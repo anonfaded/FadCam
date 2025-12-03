@@ -9,13 +9,18 @@ android {
     compileSdk = 36
 
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
+    val isProBuild = gradle.startParameter.taskNames.any { it.lowercase().contains("pro") }
 
     splits {
         abi {
-            isEnable = !isBundle
+            // For pro builds: only ARM64 (no splits, no universal)
+            // For other builds: arm64-v8a + armeabi-v7a with universal APK
+            isEnable = !isBundle && !isProBuild
             reset()
-            include("armeabi-v7a", "arm64-v8a")
-            isUniversalApk = true
+            if (!isProBuild) {
+                include("armeabi-v7a", "arm64-v8a")
+                isUniversalApk = true
+            }
         }
     }
 
@@ -79,8 +84,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
-            // App name will be set via gradle property or default
-            resValue("string", "app_name", "FadCam Pro")
+            // Allow custom app name via gradle property: -PcustomAppName="My App Name"
+            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro"
+            resValue("string", "app_name", customAppName)
         }
 
         create("debugPro") {

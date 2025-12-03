@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       app_name:
-        description: 'Custom app name (max 50 chars)'
+        description: 'Custom app name (max 50 chars, alphanumeric + spaces)'
         required: true
         type: string
 
@@ -40,14 +40,32 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US" || true
           echo "✓ Debug keystore ready"
           
-      - name: Validate inputs
+      - name: Validate and sanitize app name
         run: |
           APP_NAME="${{ inputs.app_name }}"
+          
+          # Check length
           if [ ${#APP_NAME} -gt 50 ]; then
-            echo "App name must be 50 characters or less"
+            echo "❌ App name must be 50 characters or less"
             exit 1
           fi
-          echo "✓ App name valid: $APP_NAME"
+          
+          # Remove leading/trailing whitespace and special characters
+          # Keep only alphanumeric, spaces, and hyphens
+          SANITIZED=$(echo "$APP_NAME" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/[^a-zA-Z0-9 -]//g')
+          
+          # Build final name: "FadCam Pro - <UserName>"
+          FINAL_NAME="FadCam Pro - $SANITIZED"
+          
+          # Verify it's not empty after sanitization
+          if [ -z "$SANITIZED" ]; then
+            echo "❌ App name contains no valid characters"
+            exit 1
+          fi
+          
+          echo "SANITIZED_APP_NAME=$SANITIZED" >> $GITHUB_ENV
+          echo "FINAL_APP_NAME=$FINAL_NAME" >> $GITHUB_ENV
+          echo "✓ App name sanitized: $FINAL_NAME"
           
       - name: Decode and validate icon
         run: |
@@ -124,16 +142,16 @@ jobs:
           APP_NAME="${{ inputs.app_name }}"
           echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
           
-      - name: Build Pro APK
+      - name: Build Pro APK (Release, ARM64 only)
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebugPro -PcustomAppName="${{ env.APP_NAME }}"
+          ./gradlew assemblePro -PcustomAppName="${{ env.FINAL_APP_NAME }}"
           
       - name: Verify APK was built
         run: |
-          if [ -f "app/build/outputs/apk/debugPro/app-arm64-v8a-debugPro.apk" ]; then
+          if [ -f "app/build/outputs/apk/pro/app-arm64-v8a-pro.apk" ]; then
             echo "✓ APK built successfully"
-            ls -lh app/build/outputs/apk/debugPro/
+            ls -lh app/build/outputs/apk/pro/
           else
             echo "✗ APK not found"
             exit 1
@@ -143,8 +161,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fadcam-pro-apk
-          path: app/build/outputs/apk/debugPro/*.apk
-          retention-days: 7
+          path: app/build/outputs/apk/pro/app-arm64-v8a-pro.apk
+          retention-days: 1
           
       - name: Build summary
         run: |
@@ -152,10 +170,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
           echo "- Package ID: com.fadcam.pro" >> $GITHUB_STEP_SUMMARY
-          echo "- App Name: ${{ env.APP_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Build Type: Debug Pro (Fast)" >> $GITHUB_STEP_SUMMARY
+          echo "- App Name: ${{ env.FINAL_APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Type: Release (Optimized, ARM64 only)" >> $GITHUB_STEP_SUMMARY
+          echo "- Architecture: arm64-v8a" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Download:**" >> $GITHUB_STEP_SUMMARY
-          echo "APKs are available in the workflow artifacts (valid for 7 days)" >> $GITHUB_STEP_SUMMARY
+          echo "APK is available in the workflow artifacts (expires in 24 hours)" >> $GITHUB_STEP_SUMMARY
