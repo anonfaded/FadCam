@@ -75,7 +75,7 @@ applyTo: '**'
 - Wrap fixes with start/end markers.  
 - Confirm builds after changes.  
 
-**Run this command only after updates (build + install in one):**  
+**Run this command only after updates (build + install in one), and also never use '2>&1 | tail -30' type of command pipes so i can see the output in realtime:**  
 ```
 .\gradlew.bat compileDebugJavaWithJavac installDebug
 ```

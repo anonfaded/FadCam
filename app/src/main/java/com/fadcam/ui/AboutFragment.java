@@ -144,8 +144,15 @@ public class AboutFragment extends BaseFragment {
         appName.setTextColor(themeTextColor);
         
         try {
-            String versionName = requireContext().getPackageManager().getPackageInfo(requireContext().getPackageName(), 0).versionName;
-            appVersion.setText(getString(R.string.version_format, versionName));
+            PackageManager packageManager = requireContext().getPackageManager();
+            String packageName = requireContext().getPackageName();
+            PackageInfo packageInfo = packageManager.getPackageInfo(packageName, 0);
+            String versionName = packageInfo.versionName;
+            int versionCode = packageInfo.versionCode;
+            
+            // Format: "Version Name (versionCode)\npackage.name"
+            String versionText = getString(R.string.version_format, versionName) + " (" + versionCode + ")\n" + packageName;
+            appVersion.setText(versionText);
             appVersion.setTextColor(Color.WHITE);
         } catch (Exception e) {
             appVersion.setText("");

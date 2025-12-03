@@ -61,11 +61,7 @@ android {
             applicationIdSuffix = ".beta"
             isDebuggable = true
             versionNameSuffix = "-beta"
-            // Only set app name for non-pro builds
-            // Pro flavors will override this
-            if (!isProBuild) {
-                resValue("string", "app_name", "FadCam Beta")
-            }
+            resValue("string", "app_name", "FadCam Beta")
         }
         
         release {
@@ -81,30 +77,16 @@ android {
         }
         
         create("pro") {
-            initWith(getByName("debug"))
-            applicationIdSuffix = ".pro"
-            isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
-            versionNameSuffix = "-pro"  // FadCam Pro: 3.0.0-pro
-            // Don't set app name here - let flavors or customAppName property handle it
-            val customAppName = project.findProperty("customAppName")?.toString()
-            if (customAppName != null) {
-                resValue("string", "app_name", customAppName)
-            }
-        }
-
-        create("debugPro") {
-            initWith(getByName("debug"))
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             applicationIdSuffix = ".pro"
-            isDebuggable = true
-            isMinifyEnabled = false
-            isShrinkResources = false
-            versionNameSuffix = "-proplus"  // Pro Plus: 3.0.0-proplus
-            // Allow custom app name via gradle property: -PcustomAppName="My App Name"
-            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro"
-            resValue("string", "app_name", customAppName)
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
+            versionNameSuffix = "-Pro"
         }
     }
 
@@ -125,6 +107,20 @@ android {
             dimension = "pro"
             applicationIdSuffix = ".weather"
             resValue("string", "app_name", "Weather")
+        }
+    }
+
+// ./gradlew assembleNotesPro
+// ./gradlew assembleCalcPro
+// ./gradlew assembleWeatherPro
+
+    // Only build 'pro' build type for pro flavors
+    variantFilter {
+        if (name.contains("notesPro") || name.contains("calcPro") || name.contains("weatherPro")) {
+            // For pro flavors, only build 'pro' build type
+            if (!name.endsWith("Pro")) {
+                ignore = true
+            }
         }
     }
 
