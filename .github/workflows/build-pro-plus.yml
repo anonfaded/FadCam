@@ -32,23 +32,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y imagemagick webp
           
-      - name: Generate debug keystore
+      - name: Setup local.properties with release keystore
         run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore \
-            -storepass android -alias androiddebugkey -keypass android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US" || true
-          echo "✓ Debug keystore ready"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> local.properties
+          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> local.properties
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> local.properties
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> local.properties
           
-      - name: Configure local.properties for signing
+      - name: Decode and write keystore
         run: |
-          cat > local.properties << 'EOF'
-          KEYSTORE_FILE=$HOME/.android/debug.keystore
-          KEYSTORE_PASSWORD=android
-          KEY_ALIAS=androiddebugkey
-          KEY_PASSWORD=android
-          EOF
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/release.keystore
+          if [ ! -f "$RUNNER_TEMP/release.keystore" ]; then
+            echo "❌ Keystore file not created"
+            exit 1
+          fi
+          echo "✓ Keystore file created"
           echo "✓ local.properties configured"
           
       - name: Validate and sanitize app name
@@ -65,18 +63,14 @@ jobs:
           # Keep only alphanumeric, spaces, and hyphens
           SANITIZED=$(echo "$APP_NAME" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/[^a-zA-Z0-9 -]//g')
           
-          # Build final name: "FadCam Pro - <UserName>"
-          FINAL_NAME="FadCam Pro - $SANITIZED"
-          
           # Verify it's not empty after sanitization
           if [ -z "$SANITIZED" ]; then
             echo "❌ App name contains no valid characters"
             exit 1
           fi
           
-          echo "SANITIZED_APP_NAME=$SANITIZED" >> $GITHUB_ENV
-          echo "FINAL_APP_NAME=$FINAL_NAME" >> $GITHUB_ENV
-          echo "✓ App name sanitized: $FINAL_NAME"
+          echo "FINAL_APP_NAME=$SANITIZED" >> $GITHUB_ENV
+          echo "✓ App name sanitized: $SANITIZED"
           
       - name: Decode and validate icon
         run: |
@@ -161,9 +155,9 @@ jobs:
           
       - name: Verify APK was built
         run: |
-          if [ -f "app/build/outputs/apk/default/proPlus/app-default-proPlus.apk" ]; then
+          if [ -f "app/build/outputs/apk/default/proPlus/app-default-proPlus-unsigned.apk" ]; then
             echo "✓ Pro+ APK built successfully"
-            ls -lh app/build/outputs/apk/default/proPlus/app-default-proPlus.apk
+            ls -lh app/build/outputs/apk/default/proPlus/app-default-proPlus-unsigned.apk
           else
             echo "✗ APK not found"
             ls -lh app/build/outputs/apk/default/proPlus/ || echo "Directory doesn't exist"
@@ -174,7 +168,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fadcam-pro-plus-apk
-          path: app/build/outputs/apk/default/proPlus/app-default-proPlus.apk
+          path: app/build/outputs/apk/default/proPlus/app-default-proPlus-unsigned.apk
           retention-days: 1
           
       - name: Build summary

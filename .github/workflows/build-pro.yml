@@ -18,17 +18,21 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
           
-      - name: Generate debug keystore
+      - name: Setup local.properties with release keystore
         run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> local.properties
+          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> local.properties
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> local.properties
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> local.properties
           
-      - name: Setup local.properties with debug keystore
+      - name: Decode and write keystore
         run: |
-          echo "KEYSTORE_FILE=$HOME/.android/debug.keystore" >> local.properties
-          echo "KEYSTORE_PASSWORD=android" >> local.properties
-          echo "KEY_ALIAS=androiddebugkey" >> local.properties
-          echo "KEY_PASSWORD=android" >> local.properties
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/release.keystore
+          if [ ! -f "$RUNNER_TEMP/release.keystore" ]; then
+            echo "❌ Keystore file not created"
+            exit 1
+          fi
+          echo "✓ Keystore file created"
           
       - name: Build Notes Pro variant
         run: |
