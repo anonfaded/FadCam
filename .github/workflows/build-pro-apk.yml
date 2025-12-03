@@ -149,11 +149,13 @@ jobs:
           
       - name: Verify APK was built
         run: |
-          if [ -f "app/build/outputs/apk/pro/app-arm64-v8a-pro.apk" ]; then
+          if [ -f "app/build/outputs/apk/pro/app-pro.apk" ]; then
             echo "✓ APK built successfully"
-            ls -lh app/build/outputs/apk/pro/
+            ls -lh app/build/outputs/apk/pro/app-pro.apk
           else
             echo "✗ APK not found"
+            echo "Files in pro directory:"
+            ls -lh app/build/outputs/apk/pro/ || echo "Directory doesn't exist"
             exit 1
           fi
           
@@ -161,7 +163,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fadcam-pro-apk
-          path: app/build/outputs/apk/pro/app-arm64-v8a-pro.apk
+          path: app/build/outputs/apk/pro/app-pro.apk
           retention-days: 1
           
       - name: Build summary
