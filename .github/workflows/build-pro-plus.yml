@@ -25,6 +25,7 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
+          cache: 'gradle'
           
       - name: Install ImageMagick and WebP tools
         run: |

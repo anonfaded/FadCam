@@ -16,6 +16,7 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
+          cache: 'gradle'
           
       - name: Generate debug keystore
         run: |
