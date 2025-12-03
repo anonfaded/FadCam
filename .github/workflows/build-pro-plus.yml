@@ -155,9 +155,9 @@ jobs:
           
       - name: Verify APK was built
         run: |
-          if [ -f "app/build/outputs/apk/default/proPlus/app-default-proPlus-unsigned.apk" ]; then
+          if [ -f "app/build/outputs/apk/default/proPlus/app-default-proPlus.apk" ]; then
             echo "✓ Pro+ APK built successfully"
-            ls -lh app/build/outputs/apk/default/proPlus/app-default-proPlus-unsigned.apk
+            ls -lh app/build/outputs/apk/default/proPlus/app-default-proPlus.apk
           else
             echo "✗ APK not found"
             ls -lh app/build/outputs/apk/default/proPlus/ || echo "Directory doesn't exist"
@@ -168,7 +168,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fadcam-pro-plus-apk
-          path: app/build/outputs/apk/default/proPlus/app-default-proPlus-unsigned.apk
+          path: app/build/outputs/apk/default/proPlus/app-default-proPlus.apk
           retention-days: 1
           
       - name: Build summary
