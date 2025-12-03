@@ -1460,6 +1460,19 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     public void onResume() {
+        // CRITICAL FIX: Restore the persisted recording state BEFORE calling super.onResume()
+        // This ensures button state reflects actual recording status when fragment resumes
+        // Happens when user returns from TextEditorActivity or other activities
+        String savedState = sharedPreferencesManager.getScreenRecordingState();
+        try {
+            screenRecordingState = ScreenRecordingState.valueOf(savedState);
+            Log.d(TAG, "onResume: Restored persisted recording state: " + screenRecordingState);
+        } catch (IllegalArgumentException e) {
+            // Invalid saved state, default to NONE
+            screenRecordingState = ScreenRecordingState.NONE;
+            Log.w(TAG, "onResume: Invalid saved state '" + savedState + "', defaulting to NONE");
+        }
+        
         super.onResume(); // MUST call super - Android requirement
         // NOTE: Parent's onResume() calls fetchRecordingState() which starts RecordingService (camera recording)
         // This is WRONG for FadRec. We use ScreenRecordingService which broadcasts state via LocalBroadcastManager
