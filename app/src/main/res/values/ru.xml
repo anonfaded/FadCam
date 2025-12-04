@@ -1122,4 +1122,26 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="delete_all">Delete All</string>
     <string name="new_project">New Project</string>
     <string name="delete">Delete</string>
+    <!-- FadCam Pro Strings -->
+    <string name="fadcam_pro_title">FadCam Pro</string>
+    <string name="fadcam_pro_subtitle">Premium features for complete discretion</string>
+    <string name="fadcam_pro_get_button">Get FadCam Pro</string>
+    <string name="fadcam_pro_free">Free</string>
+    <string name="fadcam_pro_column_label">Pro</string>
+    <string name="fadcam_pro_proplus_label">Pro+</string>
+    <string name="fadcam_pro_lab_label">Lab</string>
+    <string name="fadcam_pro_plus_label">Pro</string>
+    <string name="fadcam_pro_early_bird">Early bird offer! FadCam Pro is currently free. Soon transitioning to paid access.</string>
+    <string name="fadcam_pro_coming_soon">Pro+ and Lab features coming soon with custom icon uploads, custom app names, and FadDrive cloud sync.</string>
+    <string name="fadcam_pro_support_text">Your support helps sustain development</string>
+    <string name="fadcam_pro_onetime_purchase">One-time purchase • No subscription</string>
+    <string name="fadcam_pro_separate_apk">Standalone app • Works alongside FadCam</string>
+    <string name="fadcam_pro_feature_everything_icon">Everything</string>
+    <string name="fadcam_pro_feature_everything">Everything</string>
+    <string name="fadcam_pro_feature_custom_icon">Custom App Icon</string>
+    <string name="fadcam_pro_feature_notification_icon">Notification Discreet Icon</string>
+    <string name="fadcam_pro_feature_user_icon">User Uploaded Icon</string>
+    <string name="fadcam_pro_feature_app_name">Custom App Name</string>
+    <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
+    <string name="fadcam_pro_header_button">Pro</string>
 </resources>
