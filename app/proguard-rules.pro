@@ -118,17 +118,14 @@
 -keep class com.airbnb.lottie.LottieResult { *; }
 -dontwarn com.airbnb.lottie.**
 
-# Keep ExoPlayer - only essential classes
--keep class com.google.android.exoplayer2.ExoPlayer { *; }
--keep class com.google.android.exoplayer2.SimpleExoPlayer { *; }
--keep class com.google.android.exoplayer2.ui.** { *; }
--keep class com.google.android.exoplayer2.source.** { *; }
--keep class com.google.android.exoplayer2.extractor.** { *; }
--keep class com.google.android.exoplayer2.upstream.** { *; }
--keep class com.google.android.exoplayer2.decoder.** { *; }
--keep class com.google.android.exoplayer2.Format { *; }
--keep class com.google.android.exoplayer2.MediaItem { *; }
--dontwarn com.google.android.exoplayer2.**
+# Keep Media3 ExoPlayer - only essential classes
+-keep class androidx.media3.exoplayer.** { *; }
+-keep class androidx.media3.common.** { *; }
+-keep class androidx.media3.ui.** { *; }
+-keep class androidx.media3.extractor.** { *; }
+-keep class androidx.media3.datasource.** { *; }
+-keep class androidx.media3.decoder.** { *; }
+-dontwarn androidx.media3.**
 
 # Keep OSMDroid - only essential classes
 -keep class org.osmdroid.views.** { *; }

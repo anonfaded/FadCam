@@ -12,21 +12,23 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.PlayerView;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
-import com.google.android.exoplayer2.C; // For Playback Speed
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.provider.Settings;
 
 public class VideoPlayerActivity extends AppCompatActivity {
@@ -34,7 +36,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private static final String TAG = "VideoPlayerActivity";
 
     private ExoPlayer player;
-    private StyledPlayerView playerView;
+    private PlayerView playerView;
     private android.view.GestureDetector gestureDetector;
     private android.view.ScaleGestureDetector scaleGestureDetector;
     private float currentScale = 1.0f;
@@ -56,6 +58,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private com.fadcam.ui.custom.AudioWaveformView audioWaveformView;
     private android.net.Uri currentVideoUri;
     private com.google.android.material.slider.Slider timeSlider;
+    // Cached duration for fragmented MP4s where player.getDuration() returns TIME_UNSET
+    private long cachedDurationMs = C.TIME_UNSET;
     // Gesture/interaction helpers
     private AudioManager audioManager;
     private int maxStreamVolume = 0;
@@ -200,6 +204,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(com.fadcam.R.layout.activity_video_player);
+        
+        // Ensure hardware volume buttons control media (STREAM_MUSIC) volume
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         playerView = findViewById(com.fadcam.R.id.player_view);
         backButton = findViewById(com.fadcam.R.id.back_button);
@@ -296,9 +303,23 @@ public class VideoPlayerActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
 
             // Keep controller visible while scrubbing via slider
+            // Clear any existing listeners first to prevent duplicates causing slider jumping
+            try {
+                timeSlider.clearOnSliderTouchListeners();
+                timeSlider.clearOnChangeListeners();
+            } catch (Exception e) {
+                Log.w(TAG, "Error clearing slider listeners", e);
+            }
+            
             timeSlider.addOnSliderTouchListener(new com.google.android.material.slider.Slider.OnSliderTouchListener() {
                 @Override
                 public void onStartTrackingTouch(com.google.android.material.slider.Slider slider) {
+                    // Debounce protection - ignore if already scrubbing
+                    if (isTimebarScrubbing) {
+                        android.util.Log.d("VideoPlayerActivity", "Already scrubbing, ignoring duplicate onStartTrackingTouch");
+                        return;
+                    }
+                    
                     isTimebarScrubbing = true;
                     android.util.Log.d("VideoPlayerActivity", "Started scrubbing - enforcing controller visibility");
                     try {
@@ -315,6 +336,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
                 @Override
                 public void onStopTrackingTouch(com.google.android.material.slider.Slider slider) {
+                    // Debounce protection - ignore if not scrubbing
+                    if (!isTimebarScrubbing) {
+                        android.util.Log.d("VideoPlayerActivity", "Not scrubbing, ignoring duplicate onStopTrackingTouch");
+                        return;
+                    }
+                    
                     isTimebarScrubbing = false;
                     android.util.Log.d("VideoPlayerActivity", "Stopped scrubbing - restoring normal controller behavior");
                     try {
@@ -350,12 +377,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     lastSeekUptime = now;
                     try {
                         long dur = player.getDuration();
-                        if (dur > 0 && dur != com.google.android.exoplayer2.C.TIME_UNSET) {
+                        // Use cached duration as fallback for fragmented MP4s
+                        if ((dur <= 0 || dur == C.TIME_UNSET) && cachedDurationMs > 0) {
+                            dur = cachedDurationMs;
+                        }
+                        if (dur > 0 && dur != C.TIME_UNSET) {
                             // Slider value is in milliseconds (0..duration). Seek directly using value.
                             long clamped = Math.max(0L, Math.min(dur, (long) value));
                             player.seekTo(clamped);
+                            Log.d(TAG, "Seeking to: " + clamped + "ms (slider value: " + value + ")");
+                        } else {
+                            Log.w(TAG, "Cannot seek - no valid duration available");
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error during seek", e);
+                    }
                 }
             });
         }
@@ -477,7 +513,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         // Hide old ExoPlayer time bar if present (we now use Material Slider)
         try {
-            View legacyTimeBar = playerView.findViewById(com.google.android.exoplayer2.ui.R.id.exo_progress);
+            View legacyTimeBar = playerView.findViewById(androidx.media3.ui.R.id.exo_progress);
             if (legacyTimeBar != null) legacyTimeBar.setVisibility(View.GONE);
         } catch (Exception ignored) {}
 
@@ -637,8 +673,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     // secondsDelta rounds to 0 initially.
                                     try { lastSeekDirection = dx >= 0f ? 1 : -1; } catch (Exception ignored) {}
                                     long target = seekStartPosition + deltaMs;
-                                    long dur = player != null ? player.getDuration() : com.google.android.exoplayer2.C.TIME_UNSET;
-                                    if (dur != com.google.android.exoplayer2.C.TIME_UNSET) target = Math.max(0L, Math.min(dur, target));
+                                    long dur = player != null ? player.getDuration() : C.TIME_UNSET;
+                                    if (dur != C.TIME_UNSET) target = Math.max(0L, Math.min(dur, target));
                                     else target = Math.max(0L, target);
                                     if (player != null) player.seekTo(target);
                                     showSeekOverlay((int) (deltaMs / 1000L));
@@ -708,7 +744,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 // Expanded boundaries - calculate based on screen size and scale
                                 android.view.View contentFrame =
                                     playerView.findViewById(
-                                        com.google.android.exoplayer2.ui.R.id.exo_content_frame
+                                        androidx.media3.ui.R.id.exo_content_frame
                                     );
                                 if (contentFrame != null) {
                                     float screenWidth = playerView.getWidth();
@@ -1043,6 +1079,35 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // *** FIX: Modified method signature to accept Uri ***
     private void initializePlayer(Uri videoUri) {
         try {
+            // Check and log device volume levels
+            AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+            if (audioManager != null) {
+                int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                boolean isMusicMuted = currentVolume == 0;
+                boolean isMusicMutedFlg = audioManager.isStreamMute(AudioManager.STREAM_MUSIC);
+                int ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+                int alarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
+                int notifVolume = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+
+                Log.d(
+                    TAG,
+                    "AudioState: MUSIC=" + currentVolume + "/" + maxVolume +
+                        ", musicMutedVolZero=" + isMusicMuted +
+                        ", musicMutedFlag=" + isMusicMutedFlg +
+                        ", RING=" + ringVolume +
+                        ", ALARM=" + alarmVolume +
+                        ", NOTIF=" + notifVolume
+                );
+
+                if (currentVolume == 0 || isMusicMutedFlg) {
+                    Log.w(TAG, "WARNING: Device MUSIC stream is at 0 or muted flag set!");
+                    // Don't show toast - could be misleading on some devices
+                }
+            } else {
+                Log.w(TAG, "AudioManager is NULL - cannot inspect device audio state");
+            }
+            
             // Use shared player so service + activity stay in sync
             com.fadcam.playback.PlayerHolder holder =
                 com.fadcam.playback.PlayerHolder.getInstance();
@@ -1092,18 +1157,26 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     );
                 }
             } catch (Exception ignored) {}
+            Log.i(TAG, "initializePlayer() calling holder.setMediaIfNeeded for URI=" + videoUri);
             holder.setMediaIfNeeded(videoUri);
             // Set initial playback speed
+            float initialSpeed = speedValues[currentSpeedIndex];
+            Log.d(TAG, "Setting initial playback speed to " + initialSpeed + "x");
             player.setPlaybackParameters(
-                new PlaybackParameters(speedValues[currentSpeedIndex])
+                new PlaybackParameters(initialSpeed)
             );
-            // Apply initial mute state from prefs
+            // FORCE volume to 1.0 for debugging - ignore mute preference temporarily
             boolean muted = SharedPreferencesManager.getInstance(
                 this
             ).isPlaybackMuted();
             try {
-                player.setVolume(muted ? 0f : 1f);
-            } catch (Exception ignored) {}
+                // Always use volume 1.0 for debugging
+                float volume = 1f;
+                player.setVolume(volume);
+                Log.d(TAG, "Player volume FORCED to 1.0 (mutedPref was=" + muted + ")");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to set player volume", e);
+            }
             // Autoplay (prepared in holder if needed)
             // Restore saved playback position (resume) if available
             try {
@@ -1115,26 +1188,36 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     uriStr,
                     filename
                 );
+                Log.d(
+                    TAG,
+                    "Resume check: uri=" + uriStr +
+                        ", filename=" + filename +
+                        ", savedPositionMs=" + savedMs
+                );
                 if (savedMs > 0) {
+                    Log.d(TAG, "Seeking to saved position on init: " + savedMs + "ms");
                     player.seekTo(savedMs);
                 }
             } catch (Exception ignored) {}
+            Log.d(TAG, "Calling player.play() after initialization");
             player.play();
             // Listen for seeks so we can save immediately and notify adapters
             try {
                 player.addListener(
-                    new com.google.android.exoplayer2.Player.Listener() {
+                    new Player.Listener() {
                         public void onSeekProcessed() {
                             // Save and broadcast immediately when user finishes a seek
+                            Log.d(TAG, "onSeekProcessed() - saving current playback position");
                             saveCurrentPlaybackPosition();
                         }
                         @Override
-                        public void onEvents(com.google.android.exoplayer2.Player p, com.google.android.exoplayer2.Player.Events events) {
+                        public void onEvents(Player p, Player.Events events) {
                             // Update slider maximum on timeline changes
                             if (timeSlider != null) {
                                 try {
                                     long d = p.getDuration();
-                                    if (d > 0 && d != com.google.android.exoplayer2.C.TIME_UNSET) {
+                                    Log.d(TAG, "onEvents(): timeline changed, reported duration=" + d);
+                                    if (d > 0 && d != C.TIME_UNSET) {
                                         float newMax = (float) d;
                                         // First update max, then clamp and update value if needed
                                         timeSlider.setValueTo(newMax);
@@ -1144,20 +1227,93 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 } catch (Exception ignored) {}
                             }
                         }
+                        @Override
+                        public void onTracksChanged(androidx.media3.common.Tracks tracks) {
+                            // Log track information for debugging
+                            Log.d(TAG, "onTracksChanged(): groups=" + tracks.getGroups().size());
+                            for (int i = 0; i < tracks.getGroups().size(); i++) {
+                                androidx.media3.common.Tracks.Group group = tracks.getGroups().get(i);
+                                String type = group.getType() == C.TRACK_TYPE_AUDIO ? "AUDIO" :
+                                              group.getType() == C.TRACK_TYPE_VIDEO ? "VIDEO" : "OTHER";
+                                Log.d(
+                                    TAG,
+                                    "TrackGroup[" + i + "] type=" + type +
+                                        ", selected=" + group.isSelected() +
+                                        ", length=" + group.length
+                                );
+                                for (int t = 0; t < group.length; t++) {
+                                    androidx.media3.common.Format fmt = group.getTrackFormat(t);
+                                    boolean selected = group.isTrackSelected(t);
+                                    Log.d(
+                                        TAG,
+                                        "  └ track#" + t +
+                                            " selected=" + selected +
+                                            ", mime=" + fmt.sampleMimeType +
+                                            ", id=" + fmt.id +
+                                            ", language=" + fmt.language +
+                                            ", channelCount=" + fmt.channelCount +
+                                            ", sampleRate=" + fmt.sampleRate +
+                                            ", bitrate=" + fmt.bitrate
+                                    );
+                                }
+                            }
+                        }
+                        @Override
+                        public void onPlayerError(androidx.media3.common.PlaybackException error) {
+                            Log.e(TAG, "Player error: " + error.getMessage(), error);
+                        }
+                        @Override
+                        public void onAudioSessionIdChanged(int audioSessionId) {
+                            Log.d(TAG, "onAudioSessionIdChanged(): " + audioSessionId);
+                        }
+                        @Override
+                        public void onVolumeChanged(float volume) {
+                            Log.d(TAG, "onVolumeChanged(): " + volume);
+                        }
+                        @Override
+                        public void onPlaybackStateChanged(int state) {
+                            String stateName;
+                            switch (state) {
+                                case Player.STATE_IDLE: stateName = "IDLE"; break;
+                                case Player.STATE_BUFFERING: stateName = "BUFFERING"; break;
+                                case Player.STATE_READY: stateName = "READY"; break;
+                                case Player.STATE_ENDED: stateName = "ENDED"; break;
+                                default: stateName = "UNKNOWN(" + state + ")"; break;
+                            }
+                            Log.i(TAG, "onPlaybackStateChanged(): " + stateName);
+                            // When ready, log player audio state
+                            if (state == Player.STATE_READY && player != null) {
+                                Log.i(TAG, "  Player READY - volume=" + player.getVolume() + 
+                                           ", audioSessionId=" + player.getAudioSessionId() +
+                                           ", playWhenReady=" + player.getPlayWhenReady());
+                            }
+                        }
+                        @Override
+                        public void onIsPlayingChanged(boolean isPlaying) {
+                            Log.i(TAG, "onIsPlayingChanged(): " + isPlaying);
+                            if (isPlaying && player != null) {
+                                Log.i(TAG, "  Playback STARTED - volume=" + player.getVolume() + 
+                                           ", audioSessionId=" + player.getAudioSessionId());
+                            }
+                        }
+                        @Override
+                        public void onRenderedFirstFrame() {
+                            Log.i(TAG, "onRenderedFirstFrame() - first video frame visible");
+                        }
                     }
                 );
             } catch (Exception ignored) {}
             // Wire center rewind/forward buttons to use same seek logic
             try {
                 View controls = playerView.findViewById(
-                    com.google.android.exoplayer2.ui.R.id.exo_center_controls
+                    androidx.media3.ui.R.id.exo_center_controls
                 );
                 if (controls != null) {
                     View rew = controls.findViewById(
-                        com.google.android.exoplayer2.ui.R.id.exo_rew
+                        androidx.media3.ui.R.id.exo_rew
                     );
                     View ffwd = controls.findViewById(
-                        com.google.android.exoplayer2.ui.R.id.exo_ffwd
+                        androidx.media3.ui.R.id.exo_ffwd
                     );
                     if (rew != null) rew.setOnClickListener(v -> {
                         try {
@@ -1180,14 +1336,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             long dur = player.getDuration();
                             long target = Math.min(
                                 dur ==
-                                    com.google.android.exoplayer2.C.TIME_UNSET
+                                    C.TIME_UNSET
                                     ? Long.MAX_VALUE
                                     : dur,
                                 cur + s * 1000L
                             );
                             if (
                                 dur !=
-                                com.google.android.exoplayer2.C.TIME_UNSET
+                                C.TIME_UNSET
                             ) player.seekTo(Math.min(target, dur));
                             else player.seekTo(target);
                             showDoubleTapOverlay(true);
@@ -1198,6 +1354,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
             // Start periodic saves
             resumeSaveHandler.postDelayed(resumeSaveRunnable, 5000);
+            // Fetch cached duration for fragmented MP4s where player doesn't report duration
+            fetchCachedDuration(videoUri);
+            
             // Start periodic slider updates when not scrubbing
             try {
                 android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -1207,11 +1366,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         try {
                             if (player != null && timeSlider != null && !isTimebarScrubbing) {
                                 long dur = player.getDuration();
-                                if (dur > 0 && dur != com.google.android.exoplayer2.C.TIME_UNSET) {
+                                // Use cached duration as fallback for fragmented MP4s
+                                if ((dur <= 0 || dur == C.TIME_UNSET) && cachedDurationMs > 0) {
+                                    dur = cachedDurationMs;
+                                    Log.d(TAG, "Using cached duration: " + dur + "ms");
+                                }
+                                if (dur > 0 && dur != C.TIME_UNSET) {
                                     float newMax = (float) dur;
                                     // Update max first
                                     if (Math.abs(timeSlider.getValueTo() - newMax) > 0.5f) {
                                         timeSlider.setValueTo(newMax);
+                                        Log.d(TAG, "Slider max set to: " + newMax + "ms");
                                     }
                                     long pos = player.getCurrentPosition();
                                     float targetVal = (float) Math.max(0L, Math.min((long) newMax, pos));
@@ -1221,6 +1386,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     if (Math.abs(cur - targetVal) > 5f) {
                                         timeSlider.setValue(targetVal);
                                     }
+                                } else {
+                                    Log.w(TAG, "Duration still unknown: player=" + player.getDuration() + ", cached=" + cachedDurationMs);
                                 }
                             }
                         } catch (Exception ignored) {}
@@ -1243,6 +1410,49 @@ public class VideoPlayerActivity extends AppCompatActivity {
             ).show();
             finish(); // Close activity if player fails to initialize
         }
+    }
+
+    /**
+     * Fetches video duration using MediaMetadataRetriever as fallback for fragmented MP4s
+     * where ExoPlayer's getDuration() returns TIME_UNSET.
+     * Runs on background thread to avoid blocking UI.
+     */
+    private void fetchCachedDuration(Uri uri) {
+        if (uri == null) return;
+        new Thread(() -> {
+            MediaMetadataRetriever retriever = null;
+            try {
+                retriever = new MediaMetadataRetriever();
+                retriever.setDataSource(VideoPlayerActivity.this, uri);
+                String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                if (durationStr != null && !durationStr.isEmpty()) {
+                    long durationMs = Long.parseLong(durationStr);
+                    if (durationMs > 0) {
+                        cachedDurationMs = durationMs;
+                        Log.d(TAG, "Cached duration fetched via MediaMetadataRetriever: " + durationMs + "ms");
+                        // Update slider max on UI thread if needed
+                        runOnUiThread(() -> {
+                            try {
+                                if (timeSlider != null && timeSlider.getValueTo() < durationMs) {
+                                    timeSlider.setValueTo((float) durationMs);
+                                    Log.d(TAG, "Slider max updated from cached duration: " + durationMs);
+                                }
+                            } catch (Exception e) {
+                                Log.w(TAG, "Error updating slider max from cached duration", e);
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error fetching duration via MediaMetadataRetriever", e);
+            } finally {
+                if (retriever != null) {
+                    try {
+                        retriever.release();
+                    } catch (Exception ignored) {}
+                }
+            }
+        }).start();
     }
 
     // Save current position to prefs keyed by current media URI
@@ -1331,14 +1541,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
         try {
             if (playerView == null) return false;
             View controller = playerView.findViewById(
-                com.google.android.exoplayer2.ui.R.id.exo_controller
+                androidx.media3.ui.R.id.exo_controller
             );
             if (controller != null) return (
                 controller.getVisibility() == View.VISIBLE
             );
             // Fallback: try DefaultTimeBar visibility instead
             View timeBar = playerView.findViewById(
-                com.google.android.exoplayer2.ui.R.id.exo_progress
+                androidx.media3.ui.R.id.exo_progress
             );
             if (timeBar != null) return timeBar.getVisibility() == View.VISIBLE;
         } catch (Exception ignored) {}
@@ -1355,7 +1565,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         // Enforce controller visibility during scrubbing by listening to visibility changes
         try {
             if (playerView != null) {
-                playerView.setControllerVisibilityListener(new StyledPlayerView.ControllerVisibilityListener() {
+                playerView.setControllerVisibilityListener(new PlayerView.ControllerVisibilityListener() {
                     @Override
                     public void onVisibilityChanged(int visibility) {
                         try {
@@ -1379,10 +1589,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
     // --- Playback Speed Controls ---
     private void setupCustomSettingsAction() {
         if (playerView != null) {
-            // Find settings button within the PlayerView's layout using ExoPlayer's ID
-            // Need to import com.google.android.exoplayer2.ui.R specifically for this ID
+            // Find settings button within the PlayerView's layout using Media3's ID
             settingsButton = playerView.findViewById(
-                com.google.android.exoplayer2.ui.R.id.exo_settings
+                androidx.media3.ui.R.id.exo_settings
             );
             if (settingsButton != null) {
                 settingsButton.setOnClickListener(v ->
@@ -3119,7 +3328,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             // Set up player state listener for waveform updates only
             if (player != null) {
                 player.addListener(
-                    new com.google.android.exoplayer2.Player.Listener() {
+                    new Player.Listener() {
                         @Override
                         public void onIsPlayingChanged(boolean isPlaying) {
                             updateWaveformProgress();
@@ -3239,7 +3448,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             try {
                 // Find the content frame to scale only video, not controls
                 android.view.View contentFrame = playerView.findViewById(
-                    com.google.android.exoplayer2.ui.R.id.exo_content_frame
+                    androidx.media3.ui.R.id.exo_content_frame
                 );
                 if (contentFrame != null) {
                     contentFrame.setScaleX(currentScale);
@@ -3249,7 +3458,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 } else {
                     // Fallback: try to find shutter or surface view
                     android.view.View shutter = playerView.findViewById(
-                        com.google.android.exoplayer2.ui.R.id.exo_shutter
+                        androidx.media3.ui.R.id.exo_shutter
                     );
                     if (shutter != null) {
                         shutter.setScaleX(currentScale);
@@ -3275,7 +3484,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         if (playerView != null) {
             try {
                 android.view.View contentFrame = playerView.findViewById(
-                    com.google.android.exoplayer2.ui.R.id.exo_content_frame
+                    androidx.media3.ui.R.id.exo_content_frame
                 );
                 if (contentFrame != null) {
                     contentFrame
@@ -3291,7 +3500,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         .start();
                 } else {
                     android.view.View shutter = playerView.findViewById(
-                        com.google.android.exoplayer2.ui.R.id.exo_shutter
+                        androidx.media3.ui.R.id.exo_shutter
                     );
                     if (shutter != null) {
                         shutter

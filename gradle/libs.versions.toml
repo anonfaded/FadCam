@@ -1,28 +1,29 @@
 [versions]
 agp = "8.11.1"
 appintroVersion = "6.3.1"
-camerax = "1.5.0"
+camerax = "1.5.1"
 coreKtx = "1.17.0"
-coreSplashscreen = "1.0.1"
+coreSplashscreen = "1.2.0"
 documentfile = "1.1.0"
 localbroadcastmanager = "1.1.0"
 exoplayerCore = "2.19.1"
+media3 = "1.8.0"
 glide = "5.0.5"
 gson = "2.13.2"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 appcompat = "1.7.1"
-lifecycleRuntime = "2.9.3"
-lottie = "6.6.7"
+lifecycleRuntime = "2.10.0"
+lottie = "6.7.1"
 material = "1.13.0"
-activity = "1.11.0"
+activity = "1.12.1"
 constraintlayout = "2.2.1"
-navigationUiKtx = "2.9.4"
-okhttp = "5.1.0"
+navigationUiKtx = "2.9.6"
+okhttp = "5.3.2"
 osmdroidAndroid = "6.1.20"
 smartExceptionJava = "0.2.1"
-swiperefreshlayout = "1.1.0"
+swiperefreshlayout = "1.2.0"
 viewpager2 = "1.1.0"
 
 [libraries]
@@ -49,6 +50,7 @@ lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", version.r
 localbroadcastmanager = { module = "androidx.localbroadcastmanager:localbroadcastmanager", version.ref = "localbroadcastmanager" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+media = { module = "androidx.media:media", version = "1.7.0" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationUiKtx" }
@@ -59,6 +61,12 @@ osmdroid-wms = { module = "org.osmdroid:osmdroid-wms", version.ref = "osmdroidAn
 smart-exception-java = { module = "com.arthenica:smart-exception-java", version.ref = "smartExceptionJava" }
 swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
+media3-muxer = { module = "androidx.media3:media3-muxer", version.ref = "media3" }
+media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
+media3-container = { module = "androidx.media3:media3-container", version.ref = "media3" }
+media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
+media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

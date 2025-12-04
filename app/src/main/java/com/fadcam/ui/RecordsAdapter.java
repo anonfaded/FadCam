@@ -2141,7 +2141,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
-    // Get video duration from URI (Helper)
+    // Get video duration from URI (Helper) using FFprobeKit for reliability
     // -------------- Fix Start (getVideoDuration)-----------
     private long getVideoDuration(Uri videoUri) {
         if (context == null || videoUri == null)
@@ -2152,33 +2152,36 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return 0;
         }
         // -------------- Fix End (getVideoDuration)-----------
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        long durationMs = 0;
+        
+        // Get file path for FFprobe - use SAF protocol for content:// URIs
+        String filePath;
+        if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
+            filePath = videoUri.getPath();
+        } else {
+            // For content:// URIs, use SAF protocol
+            filePath = "saf:" + videoUri.toString();
+        }
+        
+        // Use FFprobeKit to get accurate duration
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && "content".equals(videoUri.getScheme())) {
-                try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(videoUri, "r")) {
-                    if (pfd != null)
-                        retriever.setDataSource(pfd.getFileDescriptor());
-                    else
-                        throw new IOException("PFD was null for " + videoUri);
+            com.arthenica.ffmpegkit.MediaInformationSession session = 
+                com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
+            com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
+            
+            if (info != null) {
+                String durationStr = info.getDuration();
+                if (durationStr != null) {
+                    double durationSec = Double.parseDouble(durationStr);
+                    long durationMs = (long) (durationSec * 1000);
+                    Log.d(TAG, "Duration from FFprobe: " + durationMs + "ms");
+                    return durationMs;
                 }
-            } else {
-                retriever.setDataSource(context, videoUri); // Works for file:// and older content:// access
-            }
-            String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            if (durationStr != null) {
-                durationMs = Long.parseLong(durationStr);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error getting video duration for URI: " + videoUri, e);
-        } finally {
-            try {
-                retriever.release();
-            } catch (IOException e) {
-                Log.e(TAG, "Error releasing MMD retriever", e);
-            }
+            Log.e(TAG, "Error getting duration from FFprobe for URI: " + videoUri, e);
         }
-        return durationMs;
+        
+        return 0;
     }
 
     // Get file name from URI (Helper) - Crucial for Save to Gallery/Rename default

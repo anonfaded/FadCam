@@ -11,7 +11,13 @@ import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import com.google.android.exoplayer2.ExoPlayer;
+
+import com.arthenica.ffmpegkit.FFprobeKit;
+import com.arthenica.ffmpegkit.MediaInformation;
+import com.arthenica.ffmpegkit.MediaInformationSession;
+
+import androidx.media3.exoplayer.ExoPlayer;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -101,7 +107,7 @@ public class AudioWaveformView extends View {
     }
 
     /**
-     * Extract real audio data using MediaExtractor
+     * Extract real audio data using MediaExtractor with FFprobeKit for duration
      */
     private void extractRealAudioData(Uri videoUri) {
         MediaExtractor extractor = null;
@@ -134,14 +140,34 @@ public class AudioWaveformView extends View {
             }
 
             extractor.selectTrack(audioTrackIndex);
-            MediaFormat format = extractor.getTrackFormat(audioTrackIndex);
 
-            long durationUs = format.containsKey(MediaFormat.KEY_DURATION) ? format.getLong(MediaFormat.KEY_DURATION)
-                    : 0;
+            // Get duration using FFprobeKit for reliable fragmented MP4 support
+            long durationUs = 0;
+            String filePath;
+            if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
+                filePath = videoUri.getPath();
+            } else {
+                // For content:// URIs, use SAF protocol
+                filePath = "saf:" + videoUri.toString();
+            }
+            
+            try {
+                MediaInformationSession session = FFprobeKit.getMediaInformation(filePath);
+                MediaInformation info = session.getMediaInformation();
+                if (info != null) {
+                    String durationStr = info.getDuration();
+                    if (durationStr != null) {
+                        double durationSec = Double.parseDouble(durationStr);
+                        durationUs = (long) (durationSec * 1000000);
+                        Log.d(TAG, "Duration from FFprobe: " + durationSec + "s (" + durationUs + "us)");
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to get duration from FFprobe", e);
+            }
 
             if (durationUs <= 0) {
-                Log.w(TAG, "Invalid audio duration - showing silence");
-                // Fill with true silence data instead of fake waveform
+                Log.w(TAG, "Could not determine audio duration - showing silence");
                 post(() -> {
                     realWaveformData.clear();
                     for (int i = 0; i < waveformPoints; i++) {

@@ -18,6 +18,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 import com.fadcam.VideoCodec;
+import com.fadcam.media.FragmentedMp4MuxerWrapper;
 
 /**
  * GLRecordingPipeline manages the OpenGL pipeline for real-time watermarking
@@ -39,7 +40,8 @@ public class GLRecordingPipeline {
     private final WatermarkInfoProvider watermarkInfoProvider;
     private GLWatermarkRenderer glRenderer;
     private MediaCodec videoEncoder;
-    private MediaMuxer mediaMuxer;
+    // Use FragmentedMp4MuxerWrapper for crash-safe recording (writes fragments incrementally)
+    private FragmentedMp4MuxerWrapper mediaMuxer;
     private Surface encoderInputSurface;
     private Surface cameraInputSurface;
     private boolean isRecording = false;
@@ -473,33 +475,60 @@ public class GLRecordingPipeline {
                 setupAudio();
                 if (audioRecordingEnabled) {
                     startAudioThread();
-                    // Give audio encoder time to initialize
+                    // Give audio encoder time to initialize and produce output format
+                    // This is critical - the audio encoder needs data flowing through it
+                    // before INFO_OUTPUT_FORMAT_CHANGED is signaled
                     try {
-                        Thread.sleep(50);
+                        Thread.sleep(150); // Slightly longer initial wait for audio thread to start
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                     
-                    // Add a fallback timeout to start muxer if audio track isn't added
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            synchronized (GLRecordingPipeline.this) {
-                                if (!muxerStarted && videoTrackIndex != -1 && audioTrackIndex == -1) {
-                                    Log.w(TAG, "FALLBACK: Starting muxer without audio track after timeout");
-                                    try {
-                                        if (mediaMuxer != null) {
-                                            mediaMuxer.start();
-                                            muxerStarted = true;
-                                            Log.d(TAG, "Muxer started via fallback timeout (video-only mode)");
+                    // Aggressively drain audio encoder to get format early
+                    // The encoder needs some input before it produces output format
+                    // Try for up to 2 seconds (40 iterations * 50ms)
+                    for (int i = 0; i < 40 && audioTrackIndex == -1; i++) {
+                        drainAudioEncoder();
+                        if (audioTrackIndex != -1) {
+                            Log.d(TAG, "Audio track added after " + (i + 1) + " drain attempts");
+                            break;
+                        }
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                    
+                    // If audio track still not added after 2 seconds, log warning
+                    // The muxer will start when video format is ready and we'll continue
+                    // to try adding audio in the drainAudioEncoder loop
+                    if (audioTrackIndex == -1) {
+                        Log.w(TAG, "Audio track not yet ready after initialization - will continue trying in render loop");
+                        
+                        // Add a delayed safety check: if muxer hasn't started after 5 seconds,
+                        // start it without audio to prevent recording from hanging
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (GLRecordingPipeline.this) {
+                                    if (!muxerStarted && videoTrackIndex != -1 && isRecording) {
+                                        Log.w(TAG, "SAFETY FALLBACK: Starting muxer without audio after 5 second timeout");
+                                        try {
+                                            if (mediaMuxer != null) {
+                                                mediaMuxer.start();
+                                                muxerStarted = true;
+                                                Log.d(TAG, "Muxer started via safety fallback (video-only mode)");
+                                            }
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Failed to start muxer via safety fallback", e);
                                         }
-                                    } catch (Exception e) {
-                                        Log.e(TAG, "Failed to start muxer via fallback", e);
                                     }
                                 }
                             }
-                        }
-                    }, 3000); // 3 second timeout
+                        }, 5000); // 5 second safety timeout
+                    }
                 }
 
                 // -------------- Fix Start for this method(startRecording)-----------
@@ -886,27 +915,27 @@ public class GLRecordingPipeline {
 
     /**
      * Sets up the media muxer for the current output file.
+     * Uses FragmentedMp4MuxerWrapper for crash-safe recording.
      * This is called for each segment.
      */
     private void setupMuxer() throws IOException {
+        // Use FragmentedMp4MuxerWrapper for crash-safe recording
+        // Fragments are written incrementally, so if the app crashes,
+        // the video is still recoverable up to the last written fragment.
         if (currentOutputFd != null) {
-            mediaMuxer = new MediaMuxer(currentOutputFd, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            Log.d(TAG, "Created MediaMuxer with file descriptor");
+            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
+            Log.d(TAG, "Created FragmentedMp4Muxer with file descriptor (crash-safe)");
         } else {
-            mediaMuxer = new MediaMuxer(currentOutputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            Log.d(TAG, "Created MediaMuxer with path: " + currentOutputFilePath);
+            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
+            Log.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (crash-safe)");
         }
 
         // Set location metadata if available
         if (locationLatitude != null && locationLongitude != null) {
-            try {
-                mediaMuxer.setLocation(locationLatitude, locationLongitude);
-                Log.d(TAG, "Applied location metadata to MediaMuxer: " + locationLatitude + ", " + locationLongitude);
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to set location metadata in MediaMuxer", e);
-            }
+            mediaMuxer.setLocation(locationLatitude.floatValue(), locationLongitude.floatValue());
+            Log.d(TAG, "Location metadata set: " + locationLatitude + ", " + locationLongitude);
         } else {
-            Log.d(TAG, "No location metadata available for MediaMuxer");
+            Log.d(TAG, "No location metadata available");
         }
 
         // Reset track indices
@@ -924,7 +953,7 @@ public class GLRecordingPipeline {
         // DO NOT start muxer here - wait for encoder formats to be available
         // This prevents the format change issue that causes muxer restarts
     muxerStarted = false;
-    Log.d(TAG, "Muxer created but not started - waiting for encoder formats");
+    Log.d(TAG, "FragmentedMp4Muxer created but not started - waiting for encoder formats");
     // Reset per-segment state
     segmentBytesWritten = 0L;
     pendingRollover = false;
@@ -1021,6 +1050,17 @@ public class GLRecordingPipeline {
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat newFormat = videoEncoder.getOutputFormat();
                     Log.d(TAG, "Encoder output format changed: " + newFormat);
+                    
+                    // Inject frame rate and bitrate into output format for proper metadata
+                    // The encoder's output format often doesn't include these values
+                    if (!newFormat.containsKey(MediaFormat.KEY_FRAME_RATE)) {
+                        newFormat.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
+                        Log.d(TAG, "Injected frame rate: " + videoFramerate);
+                    }
+                    if (!newFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
+                        newFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
+                        Log.d(TAG, "Injected bitrate: " + videoBitrate);
+                    }
 
                     // Cache for future segment rollovers
                     cachedVideoFormat = newFormat;

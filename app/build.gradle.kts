@@ -234,8 +234,12 @@ dependencies {
     implementation(libs.camerax.video)
     implementation(libs.constraintlayout)
     implementation(libs.core.ktx)
-    implementation(libs.exoplayer.core)
-    implementation(libs.exoplayer.ui)
+    // Media3 ExoPlayer for playback (replacing deprecated exoplayer2)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+    implementation(libs.media3.session)
+    // AndroidX Media for MediaStyle notifications
+    implementation(libs.media)
     implementation(libs.glide)
     implementation(libs.gson)
     implementation(libs.lottie)
@@ -252,6 +256,11 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation(libs.documentfile)
     implementation(libs.localbroadcastmanager)
+    
+    // Media3 for fragmented MP4 muxing (crash-safe recording)
+    implementation(libs.media3.muxer)
+    implementation(libs.media3.common)
+    implementation(libs.media3.container)
 
     annotationProcessor(libs.compiler)
 

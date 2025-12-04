@@ -10,18 +10,19 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.support.v4.media.session.PlaybackStateCompat;
+
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
+import androidx.media3.common.C;
+import androidx.media3.common.AudioAttributes;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
 
 import com.fadcam.R;
 import com.fadcam.playback.PlayerHolder;
 import com.fadcam.ui.VideoPlayerActivity;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.audio.AudioAttributes;
 
 /**
  * Media-style foreground service: posts a media notification with playback controls and progress.
@@ -131,8 +132,8 @@ public class PlaybackService extends Service {
             PlayerHolder holder = PlayerHolder.getInstance();
             player = holder.getOrCreate(this);
             player.setAudioAttributes(new AudioAttributes.Builder()
-                    .setContentType(com.google.android.exoplayer2.C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .setUsage(com.google.android.exoplayer2.C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                    .setUsage(C.USAGE_MEDIA)
                     .build(), true);
             player.setPlayWhenReady(playWhenReady);
             if (uri != null) {
@@ -400,7 +401,7 @@ public class PlaybackService extends Service {
         nb.setStyle(style);
         
         // Add progress if we have valid duration (>0 and not UNKNOWN)
-        if (duration > 0 && duration != com.google.android.exoplayer2.C.TIME_UNSET) {
+        if (duration > 0 && duration != C.TIME_UNSET) {
             nb.setProgress((int)duration, (int)position, false);
             nb.setShowWhen(false); // Hide timestamp since we're showing our own progress
         }
