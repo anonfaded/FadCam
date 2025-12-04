@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Feature row item for FadCam Pro comparison table -->
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="14dp"
+    android:paddingHorizontal="8dp"
+    android:background="@drawable/bg_feature_row"
+    android:gravity="center_vertical">
+
+    <!-- Feature Name -->
+    <TextView
+        android:id="@+id/tvFeatureName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Feature Name"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:ellipsize="end"
+        android:maxLines="2" />
+
+    <!-- Free Column -->
+    <FrameLayout
+        android:layout_width="60dp"
+        android:layout_height="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvFreeStatus"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="remove"
+            android:textColor="#666666"
+            android:textSize="18sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+    <!-- Pro Column -->
+    <FrameLayout
+        android:layout_width="60dp"
+        android:layout_height="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvProStatus"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="check_circle"
+            android:textColor="#FFD700"
+            android:textSize="18sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+</LinearLayout>

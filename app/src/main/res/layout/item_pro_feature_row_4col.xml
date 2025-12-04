@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Feature row item for FadCam Pro comparison table with 4 columns -->
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="10dp"
+    android:paddingHorizontal="4dp"
+    android:background="@drawable/bg_feature_row"
+    android:gravity="center_vertical">
+
+    <!-- Feature Name -->
+    <TextView
+        android:id="@+id/tvFeatureName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Feature Name"
+        android:textSize="12sp"
+        android:textColor="@android:color/white"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:lineSpacingExtra="2dp" />
+
+    <!-- Free Column -->
+    <FrameLayout
+        android:layout_width="48dp"
+        android:layout_height="22dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvFreeStatus"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="remove"
+            android:textColor="#666666"
+            android:textSize="16sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+    <!-- Pro Column -->
+    <FrameLayout
+        android:layout_width="48dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="3dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvProStatus"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="check_circle"
+            android:textColor="#FFD700"
+            android:textSize="16sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+    <!-- Pro+ Column -->
+    <FrameLayout
+        android:layout_width="48dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="3dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvProPlusStatus"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="check_circle"
+            android:textColor="#FF6B6B"
+            android:textSize="16sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+    <!-- Lab Column -->
+    <FrameLayout
+        android:layout_width="48dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="3dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvLabStatus"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="remove"
+            android:textColor="#666666"
+            android:textSize="16sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+</LinearLayout>

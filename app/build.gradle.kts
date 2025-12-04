@@ -153,8 +153,8 @@ android {
                 ignore = true
             }
         } else if (isDefaultFlavor) {
-            // Default flavor: only 'proPlus' build type
-            if (!name.endsWith("ProPlus")) {
+            // Default flavor: allow 'debug', 'release', and 'proPlus' build types
+            if (name.endsWith("Pro") && !name.endsWith("ProPlus")) {
                 ignore = true
             }
         }

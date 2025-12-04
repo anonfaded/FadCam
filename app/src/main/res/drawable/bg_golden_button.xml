@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Golden gradient button background -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="90"
+        android:startColor="#D4A017"
+        android:centerColor="#FFD700"
+        android:endColor="#F5D742" />
+    <corners android:radius="28dp" />
+</shape>

@@ -82,4 +82,9 @@
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowAnimationStyle">@null</item>
     </style>
+
+    <!-- FadCam Pro Activity Theme with Ubuntu Font -->
+    <style name="FadCamProTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:fontFamily">@font/ubuntu_regular</item>
+    </style>
 </resources>

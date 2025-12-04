@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Golden header button for home fragment -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="90"
+        android:startColor="#C9A227"
+        android:centerColor="#FFD700"
+        android:endColor="#E8C547" />
+    <corners android:radius="14dp" />
+    <padding
+        android:left="10dp"
+        android:right="10dp"
+        android:top="4dp"
+        android:bottom="4dp" />
+</shape>

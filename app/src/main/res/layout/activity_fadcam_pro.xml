@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_fadcam_pro_gradient">
+
+    <!-- Back Button -->
+    <ImageView
+        android:id="@+id/btnBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="12dp"
+        android:padding="8dp"
+        android:src="@drawable/ic_arrow_back"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/back"
+        app:tint="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Header Section -->
+    <LinearLayout
+        android:id="@+id/headerSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:paddingHorizontal="24dp"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Pro Icon/Badge with crown -->
+        <FrameLayout
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginBottom="12dp">
+
+            <View
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_pro_icon_glow" />
+
+            <TextView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="workspace_premium"
+                android:textColor="#FFD700"
+                android:textSize="36sp"
+                android:gravity="center" />
+        </FrameLayout>
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvProTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/fadcam_pro_title"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Subtitle -->
+        <TextView
+            android:id="@+id/tvProSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/fadcam_pro_subtitle"
+            android:textSize="13sp"
+            android:textColor="#B0B0B0"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Features Container -->
+    <ScrollView
+        android:id="@+id/scrollFeatures"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:paddingHorizontal="12dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/headerSection"
+        app:layout_constraintBottom_toTopOf="@id/bottomSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/featuresContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="8dp">
+
+            <!-- Feature Comparison Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="4dp"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical">
+
+                <!-- Feature name column (empty header) -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text=""
+                    android:textSize="10sp"
+                    android:textColor="#808080" />
+
+                <!-- Free column header -->
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_header_label_transparent"
+                    android:paddingVertical="3dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/fadcam_pro_free"
+                        android:textSize="9sp"
+                        android:textColor="#808080"
+                        android:gravity="center"
+                        android:textStyle="bold" />
+                </FrameLayout>
+
+                <!-- Pro column header -->
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:background="@drawable/bg_pro_badge_small"
+                    android:paddingVertical="3dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/fadcam_pro_column_label"
+                        android:textSize="9sp"
+                        android:textColor="#FFD700"
+                        android:gravity="center"
+                        android:textStyle="bold" />
+                </FrameLayout>
+
+                <!-- Pro+ column header -->
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:background="@drawable/bg_proplus_badge_small"
+                    android:paddingVertical="3dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/fadcam_pro_proplus_label"
+                        android:textSize="8sp"
+                        android:textColor="#FF6B6B"
+                        android:gravity="center"
+                        android:textStyle="bold"
+                        android:maxLines="1" />
+                </FrameLayout>
+
+                <!-- Lab column header -->
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:background="@drawable/bg_lab_badge_small"
+                    android:paddingVertical="3dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/fadcam_pro_lab_label"
+                        android:textSize="9sp"
+                        android:textColor="#00BCD4"
+                        android:gravity="center"
+                        android:textStyle="bold" />
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!-- Feature Row 1: Everything -->
+            <include layout="@layout/item_pro_feature_row_4col"
+                android:id="@+id/featureRow1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp" />
+
+            <!-- Feature Row 2: Notification Icon -->
+            <include layout="@layout/item_pro_feature_row_4col"
+                android:id="@+id/featureRow2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp" />
+
+            <!-- Feature Row 3: User Uploaded Icon (Pro+ only) -->
+            <include layout="@layout/item_pro_feature_row_4col"
+                android:id="@+id/featureRow3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp" />
+
+            <!-- Feature Row 4: Custom App Name (Pro+ only) -->
+            <include layout="@layout/item_pro_feature_row_4col"
+                android:id="@+id/featureRow4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp" />
+
+            <!-- Feature Row 5: FadDrive (Lab only) -->
+            <include layout="@layout/item_pro_feature_row_4col"
+                android:id="@+id/featureRow5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp" />
+
+            <!-- Early Bird Notice -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="#1A4CAF50"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:fontFamily="@font/materialicons"
+                        android:text="celebration"
+                        android:textColor="#4CAF50"
+                        android:textSize="16sp"
+                        android:gravity="center"
+                        android:layout_marginEnd="10dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/fadcam_pro_early_bird"
+                        android:textSize="12sp"
+                        android:textColor="#4CAF50"
+                        android:lineSpacingExtra="2dp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Coming Soon Notice -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="#1AFF6B6B"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:fontFamily="@font/materialicons"
+                        android:text="schedule"
+                        android:textColor="#FF6B6B"
+                        android:textSize="16sp"
+                        android:gravity="center"
+                        android:layout_marginEnd="10dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/fadcam_pro_coming_soon"
+                        android:textSize="12sp"
+                        android:textColor="#FF6B6B"
+                        android:lineSpacingExtra="2dp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom Section with CTA Button -->
+    <LinearLayout
+        android:id="@+id/bottomSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="20dp"
+        android:background="@drawable/bg_bottom_fade"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Golden CTA Button with Shimmer -->
+        <com.fadcam.ui.ShimmerButton
+            android:id="@+id/btnGetPro"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/fadcam_pro_get_button"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:textAllCaps="false"
+            android:letterSpacing="0.02"
+            app:backgroundTint="@null"
+            android:background="@drawable/bg_golden_button"
+            app:cornerRadius="25dp"
+            app:icon="@drawable/ic_crown"
+            app:iconGravity="textStart"
+            app:iconTint="#1A1A1A"
+            app:iconPadding="8dp"
+            app:rippleColor="#80FFD700" />
+
+        <!-- One-time Purchase Notice -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:text="@string/fadcam_pro_onetime_purchase"
+            android:textSize="11sp"
+            android:textColor="#FFD700"
+            android:gravity="center"
+            android:drawableStart="@drawable/ic_check_circle"
+            android:drawablePadding="4dp"
+            android:drawableTint="#FFD700" />
+
+        <!-- Separate APK Notice -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="@string/fadcam_pro_separate_apk"
+            android:textSize="11sp"
+            android:textColor="#B0B0B0"
+            android:gravity="center"
+            android:drawableStart="@drawable/ic_download_small"
+            android:drawablePadding="4dp"
+            android:drawableTint="#B0B0B0" />
+
+        <!-- Support Text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/fadcam_pro_support_text"
+            android:textSize="11sp"
+            android:textColor="#808080"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

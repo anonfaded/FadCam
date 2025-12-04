@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Golden to dark gradient background for FadCam Pro activity -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="135"
+        android:startColor="#2A200A"
+        android:centerColor="#3D3015"
+        android:endColor="#1A1A1A" />
+</shape>

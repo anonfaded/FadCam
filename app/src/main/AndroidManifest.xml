@@ -274,6 +274,11 @@
 
         <activity android:name=".ui.OnboardingActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
 
+        <activity 
+            android:name=".ui.FadCamProActivity" 
+            android:theme="@style/FadCamProTheme"
+            android:exported="false" />
+
         <!-- Services and receivers remain unchanged -->
         <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 

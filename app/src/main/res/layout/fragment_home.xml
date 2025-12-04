@@ -3,21 +3,38 @@
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?android:colorBackground">
 
     <!-- Fixed Header -->
-    <LinearLayout android:id="@+id/header_bar" android:layout_width="0dp" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:background="?attr/colorTopBar" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/header_bar" android:layout_width="0dp" android:layout_height="wrap_content" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:background="?attr/colorTopBar" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
 
         <!-- Hamburger menu button -->
-        <ImageView android:id="@+id/btnHamburgerMenu" android:layout_width="24dp" android:layout_height="24dp" android:padding="2dp" android:src="@drawable/ic_home_hamburger" android:tint="@android:color/white" android:contentDescription="@string/home_menu" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:layout_marginEnd="12dp" />
+        <ImageView android:id="@+id/btnHamburgerMenu" android:layout_width="24dp" android:layout_height="24dp" android:padding="2dp" android:src="@drawable/ic_home_hamburger" android:tint="@android:color/white" android:contentDescription="@string/home_menu" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:layout_marginEnd="12dp" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" />
 
         <!-- App Title (centered) -->
-        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center">
+        <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:src="@drawable/menu_icon_unknown" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
 
-            <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:src="@drawable/menu_icon_unknown" />
-        </LinearLayout>
+        <!-- Golden Pro Button with Shimmer -->
+        <com.fadcam.ui.ShimmerTextView 
+            android:id="@+id/btnGetPro"
+            android:layout_width="wrap_content"
+            android:layout_height="26dp"
+            android:paddingHorizontal="8dp"
+            android:background="@drawable/bg_golden_header_button"
+            android:text="@string/fadcam_pro_header_button"
+            android:textColor="#1A1A1A"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/ubuntu_regular"
+            android:gravity="center_vertical"
+            android:drawableStart="@drawable/ic_crown"
+            android:drawablePadding="0dp"
+            android:drawableTint="#1A1A1A"
+            android:focusable="true"
+            android:clickable="true"
+            android:layout_marginEnd="4dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Giftbox icon for Ko-fi support -->
-        <ImageButton android:id="@+id/ivKoFiSupport" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:src="@drawable/coffee_cup" android:contentDescription="@string/support_ko_fi" android:scaleType="centerInside" android:focusable="true" android:clickable="true" />
-
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Mode Switcher (FadCam, FadRec, FadMic) -->
     <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_marginEnd="16dp" android:layout_marginTop="4dp" app:layout_constraintTop_toBottomOf="@id/header_bar" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
