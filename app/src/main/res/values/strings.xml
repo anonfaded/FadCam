@@ -1216,7 +1216,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fadcam_pro_feature_everything_icon">Everything</string>
     <string name="fadcam_pro_feature_everything">Everything</string>
     <string name="fadcam_pro_feature_custom_icon">Custom App Icon</string>
-    <string name="fadcam_pro_feature_notification_icon">Notification Icon</string>
+    <string name="fadcam_pro_feature_notification_icon">Notification Discreet Icon</string>
     <string name="fadcam_pro_feature_user_icon">User Uploaded Icon</string>
     <string name="fadcam_pro_feature_app_name">Custom App Name</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
