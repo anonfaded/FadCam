@@ -3224,8 +3224,11 @@ public class RecordingService extends Service {
         float zoomRatio = sharedPreferencesManager.getSpecificZoomRatio(cameraType);
 
         // Apply zoom ratio to the capture request
-        builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
-        Log.d(TAG, "Applied zoom ratio " + zoomRatio + " for " + cameraType + " camera");
+        // CONTROL_ZOOM_RATIO was added in Android 11 (API 30)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
+            Log.d(TAG, "Applied zoom ratio " + zoomRatio + " for " + cameraType + " camera");
+        }
         // ----- Fix Ended for this method(applyZoomSettings)-----
     }
 
