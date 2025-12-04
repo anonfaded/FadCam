@@ -1392,36 +1392,56 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 File parentDir = oldFile.getParentFile();
                 if (parentDir == null)
                     throw new IOException("Cannot get parent directory for file URI");
-                File newFile = new File(parentDir, newFullName);
+                
+                // Generate unique filename to prevent overwriting existing files
+                String uniqueName = getUniqueFileNameInDirectory(parentDir, newFullName);
+                File newFile = new File(parentDir, uniqueName);
+                
+                Log.d(TAG, "Original name: " + newFullName + ", Unique name: " + uniqueName);
 
                 if (oldFile.renameTo(newFile)) {
                     renameSuccess = true;
                     newUri = Uri.fromFile(newFile);
-                    Log.i(TAG, "Renamed file system file successfully.");
+                    Log.i(TAG, "Renamed file system file successfully to: " + uniqueName);
                 } else {
                     Log.e(TAG, "File.renameTo() failed for " + oldFile.getPath());
                 }
             } else if ("content".equals(videoUri.getScheme())) {
-                newUri = DocumentsContract.renameDocument(context.getContentResolver(), videoUri, newFullName);
+                // For SAF documents, check parent for existing files with same name
+                DocumentFile sourceDoc = DocumentFile.fromSingleUri(context, videoUri);
+                DocumentFile parentDoc = sourceDoc != null ? sourceDoc.getParentFile() : null;
+                String finalName = newFullName;
+                
+                if (parentDoc != null) {
+                    // Check if a file with this name already exists
+                    DocumentFile existingFile = parentDoc.findFile(newFullName);
+                    if (existingFile != null && existingFile.exists() && !existingFile.getUri().equals(videoUri)) {
+                        // Generate unique name to prevent overwriting
+                        finalName = getUniqueFileNameForSAF(parentDoc, newFullName);
+                        Log.d(TAG, "SAF file already exists. Generated unique name: " + finalName);
+                    }
+                }
+                
+                newUri = DocumentsContract.renameDocument(context.getContentResolver(), videoUri, finalName);
                 if (newUri != null) {
                     renameSuccess = true;
-                    Log.i(TAG, "Renamed SAF document successfully. New URI: " + newUri);
+                    Log.i(TAG, "Renamed SAF document successfully to: " + finalName + ", New URI: " + newUri);
                 } else {
-                    Log.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + newFullName
+                    Log.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + finalName
                             + "'.");
                     // Check if rename actually happened (some providers might return null on
                     // success if name didn't change or already exists)
                     DocumentFile checkDoc = DocumentFile.fromSingleUri(context, videoUri); // Check original URI, it
                                                                                            // might have been renamed in
                                                                                            // place
-                    if (checkDoc != null && newFullName.equals(checkDoc.getName())) {
+                    if (checkDoc != null && finalName.equals(checkDoc.getName())) {
                         Log.w(TAG, "Rename check: File with new name exists under original URI. Assuming success.");
                         newUri = checkDoc.getUri();
                         renameSuccess = true;
                     } else { // Check if a new file with the new name exists in the parent
                         DocumentFile parent = checkDoc != null ? checkDoc.getParentFile() : null;
                         if (parent != null) {
-                            DocumentFile renamedFile = parent.findFile(newFullName);
+                            DocumentFile renamedFile = parent.findFile(finalName);
                             if (renamedFile != null && renamedFile.exists()) {
                                 Log.w(TAG, "Rename check: File with new name exists in parent. Assuming success.");
                                 newUri = renamedFile.getUri();
@@ -2693,5 +2713,86 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
             }
         });
+    }
+
+    /**
+     * Generates a unique filename in the given directory to prevent overwriting existing files.
+     * If a file with the requested name already exists, appends a counter like " (1)", " (2)", etc.
+     * 
+     * @param directory The parent directory to check for existing files
+     * @param originalName The desired filename
+     * @return A unique filename that doesn't exist in the directory
+     */
+    private String getUniqueFileNameInDirectory(File directory, String originalName) {
+        if (directory == null || !directory.exists()) {
+            Log.w(TAG, "getUniqueFileNameInDirectory: Target directory doesn't exist: " 
+                    + (directory != null ? directory.getAbsolutePath() : "null"));
+            return originalName;
+        }
+
+        File file = new File(directory, originalName);
+        if (!file.exists()) {
+            return originalName;
+        }
+
+        // File already exists, generate a unique name
+        String namePart = originalName;
+        String extPart = "";
+        int dotIndex = originalName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < originalName.length() - 1) {
+            namePart = originalName.substring(0, dotIndex);
+            extPart = originalName.substring(dotIndex);
+        }
+
+        int count = 1;
+        while (true) {
+            String newName = namePart + " (" + count + ")" + extPart;
+            file = new File(directory, newName);
+            if (!file.exists()) {
+                Log.d(TAG, "Generated unique filename: " + newName);
+                return newName;
+            }
+            count++;
+        }
+    }
+
+    /**
+     * Generates a unique filename for SAF (Storage Access Framework) documents.
+     * If a file with the requested name already exists, appends a counter like " (1)", " (2)", etc.
+     * 
+     * @param parentDir The parent DocumentFile directory to check for existing files
+     * @param originalName The desired filename
+     * @return A unique filename that doesn't exist in the directory
+     */
+    private String getUniqueFileNameForSAF(DocumentFile parentDir, String originalName) {
+        if (parentDir == null || !parentDir.exists()) {
+            Log.w(TAG, "getUniqueFileNameForSAF: Parent directory doesn't exist or is null");
+            return originalName;
+        }
+
+        DocumentFile existingFile = parentDir.findFile(originalName);
+        if (existingFile == null || !existingFile.exists()) {
+            return originalName;
+        }
+
+        // File already exists, generate a unique name
+        String namePart = originalName;
+        String extPart = "";
+        int dotIndex = originalName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < originalName.length() - 1) {
+            namePart = originalName.substring(0, dotIndex);
+            extPart = originalName.substring(dotIndex);
+        }
+
+        int count = 1;
+        while (true) {
+            String newName = namePart + " (" + count + ")" + extPart;
+            DocumentFile checkFile = parentDir.findFile(newName);
+            if (checkFile == null || !checkFile.exists()) {
+                Log.d(TAG, "Generated unique SAF filename: " + newName);
+                return newName;
+            }
+            count++;
+        }
     }
 }
