@@ -498,6 +498,32 @@ public class SharedPreferencesManager {
             .putBoolean(Constants.PREF_PLAYER_KEEP_SCREEN_ON, keepOn)
             .apply();
     }
+    
+    // --- Remote Streaming preferences ---
+    private static final String PREF_KEY_STREAMING_MODE = "pref_streaming_mode";
+    
+    /**
+     * Get the current streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
+     * Defaults to STREAM_AND_SAVE.
+     */
+    public com.fadcam.streaming.RemoteStreamManager.StreamingMode getStreamingMode() {
+        String mode = sharedPreferences.getString(PREF_KEY_STREAMING_MODE, "STREAM_AND_SAVE");
+        try {
+            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.valueOf(mode);
+        } catch (IllegalArgumentException e) {
+            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+        }
+    }
+    
+    /**
+     * Set the streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
+     */
+    public void setStreamingMode(com.fadcam.streaming.RemoteStreamManager.StreamingMode mode) {
+        sharedPreferences
+            .edit()
+            .putString(PREF_KEY_STREAMING_MODE, mode.toString())
+            .apply();
+    }
 
     // --- Player seek seconds preference ---
     private static final String PREF_KEY_PLAYER_SEEK_SECONDS =

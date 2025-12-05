@@ -34,53 +34,172 @@
             android:textAlignment="viewStart"/>
     </LinearLayout>
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="center"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent">
 
-        <ImageView
-            android:id="@+id/remote_icon"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/unknown_icon3"
-            android:contentDescription="@string/nav_remote"
-            android:scaleType="fitCenter" />
-
-        <TextView
-            android:id="@+id/remote_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/remote_access_title"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginTop="24dp"
-            android:textColor="@color/amoled_text_primary"
-            android:textAlignment="center" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
-            android:id="@+id/remote_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/remote_coming_soon"
-            android:textSize="15sp"
-            android:layout_marginTop="8dp"
-            android:textColor="@color/amoled_text_secondary"
-            android:textAlignment="center" />
+            <!-- Streaming Control Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp">
 
-        <TextView
-            android:id="@+id/remote_description"
-            android:layout_width="280dp"
-            android:layout_height="wrap_content"
-            android:text="@string/remote_feature_description"
-            android:textSize="14sp"
-            android:layout_marginTop="18dp"
-            android:textAlignment="center"
-            android:textColor="@color/amoled_text_secondary" />
-    </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="HTTP Streaming"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/amoled_text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Stream live video over local network"
+                        android:textSize="13sp"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/amoled_text_secondary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Enable Streaming"
+                            android:textSize="15sp"
+                            android:textColor="@color/amoled_text_primary" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/streaming_toggle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/status_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Status: Inactive"
+                        android:textSize="13sp"
+                        android:layout_marginTop="12dp"
+                        android:textColor="@color/amoled_text_secondary" />
+
+                    <TextView
+                        android:id="@+id/stream_url_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="http://192.168.1.100:8080/live.m3u8"
+                        android:textSize="12sp"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/amoled_text_primary"
+                        android:fontFamily="monospace"
+                        android:background="@drawable/settings_group_card_bg"
+                        android:padding="8dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Mode Configuration Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Recording Mode"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/amoled_text_primary" />
+
+                    <TextView
+                        android:id="@+id/mode_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mode: Stream &amp; Save"
+                        android:textSize="13sp"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/amoled_text_secondary" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/mode_toggle_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Toggle Mode"
+                        android:layout_marginTop="12dp"
+                        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="• Stream Only: No files saved, old segments auto-deleted\n• Stream &amp; Save: Videos saved to gallery"
+                        android:textSize="12sp"
+                        android:layout_marginTop="12dp"
+                        android:textColor="@color/amoled_text_secondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Instructions Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="How to Watch"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/amoled_text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1. Enable streaming above\n2. Start recording from Home tab\n3. Open stream URL in:\n   • VLC Media Player\n   • Web browser (HLS player)\n   • FFplay or similar\n\nNote: Device and viewer must be on same WiFi network."
+                        android:textSize="13sp"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/amoled_text_secondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

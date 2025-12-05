@@ -956,6 +956,14 @@ public class RecordingService extends Service {
         // First update the state to prevent any new operations
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
+        
+        // Notify RemoteStreamManager that recording stopped
+        try {
+            com.fadcam.streaming.RemoteStreamManager.getInstance().stopRecording();
+            Log.i(TAG, "🛑 RemoteStreamManager notified: recording stopped");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to notify RemoteStreamManager about recording stop", e);
+        }
 
         // ✅ SERVICE CLEANUP: Clear timer from SharedPreferences
         // CRITICAL: Must use same prefs name as SharedPreferencesManager
@@ -3338,6 +3346,17 @@ public class RecordingService extends Service {
                 broadcastOnRecordingStarted();
 
                 Log.d(TAG, "Recording started successfully");
+                
+                // Notify RemoteStreamManager about active recording file
+                if (currentSegmentFile != null) {
+                    try {
+                        com.fadcam.streaming.RemoteStreamManager.getInstance()
+                            .startRecording(currentSegmentFile);
+                        Log.i(TAG, "🎬 RemoteStreamManager notified: recording started");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
+                    }
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start recording", e);
                 stopRecording();
@@ -3356,6 +3375,10 @@ public class RecordingService extends Service {
     // Add these fields to RecordingService class
     private GLRecordingPipeline glRecordingPipeline;
     private WatermarkInfoProvider watermarkInfoProvider;
+    
+    // Track current segment file for streaming
+    private File currentSegmentFile;
+    private String currentSegmentPath;
 
     // Add this helper method for OpenGL pipeline direct output
     private File getFinalOutputFile() {
@@ -3427,6 +3450,24 @@ public class RecordingService extends Service {
                 }
             } else {
                 Log.d(TAG, "Using internal storage for segment rollover");
+                
+                // Notify RemoteStreamManager about COMPLETED segment (before creating next)
+                if (currentSegmentFile != null && currentSegmentFile.exists()) {
+                    try {
+                        long fileSize = currentSegmentFile.length();
+                        Log.i(TAG, "📹 SEGMENT COMPLETE: #" + (nextSegmentNumber - 1) + 
+                            ", Size: " + (fileSize / 1024) + " KB, Path: " + currentSegmentFile.getName());
+                        Log.d(TAG, "Notifying RemoteStreamManager about completed segment: " + currentSegmentFile.getAbsolutePath());
+                        com.fadcam.streaming.RemoteStreamManager.getInstance()
+                            .onSegmentComplete(nextSegmentNumber - 1, currentSegmentFile);
+                        Log.i(TAG, "✅ RemoteStreamManager notified successfully");
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Failed to notify RemoteStreamManager", e);
+                    }
+                } else {
+                    Log.w(TAG, "⚠️ No current segment file to notify (currentSegmentFile=" + currentSegmentFile + ")");
+                }
+                
                 // Internal: use createNextSegmentOutputFile()
                 File nextFile = createNextSegmentOutputFile(nextSegmentNumber);
                 if (nextFile == null) {
@@ -3435,6 +3476,11 @@ public class RecordingService extends Service {
                     return;
                 }
                 Log.d(TAG, "Successfully created new segment file: " + nextFile.getAbsolutePath());
+                
+                // Track this as current segment
+                currentSegmentFile = nextFile;
+                currentSegmentPath = nextFile.getAbsolutePath();
+                
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
                     Log.d(TAG, "Set next output to path: " + nextFile.getAbsolutePath() + " for segment "
@@ -3631,6 +3677,11 @@ public class RecordingService extends Service {
                 
                 File outputFile = getFinalOutputFile();
                 Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
+                
+                // Track initial segment file for streaming
+                currentSegmentFile = outputFile;
+                currentSegmentPath = outputFile.getAbsolutePath();
+                
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
                         segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec, latitude, longitude);

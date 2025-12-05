@@ -261,6 +261,9 @@ dependencies {
     implementation(libs.media3.muxer)
     implementation(libs.media3.common)
     implementation(libs.media3.container)
+    
+    // NanoHTTPD for HTTP streaming server
+    implementation(libs.nanohttpd.core)
 
     annotationProcessor(libs.compiler)
 
