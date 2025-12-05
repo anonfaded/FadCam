@@ -1136,4 +1136,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fadcam_pro_feature_app_name">Custom App Name</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
     <string name="fadcam_pro_header_button">Pro</string>
+    <!-- Video Player Info Bottom Sheet -->
+    <string name="player_info_title">About the Video Player</string>
+    <string name="player_info_content"><![CDATA[<b>Fragmented MP4 Format</b><br/><br/>
+FadCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
+If the last few seconds of your video appear frozen or stale, don\'t worry — it\'s not a bug! When you stop recording, the current fragment may still complete its cycle (~3 seconds), which can leave a brief stale frame at the end.<br/><br/>
+<b>Player Limitations</b><br/><br/>
+The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
+For the smoothest playback experience, you can use an external player like VLC. That said, the integrated player works well for everyday use!
+    ]]></string>
 </resources>
