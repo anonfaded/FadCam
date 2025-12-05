@@ -27,6 +27,19 @@
         android:padding="16dp"
         android:layout_margin="16dp"
         app:tint="@android:color/white" />
+    
+    <!-- Info button (top right) -->
+    <ImageButton
+        android:id="@+id/info_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:src="@drawable/ic_info"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:padding="16dp"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/player_info_title"
+        app:tint="@android:color/white" />
         
     <!-- Reset zoom button (appears when video is zoomed) -->
     <ImageButton

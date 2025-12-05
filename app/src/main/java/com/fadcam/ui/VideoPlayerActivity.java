@@ -52,6 +52,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private static final String EXTRA_URI = "extra_uri";
     private static final String EXTRA_POSITION_MS = "extra_position_ms";
     private ImageButton backButton;
+    private ImageButton infoButton;
     private ImageButton settingsButton; // For playback speed
     private TextView quickSpeedOverlay;
     private SharedPreferencesManager spm;
@@ -213,14 +214,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         playerView = findViewById(com.fadcam.R.id.player_view);
         backButton = findViewById(com.fadcam.R.id.back_button);
+        infoButton = findViewById(com.fadcam.R.id.info_button);
         resetZoomButton = findViewById(com.fadcam.R.id.reset_zoom_button);
         // Wire Material time slider if present in control layout
         try {
             timeSlider = playerView.findViewById(R.id.material_time_slider);
         } catch (Exception ignored) {}
 
-    // Back button should be visible by default and hide together with controls
-    try { backButton.setVisibility(View.VISIBLE); } catch (Exception ignored) {}
+    // Top buttons (back and info) should be visible by default and hide together with controls
+    try { 
+        backButton.setVisibility(View.VISIBLE); 
+        infoButton.setVisibility(View.VISIBLE); 
+    } catch (Exception ignored) {}
         // Init audio manager for volume gestures
         try {
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -268,6 +273,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
 
         setupBackButton();
+        setupInfoButton();
 
         // Ensure the system status bar matches the header/back-button area color for
         // this activity
@@ -366,6 +372,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     try {
                                         playerView.hideController();
                                         backButton.setVisibility(View.GONE);
+                                        infoButton.setVisibility(View.GONE);
                                     } catch (Exception ignored) {}
                                 };
                                 controlsHideHandler.postDelayed(controlsHideRunnable, t * 1000L);
@@ -1624,6 +1631,15 @@ public class VideoPlayerActivity extends AppCompatActivity {
         backButton.setOnClickListener(v -> finish());
     }
 
+    private void setupInfoButton() {
+        if (infoButton != null) {
+            infoButton.setOnClickListener(v -> {
+                PlayerInfoBottomSheetFragment sheet = PlayerInfoBottomSheetFragment.newInstance();
+                sheet.show(getSupportFragmentManager(), "player_info_sheet");
+            });
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -1641,8 +1657,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 playerView.setControllerShowTimeoutMs(0);
                                 playerView.showController();
                                 if (backButton != null) backButton.setVisibility(View.VISIBLE);
+                                if (infoButton != null) infoButton.setVisibility(View.VISIBLE);
                             } else {
                                 if (backButton != null) backButton.setVisibility(visibility == View.VISIBLE ? View.VISIBLE : View.GONE);
+                                if (infoButton != null) infoButton.setVisibility(visibility == View.VISIBLE ? View.VISIBLE : View.GONE);
                             }
                         } catch (Exception ignored) {}
                     }
@@ -3024,12 +3042,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 if (visible) {
                     if (isTimebarScrubbing) return; // don't allow hiding while scrubbing
                     playerView.hideController();
-                    try { backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+                    try { 
+                        backButton.setVisibility(View.GONE);
+                        infoButton.setVisibility(View.GONE);
+                    } catch (Exception ignored) {}
                     // Cancel any auto-hide runnable
                     if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
                 } else {
                     playerView.showController();
-                    try { backButton.setVisibility(View.VISIBLE); } catch (Exception ignored) {}
+                    try { 
+                        backButton.setVisibility(View.VISIBLE);
+                        infoButton.setVisibility(View.VISIBLE);
+                    } catch (Exception ignored) {}
                     // Schedule hide according to prefs
                     int t = SharedPreferencesManager.getInstance(this).getPlayerControlsTimeoutSeconds();
                     if (t > 0) {
@@ -3041,7 +3065,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 if (t2 > 0) controlsHideHandler.postDelayed(controlsHideRunnable, t2 * 1000L);
                                 return;
                             }
-                            try { playerView.hideController(); backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+                            try { 
+                                playerView.hideController();
+                                backButton.setVisibility(View.GONE);
+                                infoButton.setVisibility(View.GONE);
+                            } catch (Exception ignored) {}
                         };
                         controlsHideHandler.postDelayed(controlsHideRunnable, t * 1000L);
                     }
@@ -3624,6 +3652,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             playerView.setControllerShowTimeoutMs(0);
                             playerView.showController();
                             if (backButton != null) backButton.setVisibility(View.VISIBLE);
+                            if (infoButton != null) infoButton.setVisibility(View.VISIBLE);
                         }
                     } catch (Exception e) {
                         android.util.Log.e("VideoPlayerActivity", "Error in scrub controller enforcement", e);
