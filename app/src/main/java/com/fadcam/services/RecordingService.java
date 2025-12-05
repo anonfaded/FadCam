@@ -1221,6 +1221,26 @@ public class RecordingService extends Service {
 
         try {
             String[] basicCameraIds = cameraManager.getCameraIdList();
+            
+            // If no cameras found, cameraserver might be restarting - try once more
+            if (basicCameraIds.length == 0) {
+                Log.w(TAG, "No cameras found on first attempt, waiting 1s and retrying...");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                basicCameraIds = cameraManager.getCameraIdList();
+                if (basicCameraIds.length == 0) {
+                    Log.e(TAG, "Still no cameras after retry. CameraServer may be crashed or unavailable.");
+                    Toast.makeText(this, "Camera service not responding. Try again.", Toast.LENGTH_LONG).show();
+                    if (recordingState == RecordingState.STARTING)
+                        recordingState = RecordingState.NONE;
+                    stopSelf();
+                    return;
+                }
+            }
+            
             Set<String> allAvailableCameraIds = new HashSet<>(Arrays.asList(basicCameraIds));
 
             // On Android P+, also include physical cameras from logical cameras

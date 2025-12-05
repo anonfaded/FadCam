@@ -49,8 +49,15 @@ public class FragmentedMp4MuxerWrapper {
      */
     public FragmentedMp4MuxerWrapper(@NonNull String path) throws IOException {
         this.fileOutputStream = new FileOutputStream(path);
-        this.muxer = new FragmentedMp4Muxer.Builder(fileOutputStream).build();
-        Log.d(TAG, "Created FragmentedMp4Muxer for path: " + path);
+        // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
+        // 1. Use 2000ms (2 second) fragments instead of default 500ms
+        //    Longer fragments = fewer moof boxes = better seeking accuracy
+        // 2. Fragments will be automatically keyframe-aligned by Media3
+        // 3. This ensures proper tfdt timestamps and fragment boundaries
+        this.muxer = new FragmentedMp4Muxer.Builder(fileOutputStream)
+                .setFragmentDurationMs(2000) // 2 seconds per fragment for better seeking
+                .build();
+        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments for path: " + path);
     }
 
     /**
@@ -61,8 +68,12 @@ public class FragmentedMp4MuxerWrapper {
      */
     public FragmentedMp4MuxerWrapper(@NonNull FileDescriptor fd) throws IOException {
         this.fileOutputStream = new FileOutputStream(fd);
-        this.muxer = new FragmentedMp4Muxer.Builder(fileOutputStream).build();
-        Log.d(TAG, "Created FragmentedMp4Muxer for file descriptor");
+        // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
+        // Use 2000ms (2 second) fragments for proper seeking support
+        this.muxer = new FragmentedMp4Muxer.Builder(fileOutputStream)
+                .setFragmentDurationMs(2000) // 2 seconds per fragment for better seeking
+                .build();
+        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments for file descriptor");
     }
 
     /**

@@ -181,7 +181,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private long lastSingleTapTime = 0L;
     // Keep track of controller auto-hide timeout and scrubbing state
     private int controllerAutoHideMs = -1; // 0 means never hide
-    private boolean isTimebarScrubbing = false;
+    private volatile boolean isTimebarScrubbing = false;
+    private volatile long scrubEndTimeMs = 0; // Timestamp when scrubbing ended, for grace period
+    private volatile long lastSeekPositionMs = -1; // Last seek position to prevent slider reset
+    private static final long SCRUB_GRACE_PERIOD_MS = 1000L; // 1 second grace period after scrub
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -316,20 +319,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 public void onStartTrackingTouch(com.google.android.material.slider.Slider slider) {
                     // Debounce protection - ignore if already scrubbing
                     if (isTimebarScrubbing) {
-                        android.util.Log.d("VideoPlayerActivity", "Already scrubbing, ignoring duplicate onStartTrackingTouch");
                         return;
                     }
                     
                     isTimebarScrubbing = true;
-                    android.util.Log.d("VideoPlayerActivity", "Started scrubbing - enforcing controller visibility");
+                    android.util.Log.d("VideoPlayerActivity", "Started scrubbing");
+                    
+                    // IMPORTANT: Don't call showController() here - it causes layout changes
+                    // that can interrupt touch tracking and make the slider snap back!
+                    // Just prevent auto-hide by setting timeout to 0
                     try {
                         if (playerView != null) {
-                            playerView.showController();
                             playerView.setControllerShowTimeoutMs(0);
-                            if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
-                            
-                            // Start continuous enforcement to prevent any hide attempts during scrubbing
-                            startScrubControllerEnforcement();
+                        }
+                        if (controlsHideRunnable != null) {
+                            controlsHideHandler.removeCallbacks(controlsHideRunnable);
                         }
                     } catch (Exception ignored) {}
                 }
@@ -338,26 +342,31 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 public void onStopTrackingTouch(com.google.android.material.slider.Slider slider) {
                     // Debounce protection - ignore if not scrubbing
                     if (!isTimebarScrubbing) {
-                        android.util.Log.d("VideoPlayerActivity", "Not scrubbing, ignoring duplicate onStopTrackingTouch");
                         return;
                     }
                     
                     isTimebarScrubbing = false;
-                    android.util.Log.d("VideoPlayerActivity", "Stopped scrubbing - restoring normal controller behavior");
+                    scrubEndTimeMs = System.currentTimeMillis(); // Start grace period
+                    android.util.Log.d("VideoPlayerActivity", "Stopped scrubbing");
+                    
                     try {
-                        // Stop continuous enforcement
-                        stopScrubControllerEnforcement();
-                        
                         if (playerView != null) {
-                            if (controllerAutoHideMs >= 0) playerView.setControllerShowTimeoutMs(controllerAutoHideMs);
-                            playerView.showController();
-                            // restart hide schedule if timeout > 0
+                            // Restore auto-hide timeout
+                            if (controllerAutoHideMs >= 0) {
+                                playerView.setControllerShowTimeoutMs(controllerAutoHideMs);
+                            }
+                            // Schedule hide with delay - don't call showController immediately
                             int t = SharedPreferencesManager.getInstance(VideoPlayerActivity.this).getPlayerControlsTimeoutSeconds();
                             if (t > 0) {
-                                if (controlsHideRunnable != null) controlsHideHandler.removeCallbacks(controlsHideRunnable);
+                                if (controlsHideRunnable != null) {
+                                    controlsHideHandler.removeCallbacks(controlsHideRunnable);
+                                }
                                 controlsHideRunnable = () -> {
-                                    if (isTimebarScrubbing) return; // don't hide if user started scrubbing again
-                                    try { playerView.hideController(); backButton.setVisibility(View.GONE); } catch (Exception ignored) {}
+                                    if (isTimebarScrubbing) return;
+                                    try {
+                                        playerView.hideController();
+                                        backButton.setVisibility(View.GONE);
+                                    } catch (Exception ignored) {}
                                 };
                                 controlsHideHandler.postDelayed(controlsHideRunnable, t * 1000L);
                             }
@@ -384,7 +393,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         if (dur > 0 && dur != C.TIME_UNSET) {
                             // Slider value is in milliseconds (0..duration). Seek directly using value.
                             long clamped = Math.max(0L, Math.min(dur, (long) value));
-                            player.seekTo(clamped);
+                            lastSeekPositionMs = clamped; // Remember seek position to prevent reset
+                            // Use PlayerHolder's seekToPosition for fragmented MP4 compatibility
+                            com.fadcam.playback.PlayerHolder holder = com.fadcam.playback.PlayerHolder.getInstance();
+                            holder.seekToPosition(clamped);
                             Log.d(TAG, "Seeking to: " + clamped + "ms (slider value: " + value + ")");
                         } else {
                             Log.w(TAG, "Cannot seek - no valid duration available");
@@ -543,6 +555,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
         final float[] lastPanXY = new float[2];
         final boolean[] pendingTap = new boolean[] { false };
         playerView.setOnTouchListener((v, ev) -> {
+            // CRITICAL: If user is scrubbing the slider, do NOT process gestures at all!
+            // The gesture detector can steal touch events and cause the slider to snap back.
+            if (isTimebarScrubbing) {
+                return false; // Let the slider handle the touch event
+            }
+            
+            // Also check if the touch is on the slider area - avoid processing gestures there
+            // This catches the initial ACTION_DOWN before isTimebarScrubbing is set
+            if (timeSlider != null && isTouchOnView(timeSlider, ev)) {
+                return false; // Let the slider handle the touch event
+            }
+            
             boolean gdHandled = false;
             boolean scaleHandled = false;
             boolean gestureConsumed = false;
@@ -1076,9 +1100,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
+    // Track the actual playback URI (for legacy compatibility)
+    private Uri actualPlaybackUri;
+
     // *** FIX: Modified method signature to accept Uri ***
     private void initializePlayer(Uri videoUri) {
         try {
+            // VLC-like fMP4 seeking is now handled automatically by PlayerHolder
+            // using SeekableFragmentedMp4MediaSourceFactory (no remuxing needed)
+            // The factory pre-scans fMP4 files to build a fragment index for seeking
+            actualPlaybackUri = videoUri;
+
             // Check and log device volume levels
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
             if (audioManager != null) {
@@ -1157,8 +1189,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     );
                 }
             } catch (Exception ignored) {}
-            Log.i(TAG, "initializePlayer() calling holder.setMediaIfNeeded for URI=" + videoUri);
-            holder.setMediaIfNeeded(videoUri);
+            // Use the actual playback URI (may be remuxed version for seeking support)
+            Uri uriForPlayer = actualPlaybackUri != null ? actualPlaybackUri : videoUri;
+            Log.i(TAG, "initializePlayer() calling holder.setMediaIfNeeded for URI=" + uriForPlayer);
+            holder.setMediaIfNeeded(uriForPlayer);
             // Set initial playback speed
             float initialSpeed = speedValues[currentSpeedIndex];
             Log.d(TAG, "Setting initial playback speed to " + initialSpeed + "x");
@@ -1212,17 +1246,22 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         }
                         @Override
                         public void onEvents(Player p, Player.Events events) {
-                            // Update slider maximum on timeline changes
-                            if (timeSlider != null) {
+                            // Update slider maximum on timeline changes - BUT NOT WHILE SCRUBBING
+                            // Modifying slider during scrubbing causes the thumb to jump/snap back
+                            // Also respect grace period after scrubbing ends
+                            boolean inGracePeriod = (System.currentTimeMillis() - scrubEndTimeMs) < SCRUB_GRACE_PERIOD_MS;
+                            if (timeSlider != null && !isTimebarScrubbing && !inGracePeriod) {
                                 try {
                                     long d = p.getDuration();
-                                    Log.d(TAG, "onEvents(): timeline changed, reported duration=" + d);
                                     if (d > 0 && d != C.TIME_UNSET) {
                                         float newMax = (float) d;
-                                        // First update max, then clamp and update value if needed
-                                        timeSlider.setValueTo(newMax);
-                                        float curVal = timeSlider.getValue();
-                                        if (curVal > newMax) timeSlider.setValue(newMax);
+                                        // Only update if significantly different (100ms+) to avoid unnecessary changes
+                                        if (Math.abs(timeSlider.getValueTo() - newMax) > 100f) {
+                                            // First update max, then clamp and update value if needed
+                                            timeSlider.setValueTo(newMax);
+                                            float curVal = timeSlider.getValue();
+                                            if (curVal > newMax) timeSlider.setValue(newMax);
+                                        }
                                     }
                                 } catch (Exception ignored) {}
                             }
@@ -1281,6 +1320,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 default: stateName = "UNKNOWN(" + state + ")"; break;
                             }
                             Log.i(TAG, "onPlaybackStateChanged(): " + stateName);
+                            // When ready after seeking, clear lastSeekPositionMs to sync with actual player position
+                            // This handles fragmented MP4s where seek lands on keyframe, not exact position
+                            if (state == Player.STATE_READY && lastSeekPositionMs >= 0 && player != null) {
+                                long actualPos = player.getCurrentPosition();
+                                Log.d(TAG, "  Seek completed: requested=" + lastSeekPositionMs + 
+                                           "ms, actual=" + actualPos + "ms (keyframe alignment)");
+                                lastSeekPositionMs = -1; // Clear to use actual player position
+                            }
                             // When ready, log player audio state
                             if (state == Player.STATE_READY && player != null) {
                                 Log.i(TAG, "  Player READY - volume=" + player.getVolume() + 
@@ -1364,33 +1411,49 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            if (player != null && timeSlider != null && !isTimebarScrubbing) {
+                            // Check if we're scrubbing OR in grace period after scrubbing ends
+                            boolean inGracePeriod = (System.currentTimeMillis() - scrubEndTimeMs) < SCRUB_GRACE_PERIOD_MS;
+                            
+                            if (isTimebarScrubbing || inGracePeriod) {
+                                // Skip update while scrubbing or in grace period
+                                h.postDelayed(this, 200);
+                                return;
+                            }
+                            
+                            if (player != null && timeSlider != null) {
                                 long dur = player.getDuration();
                                 // Use cached duration as fallback for fragmented MP4s
                                 if ((dur <= 0 || dur == C.TIME_UNSET) && cachedDurationMs > 0) {
                                     dur = cachedDurationMs;
-                                    Log.d(TAG, "Using cached duration: " + dur + "ms");
                                 }
                                 if (dur > 0 && dur != C.TIME_UNSET) {
                                     float newMax = (float) dur;
-                                    // Update max first
-                                    if (Math.abs(timeSlider.getValueTo() - newMax) > 0.5f) {
+                                    // Update max first - only if significantly different
+                                    if (Math.abs(timeSlider.getValueTo() - newMax) > 100f) {
                                         timeSlider.setValueTo(newMax);
-                                        Log.d(TAG, "Slider max set to: " + newMax + "ms");
                                     }
                                     long pos = player.getCurrentPosition();
+                                    // Use last seek position only during BUFFERING to show user's intended position
+                                    // Once READY, onPlaybackStateChanged clears lastSeekPositionMs for accurate sync
+                                    if (lastSeekPositionMs >= 0 && player.getPlaybackState() == Player.STATE_BUFFERING) {
+                                        pos = lastSeekPositionMs;
+                                        Log.d(TAG, "Buffering: showing seek target " + lastSeekPositionMs + "ms");
+                                    }
                                     float targetVal = (float) Math.max(0L, Math.min((long) newMax, pos));
-                                    // Avoid feedback loop by only setting if significantly changed and always <= valueTo
+                                    // Avoid feedback loop by only setting if significantly changed
                                     float cur = timeSlider.getValue();
                                     if (targetVal > timeSlider.getValueTo()) targetVal = timeSlider.getValueTo();
-                                    if (Math.abs(cur - targetVal) > 5f) {
+                                    // Only update if position changed by more than 200ms to reduce jitter
+                                    if (Math.abs(cur - targetVal) > 200f) {
                                         timeSlider.setValue(targetVal);
                                     }
                                 } else {
                                     Log.w(TAG, "Duration still unknown: player=" + player.getDuration() + ", cached=" + cachedDurationMs);
                                 }
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error in periodic slider update", e);
+                        }
                         h.postDelayed(this, 200);
                     }
                 };
@@ -1433,7 +1496,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         // Update slider max on UI thread if needed
                         runOnUiThread(() -> {
                             try {
-                                if (timeSlider != null && timeSlider.getValueTo() < durationMs) {
+                                // Don't update slider during scrubbing or grace period
+                                boolean inGracePeriod = (System.currentTimeMillis() - scrubEndTimeMs) < SCRUB_GRACE_PERIOD_MS;
+                                if (timeSlider != null && !isTimebarScrubbing && !inGracePeriod && timeSlider.getValueTo() < durationMs) {
                                     timeSlider.setValueTo((float) durationMs);
                                     Log.d(TAG, "Slider max updated from cached duration: " + durationMs);
                                 }
@@ -3580,4 +3645,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
     // -------------- End Scrub Controller Enforcement Methods -----------
+    
+    /**
+     * Check if a MotionEvent occurred within the bounds of a given view.
+     * This is used to detect if a touch is on the slider to avoid gesture processing conflicts.
+     */
+    private boolean isTouchOnView(View view, android.view.MotionEvent event) {
+        if (view == null) return false;
+        int[] location = new int[2];
+        view.getLocationOnScreen(location);
+        float rawX = event.getRawX();
+        float rawY = event.getRawY();
+        int viewLeft = location[0];
+        int viewTop = location[1];
+        int viewRight = viewLeft + view.getWidth();
+        int viewBottom = viewTop + view.getHeight();
+        return rawX >= viewLeft && rawX <= viewRight && rawY >= viewTop && rawY <= viewBottom;
+    }
 }

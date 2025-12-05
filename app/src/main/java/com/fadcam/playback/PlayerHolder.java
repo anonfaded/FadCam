@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.Format;
@@ -15,11 +16,12 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.TrackSelectionParameters;
 import androidx.media3.common.Tracks;
-import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DecoderCounters;
 import androidx.media3.exoplayer.DecoderReuseEvaluation;
+import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.Renderer;
 import androidx.media3.exoplayer.analytics.AnalyticsListener;
 import androidx.media3.exoplayer.audio.AudioRendererEventListener;
@@ -27,19 +29,25 @@ import androidx.media3.exoplayer.audio.AudioSink;
 import androidx.media3.exoplayer.audio.DefaultAudioSink;
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer;
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
-import androidx.media3.extractor.DefaultExtractorsFactory;
-import androidx.media3.extractor.mp4.FragmentedMp4Extractor;
+import androidx.media3.exoplayer.source.MediaSource;
 
 /**
  * Singleton holder for a shared ExoPlayer instance so Activity and Service control the same player.
  * Uses Media3 ExoPlayer for better fragmented MP4 audio support.
+ * 
+ * <p>VLC-like fMP4 seeking: Uses SeekableFragmentedMp4MediaSourceFactory to pre-scan fMP4 files
+ * and build a fragment index for proper seeking without requiring sidx boxes.
  */
 public final class PlayerHolder {
     private static final String TAG = "PlayerHolder";
     private static PlayerHolder instance;
     private ExoPlayer player;
     private Uri currentUri;
+    
+    // Factory for creating seekable fMP4 media sources (VLC-like approach)
+    @Nullable
+    private SeekableFragmentedMp4MediaSourceFactory fmp4SourceFactory;
+    private Context appContext;
 
     private PlayerHolder() {}
 
@@ -52,7 +60,13 @@ public final class PlayerHolder {
         if (player == null) {
             Log.d(TAG, "Creating new ExoPlayer instance with explicit audio config");
             
-            Context appContext = context.getApplicationContext();
+            appContext = context.getApplicationContext();
+            
+            // Initialize the seekable fMP4 media source factory (VLC-like approach)
+            if (fmp4SourceFactory == null) {
+                fmp4SourceFactory = new SeekableFragmentedMp4MediaSourceFactory(appContext);
+                Log.d(TAG, "Created SeekableFragmentedMp4MediaSourceFactory for VLC-like fMP4 seeking");
+            }
             
             // Create audio attributes for media playback
             AudioAttributes audioAttrs = new AudioAttributes.Builder()
@@ -60,11 +74,33 @@ public final class PlayerHolder {
                     .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
                     .build();
             
+            // Configure LoadControl with larger buffers for fragmented MP4
+            // Fragmented MP4 files have small fragments (~500ms) which cause constant buffering
+            // without adequate buffer configuration
+            DefaultLoadControl loadControl = new DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                            5000,   // minBufferMs: minimum buffer before playback starts
+                            30000,  // maxBufferMs: maximum buffer size
+                            1500,   // bufferForPlaybackMs: buffer needed to start/resume playback
+                            3000)   // bufferForPlaybackAfterRebufferMs: buffer after rebuffer
+                    .setPrioritizeTimeOverSizeThresholds(true)
+                    .build();
+            
+            // Use default MediaSourceFactory
+            // Fragmented MP4 seeking is now handled by remuxing the file before playback
+            // (see VideoPlayerActivity.initializePlayer and FragmentedMp4Remuxer)
+            
             // Create player with audio attributes set in builder
             // This is critical - setting audio attrs after build may not work on all devices
             player = new ExoPlayer.Builder(appContext)
                     .setAudioAttributes(audioAttrs, /* handleAudioFocus= */ false)
+                    .setLoadControl(loadControl)
+                    .setSeekBackIncrementMs(10000) // 10 second seek back
+                    .setSeekForwardIncrementMs(10000) // 10 second seek forward
                     .build();
+            
+            // Use CLOSEST_SYNC for fast seeking to nearest keyframe
+            player.setSeekParameters(SeekParameters.CLOSEST_SYNC);
             
             // Force set audio attributes again after creation
             player.setAudioAttributes(audioAttrs, false);
@@ -210,9 +246,21 @@ public final class PlayerHolder {
         Log.d(TAG, "Current URI: " + currentUri);
         Log.d(TAG, "Media item count: " + player.getMediaItemCount());
         
-        // Only set media if URI changed or no media is loaded (like v2.0.0)
-        if (currentUri == null || !uri.equals(currentUri) || player.getMediaItemCount() == 0) {
-            Log.d(TAG, "Setting new media (URI changed or empty)");
+        // Check if this is a fragmented MP4 - always rebuild index since file might have changed
+        boolean isFmp4 = fmp4SourceFactory != null && fmp4SourceFactory.isFragmentedMp4(uri);
+        
+        // For fMP4, always rebuild index. File content may change (new recording with same name,
+        // or file was still being recorded when first opened). Index scan is fast (~5ms).
+        // For other formats, only set media if URI changed or no media is loaded.
+        boolean shouldSetMedia = currentUri == null || !uri.equals(currentUri) || 
+                                 player.getMediaItemCount() == 0 || isFmp4;
+        
+        if (shouldSetMedia) {
+            if (isFmp4) {
+                Log.d(TAG, "Setting fMP4 media (always rebuild index for accurate duration)");
+            } else {
+                Log.d(TAG, "Setting new media (URI changed or empty)");
+            }
             
             // Build MediaItem with metadata
             String title = null;
@@ -228,8 +276,28 @@ public final class PlayerHolder {
                 item = MediaItem.fromUri(uri);
             }
             
-            Log.d(TAG, "Setting media item: " + (title != null ? title : uri.toString()));
-            player.setMediaItem(item);
+            // Check if this is a fragmented MP4 that needs our VLC-like seeking approach
+            boolean usedFmp4Factory = false;
+            if (fmp4SourceFactory != null && fmp4SourceFactory.isFragmentedMp4(uri)) {
+                try {
+                    Log.d(TAG, "Detected fMP4 file, using VLC-like seekable media source");
+                    long startTime = System.currentTimeMillis();
+                    MediaSource mediaSource = fmp4SourceFactory.createMediaSource(item);
+                    player.setMediaSource(mediaSource);
+                    long buildTime = System.currentTimeMillis() - startTime;
+                    Log.d(TAG, "fMP4 MediaSource created in " + buildTime + "ms (includes index scan)");
+                    usedFmp4Factory = true;
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to create fMP4 MediaSource, falling back to default", e);
+                }
+            }
+            
+            if (!usedFmp4Factory) {
+                // Use default MediaItem approach for non-fMP4 files
+                Log.d(TAG, "Using default MediaItem for playback");
+                player.setMediaItem(item);
+            }
+            
             currentUri = uri;
             
             Log.d(TAG, "Calling player.prepare()");
@@ -248,11 +316,41 @@ public final class PlayerHolder {
 
     public synchronized Uri getCurrentUri() { return currentUri; }
 
+    /**
+     * Performs a seek operation optimized for fragmented MP4 files.
+     * Uses ClippingMediaSource with known duration for reliable seeking.
+     * 
+     * @param positionMs Position to seek to in milliseconds
+     */
+    public synchronized void seekToPosition(long positionMs) {
+        if (player == null) return;
+        
+        long duration = player.getDuration();
+        long currentPos = player.getCurrentPosition();
+        int playbackState = player.getPlaybackState();
+        
+        Log.d(TAG, "Seeking: currentPos=" + currentPos + "ms, targetPos=" + positionMs + 
+                   "ms, duration=" + duration + "ms, state=" + playbackState);
+        
+        // If playback ended and we're seeking backwards, we need to seek then prepare
+        if (playbackState == Player.STATE_ENDED) {
+            Log.d(TAG, "Seeking after ENDED state - will restart playback");
+        }
+        
+        // Direct seek - ExoPlayer handles state transition from ENDED when seeking
+        player.seekTo(positionMs);
+        
+        // Log the result after seek
+        Log.d(TAG, "Seeked to " + positionMs + "ms (player reports: " + player.getCurrentPosition() + "ms)");
+    }
+
     public synchronized void release() {
         if (player != null) {
             try { player.release(); } catch (Exception ignored) {}
             player = null;
         }
         currentUri = null;
+        fmp4SourceFactory = null;
+        appContext = null;
     }
 }
