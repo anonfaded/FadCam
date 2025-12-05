@@ -365,17 +365,37 @@ public class FragmentedMp4MuxerWrapper {
 
         // Handle audio format
         if (mimeType != null && mimeType.startsWith("audio/")) {
+            Log.d(TAG, "Converting audio format: " + mimeType);
+            
+            // CRITICAL: Set codec string for AAC to enable proper sync sample flagging
+            // Without this, Media3's FragmentedMp4Muxer marks AAC samples as non-sync
+            // which causes ExoPlayer to not play audio. See: https://github.com/androidx/media/issues/2435
+            if (MimeTypes.AUDIO_AAC.equals(mimeType)) {
+                builder.setCodecs("mp4a.40.2"); // AAC-LC profile
+                Log.d(TAG, "  Set codec string: mp4a.40.2 (AAC-LC)");
+            }
+            
             if (mediaFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) {
-                builder.setChannelCount(mediaFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT));
+                int channels = mediaFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+                builder.setChannelCount(channels);
+                Log.d(TAG, "  channelCount=" + channels);
+            } else {
+                Log.w(TAG, "  WARNING: No channel count in audio format!");
             }
             if (mediaFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE)) {
-                builder.setSampleRate(mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE));
+                int sampleRate = mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+                builder.setSampleRate(sampleRate);
+                Log.d(TAG, "  sampleRate=" + sampleRate);
+            } else {
+                Log.w(TAG, "  WARNING: No sample rate in audio format!");
             }
             if (mediaFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
-                builder.setAverageBitrate(mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE));
+                int bitrate = mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE);
+                builder.setAverageBitrate(bitrate);
+                Log.d(TAG, "  bitrate=" + bitrate);
             }
 
-            // Handle audio CSD
+            // Handle audio CSD - THIS IS CRITICAL for AAC playback!
             List<byte[]> initData = new ArrayList<>();
             if (mediaFormat.containsKey("csd-0")) {
                 ByteBuffer csd0 = mediaFormat.getByteBuffer("csd-0");
@@ -384,10 +404,18 @@ public class FragmentedMp4MuxerWrapper {
                     csd0.get(csd0Bytes);
                     csd0.rewind();
                     initData.add(csd0Bytes);
+                    Log.d(TAG, "  CSD-0 added: " + csd0Bytes.length + " bytes, data=" + bytesToHex(csd0Bytes));
+                } else {
+                    Log.w(TAG, "  WARNING: CSD-0 key exists but buffer is null!");
                 }
+            } else {
+                Log.e(TAG, "  ERROR: No CSD-0 in audio format - audio playback WILL FAIL!");
             }
             if (!initData.isEmpty()) {
                 builder.setInitializationData(initData);
+                Log.d(TAG, "  Initialization data set with " + initData.size() + " entries");
+            } else {
+                Log.e(TAG, "  ERROR: No initialization data for audio - decoder won't know how to decode!");
             }
         }
 
@@ -408,5 +436,19 @@ public class FragmentedMp4MuxerWrapper {
         }
 
         return flags;
+    }
+    
+    /**
+     * Helper to convert bytes to hex string for logging.
+     */
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < Math.min(bytes.length, 16); i++) {
+            sb.append(String.format("%02X ", bytes[i]));
+        }
+        if (bytes.length > 16) {
+            sb.append("...");
+        }
+        return sb.toString().trim();
     }
 }

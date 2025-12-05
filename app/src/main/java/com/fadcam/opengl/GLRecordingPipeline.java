@@ -2022,6 +2022,22 @@ public class GLRecordingPipeline {
                     MediaFormat newFormat = audioEncoder.getOutputFormat();
                     Log.d(TAG, "Audio encoder output format changed: " + newFormat);
                     Log.d(TAG, "DEBUG Audio FORMAT: muxerStarted=" + muxerStarted + ", audioTrackIndex=" + audioTrackIndex + ", videoTrackIndex=" + videoTrackIndex);
+                    
+                    // Log CSD data for debugging audio issues
+                    try {
+                        if (newFormat.containsKey("csd-0")) {
+                            java.nio.ByteBuffer csd0 = newFormat.getByteBuffer("csd-0");
+                            if (csd0 != null) {
+                                Log.d(TAG, "Audio CSD-0 present, size=" + csd0.remaining() + " bytes");
+                            } else {
+                                Log.w(TAG, "Audio CSD-0 key present but null!");
+                            }
+                        } else {
+                            Log.w(TAG, "Audio format MISSING csd-0 - this may cause playback issues!");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error checking audio CSD", e);
+                    }
 
                     // Cache audio format for future segment rollovers
                     cachedAudioFormat = newFormat;

@@ -15,6 +15,7 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.TrackSelectionParameters;
 import androidx.media3.common.Tracks;
+import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.exoplayer.DecoderCounters;
 import androidx.media3.exoplayer.DecoderReuseEvaluation;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
@@ -26,6 +27,9 @@ import androidx.media3.exoplayer.audio.AudioSink;
 import androidx.media3.exoplayer.audio.DefaultAudioSink;
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer;
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.extractor.DefaultExtractorsFactory;
+import androidx.media3.extractor.mp4.FragmentedMp4Extractor;
 
 /**
  * Singleton holder for a shared ExoPlayer instance so Activity and Service control the same player.
@@ -46,15 +50,31 @@ public final class PlayerHolder {
 
     public synchronized ExoPlayer getOrCreate(Context context) {
         if (player == null) {
-            Log.d(TAG, "Creating new ExoPlayer instance - SIMPLEST CONFIG");
+            Log.d(TAG, "Creating new ExoPlayer instance with explicit audio config");
             
-            // Create with absolute minimal configuration
-            // Let ExoPlayer handle everything with defaults
-            player = new ExoPlayer.Builder(context.getApplicationContext()).build();
+            Context appContext = context.getApplicationContext();
+            
+            // Create audio attributes for media playback
+            AudioAttributes audioAttrs = new AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                    .build();
+            
+            // Create player with audio attributes set in builder
+            // This is critical - setting audio attrs after build may not work on all devices
+            player = new ExoPlayer.Builder(appContext)
+                    .setAudioAttributes(audioAttrs, /* handleAudioFocus= */ false)
+                    .build();
+            
+            // Force set audio attributes again after creation
+            player.setAudioAttributes(audioAttrs, false);
+            
+            // Explicitly set volume to 1.0
+            player.setVolume(1.0f);
             
             // Log audio manager state
             try {
-                AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
                 int musicVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
                 int musicMax = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                 int mode = am.getMode();
@@ -62,11 +82,15 @@ public final class PlayerHolder {
                 boolean musicActive = am.isMusicActive();
                 Log.i(TAG, "AudioManager state: MUSIC=" + musicVol + "/" + musicMax + 
                           ", mode=" + mode + ", speakerOn=" + speakerOn + ", musicActive=" + musicActive);
+                
+                // Request audio focus manually 
+                int result = am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+                Log.i(TAG, "Manual audio focus request result: " + (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "FAILED"));
             } catch (Exception e) {
                 Log.w(TAG, "Could not log AudioManager state", e);
             }
             
-            Log.d(TAG, "ExoPlayer created with DEFAULTS ONLY - no custom renderers/attributes");
+            Log.d(TAG, "ExoPlayer created with audio attributes, volume=1.0, audioFocus=false");
             
             // Add comprehensive analytics listener for debugging audio issues
             player.addAnalyticsListener(new AnalyticsListener() {
@@ -181,59 +205,44 @@ public final class PlayerHolder {
             return;
         }
         
-        // Log current player state before changes
         Log.d(TAG, "=== setMediaIfNeeded START ===");
         Log.d(TAG, "URI: " + uri);
-        Log.d(TAG, "Current player state: playWhenReady=" + player.getPlayWhenReady() + 
-                   ", playbackState=" + player.getPlaybackState() +
-                   ", isPlaying=" + player.isPlaying());
+        Log.d(TAG, "Current URI: " + currentUri);
+        Log.d(TAG, "Media item count: " + player.getMediaItemCount());
         
-        // Always ensure volume is set correctly
-        float currentVolume = player.getVolume();
-        Log.d(TAG, "Current volume: " + currentVolume);
-        if (currentVolume < 1.0f) {
-            player.setVolume(1.0f);
-            Log.d(TAG, "Volume was low, reset to 1.0");
-        }
-        
-        // Log audio session ID
-        int audioSessionId = player.getAudioSessionId();
-        Log.d(TAG, "Audio session ID: " + audioSessionId);
-        
-        // Always stop and set media fresh to ensure proper audio renderer initialization
-        // This fixes audio not playing issue that occurs when reusing player state
-        try {
-            player.stop();
-            Log.d(TAG, "Player stopped, setting fresh media");
-        } catch (Exception e) {
-            Log.w(TAG, "Error stopping player", e);
-        }
-        
-        // Build MediaItem with metadata
-        String title = null;
-        try { 
-            title = uri.getLastPathSegment(); 
-        } catch (Exception ignored) {}
-        
-        MediaItem item;
-        if (title != null && !title.isEmpty()) {
-            MediaMetadata md = new MediaMetadata.Builder().setTitle(title).build();
-            item = new MediaItem.Builder().setUri(uri).setMediaMetadata(md).build();
+        // Only set media if URI changed or no media is loaded (like v2.0.0)
+        if (currentUri == null || !uri.equals(currentUri) || player.getMediaItemCount() == 0) {
+            Log.d(TAG, "Setting new media (URI changed or empty)");
+            
+            // Build MediaItem with metadata
+            String title = null;
+            try { 
+                title = uri.getLastPathSegment(); 
+            } catch (Exception ignored) {}
+            
+            MediaItem item;
+            if (title != null && !title.isEmpty()) {
+                MediaMetadata md = new MediaMetadata.Builder().setTitle(title).build();
+                item = new MediaItem.Builder().setUri(uri).setMediaMetadata(md).build();
+            } else {
+                item = MediaItem.fromUri(uri);
+            }
+            
+            Log.d(TAG, "Setting media item: " + (title != null ? title : uri.toString()));
+            player.setMediaItem(item);
+            currentUri = uri;
+            
+            Log.d(TAG, "Calling player.prepare()");
+            player.prepare();
+            
+            Log.d(TAG, "Media set and prepared");
         } else {
-            item = MediaItem.fromUri(uri);
+            Log.d(TAG, "Media already set for this URI, skipping");
         }
         
-        Log.d(TAG, "Setting media item: " + item.mediaId);
-        player.setMediaItem(item);
-        currentUri = uri;
-        
-        Log.d(TAG, "Calling player.prepare()");
-        player.prepare();
-        
-        // Ensure volume is at max after prepare
+        // Always ensure volume is max
         player.setVolume(1.0f);
-        Log.d(TAG, "Media set and prepared, volume: " + player.getVolume());
-        Log.d(TAG, "Audio session ID after prepare: " + player.getAudioSessionId());
+        Log.d(TAG, "Volume set to 1.0, audio session ID: " + player.getAudioSessionId());
         Log.d(TAG, "=== setMediaIfNeeded END ===");
     }
 
