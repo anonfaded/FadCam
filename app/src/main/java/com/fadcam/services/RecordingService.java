@@ -1005,7 +1005,7 @@ public class RecordingService extends Service {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-
+                
                 // Stop and release the GL pipeline
                 if (glRecordingPipeline != null) {
                     try {
@@ -3379,7 +3379,7 @@ public class RecordingService extends Service {
     // Track current segment file for streaming
     private File currentSegmentFile;
     private String currentSegmentPath;
-
+    
     // Add this helper method for OpenGL pipeline direct output
     private File getFinalOutputFile() {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
@@ -3452,20 +3452,13 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Using internal storage for segment rollover");
                 
                 // Notify RemoteStreamManager about COMPLETED segment (before creating next)
+                // Fragments are delivered via FragmentedMp4MuxerWrapper callbacks (patched Media3)
                 if (currentSegmentFile != null && currentSegmentFile.exists()) {
-                    try {
-                        long fileSize = currentSegmentFile.length();
-                        Log.i(TAG, "📹 SEGMENT COMPLETE: #" + (nextSegmentNumber - 1) + 
-                            ", Size: " + (fileSize / 1024) + " KB, Path: " + currentSegmentFile.getName());
-                        Log.d(TAG, "Notifying RemoteStreamManager about completed segment: " + currentSegmentFile.getAbsolutePath());
-                        com.fadcam.streaming.RemoteStreamManager.getInstance()
-                            .onSegmentComplete(nextSegmentNumber - 1, currentSegmentFile);
-                        Log.i(TAG, "✅ RemoteStreamManager notified successfully");
-                    } catch (Exception e) {
-                        Log.e(TAG, "❌ Failed to notify RemoteStreamManager", e);
-                    }
+                    long fileSize = currentSegmentFile.length();
+                    Log.i(TAG, "📹 SEGMENT ROLLOVER: #" + (nextSegmentNumber - 1) + 
+                        ", Size: " + (fileSize / 1024) + " KB, Path: " + currentSegmentFile.getName());
                 } else {
-                    Log.w(TAG, "⚠️ No current segment file to notify (currentSegmentFile=" + currentSegmentFile + ")");
+                    Log.w(TAG, "⚠️ Segment rollover but no current segment file");
                 }
                 
                 // Internal: use createNextSegmentOutputFile()
@@ -3689,6 +3682,14 @@ public class RecordingService extends Service {
 
             Log.d(TAG, "Preparing GLRecordingPipeline surfaces");
             glRecordingPipeline.prepareSurfaces();
+
+            // Notify RemoteStreamManager that recording started
+            try {
+                com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: " + currentSegmentFile.getAbsolutePath());
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
+            }
 
             Log.d(TAG, "Creating camera preview session");
             createCameraPreviewSession();

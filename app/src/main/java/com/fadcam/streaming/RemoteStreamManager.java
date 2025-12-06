@@ -6,97 +6,84 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * RemoteStreamManager handles in-memory circular buffering of fMP4 segments for HTTP streaming.
+ * Manages remote streaming state and fragment buffer.
+ * 
+ * This singleton coordinates between RecordingService and LiveM3U8Server,
+ * maintaining a circular buffer of recent fMP4 fragments for HLS streaming.
  * 
  * Architecture:
- * - Maintains circular buffer of last 5 segments (~40MB max @ 8MB/segment)
- * - Thread-safe with ReadWriteLock for concurrent access
- * - Supports stream-only and stream-and-save modes
- * - Implements rolling disk cleanup for stream-only mode
- * - Provides segment bytes for HTTP server endpoint serving
- * 
- * Buffer Overflow Strategy (Professional):
- * - Blocks new segment writes if buffer full (backpressure to encoder)
- * - Client read timeout: 10 seconds per segment (prevents stalled connections)
- * - No data loss: Old segments retained until new ones fully committed
+ * - Circular buffer with 5 fragment slots (~10 seconds of video at 2s/fragment)
+ * - Thread-safe read/write access via ReadWriteLock
+ * - Supports both stream-only and stream-and-save modes
+ * - Stores initialization segment (ftyp + moov) separately
+ * - Each fragment is a complete moof+mdat pair
  */
 public class RemoteStreamManager {
     private static final String TAG = "RemoteStreamManager";
+    private static final int BUFFER_SIZE = 10; // Keep last 10 fragments (~20 seconds for smooth playback)
     
-    // Singleton instance
-    private static volatile RemoteStreamManager instance;
+    private static RemoteStreamManager instance;
     
-    // Buffer configuration
-    private static final int MAX_SEGMENTS = 5;
-    private static final int MAX_SEGMENT_SIZE = 10 * 1024 * 1024; // 10MB per segment (safety buffer)
-    
-    // Circular buffer storage
-    private final Map<Integer, SegmentData> segmentBuffer = new LinkedHashMap<>(MAX_SEGMENTS, 0.75f, false);
-    private final ReadWriteLock bufferLock = new ReentrantReadWriteLock();
-    
-    // Streaming state
     private boolean streamingEnabled = false;
     private StreamingMode streamingMode = StreamingMode.STREAM_AND_SAVE;
     
-    // Active recording file (for direct streaming)
+    // Fragment buffer (circular)
+    private final FragmentData[] fragmentBuffer = new FragmentData[BUFFER_SIZE];
+    private int bufferHead = 0; // Next write position
+    private int fragmentSequence = 0;
+    private int oldestSequence = 0; // Track oldest buffered fragment
+    
+    // Initialization segment (ftyp + moov)
+    private byte[] initializationSegment = null;
+    
+    // Thread safety
+    private final ReadWriteLock bufferLock = new ReentrantReadWriteLock();
+    
+    // Active recording tracking
     private File activeRecordingFile = null;
-    private FragmentMonitor fragmentMonitor = null;
     
     // Metadata
-    private String currentResolution = "1920x1080";
-    private int currentFps = 30;
-    private int currentBitrate = 8000; // kbps
     private int activeConnections = 0;
     
     public enum StreamingMode {
-        STREAM_ONLY,        // Delete old segments after buffering
-        STREAM_AND_SAVE     // Keep all segments on disk
+        STREAM_ONLY,     // Don't save to disk after streaming
+        STREAM_AND_SAVE  // Keep recording on disk
     }
     
     /**
-     * Segment metadata and buffer holder.
+     * Represents a single fMP4 fragment (moof + mdat).
      */
-    public static class SegmentData {
-        public final int segmentNumber;
+    public static class FragmentData {
+        public final int sequenceNumber;
+        public final byte[] data; // moof + mdat bytes
         public final long timestamp;
-        public final File file;
-        public final byte[] data;
-        public final int size;
+        public final int sizeBytes;
         
-        public SegmentData(int segmentNumber, long timestamp, File file, byte[] data, int size) {
-            this.segmentNumber = segmentNumber;
-            this.timestamp = timestamp;
-            this.file = file;
+        public FragmentData(int sequenceNumber, byte[] data) {
+            this.sequenceNumber = sequenceNumber;
             this.data = data;
-            this.size = size;
+            this.timestamp = System.currentTimeMillis();
+            this.sizeBytes = data.length;
+        }
+        
+        public double getDurationSeconds() {
+            return 2.0; // Fragments are configured for 2 seconds
         }
     }
     
     private RemoteStreamManager() {
-        Log.d(TAG, "RemoteStreamManager singleton initialized");
+        Log.d(TAG, "RemoteStreamManager initialized");
     }
     
-    /**
-     * Get singleton instance.
-     */
-    public static RemoteStreamManager getInstance() {
+    public static synchronized RemoteStreamManager getInstance() {
         if (instance == null) {
-            synchronized (RemoteStreamManager.class) {
-                if (instance == null) {
-                    instance = new RemoteStreamManager();
-                }
-            }
+            instance = new RemoteStreamManager();
         }
         return instance;
     }
@@ -111,7 +98,6 @@ public class RemoteStreamManager {
             Log.i(TAG, "Streaming " + (enabled ? "enabled" : "disabled"));
             
             if (!enabled) {
-                // Clear buffer when disabled
                 clearBuffer();
             }
         } finally {
@@ -133,146 +119,41 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Start monitoring a recording file for fMP4 fragments.
-     * Called when recording starts.
+     * Start recording session.
+     * Called when RecordingService starts recording.
+     * Fragments are received via FragmentedMp4MuxerWrapper callbacks.
      */
     public void startRecording(@NonNull File recordingFile) {
+        Log.i(TAG, "🎬 START RECORDING called: enabled=" + streamingEnabled + ", file=" + recordingFile.getName());
+        
         if (!streamingEnabled) {
-            Log.v(TAG, "Streaming disabled, not monitoring file");
+            Log.w(TAG, "❌ Streaming NOT enabled - ignoring startRecording call");
             return;
         }
         
-        Log.i(TAG, "🎬 START RECORDING: " + recordingFile.getName());
-        activeRecordingFile = recordingFile;
+        Log.i(TAG, "✅ Streaming ENABLED - ready to receive fragments via callbacks");
         
-        // Start fragment monitor
-        if (fragmentMonitor != null) {
-            fragmentMonitor.stopWatching();
+        bufferLock.writeLock().lock();
+        try {
+            activeRecordingFile = recordingFile;
+            clearBuffer(); // Reset buffer for new recording
+        } finally {
+            bufferLock.writeLock().unlock();
         }
-        fragmentMonitor = new FragmentMonitor(recordingFile);
-        fragmentMonitor.startWatching();
         
-        Log.i(TAG, "FragmentMonitor started for live fMP4 streaming");
+        Log.i(TAG, "Remote streaming ready (callback-based)");
     }
     
     /**
-     * Stop monitoring the recording file.
+     * Stop recording session.
      * Called when recording stops.
      */
     public void stopRecording() {
         Log.i(TAG, "🛑 STOP RECORDING");
         
-        if (fragmentMonitor != null) {
-            fragmentMonitor.stopWatching();
-            fragmentMonitor = null;
-        }
-        
-        activeRecordingFile = null;
-    }
-    
-    /**
-     * Get the active recording file (for direct streaming).
-     */
-    @androidx.annotation.Nullable
-    public File getActiveRecordingFile() {
-        return activeRecordingFile;
-    }
-    
-    /**
-     * Called by FragmentMonitor when initialization data (moov) is received.
-     */
-    public void onInitializationData(byte[] moovData) {
-        Log.i(TAG, "📋 Received initialization data (" + moovData.length + " bytes)");
-        // TODO: Store for HLS init segment
-    }
-    
-    /**
-     * Set video metadata (resolution, fps, bitrate).
-     */
-    public void setVideoMetadata(String resolution, int fps, int bitrate) {
-        this.currentResolution = resolution;
-        this.currentFps = fps;
-        this.currentBitrate = bitrate;
-        Log.d(TAG, "Video metadata updated: " + resolution + " @ " + fps + "fps, " + bitrate + "kbps");
-    }
-    
-    /**
-     * Called by RecordingService when a segment is completed.
-     * Buffers the segment bytes and manages disk cleanup if needed.
-     * 
-     * @param segmentNumber The segment number (1-based)
-     * @param segmentFile The completed segment file on disk
-     */
-    public void onSegmentComplete(int segmentNumber, @NonNull File segmentFile) {
-        if (!streamingEnabled) {
-            Log.v(TAG, "Streaming disabled, skipping segment " + segmentNumber);
-            return;
-        }
-        
-        if (!segmentFile.exists() || !segmentFile.canRead()) {
-            Log.e(TAG, "Segment file not accessible: " + segmentFile.getAbsolutePath());
-            return;
-        }
-        
-        long fileSize = segmentFile.length();
-        if (fileSize == 0) {
-            Log.e(TAG, "Segment file is empty: " + segmentFile.getAbsolutePath());
-            return;
-        }
-        
-        if (fileSize > MAX_SEGMENT_SIZE) {
-            Log.w(TAG, "Segment size exceeds max (" + fileSize + " > " + MAX_SEGMENT_SIZE + "), buffering anyway");
-        }
-        
-        Log.d(TAG, "Buffering segment " + segmentNumber + " (" + (fileSize / 1024) + " KB)");
-        
-        // Read segment bytes into memory
-        byte[] segmentData = new byte[(int) fileSize];
-        try (FileInputStream fis = new FileInputStream(segmentFile)) {
-            int totalRead = 0;
-            int bytesRead;
-            while (totalRead < fileSize && (bytesRead = fis.read(segmentData, totalRead, (int) fileSize - totalRead)) != -1) {
-                totalRead += bytesRead;
-            }
-            
-            if (totalRead != fileSize) {
-                Log.e(TAG, "Failed to read complete segment: read " + totalRead + " / " + fileSize + " bytes");
-                return;
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to read segment file", e);
-            return;
-        }
-        
-        // Buffer the segment
         bufferLock.writeLock().lock();
         try {
-            // Create segment data
-            SegmentData segment = new SegmentData(
-                segmentNumber,
-                System.currentTimeMillis(),
-                segmentFile,
-                segmentData,
-                (int) fileSize
-            );
-            
-            // Check buffer overflow (professional approach: block and wait if needed)
-            if (segmentBuffer.size() >= MAX_SEGMENTS) {
-                Log.w(TAG, "Buffer full (" + MAX_SEGMENTS + " segments), removing oldest");
-                
-                // Remove oldest segment
-                Integer oldestKey = segmentBuffer.keySet().iterator().next();
-                SegmentData oldSegment = segmentBuffer.remove(oldestKey);
-                
-                // Cleanup disk file if stream-only mode
-                if (streamingMode == StreamingMode.STREAM_ONLY && oldSegment != null) {
-                    deleteSegmentFile(oldSegment.file);
-                }
-            }
-            
-            // Add new segment to buffer
-            segmentBuffer.put(segmentNumber, segment);
-            Log.i(TAG, "Segment " + segmentNumber + " buffered successfully (" + segmentBuffer.size() + "/" + MAX_SEGMENTS + " slots)");
+            activeRecordingFile = null;
             
         } finally {
             bufferLock.writeLock().unlock();
@@ -280,66 +161,184 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Get a segment by number for HTTP serving.
+     * Get the active recording file (for fallback direct streaming).
      */
     @Nullable
-    public SegmentData getSegment(int segmentNumber) {
+    public File getActiveRecordingFile() {
+        return activeRecordingFile;
+    }
+    
+    /**
+     * Called by FragmentedMp4MuxerWrapper when initialization segment is received.
+     * @param initData ftyp + moov boxes
+     */
+    public void onInitializationSegment(byte[] initData) {
+        Log.i(TAG, "🔔 onInitializationSegment CALLED - data size: " + (initData != null ? initData.length : "NULL"));
+        bufferLock.writeLock().lock();
+        try {
+            this.initializationSegment = initData;
+            Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB)");
+        } finally {
+            bufferLock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Called by FragmentedMp4MuxerWrapper when a fragment is complete.
+     * @param sequenceNumber Fragment sequence number (1-based)
+     * @param fragmentData Complete moof+mdat bytes
+     */
+    public void onFragmentComplete(int sequenceNumber, byte[] fragmentData) {
+        if (!streamingEnabled) {
+            return;
+        }
+        
+        bufferLock.writeLock().lock();
+        try {
+            // Create fragment object
+            FragmentData fragment = new FragmentData(sequenceNumber, fragmentData);
+            
+            // Add to circular buffer
+            fragmentBuffer[bufferHead] = fragment;
+            fragmentSequence = sequenceNumber;
+            
+            // Track oldest sequence in buffer (always maintain sliding window)
+            oldestSequence = Math.max(1, sequenceNumber - BUFFER_SIZE + 1);
+            
+            // Advance head pointer (circular)
+            bufferHead = (bufferHead + 1) % BUFFER_SIZE;
+            
+            Log.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
+                (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots]");
+            
+        } finally {
+            bufferLock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Get initialization segment for HLS #EXT-X-MAP.
+     */
+    @Nullable
+    public byte[] getInitializationSegment() {
         bufferLock.readLock().lock();
         try {
-            return segmentBuffer.get(segmentNumber);
+            Log.d(TAG, "📥 getInitializationSegment called - returning: " + (initializationSegment != null ? (initializationSegment.length + " bytes") : "NULL"));
+            return initializationSegment;
         } finally {
             bufferLock.readLock().unlock();
         }
     }
     
     /**
-     * Get list of available segment numbers (for M3U8 playlist generation).
+     * Get a specific fragment by sequence number.
+     */
+    @Nullable
+    public FragmentData getFragment(int sequenceNumber) {
+        bufferLock.readLock().lock();
+        try {
+            for (FragmentData fragment : fragmentBuffer) {
+                if (fragment != null && fragment.sequenceNumber == sequenceNumber) {
+                    return fragment;
+                }
+            }
+            return null;
+        } finally {
+            bufferLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * Get list of buffered fragments sorted by sequence number.
      */
     @NonNull
-    public List<Integer> getAvailableSegments() {
+    public List<FragmentData> getBufferedFragments() {
         bufferLock.readLock().lock();
         try {
-            return new ArrayList<>(segmentBuffer.keySet());
+            List<FragmentData> fragments = new ArrayList<>();
+            
+            // Only include fragments in the current valid sequence range
+            // This prevents serving stale fragments when the circular buffer wraps
+            int validRangeStart = Math.max(1, fragmentSequence - BUFFER_SIZE + 1);
+            
+            for (FragmentData fragment : fragmentBuffer) {
+                if (fragment != null && fragment.sequenceNumber >= validRangeStart && fragment.sequenceNumber <= fragmentSequence) {
+                    fragments.add(fragment);
+                }
+            }
+            
+            // Sort by sequence number
+            fragments.sort((a, b) -> Integer.compare(a.sequenceNumber, b.sequenceNumber));
+            
+            return fragments;
         } finally {
             bufferLock.readLock().unlock();
         }
     }
     
     /**
-     * Get number of buffered segments.
+     * Get the latest fragment sequence number.
      */
-    public int getSegmentCount() {
+    public int getLatestSequenceNumber() {
         bufferLock.readLock().lock();
         try {
-            return segmentBuffer.size();
+            return fragmentSequence;
         } finally {
             bufferLock.readLock().unlock();
         }
     }
     
     /**
-     * Get current buffer status for /status endpoint.
+     * Get the oldest buffered sequence number.
+     */
+    public int getOldestSequenceNumber() {
+        bufferLock.readLock().lock();
+        try {
+            return oldestSequence;
+        } finally {
+            bufferLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * Get number of buffered fragments.
+     */
+    public int getBufferedCount() {
+        int count = 0;
+        for (FragmentData fragment : fragmentBuffer) {
+            if (fragment != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Get status JSON for HTTP /status endpoint.
      */
     public String getStatusJson() {
         bufferLock.readLock().lock();
         try {
-            int bufferCount = segmentBuffer.size();
-            long totalBufferSize = 0;
-            for (SegmentData seg : segmentBuffer.values()) {
-                totalBufferSize += seg.size;
+            int bufferedCount = getBufferedCount();
+            long totalBytes = 0;
+            for (FragmentData fragment : fragmentBuffer) {
+                if (fragment != null) {
+                    totalBytes += fragment.sizeBytes;
+                }
             }
             
             return String.format(
-                "{\"streaming\": %s, \"mode\": \"%s\", \"resolution\": \"%s\", \"fps\": %d, " +
-                "\"bitrate\": %d, \"buffered_segments\": %d, \"buffer_size_mb\": %.2f, \"active_connections\": %d}",
+                "{\"streaming\": %s, \"mode\": \"%s\", \"fragments_buffered\": %d, " +
+                "\"buffer_size_mb\": %.2f, \"latest_sequence\": %d, \"oldest_sequence\": %d, " +
+                "\"active_connections\": %d, \"has_init_segment\": %s}",
                 streamingEnabled,
                 streamingMode.toString().toLowerCase(),
-                currentResolution,
-                currentFps,
-                currentBitrate,
-                bufferCount,
-                totalBufferSize / (1024.0 * 1024.0),
-                activeConnections
+                bufferedCount,
+                totalBytes / (1024.0 * 1024.0),
+                fragmentSequence,
+                oldestSequence,
+                activeConnections,
+                (initializationSegment != null)
             );
         } finally {
             bufferLock.readLock().unlock();
@@ -365,33 +364,17 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Clear all buffered segments.
+     * Clear all buffered fragments.
      */
-    public void clearBuffer() {
-        bufferLock.writeLock().lock();
-        try {
-            Log.i(TAG, "Clearing buffer (" + segmentBuffer.size() + " segments)");
-            segmentBuffer.clear();
-        } finally {
-            bufferLock.writeLock().unlock();
+    private void clearBuffer() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            fragmentBuffer[i] = null;
         }
-    }
-    
-    /**
-     * Delete a segment file from disk (stream-only mode cleanup).
-     */
-    private void deleteSegmentFile(@NonNull File file) {
-        if (file.exists()) {
-            try {
-                if (file.delete()) {
-                    Log.d(TAG, "Deleted old segment: " + file.getName());
-                } else {
-                    Log.w(TAG, "Failed to delete segment: " + file.getAbsolutePath());
-                }
-            } catch (SecurityException e) {
-                Log.e(TAG, "Security exception deleting segment", e);
-            }
-        }
+        bufferHead = 0;
+        fragmentSequence = 0;
+        oldestSequence = 0;
+        initializationSegment = null;
+        Log.d(TAG, "Fragment buffer cleared");
     }
     
     /**
@@ -407,4 +390,5 @@ public class RemoteStreamManager {
     public StreamingMode getStreamingMode() {
         return streamingMode;
     }
+    
 }

@@ -111,9 +111,8 @@ public class RemoteStreamService extends Service {
         // Stop HTTP server
         stopHttpServer();
         
-        // Disable streaming in RemoteStreamManager
+        // Disable streaming in RemoteStreamManager (clears buffer automatically)
         RemoteStreamManager.getInstance().setStreamingEnabled(false);
-        RemoteStreamManager.getInstance().clearBuffer();
         
         super.onDestroy();
     }
@@ -263,11 +262,11 @@ public class RemoteStreamService extends Service {
         String ipAddress = getLocalIpAddress();
         String streamUrl = "http://" + ipAddress + ":" + activePort + "/live.m3u8";
         
-        // Check if we have segments
-        int segmentCount = RemoteStreamManager.getInstance().getSegmentCount();
+        // Check if we have fragments
+        int fragmentCount = RemoteStreamManager.getInstance().getBufferedCount();
         String contentText;
-        if (segmentCount > 0) {
-            contentText = "Streaming: " + streamUrl;
+        if (fragmentCount > 0) {
+            contentText = "Streaming: " + streamUrl + " (" + fragmentCount + " fragments)";
         } else {
             contentText = streamUrl + " • Start recording to stream";
         }

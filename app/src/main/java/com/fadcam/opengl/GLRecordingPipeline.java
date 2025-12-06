@@ -40,7 +40,7 @@ public class GLRecordingPipeline {
     private final WatermarkInfoProvider watermarkInfoProvider;
     private GLWatermarkRenderer glRenderer;
     private MediaCodec videoEncoder;
-    // Use FragmentedMp4MuxerWrapper for crash-safe recording (writes fragments incrementally)
+    // Use FragmentedMp4MuxerWrapper for fMP4 streaming
     private FragmentedMp4MuxerWrapper mediaMuxer;
     private Surface encoderInputSurface;
     private Surface cameraInputSurface;
@@ -915,19 +915,19 @@ public class GLRecordingPipeline {
 
     /**
      * Sets up the media muxer for the current output file.
-     * Uses FragmentedMp4MuxerWrapper for crash-safe recording.
+     * Uses FragmentedMp4MuxerWrapper for fMP4 streaming (Media3).
      * This is called for each segment.
      */
     private void setupMuxer() throws IOException {
-        // Use FragmentedMp4MuxerWrapper for crash-safe recording
-        // Fragments are written incrementally, so if the app crashes,
-        // the video is still recoverable up to the last written fragment.
+        // Use FragmentedMp4MuxerWrapper for fMP4 streaming
+        // Native Android MediaMuxer does NOT support fragmented MP4 output!
+        // We must use Media3's FragmentedMp4Muxer
         if (currentOutputFd != null) {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
-            Log.d(TAG, "Created FragmentedMp4Muxer with file descriptor (crash-safe)");
+            Log.d(TAG, "Created FragmentedMp4Muxer with file descriptor (fMP4 for streaming)");
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
-            Log.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (crash-safe)");
+            Log.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (fMP4 for streaming)");
         }
 
         // Set location metadata if available

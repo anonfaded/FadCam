@@ -11,8 +11,12 @@ import androidx.media3.common.Format;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.container.Mp4OrientationData;
+import androidx.media3.common.util.Consumer;
 import androidx.media3.muxer.FragmentedMp4Muxer;
 import androidx.media3.muxer.MuxerException;
+import androidx.media3.muxer.ProcessedSegment;
+
+import com.fadcam.streaming.RemoteStreamManager;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -40,6 +44,10 @@ public class FragmentedMp4MuxerWrapper {
     // Track last presentation times for EOS handling
     private final android.util.SparseArray<Long> lastPresentationTimeUs = new android.util.SparseArray<>();
     private int videoTrackId = -1;
+    
+    // Fragment tracking for live streaming
+    private int nextFragmentNumber = 1;
+    private boolean initSegmentSent = false;
 
     /**
      * Creates a FragmentedMp4MuxerWrapper with a file path.
@@ -49,15 +57,22 @@ public class FragmentedMp4MuxerWrapper {
      */
     public FragmentedMp4MuxerWrapper(@NonNull String path) throws IOException {
         this.fileOutputStream = new FileOutputStream(path);
+        
+        // Create callback consumer for live streaming integration
+        Consumer<ProcessedSegment> segmentConsumer = segment -> {
+            handleProcessedSegment(segment);
+        };
+        
         // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
         // 1. Use 2000ms (2 second) fragments instead of default 500ms
         //    Longer fragments = fewer moof boxes = better seeking accuracy
         // 2. Fragments will be automatically keyframe-aligned by Media3
         // 3. This ensures proper tfdt timestamps and fragment boundaries
-        this.muxer = new FragmentedMp4Muxer.Builder(fileOutputStream)
+        // 4. NEW: Callback-based architecture for real-time streaming
+        this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(2000) // 2 seconds per fragment for better seeking
                 .build();
-        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments for path: " + path);
+        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments and live streaming callback for path: " + path);
     }
 
     /**
@@ -68,12 +83,19 @@ public class FragmentedMp4MuxerWrapper {
      */
     public FragmentedMp4MuxerWrapper(@NonNull FileDescriptor fd) throws IOException {
         this.fileOutputStream = new FileOutputStream(fd);
+        
+        // Create callback consumer for live streaming integration
+        Consumer<ProcessedSegment> segmentConsumer = segment -> {
+            handleProcessedSegment(segment);
+        };
+        
         // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
         // Use 2000ms (2 second) fragments for proper seeking support
-        this.muxer = new FragmentedMp4Muxer.Builder(fileOutputStream)
+        // NEW: Callback-based architecture for real-time streaming
+        this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(2000) // 2 seconds per fragment for better seeking
                 .build();
-        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments for file descriptor");
+        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments and live streaming callback for file descriptor");
     }
 
     /**
@@ -152,7 +174,15 @@ public class FragmentedMp4MuxerWrapper {
         }
         
         started = true;
-        Log.d(TAG, "Muxer started");
+        
+        // CRITICAL: Force flush to disk so moov atom is written immediately
+        // This makes the file streamable right away
+        try {
+            fileOutputStream.flush();
+            Log.d(TAG, "Muxer started and flushed - file is now streamable");
+        } catch (IOException e) {
+            Log.w(TAG, "Failed to flush after start", e);
+        }
     }
 
     /**
@@ -461,5 +491,64 @@ public class FragmentedMp4MuxerWrapper {
             sb.append("...");
         }
         return sb.toString().trim();
+    }
+    
+    /**
+     * Handles processed segments from the patched Media3 muxer.
+     * This callback receives segments in real-time as they're muxed, enabling live streaming.
+     * 
+     * @param segment ProcessedSegment containing either init segment or media fragment
+     */
+    private void handleProcessedSegment(ProcessedSegment segment) {
+        try {
+            // Extract data from ByteBuffer
+            // CRITICAL: The patched Media3's combine() method doesn't flip the buffer after put(),
+            // so position is at end. We need to flip it first to read from start.
+            ByteBuffer payload = segment.payload;
+            payload.flip(); // Flip buffer to read from start
+            
+            byte[] data = new byte[payload.remaining()];
+            payload.get(data);
+            payload.rewind(); // Reset position for potential reuse
+            
+            if (segment.isInitSegment) {
+                // Initialization segment (ftyp + moov)
+                Log.i(TAG, "📦 Received init segment: " + data.length + " bytes");
+                
+                // Send to RemoteStreamManager for HLS streaming
+                RemoteStreamManager.getInstance().onInitializationSegment(data);
+                initSegmentSent = true;
+                
+                // Write to file
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(data);
+                    fileOutputStream.flush();
+                    Log.d(TAG, "✅ Init segment written to file");
+                }
+            } else {
+                // Media fragment (moof + mdat)
+                Log.i(TAG, "🎬 Received fragment #" + segment.segmentNr + 
+                    ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
+                
+                // Send to RemoteStreamManager for HLS streaming
+                if (initSegmentSent) {
+                    RemoteStreamManager.getInstance().onFragmentComplete(segment.segmentNr, data);
+                } else {
+                    Log.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
+                        " received before init segment - skipping stream upload");
+                }
+                
+                // Write to file
+                if (fileOutputStream != null) {
+                    fileOutputStream.write(data);
+                    fileOutputStream.flush();
+                    Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file");
+                }
+                
+                nextFragmentNumber++;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error handling processed segment", e);
+        }
     }
 }
