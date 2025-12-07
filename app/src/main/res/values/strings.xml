@@ -1297,4 +1297,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_instr_4">4. Paste URL in media player to watch live</string>
     <string name="stream_network_info">Same WiFi network required for streaming</string>
     
+    <!-- Stream Notes -->
+    <string name="stream_notes_title">Notes</string>
+    <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
+    <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) controls FPS cap and bitrate to prevent network issues</string>
+    <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
+    
 </resources>
