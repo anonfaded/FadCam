@@ -421,6 +421,24 @@ public class RemoteStreamManager {
     }
     
     /**
+     * Get total size of buffered fragments in bytes.
+     */
+    public long getBufferSizeBytes() {
+        bufferLock.readLock().lock();
+        try {
+            long totalBytes = 0;
+            for (FragmentData fragment : fragmentBuffer) {
+                if (fragment != null) {
+                    totalBytes += fragment.sizeBytes;
+                }
+            }
+            return totalBytes;
+        } finally {
+            bufferLock.readLock().unlock();
+        }
+    }
+    
+    /**
      * Get status JSON for HTTP /status endpoint.
      */
     public String getStatusJson() {

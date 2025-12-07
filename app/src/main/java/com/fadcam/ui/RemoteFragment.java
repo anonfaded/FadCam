@@ -62,6 +62,8 @@ public class RemoteFragment extends BaseFragment {
     private TextView storageText;
     private TextView dataTransferredText;
     private LinearLayout dataSentRow;
+    private LinearLayout segmentsRow;
+    private LinearLayout networkHealthRow;
     
     private RemoteStreamService streamService;
     private boolean serviceBound = false;
@@ -131,6 +133,8 @@ public class RemoteFragment extends BaseFragment {
         storageText = view.findViewById(R.id.storage_text);
         dataTransferredText = view.findViewById(R.id.data_transferred_text);
         dataSentRow = view.findViewById(R.id.data_sent_row);
+        segmentsRow = view.findViewById(R.id.segments_row);
+        networkHealthRow = view.findViewById(R.id.network_health_row);
         
         // Set context for status reporting
         RemoteStreamManager.getInstance().setContext(requireContext());
@@ -164,6 +168,12 @@ public class RemoteFragment extends BaseFragment {
         
         // Data sent row click listener
         dataSentRow.setOnClickListener(v -> showClientDataUsage());
+        
+        // Segments row click listener
+        segmentsRow.setOnClickListener(v -> showSegmentsInfo());
+        
+        // Network health row click listener
+        networkHealthRow.setOnClickListener(v -> showNetworkHealth());
         
         // Copy URL button listener
         copyRootButton.setOnClickListener(v -> {
@@ -516,6 +526,16 @@ public class RemoteFragment extends BaseFragment {
     private void showClientDataUsage() {
         ClientDataBottomSheet sheet = new ClientDataBottomSheet();
         sheet.show(getParentFragmentManager(), "client_data_sheet");
+    }
+    
+    private void showSegmentsInfo() {
+        SegmentsInfoBottomSheet sheet = new SegmentsInfoBottomSheet();
+        sheet.show(getParentFragmentManager(), "segments_info_sheet");
+    }
+    
+    private void showNetworkHealth() {
+        NetworkHealthBottomSheet sheet = new NetworkHealthBottomSheet();
+        sheet.show(getParentFragmentManager(), "network_health_sheet");
     }
     
     private int resolveThemeColor(int attr) {

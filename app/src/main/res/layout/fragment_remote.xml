@@ -271,30 +271,47 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Segments -->
+                    <!-- Segments (Clickable) -->
                     <LinearLayout
+                        android:id="@+id/segments_row"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:orientation="horizontal"
                         android:background="@drawable/settings_home_row_bg"
-                        android:padding="10dp">
+                        android:padding="10dp"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Segments"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/fragments_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Segments"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+
+                            <TextView
+                                android:id="@+id/fragments_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="13sp"
+                                android:layout_marginTop="4dp"
+                                android:textColor="@android:color/darker_gray" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@android:color/darker_gray"
+                            android:layout_gravity="center_vertical" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -315,31 +332,48 @@
                     android:orientation="vertical"
                     android:paddingEnd="6dp">
 
-                    <!-- Network Health -->
+                    <!-- Network Health (Clickable) -->
                     <LinearLayout
+                        android:id="@+id/network_health_row"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:orientation="horizontal"
                         android:background="@drawable/settings_home_row_bg"
                         android:padding="10dp"
-                        android:layout_marginBottom="6dp">
+                        android:layout_marginBottom="6dp"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Network"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/network_health_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="--"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Network"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+
+                            <TextView
+                                android:id="@+id/network_health_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--"
+                                android:textSize="13sp"
+                                android:layout_marginTop="4dp"
+                                android:textColor="@android:color/darker_gray" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@android:color/darker_gray"
+                            android:layout_gravity="center_vertical" />
                     </LinearLayout>
 
                     <!-- Storage -->
@@ -440,13 +474,11 @@
                         </LinearLayout>
 
                         <!-- Arrow Icon -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="arrow_forward"
-                            android:fontFamily="@font/materialicons"
-                            android:textSize="14dp"
-                            android:textColor="@android:color/darker_gray"
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@android:color/darker_gray"
                             android:layout_gravity="center_vertical" />
                     </LinearLayout>
                 </LinearLayout>

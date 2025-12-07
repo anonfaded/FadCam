@@ -6,10 +6,10 @@ package com.fadcam.streaming.model;
  */
 public class NetworkHealth {
     public enum Status {
-        EXCELLENT,  // > 50 Mbps
-        GOOD,       // 10-50 Mbps
-        MODERATE,   // 2-10 Mbps
-        POOR,       // < 2 Mbps
+        EXCELLENT,  // >= 1.0 Mbps (measured), low latency
+        GOOD,       // >= 0.5 Mbps (measured), acceptable latency
+        MODERATE,   // >= 0.2 Mbps (measured), high latency
+        POOR,       // < 0.2 Mbps (measured), very slow
         UNKNOWN     // Not measured yet
     }
     
@@ -29,6 +29,8 @@ public class NetworkHealth {
     
     /**
      * Update network measurements and recalculate status.
+     * Note: Small test files result in lower measured speeds than actual bandwidth.
+     * Thresholds are adjusted accordingly.
      */
     public void updateMeasurements(double downloadMbps, double uploadMbps, int latency) {
         this.downloadSpeedMbps = downloadMbps;
@@ -37,16 +39,17 @@ public class NetworkHealth {
         this.lastMeasurementTime = System.currentTimeMillis();
         
         // Calculate status based on upload speed (more critical for streaming server)
+        // Note: Favicon downloads measure lower than actual speed, so use conservative thresholds
         double relevantSpeed = Math.max(uploadMbps, downloadMbps * 0.5);
         
-        if (relevantSpeed >= 50) {
-            status = Status.EXCELLENT;
-        } else if (relevantSpeed >= 10) {
-            status = Status.GOOD;
-        } else if (relevantSpeed >= 2) {
-            status = Status.MODERATE;
+        if (relevantSpeed >= 1.0 && latency < 50) {
+            status = Status.EXCELLENT;  // Good for 8Mbps streaming
+        } else if (relevantSpeed >= 0.5 && latency < 100) {
+            status = Status.GOOD;        // Acceptable for streaming
+        } else if (relevantSpeed >= 0.2 && latency < 200) {
+            status = Status.MODERATE;    // Marginal for streaming
         } else if (relevantSpeed > 0) {
-            status = Status.POOR;
+            status = Status.POOR;        // Insufficient for streaming
         } else {
             status = Status.UNKNOWN;
         }
