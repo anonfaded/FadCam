@@ -48,6 +48,14 @@ public class FragmentedMp4MuxerWrapper {
     // Fragment tracking for live streaming
     private int nextFragmentNumber = 1;
     private boolean initSegmentSent = false;
+    
+    // CRITICAL FIX: Timestamp normalization to prevent serving 45+ minute old video
+    // MediaCodec timestamps accumulate across recording sessions (based on system uptime)
+    // We must normalize them to start from 0 for each new recording
+    private final android.util.SparseArray<Long> timestampOffsets = new android.util.SparseArray<>();
+    private boolean timestampOffsetsInitialized = false;
+    // Track how many samples logged per track to avoid log spam
+    private final android.util.SparseArray<Integer> trackSampleLogs = new android.util.SparseArray<>();
 
     /**
      * Creates a FragmentedMp4MuxerWrapper with a file path.
@@ -70,9 +78,9 @@ public class FragmentedMp4MuxerWrapper {
         // 3. This ensures proper tfdt timestamps and fragment boundaries
         // 4. NEW: Callback-based architecture for real-time streaming
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
-                .setFragmentDurationMs(2000) // 2 seconds per fragment for better seeking
+                .setFragmentDurationMs(1000) // 1 second per fragment for low-latency streaming
                 .build();
-        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments and live streaming callback for path: " + path);
+        Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
     }
 
     /**
@@ -90,12 +98,12 @@ public class FragmentedMp4MuxerWrapper {
         };
         
         // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
-        // Use 2000ms (2 second) fragments for proper seeking support
+        // Use 1000ms (1 second) fragments for low-latency streaming
         // NEW: Callback-based architecture for real-time streaming
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
-                .setFragmentDurationMs(2000) // 2 seconds per fragment for better seeking
+                .setFragmentDurationMs(1000) // 1 second per fragment for low-latency streaming
                 .build();
-        Log.d(TAG, "Created FragmentedMp4Muxer with 2s fragments and live streaming callback for file descriptor");
+        Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
     }
 
     /**
@@ -202,19 +210,50 @@ public class FragmentedMp4MuxerWrapper {
         }
 
         try {
-            // Track the last presentation time for this track (for EOS handling)
-            if (bufferInfo.presentationTimeUs > 0) {
-                Long current = lastPresentationTimeUs.get(trackIndex);
-                if (current == null || bufferInfo.presentationTimeUs > current) {
-                    lastPresentationTimeUs.put(trackIndex, bufferInfo.presentationTimeUs);
+            // CRITICAL FIX: Normalize timestamps to start from 0 for each recording
+            // MediaCodec provides timestamps based on system uptime which accumulates across sessions
+            // This causes HLS players to show 45+ minute old timestamps
+            if (!timestampOffsetsInitialized) {
+                // First sample for this track - use its timestamp as the offset
+                Long offset = timestampOffsets.get(trackIndex);
+                if (offset == null) {
+                    timestampOffsets.put(trackIndex, bufferInfo.presentationTimeUs);
+                    Log.w(TAG, "⏱️ Track " + trackIndex + " timestamp offset initialized: " + bufferInfo.presentationTimeUs + "us (" + (bufferInfo.presentationTimeUs / 1000000.0) + "s) - will be normalized to 0");
+                }
+                
+                // Check if all tracks have offsets
+                if (timestampOffsets.size() >= lastPresentationTimeUs.size()) {
+                    timestampOffsetsInitialized = true;
+                    Log.i(TAG, "✅ All track timestamp offsets initialized - timestamps will now start from 0");
                 }
             }
             
-            // Convert MediaCodec.BufferInfo to Media3 BufferInfo
+            // Normalize timestamp by subtracting the offset for this track
+            Long offset = timestampOffsets.get(trackIndex);
+            long normalizedPresentationTimeUs = offset != null ? 
+                (bufferInfo.presentationTimeUs - offset) : bufferInfo.presentationTimeUs;
+
+            // DEBUG: Log keyframes and first few samples with normalized PTS for diagnostics
+            boolean isKeyFrame = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
+            int logCount = trackSampleLogs.get(trackIndex, 0);
+            if (isKeyFrame || logCount < 6) {
+                Log.d(TAG, "PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
+                trackSampleLogs.put(trackIndex, logCount + 1);
+            }
+            
+            // Track the last normalized presentation time for this track (for EOS handling)
+            if (normalizedPresentationTimeUs > 0) {
+                Long current = lastPresentationTimeUs.get(trackIndex);
+                if (current == null || normalizedPresentationTimeUs > current) {
+                    lastPresentationTimeUs.put(trackIndex, normalizedPresentationTimeUs);
+                }
+            }
+            
+            // Convert MediaCodec.BufferInfo to Media3 BufferInfo with normalized timestamp
             int flags = convertFlags(bufferInfo.flags);
             androidx.media3.muxer.BufferInfo media3BufferInfo =
                 new androidx.media3.muxer.BufferInfo(
-                    bufferInfo.presentationTimeUs,
+                    normalizedPresentationTimeUs,  // Use normalized timestamp
                     bufferInfo.size,
                     flags
                 );
@@ -511,6 +550,10 @@ public class FragmentedMp4MuxerWrapper {
             payload.get(data);
             payload.rewind(); // Reset position for potential reuse
             
+            // Check streaming mode to determine if we should save to disk
+            RemoteStreamManager.StreamingMode streamingMode = RemoteStreamManager.getInstance().getStreamingMode();
+            boolean shouldSaveToDisk = (streamingMode == RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+            
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)
                 Log.i(TAG, "📦 Received init segment: " + data.length + " bytes");
@@ -519,11 +562,13 @@ public class FragmentedMp4MuxerWrapper {
                 RemoteStreamManager.getInstance().onInitializationSegment(data);
                 initSegmentSent = true;
                 
-                // Write to file
-                if (fileOutputStream != null) {
+                // Write to file only if STREAM_AND_SAVE mode
+                if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    Log.d(TAG, "✅ Init segment written to file");
+                    Log.d(TAG, "✅ Init segment written to file (STREAM_AND_SAVE mode)");
+                } else {
+                    Log.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
                 }
             } else {
                 // Media fragment (moof + mdat)
@@ -538,11 +583,13 @@ public class FragmentedMp4MuxerWrapper {
                         " received before init segment - skipping stream upload");
                 }
                 
-                // Write to file
-                if (fileOutputStream != null) {
+                // Write to file only if STREAM_AND_SAVE mode
+                if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file");
+                    Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
+                } else {
+                    Log.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
                 
                 nextFragmentNumber++;

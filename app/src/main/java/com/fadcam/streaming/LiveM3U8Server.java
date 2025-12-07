@@ -31,12 +31,14 @@ public class LiveM3U8Server extends NanoHTTPD {
     private static final String TAG = "LiveM3U8Server";
     
     private final RemoteStreamManager streamManager;
+    private final android.content.Context context;
     
     // HLS configuration
-    private static final int TARGET_DURATION = 3; // Segment duration in seconds (approximate)
+    private static final int TARGET_DURATION = 2; // Segment duration in seconds (1s actual + safety margin)
     
-    public LiveM3U8Server(int port) throws IOException {
+    public LiveM3U8Server(android.content.Context context, int port) throws IOException {
         super(port);
+        this.context = context.getApplicationContext();
         this.streamManager = RemoteStreamManager.getInstance();
         Log.i(TAG, "LiveM3U8Server created on port " + port);
     }
@@ -68,8 +70,14 @@ public class LiveM3U8Server extends NanoHTTPD {
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
+        } else if (Method.POST.equals(method)) {
+            if ("/torch/toggle".equals(uri)) {
+                response = toggleTorch();
+            } else {
+                response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
+            }
         } else {
-            response = newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, MIME_PLAINTEXT, "Only GET requests supported");
+            response = newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, MIME_PLAINTEXT, "Only GET and POST requests supported");
         }
         
         // Add CORS headers
@@ -85,13 +93,31 @@ public class LiveM3U8Server extends NanoHTTPD {
      */
     @NonNull
     private Response servePlaylist() {
-        // Check if initialization segment is available
-        byte[] initSegment = streamManager.getInitializationSegment();
-        if (initSegment == null) {
+        // Check if streaming is enabled at all
+        if (!streamManager.isStreamingEnabled()) {
+            Log.w(TAG, "❌ Streaming is disabled - recording not started or streaming mode is DISABLED");
+            String message = "❌ Streaming Disabled\n\n" +
+                "Please start recording on FadCam with streaming enabled (STREAM_ONLY or STREAM_AND_SAVE mode).\n\n" +
+                "Check /status endpoint for current state.";
             return newFixedLengthResponse(
                 Response.Status.SERVICE_UNAVAILABLE,
                 MIME_PLAINTEXT,
-                "Stream not ready. Waiting for initialization segment..."
+                message
+            );
+        }
+        
+        // Check if initialization segment is available
+        byte[] initSegment = streamManager.getInitializationSegment();
+        if (initSegment == null) {
+            Log.w(TAG, "❌ Init segment not available yet - recording just started or stopped");
+            String message = "⏳ Stream Initializing\n\n" +
+                "Recording is starting up. First fragments are being encoded.\n" +
+                "This usually takes 2-3 seconds. Please wait...\n\n" +
+                "Check /status endpoint for current state.";
+            return newFixedLengthResponse(
+                Response.Status.SERVICE_UNAVAILABLE,
+                MIME_PLAINTEXT,
+                message
             );
         }
         
@@ -99,10 +125,15 @@ public class LiveM3U8Server extends NanoHTTPD {
         java.util.List<RemoteStreamManager.FragmentData> fragments = streamManager.getBufferedFragments();
         
         if (fragments.isEmpty()) {
+            Log.w(TAG, "⏳ No fragments buffered yet - waiting for encoder output");
+            String message = "⏳ Buffering Fragments\n\n" +
+                "Init segment ready, waiting for first video fragments from encoder.\n" +
+                "This usually takes 1-2 seconds. Please wait...\n\n" +
+                "Check /status endpoint for current state.";
             return newFixedLengthResponse(
                 Response.Status.SERVICE_UNAVAILABLE,
                 MIME_PLAINTEXT,
-                "No fragments available yet. Recording started recently..."
+                message
             );
         }
         
@@ -115,7 +146,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             m3u8.append("#EXTM3U\n");
             m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
             m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n");
-            m3u8.append("#EXT-X-TARGETDURATION:3\n"); // 3-second max fragment duration
+            m3u8.append("#EXT-X-TARGETDURATION:2\n"); // 2-second max fragment duration (1s actual + buffer)
             
             // Reference to initialization segment (ftyp + moov)
             // Use absolute path for better player compatibility
@@ -132,32 +163,29 @@ public class LiveM3U8Server extends NanoHTTPD {
                 );
             }
             
-            // Add fragment references (only include stable fragments that are at least 300ms old)
-            java.util.List<RemoteStreamManager.FragmentData> stable = new java.util.ArrayList<>();
-            long currentTime = System.currentTimeMillis();
-            for (RemoteStreamManager.FragmentData fragment : fragments) {
-                long fragmentAge = currentTime - fragment.timestamp;
-                if (fragmentAge >= 300) { // small guard to avoid serving partially written data
-                    stable.add(fragment);
-                }
-            }
+            // REMOVED: 300ms age filter caused 503 errors when all fragments were fresh
+            // Fragments from RemoteStreamManager are already complete and ready to serve
+            java.util.List<RemoteStreamManager.FragmentData> stable = new java.util.ArrayList<>(fragments);
 
-            // Must have at least one stable fragment to serve
-            if (stable.isEmpty()) {
-                return newFixedLengthResponse(
-                    Response.Status.SERVICE_UNAVAILABLE,
-                    MIME_PLAINTEXT,
-                    "Fragments still being written, please wait..."
-                );
+            // CRITICAL FIX FOR 404 ERRORS: Only show last 5 fragments at live edge!
+            // Problem: If we show all 15 buffered fragments, by the time browser downloads oldest ones,
+            // they're already evicted from the circular buffer (new fragments push old ones out).
+            // Solution: Only reference the NEWEST 5 fragments (live edge) to ensure they're still
+            // in buffer when requested. This is standard HLS live streaming practice.
+            int LIVE_WINDOW_SIZE = 5; // Show only last 5 fragments (10 seconds at 2s/fragment)
+            java.util.List<RemoteStreamManager.FragmentData> liveEdge = new java.util.ArrayList<>();
+            int startIdx = Math.max(0, stable.size() - LIVE_WINDOW_SIZE);
+            for (int i = startIdx; i < stable.size(); i++) {
+                liveEdge.add(stable.get(i));
             }
-
+            
             // CRITICAL FIX: The MEDIA-SEQUENCE must match the sequence number stored 
             // inside the moof box (mfhd), otherwise players will reject fragments
             // The sequence numbers in moof are absolute (1, 2, 3...), so playlist must match
-            m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(stable.get(0).sequenceNumber).append("\n");
+            m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
 
-            for (RemoteStreamManager.FragmentData fragment : stable) {
-                // Use exact duration from fragment (2.0 seconds)
+            for (RemoteStreamManager.FragmentData fragment : liveEdge) {
+                // Use exact duration from fragment (1.0 seconds)
                 m3u8.append("#EXTINF:").append(String.format("%.3f", fragment.getDurationSeconds())).append(",\n");
                 m3u8.append("/seg-").append(fragment.sequenceNumber).append(".m4s\n");
             }
@@ -165,7 +193,8 @@ public class LiveM3U8Server extends NanoHTTPD {
             Log.i(TAG, "📋 Generated M3U8 playlist:");
             Log.i(TAG, "   Total fragments: " + fragments.size());
             Log.i(TAG, "   Stable fragments: " + stable.size());
-            Log.i(TAG, "   Sequence range: " + stable.get(0).sequenceNumber + " to " + stable.get(stable.size()-1).sequenceNumber);
+            Log.i(TAG, "   Live edge fragments: " + liveEdge.size());
+            Log.i(TAG, "   Sequence range: " + liveEdge.get(0).sequenceNumber + " to " + liveEdge.get(liveEdge.size()-1).sequenceNumber);
             Log.d(TAG, "M3U8 Content:\n" + m3u8.toString());
             
             Response response = newFixedLengthResponse(
@@ -174,12 +203,15 @@ public class LiveM3U8Server extends NanoHTTPD {
                 m3u8.toString()
             );
             
-            // RFC 8216 compliant headers for HLS streaming
+            // ULTRA-AGGRESSIVE cache prevention for HLS playlist
+            // Prevents browser/HLS.js from serving stale playlists with old fragment numbers
             response.addHeader("Content-Type", "application/vnd.apple.mpegurl; charset=utf-8");
             response.addHeader("Content-Disposition", "inline");
-            response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0, s-maxage=0");
             response.addHeader("Pragma", "no-cache");
             response.addHeader("Expires", "0");
+            response.addHeader("ETag", String.valueOf(System.currentTimeMillis())); // Force unique response each time
+            response.addHeader("Last-Modified", new java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", java.util.Locale.US).format(new java.util.Date()));
             response.addHeader("Access-Control-Allow-Origin", "*");
             
             return response;
@@ -232,18 +264,20 @@ public class LiveM3U8Server extends NanoHTTPD {
             String seqNumStr = uri.substring(5, uri.length() - 4); // Remove "/seg-" and ".m4s"
             int sequenceNumber = Integer.parseInt(seqNumStr);
             
+            int oldest = streamManager.getOldestSequenceNumber();
+            int latest = streamManager.getLatestSequenceNumber();
+
+            // Reject clearly stale requests early (e.g., cached player asking for old segments)
+            if (sequenceNumber < oldest || sequenceNumber > latest) {
+                Log.w(TAG, "❌ Fragment #" + sequenceNumber + " outside window [" + oldest + ", " + latest + "] - treating as stale request");
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Fragment outside live window");
+            }
+
             RemoteStreamManager.FragmentData fragment = streamManager.getFragment(sequenceNumber);
             
             if (fragment == null) {
                 Log.w(TAG, "Fragment #" + sequenceNumber + " not found in buffer");
                 return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Fragment not found");
-            }
-            
-            // Only serve fragments that are at least 1 second old (ensures complete write + stability)
-            long fragmentAge = System.currentTimeMillis() - fragment.timestamp;
-            if (fragmentAge < 1000) {
-                Log.d(TAG, "Fragment #" + sequenceNumber + " too fresh (" + fragmentAge + "ms), waiting...");
-                return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Fragment not ready yet");
             }
             
             streamManager.incrementConnections();
@@ -254,7 +288,10 @@ public class LiveM3U8Server extends NanoHTTPD {
                 // Serve fragment bytes
                 InputStream fragmentStream = new java.io.ByteArrayInputStream(fragment.data);
                 Response response = newFixedLengthResponse(Response.Status.OK, "video/mp4", fragmentStream, fragment.sizeBytes);
-                response.addHeader("Cache-Control", "public, max-age=3600"); // Cache fragments for 1 hour
+                // Never allow fragment caching; stale caches caused old video playback
+                response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                response.addHeader("Pragma", "no-cache");
+                response.addHeader("Expires", "0");
                 response.addHeader("Content-Length", String.valueOf(fragment.sizeBytes));
                 
                 return response;
@@ -269,6 +306,48 @@ public class LiveM3U8Server extends NanoHTTPD {
         }
     }
     
+    /**
+     * Handle torch toggle request from web interface.
+     * Mirrors TorchToggleActivity logic: checks if recording is active and routes appropriately.
+     */
+    @NonNull
+    private Response toggleTorch() {
+        try {
+            Log.i(TAG, "🔦 Torch toggle requested via web interface");
+            
+            // Use same logic as TorchToggleActivity
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            android.content.Intent intent;
+            
+            if (spManager.isRecordingInProgress()) {
+                // Recording active: send to RecordingService
+                intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
+                Log.d(TAG, "Recording active - routing torch toggle to RecordingService");
+            } else {
+                // Not recording: send to TorchService for idle torch control
+                intent = new android.content.Intent(context, com.fadcam.services.TorchService.class);
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_TORCH);
+                Log.d(TAG, "Not recording - routing torch toggle to TorchService");
+            }
+            
+            // Start the appropriate service
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+            
+            Log.i(TAG, "✅ Torch toggle intent sent");
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"torch_toggle_sent\"}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling torch", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
 
     
     /**
@@ -283,155 +362,32 @@ public class LiveM3U8Server extends NanoHTTPD {
     }
     
     /**
-     * Serve landing page with simple progressive streaming (works everywhere).
+     * Serve landing page HTML from streaming/web/index.html (stored in assets)
      */
     @NonNull
     private Response serveLandingPage() {
-        String baseUrl = "http://" + getHostAddress() + ":" + getListeningPort();
-        String hlsUrl = baseUrl + "/live.m3u8";
-        
-        // Professional HLS streaming with hls.js - industry standard
-        String html = "<!DOCTYPE html>\n" +
-            "<html>\n" +
-            "<head>\n" +
-            "    <title>FadCam Live</title>\n" +
-            "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
-            "    <script src=\"https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js\"></script>\n" +
-            "    <style>\n" +
-            "        body { margin: 0; background: #000; font-family: Arial, sans-serif; }\n" +
-            "        video { width: 100%; height: auto; max-height: 90vh; display: block; }\n" +
-            "        .info { color: white; padding: 20px; text-align: center; background: #1a1a1a; }\n" +
-            "        .info h2 { margin: 10px 0; color: #4caf50; }\n" +
-            "        .error { color: #f44336 !important; }\n" +
-            "        .info p { margin: 10px 0; opacity: 0.9; font-size: 14px; }\n" +
-            "        code { background: #333; padding: 5px 10px; border-radius: 3px; color: #4caf50; }\n" +
-            "    </style>\n" +
-            "</head>\n" +
-            "<body>\n" +
-            "    <video id=\"v\" controls muted></video>\n" +
-            "    <div class=\"info\">\n" +
-            "        <h2 id=\"s\">⏳ Loading stream...</h2>\n" +
-            "        <p><strong>HLS Stream:</strong> <code>" + hlsUrl + "</code></p>\n" +
-            "        <p>Or use VLC: <code>" + hlsUrl + "</code></p>\n" +
-            "    </div>\n" +
-            "    <script>\n" +
-            "        var v = document.getElementById('v');\n" +
-            "        var s = document.getElementById('s');\n" +
-            "        var hlsUrl = '" + hlsUrl + "';\n" +
-            "        \n" +
-            "        console.log('🎬 FadCam Live Stream Initializing...');\n" +
-            "        console.log('📡 Stream URL:', hlsUrl);\n" +
-            "        console.log('✅ hls.js Supported:', Hls.isSupported());\n" +
-            "        console.log('📊 hls.js Version:', Hls.version);\n" +
-            "        \n" +
-            "        if (Hls.isSupported()) {\n" +
-            "            var hls = new Hls({\n" +
-            "                debug: true,  // CRITICAL: Enable detailed debugging\n" +
-            "                enableWorker: true,\n" +
-            "                lowLatencyMode: true,\n" +
-            "                backBufferLength: 90,\n" +
-            "                maxBufferLength: 30,\n" +
-            "                maxMaxBufferLength: 60,\n" +
-            "                liveSyncDurationCount: 3,\n" +
-            "                liveMaxLatencyDurationCount: 10\n" +
-            "            });\n" +
-            "            \n" +
-            "            console.log('✅ Hls instance created with config:', hls.config);\n" +
-            "            \n" +
-            "            // Log ALL hls.js events for debugging\n" +
-            "            Object.keys(Hls.Events).forEach(function(eventName) {\n" +
-            "                hls.on(Hls.Events[eventName], function(event, data) {\n" +
-            "                    if (eventName !== 'FRAG_LOADING' && eventName !== 'FRAG_LOADED') {\n" +
-            "                        console.log('🎯 [' + eventName + ']', data);\n" +
-            "                    }\n" +
-            "                });\n" +
-            "            });\n" +
-            "            \n" +
-            "            hls.loadSource(hlsUrl);\n" +
-            "            console.log('⏳ Loading source:', hlsUrl);\n" +
-            "            \n" +
-            "            hls.attachMedia(v);\n" +
-            "            console.log('🔗 Media attached to video element');\n" +
-            "            \n" +
-            "            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {\n" +
-            "                console.log('✅ MANIFEST_PARSED:', data);\n" +
-            "                console.log('📺 Levels:', data.levels);\n" +
-            "                console.log('🎵 Audio tracks:', data.audioTracks);\n" +
-            "                console.log('📝 Video tracks:', data.videoTracks);\n" +
-            "                s.textContent = '▶️ Live Stream Ready';\n" +
-            "                s.className = '';\n" +
-            "                v.play().catch(e => { \n" +
-            "                    console.error('❌ Autoplay failed:', e);\n" +
-            "                    s.textContent = '⏸️ Click to play'; \n" +
-            "                });\n" +
-            "            });\n" +
-            "            \n" +
-            "            hls.on(Hls.Events.FRAG_LOADED, function(event, data) {\n" +
-            "                console.log('✅ Fragment loaded #' + data.frag.sn + ' (' + (data.frag.stats.total / 1024).toFixed(0) + ' KB)');\n" +
-            "            });\n" +
-            "            \n" +
-            "            hls.on(Hls.Events.ERROR, function(event, data) {\n" +
-            "                console.error('❌ HLS ERROR:', data);\n" +
-            "                console.error('   Type:', data.type);\n" +
-            "                console.error('   Details:', data.details);\n" +
-            "                console.error('   Fatal:', data.fatal);\n" +
-            "                console.error('   Response:', data.response);\n" +
-            "                console.error('   Reason:', data.reason);\n" +
-            "                \n" +
-            "                if (data.fatal) {\n" +
-            "                    s.textContent = '❌ ' + data.type + ': ' + data.details;\n" +
-            "                    s.className = 'error';\n" +
-            "                    \n" +
-            "                    switch(data.type) {\n" +
-            "                        case Hls.ErrorTypes.NETWORK_ERROR:\n" +
-            "                            console.log('🔄 Network error, retrying in 3s...');\n" +
-            "                            setTimeout(() => { hls.loadSource(hlsUrl); }, 3000);\n" +
-            "                            break;\n" +
-            "                        case Hls.ErrorTypes.MEDIA_ERROR:\n" +
-            "                            console.log('🔄 Media error, attempting recovery...');\n" +
-            "                            hls.recoverMediaError();\n" +
-            "                            break;\n" +
-            "                        default:\n" +
-            "                            console.error('💀 Unrecoverable error, destroying hls instance');\n" +
-            "                            hls.destroy();\n" +
-            "                            break;\n" +
-            "                    }\n" +
-            "                }\n" +
-            "            });\n" +
-            "            \n" +
-            "            v.addEventListener('playing', () => { s.textContent = '▶️ Live'; s.className = ''; });\n" +
-            "            v.addEventListener('waiting', () => { s.textContent = '⏳ Buffering...'; });\n" +
-            "        } else if (v.canPlayType('application/vnd.apple.mpegurl')) {\n" +
-            "            v.src = hlsUrl;\n" +
-            "            v.addEventListener('loadedmetadata', () => {\n" +
-            "                s.textContent = '▶️ Live';\n" +
-            "                v.play();\n" +
-            "            });\n" +
-            "        } else {\n" +
-            "            s.textContent = '❌ HLS not supported in this browser';\n" +
-            "            s.className = 'error';\n" +
-            "        }\n" +
-            "    </script>\n" +
-            "</body>\n" +
-            "</html>";
-        
-        Response response = newFixedLengthResponse(Response.Status.OK, "text/html", html);
-        response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.addHeader("Pragma", "no-cache");
-        response.addHeader("Expires", "0");
-        return response;
-    }
-    
-    /**
-     * Detect if User-Agent is a web browser (not a media player like VLC).
-     */
-    private boolean isBrowserUserAgent(String userAgent) {
-        if (userAgent == null) return false;
-        String ua = userAgent.toLowerCase();
-        // Detect common browsers, but not media players
-        return (ua.contains("mozilla") || ua.contains("chrome") || ua.contains("safari") || 
-                ua.contains("firefox") || ua.contains("edge") || ua.contains("opera")) &&
-               !ua.contains("vlc") && !ua.contains("ffmpeg") && !ua.contains("lavf");
+        try {
+            // Load from assets/web/index.html at runtime
+            InputStream htmlStream = context.getAssets().open("web/index.html");
+            Response response = newFixedLengthResponse(Response.Status.OK, "text/html", htmlStream, -1);
+            response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.addHeader("Pragma", "no-cache");
+            response.addHeader("Expires", "0");
+            Log.i(TAG, "✅ Loaded index.html from assets/web");
+            return response;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load index.html from assets/web", e);
+            // Fallback to simple error message
+            String html = "<!DOCTYPE html>\n" +
+                    "<html><head><title>Error</title></head><body>\n" +
+                    "<h1>Error Loading Player</h1>\n" +
+                    "<p>Failed to load index.html from assets/web folder.</p>\n" +
+                    "<p>Error: " + e.getMessage() + "</p>\n" +
+                    "<p>Stream URL: <a href=\"/live.m3u8\">/live.m3u8</a></p>\n" +
+                    "</body></html>";
+            Response response = newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/html", html);
+            return response;
+        }
     }
     
     /**

@@ -1018,6 +1018,20 @@ public class RecordingService extends Service {
                     }
                 }
 
+                // Delete temporary file if in STREAM_ONLY mode
+                if (currentSegmentFile != null && currentSegmentFile.exists()) {
+                    com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                    if (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY) {
+                        boolean deleted = currentSegmentFile.delete();
+                        if (deleted) {
+                            Log.i(TAG, "🗑️ STREAM_ONLY: Deleted temporary file: " + currentSegmentFile.getName());
+                        } else {
+                            Log.w(TAG, "⚠️ Failed to delete temporary file: " + currentSegmentFile.getAbsolutePath());
+                        }
+                    }
+                }
+
                 // Give some time for the GL pipeline to release resources
                 try {
                     Thread.sleep(50);
@@ -3668,8 +3682,21 @@ public class RecordingService extends Service {
                     Log.d(TAG, "No location available for internal recording metadata");
                 }
                 
-                File outputFile = getFinalOutputFile();
-                Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
+                // Check streaming mode to determine output file handling
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamOnly = (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                
+                File outputFile;
+                if (isStreamOnly) {
+                    // STREAM_ONLY: Use temporary file that will be deleted after recording
+                    outputFile = new File(getCacheDir(), "stream_temp_" + System.currentTimeMillis() + ".mp4");
+                    Log.i(TAG, "📺 STREAM_ONLY mode: Using temporary file: " + outputFile.getName());
+                } else {
+                    // STREAM_AND_SAVE: Use normal output file
+                    outputFile = getFinalOutputFile();
+                    Log.d(TAG, "💾 STREAM_AND_SAVE mode: Creating file: " + outputFile.getAbsolutePath());
+                }
                 
                 // Track initial segment file for streaming
                 currentSegmentFile = outputFile;

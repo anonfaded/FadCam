@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class RemoteStreamManager {
     private static final String TAG = "RemoteStreamManager";
-    private static final int BUFFER_SIZE = 10; // Keep last 10 fragments (~20 seconds for smooth playback)
+    private static final int BUFFER_SIZE = 15; // Keep last 15 fragments (~15 seconds, balanced for memory)
     
     private static RemoteStreamManager instance;
     
@@ -73,7 +73,7 @@ public class RemoteStreamManager {
         }
         
         public double getDurationSeconds() {
-            return 2.0; // Fragments are configured for 2 seconds
+            return 1.0; // Fragments are configured for 1 second
         }
     }
     
@@ -135,8 +135,18 @@ public class RemoteStreamManager {
         
         bufferLock.writeLock().lock();
         try {
+            // Only clear buffer if starting a NEW recording file
+            boolean isNewRecording = (activeRecordingFile == null || 
+                                     !activeRecordingFile.getAbsolutePath().equals(recordingFile.getAbsolutePath()));
+            
             activeRecordingFile = recordingFile;
-            clearBuffer(); // Reset buffer for new recording
+            
+            if (isNewRecording) {
+                clearBuffer(); // Reset buffer for new recording
+                Log.d(TAG, "📋 Buffer cleared for new recording session");
+            } else {
+                Log.d(TAG, "⚠️ Same recording file - buffer NOT cleared (duplicate call)");
+            }
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -147,14 +157,16 @@ public class RemoteStreamManager {
     /**
      * Stop recording session.
      * Called when recording stops.
+     * DOES NOT clear buffer - keeps fragments available for playback until next recording starts.
      */
     public void stopRecording() {
-        Log.i(TAG, "🛑 STOP RECORDING");
+        Log.i(TAG, "🛑 STOP RECORDING - buffer remains available for playback");
         
         bufferLock.writeLock().lock();
         try {
             activeRecordingFile = null;
-            
+            // DO NOT clear buffer here - let clients finish playback
+            // Buffer will be cleared when next recording starts via startRecording()
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -170,6 +182,7 @@ public class RemoteStreamManager {
     
     /**
      * Called by FragmentedMp4MuxerWrapper when initialization segment is received.
+     * PRODUCTION-GRADE: Clears all old fragments to ensure fresh stream.
      * @param initData ftyp + moov boxes
      */
     public void onInitializationSegment(byte[] initData) {
@@ -177,7 +190,27 @@ public class RemoteStreamManager {
         bufferLock.writeLock().lock();
         try {
             this.initializationSegment = initData;
-            Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB)");
+            
+            // CRITICAL PRODUCTION FIX: Clear ALL old fragments when starting new stream
+            // This prevents serving 45+ minute old fragments from previous sessions
+            int clearedCount = 0;
+            for (int i = 0; i < BUFFER_SIZE; i++) {
+                if (fragmentBuffer[i] != null) {
+                    clearedCount++;
+                    fragmentBuffer[i] = null;
+                }
+            }
+            
+            // Reset sequence tracking
+            fragmentSequence = 0;
+            oldestSequence = 1;
+            bufferHead = 0;
+            
+            if (clearedCount > 0) {
+                Log.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
+            }
+            
+            Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -195,21 +228,42 @@ public class RemoteStreamManager {
         
         bufferLock.writeLock().lock();
         try {
+            // Detect unexpected sequence gaps (helps catch encoder reset issues)
+            if (fragmentSequence > 0 && sequenceNumber != fragmentSequence + 1) {
+                Log.w(TAG, "⚠️ Fragment gap: last=" + fragmentSequence + " incoming=" + sequenceNumber + " (possible encoder restart)");
+            }
+
+            // CRITICAL FIX: Clear all old fragments from the buffer slot we're about to use
+            // This prevents serving stale fragments when buffer wraps around
+            if (fragmentBuffer[bufferHead] != null) {
+                int oldSeq = fragmentBuffer[bufferHead].sequenceNumber;
+                Log.d(TAG, "🗑️ Evicting old fragment #" + oldSeq + " from slot " + bufferHead);
+            }
+            
             // Create fragment object
             FragmentData fragment = new FragmentData(sequenceNumber, fragmentData);
             
-            // Add to circular buffer
+            // Add to circular buffer (overwrites old slot)
             fragmentBuffer[bufferHead] = fragment;
             fragmentSequence = sequenceNumber;
             
             // Track oldest sequence in buffer (always maintain sliding window)
             oldestSequence = Math.max(1, sequenceNumber - BUFFER_SIZE + 1);
             
+            // CRITICAL: Also clear any fragments older than oldestSequence
+            // This ensures no stale data from previous buffer cycles
+            for (int i = 0; i < BUFFER_SIZE; i++) {
+                if (fragmentBuffer[i] != null && fragmentBuffer[i].sequenceNumber < oldestSequence) {
+                    Log.d(TAG, "🗑️ Purging stale fragment #" + fragmentBuffer[i].sequenceNumber + " (< oldest " + oldestSequence + ")");
+                    fragmentBuffer[i] = null;
+                }
+            }
+            
             // Advance head pointer (circular)
             bufferHead = (bufferHead + 1) % BUFFER_SIZE;
             
             Log.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
-                (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots]");
+                (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
             
         } finally {
             bufferLock.writeLock().unlock();
@@ -232,16 +286,27 @@ public class RemoteStreamManager {
     
     /**
      * Get a specific fragment by sequence number.
+     * CRITICAL: Only returns fragments within the valid sequence window to prevent serving stale data.
      */
     @Nullable
     public FragmentData getFragment(int sequenceNumber) {
         bufferLock.readLock().lock();
         try {
+            // CRITICAL: Reject requests for fragments outside the valid window
+            // This prevents serving 45+ minute old fragments when client has stale playlist
+            if (sequenceNumber < oldestSequence || sequenceNumber > fragmentSequence) {
+                Log.w(TAG, "❌ Fragment #" + sequenceNumber + " is outside valid range [" + oldestSequence + " to " + fragmentSequence + "] - REJECTED");
+                return null;
+            }
+            
             for (FragmentData fragment : fragmentBuffer) {
                 if (fragment != null && fragment.sequenceNumber == sequenceNumber) {
                     return fragment;
                 }
             }
+            
+            // Fragment was in valid range but not found in buffer (already evicted)
+            Log.w(TAG, "⚠️ Fragment #" + sequenceNumber + " was in valid range but already evicted from buffer");
             return null;
         } finally {
             bufferLock.readLock().unlock();
@@ -302,15 +367,21 @@ public class RemoteStreamManager {
     
     /**
      * Get number of buffered fragments.
+     * Thread-safe with read lock protection.
      */
     public int getBufferedCount() {
-        int count = 0;
-        for (FragmentData fragment : fragmentBuffer) {
-            if (fragment != null) {
-                count++;
+        bufferLock.readLock().lock();
+        try {
+            int count = 0;
+            for (FragmentData fragment : fragmentBuffer) {
+                if (fragment != null) {
+                    count++;
+                }
             }
+            return count;
+        } finally {
+            bufferLock.readLock().unlock();
         }
-        return count;
     }
     
     /**
@@ -327,22 +398,56 @@ public class RemoteStreamManager {
                 }
             }
             
+            // Determine stream readiness state
+            String state;
+            String message;
+            boolean isRecording = (activeRecordingFile != null);
+            boolean hasInit = (initializationSegment != null);
+            
+            if (!streamingEnabled) {
+                state = "disabled";
+                message = "Streaming is disabled. Start recording with streaming enabled.";
+            } else if (!isRecording) {
+                state = "not_recording";
+                message = "Recording not started yet. Start recording to begin streaming.";
+            } else if (!hasInit) {
+                state = "initializing";
+                message = "Recording started, waiting for initialization segment (2-3 seconds).";
+            } else if (bufferedCount == 0) {
+                state = "buffering";
+                message = "Init segment ready, waiting for first fragments (1-2 seconds).";
+            } else {
+                state = "ready";
+                message = "Stream is ready for playback.";
+            }
+            
             return String.format(
-                "{\"streaming\": %s, \"mode\": \"%s\", \"fragments_buffered\": %d, " +
-                "\"buffer_size_mb\": %.2f, \"latest_sequence\": %d, \"oldest_sequence\": %d, " +
-                "\"active_connections\": %d, \"has_init_segment\": %s}",
+                "{\"streaming\": %s, \"mode\": \"%s\", \"state\": \"%s\", \"message\": \"%s\", " +
+                "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
+                "\"latest_sequence\": %d, \"oldest_sequence\": %d, \"active_connections\": %d, " +
+                "\"has_init_segment\": %s}",
                 streamingEnabled,
                 streamingMode.toString().toLowerCase(),
+                state,
+                message,
+                isRecording,
                 bufferedCount,
                 totalBytes / (1024.0 * 1024.0),
                 fragmentSequence,
                 oldestSequence,
                 activeConnections,
-                (initializationSegment != null)
+                hasInit
             );
         } finally {
             bufferLock.readLock().unlock();
         }
+    }
+    
+    /**
+     * Check if streaming is currently enabled.
+     */
+    public boolean isStreamingEnabled() {
+        return streamingEnabled;
     }
     
     /**
@@ -375,13 +480,6 @@ public class RemoteStreamManager {
         oldestSequence = 0;
         initializationSegment = null;
         Log.d(TAG, "Fragment buffer cleared");
-    }
-    
-    /**
-     * Check if streaming is enabled.
-     */
-    public boolean isStreamingEnabled() {
-        return streamingEnabled;
     }
     
     /**

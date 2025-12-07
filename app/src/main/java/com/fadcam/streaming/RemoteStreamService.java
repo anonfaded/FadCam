@@ -135,7 +135,7 @@ public class RemoteStreamService extends Service {
         }
         
         try {
-            httpServer = new LiveM3U8Server(port);
+            httpServer = new LiveM3U8Server(this, port);  // Pass context for assets loading
             httpServer.start();
             activePort = port;
             Log.i(TAG, "HTTP server started on port " + port);

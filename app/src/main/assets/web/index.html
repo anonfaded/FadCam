@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FadCam Live</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+        video { width: 100%; height: auto; max-height: 90vh; display: block; }
+        .info { color: white; padding: 20px; text-align: center; background: #1a1a1a; }
+        .info h2 { margin: 10px 0; color: #4caf50; font-size: 20px; }
+        .warning { color: #ff9800 !important; }
+        .error { color: #f44336 !important; }
+        .info p { margin: 10px 0; opacity: 0.9; font-size: 14px; }
+        code { background: #333; padding: 5px 10px; border-radius: 3px; color: #4caf50; }
+        .emoji { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+        
+        /* Torch button styles */
+        .torch-button {
+            background: linear-gradient(135deg, #ff6b00, #ff8c00);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(255, 107, 0, 0.3);
+        }
+        .torch-button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(255, 107, 0, 0.5); }
+        .torch-button:active { transform: translateY(0); }
+        .torch-button.active { background: linear-gradient(135deg, #ffb700, #ffc900); color: #000; }
+        .torch-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .controls { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <video id="v" controls muted playsinline></video>
+    <div class="info">
+        <h2 id="s"><span class="emoji">⏳</span> Checking stream status...</h2>
+        <p id="msg">Connecting to server...</p>
+        <p><strong>HLS Stream:</strong> <code id="url"></code></p>
+        <p><strong>Status:</strong> <code id="statusInfo">Loading...</code></p>
+        <div class="controls">
+            <button id="torchButton" class="torch-button" disabled>
+                <span class="emoji">🔦</span> Torch OFF
+            </button>
+        </div>
+        <p style="font-size: 12px; opacity: 0.7; margin-top: 15px;">⚠️ If you see 404 errors or old video, press <strong>Ctrl+Shift+R</strong> (or Cmd+Shift+R on Mac) to clear browser cache</p>
+    </div>
+    <script>
+        // ============================================================
+        // CONFIGURATION
+        // ============================================================
+        const CONFIG = {
+            LOG_ENABLED: true,  // Set to true for debugging, false for production
+            LOG_IMPORTANT_ONLY: false,  // Only log critical events (errors, state changes)
+            STATUS_POLL_INTERVAL: 2000,  // Check status every 2 seconds
+            STATUS_POLL_FAST: 500,  // Fast polling during initialization (0.5s)
+            ERROR_RETRY_DELAY: 3000,  // Retry after 3 seconds on error
+            BUFFER_CHECK_INTERVAL: 5000,  // Check buffer health every 5 seconds
+            MAX_STARTUP_WAIT: 10000,  // Max 10 seconds initial buffering before starting playback
+            MIN_BUFFER_LENGTH: 2,  // Minimum 2 seconds buffered before starting
+        };
+
+        // ============================================================
+        // LOGGING UTILITIES
+        // ============================================================
+        const Logger = {
+            info: function(...args) {
+                if (CONFIG.LOG_ENABLED && !CONFIG.LOG_IMPORTANT_ONLY) {
+                    console.log('[INFO]', ...args);
+                }
+            },
+            warn: function(...args) {
+                if (CONFIG.LOG_ENABLED) {
+                    console.warn('[WARN]', ...args);
+                }
+            },
+            error: function(...args) {
+                if (CONFIG.LOG_ENABLED) {
+                    console.error('[ERROR]', ...args);
+                }
+            },
+            important: function(...args) {
+                if (CONFIG.LOG_ENABLED) {
+                    console.log('[IMPORTANT]', ...args);
+                }
+            }
+        };
+
+        // ============================================================
+        // GLOBAL STATE
+        // ============================================================
+        const v = document.getElementById('v');
+        const s = document.getElementById('s');
+        const msg = document.getElementById('msg');
+        const statusInfo = document.getElementById('statusInfo');
+        const baseUrl = 'http://' + window.location.host;
+        const hlsUrl = baseUrl + '/live.m3u8';
+        const statusUrl = baseUrl + '/status';
+        
+        let hls = null;
+        let streamStarted = false;
+        let statusPollTimer = null;
+        let bufferCheckTimer = null;
+        let recoveryAttempts = 0;
+        let lastFragmentLoaded = 0;
+        let isInitialBuffering = true;
+        
+        document.getElementById('url').textContent = hlsUrl;
+        
+        Logger.important('FadCam Live Stream - Starting');
+        Logger.info('Stream URL:', hlsUrl);
+        Logger.info('HLS.js supported:', Hls.isSupported());
+
+        // ============================================================
+        // UI HELPERS
+        // ============================================================
+        function setStatus(icon, text, className = '') {
+            s.innerHTML = '<span class="emoji">' + icon + '</span> ' + text;
+            s.className = className;
+        }
+
+        function setMessage(text) {
+            msg.textContent = text;
+        }
+
+        function setStatusInfo(text) {
+            statusInfo.textContent = text;
+        }
+
+        // ============================================================
+        // STATUS POLLING
+        // ============================================================
+        function checkStatus() {
+            fetch(statusUrl)
+                .then(r => r.json())
+                .then(status => {
+                    Logger.info('Status:', status.state, 'Fragments:', status.fragments_buffered);
+                    setStatusInfo(status.state + ' | Fragments: ' + status.fragments_buffered + ' | Mode: ' + status.mode);
+                    
+                    if (status.state === 'ready' && !streamStarted) {
+                        setStatus('✅', 'Stream Ready - Starting');
+                        setMessage(status.message);
+                        Logger.important('Stream ready, starting playback');
+                        startStream();
+                    } else if (status.state === 'disabled') {
+                        setStatus('❌', 'Streaming Disabled', 'error');
+                        setMessage('Start recording with streaming enabled (STREAM_ONLY or STREAM_AND_SAVE mode)');
+                        scheduleStatusPoll(CONFIG.STATUS_POLL_INTERVAL);
+                    } else if (status.state === 'not_recording') {
+                        setStatus('⏸️', 'Recording Not Started', 'warning');
+                        setMessage('Start recording on FadCam to begin streaming');
+                        scheduleStatusPoll(CONFIG.STATUS_POLL_INTERVAL);
+                    } else if (status.state === 'initializing') {
+                        setStatus('⏳', 'Initializing', 'warning');
+                        setMessage('Recording started, encoder initializing (2-3 seconds)');
+                        scheduleStatusPoll(CONFIG.STATUS_POLL_FAST);
+                    } else if (status.state === 'buffering') {
+                        setStatus('⏳', 'Buffering Fragments', 'warning');
+                        setMessage('Waiting for video fragments (' + status.fragments_buffered + '/2 ready)');
+                        scheduleStatusPoll(CONFIG.STATUS_POLL_FAST);
+                    } else if (streamStarted && status.state === 'ready') {
+                        // Stream running, update stats silently
+                        setStatusInfo(status.state + ' | Fragments: ' + status.fragments_buffered + ' | ' + status.buffer_size_mb.toFixed(2) + ' MB');
+                        scheduleStatusPoll(CONFIG.STATUS_POLL_INTERVAL);
+                    }
+                })
+                .catch(e => {
+                    Logger.error('Status check failed:', e);
+                    setStatus('❌', 'Server Offline', 'error');
+                    setMessage('Cannot connect to streaming server. Check network and ensure server is running.');
+                    scheduleStatusPoll(CONFIG.ERROR_RETRY_DELAY);
+                });
+        }
+
+        function scheduleStatusPoll(delay) {
+            if (statusPollTimer) clearTimeout(statusPollTimer);
+            statusPollTimer = setTimeout(checkStatus, delay);
+        }
+
+        // ============================================================
+        // HLS STREAM MANAGEMENT
+        // ============================================================
+        function startStream() {
+            if (streamStarted) return;
+            streamStarted = true;
+            recoveryAttempts = 0;
+            
+            if (!Hls.isSupported()) {
+                if (v.canPlayType('application/vnd.apple.mpegurl')) {
+                    Logger.important('Using native HLS support');
+                    v.src = hlsUrl;
+                    v.addEventListener('loadedmetadata', () => {
+                        setStatus('▶️', 'Live');
+                        v.play();
+                    });
+                } else {
+                    setStatus('❌', 'HLS Not Supported', 'error');
+                    setMessage('Your browser does not support HLS streaming. Try Chrome, Firefox, or Safari.');
+                }
+                return;
+            }
+            
+            // Create HLS instance optimized for SMOOTH, LOW-LATENCY live streaming
+            hls = new Hls({
+                debug: false,  // Disable hls.js internal logging
+                enableWorker: true,
+                lowLatencyMode: false,  // Traditional HLS, not LL-HLS
+                
+                // BALANCED: Enough buffer to prevent stalls, not too much to cause memory issues
+                maxBufferLength: 6,  // Buffer 6 seconds (smooth playback)
+                maxMaxBufferLength: 10,  // Hard cap at 10 seconds
+                maxBufferSize: 40 * 1000 * 1000,  // 40 MB max (3-4 fragments)
+                maxBufferHole: 0.5,  // Jump small holes
+                backBufferLength: 2,  // Keep only 2s history (minimal memory)
+                
+                // Live streaming - stay close to live edge without aggressive jumping
+                liveSyncDurationCount: 2,  // Stay 2 segments behind (low latency)
+                liveMaxLatencyDurationCount: 4,  // Jump if >4 segments behind
+                liveDurationInfinity: true,  // Infinity duration for live
+                
+                // Faster timeouts to recover quickly from errors
+                levelLoadingTimeOut: 8000,  // 8s manifest timeout
+                levelLoadingMaxRetry: 3,
+                levelLoadingMaxRetryTimeout: 32000,
+                
+                fragLoadingTimeOut: 10000,  // 10s fragment timeout
+                fragLoadingMaxRetry: 4,
+                fragLoadingMaxRetryTimeout: 32000,
+                
+                // Manifest refresh
+                manifestLoadingTimeOut: 8000,
+                manifestLoadingMaxRetry: 3,
+                manifestLoadingMaxRetryTimeout: 32000,
+                
+                // Start position
+                startPosition: -1,  // Start at live edge
+                
+                // ABR (we only have one quality, but keep these sane)
+                abrEwmaDefaultEstimate: 500000,  // 500 kbps default estimate
+                abrEwmaFastLive: 3.0,
+                abrEwmaSlowLive: 9.0,
+            });
+            
+            Logger.important('HLS instance created');
+            
+            // Attach event listeners
+            setupHlsEventListeners();
+            
+            // Load and attach
+            hls.loadSource(hlsUrl);
+            hls.attachMedia(v);
+            
+            // Start buffer monitoring
+            startBufferMonitoring();
+        }
+
+        function setupHlsEventListeners() {
+            // Manifest parsed - start playing immediately for seamless experience
+            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+                Logger.important('🎬 Manifest parsed - levels: ' + data.levels.length + ', audio: ' + data.audioTracks.length + ', video: ' + data.videoTracks.length);
+                Logger.important('Starting playback immediately');
+                setStatus('▶️', 'Live');
+                setMessage('Stream connected');
+                isInitialBuffering = false;
+                
+                // Start playing immediately - browser will buffer as needed
+                v.play().catch(e => {
+                    Logger.warn('Autoplay blocked:', e.message);
+                    setStatus('⏸️', 'Click to Play');
+                    setMessage('Browser blocked autoplay. Click video to start.');
+                });
+            });
+            
+            // Fragment loaded - log ALL fragments to debug old video issue
+            hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
+                lastFragmentLoaded = Date.now();
+                Logger.important('✅ Fragment #' + data.frag.sn + ' loaded (' + (data.frag.stats.total / 1024).toFixed(0) + ' KB) - URL: ' + data.frag.url);
+            });
+            
+            // Level loaded - manifest refreshed
+            hls.on(Hls.Events.LEVEL_LOADED, function(event, data) {
+                Logger.important('📋 Manifest refreshed: ' + data.details.fragments.length + ' fragments, sequences: ' + 
+                    (data.details.fragments.length > 0 ? data.details.fragments[0].sn + '-' + data.details.fragments[data.details.fragments.length-1].sn : 'none'));
+            });
+            
+            // Errors - handle gracefully
+            hls.on(Hls.Events.ERROR, function(event, data) {
+                if (data.fatal) {
+                    Logger.error('Fatal error:', data.type, data.details);
+                    handleFatalError(data);
+                } else {
+                    Logger.warn('Non-fatal error:', data.type, data.details);
+                    
+                    // CRITICAL FIX: If we get 404 on fragment load, the playlist is stale
+                    // This happens when recording was stopped and restarted - browser has old playlist
+                    // Force reload the stream from scratch to get fresh playlist with current fragments
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR && 
+                        data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR &&
+                        data.response && data.response.code === 404) {
+                        Logger.important('⚠️ Fragment 404 detected - playlist is stale! Restarting stream...');
+                        setStatus('🔄', 'Playlist Stale - Reloading');
+                        setMessage('Recording was restarted. Refreshing stream...');
+                        
+                        // Destroy and restart HLS to get fresh playlist
+                        cleanupStream();
+                        setTimeout(() => {
+                            startStream();
+                        }, 1000);
+                        return;
+                    }
+                    
+                    // Non-fatal errors are auto-recovered by hls.js
+                }
+            });
+            
+            // Video events
+            v.addEventListener('playing', () => {
+                setStatus('▶️', 'Live');
+                recoveryAttempts = 0;
+                Logger.important('▶️ Video playing - currentTime: ' + v.currentTime.toFixed(2) + 's');
+            });
+            
+            v.addEventListener('waiting', () => {
+                setStatus('⏳', 'Buffering');
+                Logger.warn('⏸️ Playback stalled - currentTime: ' + v.currentTime.toFixed(2) + 's, buffered: ' + (v.buffered.length > 0 ? v.buffered.end(0).toFixed(2) : 0) + 's');
+            });
+            
+            v.addEventListener('timeupdate', () => {
+                // Log time every 5 seconds to track playback position
+                if (Math.floor(v.currentTime) % 5 === 0 && Math.floor(v.currentTime * 10) % 10 === 0) {
+                    Logger.info('⏱️ Video time: ' + v.currentTime.toFixed(2) + 's, buffered: ' + (v.buffered.length > 0 ? (v.buffered.end(0) - v.currentTime).toFixed(2) : 0) + 's ahead');
+                }
+            });
+            
+            v.addEventListener('error', (e) => {
+                Logger.error('Video element error:', e);
+            });
+        }
+
+        function handleFatalError(data) {
+            recoveryAttempts++;
+            
+            if (recoveryAttempts > 5) {
+                Logger.error('Too many recovery attempts, giving up');
+                setStatus('❌', 'Stream Failed', 'error');
+                setMessage('Stream has stopped. Please refresh the page or restart recording.');
+                cleanupStream();
+                return;
+            }
+            
+            switch(data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                    Logger.important('Network error, attempt ' + recoveryAttempts + ', checking status...');
+                    setStatus('🔄', 'Network Error - Retrying', 'warning');
+                    setMessage('Connection lost. Attempting to reconnect...');
+                    
+                    // Reset and check status
+                    cleanupStream();
+                    setTimeout(() => {
+                        checkStatus();
+                    }, CONFIG.ERROR_RETRY_DELAY);
+                    break;
+                    
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                    Logger.important('Media error, attempting recovery...');
+                    setStatus('🔄', 'Media Error - Recovering', 'warning');
+                    hls.recoverMediaError();
+                    break;
+                    
+                default:
+                    Logger.error('Unrecoverable error:', data.details);
+                    setStatus('❌', 'Stream Error', 'error');
+                    setMessage('Playback error: ' + data.details);
+                    cleanupStream();
+                    setTimeout(() => {
+                        checkStatus();
+                    }, CONFIG.ERROR_RETRY_DELAY * 2);
+                    break;
+            }
+        }
+
+        function startBufferMonitoring() {
+            if (bufferCheckTimer) clearInterval(bufferCheckTimer);
+            
+            bufferCheckTimer = setInterval(() => {
+                if (!hls || !hls.media) return;
+                
+                // Check if fragments are still loading
+                const now = Date.now();
+                const timeSinceLastFragment = now - lastFragmentLoaded;
+                
+                if (timeSinceLastFragment > 15000 && !v.paused) {
+                    Logger.warn('No fragments loaded for 15s, stream may be stuck');
+                    setStatus('⚠️', 'Stream May Be Stalled', 'warning');
+                }
+                
+                // Log buffer status occasionally
+                if (hls.media.buffered.length > 0) {
+                    const bufferEnd = hls.media.buffered.end(0);
+                    const currentTime = hls.media.currentTime;
+                    const bufferLength = bufferEnd - currentTime;
+                    
+                    Logger.info('Buffer: ' + bufferLength.toFixed(1) + 's ahead of playback');
+                    
+                    // If buffer is very low, show warning
+                    if (bufferLength < 1.0 && !v.paused) {
+                        Logger.warn('Buffer critically low:', bufferLength.toFixed(1) + 's');
+                    }
+                }
+            }, CONFIG.BUFFER_CHECK_INTERVAL);
+        }
+
+        function cleanupStream() {
+            streamStarted = false;
+            isInitialBuffering = true;
+            
+            if (bufferCheckTimer) {
+                clearInterval(bufferCheckTimer);
+                bufferCheckTimer = null;
+            }
+            
+            if (hls) {
+                try {
+                    hls.destroy();
+                } catch (e) {
+                    Logger.error('Error destroying hls:', e);
+                }
+                hls = null;
+            }
+        }
+
+        // ============================================================
+        // TORCH CONTROL
+        // ============================================================
+        const torchButton = document.getElementById('torchButton');
+        let torchState = false;
+        
+        function updateTorchButtonUI(isActive) {
+            torchState = isActive;
+            if (isActive) {
+                torchButton.classList.add('active');
+                torchButton.innerHTML = '<span class="emoji">💡</span> Torch ON';
+            } else {
+                torchButton.classList.remove('active');
+                torchButton.innerHTML = '<span class="emoji">🔦</span> Torch OFF';
+            }
+        }
+        
+        async function handleTorchToggle() {
+            torchButton.disabled = true;
+            try {
+                // Use the existing TorchToggleActivity which handles both recording and idle modes
+                // POST to the server to avoid opening the activity UI
+                const response = await fetch(baseUrl + '/torch/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    Logger.info('Torch toggle sent:', data);
+                    // Toggle UI state optimistically (actual state comes from broadcast)
+                    updateTorchButtonUI(!torchState);
+                } else {
+                    Logger.error('Torch toggle failed:', response.status);
+                    alert('Failed to toggle torch. Check server is running.');
+                }
+            } catch (e) {
+                Logger.error('Torch toggle error:', e);
+                alert('Error toggling torch: ' + e.message);
+            } finally {
+                torchButton.disabled = false;
+            }
+        }
+        
+        torchButton.addEventListener('click', handleTorchToggle);
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        Logger.important('Starting status polling...');
+        // Enable torch button once we know the server is running
+        checkStatus();
+        function enableTorchAfterServerCheck() {
+            if (streamStarted || document.getElementById('statusInfo').textContent.includes('ready') || 
+                document.getElementById('statusInfo').textContent.includes('buffering')) {
+                torchButton.disabled = false;
+            }
+        }
+        // Check torch button availability after first status check
+        setTimeout(enableTorchAfterServerCheck, 3000);
+        
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            cleanupStream();
+            if (statusPollTimer) clearTimeout(statusPollTimer);
+        });
+    </script>
+</body>
+</html>
