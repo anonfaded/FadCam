@@ -1,510 +1,850 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>FadCam Live</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
-    <style>
-        body { margin: 0; background: #000; font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
-        video { width: 100%; height: auto; max-height: 90vh; display: block; }
-        .info { color: white; padding: 20px; text-align: center; background: #1a1a1a; }
-        .info h2 { margin: 10px 0; color: #4caf50; font-size: 20px; }
-        .warning { color: #ff9800 !important; }
-        .error { color: #f44336 !important; }
-        .info p { margin: 10px 0; opacity: 0.9; font-size: 14px; }
-        code { background: #333; padding: 5px 10px; border-radius: 3px; color: #4caf50; }
-        .emoji { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
-        
-        /* Torch button styles */
-        .torch-button {
-            background: linear-gradient(135deg, #ff6b00, #ff8c00);
-            border: none;
-            color: white;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 10px 5px;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(255, 107, 0, 0.3);
-        }
-        .torch-button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(255, 107, 0, 0.5); }
-        .torch-button:active { transform: translateY(0); }
-        .torch-button.active { background: linear-gradient(135deg, #ffb700, #ffc900); color: #000; }
-        .torch-button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .controls { margin-top: 15px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FadCam Remote</title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <video id="v" controls muted playsinline autoplay></video>
-    <div class="info">
-        <h2 id="s"><span class="emoji">⏳</span> Checking stream status...</h2>
-        <p id="msg">Connecting to server...</p>
-        <p><strong>HLS Stream:</strong> <code id="url"></code></p>
-        <p><strong>Status:</strong> <code id="statusInfo">Loading...</code></p>
-        <div class="controls">
-            <button id="torchButton" class="torch-button">
-                <span class="emoji">🔦</span> Torch OFF
-            </button>
-        </div>
-        <p style="font-size: 12px; opacity: 0.7; margin-top: 15px;">⚠️ If you see 404 errors or old video, press <strong>Ctrl+Shift+R</strong> (or Cmd+Shift+R on Mac) to clear browser cache</p>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <button class="hamburger-btn" id="sidebarToggle" title="Toggle sidebar">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line short-left"></span>
+        </button>
+        <h1>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+            </svg>
+            FadCam Remote
+        </h1>
     </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <!-- Server Room Status Card -->
+            <div class="card server-room-card">
+                <div class="card-header">
+                    <span class="card-title">Server Room</span>
+                    <div class="status-indicator">
+                        <div class="led-dot" id="serverLED"></div>
+                        <span class="led-label" id="serverLabel">—</span>
+                    </div>
+                </div>
+                <div class="card-divider"></div>
+                <div class="card-body">
+                    <div class="status-row">
+                        <span class="status-label">Server</span>
+                        <span class="status-badge" id="serverStatus">OFFLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Recording</span>
+                        <span class="status-badge recording" id="recordingStatus">NOT STARTED</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recording Message -->
+            <div id="recordingMessage" style="padding: 0 16px; margin-top: 16px; font-size: 12px; color: #8b949e; display: none;"></div>
+
+            <!-- Info Cards Grid -->
+            <div class="cards-grid">
+                <!-- Uptime Card -->
+                <div class="card card-sm" onclick="showUptimeModal()">
+                    <div class="card-clickable">
+                        <div class="card-label-sm">Uptime</div>
+                        <div class="card-value-sm" id="uptimeValue">—</div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Clients Card -->
+                <div class="card card-sm" onclick="showClientsModal()">
+                    <div class="card-clickable">
+                        <div class="card-label-sm">Clients</div>
+                        <div class="card-value-sm" id="clientsValue">—</div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Battery Card -->
+                <div class="card card-sm" onclick="showBatteryModal()">
+                    <div class="card-clickable">
+                        <div class="card-label-sm">Battery</div>
+                        <div class="card-value-sm" id="batteryValue">—</div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Segments Card -->
+                <div class="card card-sm" onclick="showSegmentsModal()">
+                    <div class="card-clickable">
+                        <div class="card-label-sm">Segments</div>
+                        <div class="card-value-sm" id="segmentsValue">—</div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Network Card -->
+                <div class="card card-sm" onclick="showNetworkModal()">
+                    <div class="card-clickable">
+                        <div>
+                            <div class="card-label-sm">Network</div>
+                            <div class="card-value-sm" id="networkValue">—</div>
+                        </div>
+                        <div id="networkHealth" style="width: 6px; height: 6px; border-radius: 50%; background: #6e7681;"></div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Storage Card -->
+                <div class="card card-sm" onclick="showStorageModal()">
+                    <div class="card-clickable">
+                        <div class="card-label-sm">Storage</div>
+                        <div class="card-value-sm" id="storageValue">—</div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Memory Card -->
+                <div class="card card-sm" onclick="showMemoryModal()">
+                    <div class="card-clickable">
+                        <div class="card-label-sm">Memory</div>
+                        <div class="card-value-sm" id="memoryValue">—</div>
+                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recording Mode Card -->
+            <div class="card" onclick="showRecordingModeModal()">
+                <div class="card-clickable">
+                    <div class="card-content">
+                        <div class="card-label">Recording Mode</div>
+                        <div class="card-value" id="recordingModeValue">—</div>
+                    </div>
+                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Stream Quality Card -->
+            <div class="card" onclick="showStreamQualityModal()">
+                <div class="card-clickable">
+                    <div class="card-content">
+                        <div class="card-label">Stream Quality</div>
+                        <div class="card-value" id="streamQualityValue">—</div>
+                    </div>
+                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- View All Endpoints Card -->
+            <div class="card" onclick="showEndpointsModal()">
+                <div class="card-clickable">
+                    <div class="card-content">
+                        <div class="card-label">API Endpoints</div>
+                        <div class="card-value" id="endpointsValue">View All</div>
+                    </div>
+                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Remote Control Section -->
+            <div class="section-divider">Remote Control</div>
+
+            <!-- Torch Card -->
+            <div class="card" onclick="toggleTorch()">
+                <div class="card-clickable">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 2h6l3 7H6l3-7Z"/><path d="M12 9v13"/><path d="M9 22h6"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-label">Torch</div>
+                        <div class="card-value" id="torchState">OFF</div>
+                    </div>
+                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Server URL Card -->
+            <div class="card">
+                <div class="card-content">
+                    <div class="card-label-sm">Server URL</div>
+                    <div class="card-value-sm" id="serverUrl">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Area -->
+        <div class="player-area">
+            <div class="video-container">
+                <video id="videoPlayer" playsinline muted autoplay controls></video>
+                <div class="video-overlay" id="videoOverlay" onclick="playStream()">
+                    <div class="play-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                    </div>
+                    <div class="overlay-text">Click to play live stream</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="toast-notification">
+        <div class="toast-content">
+            <span id="toastMessage"></span>
+            <button class="toast-close" onclick="closeToast()">✕</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="toast-notification">
+        <div class="toast-content">
+            <span id="toastMessage"></span>
+            <button class="toast-close" onclick="closeToast()">✕</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Uptime Details Modal -->
+    <div class="modal" id="uptimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Uptime Details</h2>
+                <button class="modal-close" onclick="hideUptimeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="uptimeContent"></div>
+        </div>
+    </div>
+
+    <!-- Clients Modal -->
+    <div class="modal" id="clientsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Connected Clients</h2>
+                <button class="modal-close" onclick="hideClientsModal()">✕</button>
+            </div>
+            <div class="modal-body" id="clientsContent"></div>
+        </div>
+    </div>
+
+    <!-- Battery Modal -->
+    <div class="modal" id="batteryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Battery Status</h2>
+                <button class="modal-close" onclick="hideBatteryModal()">✕</button>
+            </div>
+            <div class="modal-body" id="batteryContent"></div>
+        </div>
+    </div>
+
+    <!-- Network Modal -->
+    <div class="modal" id="networkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Network Status</h2>
+                <button class="modal-close" onclick="hideNetworkModal()">✕</button>
+            </div>
+            <div class="modal-body" id="networkContent"></div>
+        </div>
+    </div>
+
+    <!-- Segments Modal -->
+    <div class="modal" id="segmentsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Segments</h2>
+                <button class="modal-close" onclick="hideSegmentsModal()">✕</button>
+            </div>
+            <div class="modal-body" id="segmentsContent"></div>
+        </div>
+    </div>
+
+    <!-- Storage Modal -->
+    <div class="modal" id="storageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Storage</h2>
+                <button class="modal-close" onclick="hideStorageModal()">✕</button>
+            </div>
+            <div class="modal-body" id="storageContent"></div>
+        </div>
+    </div>
+
+    <!-- Memory Modal -->
+    <div class="modal" id="memoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Memory Usage</h2>
+                <button class="modal-close" onclick="hideMemoryModal()">✕</button>
+            </div>
+            <div class="modal-body" id="memoryContent"></div>
+        </div>
+    </div>
+
+    <!-- Endpoints Modal -->
+    <div class="modal" id="endpointsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>API Endpoints</h2>
+                <button class="modal-close" onclick="hideEndpointsModal()">✕</button>
+            </div>
+            <div class="modal-body" id="endpointsContent"></div>
+        </div>
+    </div>
+
+    <!-- Recording Mode Modal -->
+    <div class="modal" id="recordingModeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Recording Mode</h2>
+                <button class="modal-close" onclick="hideRecordingModeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="recordingModeContent"></div>
+        </div>
+    </div>
+
+    <!-- Stream Quality Modal -->
+    <div class="modal" id="streamQualityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Stream Quality</h2>
+                <button class="modal-close" onclick="hideStreamQualityModal()">✕</button>
+            </div>
+            <div class="modal-body" id="streamQualityContent"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <script src="js/config.js"></script>
+    <script src="js/utils/EventBus.js"></script>
+    <script src="js/utils/Formatter.js"></script>
+    <script src="js/services/ApiService.js"></script>
+    <script src="js/services/HlsService.js"></script>
+    <script src="js/models/ServerStatus.js"></script>
+    <script src="js/viewmodels/DashboardViewModel.js"></script>
+    
     <script>
-        // ============================================================
-        // CONFIGURATION
-        // ============================================================
-        const CONFIG = {
-            LOG_ENABLED: true,  // Set to true for debugging, false for production
-            LOG_IMPORTANT_ONLY: false,  // Only log critical events (errors, state changes)
-            STATUS_POLL_INTERVAL: 2000,  // Check status every 2 seconds
-            STATUS_POLL_FAST: 500,  // Fast polling during initialization (0.5s)
-            ERROR_RETRY_DELAY: 3000,  // Retry after 3 seconds on error
-            BUFFER_CHECK_INTERVAL: 5000,  // Check buffer health every 5 seconds
-            MAX_STARTUP_WAIT: 10000,  // Max 10 seconds initial buffering before starting playback
-            MIN_BUFFER_LENGTH: 2,  // Minimum 2 seconds buffered before starting
-        };
+        let dashboardViewModel = null;
+        let videoElement = null;
+        let currentStatus = null;
+        let sidebarCollapsed = false;
 
-        // ============================================================
-        // LOGGING UTILITIES
-        // ============================================================
-        const Logger = {
-            info: function(...args) {
-                if (CONFIG.LOG_ENABLED && !CONFIG.LOG_IMPORTANT_ONLY) {
-                    console.log('[INFO]', ...args);
-                }
-            },
-            warn: function(...args) {
-                if (CONFIG.LOG_ENABLED) {
-                    console.warn('[WARN]', ...args);
-                }
-            },
-            error: function(...args) {
-                if (CONFIG.LOG_ENABLED) {
-                    console.error('[ERROR]', ...args);
-                }
-            },
-            important: function(...args) {
-                if (CONFIG.LOG_ENABLED) {
-                    console.log('[IMPORTANT]', ...args);
-                }
-            }
-        };
-
-        // ============================================================
-        // GLOBAL STATE
-        // ============================================================
-        const v = document.getElementById('v');
-        const s = document.getElementById('s');
-        const msg = document.getElementById('msg');
-        const statusInfo = document.getElementById('statusInfo');
-        const baseUrl = 'http://' + window.location.host;
-        const hlsUrl = baseUrl + '/live.m3u8';
-        const statusUrl = baseUrl + '/status';
-        
-        let hls = null;
-        let streamStarted = false;
-        let statusPollTimer = null;
-        let bufferCheckTimer = null;
-        let recoveryAttempts = 0;
-        let lastFragmentLoaded = 0;
-        let isInitialBuffering = true;
-        
-        document.getElementById('url').textContent = hlsUrl;
-        
-        Logger.important('FadCam Live Stream - Starting');
-        Logger.info('Stream URL:', hlsUrl);
-        Logger.info('HLS.js supported:', Hls.isSupported());
-
-        // ============================================================
-        // UI HELPERS
-        // ============================================================
-        function setStatus(icon, text, className = '') {
-            s.innerHTML = '<span class="emoji">' + icon + '</span> ' + text;
-            s.className = className;
+        // Toast notification functions
+        function showToast(message, duration = 5000) {
+            const toast = document.getElementById('toastNotification');
+            const messageEl = document.getElementById('toastMessage');
+            messageEl.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
         }
 
-        function setMessage(text) {
-            msg.textContent = text;
+        function closeToast() {
+            document.getElementById('toastNotification').classList.remove('show');
         }
 
-        function setStatusInfo(text) {
-            statusInfo.textContent = text;
+        // Sidebar toggle
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebarCollapsed = !sidebarCollapsed;
+            sidebar.classList.toggle('collapsed', sidebarCollapsed);
+        });
+
+        // Close modals on outside click
+        document.addEventListener('click', (e) => {
+            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal'];
+            modals.forEach(id => {
+                const modal = document.getElementById(id);
+                if (e.target === modal) {
+                    modal.classList.remove('visible');
+                }
+            });
+        });
+
+        // Modal helpers
+        function showUptimeModal() {
+            if (!currentStatus) return;
+            const uptimeDetails = currentStatus.uptimeDetails || {};
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Formatted Uptime</span>
+                        <span class="modal-value">${uptimeDetails.formatted || uptimeDetails.formatted_uptime || currentStatus.getFormattedUptime() || '—'}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Total Seconds</span>
+                        <span class="modal-value">${uptimeDetails.seconds || currentStatus.uptimeSeconds || '—'}</span>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Session Started Date</span>
+                        <span class="modal-value">${uptimeDetails.session_started_date || 'Not started'}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Session Started Time</span>
+                        <span class="modal-value">${uptimeDetails.start_time || uptimeDetails.session_started_time || 'Not started'}</span>
+                    </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('uptimeContent').innerHTML = content;
+            document.getElementById('uptimeModal').classList.add('visible');
+        }
+        function hideUptimeModal() {
+            document.getElementById('uptimeModal').classList.remove('visible');
         }
 
-        // ============================================================
-        // STATUS POLLING
-        // ============================================================
-        function checkStatus() {
-            fetch(statusUrl)
-                .then(r => r.json())
-                .then(status => {
-                    Logger.info('Status:', status.state, 'Fragments:', status.fragments_buffered);
-                    setStatusInfo(status.state + ' | Fragments: ' + status.fragments_buffered + ' | Mode: ' + status.mode);
-                    
-                    if (status.state === 'ready' && !streamStarted) {
-                        setStatus('✅', 'Stream Ready - Starting');
-                        setMessage(status.message);
-                        Logger.important('Stream ready, starting playback');
-                        startStream();
-                    } else if (status.state === 'disabled') {
-                        setStatus('❌', 'Streaming Disabled', 'error');
-                        setMessage('Start recording with streaming enabled (STREAM_ONLY or STREAM_AND_SAVE mode)');
-                        scheduleStatusPoll(CONFIG.STATUS_POLL_INTERVAL);
-                    } else if (status.state === 'not_recording') {
-                        setStatus('⏸️', 'Recording Not Started', 'warning');
-                        setMessage('Start recording on FadCam to begin streaming');
-                        scheduleStatusPoll(CONFIG.STATUS_POLL_INTERVAL);
-                    } else if (status.state === 'initializing') {
-                        setStatus('⏳', 'Initializing', 'warning');
-                        setMessage('Recording started, encoder initializing (2-3 seconds)');
-                        scheduleStatusPoll(CONFIG.STATUS_POLL_FAST);
-                    } else if (status.state === 'buffering') {
-                        setStatus('⏳', 'Buffering Fragments', 'warning');
-                        setMessage('Waiting for video fragments (' + status.fragments_buffered + '/2 ready)');
-                        scheduleStatusPoll(CONFIG.STATUS_POLL_FAST);
-                    } else if (streamStarted && status.state === 'ready') {
-                        // Stream running, update stats silently
-                        setStatusInfo(status.state + ' | Fragments: ' + status.fragments_buffered + ' | ' + status.buffer_size_mb.toFixed(2) + ' MB');
-                        scheduleStatusPoll(CONFIG.STATUS_POLL_INTERVAL);
-                    }
-                })
-                .catch(e => {
-                    Logger.error('Status check failed:', e);
-                    setStatus('❌', 'Server Offline', 'error');
-                    setMessage('Cannot connect to streaming server. Check network and ensure server is running.');
-                    scheduleStatusPoll(CONFIG.ERROR_RETRY_DELAY);
+        function showClientsModal() {
+            if (!currentStatus) return;
+            let clientsHtml = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Connected Clients</span>
+                        <span class="modal-value">${currentStatus.activeConnections || 0}</span>
+                    </div>
+                </div>
+            `;
+            
+            if (currentStatus.clients && currentStatus.clients.length > 0) {
+                clientsHtml += '<div class="modal-section"><div class="modal-label-section">Client Details</div>';
+                currentStatus.clients.forEach((client, idx) => {
+                    const sessionMinutes = Math.floor((client.session_duration_seconds || 0) / 60);
+                    clientsHtml += `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #2d3439;" ${idx === 0 ? 'style="margin-top: 0; padding-top: 0; border-top: none;"' : ''}>
+                            <div class="modal-row">
+                                <span class="modal-label">IP Address</span>
+                                <span class="modal-value" style="font-family: var(--font-mono); font-size: 11px;">${client.ip || 'N/A'}</span>
+                            </div>
+                            <div class="modal-row">
+                                <span class="modal-label">Data Served</span>
+                                <span class="modal-value">${client.mb_served ? client.mb_served.toFixed(1) : '0'} MB</span>
+                            </div>
+                            <div class="modal-row">
+                                <span class="modal-label">Avg Bitrate</span>
+                                <span class="modal-value">${(client.average_bitrate_mbps || 0).toFixed(2)} Mbps</span>
+                            </div>
+                            <div class="modal-row">
+                                <span class="modal-label">Session Duration</span>
+                                <span class="modal-value">${sessionMinutes}m ${(client.session_duration_seconds || 0) % 60}s</span>
+                            </div>
+                        </div>
+                    `;
                 });
-        }
-
-        function scheduleStatusPoll(delay) {
-            if (statusPollTimer) clearTimeout(statusPollTimer);
-            statusPollTimer = setTimeout(checkStatus, delay);
-        }
-
-        // ============================================================
-        // HLS STREAM MANAGEMENT
-        // ============================================================
-        function startStream() {
-            if (streamStarted) return;
-            streamStarted = true;
-            recoveryAttempts = 0;
-            
-            if (!Hls.isSupported()) {
-                if (v.canPlayType('application/vnd.apple.mpegurl')) {
-                    Logger.important('Using native HLS support');
-                    v.src = hlsUrl;
-                    v.addEventListener('loadedmetadata', () => {
-                        setStatus('▶️', 'Live');
-                        v.play();
-                    });
-                } else {
-                    setStatus('❌', 'HLS Not Supported', 'error');
-                    setMessage('Your browser does not support HLS streaming. Try Chrome, Firefox, or Safari.');
-                }
-                return;
+                clientsHtml += '</div>';
             }
             
-            // Create HLS instance optimized for SMOOTH, LOW-LATENCY live streaming
-            hls = new Hls({
-                debug: false,  // Disable hls.js internal logging
-                enableWorker: true,
-                lowLatencyMode: false,  // Traditional HLS, not LL-HLS
-                
-                // PRODUCTION-READY: Increased buffer to handle variable bitrate from H.264/H.265 motion
-                // When camera moves fast, I-frames are 3-4MB, P-frames 850KB - buffer needs room for spikes
-                maxBufferLength: 12,  // Buffer 12 seconds (handles bitrate spikes from motion)
-                maxMaxBufferLength: 15,  // Hard cap at 15 seconds
-                maxBufferSize: 60 * 1000 * 1000,  // 60 MB max (handles large I-frames)
-                maxBufferHole: 0.5,  // Jump small holes
-                backBufferLength: 2,  // Keep only 2s history (minimal memory)
-                
-                // Live streaming - stay close to live edge without aggressive jumping
-                liveSyncDurationCount: 2,  // Stay 2 segments behind (low latency)
-                liveMaxLatencyDurationCount: 6,  // Jump if >6 segments behind (tolerance for bitrate spikes)
-                liveDurationInfinity: true,  // Infinity duration for live
-                
-                // Faster timeouts to recover quickly from errors
-                levelLoadingTimeOut: 8000,  // 8s manifest timeout
-                levelLoadingMaxRetry: 3,
-                levelLoadingMaxRetryTimeout: 32000,
-                
-                fragLoadingTimeOut: 10000,  // 10s fragment timeout
-                fragLoadingMaxRetry: 4,
-                fragLoadingMaxRetryTimeout: 32000,
-                
-                // Manifest refresh
-                manifestLoadingTimeOut: 8000,
-                manifestLoadingMaxRetry: 3,
-                manifestLoadingMaxRetryTimeout: 32000,
-                
-                // Start position
-                startPosition: -1,  // Start at live edge
-                
-                // ABR (we only have one quality, but keep these sane)
-                abrEwmaDefaultEstimate: 500000,  // 500 kbps default estimate
-                abrEwmaFastLive: 3.0,
-                abrEwmaSlowLive: 9.0,
-            });
-            
-            Logger.important('HLS instance created');
-            
-            // Attach event listeners
-            setupHlsEventListeners();
-            
-            // Load and attach
-            hls.loadSource(hlsUrl);
-            hls.attachMedia(v);
-            
-            // Start buffer monitoring
-            startBufferMonitoring();
+            document.getElementById('clientsContent').innerHTML = clientsHtml;
+            document.getElementById('clientsModal').classList.add('visible');
+        }
+        function hideClientsModal() {
+            document.getElementById('clientsModal').classList.remove('visible');
         }
 
-        function setupHlsEventListeners() {
-            // Manifest parsed - start playing immediately for seamless experience
-            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
-                Logger.important('🎬 Manifest parsed - levels: ' + data.levels.length + ', audio: ' + data.audioTracks.length + ', video: ' + data.videoTracks.length);
-                Logger.important('Starting playback immediately');
-                setStatus('▶️', 'Live');
-                setMessage('Stream connected');
-                isInitialBuffering = false;
-                
-                // Start playing immediately - browser will buffer as needed
-                let playPromise = v.play();
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
-                            Logger.info('Autoplay started successfully');
-                        })
-                        .catch(e => {
-                            Logger.warn('Autoplay blocked by browser:', e.message);
-                            setStatus('⏸️', 'Click to Play');
-                            setMessage('Browser blocked autoplay. Click video to start.');
-                        });
-                } else {
-                    Logger.info('Using legacy play API');
-                }
-            });
-            
-            // Fragment loaded - log ALL fragments to debug old video issue
-            hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
-                lastFragmentLoaded = Date.now();
-                Logger.important('✅ Fragment #' + data.frag.sn + ' loaded (' + (data.frag.stats.total / 1024).toFixed(0) + ' KB) - URL: ' + data.frag.url);
-            });
-            
-            // Level loaded - manifest refreshed
-            hls.on(Hls.Events.LEVEL_LOADED, function(event, data) {
-                Logger.important('📋 Manifest refreshed: ' + data.details.fragments.length + ' fragments, sequences: ' + 
-                    (data.details.fragments.length > 0 ? data.details.fragments[0].sn + '-' + data.details.fragments[data.details.fragments.length-1].sn : 'none'));
-            });
-            
-            // Errors - handle gracefully
-            hls.on(Hls.Events.ERROR, function(event, data) {
-                if (data.fatal) {
-                    Logger.error('Fatal error:', data.type, data.details);
-                    handleFatalError(data);
-                } else {
-                    Logger.warn('Non-fatal error:', data.type, data.details);
-                    
-                    // CRITICAL FIX: If we get 404 on fragment load, the playlist is stale
-                    // This happens when recording was stopped and restarted - browser has old playlist
-                    // Force reload the stream from scratch to get fresh playlist with current fragments
-                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR && 
-                        data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR &&
-                        data.response && data.response.code === 404) {
-                        Logger.important('⚠️ Fragment 404 detected - playlist is stale! Restarting stream...');
-                        setStatus('🔄', 'Playlist Stale - Reloading');
-                        setMessage('Recording was restarted. Refreshing stream...');
-                        
-                        // Destroy and restart HLS to get fresh playlist
-                        cleanupStream();
-                        setTimeout(() => {
-                            startStream();
-                        }, 1000);
-                        return;
-                    }
-                    
-                    // Non-fatal errors are auto-recovered by hls.js
-                }
-            });
-            
-            // Video events
-            v.addEventListener('playing', () => {
-                setStatus('▶️', 'Live');
-                recoveryAttempts = 0;
-                Logger.important('▶️ Video playing - currentTime: ' + v.currentTime.toFixed(2) + 's');
-            });
-            
-            v.addEventListener('waiting', () => {
-                setStatus('⏳', 'Buffering');
-                Logger.warn('⏸️ Playback stalled - currentTime: ' + v.currentTime.toFixed(2) + 's, buffered: ' + (v.buffered.length > 0 ? v.buffered.end(0).toFixed(2) : 0) + 's');
-            });
-            
-            v.addEventListener('timeupdate', () => {
-                // Log time every 5 seconds to track playback position
-                if (Math.floor(v.currentTime) % 5 === 0 && Math.floor(v.currentTime * 10) % 10 === 0) {
-                    Logger.info('⏱️ Video time: ' + v.currentTime.toFixed(2) + 's, buffered: ' + (v.buffered.length > 0 ? (v.buffered.end(0) - v.currentTime).toFixed(2) : 0) + 's ahead');
-                }
-            });
-            
-            v.addEventListener('error', (e) => {
-                Logger.error('Video element error:', e);
-            });
+        function showBatteryModal() {
+            if (!currentStatus) return;
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Level</span>
+                        <span class="modal-value">${currentStatus.battery.percent}%</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">State</span>
+                        <span class="modal-value">${currentStatus.battery.status.toUpperCase()}</span>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Consumed</span>
+                        <span class="modal-value">${currentStatus.battery.consumed}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Remaining Time</span>
+                        <span class="modal-value">${currentStatus.battery.remainingHours > 0 ? currentStatus.battery.remainingHours.toFixed(1) + 'h' : 'N/A'}</span>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-label-section">Battery Warning Threshold</div>
+                    <div class="modal-row">
+                        <input type="number" id="batteryWarningInput" min="5" max="100" value="20" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
+                        <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('batteryContent').innerHTML = content;
+            document.getElementById('batteryModal').classList.add('visible');
+        }
+        function hideBatteryModal() {
+            document.getElementById('batteryModal').classList.remove('visible');
         }
 
-        function handleFatalError(data) {
-            recoveryAttempts++;
-            
-            if (recoveryAttempts > 5) {
-                Logger.error('Too many recovery attempts, giving up');
-                setStatus('❌', 'Stream Failed', 'error');
-                setMessage('Stream has stopped. Please refresh the page or restart recording.');
-                cleanupStream();
-                return;
-            }
-            
-            switch(data.type) {
-                case Hls.ErrorTypes.NETWORK_ERROR:
-                    Logger.important('Network error, attempt ' + recoveryAttempts + ', checking status...');
-                    setStatus('🔄', 'Network Error - Retrying', 'warning');
-                    setMessage('Connection lost. Attempting to reconnect...');
-                    
-                    // Reset and check status
-                    cleanupStream();
-                    setTimeout(() => {
-                        checkStatus();
-                    }, CONFIG.ERROR_RETRY_DELAY);
-                    break;
-                    
-                case Hls.ErrorTypes.MEDIA_ERROR:
-                    Logger.important('Media error, attempting recovery...');
-                    setStatus('🔄', 'Media Error - Recovering', 'warning');
-                    hls.recoverMediaError();
-                    break;
-                    
-                default:
-                    Logger.error('Unrecoverable error:', data.details);
-                    setStatus('❌', 'Stream Error', 'error');
-                    setMessage('Playback error: ' + data.details);
-                    cleanupStream();
-                    setTimeout(() => {
-                        checkStatus();
-                    }, CONFIG.ERROR_RETRY_DELAY * 2);
-                    break;
-            }
-        }
-
-        function startBufferMonitoring() {
-            if (bufferCheckTimer) clearInterval(bufferCheckTimer);
-            
-            bufferCheckTimer = setInterval(() => {
-                if (!hls || !hls.media) return;
-                
-                // Check if fragments are still loading
-                const now = Date.now();
-                const timeSinceLastFragment = now - lastFragmentLoaded;
-                
-                if (timeSinceLastFragment > 15000 && !v.paused) {
-                    Logger.warn('No fragments loaded for 15s, stream may be stuck');
-                    setStatus('⚠️', 'Stream May Be Stalled', 'warning');
-                }
-                
-                // Log buffer status occasionally
-                if (hls.media.buffered.length > 0) {
-                    const bufferEnd = hls.media.buffered.end(0);
-                    const currentTime = hls.media.currentTime;
-                    const bufferLength = bufferEnd - currentTime;
-                    
-                    Logger.info('Buffer: ' + bufferLength.toFixed(1) + 's ahead of playback');
-                    
-                    // If buffer is very low, show warning
-                    if (bufferLength < 1.0 && !v.paused) {
-                        Logger.warn('Buffer critically low:', bufferLength.toFixed(1) + 's');
-                    }
-                }
-            }, CONFIG.BUFFER_CHECK_INTERVAL);
-        }
-
-        function cleanupStream() {
-            streamStarted = false;
-            isInitialBuffering = true;
-            
-            if (bufferCheckTimer) {
-                clearInterval(bufferCheckTimer);
-                bufferCheckTimer = null;
-            }
-            
-            if (hls) {
-                try {
-                    hls.destroy();
-                } catch (e) {
-                    Logger.error('Error destroying hls:', e);
-                }
-                hls = null;
-            }
-        }
-
-        // ============================================================
-        // TORCH CONTROL
-        // ============================================================
-        const torchButton = document.getElementById('torchButton');
-        let torchState = false;
-        
-        function updateTorchButtonUI(isActive) {
-            torchState = isActive;
-            if (isActive) {
-                torchButton.classList.add('active');
-                torchButton.innerHTML = '<span class="emoji">💡</span> Torch ON';
-            } else {
-                torchButton.classList.remove('active');
-                torchButton.innerHTML = '<span class="emoji">🔦</span> Torch OFF';
-            }
-        }
-        
-        async function handleTorchToggle() {
-            torchButton.disabled = true;
+        async function setBatteryWarning() {
+            const threshold = document.getElementById('batteryWarningInput').value;
             try {
-                // Use the existing TorchToggleActivity which handles both recording and idle modes
-                // POST to the server to avoid opening the activity UI
-                const response = await fetch(baseUrl + '/torch/toggle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    Logger.info('Torch toggle sent:', data);
-                    // Toggle UI state optimistically (actual state comes from broadcast)
-                    updateTorchButtonUI(!torchState);
-                } else {
-                    Logger.error('Torch toggle failed:', response.status);
-                    alert('Failed to toggle torch. Check server is running.');
-                }
-            } catch (e) {
-                Logger.error('Torch toggle error:', e);
-                alert('Error toggling torch: ' + e.message);
-            } finally {
-                torchButton.disabled = false;
+                await dashboardViewModel.setBatteryWarning(threshold);
+                console.log('[Battery] Warning threshold set to ' + threshold + '%');
+            } catch (error) {
+                console.error('Failed to set battery warning:', error);
             }
         }
-        
-        torchButton.addEventListener('click', handleTorchToggle);
 
-        // ============================================================
-        // INITIALIZATION
-        // ============================================================
-        Logger.important('Starting status polling...');
-        checkStatus();
-        // Torch button is enabled by default for immediate use
-        
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            cleanupStream();
-            if (statusPollTimer) clearTimeout(statusPollTimer);
+        function showNetworkModal() {
+            if (!currentStatus) return;
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Health</span>
+                        <span class="modal-value">${currentStatus.networkHealth.toUpperCase()}</span>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-label-section">Streaming</div>
+                    <div class="modal-row">
+                        <span class="modal-label">Bitrate</span>
+                        <span class="modal-value">${currentStatus.bitrate}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">FPS</span>
+                        <span class="modal-value">${currentStatus.fps}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('networkContent').innerHTML = content;
+            document.getElementById('networkModal').classList.add('visible');
+        }
+        function hideNetworkModal() {
+            document.getElementById('networkModal').classList.remove('visible');
+        }
+
+        function showSegmentsModal() {
+            if (!currentStatus) return;
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Buffered Fragments</span>
+                        <span class="modal-value">${currentStatus.fragmentsBuffered || 0}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Buffer Size</span>
+                        <span class="modal-value">${(currentStatus.bufferSizeMb || 0).toFixed(1)} MB</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Init Segment</span>
+                        <span class="modal-value">${currentStatus.hasInitSegment ? 'Present' : 'Missing'}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('segmentsContent').innerHTML = content;
+            document.getElementById('segmentsModal').classList.add('visible');
+        }
+        function hideSegmentsModal() {
+            document.getElementById('segmentsModal').classList.remove('visible');
+        }
+
+        function showStorageModal() {
+            if (!currentStatus) return;
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Used</span>
+                        <span class="modal-value">${currentStatus.storage.used}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Total</span>
+                        <span class="modal-value">${currentStatus.storage.total}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('storageContent').innerHTML = content;
+            document.getElementById('storageModal').classList.add('visible');
+        }
+        function hideStorageModal() {
+            document.getElementById('storageModal').classList.remove('visible');
+        }
+
+        function showRecordingModeModal() {
+            if (!currentStatus) return;
+            const modes = ['stream_only', 'stream_and_save'];
+            let content = '<div class="modal-section">';
+            modes.forEach(mode => {
+                const isSelected = currentStatus.mode === mode;
+                const label = mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                content += `
+                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setRecordingMode('${mode}')">
+                        <div class="option-radio ${isSelected ? 'checked' : ''}"></div>
+                        <span>${label}</span>
+                    </div>
+                `;
+            });
+            content += '</div>';
+            document.getElementById('recordingModeContent').innerHTML = content;
+            document.getElementById('recordingModeModal').classList.add('visible');
+        }
+        function hideRecordingModeModal() {
+            document.getElementById('recordingModeModal').classList.remove('visible');
+        }
+
+        async function setRecordingMode(mode) {
+            try {
+                await dashboardViewModel.setRecordingMode(mode);
+                showToast(`Recording mode changed to: ${mode.replace(/_/g, ' ')}`);
+                showRecordingModeModal();
+            } catch (error) {
+                console.error('Failed to set recording mode:', error);
+            }
+        }
+
+        function showStreamQualityModal() {
+            if (!currentStatus) return;
+            const qualities = ['low', 'medium', 'high'];
+            let content = '<div class="modal-section">';
+            qualities.forEach(quality => {
+                const isSelected = currentStatus.qualityPreset && currentStatus.qualityPreset.toLowerCase() === quality;
+                const label = quality.charAt(0).toUpperCase() + quality.slice(1);
+                content += `
+                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setStreamQuality('${quality}')">
+                        <div class="option-radio ${isSelected ? 'checked' : ''}"></div>
+                        <span>${label}</span>
+                    </div>
+                `;
+            });
+            content += '</div>';
+            document.getElementById('streamQualityContent').innerHTML = content;
+            document.getElementById('streamQualityModal').classList.add('visible');
+        }
+        function hideStreamQualityModal() {
+            document.getElementById('streamQualityModal').classList.remove('visible');
+        }
+
+        async function setStreamQuality(quality) {
+            try {
+                await dashboardViewModel.setStreamQuality(quality);
+                showToast(`Stream quality set to: ${quality}`);
+                showStreamQualityModal();
+            } catch (error) {
+                console.error('Failed to set stream quality:', error);
+                showToast('Failed to set stream quality');
+            }
+        }
+
+        async function toggleTorch() {
+            try {
+                await dashboardViewModel.toggleTorch();
+                showToast('Torch toggled');
+            } catch (error) {
+                console.error('Failed to toggle torch:', error);
+                showToast('Failed to toggle torch');
+            }
+        }
+
+        async function toggleServer() {
+            try {
+                await dashboardViewModel.toggleServer();
+            } catch (error) {
+                console.error('Failed to toggle server:', error);
+            }
+        }
+
+        function playStream() {
+            if (!CONFIG || !CONFIG.ENDPOINTS) {
+                setTimeout(playStream, 500);
+                return;
+            }
+            const streamUrl = CONFIG.BASE_URL + CONFIG.ENDPOINTS.HLS;
+            hlsService.load(streamUrl, videoElement);
+            videoElement.play();
+            document.getElementById('videoOverlay').classList.add('hidden');
+        }
+
+        function updateUI(status) {
+            currentStatus = status;
+
+            // Server status - ALWAYS ONLINE (server is always on when website loads)
+            const serverLED = document.getElementById('serverLED');
+            serverLED.className = 'led-dot online';
+            document.getElementById('serverLabel').textContent = 'Active';
+            document.getElementById('serverStatus').textContent = 'ONLINE';
+
+            // Recording status
+            const isRecording = status.isRecording;
+            document.getElementById('recordingStatus').textContent = isRecording ? 'RECORDING IN PROGRESS' : 'NOT STARTED';
+            
+            // Display recording message if available
+            const msgEl = document.getElementById('recordingMessage');
+            if (status.message && !isRecording) {
+                msgEl.textContent = status.message;
+                msgEl.style.display = 'block';
+            } else {
+                msgEl.style.display = 'none';
+            }
+
+            // Quick values - use formatted uptime from uptimeDetails
+            const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
+            document.getElementById('uptimeValue').textContent = formattedUptime;
+            document.getElementById('clientsValue').textContent = status.activeConnections || '0';
+            document.getElementById('batteryValue').textContent = status.getFormattedBattery();
+            document.getElementById('segmentsValue').textContent = status.fragmentsBuffered || '0';
+            document.getElementById('networkValue').textContent = `${status.bitrate}`;
+            
+            // Update network health color indicator
+            const healthEl = document.getElementById('networkHealth');
+            const healthColors = {
+                'good': '#3fb950',
+                'moderate': '#d29922',
+                'poor': '#f85149'
+            };
+            healthEl.style.background = healthColors[status.networkHealth] || '#6e7681';
+            document.getElementById('storageValue').textContent = status.getFormattedStorage();
+            document.getElementById('memoryValue').textContent = status.getFormattedMemory();
+            document.getElementById('recordingModeValue').textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            document.getElementById('streamQualityValue').textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
+            document.getElementById('torchState').textContent = status.torchOn ? 'ON' : 'OFF';
+            document.getElementById('serverUrl').textContent = CONFIG.BASE_URL || 'http://192.168.1.5:8080';
+        }
+
+        let currentToastTimeout = null;
+        function showToast(message, duration = 5000) {
+            const toast = document.getElementById('toastNotification');
+            const messageEl = document.getElementById('toastMessage');
+            
+            // Clear existing timeout
+            if (currentToastTimeout) {
+                clearTimeout(currentToastTimeout);
+                toast.classList.remove('show');
+            }
+            
+            // Set new message and show
+            messageEl.textContent = message;
+            
+            // Small delay to allow CSS transition to reset
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // Auto-hide after duration
+            currentToastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                currentToastTimeout = null;
+            }, duration);
+        }
+
+        function closeToast() {
+            if (currentToastTimeout) {
+                clearTimeout(currentToastTimeout);
+                currentToastTimeout = null;
+            }
+            document.getElementById('toastNotification').classList.remove('show');
+        }
+
+        function showMemoryModal() {
+            if (!currentStatus) return;
+            const memoryContent = document.getElementById('memoryContent');
+            memoryContent.innerHTML = `<p style="color: #8b949e;">${currentStatus.memory || '—'}</p>`;
+            document.getElementById('memoryModal').classList.add('show');
+        }
+
+        function hideMemoryModal() {
+            document.getElementById('memoryModal').classList.remove('show');
+        }
+
+        function showEndpointsModal() {
+            const endpointsContent = document.getElementById('endpointsContent');
+            endpointsContent.innerHTML = `
+                <ul style="list-style: none; padding: 0; margin: 0; color: #8b949e; font-size: 13px;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
+                        <strong style="color: #e6edf3;">GET /status</strong><br/>
+                        Server status, metrics, battery, network
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
+                        <strong style="color: #e6edf3;">GET /live.m3u8</strong><br/>
+                        HLS stream playlist
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
+                        <strong style="color: #e6edf3;">POST /torch/toggle</strong><br/>
+                        Toggle flashlight on/off
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
+                        <strong style="color: #e6edf3;">POST /config/recordingMode</strong><br/>
+                        Set recording mode (record_only, stream_only, dual)
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
+                        <strong style="color: #e6edf3;">POST /config/streamQuality</strong><br/>
+                        Set stream quality (low, medium, high)
+                    </li>
+                    <li style="padding: 8px 0;">
+                        <strong style="color: #e6edf3;">POST /config/batteryWarning</strong><br/>
+                        Set battery warning threshold
+                    </li>
+                </ul>
+            `;
+            document.getElementById('endpointsModal').classList.add('show');
+        }
+
+        function hideEndpointsModal() {
+            document.getElementById('endpointsModal').classList.remove('show');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            videoElement = document.getElementById('videoPlayer');
+
+            let attempts = 0;
+            while (!CONFIG && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+
+            if (!CONFIG) {
+                console.error('[DOMContentLoaded] CONFIG failed to load');
+                return;
+            }
+
+            dashboardViewModel = new DashboardViewModel();
+            
+            // Listen for status updates before initializing
+            eventBus.on('status-updated', (status) => {
+                updateUI(status);
+            });
+            
+            // Initialize will fetch first status and emit event
+            await dashboardViewModel.initialize();
+            playStream();
         });
     </script>
 </body>

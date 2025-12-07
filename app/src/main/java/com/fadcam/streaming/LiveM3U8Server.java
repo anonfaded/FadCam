@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import com.fadcam.streaming.model.ClientEvent;
 import com.fadcam.streaming.model.ClientMetrics;
+import com.fadcam.streaming.model.StreamQuality;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -74,12 +75,21 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = serveStatus();
             } else if ("/".equals(uri)) {
                 response = serveLandingPage();
+            } else if (uri.startsWith("/css/") || uri.startsWith("/js/") || uri.startsWith("/assets/")) {
+                // Serve static web assets (CSS, JS, images, fonts)
+                response = serveStaticFile(uri);
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
         } else if (Method.POST.equals(method)) {
             if ("/torch/toggle".equals(uri)) {
                 response = toggleTorch();
+            } else if ("/config/recordingMode".equals(uri)) {
+                response = setRecordingMode(session);
+            } else if ("/config/streamQuality".equals(uri)) {
+                response = setStreamQuality(session);
+            } else if ("/config/batteryWarning".equals(uri)) {
+                response = setBatteryWarning(session);
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
@@ -394,10 +404,145 @@ public class LiveM3U8Server extends NanoHTTPD {
         }
     }
 
-    
     /**
-     * Serve status JSON.
+     * Handle POST /config/recordingMode - Set recording mode
      */
+    @NonNull
+    private Response setRecordingMode(IHTTPSession session) {
+        try {
+            // Parse JSON body
+            int contentLength = 0;
+            java.io.InputStream inputStream = session.getInputStream();
+            if (inputStream != null) {
+                contentLength = inputStream.available();
+            }
+            
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String body = files.get("postData");
+            if (body == null || body.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
+            }
+            
+            // Parse JSON mode from body
+            String mode = null;
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                mode = json.getString("mode");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to parse recording mode JSON", e);
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
+            }
+            
+            // Set the mode in preferences
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            spManager.setCurrentRecordingMode(mode);
+            
+            Log.i(TAG, "✅ Recording mode set to: " + mode);
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Recording mode set to " + mode + "\"}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting recording mode", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Handle POST /config/streamQuality - Set stream quality
+     */
+    @NonNull
+    private Response setStreamQuality(IHTTPSession session) {
+        try {
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String body = files.get("postData");
+            if (body == null || body.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
+            }
+            
+            // Parse JSON quality from body
+            String quality = null;
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                quality = json.getString("quality");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to parse stream quality JSON", e);
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
+            }
+            
+            // Convert string to preset and apply
+            try {
+                StreamQuality.Preset preset = StreamQuality.Preset.valueOf(quality.toUpperCase());
+                streamManager.setStreamQuality(preset, context);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Invalid stream quality preset: " + quality);
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid quality preset\"}");
+            }
+            
+            Log.i(TAG, "✅ Stream quality set to: " + quality);
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Stream quality set to " + quality + "\"}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting stream quality", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Handle POST /config/batteryWarning - Set battery warning threshold
+     */
+    @NonNull
+    private Response setBatteryWarning(IHTTPSession session) {
+        try {
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String body = files.get("postData");
+            if (body == null || body.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
+            }
+            
+            // Parse JSON threshold from body
+            int threshold = 20; // Default
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                threshold = json.getInt("threshold");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to parse battery warning threshold JSON", e);
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
+            }
+            
+            // Store battery warning threshold in preferences
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            // Use setPref method if available, or directly with SharedPreferences
+            android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = prefs.edit();
+            editor.putInt("battery_warning_threshold", threshold);
+            editor.apply();
+            
+            Log.i(TAG, "✅ Battery warning threshold set to: " + threshold + "%");
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Battery warning set to " + threshold + "%\"}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting battery warning", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    
     @NonNull
     private Response serveStatus() {
         String statusJson = streamManager.getStatusJson();
@@ -410,6 +555,51 @@ public class LiveM3U8Server extends NanoHTTPD {
      * Serve landing page HTML from streaming/web/index.html (stored in assets)
      */
     @NonNull
+    /**
+     * Serve static files (CSS, JS, images, fonts) from assets/web/
+     */
+    private Response serveStaticFile(String uri) {
+        try {
+            // Map URI to assets path: /css/theme.css -> web/css/theme.css
+            String assetPath = "web" + uri;
+            
+            // Determine MIME type
+            String mimeType = getMimeType(uri);
+            
+            // Load from assets
+            InputStream fileStream = context.getAssets().open(assetPath);
+            Response response = newFixedLengthResponse(Response.Status.OK, mimeType, fileStream, -1);
+            
+            // Cache static assets for 1 hour (except HTML)
+            if (!mimeType.equals("text/html")) {
+                response.addHeader("Cache-Control", "public, max-age=3600");
+            }
+            
+            Log.d(TAG, "✅ Served static file: " + assetPath + " (" + mimeType + ")");
+            return response;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load static file: " + uri, e);
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found: " + uri);
+        }
+    }
+    
+    /**
+     * Get MIME type from file extension
+     */
+    private String getMimeType(String uri) {
+        if (uri.endsWith(".css")) return "text/css";
+        if (uri.endsWith(".js")) return "application/javascript";
+        if (uri.endsWith(".json")) return "application/json";
+        if (uri.endsWith(".png")) return "image/png";
+        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) return "image/jpeg";
+        if (uri.endsWith(".svg")) return "image/svg+xml";
+        if (uri.endsWith(".woff")) return "font/woff";
+        if (uri.endsWith(".woff2")) return "font/woff2";
+        if (uri.endsWith(".ttf")) return "font/ttf";
+        if (uri.endsWith(".html")) return "text/html";
+        return MIME_PLAINTEXT;
+    }
+    
     private Response serveLandingPage() {
         try {
             // Load from assets/web/index.html at runtime

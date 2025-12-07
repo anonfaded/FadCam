@@ -1,0 +1,179 @@
+/**
+ * DashboardViewModel - Business logic for dashboard page
+ */
+class DashboardViewModel {
+    constructor() {
+        this.statusModel = new ServerStatus();
+        this.pollInterval = null;
+        this.isPolling = false;
+    }
+    
+    /**
+     * Initialize ViewModel - start status polling
+     */
+    async initialize() {
+        console.log('[DashboardViewModel] Initializing...');
+        
+        // Initial fetch
+        await this.updateStatus();
+        
+        // Start polling
+        this.startPolling();
+    }
+    
+    /**
+     * Update status from API
+     */
+    async updateStatus() {
+        try {
+            const data = await apiService.getStatus();
+            this.statusModel.update(data);
+            
+            // Emit event for views to update
+            eventBus.emit('status-updated', this.statusModel);
+            
+            console.log('[DashboardViewModel] Status updated:', this.statusModel.state);
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to update status:', error);
+            
+            // Emit offline status
+            this.statusModel.update({ state: 'offline' });
+            eventBus.emit('status-updated', this.statusModel);
+        }
+    }
+    
+    /**
+     * Safe emit with error handling
+     */
+    safeEmit() {
+        try {
+            eventBus.emit('status-updated', this.statusModel);
+        } catch (error) {
+            console.error('[DashboardViewModel] Error emitting status:', error);
+        }
+    }
+    
+    /**
+     * Start polling for status updates
+     */
+    startPolling() {
+        if (this.isPolling) return;
+        
+        this.isPolling = true;
+        this.pollInterval = setInterval(() => {
+            this.updateStatus();
+        }, CONFIG.STATUS_POLL_INTERVAL);
+        
+        console.log('[DashboardViewModel] Started polling every', CONFIG.STATUS_POLL_INTERVAL / 1000, 'seconds');
+    }
+    
+    /**
+     * Stop polling
+     */
+    stopPolling() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+        this.isPolling = false;
+        console.log('[DashboardViewModel] Stopped polling');
+    }
+    
+    /**
+     * Toggle torch (flashlight)
+     */
+    async toggleTorch() {
+        try {
+            const result = await apiService.toggleTorch();
+            console.log('[DashboardViewModel] Torch toggled:', result);
+            
+            // Emit event
+            eventBus.emit('torch-toggled', result);
+            
+            // Force status update to get new state
+            await this.updateStatus();
+            
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to toggle torch:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Toggle server on/off
+     */
+    async toggleServer() {
+        try {
+            const result = await apiService.post('/server/toggle', {});
+            console.log('[DashboardViewModel] Server toggled:', result);
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to toggle server:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set recording mode (stream_only, record_only, stream_and_record)
+     */
+    async setRecordingMode(mode) {
+        try {
+            const result = await apiService.post('/config/recordingMode', { mode });
+            console.log('[DashboardViewModel] Recording mode set to:', mode);
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to set recording mode:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set stream quality (low, medium, high)
+     */
+    async setStreamQuality(quality) {
+        try {
+            const result = await apiService.post('/config/streamQuality', { quality });
+            console.log('[DashboardViewModel] Stream quality set to:', quality);
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to set stream quality:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set battery warning threshold
+     */
+    async setBatteryWarning(threshold) {
+        try {
+            const result = await apiService.post('/config/batteryWarning', { threshold: parseInt(threshold) });
+            console.log('[DashboardViewModel] Battery warning threshold set to:', threshold);
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to set battery warning:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Get current status model
+     * @returns {ServerStatus}
+     */
+    getStatus() {
+        return this.statusModel;
+    }
+    
+    /**
+     * Cleanup resources
+     */
+    destroy() {
+        this.stopPolling();
+        eventBus.clear('status-updated');
+        eventBus.clear('torch-toggled');
+    }
+}
