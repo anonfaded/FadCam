@@ -330,6 +330,17 @@ public class RemoteStreamService extends Service {
         String ipAddress = getLocalIpAddress();
         return "http://" + ipAddress + ":" + activePort + "/live.m3u8";
     }
+
+    /**
+     * Get device IP address with port (without /live.m3u8).
+     */
+    public String getDeviceIpWithPort() {
+        if (activePort == -1) {
+            return null;
+        }
+        String ipAddress = getLocalIpAddress();
+        return ipAddress + ":" + activePort;
+    }
     
     /**
      * Get active port.

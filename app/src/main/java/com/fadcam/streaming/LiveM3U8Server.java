@@ -48,9 +48,13 @@ public class LiveM3U8Server extends NanoHTTPD {
         String uri = session.getUri();
         Method method = session.getMethod();
         String userAgent = session.getHeaders().get("user-agent");
+        String clientIP = session.getRemoteIpAddress();
         
-        Log.i(TAG, "📥 " + method + " " + uri + " from " + session.getRemoteIpAddress());
+        Log.i(TAG, "📥 " + method + " " + uri + " from " + clientIP);
         Log.d(TAG, "   User-Agent: " + (userAgent != null ? userAgent : "unknown"));
+        
+        // Track unique client IPs (only adds if new, Set handles duplicates)
+        streamManager.trackClientIP(clientIP);
         
         // Add CORS headers for web player compatibility
         Response response;

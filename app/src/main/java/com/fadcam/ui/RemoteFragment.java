@@ -1,5 +1,8 @@
 package com.fadcam.ui;
 
+import android.animation.ObjectAnimator;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -12,33 +15,56 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
-import com.google.android.material.materialswitch.MaterialSwitch;
+
+import java.util.List;
 
 public class RemoteFragment extends BaseFragment {
     private static final String TAG = "RemoteFragment";
     
-    private MaterialSwitch streamingToggle;
+    private Switch streamingToggle;
     private TextView statusText;
-    private TextView streamUrlText;
-    private TextView modeText;
+    private TextView rootUrlText;
+    private ImageView copyRootButton;
+    private View statusIndicatorDot;
+    private View statusGlow;
+    private FrameLayout glowContainer;
+    private LinearLayout rootUrlContainer;
+    private LinearLayout recordingModeRow;
+    private LinearLayout viewEndpointsRow;
+    private LinearLayout clientsRow;
+    private TextView recordingModeValue;
+    private TextView uptimeText;
+    private TextView connectionsText;
+    private TextView batteryText;
+    private TextView fragmentsText;
+    private TextView fpsResolutionText;
+    private TextView bitrateText;
     
     private RemoteStreamService streamService;
     private boolean serviceBound = false;
     private Handler statusUpdateHandler;
     private Runnable statusUpdateRunnable;
+    private Handler healthUpdateHandler;
+    private Runnable healthUpdateRunnable;
     
     private SharedPreferencesManager prefsManager;
+    private long streamStartTime = 0;
     
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -46,6 +72,7 @@ public class RemoteFragment extends BaseFragment {
             RemoteStreamService.LocalBinder binder = (RemoteStreamService.LocalBinder) service;
             streamService = binder.getService();
             serviceBound = true;
+            streamStartTime = System.currentTimeMillis();
             updateUI();
             Log.d(TAG, "Service connected");
         }
@@ -54,6 +81,7 @@ public class RemoteFragment extends BaseFragment {
         public void onServiceDisconnected(ComponentName name) {
             streamService = null;
             serviceBound = false;
+            streamStartTime = 0;
             Log.d(TAG, "Service disconnected");
         }
     };
@@ -70,23 +98,28 @@ public class RemoteFragment extends BaseFragment {
         
         prefsManager = SharedPreferencesManager.getInstance(requireContext());
         
-        // Setup header bar
-        LinearLayout headerBar = view.findViewById(R.id.header_bar);
-        if (headerBar != null) {
-            int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
-            headerBar.setBackgroundColor(colorTopBar);
-        }
-        
         // Initialize views
         streamingToggle = view.findViewById(R.id.streaming_toggle);
         statusText = view.findViewById(R.id.status_text);
-        streamUrlText = view.findViewById(R.id.stream_url_text);
-        modeText = view.findViewById(R.id.mode_text);
+        rootUrlText = view.findViewById(R.id.root_url_text);
+        copyRootButton = view.findViewById(R.id.copy_root_button);
+        statusIndicatorDot = view.findViewById(R.id.status_indicator_dot);
+        statusGlow = view.findViewById(R.id.status_glow);
+        glowContainer = view.findViewById(R.id.glow_container);
+        rootUrlContainer = view.findViewById(R.id.root_url_container);
+        recordingModeRow = view.findViewById(R.id.recording_mode_row);
+        recordingModeValue = view.findViewById(R.id.recording_mode_value);
+        viewEndpointsRow = view.findViewById(R.id.view_endpoints_row);
+        clientsRow = view.findViewById(R.id.clients_row);
+        uptimeText = view.findViewById(R.id.uptime_text);
+        connectionsText = view.findViewById(R.id.connections_text);
+        batteryText = view.findViewById(R.id.battery_text);
+        fragmentsText = view.findViewById(R.id.fragments_text);
+        fpsResolutionText = view.findViewById(R.id.fps_resolution_text);
+        bitrateText = view.findViewById(R.id.bitrate_text);
         
-        // Set mode text (default: Stream & Save)
-        RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
-        modeText.setText(mode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
-            "Mode: Stream Only" : "Mode: Stream & Save");
+        // Update FPS and resolution display
+        updateRequirementsDisplay();
         
         // Setup toggle listener
         streamingToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -97,8 +130,26 @@ public class RemoteFragment extends BaseFragment {
             }
         });
         
-        // Mode toggle button
-        view.findViewById(R.id.mode_toggle_button).setOnClickListener(v -> toggleStreamingMode());
+        // Recording mode row click listener
+        recordingModeRow.setOnClickListener(v -> showRecordingModePicker());
+        
+        // View endpoints row click listener
+        viewEndpointsRow.setOnClickListener(v -> showEndpointsPicker());
+        
+        // Clients row click listener
+        clientsRow.setOnClickListener(v -> showClientDetailsPicker());
+        
+        // Copy URL button listener
+        copyRootButton.setOnClickListener(v -> {
+            String rootUrl = rootUrlText.getText().toString();
+            if (!rootUrl.contains("---")) {
+                copyToClipboard(rootUrl);
+                Toast.makeText(requireContext(), R.string.stream_url_copied, Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // Update initial mode display
+        updateModeDisplay();
         
         // Start status updates
         statusUpdateHandler = new Handler(Looper.getMainLooper());
@@ -106,7 +157,17 @@ public class RemoteFragment extends BaseFragment {
             @Override
             public void run() {
                 updateUI();
-                statusUpdateHandler.postDelayed(this, 2000); // Update every 2 seconds
+                statusUpdateHandler.postDelayed(this, 2000);
+            }
+        };
+        
+        // Health update handler
+        healthUpdateHandler = new Handler(Looper.getMainLooper());
+        healthUpdateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateServerHealth();
+                healthUpdateHandler.postDelayed(this, 1000);
             }
         };
     }
@@ -115,16 +176,19 @@ public class RemoteFragment extends BaseFragment {
     public void onResume() {
         super.onResume();
         
-        // Check if service is running before binding
         boolean serviceRunning = RemoteStreamManager.getInstance().isStreamingEnabled();
         if (serviceRunning) {
             Intent intent = new Intent(requireContext(), RemoteStreamService.class);
             requireContext().bindService(intent, serviceConnection, 0);
+            streamStartTime = System.currentTimeMillis();
         }
         
-        // Start status updates
         if (statusUpdateHandler != null && statusUpdateRunnable != null) {
             statusUpdateHandler.post(statusUpdateRunnable);
+        }
+        
+        if (healthUpdateHandler != null && healthUpdateRunnable != null) {
+            healthUpdateHandler.post(healthUpdateRunnable);
         }
         
         updateUI();
@@ -134,39 +198,41 @@ public class RemoteFragment extends BaseFragment {
     public void onPause() {
         super.onPause();
         
-        // Unbind from service
         if (serviceBound) {
-            requireContext().unbindService(serviceConnection);
+            try {
+                requireContext().unbindService(serviceConnection);
+            } catch (Exception e) {
+                Log.e(TAG, "Error unbinding service", e);
+            }
             serviceBound = false;
         }
         
-        // Stop status updates
         if (statusUpdateHandler != null && statusUpdateRunnable != null) {
             statusUpdateHandler.removeCallbacks(statusUpdateRunnable);
+        }
+        
+        if (healthUpdateHandler != null && healthUpdateRunnable != null) {
+            healthUpdateHandler.removeCallbacks(healthUpdateRunnable);
         }
     }
     
     private void startStreaming() {
         Log.i(TAG, "Starting streaming");
         
-        // Set streaming mode from preferences
         RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
         RemoteStreamManager.getInstance().setStreamingMode(mode);
         
-        // Start service
         Intent intent = new Intent(requireContext(), RemoteStreamService.class);
         requireContext().startForegroundService(intent);
-        
-        // Bind to service
         requireContext().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         
+        streamStartTime = System.currentTimeMillis();
         Toast.makeText(requireContext(), "Stream server starting...", Toast.LENGTH_SHORT).show();
     }
     
     private void stopStreaming() {
         Log.i(TAG, "Stopping streaming");
         
-        // Unbind from service first
         if (streamService != null) {
             try {
                 requireContext().unbindService(serviceConnection);
@@ -176,54 +242,58 @@ public class RemoteFragment extends BaseFragment {
             streamService = null;
         }
         
-        // Stop service
         Intent intent = new Intent(requireContext(), RemoteStreamService.class);
         requireContext().stopService(intent);
-        
-        // Disable streaming in manager
         RemoteStreamManager.getInstance().setStreamingEnabled(false);
         
+        streamStartTime = 0;
         Toast.makeText(requireContext(), "Stream server stopped", Toast.LENGTH_SHORT).show();
-        
         updateUI();
     }
     
-    private void toggleStreamingMode() {
-        RemoteStreamManager.StreamingMode currentMode = prefsManager.getStreamingMode();
-        RemoteStreamManager.StreamingMode newMode = currentMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ?
-            RemoteStreamManager.StreamingMode.STREAM_AND_SAVE : RemoteStreamManager.StreamingMode.STREAM_ONLY;
-        
+    private void switchStreamingMode(RemoteStreamManager.StreamingMode newMode) {
         prefsManager.setStreamingMode(newMode);
         RemoteStreamManager.getInstance().setStreamingMode(newMode);
-        
-        modeText.setText(newMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
-            "Mode: Stream Only" : "Mode: Stream & Save");
+        updateModeDisplay();
         
         Toast.makeText(requireContext(), 
             newMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
-                "Stream Only (no save)" : "Stream & Save to gallery", 
+                "Stream Only mode" : "Stream & Save mode", 
             Toast.LENGTH_SHORT).show();
     }
     
+    private void updateModeDisplay() {
+        RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
+        String modeText = mode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
+            "Stream Only" : "Stream & Save";
+        recordingModeValue.setText(modeText);
+    }
+    
     private void updateUI() {
-        // Temporarily remove listener to prevent triggering stopStreaming
         streamingToggle.setOnCheckedChangeListener(null);
         
-        if (streamService != null && serviceBound && streamService.isServerRunning()) {
+        boolean isStreaming = streamService != null && serviceBound && streamService.isServerRunning();
+        
+        if (isStreaming) {
             streamingToggle.setChecked(true);
-            String url = streamService.getStreamUrl();
-            if (url != null) {
-                statusText.setText("Status: Active");
-                streamUrlText.setText(url);
-                streamUrlText.setVisibility(View.VISIBLE);
+            statusText.setText(R.string.stream_active);
+            animateStatusIndicator(true);
+            
+            // Get base server URL (without endpoint path)
+            String serverUrlWithPort = streamService.getDeviceIpWithPort();
+            if (serverUrlWithPort != null) {
+                String rootUrl = "http://" + serverUrlWithPort + "/";
+                rootUrlText.setText(rootUrl);
             }
         } else {
             streamingToggle.setChecked(false);
-            statusText.setText("Status: Inactive");
-            streamUrlText.setVisibility(View.GONE);
+            statusText.setText(R.string.stream_inactive);
+            animateStatusIndicator(false);
+            
+            // Show placeholder URL when inactive
+            rootUrlText.setText("http://---.---.---.---:----/");
         }
         
-        // Restore listener
         streamingToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 startStreaming();
@@ -233,9 +303,165 @@ public class RemoteFragment extends BaseFragment {
         });
     }
     
+    private void animateStatusIndicator(boolean isActive) {
+        if (isActive) {
+            statusIndicatorDot.setBackground(requireContext().getDrawable(R.drawable.status_dot_pulse));
+            statusGlow.setVisibility(View.VISIBLE);
+            
+            // Smooth constant pulse animation
+            statusGlow.setAlpha(0.7f);
+            statusGlow.setScaleX(1f);
+            statusGlow.setScaleY(1f);
+            
+            // Single smooth scale and fade animation
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(statusGlow, "scaleX", 1f, 1.3f);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(statusGlow, "scaleY", 1f, 1.3f);
+            ObjectAnimator alpha = ObjectAnimator.ofFloat(statusGlow, "alpha", 0.7f, 0f);
+            
+            scaleX.setDuration(2000);
+            scaleY.setDuration(2000);
+            alpha.setDuration(2000);
+            
+            // Use AccelerateDecelerateInterpolator for smooth motion
+            android.view.animation.AccelerateDecelerateInterpolator interpolator = 
+                new android.view.animation.AccelerateDecelerateInterpolator();
+            scaleX.setInterpolator(interpolator);
+            scaleY.setInterpolator(interpolator);
+            alpha.setInterpolator(interpolator);
+            
+            // Infinite repeat
+            scaleX.setRepeatCount(ObjectAnimator.INFINITE);
+            scaleY.setRepeatCount(ObjectAnimator.INFINITE);
+            alpha.setRepeatCount(ObjectAnimator.INFINITE);
+            scaleX.setRepeatMode(ObjectAnimator.RESTART);
+            scaleY.setRepeatMode(ObjectAnimator.RESTART);
+            alpha.setRepeatMode(ObjectAnimator.RESTART);
+            
+            scaleX.start();
+            scaleY.start();
+            alpha.start();
+        } else {
+            statusIndicatorDot.setBackground(requireContext().getDrawable(R.drawable.status_dot_inactive));
+            statusGlow.setVisibility(View.GONE);
+            statusGlow.clearAnimation();
+        }
+    }
+    
+    private void updateServerHealth() {
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        
+        // Get persistent uptime from manager
+        long uptimeMs = manager.getServerUptimeMs();
+        String uptime = formatUptime(uptimeMs);
+        uptimeText.setText(uptime);
+        
+        // Get active connections count
+        int connections = manager.getActiveConnections();
+        connectionsText.setText(String.valueOf(connections));
+        
+        // Get battery percentage
+        int battery = manager.getBatteryPercentage(requireContext());
+        batteryText.setText(battery > 0 ? battery + "%" : "--");
+        
+        // Get buffered fragments count
+        int fragments = manager.getBufferedCount();
+        fragmentsText.setText(String.valueOf(fragments));
+    }
+    
+    private String formatUptime(long ms) {
+        long seconds = ms / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        
+        if (hours > 0) {
+            return String.format("%dh %dm", hours, minutes % 60);
+        } else if (minutes > 0) {
+            return String.format("%dm %ds", minutes, seconds % 60);
+        } else {
+            return String.format("%ds", seconds);
+        }
+    }
+    
+    private void updateRequirementsDisplay() {
+        int fps = Constants.DEFAULT_VIDEO_FRAME_RATE;
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        
+        android.util.Size resolution = prefs.getCameraResolution();
+        int width = resolution.getWidth();
+        int height = resolution.getHeight();
+        
+        fpsResolutionText.setText(getString(R.string.stream_fps_resolution, fps, width, height));
+        
+        int bitrateMbps = Constants.DEFAULT_VIDEO_BITRATE / 1_000_000;
+        bitrateText.setText(getString(R.string.stream_bitrate, bitrateMbps + " Mbps"));
+    }
+    
+    private void copyToClipboard(String text) {
+        ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("Stream", text);
+        clipboard.setPrimaryClip(clip);
+    }
+    
+    private void showClientDetailsPicker() {
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        List<String> clientIPs = manager.getConnectedClientIPs();
+        
+        if (clientIPs.isEmpty()) {
+            Toast.makeText(requireContext(), "No clients connected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        ClientDetailsBottomSheetFragment sheet = ClientDetailsBottomSheetFragment.newInstance(clientIPs);
+        sheet.show(getParentFragmentManager(), "client_details");
+    }
+    
+    private void showRecordingModePicker() {
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+            "stream_only", "Stream Only", "Stream without saving to storage", null));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+            "stream_and_save", "Stream & Save", "Stream and save recording to storage", null));
+        
+        RemoteStreamManager.StreamingMode currentMode = prefsManager.getStreamingMode();
+        String selectedId = currentMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
+            "stream_only" : "stream_and_save";
+        
+        com.fadcam.ui.picker.PickerBottomSheetFragment picker = 
+            com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                "Recording Mode", items, selectedId, "recording_mode_picker");
+        
+        getParentFragmentManager().setFragmentResultListener("recording_mode_picker", 
+            getViewLifecycleOwner(), (requestKey, result) -> {
+                String newSelectedId = result.getString("selected_id");
+                if (newSelectedId != null) {
+                    RemoteStreamManager.StreamingMode newMode = 
+                        "stream_only".equals(newSelectedId) ? 
+                        RemoteStreamManager.StreamingMode.STREAM_ONLY : 
+                        RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+                    switchStreamingMode(newMode);
+                }
+            });
+        
+        picker.show(getParentFragmentManager(), "recording_mode_picker");
+    }
+    
+    private void showEndpointsPicker() {
+        String serverUrl = "";
+        if (streamService != null && serviceBound && streamService.isServerRunning()) {
+            String serverUrlWithPort = streamService.getDeviceIpWithPort();
+            if (serverUrlWithPort != null) {
+                serverUrl = "http://" + serverUrlWithPort;
+            }
+        }
+        
+        EndpointsBottomSheetFragment endpointsSheet = EndpointsBottomSheetFragment.newInstance(serverUrl);
+        endpointsSheet.show(getParentFragmentManager(), "endpoints_sheet");
+    }
+    
     private int resolveThemeColor(int attr) {
         android.util.TypedValue typedValue = new android.util.TypedValue();
         requireContext().getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
 }
+

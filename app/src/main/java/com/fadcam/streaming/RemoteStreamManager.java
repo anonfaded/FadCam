@@ -50,6 +50,8 @@ public class RemoteStreamManager {
     
     // Metadata
     private int activeConnections = 0;
+    private final java.util.Set<String> connectedClientIPs = new java.util.HashSet<>();
+    private long serverStartTime = 0;
     
     public enum StreamingMode {
         STREAM_ONLY,     // Don't save to disk after streaming
@@ -96,6 +98,16 @@ public class RemoteStreamManager {
         try {
             this.streamingEnabled = enabled;
             Log.i(TAG, "Streaming " + (enabled ? "enabled" : "disabled"));
+            
+            if (enabled) {
+                // Start server uptime tracking
+                serverStartTime = System.currentTimeMillis();
+                connectedClientIPs.clear();
+                Log.i(TAG, "Server uptime started");
+            } else {
+                serverStartTime = 0;
+                connectedClientIPs.clear();
+            }
             
             if (!enabled) {
                 clearBuffer();
@@ -451,11 +463,26 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Increment active connection count.
+     * Track client IP address (Set automatically handles duplicates).
+     */
+    public void trackClientIP(String clientIP) {
+        if (clientIP != null && !clientIP.isEmpty()) {
+            boolean isNewClient = connectedClientIPs.add(clientIP);
+            if (isNewClient) {
+                Log.i(TAG, "New client connected: " + clientIP + " (Total: " + connectedClientIPs.size() + ")");
+            }
+        }
+    }
+    
+    /**
+     * Increment active connection count (for backward compatibility).
      */
     public void incrementConnections() {
         activeConnections++;
-        Log.d(TAG, "Active connections: " + activeConnections);
+    }
+    
+    public void incrementConnections(String clientIP) {
+        trackClientIP(clientIP);
     }
     
     /**
@@ -465,7 +492,49 @@ public class RemoteStreamManager {
         if (activeConnections > 0) {
             activeConnections--;
         }
-        Log.d(TAG, "Active connections: " + activeConnections);
+    }
+    
+    /**
+     * Get server uptime in milliseconds.
+     */
+    public long getServerUptimeMs() {
+        if (serverStartTime == 0) {
+            return 0;
+        }
+        return System.currentTimeMillis() - serverStartTime;
+    }
+    
+    /**
+     * Get list of connected client IPs.
+     */
+    public List<String> getConnectedClientIPs() {
+        return new ArrayList<>(connectedClientIPs);
+    }
+    
+    /**
+     * Get number of unique connected clients.
+     */
+    public int getActiveConnections() {
+        return connectedClientIPs.size();
+    }
+    
+    /**
+     * Get device battery percentage.
+     */
+    public int getBatteryPercentage(android.content.Context context) {
+        if (context == null) return -1;
+        
+        android.content.Intent batteryIntent = context.registerReceiver(null, 
+            new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
+        
+        if (batteryIntent == null) return -1;
+        
+        int level = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryIntent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
+        
+        if (level == -1 || scale == -1) return -1;
+        
+        return (int) ((level / (float) scale) * 100);
     }
     
     /**

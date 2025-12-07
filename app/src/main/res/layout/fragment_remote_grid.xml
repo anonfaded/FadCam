@@ -1,102 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="?android:attr/colorBackground">
 
-    <!-- Server Room Image Header with Status Overlay -->
-    <FrameLayout
-        android:layout_width="match_parent"
+    <!-- Custom Header -->
+    <LinearLayout
+        android:id="@+id/fixed_header"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="4dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:background="?attr/colorTopBar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="220dp"
-            android:src="@drawable/fadcam_server_room_bg_rounded"
-            android:scaleType="centerCrop"
-            android:contentDescription="@string/stream_server_room" />
-
-        <!-- Status Card Overlay -->
-        <LinearLayout
-            android:id="@+id/status_card"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|start"
-            android:layout_marginBottom="12dp"
-            android:layout_marginStart="12dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
-
-                <!-- Glow Container + Indicator -->
-                <FrameLayout
-                    android:id="@+id/glow_container"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="12dp"
-                    android:clipChildren="false"
-                    android:clipToPadding="false">
-
-                    <View
-                        android:id="@+id/status_glow"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/status_dot_glow"
-                        android:visibility="gone" />
-
-                    <View
-                        android:id="@+id/status_indicator_dot"
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/status_dot_inactive" />
-                </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/status_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/stream_inactive"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:shadowColor="#000000"
-                        android:shadowDx="0"
-                        android:shadowDy="1"
-                        android:shadowRadius="3" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Server Status"
-                        android:textSize="11sp"
-                        android:layout_marginTop="2dp"
-                        android:textColor="#DDDDDD"
-                        android:shadowColor="#000000"
-                        android:shadowDx="0"
-                        android:shadowDy="1"
-                        android:shadowRadius="3" />
-                </LinearLayout>
-        </LinearLayout>
-    </FrameLayout>
+            android:text="@string/stream_title"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
 
     <!-- Scrollable Content -->
     <ScrollView
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        app:layout_constraintTop_toBottomOf="@id/fixed_header"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -107,187 +49,296 @@
             android:paddingTop="12dp"
             android:paddingBottom="24dp">
 
-            <!-- Start Server Toggle Row -->
-            <LinearLayout
+            <!-- COMPACT SERVER ROOM CARD -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/settings_home_row_bg"
-                android:paddingStart="14dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/stream_start_server"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="?attr/colorHeading" />
+                <!-- Background Image -->
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:src="@drawable/fadcam_server_room_bg"
+                    android:scaleType="centerCrop" />
 
-                <Switch
-                    android:id="@+id/streaming_toggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                <!-- Semi-transparent overlay -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:background="#80000000" />
 
-            <!-- Metrics Grid -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="2"
-                android:layout_marginBottom="8dp">
-
-                <!-- Left Column -->
+                <!-- Content -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:orientation="vertical"
-                    android:paddingEnd="6dp">
+                    android:padding="12dp">
 
-                    <!-- Uptime -->
+                    <!-- Header Row with Title and Status Circle -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/settings_home_row_bg"
-                        android:padding="10dp"
-                        android:layout_marginBottom="6dp">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Uptime"
-                            android:textSize="11sp"
+                            android:layout_weight="1"
+                            android:text="@string/stream_server_room"
+                            android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                            android:textColor="#4CAF50" />
 
-                        <TextView
-                            android:id="@+id/uptime_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0s"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
+                        <!-- Status Indicator Circle (stays in place) -->
+                        <FrameLayout
+                            android:id="@+id/glow_container"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="12dp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false">
+
+                            <View
+                                android:id="@+id/status_glow"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:background="@drawable/status_dot_glow"
+                                android:visibility="gone" />
+
+                            <View
+                                android:id="@+id/status_indicator_dot"
+                                android:layout_width="10dp"
+                                android:layout_height="10dp"
+                                android:layout_gravity="center"
+                                android:background="@drawable/status_dot_inactive" />
+                        </FrameLayout>
                     </LinearLayout>
 
-                    <!-- Battery -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <!-- Status Label (below circle) -->
+                    <TextView
+                        android:id="@+id/status_text"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/settings_home_row_bg"
-                        android:padding="10dp">
+                        android:text="@string/stream_inactive"
+                        android:textSize="11sp"
+                        android:textColor="#9E9E9E"
+                        android:layout_marginBottom="10dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Battery"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                <!-- Start Server Toggle Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/settings_home_row_bg"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:layout_marginBottom="8dp">
 
-                        <TextView
-                            android:id="@+id/battery_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="--"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
-                    </LinearLayout>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/stream_start_server"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading" />
+
+                    <Switch
+                        android:id="@+id/streaming_toggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
-                <!-- Right Column -->
+                <!-- Compact Metrics Grid -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:paddingStart="6dp">
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:layout_marginBottom="6dp">
 
-                    <!-- Clients (Clickable) -->
+                    <!-- Left Column -->
                     <LinearLayout
-                        android:id="@+id/clients_row"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
-                        android:background="@drawable/settings_home_row_bg"
-                        android:padding="10dp"
-                        android:layout_marginBottom="6dp">
+                        android:paddingEnd="6dp">
 
+                        <!-- Uptime -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:orientation="vertical"
+                            android:background="@drawable/settings_home_row_bg"
+                            android:padding="8dp"
+                            android:layout_marginBottom="6dp">
 
-                            <LinearLayout
-                                android:layout_width="0dp"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
+                                android:text="Uptime"
+                                android:textSize="11sp"
+                                android:textColor="#9E9E9E"
+                                android:layout_marginBottom="2dp" />
 
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Clients"
-                                    android:textSize="11sp"
-                                    android:textStyle="bold"
-                                    android:textColor="?attr/colorHeading" />
+                            <TextView
+                                android:id="@+id/uptime_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0s"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+                        </LinearLayout>
 
-                                <TextView
-                                    android:id="@+id/connections_text"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="0"
-                                    android:textSize="13sp"
-                                    android:layout_marginTop="4dp"
-                                    android:textColor="@android:color/darker_gray" />
-                            </LinearLayout>
+                        <!-- Battery -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="@drawable/settings_home_row_bg"
+                            android:padding="8dp">
 
-                            <ImageView
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:src="@drawable/ic_arrow_right"
-                                android:tint="@android:color/darker_gray" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Battery"
+                                android:textSize="11sp"
+                                android:textColor="#9E9E9E"
+                                android:layout_marginBottom="2dp" />
+
+                            <TextView
+                                android:id="@+id/battery_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Segments -->
+                    <!-- Right Column -->
                     <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingStart="6dp">
+
+                        <!-- Clients -->
+                        <LinearLayout
+                            android:id="@+id/clients_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="@drawable/settings_home_row_bg"
+                            android:padding="8dp"
+                            android:layout_marginBottom="6dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Clients"
+                                        android:textSize="11sp"
+                                        android:textColor="#9E9E9E"
+                                        android:layout_marginBottom="2dp" />
+
+                                    <TextView
+                                        android:id="@+id/connections_text"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="0"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        android:textColor="?attr/colorHeading" />
+                                </LinearLayout>
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_arrow_right"
+                                    android:tint="@android:color/darker_gray" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Segments -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="@drawable/settings_home_row_bg"
+                            android:padding="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Segments"
+                                android:textSize="11sp"
+                                android:textColor="#9E9E9E"
+                                android:layout_marginBottom="2dp" />
+
+                            <TextView
+                                android:id="@+id/fragments_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+                        </LinearLayout>
+                    </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Client IPs (Expandable) -->
+                    <LinearLayout
+                        android:id="@+id/client_ips_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:background="@drawable/settings_home_row_bg"
-                        android:padding="10dp">
+                        android:padding="8dp"
+                        android:visibility="gone">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Segments"
+                            android:text="@string/stream_client_ips"
                             android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                            android:textColor="#9E9E9E"
+                            android:layout_marginBottom="4dp" />
 
                         <TextView
-                            android:id="@+id/fragments_text"
+                            android:id="@+id/client_ips_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
+                            android:text="@string/stream_no_clients"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorHeading"
+                            android:fontFamily="monospace" />
                     </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
+            </FrameLayout>
 
             <!-- Recording Mode Row -->
             <LinearLayout
@@ -398,28 +449,14 @@
                 android:paddingBottom="12dp"
                 android:layout_marginBottom="16dp">
 
-                <LinearLayout
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/stream_view_all_endpoints"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorHeading" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View all API endpoints (GET/POST)"
-                        android:textSize="12sp"
-                        android:layout_marginTop="2dp"
-                        android:textColor="@android:color/darker_gray" />
-                </LinearLayout>
+                    android:text="@string/stream_view_all_endpoints"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorHeading" />
 
                 <ImageView
                     android:layout_width="14dp"
@@ -572,4 +609,4 @@
         </LinearLayout>
     </ScrollView>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
