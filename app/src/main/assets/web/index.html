@@ -40,14 +40,14 @@
     </style>
 </head>
 <body>
-    <video id="v" controls muted playsinline></video>
+    <video id="v" controls muted playsinline autoplay></video>
     <div class="info">
         <h2 id="s"><span class="emoji">⏳</span> Checking stream status...</h2>
         <p id="msg">Connecting to server...</p>
         <p><strong>HLS Stream:</strong> <code id="url"></code></p>
         <p><strong>Status:</strong> <code id="statusInfo">Loading...</code></p>
         <div class="controls">
-            <button id="torchButton" class="torch-button" disabled>
+            <button id="torchButton" class="torch-button">
                 <span class="emoji">🔦</span> Torch OFF
             </button>
         </div>
@@ -214,16 +214,17 @@
                 enableWorker: true,
                 lowLatencyMode: false,  // Traditional HLS, not LL-HLS
                 
-                // BALANCED: Enough buffer to prevent stalls, not too much to cause memory issues
-                maxBufferLength: 6,  // Buffer 6 seconds (smooth playback)
-                maxMaxBufferLength: 10,  // Hard cap at 10 seconds
-                maxBufferSize: 40 * 1000 * 1000,  // 40 MB max (3-4 fragments)
+                // PRODUCTION-READY: Increased buffer to handle variable bitrate from H.264/H.265 motion
+                // When camera moves fast, I-frames are 3-4MB, P-frames 850KB - buffer needs room for spikes
+                maxBufferLength: 12,  // Buffer 12 seconds (handles bitrate spikes from motion)
+                maxMaxBufferLength: 15,  // Hard cap at 15 seconds
+                maxBufferSize: 60 * 1000 * 1000,  // 60 MB max (handles large I-frames)
                 maxBufferHole: 0.5,  // Jump small holes
                 backBufferLength: 2,  // Keep only 2s history (minimal memory)
                 
                 // Live streaming - stay close to live edge without aggressive jumping
                 liveSyncDurationCount: 2,  // Stay 2 segments behind (low latency)
-                liveMaxLatencyDurationCount: 4,  // Jump if >4 segments behind
+                liveMaxLatencyDurationCount: 6,  // Jump if >6 segments behind (tolerance for bitrate spikes)
                 liveDurationInfinity: true,  // Infinity duration for live
                 
                 // Faster timeouts to recover quickly from errors
@@ -272,11 +273,20 @@
                 isInitialBuffering = false;
                 
                 // Start playing immediately - browser will buffer as needed
-                v.play().catch(e => {
-                    Logger.warn('Autoplay blocked:', e.message);
-                    setStatus('⏸️', 'Click to Play');
-                    setMessage('Browser blocked autoplay. Click video to start.');
-                });
+                let playPromise = v.play();
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            Logger.info('Autoplay started successfully');
+                        })
+                        .catch(e => {
+                            Logger.warn('Autoplay blocked by browser:', e.message);
+                            setStatus('⏸️', 'Click to Play');
+                            setMessage('Browser blocked autoplay. Click video to start.');
+                        });
+                } else {
+                    Logger.info('Using legacy play API');
+                }
             });
             
             // Fragment loaded - log ALL fragments to debug old video issue
@@ -487,16 +497,8 @@
         // INITIALIZATION
         // ============================================================
         Logger.important('Starting status polling...');
-        // Enable torch button once we know the server is running
         checkStatus();
-        function enableTorchAfterServerCheck() {
-            if (streamStarted || document.getElementById('statusInfo').textContent.includes('ready') || 
-                document.getElementById('statusInfo').textContent.includes('buffering')) {
-                torchButton.disabled = false;
-            }
-        }
-        // Check torch button availability after first status check
-        setTimeout(enableTorchAfterServerCheck, 3000);
+        // Torch button is enabled by default for immediate use
         
         
         // Cleanup on page unload
