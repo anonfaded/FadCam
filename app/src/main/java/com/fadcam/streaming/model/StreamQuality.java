@@ -2,26 +2,26 @@ package com.fadcam.streaming.model;
 
 /**
  * Stream quality preset configuration.
- * Defines resolution, FPS, and bitrate combinations.
+ * Uses standard camera resolutions with reduced bitrates and FPS caps for streaming.
+ * Orientation is NOT stored here - users can select portrait/landscape separately.
+ * Resolution comes from normal recording settings.
  */
 public class StreamQuality {
     public enum Preset {
-        LOW("Low", 854, 480, 15, 2_000_000, "2 Mbps - Good for slow connections"),
-        MEDIUM("Medium", 1280, 720, 24, 4_000_000, "4 Mbps - Balanced quality"),
-        HIGH("High", 1920, 1080, 30, 8_000_000, "8 Mbps - HD streaming (default)"),
-        ULTRA("Ultra", 1920, 1080, 30, 12_000_000, "12 Mbps - Maximum quality");
+        // Streaming presets: bitrate + max FPS caps ONLY (resolution from normal recording)
+        // This prevents high fps from using excessive bandwidth for streaming
+        LOW("Low", 15, 1_000_000, "1 Mbps, max 15fps - Good for very poor connections"),
+        MEDIUM("Medium", 24, 2_500_000, "2.5 Mbps, max 24fps - Balanced quality"),
+        HIGH("High", 30, 5_000_000, "5 Mbps, max 30fps - HD streaming (default)"),
+        ULTRA("Ultra", 30, 8_000_000, "8 Mbps, max 30fps - Maximum quality");
         
         private final String displayName;
-        private final int width;
-        private final int height;
         private final int fps;
         private final int bitrate;
         private final String description;
         
-        Preset(String displayName, int width, int height, int fps, int bitrate, String description) {
+        Preset(String displayName, int fps, int bitrate, String description) {
             this.displayName = displayName;
-            this.width = width;
-            this.height = height;
             this.fps = fps;
             this.bitrate = bitrate;
             this.description = description;
@@ -29,14 +29,6 @@ public class StreamQuality {
         
         public String getDisplayName() {
             return displayName;
-        }
-        
-        public int getWidth() {
-            return width;
-        }
-        
-        public int getHeight() {
-            return height;
         }
         
         public int getFps() {
@@ -51,21 +43,17 @@ public class StreamQuality {
             return description;
         }
         
-        public String getResolutionString() {
-            return width + "x" + height;
-        }
-        
         public String getBitrateString() {
             return (bitrate / 1_000_000) + " Mbps";
         }
         
         /**
-         * Get preset from resolution and bitrate (approximate match).
+         * Get preset from bitrate only (approximate match).
          */
-        public static Preset fromSpecs(int width, int height, int bitrate) {
-            if (width <= 854) return LOW;
-            if (width <= 1280) return MEDIUM;
-            if (bitrate >= 10_000_000) return ULTRA;
+        public static Preset fromSpecs(int bitrate) {
+            if (bitrate <= 1_500_000) return LOW;
+            if (bitrate <= 3_000_000) return MEDIUM;
+            if (bitrate >= 8_000_000) return ULTRA;
             return HIGH;
         }
     }
@@ -127,12 +115,10 @@ public class StreamQuality {
     
     public String toJson() {
         return String.format(
-            "{\"preset\": \"%s\", \"resolution\": \"%s\", \"fps\": %d, \"bitrate\": \"%s\", \"stream_orientation\": \"%s\"}",
+            "{\"preset\": \"%s\", \"bitrate\": \"%s\", \"fps_cap\": %d, \"note\": \"resolution uses normal recording settings\"}",
             currentPreset.name().toLowerCase(),
-            currentPreset.getResolutionString(),
-            currentPreset.getFps(),
             currentPreset.getBitrateString(),
-            streamOrientation.getDisplayName()
+            currentPreset.getFps()
         );
     }
 }

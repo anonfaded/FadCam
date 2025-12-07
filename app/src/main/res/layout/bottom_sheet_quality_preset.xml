@@ -50,7 +50,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="854x480 • 15fps • 2 Mbps\nGood for slow connections"
+                android:text="1 Mbps, max 15fps\nGood for very poor connections"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />
@@ -97,7 +97,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1280x720 • 24fps • 4 Mbps\nBalanced quality"
+                android:text="2.5 Mbps, max 24fps\nBalanced quality"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />
@@ -144,7 +144,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1920x1080 • 30fps • 8 Mbps\nHD streaming (default)"
+                android:text="5 Mbps, max 30fps\nHD streaming (default)"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />
@@ -191,7 +191,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1920x1080 • 30fps • 12 Mbps\nMaximum quality"
+                android:text="8 Mbps, max 30fps\nMaximum quality"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />

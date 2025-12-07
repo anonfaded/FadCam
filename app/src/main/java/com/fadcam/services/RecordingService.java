@@ -1803,6 +1803,16 @@ public class RecordingService extends Service {
             // Use per-camera FPS setting and only choose HSR if selected resolution
             // supports it
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            
+            // ROBUST FIX: Apply streaming FPS cap BEFORE creating camera session
+            // This ensures camera captures at capped framerate, not just pipeline drops frames
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+            if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
+                Log.d(TAG, "[STREAMING] Capping camera FPS from " + targetFrameRate + " to " + streamFpsCap + " (streaming preset)");
+                targetFrameRate = streamFpsCap;
+            }
+            
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
             Size selected = sharedPreferencesManager.getCameraResolution();
@@ -1873,6 +1883,15 @@ public class RecordingService extends Service {
             // -------------- Fix Start: Use per-camera FPS --------------
             // Get target frame rate from settings for specific camera
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            
+            // ROBUST FIX: Apply streaming FPS cap BEFORE creating camera session
+            // This ensures camera captures at capped framerate, not just pipeline drops frames
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+            if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
+                Log.d(TAG, "[STREAMING] Capping camera FPS from " + targetFrameRate + " to " + streamFpsCap + " (streaming preset)");
+                targetFrameRate = streamFpsCap;
+            }
             // -------------- Fix End: Use per-camera FPS --------------
 
             // Log device info once for debugging
@@ -2204,14 +2223,14 @@ public class RecordingService extends Service {
     private int getVideoBitrate() {
         int videoBitrate;
         
-        // Check if quality preset is set (from remote streaming)
+        // Check if streaming bitrate is set (from remote streaming quality preset)
         android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
-        int presetBitrate = fadcamPrefs.getInt("video_bitrate", -1);
+        int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
         
-        if (presetBitrate > 0) {
-            // Use quality preset bitrate (stored in Mbps, convert to bps)
-            videoBitrate = presetBitrate * 1_000_000;
-            Log.d(TAG, "[DEBUG] Using quality preset video bitrate: " + videoBitrate + " bps (" + presetBitrate + " Mbps)");
+        if (streamBitrate > 0) {
+            // Use streaming quality preset bitrate (already stored in bps, no conversion needed!)
+            videoBitrate = streamBitrate;
+            Log.d(TAG, "[DEBUG] Using streaming bitrate: " + videoBitrate + " bps (" + (videoBitrate / 1_000_000) + " Mbps)");
         } else if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
             videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored
                                                                                                                     // as
@@ -3591,10 +3610,26 @@ public class RecordingService extends Service {
                 }
             };
 
+            // -------------- Fix Start: Apply streaming bitrate and FPS cap to encoder ------
+            // Check for active streaming bitrate + FPS cap (quality preset)
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
+            int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+            
+            // Use normal recording resolution and orientation
+            // Only streaming bitrate and FPS cap are applied from quality preset
             Size resolution = sharedPreferencesManager.getCameraResolution();
-            String orientation = sharedPreferencesManager.getVideoOrientation();
             int videoWidth = resolution.getWidth();
             int videoHeight = resolution.getHeight();
+            String orientation = sharedPreferencesManager.getVideoOrientation();
+            
+            if (streamBitrate > 0) {
+                Log.d(TAG, "[STREAMING] Using quality preset bitrate: " + (streamBitrate / 1_000_000) + " Mbps");
+            }
+            if (streamFpsCap > 0) {
+                Log.d(TAG, "[STREAMING] Using quality preset FPS cap: " + streamFpsCap + " fps");
+            }
+            Log.d(TAG, "[STREAMING] Using normal recording resolution: " + videoWidth + "x" + videoHeight + " (" + orientation + ")");
 
             // Get sensor orientation
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -3612,9 +3647,15 @@ public class RecordingService extends Service {
                 }
             }
             int videoBitrate = getVideoBitrate();
-            // -------------- Fix Start: Use per-camera FPS for encoder --------------
+            
+            // Get camera's target framerate (already capped by streaming FPS cap if needed)
             int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
-            // -------------- Fix End: Use per-camera FPS for encoder --------------
+            // Apply streaming FPS cap again here as safety (main cap is applied at camera session creation)
+            if (streamFpsCap > 0 && videoFramerate > streamFpsCap) {
+                Log.d(TAG, "[STREAMING] Applying secondary FPS cap: " + videoFramerate + " -> " + streamFpsCap);
+                videoFramerate = streamFpsCap;
+            }
+            // -------------- Fix End: Apply streaming bitrate and FPS cap to encoder ------
             // ----- Fix Start for video splitting -----
             // Set splitSizeBytes to 0 if video splitting is disabled
             long splitSizeBytes = 0;
@@ -3685,7 +3726,8 @@ public class RecordingService extends Service {
                     Log.d(TAG, "No location available for SAF recording metadata");
                 }
                 
-                Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
+                Log.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
+                    " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
                         initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
@@ -3726,6 +3768,8 @@ public class RecordingService extends Service {
                 currentSegmentFile = outputFile;
                 currentSegmentPath = outputFile.getAbsolutePath();
                 
+                Log.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
+                    " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
                         segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec, latitude, longitude);

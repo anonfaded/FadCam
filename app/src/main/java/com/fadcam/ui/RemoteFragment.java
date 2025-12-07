@@ -53,7 +53,6 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout viewEndpointsRow;
     private LinearLayout clientsRow;
     private LinearLayout fpsFormatRow;
-    private LinearLayout streamOrientationRow;
     private LinearLayout uptimeRow;
     private LinearLayout batteryRow;
     private TextView recordingModeValue;
@@ -62,7 +61,6 @@ public class RemoteFragment extends BaseFragment {
     private TextView batteryText;
     private TextView fragmentsText;
     private TextView fpsResolutionText;
-    private TextView streamOrientationText;
     private TextView networkHealthText;
     private TextView memoryText;
     private TextView storageText;
@@ -127,7 +125,6 @@ public class RemoteFragment extends BaseFragment {
         viewEndpointsRow = view.findViewById(R.id.view_endpoints_row);
         clientsRow = view.findViewById(R.id.clients_row);
         fpsFormatRow = view.findViewById(R.id.fps_format_row);
-        streamOrientationRow = view.findViewById(R.id.stream_orientation_row);
         uptimeRow = view.findViewById(R.id.uptime_row);
         batteryRow = view.findViewById(R.id.battery_row);
         uptimeText = view.findViewById(R.id.uptime_text);
@@ -135,7 +132,6 @@ public class RemoteFragment extends BaseFragment {
         batteryText = view.findViewById(R.id.battery_text);
         fragmentsText = view.findViewById(R.id.fragments_text);
         fpsResolutionText = view.findViewById(R.id.fps_resolution_text);
-        streamOrientationText = view.findViewById(R.id.stream_orientation_text);
         networkHealthText = view.findViewById(R.id.network_health_text);
         memoryText = view.findViewById(R.id.memory_text);
         storageText = view.findViewById(R.id.storage_text);
@@ -168,11 +164,8 @@ public class RemoteFragment extends BaseFragment {
         // Clients row click listener
         clientsRow.setOnClickListener(v -> showClientDetailsPicker());
         
-        // Stream Quality row click listener (unified FPS/Format/Bitrate)
+        // Stream Quality row click listener (bitrate + FPS cap)
         fpsFormatRow.setOnClickListener(v -> showQualityPresetPicker());
-        
-        // Stream Orientation row click listener
-        streamOrientationRow.setOnClickListener(v -> showStreamOrientationPicker());
         
         // Uptime row click listener
         uptimeRow.setOnClickListener(v -> showUptimeInfo());
@@ -346,6 +339,9 @@ public class RemoteFragment extends BaseFragment {
             rootUrlText.setText("http://---.---.---.---:----/");
         }
         
+        // Update quality display (FPS cap + bitrate)
+        updateRequirementsDisplay();
+        
         streamingToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 startStreaming();
@@ -455,14 +451,15 @@ public class RemoteFragment extends BaseFragment {
     
     private void updateRequirementsDisplay() {
         // Display current stream quality preset
+        // NOTE: Resolution and orientation now use normal recording settings
         RemoteStreamManager manager = RemoteStreamManager.getInstance();
         StreamQuality quality = manager.getStreamQuality();
         StreamQuality.Preset preset = quality.getCurrentPreset();
         
-        // Format: "High (1080p) • 30fps • 8 Mbps"
-        String displayText = String.format("%s (%s) • %dfps • %s",
+        // Format: "High • 30fps cap • 5 Mbps"
+        // (Resolution comes from normal recording settings)
+        String displayText = String.format("%s • %dfps cap • %s",
             preset.getDisplayName(),
-            preset.getResolutionString().split("x")[1] + "p",  // Extract vertical resolution
             preset.getFps(),
             preset.getBitrateString()
         );
@@ -570,30 +567,6 @@ public class RemoteFragment extends BaseFragment {
     private void showNetworkHealth() {
         NetworkHealthBottomSheet sheet = new NetworkHealthBottomSheet();
         sheet.show(getParentFragmentManager(), "network_health_sheet");
-    }
-    
-    private void showStreamOrientationPicker() {
-        RemoteStreamManager manager = RemoteStreamManager.getInstance();
-        StreamQuality quality = manager.getStreamQuality();
-        StreamQuality.StreamOrientation currentOrientation = quality.getStreamOrientation();
-        
-        com.fadcam.ui.bottomsheet.StreamOrientationBottomSheet sheet = 
-            com.fadcam.ui.bottomsheet.StreamOrientationBottomSheet.newInstance(currentOrientation);
-        sheet.setOnOrientationSelectedListener(orientation -> {
-            // Orientation will be updated in RemoteStreamManager by the bottom sheet
-            // Update UI to reflect new orientation immediately
-            updateStreamOrientationDisplay();
-            updateUI(); // Refresh all UI elements
-        });
-        sheet.show(getParentFragmentManager(), "stream_orientation_sheet");
-    }
-    
-    private void updateStreamOrientationDisplay() {
-        RemoteStreamManager manager = RemoteStreamManager.getInstance();
-        StreamQuality quality = manager.getStreamQuality();
-        StreamQuality.StreamOrientation orientation = quality.getStreamOrientation();
-        
-        streamOrientationText.setText(orientation.getDisplayName());
     }
     
     private int resolveThemeColor(int attr) {

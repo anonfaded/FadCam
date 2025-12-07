@@ -89,16 +89,20 @@ public class ClientEventLogsBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void addEventRow(LinearLayout container, ClientEvent event) {
-        LayoutInflater inflater = LayoutInflater.from(requireContext());
         LinearLayout row = new LinearLayout(requireContext());
         row.setLayoutParams(new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ));
         row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(12, 8, 12, 8);
+        row.setPadding(16, 12, 16, 12);
+        row.setBackgroundResource(com.fadcam.R.drawable.settings_group_card_bg);
+        
+        LinearLayout.LayoutParams rowParams = (LinearLayout.LayoutParams) row.getLayoutParams();
+        rowParams.bottomMargin = 8;
+        row.setLayoutParams(rowParams);
 
-        // Event type and timestamp
+        // Event type and timestamp header
         LinearLayout headerLayout = new LinearLayout(requireContext());
         headerLayout.setLayoutParams(new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -107,11 +111,14 @@ public class ClientEventLogsBottomSheet extends BottomSheetDialogFragment {
         headerLayout.setOrientation(LinearLayout.HORIZONTAL);
         headerLayout.setGravity(android.view.Gravity.CENTER_VERTICAL);
 
+        // Event type badge
         TextView eventType = new TextView(requireContext());
         eventType.setText(event.getEventType().name());
-        eventType.setTextSize(11);
+        eventType.setTextSize(12);
         eventType.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
-        eventType.setTextColor(getEventTypeColor(event.getEventType()));
+        eventType.setTextColor(0xFFFFFFFF); // White text
+        eventType.setBackgroundColor(getEventTypeColor(event.getEventType()));
+        eventType.setPadding(8, 4, 8, 4);
         eventType.setLayoutParams(new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -124,7 +131,7 @@ public class ClientEventLogsBottomSheet extends BottomSheetDialogFragment {
         
         TextView timestamp = new TextView(requireContext());
         timestamp.setText(timeStr);
-        timestamp.setTextSize(10);
+        timestamp.setTextSize(11);
         timestamp.setTextColor(requireContext().getColor(android.R.color.darker_gray));
         LinearLayout.LayoutParams timestampParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -140,32 +147,16 @@ public class ClientEventLogsBottomSheet extends BottomSheetDialogFragment {
         if (event.getDetails() != null && !event.getDetails().isEmpty()) {
             TextView details = new TextView(requireContext());
             details.setText(event.getDetails());
-            details.setTextSize(10);
+            details.setTextSize(11);
             details.setTextColor(requireContext().getColor(android.R.color.darker_gray));
-            details.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams detailsParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ));
-            row.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ));
+            );
+            detailsParams.topMargin = 4;
+            details.setLayoutParams(detailsParams);
             row.addView(details);
         }
-
-        // Divider
-        View divider = new View(requireContext());
-        divider.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            1
-        ));
-        divider.setBackgroundColor(requireContext().getColor(android.R.color.darker_gray));
-        LinearLayout.LayoutParams dividerParams = (LinearLayout.LayoutParams) divider.getLayoutParams();
-        dividerParams.setMarginStart(0);
-        dividerParams.setMarginEnd(0);
-        dividerParams.topMargin = 4;
-        dividerParams.bottomMargin = 4;
-        row.addView(divider);
 
         container.addView(row);
     }

@@ -510,7 +510,7 @@ public class RemoteStreamManager {
             // Get all system health metrics
             android.content.Context ctx = context != null ? context : null;
             int batteryPercent = ctx != null ? getBatteryPercentage(ctx) : -1;
-            String batteryInfo = ctx != null ? getBatteryInfo(ctx) : "Unknown";
+            String batteryDetailsJson = ctx != null ? getBatteryDetailsJson(ctx) : "{\"percent\": -1}";
             String networkType = ctx != null ? getNetworkType(ctx) : "unknown";
             boolean isNetworkConnected = ctx != null ? isNetworkConnected(ctx) : false;
             
@@ -553,7 +553,7 @@ public class RemoteStreamManager {
                 "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
                 "\"latest_sequence\": %d, \"oldest_sequence\": %d, \"active_connections\": %d, " +
                 "\"has_init_segment\": %s, \"uptime_seconds\": %d, " +
-                "\"battery_percent\": %d, \"battery_info\": \"%s\", " +
+                "\"battery_details\": %s, " +
                 "\"uptime_details\": %s, " +
                 "\"network_type\": \"%s\", \"network_connected\": %s, " +
                 "\"network_health\": %s, " +
@@ -574,8 +574,7 @@ public class RemoteStreamManager {
                 getAllClientMetrics().size(),
                 hasInit,
                 uptimeSeconds,
-                batteryPercent,
-                batteryInfo,
+                batteryDetailsJson,
                 uptimeDetailsJson,
                 networkType,
                 isNetworkConnected,
@@ -718,6 +717,67 @@ public class RemoteStreamManager {
             Log.e(TAG, "Error checking charging status: " + e.getMessage());
             return false;
         }
+    }
+    
+    /**
+     * Get battery details as JSON with separate fields for cleaner parsing.
+     * Returns: {"percent": X, "charging": true/false, "consumed": X, "remaining_hours": Y, "warning": "..."}
+     */
+    public String getBatteryDetailsJson(android.content.Context context) {
+        if (context == null) return "{\"percent\": -1, \"status\": \"Unknown\"}";
+        
+        int currentLevel = getBatteryPercentage(context);
+        if (currentLevel == -1) return "{\"percent\": -1, \"status\": \"Unknown\"}";
+        
+        // Track battery at app start
+        if (appStartBatteryLevel == -1) {
+            appStartBatteryLevel = currentLevel;
+        }
+        
+        // Track battery at streaming start
+        if (streamingEnabled && streamStartBatteryLevel == -1) {
+            streamStartBatteryLevel = currentLevel;
+        }
+        
+        boolean isCharging = isDeviceCharging(context);
+        int consumed = 0;
+        double remainingHours = 0;
+        String warning = "";
+        
+        // Calculate consumption and estimate remaining time if streaming
+        if (streamingEnabled && streamStartBatteryLevel != -1 && serverStartTime > 0) {
+            consumed = (int) (streamStartBatteryLevel - currentLevel);
+            if (consumed >= 0) {
+                // Estimate remaining streaming time
+                long streamingDurationMs = System.currentTimeMillis() - serverStartTime;
+                if (streamingDurationMs > 60000) { // At least 1 minute of streaming
+                    double consumptionRate = consumed / (streamingDurationMs / 3600000.0); // % per hour
+                    if (consumptionRate > 0) {
+                        remainingHours = currentLevel / consumptionRate;
+                        if (remainingHours >= 500) { // Set to -1 if unreasonable
+                            remainingHours = currentLevel; // Fallback: estimate conservatively
+                        }
+                    } else {
+                        remainingHours = currentLevel; // No consumption yet
+                    }
+                } else {
+                    remainingHours = currentLevel; // Less than 1 minute
+                }
+            }
+        }
+        
+        // Warning if battery is low (only if not charging)
+        if (currentLevel < 20 && !isCharging) {
+            warning = "Low - Plug charger ASAP";
+        }
+        
+        String warningJson = warning.isEmpty() ? "\"\"" : "\"" + warning + "\"";
+        String chargingStatus = isCharging ? "Charging" : "Discharging";
+        
+        return String.format(
+            "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remaining_hours\": %.1f, \"warning\": %s}",
+            currentLevel, chargingStatus, consumed, remainingHours, warningJson
+        );
     }
     
     /**
@@ -865,7 +925,8 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Set stream quality preset.
+     * Set stream quality preset (bitrate + FPS cap are used for streaming).
+     * Resolution and actual FPS use the normal recording settings - but FPS is capped at preset max.
      * Note: Requires camera/encoder restart to apply new settings.
      */
     public void setStreamQuality(StreamQuality.Preset preset, android.content.Context context) {
@@ -874,13 +935,12 @@ public class RemoteStreamManager {
         // Update quality preset
         streamQuality.setPreset(preset);
         
-        // Store in SharedPreferences for persistence
+        // Store bitrate + FPS cap in SharedPreferences
+        // Resolution comes from normal recording settings
         android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
         android.content.SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt("video_width", preset.getWidth());
-        editor.putInt("video_height", preset.getHeight());
-        editor.putInt("video_fps", preset.getFps());
-        editor.putInt("video_bitrate", preset.getBitrate());
+        editor.putInt("stream_bitrate", preset.getBitrate()); // Bitrate for streaming
+        editor.putInt("stream_fps_cap", preset.getFps());     // Max FPS for streaming (cap user's recording fps if higher)
         editor.putString("quality_preset", preset.name());
         editor.apply();
         
