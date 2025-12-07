@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/colorOnSurface"
+        android:alpha="0.1"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/client_ip_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Events for 192.168.1.8"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Showing all recorded events for this client"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="400dp">
+
+        <LinearLayout
+            android:id="@+id/events_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp" />
+    </ScrollView>
+</LinearLayout>

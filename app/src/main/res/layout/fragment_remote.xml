@@ -161,57 +161,91 @@
                     android:orientation="vertical"
                     android:paddingEnd="6dp">
 
-                    <!-- Uptime -->
+                    <!-- Uptime (Clickable) -->
                     <LinearLayout
+                        android:id="@+id/uptime_row"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:orientation="horizontal"
                         android:background="@drawable/settings_home_row_bg"
                         android:padding="10dp"
-                        android:layout_marginBottom="6dp">
+                        android:layout_marginBottom="6dp"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Uptime"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/uptime_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0s"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Uptime"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+
+                            <TextView
+                                android:id="@+id/uptime_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0s"
+                                android:textSize="13sp"
+                                android:layout_marginTop="4dp"
+                                android:textColor="@android:color/darker_gray" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@android:color/darker_gray"
+                            android:layout_gravity="center_vertical" />
                     </LinearLayout>
 
-                    <!-- Battery -->
+                    <!-- Battery (Clickable) -->
                     <LinearLayout
+                        android:id="@+id/battery_row"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:orientation="horizontal"
                         android:background="@drawable/settings_home_row_bg"
-                        android:padding="10dp">
+                        android:padding="10dp"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Battery"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/battery_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="--"
-                            android:textSize="13sp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@android:color/darker_gray" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Battery"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+
+                            <TextView
+                                android:id="@+id/battery_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--"
+                                android:textSize="13sp"
+                                android:layout_marginTop="4dp"
+                                android:textColor="@android:color/darker_gray" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@android:color/darker_gray"
+                            android:layout_gravity="center_vertical" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -657,7 +691,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="FPS &amp; Format"
+                        android:text="Stream Quality"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -666,53 +700,7 @@
                         android:id="@+id/fps_resolution_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="30 fps @ 1920x1080 (AVC)"
-                        android:textSize="12sp"
-        android:layout_marginTop="2dp"
-                        android:textColor="@android:color/darker_gray" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@android:color/darker_gray"
-                    android:layout_marginEnd="12dp" />
-            </LinearLayout>
-
-            <!-- Bitrate Row -->
-            <LinearLayout
-                android:id="@+id/bitrate_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/settings_home_row_bg"
-                android:paddingStart="14dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Bitrate"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorHeading" />
-
-                    <TextView
-                        android:id="@+id/bitrate_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="8 Mbps (Auto)"
+                        android:text="High (1080p) • 30fps • 8 Mbps"
                         android:textSize="12sp"
                         android:layout_marginTop="2dp"
                         android:textColor="@android:color/darker_gray" />
@@ -725,6 +713,54 @@
                     android:tint="@android:color/darker_gray"
                     android:layout_marginEnd="12dp" />
             </LinearLayout>
+
+            <!-- Stream Orientation Row -->
+            <LinearLayout
+                android:id="@+id/stream_orientation_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/settings_home_row_bg"
+                android:paddingStart="14dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:layout_marginBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Stream Orientation"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading" />
+
+                    <TextView
+                        android:id="@+id/stream_orientation_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Auto (use app setting)"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp"
+                        android:textColor="@android:color/darker_gray" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"
+                    android:layout_marginEnd="12dp" />
+            </LinearLayout>
+
+
 
             <!-- How to Use Section -->
             <TextView

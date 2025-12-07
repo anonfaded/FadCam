@@ -2203,7 +2203,16 @@ public class RecordingService extends Service {
 
     private int getVideoBitrate() {
         int videoBitrate;
-        if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
+        
+        // Check if quality preset is set (from remote streaming)
+        android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        int presetBitrate = fadcamPrefs.getInt("video_bitrate", -1);
+        
+        if (presetBitrate > 0) {
+            // Use quality preset bitrate (stored in Mbps, convert to bps)
+            videoBitrate = presetBitrate * 1_000_000;
+            Log.d(TAG, "[DEBUG] Using quality preset video bitrate: " + videoBitrate + " bps (" + presetBitrate + " Mbps)");
+        } else if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
             videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored
                                                                                                                     // as
                                                                                                                     // kbps,

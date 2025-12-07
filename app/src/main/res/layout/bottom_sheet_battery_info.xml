@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header with gradient -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Battery Information"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:paddingBottom="16dp" />
+
+    <!-- Current Battery Level Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Current Level"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/currentBatteryLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="75%"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Battery Consumption Card -->
+    <LinearLayout
+        android:id="@+id/consumptionCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Battery Consumed (Streaming)"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/consumedPercentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="15%"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/consumptionRate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Consumption rate: ~5% per hour"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Estimated Time Remaining Card -->
+    <LinearLayout
+        android:id="@+id/timeRemainingCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Estimated Streaming Time Remaining"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/timeRemaining"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="~3.2 hours"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Charging Status Card -->
+    <LinearLayout
+        android:id="@+id/chargingStatusCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Charging Status"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/chargingStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Not Charging"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Low Battery Warning Card -->
+    <LinearLayout
+        android:id="@+id/lowBatteryWarning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="⚠️ Low Battery - Plug charger ASAP"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FF6B6B" />
+    </LinearLayout>
+
+</LinearLayout>

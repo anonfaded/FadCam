@@ -4,6 +4,9 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.fadcam.streaming.model.ClientEvent;
+import com.fadcam.streaming.model.ClientMetrics;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -245,8 +248,21 @@ public class LiveM3U8Server extends NanoHTTPD {
         try {
             Log.d(TAG, "📋 Serving initialization segment (" + (initSegment.length / 1024) + " KB) to " + clientIP);
             
+            // Check if this is first request from this client
+            ClientMetrics metrics = streamManager.getClientMetrics(clientIP);
+            boolean isFirstRequest = (metrics == null || metrics.getTotalBytesServed() == 0);
+            
             // Track data served to this client
             streamManager.addDataServed(clientIP, initSegment.length);
+            
+            // Log first request event
+            if (isFirstRequest) {
+                streamManager.logClientEvent(new ClientEvent(
+                    clientIP,
+                    ClientEvent.EventType.CONNECTED,
+                    "First request - init segment"
+                ));
+            }
             
             InputStream initStream = new java.io.ByteArrayInputStream(initSegment);
             Response response = newFixedLengthResponse(Response.Status.OK, "video/mp4", initStream, initSegment.length);
@@ -292,8 +308,27 @@ public class LiveM3U8Server extends NanoHTTPD {
             try {
                 Log.d(TAG, "📦 Serving fragment #" + sequenceNumber + " (" + (fragment.sizeBytes / 1024) + " KB) to " + clientIP);
                 
-                // Track data served to this client
+                // Get previous data before adding new
+                ClientMetrics prevMetrics = streamManager.getClientMetrics(clientIP);
+                long previousData = prevMetrics != null ? prevMetrics.getTotalBytesServed() : 0;
+                long previousMB = previousData / (1024 * 1024);
+                
+                // Track new data served
                 streamManager.addDataServed(clientIP, fragment.sizeBytes);
+                
+                // Get new total
+                ClientMetrics newMetrics = streamManager.getClientMetrics(clientIP);
+                long newData = newMetrics != null ? newMetrics.getTotalBytesServed() : 0;
+                long newMB = newData / (1024 * 1024);
+                
+                // Log milestone every 10MB served to this client
+                if (newMB > 0 && previousMB / 10 < newMB / 10) {
+                    streamManager.logClientEvent(new ClientEvent(
+                        clientIP,
+                        ClientEvent.EventType.DATA_MILESTONE,
+                        newMB + " MB served"
+                    ));
+                }
                 
                 // Serve fragment bytes
                 InputStream fragmentStream = new java.io.ByteArrayInputStream(fragment.data);

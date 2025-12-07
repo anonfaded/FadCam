@@ -5,8 +5,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.streaming.model.ClientEvent;
 import com.fadcam.streaming.model.ClientMetrics;
 import com.fadcam.streaming.model.NetworkHealth;
+import com.fadcam.streaming.model.StreamQuality;
 import com.fadcam.streaming.util.NetworkMonitor;
 
 import java.io.File;
@@ -58,8 +60,13 @@ public class RemoteStreamManager {
     // Metadata
     private int activeConnections = 0;
     private final Map<String, ClientMetrics> clientMetricsMap = new HashMap<>();
+    private final List<ClientEvent> clientEventLog = new ArrayList<>();
+    private static final int MAX_EVENT_LOG_SIZE = 100; // Keep last 100 events
     private long serverStartTime = 0;
     private long totalDataServed = 0; // Track total bytes served across all sessions
+    private final StreamQuality streamQuality = new StreamQuality();
+    private long appStartBatteryLevel = -1; // Battery level when app started
+    private long streamStartBatteryLevel = -1; // Battery level when streaming started
     
     public enum StreamingMode {
         STREAM_ONLY,     // Don't save to disk after streaming
@@ -146,11 +153,15 @@ public class RemoteStreamManager {
     
     /**
      * Set context for status reporting.
+     * Also loads saved quality preset and orientation from SharedPreferences.
      */
     public void setContext(android.content.Context context) {
         this.context = context != null ? context.getApplicationContext() : null;
         if (this.context != null) {
             NetworkMonitor.getInstance().initialize(this.context);
+            // Load saved quality preset and orientation
+            loadStreamQuality(this.context);
+            loadStreamOrientation(this.context);
         }
     }
     
@@ -214,6 +225,13 @@ public class RemoteStreamManager {
     @Nullable
     public File getActiveRecordingFile() {
         return activeRecordingFile;
+    }
+    
+    /**
+     * Check if recording is currently active.
+     */
+    public boolean isRecording() {
+        return activeRecordingFile != null;
     }
     
     /**
@@ -492,6 +510,7 @@ public class RemoteStreamManager {
             // Get all system health metrics
             android.content.Context ctx = context != null ? context : null;
             int batteryPercent = ctx != null ? getBatteryPercentage(ctx) : -1;
+            String batteryInfo = ctx != null ? getBatteryInfo(ctx) : "Unknown";
             String networkType = ctx != null ? getNetworkType(ctx) : "unknown";
             boolean isNetworkConnected = ctx != null ? isNetworkConnected(ctx) : false;
             
@@ -504,13 +523,42 @@ public class RemoteStreamManager {
             String storageInfo = getStorageInfo();
             long totalDataMB = getTotalDataTransferred() / (1024 * 1024);
             
+            // Get uptime details
+            java.util.Map<String, Object> uptimeDetailsMap = getUptimeDetails();
+            String uptimeDetailsJson = String.format(
+                "{\"seconds\": %d, \"formatted\": \"%s\", \"start_time\": \"%s\", \"start_timestamp\": %d}",
+                uptimeDetailsMap.get("seconds"),
+                uptimeDetailsMap.get("formatted"),
+                uptimeDetailsMap.get("startTime"),
+                uptimeDetailsMap.get("startTimestamp")
+            );
+            
+            // Get event log (last 20 events)
+            StringBuilder eventsJson = new StringBuilder("[");
+            List<ClientEvent> events = getClientEventLog();
+            int eventStart = Math.max(0, events.size() - 20);
+            for (int i = eventStart; i < events.size(); i++) {
+                eventsJson.append(events.get(i).toJson());
+                if (i < events.size() - 1) {
+                    eventsJson.append(", ");
+                }
+            }
+            eventsJson.append("]");
+            
+            // Get stream quality info
+            String qualityJson = streamQuality.toJson();
+            
             return String.format(
                 "{\"streaming\": %s, \"mode\": \"%s\", \"state\": \"%s\", \"message\": \"%s\", " +
                 "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
                 "\"latest_sequence\": %d, \"oldest_sequence\": %d, \"active_connections\": %d, " +
-                "\"has_init_segment\": %s, \"uptime_seconds\": %d, \"battery_percent\": %d, " +
+                "\"has_init_segment\": %s, \"uptime_seconds\": %d, " +
+                "\"battery_percent\": %d, \"battery_info\": \"%s\", " +
+                "\"uptime_details\": %s, " +
                 "\"network_type\": \"%s\", \"network_connected\": %s, " +
                 "\"network_health\": %s, " +
+                "\"stream_quality\": %s, " +
+                "\"events\": %s, " +
                 "\"clients\": %s, " +
                 "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
                 "\"total_data_transferred_mb\": %d}",
@@ -527,9 +575,13 @@ public class RemoteStreamManager {
                 hasInit,
                 uptimeSeconds,
                 batteryPercent,
+                batteryInfo,
+                uptimeDetailsJson,
                 networkType,
                 isNetworkConnected,
                 networkHealthJson,
+                qualityJson,
+                eventsJson.toString(),
                 clientsJson.toString(),
                 memoryUsage,
                 storageInfo,
@@ -629,7 +681,7 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Get device battery percentage.
+     * Get battery percentage.
      */
     public int getBatteryPercentage(android.content.Context context) {
         if (context == null) return -1;
@@ -645,6 +697,253 @@ public class RemoteStreamManager {
         if (level == -1 || scale == -1) return -1;
         
         return (int) ((level / (float) scale) * 100);
+    }
+    
+    /**
+     * Check if device is currently charging.
+     */
+    private boolean isDeviceCharging(android.content.Context context) {
+        if (context == null) return false;
+        
+        try {
+            android.content.IntentFilter ifilter = new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED);
+            android.content.Intent batteryStatus = context.registerReceiver(null, ifilter);
+            
+            if (batteryStatus == null) return false;
+            
+            int status = batteryStatus.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
+            return status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || 
+                   status == android.os.BatteryManager.BATTERY_STATUS_FULL;
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking charging status: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get enhanced battery information with consumption and time remaining.
+     * Format: "{level}% (consumed: {X}%, ~{Y}h remaining)" or "🔌 Charging" or "⚠️ Low - Plug charger ASAP" if <20%
+     */
+    public String getBatteryInfo(android.content.Context context) {
+        if (context == null) return "Unknown";
+        
+        int currentLevel = getBatteryPercentage(context);
+        if (currentLevel == -1) return "Unknown";
+        
+        // Track battery at app start
+        if (appStartBatteryLevel == -1) {
+            appStartBatteryLevel = currentLevel;
+        }
+        
+        // Track battery at streaming start
+        if (streamingEnabled && streamStartBatteryLevel == -1) {
+            streamStartBatteryLevel = currentLevel;
+        }
+        
+        StringBuilder info = new StringBuilder();
+        info.append(currentLevel).append("%");
+        
+        // Check if device is charging
+        boolean isCharging = isDeviceCharging(context);
+        if (isCharging) {
+            info.append(" 🔌 Charging");
+        }
+        
+        // Calculate consumption and estimate remaining time if streaming
+        if (streamingEnabled && streamStartBatteryLevel != -1 && serverStartTime > 0) {
+            int consumed = (int) (streamStartBatteryLevel - currentLevel);
+            if (consumed >= 0) {
+                info.append(" (consumed: ").append(consumed).append("%");
+                
+                // Estimate remaining streaming time
+                long streamingDurationMs = System.currentTimeMillis() - serverStartTime;
+                if (streamingDurationMs > 60000) { // At least 1 minute of streaming
+                    double consumptionRate = consumed / (streamingDurationMs / 3600000.0); // % per hour
+                    if (consumptionRate > 0) {
+                        double remainingHours = currentLevel / consumptionRate;
+                        if (remainingHours < 500) { // Only show if reasonable
+                            info.append(", ~").append(String.format("%.1f", remainingHours)).append("h remaining");
+                        }
+                    } else {
+                        // No consumption yet, estimate based on current level
+                        info.append(", ~").append(currentLevel).append("h+ remaining");
+                    }
+                } else {
+                    // Less than 1 minute, estimate conservatively
+                    info.append(", ~").append(currentLevel).append("h+ remaining");
+                }
+                info.append(")");
+            }
+        }
+        
+        // Warning if battery is low (only if not charging)
+        if (currentLevel < 20 && !isCharging) {
+            info.append(" ⚠️ Low - Plug charger ASAP");
+        }
+        
+        return info.toString();
+    }
+    
+    /**
+     * Get detailed uptime information.
+     * Returns map with: seconds, formatted, startTime, startTimestamp
+     */
+    public java.util.Map<String, Object> getUptimeDetails() {
+        java.util.Map<String, Object> details = new java.util.HashMap<>();
+        
+        if (!streamingEnabled || serverStartTime <= 0) {
+            details.put("seconds", 0);
+            details.put("formatted", "0s");
+            details.put("startTime", "Not started");
+            details.put("startDate", "Not started");
+            details.put("startTimestamp", 0L);
+            return details;
+        }
+        
+        long uptimeSeconds = (System.currentTimeMillis() - serverStartTime) / 1000;
+        
+        // Calculate hours, minutes, seconds
+        long hours = uptimeSeconds / 3600;
+        long minutes = (uptimeSeconds % 3600) / 60;
+        long seconds = uptimeSeconds % 60;
+        
+        // Format: "2h 17m 23s"
+        StringBuilder formatted = new StringBuilder();
+        if (hours > 0) {
+            formatted.append(hours).append("h ");
+        }
+        if (minutes > 0 || hours > 0) {
+            formatted.append(minutes).append("m ");
+        }
+        formatted.append(seconds).append("s");
+        
+        // Start time in AM/PM format
+        java.text.SimpleDateFormat sdfTime = new java.text.SimpleDateFormat("hh:mm:ss a", java.util.Locale.US);
+        String startTimeFormatted = sdfTime.format(new java.util.Date(serverStartTime));
+        
+        // Start date in full format (e.g., "Dec 7, 2025")
+        java.text.SimpleDateFormat sdfDate = new java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.US);
+        String startDateFormatted = sdfDate.format(new java.util.Date(serverStartTime));
+        
+        details.put("seconds", uptimeSeconds);
+        details.put("formatted", formatted.toString().trim());
+        details.put("startTime", startTimeFormatted);
+        details.put("startDate", startDateFormatted);
+        details.put("startTimestamp", serverStartTime);
+        
+        return details;
+    }
+    
+    /**
+     * Log a client event (CONNECTED, DISCONNECTED, etc.).
+     * Maintains circular buffer with max 100 events.
+     */
+    public synchronized void logClientEvent(ClientEvent event) {
+        if (event == null) return;
+        
+        // Add to log
+        clientEventLog.add(event);
+        
+        // Enforce size limit (circular buffer)
+        while (clientEventLog.size() > MAX_EVENT_LOG_SIZE) {
+            clientEventLog.remove(0);
+        }
+    }
+    
+    /**
+     * Get the client event log (recent events).
+     */
+    public synchronized java.util.List<ClientEvent> getClientEventLog() {
+        return new java.util.ArrayList<>(clientEventLog);
+    }
+    
+    /**
+     * Get current stream quality preset.
+     */
+    public StreamQuality getStreamQuality() {
+        return streamQuality;
+    }
+    
+    /**
+     * Set stream quality preset.
+     * Note: Requires camera/encoder restart to apply new settings.
+     */
+    public void setStreamQuality(StreamQuality.Preset preset, android.content.Context context) {
+        if (preset == null || context == null) return;
+        
+        // Update quality preset
+        streamQuality.setPreset(preset);
+        
+        // Store in SharedPreferences for persistence
+        android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt("video_width", preset.getWidth());
+        editor.putInt("video_height", preset.getHeight());
+        editor.putInt("video_fps", preset.getFps());
+        editor.putInt("video_bitrate", preset.getBitrate());
+        editor.putString("quality_preset", preset.name());
+        editor.apply();
+        
+        // Log quality change event
+        logClientEvent(new ClientEvent(
+            "system",
+            ClientEvent.EventType.FIRST_REQUEST, // Using as generic event
+            "Quality changed to " + preset.getDisplayName()
+        ));
+    }
+    
+    /**
+     * Get stream orientation (only affects streaming, not normal recording).
+     */
+    public StreamQuality.StreamOrientation getStreamOrientation() {
+        return streamQuality.getStreamOrientation();
+    }
+    
+    /**
+     * Set stream orientation (only affects streaming, not normal recording).
+     */
+    public void setStreamOrientation(StreamQuality.StreamOrientation orientation, android.content.Context context) {
+        if (orientation == null || context == null) return;
+        
+        // Update orientation
+        streamQuality.setStreamOrientation(orientation);
+        
+        // Store in SharedPreferences for persistence
+        android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt("stream_orientation", orientation.getValue());
+        editor.apply();
+        
+        Log.d(TAG, "Stream orientation set to: " + orientation.getDisplayName());
+    }
+    
+    /**
+     * Load stream quality from SharedPreferences.
+     */
+    public void loadStreamQuality(android.content.Context context) {
+        if (context == null) return;
+        
+        android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        String presetName = prefs.getString("quality_preset", "HIGH");
+        try {
+            StreamQuality.Preset preset = StreamQuality.Preset.valueOf(presetName);
+            streamQuality.setPreset(preset);
+            Log.d(TAG, "Loaded quality preset from preferences: " + preset.getDisplayName());
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Invalid quality preset in preferences: " + presetName + ", using HIGH");
+            streamQuality.setPreset(StreamQuality.Preset.HIGH);
+        }
+    }
+    
+    /**
+     * Load stream orientation from SharedPreferences.
+     */
+    public void loadStreamOrientation(android.content.Context context) {
+        if (context == null) return;
+        
+        android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        int orientationValue = prefs.getInt("stream_orientation", -1);
+        streamQuality.setStreamOrientation(StreamQuality.StreamOrientation.fromValue(orientationValue));
     }
     
     /**

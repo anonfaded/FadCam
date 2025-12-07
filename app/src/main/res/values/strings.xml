@@ -1284,6 +1284,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     
     <!-- Specs -->
     <string name="stream_specs">Stream Specs</string>
+    <string name="stream_quality_preset">Stream Quality Preset</string>
     <string name="stream_fps_resolution">FPS: %1$d • Resolution: %2$dx%3$d</string>
     <string name="stream_bitrate">Bitrate: %1$s</string>
     <string name="stream_codec">Codec: H.264</string>

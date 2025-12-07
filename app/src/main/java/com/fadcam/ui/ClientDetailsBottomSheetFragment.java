@@ -1,16 +1,22 @@
 package com.fadcam.ui;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.fadcam.R;
+import com.fadcam.ui.bottomsheet.ClientEventLogsBottomSheet;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.util.List;
@@ -77,6 +83,8 @@ public class ClientDetailsBottomSheetFragment extends BottomSheetDialogFragment 
         TextView clientLabel = row.findViewById(R.id.client_label);
         TextView clientIp = row.findViewById(R.id.client_ip);
         TextView clientType = row.findViewById(R.id.client_type);
+        ImageView copyIpButton = row.findViewById(R.id.copy_ip_button);
+        LinearLayout eventLogsButton = row.findViewById(R.id.event_logs_button);
 
         clientLabel.setText("Client " + clientNumber);
         clientIp.setText(ip);
@@ -84,6 +92,20 @@ public class ClientDetailsBottomSheetFragment extends BottomSheetDialogFragment 
         // Try to determine client type from IP (this is basic - could be enhanced)
         String clientType_text = ip.startsWith("127.") ? "Local" : "Remote";
         clientType.setText(clientType_text);
+
+        // Copy IP button click listener
+        copyIpButton.setOnClickListener(v -> {
+            ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("Client IP", ip);
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(requireContext(), "IP copied: " + ip, Toast.LENGTH_SHORT).show();
+        });
+
+        // Event logs button click listener
+        eventLogsButton.setOnClickListener(v -> {
+            ClientEventLogsBottomSheet logsSheet = ClientEventLogsBottomSheet.newInstance(ip);
+            logsSheet.show(getParentFragmentManager(), "client_event_logs");
+        });
 
         container.addView(row);
     }

@@ -31,6 +31,10 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
+import com.fadcam.streaming.model.StreamQuality;
+import com.fadcam.ui.bottomsheet.BatteryInfoBottomSheet;
+import com.fadcam.ui.bottomsheet.QualityPresetBottomSheet;
+import com.fadcam.ui.bottomsheet.UptimeInfoBottomSheet;
 
 import java.util.List;
 
@@ -49,14 +53,16 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout viewEndpointsRow;
     private LinearLayout clientsRow;
     private LinearLayout fpsFormatRow;
-    private LinearLayout bitrateRow;
+    private LinearLayout streamOrientationRow;
+    private LinearLayout uptimeRow;
+    private LinearLayout batteryRow;
     private TextView recordingModeValue;
     private TextView uptimeText;
     private TextView connectionsText;
     private TextView batteryText;
     private TextView fragmentsText;
     private TextView fpsResolutionText;
-    private TextView bitrateText;
+    private TextView streamOrientationText;
     private TextView networkHealthText;
     private TextView memoryText;
     private TextView storageText;
@@ -121,13 +127,15 @@ public class RemoteFragment extends BaseFragment {
         viewEndpointsRow = view.findViewById(R.id.view_endpoints_row);
         clientsRow = view.findViewById(R.id.clients_row);
         fpsFormatRow = view.findViewById(R.id.fps_format_row);
-        bitrateRow = view.findViewById(R.id.bitrate_row);
+        streamOrientationRow = view.findViewById(R.id.stream_orientation_row);
+        uptimeRow = view.findViewById(R.id.uptime_row);
+        batteryRow = view.findViewById(R.id.battery_row);
         uptimeText = view.findViewById(R.id.uptime_text);
         connectionsText = view.findViewById(R.id.connections_text);
         batteryText = view.findViewById(R.id.battery_text);
         fragmentsText = view.findViewById(R.id.fragments_text);
         fpsResolutionText = view.findViewById(R.id.fps_resolution_text);
-        bitrateText = view.findViewById(R.id.bitrate_text);
+        streamOrientationText = view.findViewById(R.id.stream_orientation_text);
         networkHealthText = view.findViewById(R.id.network_health_text);
         memoryText = view.findViewById(R.id.memory_text);
         storageText = view.findViewById(R.id.storage_text);
@@ -160,11 +168,17 @@ public class RemoteFragment extends BaseFragment {
         // Clients row click listener
         clientsRow.setOnClickListener(v -> showClientDetailsPicker());
         
-        // FPS/Format row click listener
-        fpsFormatRow.setOnClickListener(v -> showFpsFormatPicker());
+        // Stream Quality row click listener (unified FPS/Format/Bitrate)
+        fpsFormatRow.setOnClickListener(v -> showQualityPresetPicker());
         
-        // Bitrate row click listener
-        bitrateRow.setOnClickListener(v -> showBitratePicker());
+        // Stream Orientation row click listener
+        streamOrientationRow.setOnClickListener(v -> showStreamOrientationPicker());
+        
+        // Uptime row click listener
+        uptimeRow.setOnClickListener(v -> showUptimeInfo());
+        
+        // Battery row click listener
+        batteryRow.setOnClickListener(v -> showBatteryInfo());
         
         // Data sent row click listener
         dataSentRow.setOnClickListener(v -> showClientDataUsage());
@@ -440,17 +454,20 @@ public class RemoteFragment extends BaseFragment {
     }
     
     private void updateRequirementsDisplay() {
-        int fps = Constants.DEFAULT_VIDEO_FRAME_RATE;
-        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        // Display current stream quality preset
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        StreamQuality quality = manager.getStreamQuality();
+        StreamQuality.Preset preset = quality.getCurrentPreset();
         
-        android.util.Size resolution = prefs.getCameraResolution();
-        int width = resolution.getWidth();
-        int height = resolution.getHeight();
+        // Format: "High (1080p) • 30fps • 8 Mbps"
+        String displayText = String.format("%s (%s) • %dfps • %s",
+            preset.getDisplayName(),
+            preset.getResolutionString().split("x")[1] + "p",  // Extract vertical resolution
+            preset.getFps(),
+            preset.getBitrateString()
+        );
         
-        fpsResolutionText.setText(getString(R.string.stream_fps_resolution, fps, width, height));
-        
-        int bitrateMbps = Constants.DEFAULT_VIDEO_BITRATE / 1_000_000;
-        bitrateText.setText(getString(R.string.stream_bitrate, bitrateMbps + " Mbps"));
+        fpsResolutionText.setText(displayText);
     }
     
     private void copyToClipboard(String text) {
@@ -515,12 +532,29 @@ public class RemoteFragment extends BaseFragment {
         endpointsSheet.show(getParentFragmentManager(), "endpoints_sheet");
     }
     
-    private void showFpsFormatPicker() {
-        Toast.makeText(requireContext(), "FPS/Format: 30fps @ 1920x1080\nCodec: H.264/AVC\nFormat: HLS (fMP4 segments)", Toast.LENGTH_LONG).show();
+    private void showQualityPresetPicker() {
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        StreamQuality quality = manager.getStreamQuality();
+        StreamQuality.Preset currentPreset = quality.getCurrentPreset();
+        
+        QualityPresetBottomSheet sheet = QualityPresetBottomSheet.newInstance(currentPreset);
+        sheet.setOnQualitySelectedListener(preset -> {
+            // Quality will be updated in RemoteStreamManager by the bottom sheet
+            // Update UI to reflect new quality immediately
+            updateRequirementsDisplay();
+            updateUI(); // Refresh all UI elements
+        });
+        sheet.show(getParentFragmentManager(), "quality_preset_sheet");
     }
     
-    private void showBitratePicker() {
-        Toast.makeText(requireContext(), "Bitrate: 8 Mbps (Constant)\nEncoding: VBR (Variable Bitrate)\nQuality: High", Toast.LENGTH_LONG).show();
+    private void showBatteryInfo() {
+        BatteryInfoBottomSheet sheet = new BatteryInfoBottomSheet();
+        sheet.show(getParentFragmentManager(), "battery_info_sheet");
+    }
+    
+    private void showUptimeInfo() {
+        UptimeInfoBottomSheet sheet = new UptimeInfoBottomSheet();
+        sheet.show(getParentFragmentManager(), "uptime_info_sheet");
     }
     
     private void showClientDataUsage() {
@@ -536,6 +570,30 @@ public class RemoteFragment extends BaseFragment {
     private void showNetworkHealth() {
         NetworkHealthBottomSheet sheet = new NetworkHealthBottomSheet();
         sheet.show(getParentFragmentManager(), "network_health_sheet");
+    }
+    
+    private void showStreamOrientationPicker() {
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        StreamQuality quality = manager.getStreamQuality();
+        StreamQuality.StreamOrientation currentOrientation = quality.getStreamOrientation();
+        
+        com.fadcam.ui.bottomsheet.StreamOrientationBottomSheet sheet = 
+            com.fadcam.ui.bottomsheet.StreamOrientationBottomSheet.newInstance(currentOrientation);
+        sheet.setOnOrientationSelectedListener(orientation -> {
+            // Orientation will be updated in RemoteStreamManager by the bottom sheet
+            // Update UI to reflect new orientation immediately
+            updateStreamOrientationDisplay();
+            updateUI(); // Refresh all UI elements
+        });
+        sheet.show(getParentFragmentManager(), "stream_orientation_sheet");
+    }
+    
+    private void updateStreamOrientationDisplay() {
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        StreamQuality quality = manager.getStreamQuality();
+        StreamQuality.StreamOrientation orientation = quality.getStreamOrientation();
+        
+        streamOrientationText.setText(orientation.getDisplayName());
     }
     
     private int resolveThemeColor(int attr) {
