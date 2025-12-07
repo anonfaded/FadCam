@@ -1232,5 +1232,13 @@ If the last few seconds of your video appear frozen or stale, don\'t worry — i
 The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
 For the smoothest playback experience, you can use an external player like VLC. That said, the integrated player works well for everyday use!
     ]]></string>
+
+    <!-- Codec Compatibility Strings -->
+    <string name="codec_hevc_incompatible_title">H.265 Codec Not Supported for Live Streaming</string>
+    <string name="codec_hevc_incompatible_message">📡 Live streaming via HLS requires H.264 codec.\n\nH.265 is not compatible with browser players.\n\nWould you like to switch to H.264 and start recording?</string>
+    <string name="codec_switch_and_record">Switch to H.264 &amp; Record</string>
+    <string name="codec_switch_cancelled">Codec switch cancelled</string>
+    <string name="codec_switched_to_h264">✓ Codec switched to H.264. Starting recording...</string>
+    <string name="codec_go_to_settings">Go to Settings</string>
     
 </resources>

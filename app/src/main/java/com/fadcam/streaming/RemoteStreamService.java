@@ -79,8 +79,20 @@ public class RemoteStreamService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Service starting");
         
+        // Handle copy stream URL action from notification
+        if (intent != null && "com.fadcam.COPY_STREAM_URL".equals(intent.getAction())) {
+            String streamUrl = intent.getStringExtra("stream_url");
+            if (streamUrl != null) {
+                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                android.content.ClipData clip = android.content.ClipData.newPlainText("Stream URL", streamUrl);
+                clipboard.setPrimaryClip(clip);
+                Log.d(TAG, "Stream URL copied to clipboard: " + streamUrl);
+            }
+            return START_STICKY;
+        }
+        
         // Start foreground with notification
-        startForeground(NOTIFICATION_ID, buildNotification("Ready. Start recording to begin streaming."));
+        startForeground(NOTIFICATION_ID, buildNotification("Ready. Start recording to begin streaming.", "http://..."));
         
         // Start HTTP server
         if (!startHttpServer()) {
@@ -234,18 +246,28 @@ public class RemoteStreamService extends Service {
     /**
      * Build notification for foreground service.
      */
-    private Notification buildNotification(String contentText) {
+    private Notification buildNotification(String contentText, String streamUrl) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent,
             PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
         
+        // Create copy link action
+        Intent copyIntent = new Intent(this, RemoteStreamService.class);
+        copyIntent.setAction("com.fadcam.COPY_STREAM_URL");
+        copyIntent.putExtra("stream_url", streamUrl);
+        PendingIntent copyPendingIntent = PendingIntent.getService(
+            this, 1, copyIntent,
+            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Remote Streaming Active")
             .setContentText(contentText)
-            .setSmallIcon(R.drawable.ic_notification_icon)
+            .setSmallIcon(R.drawable.ic_broadcast_on_personal_24)
             .setContentIntent(pendingIntent)
+            .addAction(android.R.drawable.ic_menu_view, "Copy Link", copyPendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build();
@@ -271,7 +293,7 @@ public class RemoteStreamService extends Service {
             contentText = streamUrl + " • Start recording to stream";
         }
         
-        Notification notification = buildNotification(contentText);
+        Notification notification = buildNotification(contentText, streamUrl);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager != null) {
             notificationManager.notify(NOTIFICATION_ID, notification);

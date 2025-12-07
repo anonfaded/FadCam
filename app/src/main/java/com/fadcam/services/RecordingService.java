@@ -2717,6 +2717,14 @@ public class RecordingService extends Service {
     private File createNextSegmentOutputFile(int nextSegmentNumber) {
         // ----- Fix Start for this method(createNextSegmentOutputFile)-----
         String storageMode = sharedPreferencesManager.getStorageMode();
+        
+        // Use "Stream_" prefix only if streaming is actually enabled (server running)
+        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/DocumentFile mode
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
@@ -2732,8 +2740,7 @@ public class RecordingService extends Service {
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            // Use FadCam prefix for consistent naming
-            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+            String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                     + Constants.RECORDING_FILE_EXTENSION;
             DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION,
                     baseFilename);
@@ -2760,7 +2767,7 @@ public class RecordingService extends Service {
             // Internal storage mode - Use same directory and naming as first segment
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+            String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                     + Constants.RECORDING_FILE_EXTENSION;
 
             // Use the same directory as the first segment (app's external files directory)
@@ -3398,7 +3405,15 @@ public class RecordingService extends Service {
     private File getFinalOutputFile() {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String segmentSuffix = ""; // No segment number for the initial file
-        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+        
+        // Use "Stream_" prefix only if streaming is actually enabled (server running)
+        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        
+        String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                 + Constants.RECORDING_FILE_EXTENSION;
         File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         if (!videoDir.exists() && !videoDir.mkdirs()) {

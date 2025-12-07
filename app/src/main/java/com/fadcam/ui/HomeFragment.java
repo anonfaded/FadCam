@@ -76,8 +76,10 @@ import com.fadcam.RecordingControlIntents;
 import com.fadcam.RecordingState;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
+import com.fadcam.VideoCodec;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
+import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.utils.DebouncedRunnable;
 import com.fadcam.utils.DeviceHelper;
@@ -4347,6 +4349,123 @@ public class HomeFragment extends BaseFragment {
         performHapticFeedback();
         // Permission checks removed; handled by onboarding
 
+        // -------------- Fix Start: HEVC Codec Validation for Live Streaming ------
+        // Check if codec is HEVC - browsers don't support HEVC for HLS live streaming
+        // Only validate if streaming is actually enabled (server running)
+        if (RemoteStreamManager.getInstance().isStreamingEnabled()) {
+            VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+            if (selectedCodec == VideoCodec.HEVC) {
+                // HEVC is not browser-compatible for HLS streaming
+                // Show Material Dialog with option to auto-switch to AVC
+                showCodecIncompatibilityDialog();
+                return; // Block recording start
+            }
+        }
+        // -------------- Fix Ended: HEVC Codec Validation ------
+
+        // Force reset recording state if service is not running
+        if (!isMyServiceRunning(RecordingService.class)) {
+            Log.d(TAG, "Service not running, forcing recordingState to NONE");
+            recordingState = RecordingState.NONE;
+        }
+
+        if (isMyServiceRunning(RecordingService.class)) {
+            Log.w(
+                TAG,
+                "Start requested, but service appears to be already running or starting. Current state: " +
+                recordingState
+            );
+            // Query the service for its actual state if unsure
+            Intent queryIntent = new Intent(
+                getContext(),
+                RecordingService.class
+            );
+            queryIntent.setAction(
+                Constants.BROADCAST_ON_RECORDING_STATE_REQUEST
+            );
+            ContextCompat.startForegroundService(getContext(), queryIntent);
+            // UI should update based on the broadcast from the service
+            return; // Don't try to start again if it might be running
+        }
+
+        Log.d(TAG, "startRecording: Starting RecordingService.");
+        Intent serviceIntent = new Intent(getContext(), RecordingService.class);
+        serviceIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
+
+        // ----- Fix Start for this method(startRecording_passTorchState)-----
+        // Pass current torch state (from HomeFragment's perspective) to the service
+        // The service will use this to set the initial FLASH_MODE in its CaptureRequest
+        // if it starts successfully.
+        Log.d(TAG, "Passing initial torch state to service: " + isTorchOn);
+        serviceIntent.putExtra(
+            Constants.INTENT_EXTRA_INITIAL_TORCH_STATE,
+            isTorchOn
+        );
+        // ----- Fix Ended for this method(startRecording_passTorchState)-----
+
+        // Pass the surface if preview is enabled and surface is valid
+        if (
+            isPreviewEnabled &&
+            textureViewSurface != null &&
+            textureViewSurface.isValid()
+        ) {
+            Log.d(TAG, "Preview enabled, passing valid surface to service.");
+            serviceIntent.putExtra("SURFACE", textureViewSurface);
+        } else {
+            Log.w(
+                TAG,
+                "Preview disabled or surface invalid. Service will start without preview surface."
+            );
+            serviceIntent.putExtra("SURFACE", (Surface) null); // Explicitly pass null
+        }
+
+        ContextCompat.startForegroundService(getContext(), serviceIntent);
+        // UI state changes will be handled by broadcast receivers
+        // setUIForRecordingActive(); // Move UI update to onRecordingStarted broadcast
+        // receiver
+        Log.d(TAG, "startRecording: RecordingService start initiated.");
+    }
+
+    /**
+     * Shows a Material Dialog when HEVC codec is selected but live streaming requires AVC.
+     * Offers user to automatically switch to AVC codec and start recording.
+     */
+    private void showCodecIncompatibilityDialog() {
+        if (getContext() == null) return;
+
+        new MaterialAlertDialogBuilder(getContext())
+                .setTitle(getString(R.string.codec_hevc_incompatible_title))
+                .setMessage(getString(R.string.codec_hevc_incompatible_message))
+                .setPositiveButton(getString(R.string.codec_switch_and_record), (dialog, which) -> {
+                    // Auto-switch codec to AVC
+                    Log.d(TAG, "User requested auto-switch from HEVC to AVC codec");
+                    sharedPreferencesManager.sharedPreferences.edit()
+                        .putString(Constants.PREF_VIDEO_CODEC, VideoCodec.AVC.toString())
+                        .apply();
+                    
+                    // Show confirmation toast
+                    Toast.makeText(
+                        getContext(),
+                        getString(R.string.codec_switched_to_h264),
+                        Toast.LENGTH_SHORT
+                    ).show();
+                    
+                    // Proceed with recording start
+                    proceedWithRecordingStart();
+                })
+                .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
+                    Log.d(TAG, "User cancelled recording due to codec incompatibility");
+                    dialog.dismiss();
+                })
+                .setCancelable(true)
+                .show();
+    }
+
+    /**
+     * Continue with recording start after codec validation passes.
+     * Contains the actual recording initialization logic.
+     */
+    private void proceedWithRecordingStart() {
         // Force reset recording state if service is not running
         if (!isMyServiceRunning(RecordingService.class)) {
             Log.d(TAG, "Service not running, forcing recordingState to NONE");
