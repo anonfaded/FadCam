@@ -600,15 +600,20 @@
 
         function showRecordingModeModal() {
             if (!currentStatus) return;
-            const modes = ['stream_only', 'stream_and_save'];
+            const modes = [
+                { id: 'stream_only', label: 'Stream Only', subtitle: 'Live stream without saving to device' },
+                { id: 'stream_and_save', label: 'Stream And Save', subtitle: 'Live stream + save video file locally' }
+            ];
             let content = '<div class="modal-section">';
             modes.forEach(mode => {
-                const isSelected = currentStatus.mode === mode;
-                const label = mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const isSelected = currentStatus.mode === mode.id;
                 content += `
-                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setRecordingMode('${mode}')">
+                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setRecordingMode('${mode.id}')">
                         <div class="option-radio ${isSelected ? 'checked' : ''}"></div>
-                        <span>${label}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #e6edf3; margin-bottom: 2px;">${mode.label}</div>
+                            <div style="font-size: 11px; color: #8b949e;">${mode.subtitle}</div>
+                        </div>
                     </div>
                 `;
             });
@@ -632,15 +637,21 @@
 
         function showStreamQualityModal() {
             if (!currentStatus) return;
-            const qualities = ['low', 'medium', 'high'];
+            const qualities = [
+                { id: 'low', label: 'Low', subtitle: '1 Mbps • 15 FPS • Best for slow networks' },
+                { id: 'medium', label: 'Medium', subtitle: '3 Mbps • 24 FPS • Balanced quality' },
+                { id: 'high', label: 'High', subtitle: '5 Mbps • 30 FPS • Best quality' }
+            ];
             let content = '<div class="modal-section">';
             qualities.forEach(quality => {
-                const isSelected = currentStatus.qualityPreset && currentStatus.qualityPreset.toLowerCase() === quality;
-                const label = quality.charAt(0).toUpperCase() + quality.slice(1);
+                const isSelected = currentStatus.qualityPreset && currentStatus.qualityPreset.toLowerCase() === quality.id;
                 content += `
-                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setStreamQuality('${quality}')">
+                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setStreamQuality('${quality.id}')">
                         <div class="option-radio ${isSelected ? 'checked' : ''}"></div>
-                        <span>${label}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #e6edf3; margin-bottom: 2px;">${quality.label}</div>
+                            <div style="font-size: 11px; color: #8b949e;">${quality.subtitle}</div>
+                        </div>
                     </div>
                 `;
             });

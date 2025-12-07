@@ -435,9 +435,21 @@ public class LiveM3U8Server extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
             }
             
-            // Set the mode in preferences
+            // Convert mode string to StreamingMode enum
+            RemoteStreamManager.StreamingMode streamingMode;
+            if ("stream_only".equals(mode)) {
+                streamingMode = RemoteStreamManager.StreamingMode.STREAM_ONLY;
+            } else if ("stream_and_save".equals(mode)) {
+                streamingMode = RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+            } else {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"error\": \"Invalid mode. Use 'stream_only' or 'stream_and_save'\"}");
+            }
+            
+            // Set the mode in both RemoteStreamManager and preferences
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
-            spManager.setCurrentRecordingMode(mode);
+            spManager.setStreamingMode(streamingMode);
+            streamManager.setStreamingMode(streamingMode);
             
             Log.i(TAG, "✅ Recording mode set to: " + mode);
             

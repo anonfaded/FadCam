@@ -719,27 +719,29 @@ video {
 /* Toast Notification */
 .toast-notification {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(150%);
+    top: 80px;
+    right: 20px;
+    transform: translateX(120%);
     background: linear-gradient(135deg, #1a1e24 0%, #151920 100%);
     border: 1px solid #3fb950;
     border-radius: 8px;
     padding: 12px 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 9999;
-    transition: all 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    max-width: 90%;
+    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 350px;
     display: flex;
     align-items: center;
     gap: 12px;
     opacity: 0;
+    visibility: hidden;
 }
 
 .toast-notification.show {
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(0);
     opacity: 1;
-    transition: all 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    visibility: visible;
+    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .toast-content {
