@@ -64,9 +64,9 @@ public class LiveM3U8Server extends NanoHTTPD {
                 // HLS playlist - industry standard for live streaming
                 response = servePlaylist();
             } else if ("/init.mp4".equals(uri)) {
-                response = serveInitSegment();
+                response = serveInitSegment(clientIP);
             } else if (uri.startsWith("/seg-") && uri.endsWith(".m4s")) {
-                response = serveFragment(uri);
+                response = serveFragment(uri, clientIP);
             } else if ("/status".equals(uri)) {
                 response = serveStatus();
             } else if ("/".equals(uri)) {
@@ -229,7 +229,7 @@ public class LiveM3U8Server extends NanoHTTPD {
      * Serve initialization segment (ftyp + moov).
      */
     @NonNull
-    private Response serveInitSegment() {
+    private Response serveInitSegment(String clientIP) {
         byte[] initSegment = streamManager.getInitializationSegment();
         
         if (initSegment == null) {
@@ -243,7 +243,10 @@ public class LiveM3U8Server extends NanoHTTPD {
         streamManager.incrementConnections();
         
         try {
-            Log.d(TAG, "📋 Serving initialization segment (" + (initSegment.length / 1024) + " KB)");
+            Log.d(TAG, "📋 Serving initialization segment (" + (initSegment.length / 1024) + " KB) to " + clientIP);
+            
+            // Track data served to this client
+            streamManager.addDataServed(clientIP, initSegment.length);
             
             InputStream initStream = new java.io.ByteArrayInputStream(initSegment);
             Response response = newFixedLengthResponse(Response.Status.OK, "video/mp4", initStream, initSegment.length);
@@ -262,7 +265,7 @@ public class LiveM3U8Server extends NanoHTTPD {
      * URI format: /seg-{sequenceNumber}.m4s
      */
     @NonNull
-    private Response serveFragment(String uri) {
+    private Response serveFragment(String uri, String clientIP) {
         try {
             // Extract sequence number from URI: "/seg-123.m4s" -> 123
             String seqNumStr = uri.substring(5, uri.length() - 4); // Remove "/seg-" and ".m4s"
@@ -287,7 +290,10 @@ public class LiveM3U8Server extends NanoHTTPD {
             streamManager.incrementConnections();
             
             try {
-                Log.d(TAG, "📦 Serving fragment #" + sequenceNumber + " (" + (fragment.sizeBytes / 1024) + " KB)");
+                Log.d(TAG, "📦 Serving fragment #" + sequenceNumber + " (" + (fragment.sizeBytes / 1024) + " KB) to " + clientIP);
+                
+                // Track data served to this client
+                streamManager.addDataServed(clientIP, fragment.sizeBytes);
                 
                 // Serve fragment bytes
                 InputStream fragmentStream = new java.io.ByteArrayInputStream(fragment.data);

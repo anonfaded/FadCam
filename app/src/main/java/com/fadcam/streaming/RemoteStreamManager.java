@@ -5,9 +5,15 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.streaming.model.ClientMetrics;
+import com.fadcam.streaming.model.NetworkHealth;
+import com.fadcam.streaming.util.NetworkMonitor;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -32,6 +38,7 @@ public class RemoteStreamManager {
     
     private boolean streamingEnabled = false;
     private StreamingMode streamingMode = StreamingMode.STREAM_AND_SAVE;
+    private android.content.Context context;
     
     // Fragment buffer (circular)
     private final FragmentData[] fragmentBuffer = new FragmentData[BUFFER_SIZE];
@@ -50,8 +57,9 @@ public class RemoteStreamManager {
     
     // Metadata
     private int activeConnections = 0;
-    private final java.util.Set<String> connectedClientIPs = new java.util.HashSet<>();
+    private final Map<String, ClientMetrics> clientMetricsMap = new HashMap<>();
     private long serverStartTime = 0;
+    private long totalDataServed = 0; // Track total bytes served across all sessions
     
     public enum StreamingMode {
         STREAM_ONLY,     // Don't save to disk after streaming
@@ -102,11 +110,17 @@ public class RemoteStreamManager {
             if (enabled) {
                 // Start server uptime tracking
                 serverStartTime = System.currentTimeMillis();
-                connectedClientIPs.clear();
+                synchronized (clientMetricsMap) {
+                    clientMetricsMap.clear();
+                }
+                NetworkMonitor.getInstance().startMonitoring();
                 Log.i(TAG, "Server uptime started");
             } else {
                 serverStartTime = 0;
-                connectedClientIPs.clear();
+                synchronized (clientMetricsMap) {
+                    clientMetricsMap.clear();
+                }
+                NetworkMonitor.getInstance().stopMonitoring();
             }
             
             if (!enabled) {
@@ -127,6 +141,16 @@ public class RemoteStreamManager {
             Log.i(TAG, "Streaming mode set to: " + mode);
         } finally {
             bufferLock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Set context for status reporting.
+     */
+    public void setContext(android.content.Context context) {
+        this.context = context != null ? context.getApplicationContext() : null;
+        if (this.context != null) {
+            NetworkMonitor.getInstance().initialize(this.context);
         }
     }
     
@@ -433,11 +457,45 @@ public class RemoteStreamManager {
                 message = "Stream is ready for playback.";
             }
             
+            // Get uptime in seconds
+            long uptimeSeconds = getServerUptimeMs() / 1000;
+            
+            // Get client metrics as JSON array
+            StringBuilder clientsJson = new StringBuilder("[");
+            List<ClientMetrics> clients = getAllClientMetrics();
+            for (int i = 0; i < clients.size(); i++) {
+                clientsJson.append(clients.get(i).toJson());
+                if (i < clients.size() - 1) {
+                    clientsJson.append(", ");
+                }
+            }
+            clientsJson.append("]");
+            
+            // Get all system health metrics
+            android.content.Context ctx = context != null ? context : null;
+            int batteryPercent = ctx != null ? getBatteryPercentage(ctx) : -1;
+            String networkType = ctx != null ? getNetworkType(ctx) : "unknown";
+            boolean isNetworkConnected = ctx != null ? isNetworkConnected(ctx) : false;
+            
+            // Get network health from NetworkMonitor
+            NetworkHealth netHealth = getNetworkHealth();
+            String networkHealthStatus = netHealth.getStatusString();
+            String networkHealthJson = netHealth.toJson();
+            
+            String memoryUsage = ctx != null ? getMemoryUsage(ctx) : "unknown";
+            String storageInfo = getStorageInfo();
+            long totalDataMB = getTotalDataTransferred() / (1024 * 1024);
+            
             return String.format(
                 "{\"streaming\": %s, \"mode\": \"%s\", \"state\": \"%s\", \"message\": \"%s\", " +
                 "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
                 "\"latest_sequence\": %d, \"oldest_sequence\": %d, \"active_connections\": %d, " +
-                "\"has_init_segment\": %s}",
+                "\"has_init_segment\": %s, \"uptime_seconds\": %d, \"battery_percent\": %d, " +
+                "\"network_type\": \"%s\", \"network_connected\": %s, " +
+                "\"network_health\": %s, " +
+                "\"clients\": %s, " +
+                "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
+                "\"total_data_transferred_mb\": %d}",
                 streamingEnabled,
                 streamingMode.toString().toLowerCase(),
                 state,
@@ -447,8 +505,17 @@ public class RemoteStreamManager {
                 totalBytes / (1024.0 * 1024.0),
                 fragmentSequence,
                 oldestSequence,
-                activeConnections,
-                hasInit
+                getAllClientMetrics().size(),
+                hasInit,
+                uptimeSeconds,
+                batteryPercent,
+                networkType,
+                isNetworkConnected,
+                networkHealthJson,
+                clientsJson.toString(),
+                memoryUsage,
+                storageInfo,
+                totalDataMB
             );
         } finally {
             bufferLock.readLock().unlock();
@@ -463,13 +530,16 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Track client IP address (Set automatically handles duplicates).
+     * Track client IP address and create ClientMetrics if new.
      */
     public void trackClientIP(String clientIP) {
         if (clientIP != null && !clientIP.isEmpty()) {
-            boolean isNewClient = connectedClientIPs.add(clientIP);
-            if (isNewClient) {
-                Log.i(TAG, "New client connected: " + clientIP + " (Total: " + connectedClientIPs.size() + ")");
+            synchronized (clientMetricsMap) {
+                boolean isNewClient = !clientMetricsMap.containsKey(clientIP);
+                if (isNewClient) {
+                    clientMetricsMap.put(clientIP, new ClientMetrics(clientIP));
+                    Log.i(TAG, "New client connected: " + clientIP + " (Total: " + clientMetricsMap.size() + ")");
+                }
             }
         }
     }
@@ -508,14 +578,36 @@ public class RemoteStreamManager {
      * Get list of connected client IPs.
      */
     public List<String> getConnectedClientIPs() {
-        return new ArrayList<>(connectedClientIPs);
+        synchronized (clientMetricsMap) {
+            return new ArrayList<>(clientMetricsMap.keySet());
+        }
+    }
+    
+    /**
+     * Get all client metrics.
+     */
+    public List<ClientMetrics> getAllClientMetrics() {
+        synchronized (clientMetricsMap) {
+            return new ArrayList<>(clientMetricsMap.values());
+        }
+    }
+    
+    /**
+     * Get metrics for specific client.
+     */
+    public ClientMetrics getClientMetrics(String clientIP) {
+        synchronized (clientMetricsMap) {
+            return clientMetricsMap.get(clientIP);
+        }
     }
     
     /**
      * Get number of unique connected clients.
      */
     public int getActiveConnections() {
-        return connectedClientIPs.size();
+        synchronized (clientMetricsMap) {
+            return clientMetricsMap.size();
+        }
     }
     
     /**
@@ -535,6 +627,142 @@ public class RemoteStreamManager {
         if (level == -1 || scale == -1) return -1;
         
         return (int) ((level / (float) scale) * 100);
+    }
+    
+    /**
+     * Get network type (WiFi, Mobile, etc.).
+     */
+    private String getNetworkType(android.content.Context context) {
+        if (context == null) return "unknown";
+        
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) 
+            context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return "unknown";
+        
+        android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        if (activeNetwork == null || !activeNetwork.isConnected()) {
+            return "disconnected";
+        }
+        
+        int type = activeNetwork.getType();
+        switch (type) {
+            case android.net.ConnectivityManager.TYPE_WIFI:
+                return "wifi";
+            case android.net.ConnectivityManager.TYPE_MOBILE:
+                return "mobile";
+            case android.net.ConnectivityManager.TYPE_ETHERNET:
+                return "ethernet";
+            default:
+                return "other";
+        }
+    }
+    
+    /**
+     * Check if network is connected.
+     */
+    private boolean isNetworkConnected(android.content.Context context) {
+        if (context == null) return false;
+        
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) 
+            context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
+        
+        android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
+    
+    /**
+     * Get network health status.
+     * Returns: "excellent" (WiFi), "good" (Ethernet), "moderate" (Mobile), "poor" (disconnected)
+     */
+    public String getNetworkHealth(android.content.Context context) {
+        if (context == null) return "unknown";
+        
+        String networkType = getNetworkType(context);
+        boolean connected = isNetworkConnected(context);
+        
+        if (!connected) {
+            return "poor";
+        }
+        
+        switch (networkType) {
+            case "wifi":
+                return "excellent";
+            case "ethernet":
+                return "good";
+            case "mobile":
+                return "moderate";
+            case "disconnected":
+                return "poor";
+            default:
+                return "unknown";
+        }
+    }
+    
+    /**
+     * Get memory usage info with percentage.
+     */
+    public String getMemoryUsage(android.content.Context context) {
+        if (context == null) return "unknown";
+        
+        android.app.ActivityManager.MemoryInfo memInfo = new android.app.ActivityManager.MemoryInfo();
+        android.app.ActivityManager activityManager = (android.app.ActivityManager) 
+            context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        if (activityManager == null) return "unknown";
+        
+        activityManager.getMemoryInfo(memInfo);
+        long totalMB = memInfo.totalMem / (1024 * 1024);
+        long availMB = memInfo.availMem / (1024 * 1024);
+        long usedMB = totalMB - availMB;
+        int percentage = (int)((usedMB * 100.0f) / totalMB);
+        
+        return percentage + "% (" + usedMB + "/" + totalMB + " MB)";
+    }
+    
+    /**
+     * Get storage info as "available/total GB".
+     */
+    public String getStorageInfo() {
+        try {
+            android.os.StatFs stat = new android.os.StatFs(android.os.Environment.getExternalStorageDirectory().getPath());
+            long availBytes = stat.getAvailableBlocksLong() * stat.getBlockSizeLong();
+            long totalBytes = stat.getBlockCountLong() * stat.getBlockSizeLong();
+            float availGB = availBytes / (1024.0f * 1024.0f * 1024.0f);
+            float totalGB = totalBytes / (1024.0f * 1024.0f * 1024.0f);
+            return String.format("%.1f/%.1f GB", availGB, totalGB);
+        } catch (Exception e) {
+            return "unknown";
+        }
+    }
+    
+    /**
+     * Get network health from NetworkMonitor.
+     */
+    public NetworkHealth getNetworkHealth() {
+        return NetworkMonitor.getInstance().getNetworkHealth();
+    }
+    
+    /**
+     * Get total data transferred to clients (persistent across session).
+     */
+    public long getTotalDataTransferred() {
+        return totalDataServed;
+    }
+    
+    /**
+     * Track data served to specific client.
+     */
+    public void addDataServed(String clientIP, long bytes) {
+        totalDataServed += bytes;
+        
+        if (clientIP != null && !clientIP.isEmpty()) {
+            synchronized (clientMetricsMap) {
+                ClientMetrics metrics = clientMetricsMap.get(clientIP);
+                if (metrics != null) {
+                    metrics.addBytesServed(bytes);
+                }
+            }
+        }
     }
     
     /**

@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/picker_bottom_sheet_gradient_bg"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
     android:padding="16dp">
 
     <TextView
@@ -12,7 +12,7 @@
         android:text="Connected Clients"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="#FFFFFF"
+        android:textColor="?attr/colorHeading"
         android:layout_marginBottom="16dp" />
 
     <LinearLayout

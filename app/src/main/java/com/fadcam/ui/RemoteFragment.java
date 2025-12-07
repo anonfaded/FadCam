@@ -48,6 +48,8 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout recordingModeRow;
     private LinearLayout viewEndpointsRow;
     private LinearLayout clientsRow;
+    private LinearLayout fpsFormatRow;
+    private LinearLayout bitrateRow;
     private TextView recordingModeValue;
     private TextView uptimeText;
     private TextView connectionsText;
@@ -55,6 +57,11 @@ public class RemoteFragment extends BaseFragment {
     private TextView fragmentsText;
     private TextView fpsResolutionText;
     private TextView bitrateText;
+    private TextView networkHealthText;
+    private TextView memoryText;
+    private TextView storageText;
+    private TextView dataTransferredText;
+    private LinearLayout dataSentRow;
     
     private RemoteStreamService streamService;
     private boolean serviceBound = false;
@@ -111,12 +118,22 @@ public class RemoteFragment extends BaseFragment {
         recordingModeValue = view.findViewById(R.id.recording_mode_value);
         viewEndpointsRow = view.findViewById(R.id.view_endpoints_row);
         clientsRow = view.findViewById(R.id.clients_row);
+        fpsFormatRow = view.findViewById(R.id.fps_format_row);
+        bitrateRow = view.findViewById(R.id.bitrate_row);
         uptimeText = view.findViewById(R.id.uptime_text);
         connectionsText = view.findViewById(R.id.connections_text);
         batteryText = view.findViewById(R.id.battery_text);
         fragmentsText = view.findViewById(R.id.fragments_text);
         fpsResolutionText = view.findViewById(R.id.fps_resolution_text);
         bitrateText = view.findViewById(R.id.bitrate_text);
+        networkHealthText = view.findViewById(R.id.network_health_text);
+        memoryText = view.findViewById(R.id.memory_text);
+        storageText = view.findViewById(R.id.storage_text);
+        dataTransferredText = view.findViewById(R.id.data_transferred_text);
+        dataSentRow = view.findViewById(R.id.data_sent_row);
+        
+        // Set context for status reporting
+        RemoteStreamManager.getInstance().setContext(requireContext());
         
         // Update FPS and resolution display
         updateRequirementsDisplay();
@@ -138,6 +155,15 @@ public class RemoteFragment extends BaseFragment {
         
         // Clients row click listener
         clientsRow.setOnClickListener(v -> showClientDetailsPicker());
+        
+        // FPS/Format row click listener
+        fpsFormatRow.setOnClickListener(v -> showFpsFormatPicker());
+        
+        // Bitrate row click listener
+        bitrateRow.setOnClickListener(v -> showBitratePicker());
+        
+        // Data sent row click listener
+        dataSentRow.setOnClickListener(v -> showClientDataUsage());
         
         // Copy URL button listener
         copyRootButton.setOnClickListener(v -> {
@@ -277,6 +303,7 @@ public class RemoteFragment extends BaseFragment {
         if (isStreaming) {
             streamingToggle.setChecked(true);
             statusText.setText(R.string.stream_active);
+            statusText.setTextColor(0xFF4CAF50); // Green for active
             animateStatusIndicator(true);
             
             // Get base server URL (without endpoint path)
@@ -288,6 +315,7 @@ public class RemoteFragment extends BaseFragment {
         } else {
             streamingToggle.setChecked(false);
             statusText.setText(R.string.stream_inactive);
+            statusText.setTextColor(0xFFFF5252); // Red for inactive
             animateStatusIndicator(false);
             
             // Show placeholder URL when inactive
@@ -366,6 +394,25 @@ public class RemoteFragment extends BaseFragment {
         // Get buffered fragments count
         int fragments = manager.getBufferedCount();
         fragmentsText.setText(String.valueOf(fragments));
+        
+        // Update system metrics with NetworkHealth model
+        com.fadcam.streaming.model.NetworkHealth networkHealth = manager.getNetworkHealth();
+        networkHealthText.setText(capitalize(networkHealth.getStatusString()));
+        networkHealthText.setTextColor(networkHealth.getStatusColorInt());
+        
+        String memoryUsage = manager.getMemoryUsage(requireContext());
+        memoryText.setText(memoryUsage);
+        
+        String storageInfo = manager.getStorageInfo();
+        storageText.setText(storageInfo);
+        
+        long dataMb = manager.getTotalDataTransferred() / (1024 * 1024);
+        dataTransferredText.setText(String.format("%d MB", dataMb));
+    }
+    
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
     
     private String formatUptime(long ms) {
@@ -456,6 +503,19 @@ public class RemoteFragment extends BaseFragment {
         
         EndpointsBottomSheetFragment endpointsSheet = EndpointsBottomSheetFragment.newInstance(serverUrl);
         endpointsSheet.show(getParentFragmentManager(), "endpoints_sheet");
+    }
+    
+    private void showFpsFormatPicker() {
+        Toast.makeText(requireContext(), "FPS/Format: 30fps @ 1920x1080\nCodec: H.264/AVC\nFormat: HLS (fMP4 segments)", Toast.LENGTH_LONG).show();
+    }
+    
+    private void showBitratePicker() {
+        Toast.makeText(requireContext(), "Bitrate: 8 Mbps (Constant)\nEncoding: VBR (Variable Bitrate)\nQuality: High", Toast.LENGTH_LONG).show();
+    }
+    
+    private void showClientDataUsage() {
+        ClientDataBottomSheet sheet = new ClientDataBottomSheet();
+        sheet.show(getParentFragmentManager(), "client_data_sheet");
     }
     
     private int resolveThemeColor(int attr) {

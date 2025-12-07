@@ -9,7 +9,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="4dp">
+        android:padding="16dp">
 
         <ImageView
             android:layout_width="match_parent"
@@ -24,14 +24,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|start"
-            android:layout_marginBottom="12dp"
-            android:layout_marginStart="12dp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginStart="6dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
 
                 <!-- Glow Container + Indicator -->
                 <FrameLayout
@@ -106,6 +106,16 @@
             android:paddingEnd="16dp"
             android:paddingTop="12dp"
             android:paddingBottom="24dp">
+
+            <!-- Server Room Heading -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Server Room"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading"
+                android:layout_marginBottom="8dp" />
 
             <!-- Start Server Toggle Row -->
             <LinearLayout
@@ -289,6 +299,159 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- System Metrics Grid (2 columns) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2"
+                android:layout_marginBottom="8dp">
+
+                <!-- Left Column -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="6dp">
+
+                    <!-- Network Health -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/settings_home_row_bg"
+                        android:padding="10dp"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Network"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorHeading" />
+
+                        <TextView
+                            android:id="@+id/network_health_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textSize="13sp"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@android:color/darker_gray" />
+                    </LinearLayout>
+
+                    <!-- Storage -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/settings_home_row_bg"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Storage"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorHeading" />
+
+                        <TextView
+                            android:id="@+id/storage_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textSize="13sp"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@android:color/darker_gray" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Right Column -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingStart="6dp">
+
+                    <!-- Memory -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/settings_home_row_bg"
+                        android:padding="10dp"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Memory"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorHeading" />
+
+                        <TextView
+                            android:id="@+id/memory_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textSize="13sp"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@android:color/darker_gray" />
+                    </LinearLayout>
+
+                    <!-- Data Transferred (Clickable) -->
+                    <LinearLayout
+                        android:id="@+id/data_sent_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="@drawable/settings_home_row_bg"
+                        android:padding="10dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Data Sent"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorHeading" />
+
+                            <TextView
+                                android:id="@+id/data_transferred_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0 MB"
+                                android:textSize="13sp"
+                                android:layout_marginTop="4dp"
+                                android:textColor="@android:color/darker_gray" />
+                        </LinearLayout>
+
+                        <!-- Arrow Icon -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="arrow_forward"
+                            android:fontFamily="@font/materialicons"
+                            android:textSize="14dp"
+                            android:textColor="@android:color/darker_gray"
+                            android:layout_gravity="center_vertical" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
             <!-- Recording Mode Row -->
             <LinearLayout
                 android:id="@+id/recording_mode_row"
@@ -439,48 +602,30 @@
                 android:textColor="?attr/colorHeading"
                 android:layout_marginBottom="8dp" />
 
+            <!-- FPS & Format Row -->
             <LinearLayout
+                android:id="@+id/fps_format_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:layout_marginBottom="16dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/settings_home_row_bg"
+                android:paddingStart="14dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:layout_marginBottom="8dp">
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Format"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorHeading" />
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="HLS (fMP4)"
-                        android:textSize="12sp"
-                        android:textColor="@android:color/darker_gray"
-                        android:layout_marginEnd="12dp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="FPS / Resolution"
+                        android:text="FPS &amp; Format"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -489,21 +634,43 @@
                         android:id="@+id/fps_resolution_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="30fps • 1920x1080"
+                        android:text="30 fps @ 1920x1080 (AVC)"
                         android:textSize="12sp"
-                        android:textColor="@android:color/darker_gray"
-                        android:layout_marginEnd="12dp" />
+        android:layout_marginTop="2dp"
+                        android:textColor="@android:color/darker_gray" />
                 </LinearLayout>
 
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"
+                    android:layout_marginEnd="12dp" />
+            </LinearLayout>
+
+            <!-- Bitrate Row -->
+            <LinearLayout
+                android:id="@+id/bitrate_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/settings_home_row_bg"
+                android:paddingStart="14dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:layout_marginBottom="16dp">
+
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="Bitrate"
                         android:textSize="15sp"
                         android:textStyle="bold"
@@ -513,11 +680,18 @@
                         android:id="@+id/bitrate_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8 Mbps"
+                        android:text="8 Mbps (Auto)"
                         android:textSize="12sp"
-                        android:textColor="@android:color/darker_gray"
-                        android:layout_marginEnd="12dp" />
+                        android:layout_marginTop="2dp"
+                        android:textColor="@android:color/darker_gray" />
                 </LinearLayout>
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"
+                    android:layout_marginEnd="12dp" />
             </LinearLayout>
 
             <!-- How to Use Section -->
