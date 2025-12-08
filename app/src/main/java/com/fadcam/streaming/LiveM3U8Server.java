@@ -280,7 +280,11 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             InputStream initStream = new java.io.ByteArrayInputStream(initSegment);
             Response response = newFixedLengthResponse(Response.Status.OK, "video/mp4", initStream, initSegment.length);
-            response.addHeader("Cache-Control", "public, max-age=31536000"); // Cache init segment
+            // CRITICAL: Do NOT cache init segment - it changes on each recording start/restart!
+            // If cached, browser uses old init with new fragments = decode failure
+            response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.addHeader("Pragma", "no-cache");
+            response.addHeader("Expires", "0");
             response.addHeader("Content-Length", String.valueOf(initSegment.length));
             
             return response;

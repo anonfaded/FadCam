@@ -494,6 +494,7 @@
         let videoElement = null;
         let currentStatus = null;
         let sidebarCollapsed = false;
+        let hlsService = null;
 
         // Toast notification functions
         function showToast(message, duration = 5000) {
@@ -858,6 +859,13 @@
                 })
                 .catch(e => console.log('[DEBUG] Manifest fetch error:', e.message));
             
+            // Fresh HLS.js instance for clean state
+            // This ensures no cached init segment from previous recording
+            if (hlsService && hlsService.hls) {
+                hlsService.destroy();
+            }
+            hlsService = new HlsService(); // Fresh instance
+            
             hlsService.load(streamUrl, videoElement);
             videoElement.play().catch(err => console.log('[Video] Play deferred, will play when ready'));
             document.getElementById('videoOverlay').classList.add('hidden');
@@ -885,10 +893,19 @@
             if (status.isRecording && !lastRecordingState) {
                 console.log('🔴 Recording started');
                 lastRecordingState = true;
+                // CRITICAL: Reset HLS stream when recording restarts
+                // This ensures we load fresh init segment and don't mix old/new codec data
+                console.log('[Stream] Recording restarted - resetting HLS instance');
+                hlsLoaded = false;
+                if (hlsService && hlsService.hls) {
+                    console.log('[Stream] Destroying old HLS instance');
+                    hlsService.destroy();
+                }
             } else if (!status.isRecording && lastRecordingState) {
                 console.log('⏹️ Recording stopped');
                 lastRecordingState = false;
-                hlsLoaded = false; // Allow reload when recording starts again
+                // Allow reload when recording starts again
+                hlsLoaded = false;
             }
 
             // Server status - ALWAYS ONLINE (server is always on when website loads)

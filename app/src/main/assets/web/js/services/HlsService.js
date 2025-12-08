@@ -191,6 +191,3 @@ class HlsService {
         }
     }
 }
-
-// Global singleton
-const hlsService = new HlsService();
