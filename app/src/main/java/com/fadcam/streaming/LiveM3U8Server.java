@@ -158,18 +158,28 @@ public class LiveM3U8Server extends NanoHTTPD {
         streamManager.incrementConnections();
         
         try {
-            // Generate M3U8 playlist
+            // Generate M3U8 playlist - CORRECT ORDER FOR fMP4
             StringBuilder m3u8 = new StringBuilder();
             m3u8.append("#EXTM3U\n");
             m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
-            m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n");
-            m3u8.append("#EXT-X-TARGETDURATION:2\n"); // 2-second max fragment duration (1s actual + buffer)
+            m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n"); // MUST come early
+            m3u8.append("#EXT-X-TARGETDURATION:2\n"); // 2-second max fragment duration
             
-            // Reference to initialization segment (ftyp + moov)
-            // Use absolute path for better player compatibility
-            // Note: HEVC codec may not be supported in all browsers
+            // CRITICAL: Get buffered fragments before generating rest of playlist
+            java.util.List<RemoteStreamManager.FragmentData> stable = new java.util.ArrayList<>(fragments);
+            int LIVE_WINDOW_SIZE = 5;
+            java.util.List<RemoteStreamManager.FragmentData> liveEdge = new java.util.ArrayList<>();
+            int startIdx = Math.max(0, stable.size() - LIVE_WINDOW_SIZE);
+            for (int i = startIdx; i < stable.size(); i++) {
+                liveEdge.add(stable.get(i));
+            }
+            
+            // Media sequence BEFORE map
+            m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
+            
+            // INIT SEGMENT - MUST be declared before fragments
             m3u8.append("#EXT-X-MAP:URI=\"/init.mp4\"\n");
-            
+
             // Professional live streaming: minimum 2 fragments buffered before serving (lowered to reduce startup delay)
             if (fragments.size() < 2) {
                 Log.d(TAG, "⏳ Buffering... Only " + fragments.size() + "/2 fragments available");
@@ -180,29 +190,8 @@ public class LiveM3U8Server extends NanoHTTPD {
                 );
             }
             
-            // REMOVED: 300ms age filter caused 503 errors when all fragments were fresh
-            // Fragments from RemoteStreamManager are already complete and ready to serve
-            java.util.List<RemoteStreamManager.FragmentData> stable = new java.util.ArrayList<>(fragments);
-
-            // CRITICAL FIX FOR 404 ERRORS: Only show last 5 fragments at live edge!
-            // Problem: If we show all 15 buffered fragments, by the time browser downloads oldest ones,
-            // they're already evicted from the circular buffer (new fragments push old ones out).
-            // Solution: Only reference the NEWEST 5 fragments (live edge) to ensure they're still
-            // in buffer when requested. This is standard HLS live streaming practice.
-            int LIVE_WINDOW_SIZE = 5; // Show only last 5 fragments (10 seconds at 2s/fragment)
-            java.util.List<RemoteStreamManager.FragmentData> liveEdge = new java.util.ArrayList<>();
-            int startIdx = Math.max(0, stable.size() - LIVE_WINDOW_SIZE);
-            for (int i = startIdx; i < stable.size(); i++) {
-                liveEdge.add(stable.get(i));
-            }
-            
-            // CRITICAL FIX: The MEDIA-SEQUENCE must match the sequence number stored 
-            // inside the moof box (mfhd), otherwise players will reject fragments
-            // The sequence numbers in moof are absolute (1, 2, 3...), so playlist must match
-            m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
-
+            // Add fragments to playlist
             for (RemoteStreamManager.FragmentData fragment : liveEdge) {
-                // Use exact duration from fragment (1.0 seconds)
                 m3u8.append("#EXTINF:").append(String.format("%.3f", fragment.getDurationSeconds())).append(",\n");
                 m3u8.append("/seg-").append(fragment.sequenceNumber).append(".m4s\n");
             }
@@ -257,6 +246,21 @@ public class LiveM3U8Server extends NanoHTTPD {
         
         try {
             Log.d(TAG, "📋 Serving initialization segment (" + (initSegment.length / 1024) + " KB) to " + clientIP);
+            
+            // DEBUG: Log first few bytes of init segment to verify ftyp box
+            if (initSegment.length > 8) {
+                String firstBytes = String.format("%02X %02X %02X %02X %02X %02X %02X %02X",
+                    initSegment[0] & 0xFF, initSegment[1] & 0xFF, initSegment[2] & 0xFF, initSegment[3] & 0xFF,
+                    initSegment[4] & 0xFF, initSegment[5] & 0xFF, initSegment[6] & 0xFF, initSegment[7] & 0xFF);
+                Log.d(TAG, "📋 Init segment header (hex): " + firstBytes + " (should start with ftyp signature)");
+                
+                // Check for ftyp box signature
+                if (initSegment[4] == 'f' && initSegment[5] == 't' && initSegment[6] == 'y' && initSegment[7] == 'p') {
+                    Log.d(TAG, "✅ Init segment has valid ftyp box");
+                } else {
+                    Log.w(TAG, "❌ Init segment missing ftyp box! May be corrupted");
+                }
+            }
             
             // Check if this is first request from this client
             ClientMetrics metrics = streamManager.getClientMetrics(clientIP);
@@ -317,6 +321,21 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             try {
                 Log.d(TAG, "📦 Serving fragment #" + sequenceNumber + " (" + (fragment.sizeBytes / 1024) + " KB) to " + clientIP);
+                
+                // DEBUG: Log first few bytes of fragment to verify moof box
+                if (fragment.data.length > 8) {
+                    String firstBytes = String.format("%02X %02X %02X %02X %02X %02X %02X %02X",
+                        fragment.data[0] & 0xFF, fragment.data[1] & 0xFF, fragment.data[2] & 0xFF, fragment.data[3] & 0xFF,
+                        fragment.data[4] & 0xFF, fragment.data[5] & 0xFF, fragment.data[6] & 0xFF, fragment.data[7] & 0xFF);
+                    Log.d(TAG, "📦 Fragment #" + sequenceNumber + " header (hex): " + firstBytes + " (should start with moof)");
+                    
+                    // Check for moof box signature
+                    if (fragment.data[4] == 'm' && fragment.data[5] == 'o' && fragment.data[6] == 'o' && fragment.data[7] == 'f') {
+                        Log.d(TAG, "✅ Fragment #" + sequenceNumber + " has valid moof box");
+                    } else {
+                        Log.w(TAG, "❌ Fragment #" + sequenceNumber + " missing moof box! May be corrupted");
+                    }
+                }
                 
                 // Get previous data before adding new
                 ClientMetrics prevMetrics = streamManager.getClientMetrics(clientIP);

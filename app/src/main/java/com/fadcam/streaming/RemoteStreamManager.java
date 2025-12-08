@@ -471,6 +471,8 @@ public class RemoteStreamManager {
             }
             
             // Determine stream readiness state
+            // CRITICAL: Must match the requirements in LiveM3U8Server.servePlaylist()
+            // which requires: streamingEnabled && isRecording && hasInit && bufferedCount >= 2
             String state;
             String message;
             boolean isRecording = (activeRecordingFile != null);
@@ -485,9 +487,10 @@ public class RemoteStreamManager {
             } else if (!hasInit) {
                 state = "initializing";
                 message = "Recording started, waiting for initialization segment (2-3 seconds).";
-            } else if (bufferedCount == 0) {
+            } else if (bufferedCount < 2) {
+                // FIXED: Must have at least 2 fragments to match servePlaylist() requirement
                 state = "buffering";
-                message = "Init segment ready, waiting for first fragments (1-2 seconds).";
+                message = "Init segment ready, waiting for more fragments (" + bufferedCount + "/2 ready).";
             } else {
                 state = "ready";
                 message = "Stream is ready for playback.";

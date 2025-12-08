@@ -20,13 +20,19 @@ const CONFIG = {
     HLS_CONFIG: {
         debug: false,
         enableWorker: true,
-        lowLatencyMode: false,
-        maxBufferLength: 12,
-        maxMaxBufferLength: 15,
+        lowLatencyMode: true,  // Reduced latency for live streaming
+        maxBufferLength: 10,   // Smaller buffer = less delay
+        maxMaxBufferLength: 12,
         maxBufferSize: 60 * 1000 * 1000,
         liveSyncDurationCount: 2,
-        liveMaxLatencyDurationCount: 6,
-        startPosition: -1
+        liveMaxLatencyDurationCount: 4,
+        startPosition: -1,
+        // Manifest/Fragment request retry configuration
+        testOnBitrateFallback: false,
+        cmcd: null,
+        // Better default retry behavior
+        backoffMaxDelay: 64000,  // Max 64s delay between retries
+        backoffMultiplier: 2      // Exponential backoff
     },
     
     // UI Configuration

@@ -347,7 +347,7 @@
         <div class="player-area">
             <div class="video-container">
                 <video id="videoPlayer" playsinline muted autoplay controls></video>
-                <div class="video-overlay" id="videoOverlay" onclick="playStream()">
+                <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="play-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <polygon points="5 3 19 12 5 21 5 3"/>
@@ -830,29 +830,70 @@
             }
         }
 
+        let lastRecordingState = false;
+        let hlsLoaded = false;
+
         function playStream() {
             if (!CONFIG || !CONFIG.ENDPOINTS) {
                 setTimeout(playStream, 500);
                 return;
             }
+            
+            // Only load stream once
+            if (hlsLoaded) {
+                console.log('[HlsService] Stream already loaded, skipping');
+                return;
+            }
+            
+            hlsLoaded = true;
             const streamUrl = CONFIG.BASE_URL + CONFIG.ENDPOINTS.HLS;
+            console.log('[HlsService] Loading stream from:', streamUrl);
+            
+            // Debug: Fetch manifest to see what's being served
+            fetch(streamUrl)
+                .then(r => r.text())
+                .then(manifest => {
+                    console.log('[DEBUG] Raw M3U8 Manifest:');
+                    console.log(manifest);
+                })
+                .catch(e => console.log('[DEBUG] Manifest fetch error:', e.message));
+            
             hlsService.load(streamUrl, videoElement);
-            videoElement.play();
+            videoElement.play().catch(err => console.log('[Video] Play deferred, will play when ready'));
             document.getElementById('videoOverlay').classList.add('hidden');
         }
 
         function updateUI(status) {
             currentStatus = status;
+
+            // Update video overlay cursor based on stream readiness
+            const videoOverlay = document.getElementById('videoOverlay');
+            if (status.state === 'ready' && status.isRecording) {
+                videoOverlay.style.cursor = 'pointer';
+            } else {
+                videoOverlay.style.cursor = 'not-allowed';
+                videoOverlay.style.opacity = '0.5';
+            }
+
+            // AUTO-LOAD STREAM when status becomes ready (manifest available)
+            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
+                console.log('📺 Stream ready! Loading now...');
+                playStream();
+            }
             
-            console.log('=== UI UPDATE DEBUG ===');
-            console.log('Status:', status);
-            console.log('Is Recording:', status.isRecording);
+            // Track recording state for logging
+            if (status.isRecording && !lastRecordingState) {
+                console.log('🔴 Recording started');
+                lastRecordingState = true;
+            } else if (!status.isRecording && lastRecordingState) {
+                console.log('⏹️ Recording stopped');
+                lastRecordingState = false;
+                hlsLoaded = false; // Allow reload when recording starts again
+            }
 
             // Server status - ALWAYS ONLINE (server is always on when website loads)
             const serverLED = document.getElementById('serverLED');
             serverLED.className = 'led-dot online';
-            console.log('Server LED classes:', serverLED.className);
-            console.log('Server LED computed styles:', window.getComputedStyle(serverLED).background);
             
             const serverStatusLabel = document.getElementById('serverStatusLabel');
             if (serverStatusLabel) {
@@ -864,8 +905,6 @@
             const recordingLED = document.getElementById('recordingLED');
             const isRecording = status.isRecording;
             recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
-            console.log('Recording LED classes:', recordingLED.className);
-            console.log('Recording LED computed styles:', window.getComputedStyle(recordingLED).background);
             
             // Update recording status label
             const recordingStatusLabel = document.getElementById('recordingStatusLabel');
@@ -887,17 +926,6 @@
             } else {
                 msgEl.style.display = 'none';
             }
-            
-            // Check hero card background
-            const heroBg = document.querySelector('.server-hero-bg');
-            if (heroBg) {
-                console.log('Hero BG element found');
-                console.log('Hero BG inline style:', heroBg.style.backgroundImage);
-                console.log('Hero BG computed style:', window.getComputedStyle(heroBg).backgroundImage);
-            } else {
-                console.error('Hero BG element NOT found!');
-            }
-            console.log('=== END DEBUG ===');
 
             // Quick values - use formatted uptime from uptimeDetails
             const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
@@ -1036,7 +1064,7 @@
             
             // Initialize will fetch first status and emit event
             await dashboardViewModel.initialize();
-            playStream();
+            // Don't auto-load stream - wait for recording to start
         });
     </script>
 </body>
