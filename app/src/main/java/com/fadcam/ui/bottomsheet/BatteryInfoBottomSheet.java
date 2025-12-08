@@ -4,8 +4,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,11 +42,22 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
         LinearLayout consumptionCard = view.findViewById(R.id.consumptionCard);
         LinearLayout timeRemainingCard = view.findViewById(R.id.timeRemainingCard);
         LinearLayout chargingStatusCard = view.findViewById(R.id.chargingStatusCard);
-        LinearLayout lowBatteryWarning = view.findViewById(R.id.lowBatteryWarning);
+        LinearLayout lowBatteryWarningCard = view.findViewById(R.id.lowBatteryWarningCard);
+        TextView lowBatteryWarningText = view.findViewById(R.id.lowBatteryWarningText);
+        
+        // Battery warning threshold UI
+        EditText batteryWarningInput = view.findViewById(R.id.batteryWarningInput);
+        Button setBatteryWarningBtn = view.findViewById(R.id.setBatteryWarningBtn);
+        TextView warningThresholdStatus = view.findViewById(R.id.warningThresholdStatus);
         
         // Get battery info from RemoteStreamManager using new JSON format
         RemoteStreamManager manager = RemoteStreamManager.getInstance();
         String batteryDetailsJson = manager.getBatteryDetailsJson(requireContext());
+        
+        // Load current battery warning threshold and set it in the input
+        int currentThreshold = manager.getBatteryWarningThreshold();
+        batteryWarningInput.setText(String.valueOf(currentThreshold));
+        warningThresholdStatus.setText("Current threshold: " + currentThreshold + "%");
         
         try {
             // Parse the battery details JSON
@@ -58,7 +72,7 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
             currentBatteryLevel.setText(batteryPercent + "%");
             
             // Show charging status
-            chargingStatus.setText(status.equals("Charging") ? "🔌 " + status : "⚇ " + status);
+            chargingStatus.setText(status.equals("Charging") ? "🔌 Charging" : "🔋 Discharging");
             chargingStatusCard.setVisibility(View.VISIBLE);
             
             // Show consumption data if available (streaming active and battery consumed)
@@ -95,9 +109,12 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
             
             // Show low battery warning if needed
             if (!warning.isEmpty()) {
-                lowBatteryWarning.setVisibility(View.VISIBLE);
+                lowBatteryWarningCard.setVisibility(View.VISIBLE);
+                if (lowBatteryWarningText != null) {
+                    lowBatteryWarningText.setText(warning);
+                }
             } else {
-                lowBatteryWarning.setVisibility(View.GONE);
+                lowBatteryWarningCard.setVisibility(View.GONE);
             }
             
         } catch (JSONException e) {
@@ -106,8 +123,57 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
             consumptionCard.setVisibility(View.GONE);
             timeRemainingCard.setVisibility(View.GONE);
             chargingStatusCard.setVisibility(View.GONE);
-            lowBatteryWarning.setVisibility(View.GONE);
+            lowBatteryWarningCard.setVisibility(View.GONE);
         }
+        
+        // Set battery warning threshold button click listener
+        setBatteryWarningBtn.setOnClickListener(v -> {
+            String thresholdStr = batteryWarningInput.getText().toString().trim();
+            if (thresholdStr.isEmpty()) {
+                Toast.makeText(requireContext(), "Please enter a percentage", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            try {
+                int threshold = Integer.parseInt(thresholdStr);
+                if (threshold < 5 || threshold > 100) {
+                    Toast.makeText(requireContext(), "Percentage must be between 5 and 100", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Make API call to set battery warning threshold
+                setBatteryWarningThreshold(threshold, warningThresholdStatus);
+            } catch (NumberFormatException e) {
+                Toast.makeText(requireContext(), "Invalid number", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        // Update status text with current threshold if available
+        warningThresholdStatus.setText("Current threshold: " + currentThreshold + "%");
+    }
+    
+    /**
+     * Set battery warning threshold via HTTP POST request
+     */
+    private void setBatteryWarningThreshold(int threshold, TextView statusText) {
+        Thread thread = new Thread(() -> {
+            try {
+                RemoteStreamManager manager = RemoteStreamManager.getInstance();
+                manager.setBatteryWarningThreshold(threshold);
+                
+                // Update UI on main thread
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Battery warning threshold set to " + threshold + "%", Toast.LENGTH_SHORT).show();
+                    statusText.setText("Current threshold: " + threshold + "%");
+                });
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Failed to set threshold: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+        thread.start();
     }
 }
+
 

@@ -66,6 +66,7 @@ class ApiService {
      */
     async post(endpoint, data = {}) {
         try {
+            console.log(`[ApiService] POST ${endpoint} with data:`, data);
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'POST',
                 headers: {
@@ -78,7 +79,9 @@ class ApiService {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            return await response.json();
+            const responseData = await response.json();
+            console.log(`[ApiService] POST ${endpoint} response:`, responseData);
+            return responseData;
         } catch (error) {
             console.error(`POST ${endpoint} failed:`, error);
             throw error;

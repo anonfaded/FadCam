@@ -409,7 +409,21 @@ public class RemoteFragment extends BaseFragment {
         
         // Get battery percentage
         int battery = manager.getBatteryPercentage(requireContext());
-        batteryText.setText(battery > 0 ? battery + "%" : "--");
+        String batteryDisplay = battery > 0 ? battery + "%" : "--";
+        
+        // Check if battery warning should be shown
+        String batteryDetailsJson = manager.getBatteryDetailsJson(requireContext());
+        try {
+            org.json.JSONObject batteryData = new org.json.JSONObject(batteryDetailsJson);
+            String warning = batteryData.getString("warning");
+            if (warning != null && !warning.isEmpty()) {
+                batteryDisplay = "⚠️ " + batteryDisplay;
+            }
+        } catch (Exception e) {
+            // Ignore, just show battery percentage
+        }
+        
+        batteryText.setText(batteryDisplay);
         
         // Get buffered fragments count
         int fragments = manager.getBufferedCount();

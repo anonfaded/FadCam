@@ -496,21 +496,8 @@
         let sidebarCollapsed = false;
         let hlsService = null;
 
-        // Toast notification functions
-        function showToast(message, duration = 5000) {
-            const toast = document.getElementById('toastNotification');
-            const messageEl = document.getElementById('toastMessage');
-            messageEl.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, duration);
-        }
-
-        function closeToast() {
-            document.getElementById('toastNotification').classList.remove('show');
-        }
-
+        // Toast notification functions - see showToast implementation at end of script
+        
         // Sidebar toggle
         document.getElementById('sidebarToggle').addEventListener('click', () => {
             const sidebar = document.getElementById('sidebar');
@@ -611,7 +598,28 @@
 
         function showBatteryModal() {
             if (!currentStatus) return;
+            
+            // Debug logging
+            console.log('[Battery Modal] currentStatus.battery:', currentStatus.battery);
+            console.log('[Battery Modal] warning_threshold:', currentStatus.battery.warning_threshold);
+            
+            // Build warning section if battery is low
+            let warningSection = '';
+            if (currentStatus.battery.warning && currentStatus.battery.warning.length > 0) {
+                warningSection = `
+                    <div class="modal-section">
+                        <div style="padding: 12px; background: #f85149; border-radius: 8px; text-align: center;">
+                            <span style="color: white; font-weight: bold; font-size: 14px;">${currentStatus.battery.warning}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const thresholdValue = currentStatus.battery.warning_threshold || 20;
+            console.log('[Battery Modal] Using threshold:', thresholdValue);
+            
             const content = `
+                ${warningSection}
                 <div class="modal-section">
                     <div class="modal-row">
                         <span class="modal-label">Level</span>
@@ -635,7 +643,7 @@
                 <div class="modal-section">
                     <div class="modal-label-section">Battery Warning Threshold</div>
                     <div class="modal-row">
-                        <input type="number" id="batteryWarningInput" min="5" max="100" value="20" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
+                        <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warning_threshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
                         <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
                     </div>
                 </div>
@@ -649,11 +657,24 @@
 
         async function setBatteryWarning() {
             const threshold = document.getElementById('batteryWarningInput').value;
+            console.log('[Battery] setBatteryWarning called with:', threshold);
+            
+            if (!threshold || threshold < 5 || threshold > 100) {
+                showToast('Please enter a value between 5 and 100');
+                return;
+            }
             try {
+                console.log('[Battery] Sending POST request to set threshold:', threshold);
                 await dashboardViewModel.setBatteryWarning(threshold);
-                console.log('[Battery] Warning threshold set to ' + threshold + '%');
+                console.log('[Battery] POST request completed, forcing status update...');
+                showToast('Battery warning threshold set to ' + threshold + '%');
+                
+                // Force immediate status update to see the change
+                await dashboardViewModel.updateStatus();
+                console.log('[Battery] Status updated, new threshold should be:', currentStatus?.battery?.warning_threshold);
             } catch (error) {
                 console.error('Failed to set battery warning:', error);
+                showToast('Failed to set battery warning threshold');
             }
         }
 

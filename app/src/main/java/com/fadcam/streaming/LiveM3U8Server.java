@@ -544,28 +544,37 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
+                Log.w(TAG, "❌ Battery warning: No body received");
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
             }
+            
+            Log.d(TAG, "[Battery] Received body: " + body);
             
             // Parse JSON threshold from body
             int threshold = 20; // Default
             try {
                 org.json.JSONObject json = new org.json.JSONObject(body);
                 threshold = json.getInt("threshold");
+                Log.d(TAG, "[Battery] Parsed threshold: " + threshold);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to parse battery warning threshold JSON", e);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
             }
             
-            // Store battery warning threshold in preferences
-            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
-            // Use setPref method if available, or directly with SharedPreferences
-            android.content.SharedPreferences prefs = context.getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
-            android.content.SharedPreferences.Editor editor = prefs.edit();
-            editor.putInt("battery_warning_threshold", threshold);
-            editor.apply();
+            // Validate threshold
+            if (threshold < 5 || threshold > 100) {
+                Log.w(TAG, "❌ Battery warning: Invalid threshold " + threshold);
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Threshold must be between 5 and 100\"}");
+            }
             
+            // Store battery warning threshold using SharedPreferencesManager
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            spManager.setBatteryWarningThreshold(threshold);
             Log.i(TAG, "✅ Battery warning threshold set to: " + threshold + "%");
+            
+            // Verify it was stored
+            int storedValue = spManager.getBatteryWarningThreshold();
+            Log.d(TAG, "[Battery] Verified stored value: " + storedValue);
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
                 "{\"status\": \"success\", \"message\": \"Battery warning set to " + threshold + "%\"}");

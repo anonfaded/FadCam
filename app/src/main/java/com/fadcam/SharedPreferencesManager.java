@@ -24,6 +24,11 @@ public class SharedPreferencesManager {
     public static final String PREF_AUTO_UPDATE_CHECK = "auto_update_check_enabled";
     // --- END UPDATE CHECK CONSTANTS ---
     
+    // --- BATTERY WARNING CONSTANTS ---
+    public static final String PREF_BATTERY_WARNING_THRESHOLD = "battery_warning_threshold";
+    public static final int DEFAULT_BATTERY_WARNING_THRESHOLD = 20;
+    // --- END BATTERY WARNING CONSTANTS ---
+    
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris"; // Defined in Constants now
 
     private static SharedPreferencesManager instance;
@@ -175,6 +180,32 @@ public class SharedPreferencesManager {
     }
 
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
+
+    // ----- Battery Warning Threshold Methods -----
+    /**
+     * Get the battery warning threshold percentage.
+     * Default: 20%
+     */
+    public int getBatteryWarningThreshold() {
+        return sharedPreferences.getInt(
+            PREF_BATTERY_WARNING_THRESHOLD,
+            DEFAULT_BATTERY_WARNING_THRESHOLD
+        );
+    }
+
+    /**
+     * Set the battery warning threshold percentage.
+     */
+    public void setBatteryWarningThreshold(int percentage) {
+        if (percentage < 5 || percentage > 100) {
+            percentage = DEFAULT_BATTERY_WARNING_THRESHOLD;
+        }
+        sharedPreferences
+            .edit()
+            .putInt(PREF_BATTERY_WARNING_THRESHOLD, percentage)
+            .apply();
+    }
+    // ----- End Battery Warning Threshold Methods -----
 
     // ----- Fix Start for this class (SharedPreferencesManager_playback_muted) -----
     /** Returns whether playback should start muted by default. Default: false (unmuted). */

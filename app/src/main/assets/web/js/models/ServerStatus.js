@@ -67,7 +67,8 @@ class ServerStatus {
                 status: data.battery_details.status || 'unknown',
                 consumed: data.battery_details.consumed !== undefined && data.battery_details.consumed !== null ? data.battery_details.consumed + '' : 'N/A',
                 remainingHours: data.battery_details.remaining_hours ?? -1,
-                warning: data.battery_details.warning || false
+                warning: data.battery_details.warning || false,
+                warning_threshold: data.battery_details.warning_threshold || 20
             };
         } else {
             this.battery = {
@@ -75,7 +76,8 @@ class ServerStatus {
                 status: 'unknown',
                 consumed: 'N/A',
                 remainingHours: -1,
-                warning: false
+                warning: false,
+                warning_threshold: 20
             };
         }
         
@@ -199,7 +201,14 @@ class ServerStatus {
      * @returns {string}
      */
     getFormattedBattery() {
-        return this.battery.percent >= 0 ? this.battery.percent + '%' : 'N/A';
+        if (this.battery.percent < 0) return 'N/A';
+        
+        // Show warning indicator if battery is low
+        if (this.battery.warning && this.battery.warning.length > 0) {
+            return '⚠️ ' + this.battery.percent + '%';
+        }
+        
+        return this.battery.percent + '%';
     }
     
     /**

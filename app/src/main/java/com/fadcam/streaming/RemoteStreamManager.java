@@ -769,18 +769,25 @@ public class RemoteStreamManager {
             }
         }
         
-        // Warning if battery is low (only if not charging)
-        if (currentLevel < 20 && !isCharging) {
-            warning = "Low - Plug charger ASAP";
+        // Get configured battery warning threshold from SharedPreferencesManager
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
+        int warningThreshold = prefs.getBatteryWarningThreshold();
+        Log.d(TAG, "[Battery] Retrieved threshold from prefs: " + warningThreshold);
+        
+        // Warning if battery is below or equal to threshold (only if not charging)
+        if (currentLevel <= warningThreshold && !isCharging) {
+            warning = "⚠️ Low Battery - Plug charger ASAP";
         }
         
         String warningJson = warning.isEmpty() ? "\"\"" : "\"" + warning + "\"";
         String chargingStatus = isCharging ? "Charging" : "Discharging";
         
-        return String.format(
-            "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remaining_hours\": %.1f, \"warning\": %s}",
-            currentLevel, chargingStatus, consumed, remainingHours, warningJson
+        String result = String.format(
+            "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remaining_hours\": %.1f, \"warning\": %s, \"warning_threshold\": %d}",
+            currentLevel, chargingStatus, consumed, remainingHours, warningJson, warningThreshold
         );
+        Log.d(TAG, "[Battery] Returning JSON: " + result);
+        return result;
     }
     
     /**
@@ -1164,6 +1171,30 @@ public class RemoteStreamManager {
      */
     public StreamingMode getStreamingMode() {
         return streamingMode;
+    }
+    
+    /**
+     * Get the battery warning threshold percentage.
+     */
+    public int getBatteryWarningThreshold() {
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
+        return prefs.getBatteryWarningThreshold();
+    }
+    
+    /**
+     * Set the battery warning threshold percentage.
+     * Makes HTTP POST request to update on all connected clients.
+     */
+    public void setBatteryWarningThreshold(int percentage) throws Exception {
+        if (percentage < 5 || percentage > 100) {
+            throw new IllegalArgumentException("Battery warning threshold must be between 5 and 100");
+        }
+        
+        // Store locally
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
+        prefs.setBatteryWarningThreshold(percentage);
+        
+        Log.d(TAG, "Battery warning threshold set to " + percentage + "%");
     }
     
 }
