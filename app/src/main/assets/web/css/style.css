@@ -72,6 +72,7 @@ body {
     gap: 4px;
     padding: 8px;
     margin: -8px;
+    transition: all 200ms ease;
 }
 
 .hamburger-line {
@@ -85,6 +86,13 @@ body {
 .hamburger-line.short-left {
     width: 14px;
     margin-right: 6px;
+    transition: all 200ms ease;
+}
+
+/* Hamburger animation when sidebar is collapsed (active state) */
+.hamburger-btn.active .hamburger-line.short-left {
+    width: 20px;
+    margin-right: 0;
 }
 
 .hamburger-btn:hover .hamburger-line {
@@ -132,6 +140,54 @@ body {
     width: 0;
     padding: 0;
     gap: 0;
+}
+
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.footer-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.footer-links {
+    display: flex;
+    gap: 8px;
+    justify-content: space-around;
+}
+
+.footer-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 6px;
+    color: #8b949e;
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 600;
+    transition: all 200ms ease;
+    text-align: center;
+    flex: 1;
+}
+
+.footer-link:hover {
+    background: rgba(248, 81, 73, 0.1);
+    color: var(--accent-red);
+}
+
+.footer-link i {
+    font-size: 16px;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -368,13 +424,19 @@ body {
 .card-sm {
     padding: 0;
     position: relative;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
 }
 
 .card-sm .card-clickable {
     flex-direction: row;
     align-items: center;
-    padding: 10px 12px;
+    justify-content: space-between;
+    padding: 12px 14px;
     gap: 10px;
+    flex: 1;
+    display: flex;
 }
 
 .card-sm-content {
@@ -384,6 +446,7 @@ body {
     flex: 1;
     min-width: 0;
     justify-content: center;
+    align-items: flex-start;
 }
 
 .card-icon-sm {

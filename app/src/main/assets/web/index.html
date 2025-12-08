@@ -273,9 +273,9 @@
                 <!-- Data Transfer Card -->
                 <div class="card card-sm" onclick="showDataTransferModal()">
                     <div class="card-clickable">
-                        <i class="fas fa-exchange-alt card-icon-sm"></i>
+                        <i class="fas fa-arrow-down" style="font-size: 10px; color: #f85149; width: 12px; height: 12px; flex-shrink: 0;"></i>
                         <div class="card-sm-content">
-                            <div class="card-label-sm">Data Sent</div>
+                            <div class="card-label-sm">Data Received</div>
                             <div class="card-value-sm" id="dataTransferValue">—</div>
                         </div>
                         <i class="fas fa-chevron-right card-arrow-sm"></i>
@@ -329,71 +329,75 @@
                 </div>
             </div>
 
-            <!-- Recording Mode Card -->
-            <div class="card" onclick="showRecordingModeModal()">
-                <div class="card-clickable">
-                    <div class="card-content">
-                        <div class="card-label">Recording Mode</div>
-                        <div class="card-value" id="recordingModeValue">—</div>
+            <!-- Settings Cards Grid - Recording & Quality -->
+            <div class="cards-grid">
+                <!-- Recording Mode Card -->
+                <div class="card card-sm" onclick="showRecordingModeModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-circle-dot card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Recording</div>
+                            <div class="card-value-sm" id="recordingModeValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
-                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
                 </div>
-            </div>
 
-            <!-- Stream Quality Card -->
-            <div class="card" onclick="showStreamQualityModal()">
-                <div class="card-clickable">
-                    <div class="card-content">
-                        <div class="card-label">Stream Quality</div>
-                        <div class="card-value" id="streamQualityValue">—</div>
+                <!-- Stream Quality Card -->
+                <div class="card card-sm" onclick="showStreamQualityModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-signal card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Quality</div>
+                            <div class="card-value-sm" id="streamQualityValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
-                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                </div>
-            </div>
-
-            <!-- View All Endpoints Card -->
-            <div class="card" onclick="showEndpointsModal()">
-                <div class="card-clickable">
-                    <div class="card-content">
-                        <div class="card-label">API Endpoints</div>
-                        <div class="card-value" id="endpointsValue">View All</div>
-                    </div>
-                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
                 </div>
             </div>
 
             <!-- Remote Control Section -->
             <div class="section-divider">Remote Control</div>
 
-            <!-- Torch Card -->
-            <div class="card" onclick="toggleTorch()">
+            <!-- Torch Card - Compact -->
+            <div class="card card-sm" onclick="toggleTorch()">
                 <div class="card-clickable">
-                    <div class="card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 2h6l3 7H6l3-7Z"/><path d="M12 9v13"/><path d="M9 22h6"/>
-                        </svg>
+                    <i class="fas fa-lightbulb card-icon-sm" style="color: #f59e0b;"></i>
+                    <div class="card-sm-content">
+                        <div class="card-label-sm">Torch</div>
+                        <div class="card-value-sm" id="torchState">OFF</div>
                     </div>
-                    <div class="card-content">
-                        <div class="card-label">Torch</div>
-                        <div class="card-value" id="torchState">OFF</div>
-                    </div>
-                    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
+                    <i class="fas fa-chevron-right card-arrow-sm"></i>
                 </div>
             </div>
 
-            <!-- Server URL Card -->
-            <div class="card">
-                <div class="card-content">
-                    <div class="card-label-sm">Server URL</div>
-                    <div class="card-value-sm" id="serverUrl">—</div>
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <!-- Server URL Card -->
+                <div class="footer-card">
+                    <div style="font-size: 10px; color: #8b949e; margin-bottom: 6px; font-weight: 600;">Server URL</div>
+                    <div id="serverUrl" style="font-size: 11px; color: #e6edf3; font-family: monospace; word-break: break-all; line-height: 1.3;">—</div>
+                </div>
+
+                <!-- Footer Links -->
+                <div class="footer-links">
+                    <a href="https://discord.gg/kvAZvdkuuN" target="_blank" title="Discord Community" class="footer-link">
+                        <i class="fab fa-discord"></i>
+                        <span>Discord</span>
+                    </a>
+                    <a href="https://github.com/anonfaded/FadCam" target="_blank" title="GitHub Repository" class="footer-link">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                    <a href="" id="endpointsFooterLink" onclick="showEndpointsModal(); return false;" title="API Endpoints" class="footer-link">
+                        <i class="fas fa-code"></i>
+                        <span>API</span>
+                    </a>
+                </div>
+
+                <!-- Version Info -->
+                <div style="font-size: 10px; color: #6e7681; text-align: center; padding-top: 8px; border-top: 1px solid #3d4349;">
+                    FadCam v3.0.0
                 </div>
             </div>
         </div>
@@ -471,7 +475,7 @@
     <div class="modal" id="dataTransferModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Data Transfer</h2>
+                <h2>Client Data Usage</h2>
                 <button class="modal-close" onclick="hideDataTransferModal()">✕</button>
             </div>
             <div class="modal-body" id="dataTransferContent"></div>
@@ -621,7 +625,7 @@
             
             if (status.storageUsedGb > 0 && status.storageTotalGb > 0) {
                 const percent = (status.storageUsedGb / status.storageTotalGb) * 100;
-                storageValue.textContent = `${status.storageUsedGb.toFixed(1)}/${status.storageTotalGb.toFixed(1)} GB`;
+                storageValue.textContent = `${percent.toFixed(0)}% (${status.storageUsedGb.toFixed(1)}/${status.storageTotalGb.toFixed(1)} GB)`;
                 storageFill.style.width = percent + '%';
                 
                 storageBar.classList.remove('warning', 'critical');
@@ -650,7 +654,7 @@
                 const usedGb = status.memoryUsedMb / 1024;
                 const totalGb = status.memoryTotalMb / 1024;
                 
-                memoryValue.textContent = `${usedGb.toFixed(1)}/${totalGb.toFixed(1)} GB`;
+                memoryValue.textContent = `${percent.toFixed(0)}% (${usedGb.toFixed(1)}/${totalGb.toFixed(1)} GB)`;
                 memoryFill.style.width = percent + '%';
                 
                 memoryBar.classList.remove('warning', 'critical');
@@ -692,11 +696,13 @@
             }
         }
         
-        // Sidebar toggle
+        // Sidebar toggle with hamburger animation
         document.getElementById('sidebarToggle').addEventListener('click', () => {
             const sidebar = document.getElementById('sidebar');
+            const hamburgerBtn = document.getElementById('sidebarToggle');
             sidebarCollapsed = !sidebarCollapsed;
             sidebar.classList.toggle('collapsed', sidebarCollapsed);
+            hamburgerBtn.classList.toggle('active', sidebarCollapsed);
         });
 
         // Close modals on outside click
@@ -946,15 +952,55 @@
             const displayValue = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
             const activeClientsCount = currentStatus.clients ? currentStatus.clients.length : 0;
             
-            // Build per-client breakdown
+            // Build per-client breakdown with all metrics
             let clientsHtml = '';
             if (currentStatus.clients && currentStatus.clients.length > 0) {
-                clientsHtml = currentStatus.clients.map(client => `
-                    <div class="modal-row">
-                        <span class="modal-label">${client.ip || 'Unknown'}</span>
-                        <span class="modal-value">${client.data_transferred_mb ? client.data_transferred_mb.toFixed(1) : '0'} MB</span>
-                    </div>
-                `).join('');
+                clientsHtml = currentStatus.clients.map(client => {
+                    // Calculate duration display
+                    let durationDisplay = '0m';
+                    if (client.session_duration_seconds) {
+                        const seconds = client.session_duration_seconds;
+                        if (seconds < 60) {
+                            durationDisplay = seconds + 's';
+                        } else if (seconds < 3600) {
+                            durationDisplay = Math.floor(seconds / 60) + 'm';
+                        } else {
+                            const hours = Math.floor(seconds / 3600);
+                            const mins = Math.floor((seconds % 3600) / 60);
+                            durationDisplay = hours + 'h ' + mins + 'm';
+                        }
+                    }
+                    
+                    // Get data served
+                    const dataMb = client.mb_served || 0;
+                    const fragments = client.fragments_served || 0;
+                    const isActive = client.is_active !== false; // Default to active if not specified
+                    
+                    return `
+                        <div style="background: #1a1f26; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                            <!-- IP and Status Row -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 13sp; font-weight: 700; color: #e6edf3; font-family: monospace;">${client.ip || 'Unknown'}</span>
+                                <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${isActive ? '#3fb950' : '#6e7681'}; padding: 4px 8px; border-radius: 4px;">${isActive ? 'Active' : 'Inactive'}</span>
+                            </div>
+                            <!-- Metrics Grid -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <div style="font-size: 11px; color: #8b949e; margin-bottom: 4px;">Data Served</div>
+                                    <div style="font-size: 13px; font-weight: 700; color: #e6edf3;">${dataMb.toFixed(1)} MB</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 11px; color: #8b949e; margin-bottom: 4px;">Duration</div>
+                                    <div style="font-size: 13px; font-weight: 700; color: #e6edf3;">${durationDisplay}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 11px; color: #8b949e; margin-bottom: 4px;">Fragments</div>
+                                    <div style="font-size: 13px; font-weight: 700; color: #e6edf3;">${fragments}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } else {
                 clientsHtml = '<div style="text-align: center; padding: 16px; color: #8b949e; font-size: 12px;">No clients connected</div>';
             }
@@ -976,7 +1022,7 @@
                 </div>
                 <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 12px;">
                     <div style="font-size: 12px; color: #8b949e; line-height: 1.5;">
-                        ℹ️ Shows the total amount of video data transmitted to each connected client.
+                        ℹ️ Shows detailed data transmission metrics for each connected client.
                     </div>
                 </div>
             `;
