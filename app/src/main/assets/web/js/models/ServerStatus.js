@@ -56,8 +56,16 @@ class ServerStatus {
         // Network (handle both object and string)
         if (data.network_health && typeof data.network_health === 'object') {
             this.networkHealth = data.network_health.status || 'unknown';
+            this.networkDownloadMbps = data.network_health.download_mbps ?? null;
+            this.networkUploadMbps = data.network_health.upload_mbps ?? null;
+            this.networkLatencyMs = data.network_health.latency_ms ?? null;
+            this.networkLastMeasurementMs = data.network_health.last_measurement_ms ?? 0;
         } else {
             this.networkHealth = data.network_health || 'unknown';
+            this.networkDownloadMbps = null;
+            this.networkUploadMbps = null;
+            this.networkLatencyMs = null;
+            this.networkLastMeasurementMs = 0;
         }
         
         // Battery (nested object)

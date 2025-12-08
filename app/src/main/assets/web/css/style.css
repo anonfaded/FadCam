@@ -383,6 +383,7 @@ body {
     gap: 2px;
     flex: 1;
     min-width: 0;
+    justify-content: center;
 }
 
 .card-icon-sm {
@@ -1063,9 +1064,9 @@ video {
 
 .card-battery-ios.charging .battery-status-badge {
     display: block;
-    background: rgba(0, 0, 0, 0.12);
-    color: #1a1f26;
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    backdrop-filter: blur(8px);
     font-weight: 700;
 }
 

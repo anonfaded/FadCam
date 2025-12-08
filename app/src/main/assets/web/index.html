@@ -258,16 +258,6 @@
                     </div>
                 </div>
 
-                <!-- Temporary Battery Slider for Testing -->
-                <div class="card" style="padding: 12px;" id="batteryTestSlider">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span style="font-size: 11px; color: #8b949e; min-width: 50px; font-weight: 600;">TEST:</span>
-                        <input type="range" id="batterySlider" min="0" max="100" value="74" 
-                               style="flex: 1; cursor: pointer; accent-color: #3fb950; height: 4px;">
-                        <span id="sliderValue" style="font-size: 11px; color: #e6edf3; min-width: 40px; font-weight: 700;">74%</span>
-                    </div>
-                </div>
-
                 <!-- Segments Card -->
                 <div class="card card-sm" onclick="showSegmentsModal()">
                     <div class="card-clickable">
@@ -275,6 +265,18 @@
                         <div class="card-sm-content">
                             <div class="card-label-sm">Segments</div>
                             <div class="card-value-sm" id="segmentsValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Data Transfer Card -->
+                <div class="card card-sm" onclick="showDataTransferModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-exchange-alt card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Data Sent</div>
+                            <div class="card-value-sm" id="dataTransferValue">—</div>
                         </div>
                         <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
@@ -462,6 +464,17 @@
                 <button class="modal-close" onclick="hideNetworkModal()">✕</button>
             </div>
             <div class="modal-body" id="networkContent"></div>
+        </div>
+    </div>
+
+    <!-- Data Transfer Modal -->
+    <div class="modal" id="dataTransferModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Data Transfer</h2>
+                <button class="modal-close" onclick="hideDataTransferModal()">✕</button>
+            </div>
+            <div class="modal-body" id="dataTransferContent"></div>
         </div>
     </div>
 
@@ -688,7 +701,7 @@
 
         // Close modals on outside click
         document.addEventListener('click', (e) => {
-            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal'];
+            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal'];
             modals.forEach(id => {
                 const modal = document.getElementById(id);
                 if (e.target === modal) {
@@ -822,10 +835,13 @@
                     </div>
                 </div>
                 <div class="modal-section">
-                    <div class="modal-label-section">Battery Warning Threshold</div>
+                    <div class="modal-label-section">Low Battery Warning Threshold</div>
                     <div class="modal-row">
                         <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warning_threshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
                         <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #8b949e; line-height: 1.4;">
+                        When battery drops to or below this percentage, a warning will be displayed. Valid range: 5-100%
                     </div>
                 </div>
             `;
@@ -861,11 +877,43 @@
 
         function showNetworkModal() {
             if (!currentStatus) return;
+            
+            // Get network data from parsed properties
+            const downloadSpeed = currentStatus.networkDownloadMbps !== null ? currentStatus.networkDownloadMbps.toFixed(2) + ' Mbps' : 'N/A';
+            const uploadSpeed = currentStatus.networkUploadMbps !== null ? currentStatus.networkUploadMbps.toFixed(2) + ' Mbps' : 'N/A';
+            const latency = currentStatus.networkLatencyMs !== null ? currentStatus.networkLatencyMs + ' ms' : 'N/A';
+            
+            // Format last measurement time
+            let lastTested = 'Never';
+            if (currentStatus.networkLastMeasurementMs > 0) {
+                const lastMeasureDate = new Date(currentStatus.networkLastMeasurementMs);
+                lastTested = lastMeasureDate.toLocaleTimeString();
+            }
+            
             const content = `
                 <div class="modal-section">
                     <div class="modal-row">
-                        <span class="modal-label">Health</span>
-                        <span class="modal-value">${currentStatus.networkHealth.toUpperCase()}</span>
+                        <span class="modal-label">Status</span>
+                        <span class="modal-value">${currentStatus.networkHealth.charAt(0).toUpperCase() + currentStatus.networkHealth.slice(1).toUpperCase()}</span>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-label-section">Speed Metrics</div>
+                    <div class="modal-row">
+                        <span class="modal-label">↓ Download</span>
+                        <span class="modal-value">${downloadSpeed}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">↑ Upload</span>
+                        <span class="modal-value">${uploadSpeed}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Latency (Ping)</span>
+                        <span class="modal-value">${latency}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Last Tested</span>
+                        <span class="modal-value" style="font-size: 12px;">${lastTested}</span>
                     </div>
                 </div>
                 <div class="modal-section">
@@ -879,12 +927,64 @@
                         <span class="modal-value">${currentStatus.fps}</span>
                     </div>
                 </div>
+                <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 12px;">
+                    <div style="font-size: 12px; color: #8b949e; line-height: 1.5;">
+                        ℹ️ Speed tests use small file downloads and may show lower values than your actual bandwidth. Network health is automatically measured every 2 minutes.
+                    </div>
+                </div>
             `;
             document.getElementById('networkContent').innerHTML = content;
             document.getElementById('networkModal').classList.add('visible');
         }
         function hideNetworkModal() {
             document.getElementById('networkModal').classList.remove('visible');
+        }
+
+        function showDataTransferModal() {
+            if (!currentStatus) return;
+            const dataTransferred = currentStatus.dataTransferredMb || 0;
+            const displayValue = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
+            const activeClientsCount = currentStatus.clients ? currentStatus.clients.length : 0;
+            
+            // Build per-client breakdown
+            let clientsHtml = '';
+            if (currentStatus.clients && currentStatus.clients.length > 0) {
+                clientsHtml = currentStatus.clients.map(client => `
+                    <div class="modal-row">
+                        <span class="modal-label">${client.ip || 'Unknown'}</span>
+                        <span class="modal-value">${client.data_transferred_mb ? client.data_transferred_mb.toFixed(1) : '0'} MB</span>
+                    </div>
+                `).join('');
+            } else {
+                clientsHtml = '<div style="text-align: center; padding: 16px; color: #8b949e; font-size: 12px;">No clients connected</div>';
+            }
+            
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-row">
+                        <span class="modal-label">Total Served</span>
+                        <span class="modal-value">${displayValue}</span>
+                    </div>
+                    <div class="modal-row">
+                        <span class="modal-label">Active Clients</span>
+                        <span class="modal-value">${activeClientsCount}</span>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-label-section">Per-Client Breakdown</div>
+                    ${clientsHtml}
+                </div>
+                <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 12px;">
+                    <div style="font-size: 12px; color: #8b949e; line-height: 1.5;">
+                        ℹ️ Shows the total amount of video data transmitted to each connected client.
+                    </div>
+                </div>
+            `;
+            document.getElementById('dataTransferContent').innerHTML = content;
+            document.getElementById('dataTransferModal').classList.add('visible');
+        }
+        function hideDataTransferModal() {
+            document.getElementById('dataTransferModal').classList.remove('visible');
         }
 
         function showSegmentsModal() {
@@ -1158,6 +1258,12 @@
             updateNetworkCard(status);
             
             document.getElementById('segmentsValue').textContent = status.fragmentsBuffered || '0';
+            
+            // Update data transfer card
+            const dataTransferred = status.dataTransferredMb || 0;
+            const displayDataTransfer = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
+            document.getElementById('dataTransferValue').textContent = displayDataTransfer;
+            
             document.getElementById('recordingModeValue').textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             document.getElementById('streamQualityValue').textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
             document.getElementById('torchState').textContent = status.torchOn ? 'ON' : 'OFF';
@@ -1278,45 +1384,10 @@
             // Initialize will fetch first status and emit event
             await dashboardViewModel.initialize();
             // Don't auto-load stream - wait for recording to start
-            
-            // ===== TEMPORARY: Battery Slider for Testing =====
-            const batterySlider = document.getElementById('batterySlider');
-            const batteryTestSlider = document.getElementById('batteryTestSlider');
-            const sliderValue = document.getElementById('sliderValue');
-            
-            // Toggle slider visibility with keyboard shortcut (Ctrl+Shift+T)
-            document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.shiftKey && e.code === 'KeyT') {
-                    e.preventDefault();
-                    if (batteryTestSlider) {
-                        const isHidden = batteryTestSlider.style.display === 'none';
-                        batteryTestSlider.style.display = isHidden ? 'block' : 'none';
-                    }
-                }
-            });
-            
-            if (batterySlider) {
-                batterySlider.addEventListener('input', (e) => {
-                    const value = parseInt(e.target.value);
-                    sliderValue.textContent = value + '%';
-                    
-                    // Create mock status with slider value
-                    const mockStatus = {
-                        ...currentStatus,
-                        battery: {
-                            ...currentStatus.battery,
-                            percent: value,
-                            status: value >= 80 ? 'Charging' : value <= 20 ? 'Discharging' : 'Discharging',
-                            warning_threshold: currentStatus.battery.warning_threshold || 20
-                        }
-                    };
-                    
-                    // Update battery card with mock data
-                    updateBatteryCard(mockStatus);
-                });
+
             }
             // ===== END TEMPORARY SLIDER =====
-        });
+        );
     </script>
 </body>
 </html>
