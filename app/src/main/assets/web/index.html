@@ -3,9 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>FadCam Remote</title>
     <link rel="icon" type="image/png" href="assets/images/favicon.png">
-    <link rel="stylesheet" href="css/style.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=1.2">
+    <style>
+        /* Critical CSS fallback for hero card and LEDs */
+        .server-hero-card {
+            position: relative !important;
+            height: 280px !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            margin-bottom: 12px !important;
+            background: #171717 !important;
+            border: 1px solid #2d3439 !important;
+        }
+        .server-hero-bg {
+            position: absolute !important;
+            inset: 0 !important;
+            background-size: cover !important;
+            background-position: center !important;
+            opacity: 1 !important;
+            z-index: 1 !important;
+        }
+        .server-hero-content {
+            position: relative !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            align-items: flex-end !important;
+            padding: 16px !important;
+            z-index: 2 !important;
+        }
+        .led-dot {
+            width: 10px !important;
+            height: 10px !important;
+            border-radius: 50% !important;
+            background: #6e7681 !important;
+            transition: all 300ms ease !important;
+        }
+        .led-dot.online {
+            background: #3fb950 !important;
+            box-shadow: 0 0 10px rgba(63, 185, 80, 0.7) !important;
+        }
+        .recording-led {
+            background: #6e7681 !important;
+        }
+        .recording-led.active {
+            background: #f85149 !important;
+            box-shadow: 0 0 10px rgba(248, 81, 73, 0.7) !important;
+        }
+        /* Status Layout */
+        .server-status-indicators {
+            display: grid !important;
+            grid-template-columns: 10px 1fr !important;
+            gap: 10px !important;
+            align-items: start !important;
+            width: auto !important;
+            align-self: flex-end !important;
+        }
+        .status-group {
+            display: contents !important;
+        }
+        .led-dot {
+            width: 10px !important;
+            height: 10px !important;
+            border-radius: 50% !important;
+            background: #6e7681 !important;
+            transition: all 300ms ease !important;
+        }
+        .led-dot.online {
+            background: #3fb950 !important;
+            box-shadow: 0 0 10px rgba(63, 185, 80, 0.7) !important;
+        }
+        .recording-led {
+            background: #6e7681 !important;
+        }
+        .recording-led.active {
+            background: #f85149 !important;
+            box-shadow: 0 0 10px rgba(248, 81, 73, 0.7) !important;
+        }
+        .status-text-col {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+            text-align: left !important;
+        }
+        .led-label {
+            font-size: 10px !important;
+            font-weight: 600 !important;
+            color: #8b949e !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+            line-height: 1.2 !important;
+        }
+        .status-value {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+            line-height: 1.2 !important;
+        }
+        .status-value.online-text {
+            color: #3fb950 !important;
+        }
+        .status-value.recording-text {
+            color: #6e7681 !important;
+        }
+        .status-value.recording-text-active {
+            color: #f85149 !important;
+        }
+    </style>
+    <script>
+        // Check if CSS loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            const testEl = document.createElement('div');
+            testEl.className = 'led-dot';
+            document.body.appendChild(testEl);
+            const bg = window.getComputedStyle(testEl).background;
+            console.log('CSS Load Test - LED background:', bg);
+            if (bg === 'none' || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
+                console.error('❌ CSS NOT LOADED! Using inline fallback.');
+            } else {
+                console.log('✅ CSS loaded successfully');
+            }
+            document.body.removeChild(testEl);
+        });
+    </script>
 </head>
 <body>
     <!-- Top Bar -->
@@ -26,110 +155,121 @@
     <div class="main-layout">
         <!-- Left Sidebar -->
         <div class="sidebar" id="sidebar">
-            <!-- Server Room Status Card -->
-            <div class="card server-room-card">
-                <div class="card-header">
-                    <span class="card-title">Server Room</span>
-                    <div class="status-indicator">
-                        <div class="led-dot" id="serverLED"></div>
-                        <span class="led-label" id="serverLabel">—</span>
-                    </div>
-                </div>
-                <div class="card-divider"></div>
-                <div class="card-body">
-                    <div class="status-row">
-                        <span class="status-label">Server</span>
-                        <span class="status-badge" id="serverStatus">OFFLINE</span>
-                    </div>
-                    <div class="status-row">
-                        <span class="status-label">Recording</span>
-                        <span class="status-badge recording" id="recordingStatus">NOT STARTED</span>
+            <!-- Server Hero Card -->
+            <div class="server-hero-card">
+                <div class="server-hero-bg" style="background-image: url('assets/images/fadcam_server_room_bg_rounded.png');"></div>
+                <div class="server-hero-content">
+                    <div class="server-status-indicators">
+                        <!-- Server Status -->
+                        <div class="status-group">
+                            <div class="led-dot online" id="serverLED"></div>
+                            <div class="status-text-col">
+                                <span class="led-label">Server Status</span>
+                                <span id="serverStatusLabel" class="status-value online-text">ONLINE</span>
+                            </div>
+                        </div>
+                        <!-- Recording Status -->
+                        <div class="status-group">
+                            <div class="led-dot recording-led" id="recordingLED"></div>
+                            <div class="status-text-col">
+                                <span class="led-label">Recording</span>
+                                <span id="recordingStatusLabel" class="status-value recording-text">NOT RECORDING</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Recording Message -->
-            <div id="recordingMessage" style="padding: 0 16px; margin-top: 16px; font-size: 12px; color: #8b949e; display: none;"></div>
+            <div id="recordingMessage" class="recording-message"></div>
+
+            <!-- Server Room Section -->
+            <div class="section-heading">Server Room</div>
 
             <!-- Info Cards Grid -->
             <div class="cards-grid">
                 <!-- Uptime Card -->
                 <div class="card card-sm" onclick="showUptimeModal()">
                     <div class="card-clickable">
-                        <div class="card-label-sm">Uptime</div>
-                        <div class="card-value-sm" id="uptimeValue">—</div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-clock card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Uptime</div>
+                            <div class="card-value-sm" id="uptimeValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
                 <!-- Clients Card -->
                 <div class="card card-sm" onclick="showClientsModal()">
                     <div class="card-clickable">
-                        <div class="card-label-sm">Clients</div>
-                        <div class="card-value-sm" id="clientsValue">—</div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-users card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Clients</div>
+                            <div class="card-value-sm" id="clientsValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
                 <!-- Battery Card -->
                 <div class="card card-sm" onclick="showBatteryModal()">
                     <div class="card-clickable">
-                        <div class="card-label-sm">Battery</div>
-                        <div class="card-value-sm" id="batteryValue">—</div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-battery-half card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Battery</div>
+                            <div class="card-value-sm" id="batteryValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
                 <!-- Segments Card -->
                 <div class="card card-sm" onclick="showSegmentsModal()">
                     <div class="card-clickable">
-                        <div class="card-label-sm">Segments</div>
-                        <div class="card-value-sm" id="segmentsValue">—</div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-list card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Segments</div>
+                            <div class="card-value-sm" id="segmentsValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
                 <!-- Network Card -->
                 <div class="card card-sm" onclick="showNetworkModal()">
                     <div class="card-clickable">
-                        <div>
+                        <i class="fas fa-network-wired card-icon-sm"></i>
+                        <div class="card-sm-content">
                             <div class="card-label-sm">Network</div>
                             <div class="card-value-sm" id="networkValue">—</div>
                         </div>
                         <div id="networkHealth" style="width: 6px; height: 6px; border-radius: 50%; background: #6e7681;"></div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
                 <!-- Storage Card -->
                 <div class="card card-sm" onclick="showStorageModal()">
                     <div class="card-clickable">
-                        <div class="card-label-sm">Storage</div>
-                        <div class="card-value-sm" id="storageValue">—</div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-hard-drive card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Storage</div>
+                            <div class="card-value-sm" id="storageValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
                 <!-- Memory Card -->
                 <div class="card card-sm" onclick="showMemoryModal()">
                     <div class="card-clickable">
-                        <div class="card-label-sm">Memory</div>
-                        <div class="card-value-sm" id="memoryValue">—</div>
-                        <svg class="card-arrow-sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <i class="fas fa-microchip card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Memory</div>
+                            <div class="card-value-sm" id="memoryValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
             </div>
@@ -216,14 +356,6 @@
                     <div class="overlay-text">Click to play live stream</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toastNotification" class="toast-notification">
-        <div class="toast-content">
-            <span id="toastMessage"></span>
-            <button class="toast-close" onclick="closeToast()">✕</button>
         </div>
     </div>
 
@@ -629,9 +761,15 @@
             try {
                 await dashboardViewModel.setRecordingMode(mode);
                 showToast(`Recording mode changed to: ${mode.replace(/_/g, ' ')}`);
-                showRecordingModeModal();
+                hideRecordingModeModal();
+                // Update UI immediately
+                if (currentStatus) {
+                    currentStatus.mode = mode;
+                    updateUI(currentStatus);
+                }
             } catch (error) {
                 console.error('Failed to set recording mode:', error);
+                showToast('Failed to change recording mode');
             }
         }
 
@@ -705,25 +843,61 @@
 
         function updateUI(status) {
             currentStatus = status;
+            
+            console.log('=== UI UPDATE DEBUG ===');
+            console.log('Status:', status);
+            console.log('Is Recording:', status.isRecording);
 
             // Server status - ALWAYS ONLINE (server is always on when website loads)
             const serverLED = document.getElementById('serverLED');
             serverLED.className = 'led-dot online';
-            document.getElementById('serverLabel').textContent = 'Active';
-            document.getElementById('serverStatus').textContent = 'ONLINE';
+            console.log('Server LED classes:', serverLED.className);
+            console.log('Server LED computed styles:', window.getComputedStyle(serverLED).background);
+            
+            const serverStatusLabel = document.getElementById('serverStatusLabel');
+            if (serverStatusLabel) {
+                serverStatusLabel.textContent = 'ONLINE';
+                serverStatusLabel.className = 'status-value online-text';
+            }
 
-            // Recording status
+            // Recording status LED
+            const recordingLED = document.getElementById('recordingLED');
             const isRecording = status.isRecording;
-            document.getElementById('recordingStatus').textContent = isRecording ? 'RECORDING IN PROGRESS' : 'NOT STARTED';
+            recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
+            console.log('Recording LED classes:', recordingLED.className);
+            console.log('Recording LED computed styles:', window.getComputedStyle(recordingLED).background);
+            
+            // Update recording status label
+            const recordingStatusLabel = document.getElementById('recordingStatusLabel');
+            if (recordingStatusLabel) {
+                if (isRecording) {
+                    recordingStatusLabel.textContent = 'RECORDING';
+                    recordingStatusLabel.className = 'status-value recording-text-active';
+                } else {
+                    recordingStatusLabel.textContent = 'NOT RECORDING';
+                    recordingStatusLabel.className = 'status-value recording-text';
+                }
+            }
             
             // Display recording message if available
             const msgEl = document.getElementById('recordingMessage');
             if (status.message && !isRecording) {
                 msgEl.textContent = status.message;
-                msgEl.style.display = 'block';
+                msgEl.style.display = 'none'; // Keep hidden to avoid height issues
             } else {
                 msgEl.style.display = 'none';
             }
+            
+            // Check hero card background
+            const heroBg = document.querySelector('.server-hero-bg');
+            if (heroBg) {
+                console.log('Hero BG element found');
+                console.log('Hero BG inline style:', heroBg.style.backgroundImage);
+                console.log('Hero BG computed style:', window.getComputedStyle(heroBg).backgroundImage);
+            } else {
+                console.error('Hero BG element NOT found!');
+            }
+            console.log('=== END DEBUG ===');
 
             // Quick values - use formatted uptime from uptimeDetails
             const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
@@ -828,8 +1002,15 @@
         }
 
         function hideEndpointsModal() {
-            document.getElementById('endpointsModal').classList.remove('show');
+            document.getElementById('endpointsModal').classList.remove('visible');
         }
+
+        // Initialize Lucide icons after DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
