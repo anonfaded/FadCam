@@ -115,11 +115,25 @@ class ServerStatus {
         }
         
         // Parse memory and storage from strings
+        // Memory format from backend: "75% (1024/1366 MB)"
         if (data.memory_usage) {
-            const memMatch = data.memory_usage.match(/(\d+\.?\d*)/);
-            this.memoryUsageMb = memMatch ? parseFloat(memMatch[1]) : 0;
+            // Extract percentage: "75% (1024/1366 MB)" → 75
+            const percentMatch = data.memory_usage.match(/(\d+)%/);
+            this.memoryPercent = percentMatch ? parseInt(percentMatch[1]) : 0;
+            
+            // Extract used/total: "75% (1024/1366 MB)" → [1024, 1366]
+            const memMatch = data.memory_usage.match(/\((\d+)\/(\d+)\s*MB\)/);
+            if (memMatch) {
+                this.memoryUsedMb = parseInt(memMatch[1]);
+                this.memoryTotalMb = parseInt(memMatch[2]);
+            } else {
+                this.memoryUsedMb = 0;
+                this.memoryTotalMb = 0;
+            }
         } else {
-            this.memoryUsageMb = 0;
+            this.memoryPercent = 0;
+            this.memoryUsedMb = 0;
+            this.memoryTotalMb = 0;
         }
         
         if (data.storage) {
@@ -193,7 +207,12 @@ class ServerStatus {
      * @returns {string}
      */
     getFormattedMemory() {
-        return this.memory;
+        if (this.memoryTotalMb > 0) {
+            const usedGb = this.memoryUsedMb / 1024;
+            const totalGb = this.memoryTotalMb / 1024;
+            return `${usedGb.toFixed(1)}/${totalGb.toFixed(1)} GB`;
+        }
+        return '—';
     }
     
     /**

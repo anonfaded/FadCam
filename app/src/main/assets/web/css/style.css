@@ -789,6 +789,520 @@ video {
     stroke: #cfbafd !important;
 }
 
+/* ============================================================
+   iOS-STYLE CARD COMPONENTS
+   Battery, Storage, Memory, Network Cards
+   ============================================================ */
+
+/* -------- BATTERY CARD -------- */
+
+.card-battery-ios {
+    padding: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.card-battery-ios .card-clickable {
+    position: relative !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+    align-items: center !important;
+}
+
+/* Fill background layer */
+.card-ios-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 0%;
+    background: linear-gradient(90deg, #3fb950 0%, #29b141 100%);
+    transition: width 500ms cubic-bezier(0.34, 0.69, 0.5, 1);
+    z-index: 1;
+    border-radius: 8px;
+    opacity: 1;
+}
+
+/* Charging state gradient */
+.card-battery-ios.charging .card-ios-fill {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb700 100%);
+    opacity: 1;
+}
+
+/* Low battery state */
+.card-battery-ios.low .card-ios-fill {
+    background: linear-gradient(90deg, #f85149 0%, #da3633 100%);
+    opacity: 1;
+}
+
+/* Content layer - stays on top */
+.card-ios-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Battery Icon */
+.battery-icon {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a1f26;
+    background: transparent;
+    border-radius: 6px;
+    backdrop-filter: none;
+    transition: color 300ms ease, background 300ms ease;
+}
+
+.card-battery-ios.charging .battery-icon {
+    color: #1a1f26;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.card-battery-ios.low .battery-icon {
+    color: #ffffff;
+    background: transparent;
+}
+
+.battery-icon svg {
+    width: 100%;
+    height: 100%;
+    color: inherit;
+}
+
+.battery-level {
+    transition: width 500ms cubic-bezier(0.34, 0.69, 0.5, 1);
+}
+
+/* Charging indicator - bubble animation */
+.charging-indicator {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    opacity: 0;
+    transition: opacity 300ms ease;
+}
+
+.card-battery-ios.charging .charging-indicator {
+    opacity: 1;
+}
+
+/* Charging bolt */
+.charging-bolt {
+    position: absolute;
+    font-size: 14px;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+    z-index: 10;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 3px rgba(0, 0, 0, 0.6);
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.5);
+}
+
+.card-battery-ios.charging .charging-bolt {
+    opacity: 1;
+    transform: scale(1);
+    animation: boltPulse 1.2s ease-in-out infinite;
+    color: #ffd700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.card-battery-ios.low .charging-bolt {
+    opacity: 1;
+    transform: scale(1);
+    animation: boltJiggle 0.6s ease-in-out infinite;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes boltPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.35);
+    }
+}
+
+@keyframes boltJiggle {
+    0%, 100% {
+        transform: scale(1) rotateZ(0deg);
+    }
+    25% {
+        transform: scale(1.1) rotateZ(-8deg);
+    }
+    75% {
+        transform: scale(1.1) rotateZ(8deg);
+    }
+}
+
+.bubble {
+    width: 3px;
+    height: 3px;
+    background: #ffd700;
+    border-radius: 50%;
+    animation: bubbleRise 1s ease-in-out infinite;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+    box-shadow: 0 0 4px rgba(255, 215, 0, 0.8);
+}
+
+.card-battery-ios.charging .bubble {
+    background: rgba(26, 31, 38, 0.8);
+    box-shadow: 0 0 4px rgba(26, 31, 38, 0.6);
+}
+
+@keyframes bubbleRise {
+    0% {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+}
+
+/* Battery Info Text */
+.battery-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.battery-info-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Battery label - first row */
+.battery-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #2c3338;
+}
+
+.card-battery-ios.charging .battery-label {
+    color: #1a1f26;
+}
+
+.card-battery-ios.low .battery-label {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Battery percentage text - second row */
+.battery-percentage {
+    color: #1a1f26;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.4);
+}
+
+.card-battery-ios.charging .battery-percentage {
+    color: #1a1f26;
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
+}
+
+.card-battery-ios.low .battery-percentage {
+    color: #ffffff;
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Dim text state - when battery is low (below 30%) but not yet in "low" alert state */
+.card-battery-ios.dim-text .battery-label {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.card-battery-ios.dim-text .battery-percentage {
+    color: #ffffff;
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Status badge */
+.battery-status-badge {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background: transparent;
+    color: transparent;
+    transition: all 300ms ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+    backdrop-filter: blur(2px);
+    margin-right: 8px;
+    display: none;
+}
+
+.card-battery-ios.charging .battery-status-badge {
+    display: block;
+    background: rgba(0, 0, 0, 0.12);
+    color: #1a1f26;
+    backdrop-filter: blur(4px);
+    font-weight: 700;
+}
+
+.card-battery-ios.low .battery-status-badge {
+    display: block;
+    background: rgba(0, 0, 0, 0.15);
+    color: #ffffff;
+    backdrop-filter: blur(4px);
+}
+
+/* -------- STORAGE CARD -------- */
+
+.card-storage-ios {
+    padding: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.card-storage-ios .card-clickable {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    align-items: center !important;
+}
+
+.storage-bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: rgba(139, 148, 158, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.storage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3fb950 0%, #29b141 100%);
+    border-radius: 4px;
+    transition: width 500ms cubic-bezier(0.34, 0.69, 0.5, 1);
+}
+
+.storage-bar.warning .storage-fill {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb700 100%);
+}
+
+.storage-bar.critical .storage-fill {
+    background: linear-gradient(90deg, #f85149 0%, #da3633 100%);
+}
+
+.storage-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.storage-value {
+    color: #e6edf3 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+.storage-label {
+    color: #8b949e !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* -------- MEMORY CARD -------- */
+
+.card-memory-ios {
+    padding: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.card-memory-ios .card-clickable {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    align-items: center !important;
+}
+
+.memory-bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: rgba(139, 148, 158, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.memory-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3fb950 0%, #29b141 100%);
+    border-radius: 4px;
+    transition: width 500ms cubic-bezier(0.34, 0.69, 0.5, 1);
+}
+
+.memory-bar.warning .memory-fill {
+    background: linear-gradient(90deg, #ffd700 0%, #ffb700 100%);
+}
+
+.memory-bar.critical .memory-fill {
+    background: linear-gradient(90deg, #f85149 0%, #da3633 100%);
+}
+
+.memory-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.memory-value {
+    color: #e6edf3 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+.memory-label {
+    color: #8b949e !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* -------- NETWORK CARD -------- */
+
+.card-network-ios {
+    padding: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.card-network-ios .card-clickable {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    align-items: center !important;
+}
+
+.wifi-bars {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.wifi-bar {
+    width: 2px;
+    background: #8b949e;
+    border-radius: 1px;
+    transition: all 300ms ease;
+}
+
+.wifi-bar:nth-child(1) {
+    height: 3px;
+}
+
+.wifi-bar:nth-child(2) {
+    height: 6px;
+}
+
+.wifi-bar:nth-child(3) {
+    height: 9px;
+}
+
+.wifi-bar:nth-child(4) {
+    height: 12px;
+}
+
+.wifi-bars.good .wifi-bar {
+    background: #3fb950;
+}
+
+.wifi-bars.moderate .wifi-bar {
+    background: #ffd700;
+}
+
+.wifi-bars.poor .wifi-bar {
+    background: #f85149;
+}
+
+.network-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.network-value {
+    color: #e6edf3 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+.network-label {
+    color: #8b949e !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+.network-health-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #6e7681;
+    transition: all 300ms ease;
+    flex-shrink: 0;
+}
+
+.network-status {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #8b949e;
+    transition: color 300ms ease;
+    letter-spacing: 0.5px;
+}
+
+.wifi-bars.good ~ .network-info .network-status {
+    color: #3fb950;
+}
+
+.wifi-bars.moderate ~ .network-info .network-status {
+    color: #ffd700;
+}
+
+.wifi-bars.poor ~ .network-info .network-status {
+    color: #f85149;
+}
+
+/* ============ End iOS Components ============ */
+
 /* Toast Notification */
 .toast-notification {
     position: fixed;
@@ -963,4 +1477,60 @@ video {
     display: none;
     height: 0;
     overflow: hidden;
+}
+
+/* Charging Animations */
+.charging-bolt {
+    position: absolute;
+    font-size: 8px;
+    opacity: 0;
+    transform: scale(0);
+    z-index: 10;
+    line-height: 1;
+}
+
+.card-battery-ios.charging .charging-bolt {
+    opacity: 1;
+    animation: boltPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes boltPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+.charging-indicator {
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+}
+
+.bubble {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    margin: 0 2px;
+    opacity: 0;
+}
+
+.card-battery-ios.charging .bubble {
+    animation: bubbleRise 1.2s ease-in-out infinite;
+}
+
+@keyframes bubbleRise {
+    0% {
+        opacity: 0;
+        transform: translateY(0);
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
 }

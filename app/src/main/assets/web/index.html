@@ -212,15 +212,59 @@
                     </div>
                 </div>
 
-                <!-- Battery Card -->
-                <div class="card card-sm" onclick="showBatteryModal()">
-                    <div class="card-clickable">
-                        <i class="fas fa-battery-half card-icon-sm"></i>
-                        <div class="card-sm-content">
-                            <div class="card-label-sm">Battery</div>
-                            <div class="card-value-sm" id="batteryValue">—</div>
+                <!-- Battery Card - iOS Style -->
+                <div class="card card-sm card-battery-ios" onclick="showBatteryModal()">
+                    <div class="card-clickable battery-card-display">
+                        <!-- Background Fill -->
+                        <div class="card-ios-fill" id="batteryFill"></div>
+                        
+                        <!-- Content Layer -->
+                        <div class="card-ios-content">
+                            <!-- Battery Icon with Charging Indicator -->
+                            <div class="card-ios-icon battery-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Battery outline -->
+                                    <path d="M4 7C3.44772 7 3 7.44772 3 8v8c0 .5523.44772 1 1 1h14c.5523 0 1-.4477 1-1V8c0-.55228-.4477-1-1-1H4z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                                    <!-- Battery terminal -->
+                                    <rect x="19" y="9" width="1.5" height="6" rx="0.5" fill="currentColor"/>
+                                    <!-- Battery fill -->
+                                    <rect class="battery-level" x="4.5" y="8.5" width="13" height="7" rx="0.5" fill="currentColor" opacity="0.8"/>
+                                </svg>
+                                <!-- Charging Bolt -->
+                                <div class="charging-bolt" id="chargingBolt">⚡</div>
+                                <!-- Charging Bubbles -->
+                                <div class="charging-indicator" id="batteryCharges">
+                                    <span class="bubble" style="animation-delay: 0s"></span>
+                                    <span class="bubble" style="animation-delay: 0.2s"></span>
+                                    <span class="bubble" style="animation-delay: 0.4s"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Battery Info Container - Two Rows -->
+                            <div class="battery-info-container">
+                                <!-- Row 1: Label -->
+                                <div class="battery-label">Battery</div>
+                                
+                                <!-- Row 2: Percentage and Badge -->
+                                <div class="battery-info-right">
+                                    <div class="battery-percentage" id="batteryPercentage">—%</div>
+                                    <div class="battery-status-badge" id="batteryStatusBadge">—</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Arrow -->
+                            <i class="fas fa-chevron-right card-arrow-sm"></i>
                         </div>
-                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Temporary Battery Slider for Testing -->
+                <div class="card" style="padding: 12px;" id="batteryTestSlider">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 11px; color: #8b949e; min-width: 50px; font-weight: 600;">TEST:</span>
+                        <input type="range" id="batterySlider" min="0" max="100" value="74" 
+                               style="flex: 1; cursor: pointer; accent-color: #3fb950; height: 4px;">
+                        <span id="sliderValue" style="font-size: 11px; color: #e6edf3; min-width: 40px; font-weight: 700;">74%</span>
                     </div>
                 </div>
 
@@ -236,40 +280,49 @@
                     </div>
                 </div>
 
-                <!-- Network Card -->
-                <div class="card card-sm" onclick="showNetworkModal()">
+                <!-- Network Card - iOS Style with WiFi Bars -->
+                <div class="card card-sm card-network-ios" onclick="showNetworkModal()">
                     <div class="card-clickable">
-                        <i class="fas fa-network-wired card-icon-sm"></i>
-                        <div class="card-sm-content">
-                            <div class="card-label-sm">Network</div>
-                            <div class="card-value-sm" id="networkValue">—</div>
+                        <div class="wifi-bars" id="wifiBars">
+                            <div class="wifi-bar"></div>
+                            <div class="wifi-bar"></div>
+                            <div class="wifi-bar"></div>
+                            <div class="wifi-bar"></div>
                         </div>
-                        <div id="networkHealth" style="width: 6px; height: 6px; border-radius: 50%; background: #6e7681;"></div>
-                        <i class="fas fa-chevron-right card-arrow-sm"></i>
-                    </div>
-                </div>
-
-                <!-- Storage Card -->
-                <div class="card card-sm" onclick="showStorageModal()">
-                    <div class="card-clickable">
-                        <i class="fas fa-hard-drive card-icon-sm"></i>
-                        <div class="card-sm-content">
-                            <div class="card-label-sm">Storage</div>
-                            <div class="card-value-sm" id="storageValue">—</div>
+                        <div class="network-info">
+                            <div class="network-label">Network</div>
+                            <div class="network-value" id="networkValue">—</div>
+                            <div class="network-status" id="networkStatus">—</div>
                         </div>
                         <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
-                <!-- Memory Card -->
-                <div class="card card-sm" onclick="showMemoryModal()">
+                <!-- Storage Card - iOS Style -->
+                <div class="card card-sm card-storage-ios">
                     <div class="card-clickable">
-                        <i class="fas fa-microchip card-icon-sm"></i>
-                        <div class="card-sm-content">
-                            <div class="card-label-sm">Memory</div>
-                            <div class="card-value-sm" id="memoryValue">—</div>
+                        <i class="fas fa-hard-drive card-icon-sm" style="color: #6366f1;"></i>
+                        <div class="storage-info">
+                            <div class="storage-label">Storage</div>
+                            <div class="storage-value" id="storageValue">—</div>
+                            <div class="storage-bar" id="storageBar">
+                                <div class="storage-fill" id="storageFill" style="width: 0%"></div>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Memory Card - iOS Style -->
+                <div class="card card-sm card-memory-ios">
+                    <div class="card-clickable">
+                        <i class="fas fa-microchip card-icon-sm" style="color: #ec4899;"></i>
+                        <div class="memory-info">
+                            <div class="memory-label">Memory</div>
+                            <div class="memory-value" id="memoryValue">—</div>
+                            <div class="memory-bar" id="memoryBar">
+                                <div class="memory-fill" id="memoryFill" style="width: 0%"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -497,6 +550,134 @@
         let hlsService = null;
 
         // Toast notification functions - see showToast implementation at end of script
+        
+        /**
+         * Update battery card with iOS-style visualization
+         */
+        function updateBatteryCard(status) {
+            const percent = status.battery?.percent ?? -1;
+            const isCharging = status.battery?.status?.toLowerCase() === 'charging';
+            const isLow = percent > 0 && percent <= (status.battery?.warning_threshold ?? 20);
+            
+            const batteryCard = document.querySelector('.card-battery-ios');
+            const batteryFill = document.getElementById('batteryFill');
+            const batteryPercentage = document.getElementById('batteryPercentage');
+            const batteryStatusBadge = document.getElementById('batteryStatusBadge');
+            const batteryLabel = document.querySelector('.battery-label');
+            const batteryLevel = document.querySelector('.battery-level');
+            
+            if (!batteryCard || percent < 0) {
+                batteryPercentage.textContent = '—%';
+                batteryStatusBadge.textContent = '—';
+                return;
+            }
+            
+            const fillPercent = Math.max(0, Math.min(100, percent));
+            batteryFill.style.width = fillPercent + '%';
+            batteryPercentage.textContent = percent + '%';
+            
+            if (batteryLevel) {
+                batteryLevel.style.width = fillPercent + '%';
+            }
+            
+            batteryCard.classList.remove('charging', 'low', 'dim-text');
+            
+            // Add dim-text class if battery is below 30% and not charging (to switch text to white for contrast)
+            if (!isCharging && percent > 0 && percent < 30) {
+                batteryCard.classList.add('dim-text');
+            }
+            
+            if (isCharging) {
+                batteryCard.classList.add('charging');
+                batteryStatusBadge.textContent = 'Charging';
+            } else if (isLow) {
+                batteryCard.classList.add('low');
+                batteryStatusBadge.textContent = 'Low';
+            } else {
+                batteryStatusBadge.textContent = 'Normal';
+            }
+        }
+
+        /**
+         * Update storage card with color-coded bar
+         */
+        function updateStorageCard(status) {
+            const storageValue = document.getElementById('storageValue');
+            const storageFill = document.getElementById('storageFill');
+            const storageBar = document.getElementById('storageBar');
+            
+            if (status.storageUsedGb > 0 && status.storageTotalGb > 0) {
+                const percent = (status.storageUsedGb / status.storageTotalGb) * 100;
+                storageValue.textContent = `${status.storageUsedGb.toFixed(1)}/${status.storageTotalGb.toFixed(1)} GB`;
+                storageFill.style.width = percent + '%';
+                
+                storageBar.classList.remove('warning', 'critical');
+                if (percent > 85) {
+                    storageBar.classList.add('critical');
+                } else if (percent > 70) {
+                    storageBar.classList.add('warning');
+                }
+            } else {
+                storageValue.textContent = '—';
+                storageFill.style.width = '0%';
+            }
+        }
+
+        /**
+         * Update memory card with color-coded bar
+         */
+        function updateMemoryCard(status) {
+            const memoryValue = document.getElementById('memoryValue');
+            const memoryFill = document.getElementById('memoryFill');
+            const memoryBar = document.getElementById('memoryBar');
+            
+            if (status.memoryTotalMb > 0) {
+                // Use real data from backend: percentage from "75% (1024/1366 MB)"
+                const percent = status.memoryPercent || 0;
+                const usedGb = status.memoryUsedMb / 1024;
+                const totalGb = status.memoryTotalMb / 1024;
+                
+                memoryValue.textContent = `${usedGb.toFixed(1)}/${totalGb.toFixed(1)} GB`;
+                memoryFill.style.width = percent + '%';
+                
+                memoryBar.classList.remove('warning', 'critical');
+                if (percent > 85) {
+                    memoryBar.classList.add('critical');
+                } else if (percent > 70) {
+                    memoryBar.classList.add('warning');
+                }
+            } else {
+                memoryValue.textContent = '—';
+                memoryFill.style.width = '0%';
+            }
+        }
+
+        /**
+         * Update network card with WiFi bars based on health
+         */
+        function updateNetworkCard(status) {
+            const wifiBars = document.getElementById('wifiBars');
+            const networkValue = document.getElementById('networkValue');
+            const networkStatus = document.getElementById('networkStatus');
+            
+            networkValue.textContent = status.bitrate || '—';
+            
+            wifiBars.classList.remove('good', 'moderate', 'poor');
+            
+            const health = status.networkHealth || 'unknown';
+            if (health === 'good') {
+                wifiBars.classList.add('good');
+                networkStatus.textContent = 'Good';
+            } else if (health === 'moderate') {
+                wifiBars.classList.add('moderate');
+                networkStatus.textContent = 'Moderate';
+            } else if (health === 'poor') {
+                wifiBars.classList.add('poor');
+                networkStatus.textContent = 'Poor';
+            } else {
+                networkStatus.textContent = '—';
+            }
+        }
         
         // Sidebar toggle
         document.getElementById('sidebarToggle').addEventListener('click', () => {
@@ -969,20 +1150,14 @@
             const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
             document.getElementById('uptimeValue').textContent = formattedUptime;
             document.getElementById('clientsValue').textContent = status.activeConnections || '0';
-            document.getElementById('batteryValue').textContent = status.getFormattedBattery();
-            document.getElementById('segmentsValue').textContent = status.fragmentsBuffered || '0';
-            document.getElementById('networkValue').textContent = `${status.bitrate}`;
             
-            // Update network health color indicator
-            const healthEl = document.getElementById('networkHealth');
-            const healthColors = {
-                'good': '#3fb950',
-                'moderate': '#d29922',
-                'poor': '#f85149'
-            };
-            healthEl.style.background = healthColors[status.networkHealth] || '#6e7681';
-            document.getElementById('storageValue').textContent = status.getFormattedStorage();
-            document.getElementById('memoryValue').textContent = status.getFormattedMemory();
+            // Update iOS-style cards with visualizations
+            updateBatteryCard(status);
+            updateStorageCard(status);
+            updateMemoryCard(status);
+            updateNetworkCard(status);
+            
+            document.getElementById('segmentsValue').textContent = status.fragmentsBuffered || '0';
             document.getElementById('recordingModeValue').textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             document.getElementById('streamQualityValue').textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
             document.getElementById('torchState').textContent = status.torchOn ? 'ON' : 'OFF';
@@ -1103,6 +1278,44 @@
             // Initialize will fetch first status and emit event
             await dashboardViewModel.initialize();
             // Don't auto-load stream - wait for recording to start
+            
+            // ===== TEMPORARY: Battery Slider for Testing =====
+            const batterySlider = document.getElementById('batterySlider');
+            const batteryTestSlider = document.getElementById('batteryTestSlider');
+            const sliderValue = document.getElementById('sliderValue');
+            
+            // Toggle slider visibility with keyboard shortcut (Ctrl+Shift+T)
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.shiftKey && e.code === 'KeyT') {
+                    e.preventDefault();
+                    if (batteryTestSlider) {
+                        const isHidden = batteryTestSlider.style.display === 'none';
+                        batteryTestSlider.style.display = isHidden ? 'block' : 'none';
+                    }
+                }
+            });
+            
+            if (batterySlider) {
+                batterySlider.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    sliderValue.textContent = value + '%';
+                    
+                    // Create mock status with slider value
+                    const mockStatus = {
+                        ...currentStatus,
+                        battery: {
+                            ...currentStatus.battery,
+                            percent: value,
+                            status: value >= 80 ? 'Charging' : value <= 20 ? 'Discharging' : 'Discharging',
+                            warning_threshold: currentStatus.battery.warning_threshold || 20
+                        }
+                    };
+                    
+                    // Update battery card with mock data
+                    updateBatteryCard(mockStatus);
+                });
+            }
+            // ===== END TEMPORARY SLIDER =====
         });
     </script>
 </body>
