@@ -393,6 +393,11 @@ public class LiveM3U8Server extends NanoHTTPD {
         try {
             Log.i(TAG, "🔦 Torch toggle requested via web interface");
             
+            // Toggle state in RemoteStreamManager
+            RemoteStreamManager manager = RemoteStreamManager.getInstance();
+            boolean newState = !manager.isTorchOn();
+            manager.setTorchState(newState);
+            
             // Use same logic as TorchToggleActivity
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
             android.content.Intent intent;
@@ -416,9 +421,10 @@ public class LiveM3U8Server extends NanoHTTPD {
                 context.startService(intent);
             }
             
-            Log.i(TAG, "✅ Torch toggle intent sent");
+            Log.i(TAG, "✅ Torch toggle intent sent. New state: " + newState);
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"torch_toggle_sent\"}");
+            String responseJson = String.format("{\"status\": \"success\", \"torch_state\": %s}", newState);
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {

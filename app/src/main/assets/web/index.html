@@ -1312,7 +1312,16 @@
             
             document.getElementById('recordingModeValue').textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
             document.getElementById('streamQualityValue').textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
-            document.getElementById('torchState').textContent = status.torchOn ? 'ON' : 'OFF';
+            const torchState = document.getElementById('torchState');
+            if (status.torchOn) {
+                torchState.textContent = 'ON';
+                torchState.style.color = '#f59e0b';
+                torchState.style.fontWeight = '700';
+            } else {
+                torchState.textContent = 'OFF';
+                torchState.style.color = '#8b949e';
+                torchState.style.fontWeight = '600';
+            }
             document.getElementById('serverUrl').textContent = CONFIG.BASE_URL || 'http://192.168.1.5:8080';
         }
 
@@ -1363,39 +1372,59 @@
 
         function showEndpointsModal() {
             const endpointsContent = document.getElementById('endpointsContent');
+            const serverUrl = document.getElementById('serverUrl')?.textContent || CONFIG.BASE_URL || 'http://192.168.1.5:8080';
+            
             endpointsContent.innerHTML = `
-                <ul style="list-style: none; padding: 0; margin: 0; color: #8b949e; font-size: 13px;">
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
-                        <strong style="color: #e6edf3;">GET /status</strong><br/>
-                        Server status, metrics, battery, network
+                <!-- Server URL Card -->
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid #3d4349; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="font-size: 10px; color: #8b949e; margin-bottom: 6px; font-weight: 600;">Server URL</div>
+                    <div style="font-size: 12px; color: #e6edf3; font-family: monospace; word-break: break-all; line-height: 1.4;">${serverUrl}</div>
+                </div>
+
+                <!-- Endpoints List -->
+                <ul style="list-style: none; padding: 0; margin: 0; color: #8b949e; font-size: 12px;">
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">GET /status</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Server status, metrics, battery, network, torch state, recording mode, stream quality</span>
                     </li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
-                        <strong style="color: #e6edf3;">GET /live.m3u8</strong><br/>
-                        HLS stream playlist
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">GET /live.m3u8</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">HLS stream playlist for video playback</span>
                     </li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
-                        <strong style="color: #e6edf3;">POST /torch/toggle</strong><br/>
-                        Toggle flashlight on/off
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">POST /torch/toggle</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Toggle flashlight on/off, returns updated state</span>
                     </li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
-                        <strong style="color: #e6edf3;">POST /config/recordingMode</strong><br/>
-                        Set recording mode (record_only, stream_only, dual)
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">POST /config/recordingMode</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Set recording mode: record_only, stream_only, dual_mode</span>
                     </li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d3439;">
-                        <strong style="color: #e6edf3;">POST /config/streamQuality</strong><br/>
-                        Set stream quality (low, medium, high)
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">POST /config/streamQuality</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Set stream quality: low, medium, high</span>
                     </li>
-                    <li style="padding: 8px 0;">
-                        <strong style="color: #e6edf3;">POST /config/batteryWarning</strong><br/>
-                        Set battery warning threshold
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">POST /config/batteryWarning</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Set battery warning threshold percentage</span>
+                    </li>
+                    <li style="padding: 12px 0;">
+                        <strong style="color: #e6edf3; font-size: 13px;">GET /health</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Server health check endpoint</span>
                     </li>
                 </ul>
+
+                <!-- Helper Text -->
+                <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 16px;">
+                    <div style="font-size: 11px; color: #8b949e; line-height: 1.6;">
+                        <strong style="color: #e6edf3;">Base URL:</strong> Use the server URL above with these endpoints. Example: ${serverUrl}/status
+                    </div>
+                </div>
             `;
             document.getElementById('endpointsModal').classList.add('show');
         }
 
         function hideEndpointsModal() {
-            document.getElementById('endpointsModal').classList.remove('visible');
+            document.getElementById('endpointsModal').classList.remove('show');
         }
 
         // Initialize Lucide icons after DOM loads

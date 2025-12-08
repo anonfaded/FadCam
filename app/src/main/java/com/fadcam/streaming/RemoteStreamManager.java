@@ -67,6 +67,7 @@ public class RemoteStreamManager {
     private final StreamQuality streamQuality = new StreamQuality();
     private long appStartBatteryLevel = -1; // Battery level when app started
     private long streamStartBatteryLevel = -1; // Battery level when streaming started
+    private boolean torchState = false; // Current torch on/off state
     
     public enum StreamingMode {
         STREAM_ONLY,     // Don't save to disk after streaming
@@ -561,6 +562,7 @@ public class RemoteStreamManager {
                 "\"network_type\": \"%s\", \"network_connected\": %s, " +
                 "\"network_health\": %s, " +
                 "\"stream_quality\": %s, " +
+                "\"torch_state\": %s, " +
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
                 "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
@@ -583,6 +585,7 @@ public class RemoteStreamManager {
                 isNetworkConnected,
                 networkHealthJson,
                 qualityJson,
+                torchState,
                 eventsJson.toString(),
                 clientsJson.toString(),
                 memoryUsage,
@@ -599,6 +602,20 @@ public class RemoteStreamManager {
      */
     public boolean isStreamingEnabled() {
         return streamingEnabled;
+    }
+
+    /**
+     * Get torch state (on/off).
+     */
+    public boolean isTorchOn() {
+        return torchState;
+    }
+
+    /**
+     * Set torch state.
+     */
+    public void setTorchState(boolean state) {
+        this.torchState = state;
     }
     
     /**
