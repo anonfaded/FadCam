@@ -906,8 +906,8 @@ video {
     position: relative;
     z-index: 2;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 10px;
     width: 100%;
 }
@@ -1057,6 +1057,8 @@ video {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 3;
 }
 
 /* Battery label - first row */
@@ -1425,7 +1427,7 @@ video {
 /* Server Hero Card */
 .server-hero-card {
     position: relative;
-    height: 280px;
+    height: 240px;
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 12px;
@@ -1447,17 +1449,35 @@ video {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-end;
     padding: 16px;
     z-index: 2;
 }
 
+/* Removed .indicator-title-section styling - no longer used */
+
 .server-status-indicators {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
     align-items: flex-end;
+    gap: 12px;
+    z-index: 3;
+}
+
+.status-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: auto;
+}
+
+.status-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
 }
 
 .status-item {
@@ -1473,21 +1493,28 @@ video {
     text-align: right;
 }
 
+.status-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+}
+
 .status-text {
     font-size: 12px;
     font-weight: 700;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-.status-text.online-text {
+.status-value.online-text {
     color: #3fb950;
 }
 
-.status-text.recording-text {
+.status-value.recording-text {
     color: #6e7681;
 }
 
-.status-text.recording-text-active {
+.status-value.recording-text-active {
     color: #f85149;
 }
 
@@ -1497,6 +1524,7 @@ video {
     border-radius: 50%;
     background: #6e7681;
     transition: all 300ms ease;
+    flex-shrink: 0;
 }
 
 .led-dot.online {
@@ -1525,11 +1553,12 @@ video {
 .section-heading {
     font-size: 11px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: #f85149;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     margin-bottom: 8px;
-    margin-top: 4px;
+    margin-top: 12px;
+    padding-left: 2px;
 }
 
 .recording-message {
@@ -1598,3 +1627,262 @@ video {
         transform: translateY(-10px);
     }
 }
+
+/* Volume Card Styling */
+.volume-card {
+    position: relative;
+    min-height: 60px;
+}
+
+.volume-card .card-clickable {
+    pointer-events: none;
+    padding: 10px 12px !important;
+}
+
+.volume-card .card-ios-content {
+    flex-direction: row !important;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.volume-card .battery-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.volume-label {
+    color: #e6edf3 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    font-size: 12px !important;
+}
+
+.volume-percentage {
+    color: #e6edf3 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+}
+
+.volume-button-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.volume-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #3d4349;
+    border-radius: 6px;
+    background: rgba(30, 30, 30, 0.8);
+    color: #8b949e;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.volume-btn:hover {
+    border-color: #f85149;
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.1);
+}
+
+.volume-btn:active {
+    background: rgba(248, 81, 73, 0.15);
+    transform: scale(0.95);
+}
+
+/* Muted State - Gray */
+.volume-card.muted {
+    /* Use default card background like other cards */
+}
+
+.volume-card.muted .card-ios-fill {
+    background: linear-gradient(90deg, #6e7681 0%, #8b949e 100%) !important;
+}
+
+.volume-card.muted .battery-label {
+    color: #e6edf3 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.muted .battery-percentage {
+    color: #e6edf3 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Low Volume - Green (0-33%) */
+.volume-card.low .battery-label {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.low .battery-percentage {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.low {
+    background: linear-gradient(135deg, #1a4d2e 0%, #2d5a3d 100%) !important;
+}
+
+.volume-card.low .card-ios-fill {
+    background: linear-gradient(90deg, #3fb950 0%, #56d364 100%) !important;
+}
+
+/* Medium Volume - Orange (33-66%) */
+.volume-card.medium .battery-label {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.medium .battery-percentage {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.medium {
+    background: linear-gradient(135deg, #4d3a1a 0%, #5d4a2d 100%) !important;
+}
+
+.volume-card.medium .card-ios-fill {
+    background: linear-gradient(90deg, #fb8500 0%, #ffb703 100%) !important;
+}
+
+/* High Volume - Red (66%+) */
+.volume-card.high .battery-label {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.high .battery-percentage {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.volume-card.high {
+    background: linear-gradient(135deg, #4d1a1a 0%, #5d2d2d 100%) !important;
+}
+
+.volume-card.high .card-ios-fill {
+    background: linear-gradient(90deg, #f85149 0%, #ff7b72 100%) !important;
+}
+
+.volume-icon {
+    width: 24px;
+    height: 24px;
+    color: currentColor;
+}
+
+.volume-wave {
+    opacity: 0.6;
+    transition: opacity 200ms ease;
+}
+
+.volume-slider {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: grab;
+    -webkit-appearance: none;
+    appearance: none;
+    z-index: 10;
+}
+
+.volume-slider:active {
+    cursor: grabbing;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    background: transparent;
+    border: none;
+}
+
+.volume-slider:active::-webkit-slider-thumb {
+    cursor: grabbing;
+}
+
+.volume-slider:active::-moz-range-thumb {
+    cursor: grabbing;
+}
+
+/* Volume Control Buttons */
+.volume-controls {
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+    gap: 8px !important;
+}
+
+.volume-button-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    position: relative;
+    z-index: 15;
+    pointer-events: auto;
+    margin-left: auto;
+}
+
+.volume-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1.5px solid #3d4349;
+    background: rgba(29, 30, 32, 0.95);
+    color: #e6edf3;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 120ms ease;
+    padding: 0;
+    line-height: 1;
+    position: relative;
+    z-index: 15;
+    pointer-events: auto;
+}
+
+.volume-btn:hover {
+    background: rgba(248, 81, 73, 0.15);
+    border-color: #f85149;
+    color: #f85149;
+    transform: scale(1.08);
+}
+
+.volume-btn:active {
+    transform: scale(0.92);
+    background: rgba(248, 81, 73, 0.25);
+}
+
+.volume-btn-minus:hover {
+    color: #f85149;
+}
+
+.volume-btn-plus:hover {
+    color: #f85149;
+}
+

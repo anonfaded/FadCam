@@ -93,6 +93,56 @@ public class ClientDetailsBottomSheetFragment extends BottomSheetDialogFragment 
         String clientType_text = ip.startsWith("127.") ? "Local" : "Remote";
         clientType.setText(clientType_text);
 
+        // Get API call statistics from RemoteStreamManager
+        com.fadcam.streaming.RemoteStreamManager manager = com.fadcam.streaming.RemoteStreamManager.getInstance();
+        com.fadcam.streaming.model.ClientMetrics metrics = manager.getClientMetrics(ip);
+        
+        // Get the main vertical container (the outer LinearLayout's first and only child)
+        LinearLayout mainContainer = null;
+        if (row instanceof LinearLayout) {
+            LinearLayout rowLinear = (LinearLayout) row;
+            if (rowLinear.getChildCount() > 0 && rowLinear.getChildAt(0) instanceof LinearLayout) {
+                mainContainer = (LinearLayout) rowLinear.getChildAt(0);
+            }
+        }
+        
+        // Create and add API stats text view
+        if (mainContainer != null) {
+            TextView apiStatsText = new TextView(requireContext());
+            
+            if (metrics != null) {
+                int totalApiCalls = metrics.getGetRequestsCount() + metrics.getPostRequestsCount();
+                apiStatsText.setText(String.format("API Calls: %d (GET: %d, POST: %d)",
+                    totalApiCalls, metrics.getGetRequestsCount(), metrics.getPostRequestsCount()));
+            } else {
+                apiStatsText.setText("API Calls: 0 (GET: 0, POST: 0)");
+            }
+            
+            apiStatsText.setTextSize(11);
+            apiStatsText.setTextColor(android.graphics.Color.parseColor("#8b949e"));
+            
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 6, 0, 0);
+            
+            mainContainer.addView(apiStatsText, params);
+            
+            // Add helper text explaining GET vs POST
+            TextView helperText = new TextView(requireContext());
+            helperText.setText("📥 GET: status queries  •  📤 POST: control commands");
+            helperText.setTextSize(10);
+            helperText.setTextColor(android.graphics.Color.parseColor("#6e7681"));
+            helperText.setAlpha(0.75f);
+            
+            LinearLayout.LayoutParams helperParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+            helperParams.setMargins(0, 2, 0, 0);
+            
+            mainContainer.addView(helperText, helperParams);
+        }
+
         // Copy IP button click listener
         copyIpButton.setOnClickListener(v -> {
             ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);

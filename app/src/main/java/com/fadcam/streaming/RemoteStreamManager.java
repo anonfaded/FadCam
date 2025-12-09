@@ -68,7 +68,12 @@ public class RemoteStreamManager {
     private long appStartBatteryLevel = -1; // Battery level when app started
     private long streamStartBatteryLevel = -1; // Battery level when streaming started
     private boolean torchState = false; // Current torch on/off state
+    private int mediaVolume = 15; // Device media volume level (0-15)
+    private int maxMediaVolume = 15; // Maximum media volume (initialized from AudioManager)
     
+    /**
+     * Streaming mode options.
+     */
     public enum StreamingMode {
         STREAM_ONLY,     // Don't save to disk after streaming
         STREAM_AND_SAVE  // Keep recording on disk
@@ -163,6 +168,26 @@ public class RemoteStreamManager {
             // Load saved quality preset and orientation
             loadStreamQuality(this.context);
             loadStreamOrientation(this.context);
+            // Initialize current volume from AudioManager
+            initializeVolume(this.context);
+        }
+    }
+    
+    /**
+     * Initialize volume from AudioManager.
+     */
+    private void initializeVolume(android.content.Context ctx) {
+        try {
+            android.media.AudioManager audioManager = (android.media.AudioManager) ctx.getSystemService(android.content.Context.AUDIO_SERVICE);
+            if (audioManager != null) {
+                int currentVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                int maxVol = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                this.mediaVolume = currentVolume;
+                this.maxMediaVolume = maxVol;
+                Log.d(TAG, "Volume initialized: " + currentVolume + "/" + maxVol);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to initialize volume", e);
         }
     }
     
@@ -463,6 +488,22 @@ public class RemoteStreamManager {
     public String getStatusJson() {
         bufferLock.readLock().lock();
         try {
+            // Sync current volume from AudioManager (catches hardware button changes)
+            if (context != null) {
+                android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
+                if (audioManager != null) {
+                    int currentVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                    int maxVol = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                    
+                    // Only log if volume changed (avoid spam)
+                    if (currentVolume != mediaVolume) {
+                        android.util.Log.d(TAG, "🔄 Volume synced from AudioManager: " + mediaVolume + " → " + currentVolume + "/" + maxVol);
+                        mediaVolume = currentVolume;
+                    }
+                    maxMediaVolume = maxVol;
+                }
+            }
+            
             int bufferedCount = getBufferedCount();
             long totalBytes = 0;
             for (FragmentData fragment : fragmentBuffer) {
@@ -552,6 +593,9 @@ public class RemoteStreamManager {
             // Get stream quality info
             String qualityJson = streamQuality.toJson();
             
+            // Calculate volume percentage
+            float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
+            
             return String.format(
                 "{\"streaming\": %s, \"mode\": \"%s\", \"state\": \"%s\", \"message\": \"%s\", " +
                 "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
@@ -563,6 +607,7 @@ public class RemoteStreamManager {
                 "\"network_health\": %s, " +
                 "\"stream_quality\": %s, " +
                 "\"torch_state\": %s, " +
+                "\"volume\": %d, \"max_volume\": %d, \"volume_percentage\": %.1f, " +
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
                 "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
@@ -586,6 +631,9 @@ public class RemoteStreamManager {
                 networkHealthJson,
                 qualityJson,
                 torchState,
+                mediaVolume,
+                maxMediaVolume,
+                volumePercentage,
                 eventsJson.toString(),
                 clientsJson.toString(),
                 memoryUsage,
@@ -619,6 +667,29 @@ public class RemoteStreamManager {
     }
     
     /**
+     * Get current media volume level (0-15).
+     */
+    public int getMediaVolume() {
+        return mediaVolume;
+    }
+    
+    /**
+     * Set media volume level (0-15).
+     * @param volume Level from 0 to 15
+     */
+    public void setMediaVolume(int volume) {
+        this.mediaVolume = Math.max(0, Math.min(volume, maxMediaVolume));
+        Log.d(TAG, "Media volume set to: " + this.mediaVolume);
+    }
+    
+    /**
+     * Get maximum media volume.
+     */
+    public int getMaxMediaVolume() {
+        return maxMediaVolume;
+    }
+    
+    /**
      * Track client IP address and create ClientMetrics if new.
      */
     public void trackClientIP(String clientIP) {
@@ -629,6 +700,32 @@ public class RemoteStreamManager {
                     clientMetricsMap.put(clientIP, new ClientMetrics(clientIP));
                     Log.i(TAG, "New client connected: " + clientIP + " (Total: " + clientMetricsMap.size() + ")");
                 }
+            }
+        }
+    }
+    
+    /**
+     * Increment GET request count for a client (API calls only, not fragments).
+     */
+    public void incrementClientGetRequests(String clientIP) {
+        trackClientIP(clientIP);
+        synchronized (clientMetricsMap) {
+            ClientMetrics metrics = clientMetricsMap.get(clientIP);
+            if (metrics != null) {
+                metrics.incrementGetRequests();
+            }
+        }
+    }
+    
+    /**
+     * Increment POST request count for a client (API calls only).
+     */
+    public void incrementClientPostRequests(String clientIP) {
+        trackClientIP(clientIP);
+        synchronized (clientMetricsMap) {
+            ClientMetrics metrics = clientMetricsMap.get(clientIP);
+            if (metrics != null) {
+                metrics.incrementPostRequests();
             }
         }
     }

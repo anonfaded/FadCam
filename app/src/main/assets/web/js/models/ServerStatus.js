@@ -105,6 +105,11 @@ class ServerStatus {
         // Torch state
         this.torchOn = data.torch_state || false;
         
+        // Volume state
+        this.volume = data.volume ?? 0;
+        this.max_volume = data.max_volume ?? 15;
+        this.volume_percentage = data.volume_percentage ?? 0;
+        
         // Stats
         this.dataTransferredMb = data.total_data_transferred_mb || 0;
         this.uptimeSeconds = data.uptime_seconds || 0;

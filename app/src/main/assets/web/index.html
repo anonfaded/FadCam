@@ -12,112 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css?v=1.2">
     <style>
-        /* Critical CSS fallback for hero card and LEDs */
-        .server-hero-card {
-            position: relative !important;
-            height: 280px !important;
-            border-radius: 12px !important;
-            overflow: hidden !important;
-            margin-bottom: 12px !important;
-            background: #171717 !important;
-            border: 1px solid #2d3439 !important;
-        }
-        .server-hero-bg {
-            position: absolute !important;
-            inset: 0 !important;
-            background-size: cover !important;
-            background-position: center !important;
-            opacity: 1 !important;
-            z-index: 1 !important;
-        }
-        .server-hero-content {
-            position: relative !important;
-            height: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: flex-end !important;
-            align-items: flex-end !important;
-            padding: 16px !important;
-            z-index: 2 !important;
-        }
-        .led-dot {
-            width: 10px !important;
-            height: 10px !important;
-            border-radius: 50% !important;
-            background: #6e7681 !important;
-            transition: all 300ms ease !important;
-        }
-        .led-dot.online {
-            background: #3fb950 !important;
-            box-shadow: 0 0 10px rgba(63, 185, 80, 0.7) !important;
-        }
-        .recording-led {
-            background: #6e7681 !important;
-        }
-        .recording-led.active {
-            background: #f85149 !important;
-            box-shadow: 0 0 10px rgba(248, 81, 73, 0.7) !important;
-        }
-        /* Status Layout */
-        .server-status-indicators {
-            display: grid !important;
-            grid-template-columns: 10px 1fr !important;
-            gap: 10px !important;
-            align-items: start !important;
-            width: auto !important;
-            align-self: flex-end !important;
-        }
-        .status-group {
-            display: contents !important;
-        }
-        .led-dot {
-            width: 10px !important;
-            height: 10px !important;
-            border-radius: 50% !important;
-            background: #6e7681 !important;
-            transition: all 300ms ease !important;
-        }
-        .led-dot.online {
-            background: #3fb950 !important;
-            box-shadow: 0 0 10px rgba(63, 185, 80, 0.7) !important;
-        }
-        .recording-led {
-            background: #6e7681 !important;
-        }
-        .recording-led.active {
-            background: #f85149 !important;
-            box-shadow: 0 0 10px rgba(248, 81, 73, 0.7) !important;
-        }
-        .status-text-col {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 2px !important;
-            text-align: left !important;
-        }
-        .led-label {
-            font-size: 10px !important;
-            font-weight: 600 !important;
-            color: #8b949e !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
-            line-height: 1.2 !important;
-        }
-        .status-value {
-            font-size: 12px !important;
-            font-weight: 700 !important;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
-            line-height: 1.2 !important;
-        }
-        .status-value.online-text {
-            color: #3fb950 !important;
-        }
-        .status-value.recording-text {
-            color: #6e7681 !important;
-        }
-        .status-value.recording-text-active {
-            color: #f85149 !important;
-        }
+        /* Hero card and LED styles are in style.css - removed inline !important overrides */
     </style>
     <script>
         // Check if CSS loaded
@@ -160,20 +55,24 @@
                 <div class="server-hero-bg" style="background-image: url('assets/images/fadcam_server_room_bg_rounded.png');"></div>
                 <div class="server-hero-content">
                     <div class="server-status-indicators">
-                        <!-- Server Status -->
-                        <div class="status-group">
-                            <div class="led-dot online" id="serverLED"></div>
-                            <div class="status-text-col">
-                                <span class="led-label">Server Status</span>
-                                <span id="serverStatusLabel" class="status-value online-text">ONLINE</span>
+                        <!-- Status Grid - 2 columns, bottom-left positioned -->
+                        <div class="status-grid">
+                            <!-- Server Status Indicator -->
+                            <div class="status-group">
+                                <div class="led-dot online" id="serverLED"></div>
+                                <div class="status-text-col">
+                                    <span class="led-label">Server Status</span>
+                                    <span id="serverStatusLabel" class="status-value online-text">ONLINE</span>
+                                </div>
                             </div>
-                        </div>
-                        <!-- Recording Status -->
-                        <div class="status-group">
-                            <div class="led-dot recording-led" id="recordingLED"></div>
-                            <div class="status-text-col">
-                                <span class="led-label">Recording</span>
-                                <span id="recordingStatusLabel" class="status-value recording-text">NOT RECORDING</span>
+                            
+                            <!-- Recording Status Indicator -->
+                            <div class="status-group">
+                                <div class="led-dot recording-led" id="recordingLED"></div>
+                                <div class="status-text-col">
+                                    <span class="led-label">Recording</span>
+                                    <span id="recordingStatusLabel" class="status-value recording-text">NOT RECORDING</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -184,7 +83,7 @@
             <div id="recordingMessage" class="recording-message"></div>
 
             <!-- Server Room Section -->
-            <div class="section-heading">Server Room</div>
+            <div class="section-heading" style="color: #f85149;">Server Room</div>
 
             <!-- Info Cards Grid -->
             <div class="cards-grid">
@@ -245,15 +144,13 @@
                                 <!-- Row 1: Label -->
                                 <div class="battery-label">Battery</div>
                                 
-                                <!-- Row 2: Percentage and Badge -->
+                                <!-- Row 2: Percentage, Badge, and Arrow -->
                                 <div class="battery-info-right">
                                     <div class="battery-percentage" id="batteryPercentage">—%</div>
                                     <div class="battery-status-badge" id="batteryStatusBadge">—</div>
+                                    <i class="fas fa-chevron-right card-arrow-sm"></i>
                                 </div>
                             </div>
-                            
-                            <!-- Arrow -->
-                            <i class="fas fa-chevron-right card-arrow-sm"></i>
                         </div>
                     </div>
                 </div>
@@ -357,28 +254,59 @@
             </div>
 
             <!-- Remote Control Section -->
-            <div class="section-divider">Remote Control</div>
+            <div class="section-divider" style="color: #f85149;">Remote Control</div>
 
-            <!-- Torch Card - Compact -->
-            <div class="card card-sm" onclick="toggleTorch()">
-                <div class="card-clickable">
-                    <i class="fas fa-lightbulb card-icon-sm" style="color: #f59e0b;"></i>
-                    <div class="card-sm-content">
-                        <div class="card-label-sm">Torch</div>
-                        <div class="card-value-sm" id="torchState">OFF</div>
+            <!-- Torch & Volume Row -->
+            <div class="cards-grid">
+                <!-- Torch Card - Compact -->
+                <div class="card card-sm" onclick="toggleTorch()">
+                    <div class="card-clickable">
+                        <i class="fas fa-lightbulb card-icon-sm" style="color: #f59e0b;"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Torch</div>
+                            <div class="card-value-sm" id="torchState">OFF</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
-                    <i class="fas fa-chevron-right card-arrow-sm"></i>
+                </div>
+
+                <!-- Volume Control Card -->
+                <div class="card card-sm card-battery-ios volume-card">
+                    <div class="card-clickable battery-card-display" style="cursor: default;">
+                        <!-- Background Fill -->
+                        <div class="card-ios-fill" id="volumeFill"></div>
+                        
+                        <!-- Content Layer -->
+                        <div class="card-ios-content">
+                            <!-- Volume Icon -->
+                            <div class="card-ios-icon volume-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Speaker -->
+                                    <path d="M11 5 6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round"/>
+                                    <!-- Sound waves -->
+                                    <path class="volume-wave volume-wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path class="volume-wave volume-wave-2" d="M18.37 5.63a9 9 0 0 1 0 12.73" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            
+                            <!-- Volume Info -->
+                            <div class="battery-info-container">
+                                <div class="battery-label volume-label">Volume</div>
+                                <div class="battery-percentage volume-percentage" id="volumePercentage">0%</div>
+                            </div>
+                            
+                            <!-- Volume Control Buttons (right-aligned) -->
+                            <div class="volume-button-group">
+                                <button id="volumeMinus" class="volume-btn volume-btn-minus" onclick="volumeDecrease()" title="Decrease volume">−</button>
+                                <button id="volumePlus" class="volume-btn volume-btn-plus" onclick="volumeIncrease()" title="Increase volume">+</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Sidebar Footer -->
             <div class="sidebar-footer">
-                <!-- Server URL Card -->
-                <div class="footer-card">
-                    <div style="font-size: 10px; color: #8b949e; margin-bottom: 6px; font-weight: 600;">Server URL</div>
-                    <div id="serverUrl" style="font-size: 11px; color: #e6edf3; font-family: monospace; word-break: break-all; line-height: 1.3;">—</div>
-                </div>
-
                 <!-- Footer Links -->
                 <div class="footer-links">
                     <a href="https://discord.gg/kvAZvdkuuN" target="_blank" title="Discord Community" class="footer-link">
@@ -563,6 +491,7 @@
         let dashboardViewModel = null;
         let videoElement = null;
         let currentStatus = null;
+        let previousStatus = null; // Track previous status for change detection
         let sidebarCollapsed = false;
         let hlsService = null;
 
@@ -583,7 +512,12 @@
             const batteryLabel = document.querySelector('.battery-label');
             const batteryLevel = document.querySelector('.battery-level');
             
-            if (!batteryCard || percent < 0) {
+            if (!batteryCard || !batteryFill || !batteryPercentage || !batteryStatusBadge) {
+                console.log('[Battery] Card elements not ready yet');
+                return;
+            }
+            
+            if (percent < 0) {
                 batteryPercentage.textContent = '—%';
                 batteryStatusBadge.textContent = '—';
                 return;
@@ -623,6 +557,11 @@
             const storageFill = document.getElementById('storageFill');
             const storageBar = document.getElementById('storageBar');
             
+            if (!storageValue || !storageFill || !storageBar) {
+                console.log('[Storage] Card elements not ready yet');
+                return;
+            }
+            
             if (status.storageUsedGb > 0 && status.storageTotalGb > 0) {
                 const percent = (status.storageUsedGb / status.storageTotalGb) * 100;
                 storageValue.textContent = `${percent.toFixed(0)}% (${status.storageUsedGb.toFixed(1)}/${status.storageTotalGb.toFixed(1)} GB)`;
@@ -647,6 +586,11 @@
             const memoryValue = document.getElementById('memoryValue');
             const memoryFill = document.getElementById('memoryFill');
             const memoryBar = document.getElementById('memoryBar');
+            
+            if (!memoryValue || !memoryFill || !memoryBar) {
+                console.log('[Memory] Card elements not ready yet');
+                return;
+            }
             
             if (status.memoryTotalMb > 0) {
                 // Use real data from backend: percentage from "75% (1024/1366 MB)"
@@ -677,6 +621,11 @@
             const networkValue = document.getElementById('networkValue');
             const networkStatus = document.getElementById('networkStatus');
             
+            if (!wifiBars || !networkValue || !networkStatus) {
+                console.log('[Network] Card elements not ready yet');
+                return;
+            }
+            
             networkValue.textContent = status.bitrate || '—';
             
             wifiBars.classList.remove('good', 'moderate', 'poor');
@@ -694,6 +643,60 @@
             } else {
                 networkStatus.textContent = '—';
             }
+        }
+
+        /**
+         * Update volume card with color-coded fill and draggable slider
+         */
+        function updateVolumeCard(status) {
+            const volumeFill = document.getElementById('volumeFill');
+            const volumePercentage = document.getElementById('volumePercentage');
+            const volumeWaves = document.querySelectorAll('.volume-wave');
+            
+            // Return early if elements don't exist yet
+            if (!volumeFill || !volumePercentage) {
+                console.log('[Volume] Card elements not ready yet');
+                return;
+            }
+            
+            const percent = status.volume_percentage ?? 0;
+            
+            // Update fill bar
+            volumeFill.style.width = percent + '%';
+            
+            // Update text displays
+            volumePercentage.textContent = Math.round(percent) + '%';
+            
+            // Determine color based on volume level: Green (0-33%) → Orange (33-66%) → Red (66%+)
+            const volumeCard = document.querySelector('.volume-card');
+            if (volumeCard) {
+                volumeCard.classList.remove('low', 'medium', 'high', 'muted');
+                
+                if (percent === 0) {
+                    // Muted - Gray
+                    volumeCard.classList.add('muted');
+                } else if (percent <= 33) {
+                    // Low - Green (quiet)
+                    volumeCard.classList.add('low');
+                } else if (percent <= 66) {
+                    // Medium - Orange (normal)
+                    volumeCard.classList.add('medium');
+                } else {
+                    // High - Red (loud)
+                    volumeCard.classList.add('high');
+                }
+            }
+            
+            // Animate volume waves based on level
+            volumeWaves.forEach((wave, index) => {
+                if (percent === 0) {
+                    wave.style.opacity = '0.2';
+                } else if (index === 0) {
+                    wave.style.opacity = percent > 0 ? '0.8' : '0.2';
+                } else if (index === 1) {
+                    wave.style.opacity = percent > 50 ? '0.8' : '0.2';
+                }
+            });
         }
         
         // Sidebar toggle with hamburger animation
@@ -761,6 +764,40 @@
                 </div>
             `;
             
+            // Show total API calls across all clients
+            if (currentStatus.clients && currentStatus.clients.length > 0) {
+                let totalGetCalls = 0;
+                let totalPostCalls = 0;
+                currentStatus.clients.forEach(client => {
+                    totalGetCalls += client.get_requests || 0;
+                    totalPostCalls += client.post_requests || 0;
+                });
+                
+                clientsHtml += `
+                    <div class="modal-section">
+                        <div class="modal-label-section">API Call Summary</div>
+                        <div class="modal-row">
+                            <span class="modal-label">Total GET Requests</span>
+                            <span class="modal-value">${totalGetCalls}</span>
+                        </div>
+                        <div style="padding-left: 16px; margin-bottom: 8px; font-size: 11px; color: #8b949e;">
+                            📥 Requests from clients to server (status polls, audio volume queries)
+                        </div>
+                        <div class="modal-row">
+                            <span class="modal-label">Total POST Requests</span>
+                            <span class="modal-value">${totalPostCalls}</span>
+                        </div>
+                        <div style="padding-left: 16px; margin-bottom: 12px; font-size: 11px; color: #8b949e;">
+                            📤 Requests from clients that modify server state (torch toggle, volume control)
+                        </div>
+                        <div class="modal-row">
+                            <span class="modal-label">Total API Calls</span>
+                            <span class="modal-value">${totalGetCalls + totalPostCalls}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
             if (currentStatus.clients && currentStatus.clients.length > 0) {
                 clientsHtml += '<div class="modal-section"><div class="modal-label-section">Client Details</div>';
                 currentStatus.clients.forEach((client, idx) => {
@@ -782,6 +819,26 @@
                             <div class="modal-row">
                                 <span class="modal-label">Session Duration</span>
                                 <span class="modal-value">${sessionMinutes}m ${(client.session_duration_seconds || 0) % 60}s</span>
+                            </div>
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(45, 52, 57, 0.5);">
+                                <div class="modal-row">
+                                    <span class="modal-label">API Calls (GET)</span>
+                                    <span class="modal-value">${client.get_requests || 0}</span>
+                                </div>
+                                <div style="padding-left: 16px; margin-bottom: 8px; font-size: 11px; color: #8b949e;">
+                                    📥 Status polls, info queries
+                                </div>
+                                <div class="modal-row">
+                                    <span class="modal-label">API Calls (POST)</span>
+                                    <span class="modal-value">${client.post_requests || 0}</span>
+                                </div>
+                                <div style="padding-left: 16px; margin-bottom: 8px; font-size: 11px; color: #8b949e;">
+                                    📤 Control commands (torch, volume, mode)
+                                </div>
+                                <div class="modal-row">
+                                    <span class="modal-label">Total API Calls</span>
+                                    <span class="modal-value">${(client.total_api_calls || 0)}</span>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -856,6 +913,28 @@
         }
         function hideBatteryModal() {
             document.getElementById('batteryModal').classList.remove('visible');
+        }
+
+        /**
+         * Decrease volume by 5%
+         */
+        async function volumeDecrease() {
+            const volumePercentageEl = document.getElementById('volumePercentage');
+            if (!volumePercentageEl) return;
+            const currentPercent = parseInt(volumePercentageEl.textContent) || 0;
+            const newPercent = Math.max(0, currentPercent - 5);
+            setVolume(newPercent);
+        }
+
+        /**
+         * Increase volume by 5%
+         */
+        async function volumeIncrease() {
+            const volumePercentageEl = document.getElementById('volumePercentage');
+            if (!volumePercentageEl) return;
+            const currentPercent = parseInt(volumePercentageEl.textContent) || 0;
+            const newPercent = Math.min(100, currentPercent + 5);
+            setVolume(newPercent);
         }
 
         async function setBatteryWarning() {
@@ -1163,10 +1242,23 @@
 
         async function toggleTorch() {
             try {
+                console.log('[Torch] Toggle requested');
+                const oldState = currentStatus?.torchOn;
+                
+                // Call the API
                 await dashboardViewModel.toggleTorch();
-                showToast('Torch toggled');
+                
+                // Update UI immediately with the expected new state
+                if (currentStatus) {
+                    const newState = !oldState;
+                    currentStatus.torchOn = newState;
+                    console.log('[Torch] Updated immediately:', oldState, '→', newState);
+                    updateUI(currentStatus);
+                }
+                
+                showToast(currentStatus?.torchOn ? '🔦 Torch ON' : '🔦 Torch OFF');
             } catch (error) {
-                console.error('Failed to toggle torch:', error);
+                console.error('[Torch] Failed to toggle:', error);
                 showToast('Failed to toggle torch');
             }
         }
@@ -1220,6 +1312,57 @@
         }
 
         function updateUI(status) {
+            // Detect state changes and show notifications
+            if (previousStatus) {
+                // Only show notifications if status actually changed
+                const torchChanged = previousStatus.torchOn !== status.torchOn;
+                const volumeChanged = previousStatus.volume_percentage && status.volume_percentage && Math.abs(previousStatus.volume_percentage - status.volume_percentage) > 5;
+                const recordingChanged = previousStatus.isRecording !== status.isRecording;
+                const qualityChanged = previousStatus.qualityPreset !== status.qualityPreset;
+                const modeChanged = previousStatus.mode !== status.mode;
+                
+                // Torch state change
+                if (torchChanged) {
+                    console.log('[Toast] Torch state changed:', previousStatus.torchOn, '→', status.torchOn);
+                    showToast(status.torchOn ? '🔦 Torch turned ON' : '🔦 Torch turned OFF', 2000);
+                }
+                
+                // Volume change (only notify if significant change > 5%)
+                if (volumeChanged) {
+                    console.log('[Toast] Volume changed:', previousStatus.volume_percentage, '→', status.volume_percentage);
+                    showToast(`🔊 Volume: ${Math.round(status.volume_percentage)}%`, 1500);
+                }
+                
+                // Recording state change - only notify if changed, not on initialization
+                if (recordingChanged) {
+                    console.log('[Toast] Recording state changed:', previousStatus.isRecording, '→', status.isRecording);
+                    showToast(status.isRecording ? '🔴 Recording started' : '⏹️ Recording stopped', 3000);
+                }
+                
+                // Stream quality change
+                if (qualityChanged) {
+                    console.log('[Toast] Quality changed:', previousStatus.qualityPreset, '→', status.qualityPreset);
+                    showToast(`📹 Quality: ${status.qualityPreset}`, 2000);
+                }
+                
+                // Recording mode change
+                if (modeChanged) {
+                    const modeName = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    console.log('[Toast] Mode changed:', previousStatus.mode, '→', status.mode);
+                    showToast(`📼 Mode: ${modeName}`, 2000);
+                }
+            } else {
+                console.log('[Toast] First status load - not showing change notifications');
+            }
+            
+            // Store current status as previous for next comparison (shallow copy sufficient)
+            previousStatus = {
+                torchOn: status.torchOn,
+                volume_percentage: status.volume_percentage,
+                isRecording: status.isRecording,
+                qualityPreset: status.qualityPreset,
+                mode: status.mode
+            };
             currentStatus = status;
 
             // Update video overlay cursor based on stream readiness
@@ -1294,35 +1437,55 @@
 
             // Quick values - use formatted uptime from uptimeDetails
             const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
-            document.getElementById('uptimeValue').textContent = formattedUptime;
-            document.getElementById('clientsValue').textContent = status.activeConnections || '0';
+            const uptimeEl = document.getElementById('uptimeValue');
+            if (uptimeEl) uptimeEl.textContent = formattedUptime;
+            
+            const clientsEl = document.getElementById('clientsValue');
+            if (clientsEl) clientsEl.textContent = status.activeConnections || '0';
             
             // Update iOS-style cards with visualizations
             updateBatteryCard(status);
             updateStorageCard(status);
             updateMemoryCard(status);
             updateNetworkCard(status);
+            updateVolumeCard(status);
             
-            document.getElementById('segmentsValue').textContent = status.fragmentsBuffered || '0';
+            const segmentsEl = document.getElementById('segmentsValue');
+            if (segmentsEl) segmentsEl.textContent = status.fragmentsBuffered || '0';
             
             // Update data transfer card
             const dataTransferred = status.dataTransferredMb || 0;
             const displayDataTransfer = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
-            document.getElementById('dataTransferValue').textContent = displayDataTransfer;
+            const dataTransferEl = document.getElementById('dataTransferValue');
+            if (dataTransferEl) dataTransferEl.textContent = displayDataTransfer;
             
-            document.getElementById('recordingModeValue').textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            document.getElementById('streamQualityValue').textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
+            const recordingModeEl = document.getElementById('recordingModeValue');
+            if (recordingModeEl) recordingModeEl.textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            
+            const streamQualityEl = document.getElementById('streamQualityValue');
+            if (streamQualityEl) streamQualityEl.textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
+            
+            // Update torch display and show notification if changed
             const torchState = document.getElementById('torchState');
-            if (status.torchOn) {
-                torchState.textContent = 'ON';
-                torchState.style.color = '#f59e0b';
-                torchState.style.fontWeight = '700';
-            } else {
-                torchState.textContent = 'OFF';
-                torchState.style.color = '#8b949e';
-                torchState.style.fontWeight = '600';
+            if (torchState) {
+                if (previousStatus && previousStatus.torchOn !== status.torchOn) {
+                    console.log('[Torch] State changed from server:', previousStatus.torchOn, '→', status.torchOn);
+                    showToast(status.torchOn ? '🔦 Torch turned ON' : '🔦 Torch turned OFF', 2000);
+                }
+                
+                if (status.torchOn) {
+                    torchState.textContent = 'ON';
+                    torchState.style.color = '#f59e0b';
+                    torchState.style.fontWeight = '700';
+                } else {
+                    torchState.textContent = 'OFF';
+                    torchState.style.color = '#8b949e';
+                    torchState.style.fontWeight = '600';
+                }
             }
-            document.getElementById('serverUrl').textContent = CONFIG.BASE_URL || 'http://192.168.1.5:8080';
+            
+            const serverUrlEl = document.getElementById('serverUrl');
+            if (serverUrlEl) serverUrlEl.textContent = CONFIG.BASE_URL;
         }
 
         let currentToastTimeout = null;
@@ -1372,7 +1535,7 @@
 
         function showEndpointsModal() {
             const endpointsContent = document.getElementById('endpointsContent');
-            const serverUrl = document.getElementById('serverUrl')?.textContent || CONFIG.BASE_URL || 'http://192.168.1.5:8080';
+            const serverUrl = document.getElementById('serverUrl')?.textContent || CONFIG.BASE_URL;
             
             endpointsContent.innerHTML = `
                 <!-- Server URL Card -->
@@ -1385,7 +1548,7 @@
                 <ul style="list-style: none; padding: 0; margin: 0; color: #8b949e; font-size: 12px;">
                     <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
                         <strong style="color: #e6edf3; font-size: 13px;">GET /status</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Server status, metrics, battery, network, torch state, recording mode, stream quality</span>
+                        <span style="font-size: 11px; color: #6e7681;">Server status, metrics, battery, network, torch, volume, recording mode, stream quality</span>
                     </li>
                     <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
                         <strong style="color: #e6edf3; font-size: 13px;">GET /live.m3u8</strong><br/>
@@ -1396,8 +1559,16 @@
                         <span style="font-size: 11px; color: #6e7681;">Toggle flashlight on/off, returns updated state</span>
                     </li>
                     <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">GET /audio/volume</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Get current device volume level and percentage</span>
+                    </li>
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
+                        <strong style="color: #e6edf3; font-size: 13px;">POST /audio/volume</strong><br/>
+                        <span style="font-size: 11px; color: #6e7681;">Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)</span>
+                    </li>
+                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
                         <strong style="color: #e6edf3; font-size: 13px;">POST /config/recordingMode</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Set recording mode: record_only, stream_only, dual_mode</span>
+                        <span style="font-size: 11px; color: #6e7681;">Set recording mode: stream_only, stream_and_save</span>
                     </li>
                     <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
                         <strong style="color: #e6edf3; font-size: 13px;">POST /config/streamQuality</strong><br/>
@@ -1420,19 +1591,80 @@
                     </div>
                 </div>
             `;
-            document.getElementById('endpointsModal').classList.add('show');
+            document.getElementById('endpointsModal').classList.add('visible');
         }
 
         function hideEndpointsModal() {
-            document.getElementById('endpointsModal').classList.remove('show');
+            document.getElementById('endpointsModal').classList.remove('visible');
         }
 
-        // Initialize Lucide icons after DOM loads
-        document.addEventListener('DOMContentLoaded', () => {
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+            
+            // Initialize volume +/- buttons
+            const volumeMinus = document.getElementById('volumeMinus');
+            const volumePlus = document.getElementById('volumePlus');
+            
+            if (volumeMinus && volumePlus) {
+                console.log('[Volume] Buttons found: YES');
+                
+                volumeMinus.addEventListener('click', () => {
+                    console.log('[Volume] ➖ Minus button pressed');
+                    const currentPercent = currentStatus?.volume_percentage || 0;
+                    const newPercent = Math.max(0, currentPercent - 10);
+                    console.log('[Volume] Current:', currentPercent, '% → New:', newPercent, '%');
+                    setVolume(newPercent);
+                });
+                
+                volumePlus.addEventListener('click', () => {
+                    console.log('[Volume] ➕ Plus button pressed');
+                    const currentPercent = currentStatus?.volume_percentage || 0;
+                    const newPercent = Math.min(100, currentPercent + 10);
+                    console.log('[Volume] Current:', currentPercent, '% → New:', newPercent, '%');
+                    setVolume(newPercent);
+                });
+            } else {
+                console.error('[Volume] ❌ Buttons not found!');
+            }
         });
+
+        /**
+         * Set device volume via API
+         */
+        async function setVolume(percentage) {
+            try {
+                console.log('[Volume] setVolume called with percentage:', percentage);
+                const response = await fetch('/audio/volume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ percentage: percentage })
+                });
+                
+                console.log('[Volume] Response status:', response.status);
+                const result = await response.json();
+                console.log('[Volume] Response:', result);
+                
+                if (result.status === 'success') {
+                    console.log('✅ Volume set to:', result.percentage + '%', '(' + result.volume + '/' + result.max_volume + ')');
+                    
+                    // Update currentStatus immediately with the actual values from server
+                    if (currentStatus) {
+                        currentStatus.volume = result.volume;
+                        currentStatus.max_volume = result.max_volume;
+                        currentStatus.volume_percentage = result.percentage;
+                        console.log('[Volume] Updated currentStatus immediately to:', currentStatus.volume_percentage + '%');
+                        updateUI(currentStatus);
+                    }
+                } else {
+                    console.error('❌ Failed to set volume:', result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error setting volume:', error);
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {

@@ -60,6 +60,19 @@ public class LiveM3U8Server extends NanoHTTPD {
         // Track unique client IPs (only adds if new, Set handles duplicates)
         streamManager.trackClientIP(clientIP);
         
+        // Track API calls (not fragment/HLS calls)
+        boolean isApiCall = !uri.startsWith("/seg-") && !uri.startsWith("/live.m3u8") && 
+                           !uri.startsWith("/stream.m3u8") && !uri.startsWith("/init.mp4") &&
+                           !uri.startsWith("/css/") && !uri.startsWith("/js/") && !uri.startsWith("/assets/");
+        
+        if (isApiCall) {
+            if (Method.GET.equals(method)) {
+                streamManager.incrementClientGetRequests(clientIP);
+            } else if (Method.POST.equals(method)) {
+                streamManager.incrementClientPostRequests(clientIP);
+            }
+        }
+        
         // Add CORS headers for web player compatibility
         Response response;
         
@@ -73,6 +86,8 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = serveFragment(uri, clientIP);
             } else if ("/status".equals(uri)) {
                 response = serveStatus();
+            } else if ("/audio/volume".equals(uri)) {
+                response = getVolume();
             } else if ("/".equals(uri)) {
                 response = serveLandingPage();
             } else if (uri.startsWith("/css/") || uri.startsWith("/js/") || uri.startsWith("/assets/")) {
@@ -90,6 +105,8 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = setStreamQuality(session);
             } else if ("/config/batteryWarning".equals(uri)) {
                 response = setBatteryWarning(session);
+            } else if ("/audio/volume".equals(uri)) {
+                response = setVolume(session);
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
@@ -430,6 +447,126 @@ public class LiveM3U8Server extends NanoHTTPD {
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Handle GET /audio/volume - Get current device volume level
+     */
+    @NonNull
+    private Response getVolume() {
+        try {
+            Log.i(TAG, "🔊 Volume status requested via web interface");
+            
+            android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
+            if (audioManager == null) {
+                Log.e(TAG, "AudioManager not available");
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"AudioManager not available\"}");
+            }
+            
+            int currentVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+            int maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+            
+            // Update RemoteStreamManager state
+            RemoteStreamManager manager = RemoteStreamManager.getInstance();
+            manager.setMediaVolume(currentVolume);
+            
+            String responseJson = String.format(
+                "{\"status\": \"success\", \"volume\": %d, \"max_volume\": %d, \"percentage\": %.1f}",
+                currentVolume, maxVolume, (currentVolume * 100.0f / maxVolume)
+            );
+            
+            Log.i(TAG, "✅ Volume retrieved: " + currentVolume + "/" + maxVolume);
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting volume", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Handle POST /audio/volume - Set device volume level
+     * Expects JSON body: {"volume": 0-15} or {"percentage": 0-100}
+     */
+    @NonNull
+    private Response setVolume(IHTTPSession session) {
+        try {
+            Log.i(TAG, "🔊 Volume change requested via web interface");
+            
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String postData = files.get("postData");
+            if (postData == null || postData.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Missing request body\"}");
+            }
+            
+            // Parse JSON to extract volume or percentage
+            org.json.JSONObject json = new org.json.JSONObject(postData);
+            
+            android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
+            if (audioManager == null) {
+                Log.e(TAG, "AudioManager not available");
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"AudioManager not available\"}");
+            }
+            
+            int maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+            int targetVolume;
+            
+            if (json.has("volume")) {
+                // Direct volume level (0-maxVolume)
+                targetVolume = json.getInt("volume");
+                targetVolume = Math.max(0, Math.min(targetVolume, maxVolume));
+            } else if (json.has("percentage")) {
+                // Percentage (0-100)
+                float percentage = (float) json.getDouble("percentage");
+                percentage = Math.max(0, Math.min(percentage, 100));
+                targetVolume = Math.round(percentage * maxVolume / 100.0f);
+            } else {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Missing 'volume' or 'percentage' field\"}");
+            }
+            
+            // Set the volume
+            audioManager.setStreamVolume(
+                android.media.AudioManager.STREAM_MUSIC, 
+                targetVolume, 
+                0  // No UI flags (silent change)
+            );
+            
+            // Update RemoteStreamManager state
+            RemoteStreamManager manager = RemoteStreamManager.getInstance();
+            manager.setMediaVolume(targetVolume);
+            
+            int actualVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+            float actualPercentage = actualVolume * 100.0f / maxVolume;
+            
+            Log.i(TAG, "✅ Volume set to: " + actualVolume + "/" + maxVolume + " (" + String.format("%.1f", actualPercentage) + "%)");
+            
+            String responseJson = String.format(
+                "{\"status\": \"success\", \"volume\": %d, \"max_volume\": %d, \"percentage\": %.1f}",
+                actualVolume, maxVolume, actualPercentage
+            );
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (org.json.JSONException e) {
+            Log.e(TAG, "Invalid JSON in volume request", e);
+            return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                "{\"status\": \"error\", \"message\": \"Invalid JSON: " + e.getMessage() + "\"}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting volume", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
 
