@@ -1,0 +1,42 @@
+/*
+ * Fadex Push Notification Configuration
+ * 
+ * IMPORTANT: Increment the "version" number every time you update this file.
+ * The client will detect version changes and display the notification.
+ * 
+ * Link Format: Use {text|url} syntax for clickable links
+ * Example: "Check {our documentation|https://example.com} for more info"
+ * 
+ * Priority Levels: "info" (blue), "warning" (yellow), "critical" (red)
+ * 
+ * Best Practices:
+ * - Keep title under 50 characters
+ * - Keep subtitle under 100 characters
+ * - Keep description readable and concise (but no truncation)
+ * - Use links sparingly for clarity
+ * - Use newlines (\n) in description for readability
+ */
+
+{
+  // ===== VERSION (REQUIRED - INCREMENT ON EACH UPDATE) =====
+  "version": 9,
+
+  // ===== TITLE (REQUIRED - Short, attention-grabbing) =====
+  "title": "Welcome to Fadex Notifications",
+
+  // ===== SUBTITLE (OPTIONAL - Brief context, appears in list) =====
+  "subtitle": "You'll now receive updates and alerts from Faded via Fadex",
+
+  // ===== DESCRIPTION (OPTIONAL - Full message, supports links and line breaks) =====
+  "description": "Fadex is now active on your dashboard.\n\nYou'll receive important messages from Faded about:\n• Server status changes\n• Infrastructure updates\n• Security alerts\n• Maintenance notifications\n\nFor more info: https://github.com/anonfaded/FadCam\n\nYou can dismiss this message anytime.",
+
+  // ===== PRIORITY (OPTIONAL - default: "info") =====
+  // Use "info" for general updates (no modal, just jiggle), "warning" for important alerts, "critical" for urgent matters
+  "priority": "info"
+
+  // ===== EXAMPLE: Update the version to display a new notification =====
+  // Increment version: "version": 2
+  // Update title: "title": "New Feature Available"
+  // Update other fields as needed
+  // Client will automatically detect the change and show the notification
+}
