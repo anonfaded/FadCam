@@ -799,6 +799,111 @@ video {
     font-family: var(--font-mono);
 }
 
+/* Container-Style Row Layout (Phone App Style with Rounded Boxes) */
+.modal-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #7a8290;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Container box with rounded corners (like phone app cards) */
+.modal-rows-group {
+    background: linear-gradient(180deg, #0f1217 0%, #0a0d11 100%);
+    position: relative;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: var(--spacing-md);
+    overflow: hidden;
+}
+
+.modal-rows-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px;
+    padding: 1px;
+    background: linear-gradient(135deg, #3a4551 0%, #1a2332 50%, #0d1117 100%);
+    pointer-events: none;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.modal-rows-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Individual row inside container */
+.modal-row-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(22, 27, 34, 0.8);
+    position: relative;
+    z-index: 1;
+}
+
+.modal-row-container:last-child {
+    border-bottom: none;
+}
+
+.modal-row-label {
+    font-size: 13px;
+    color: #8b949e;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.modal-row-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f6fc;
+    font-family: var(--font-mono);
+    text-align: right;
+    letter-spacing: 0.2px;
+}
+
+/* Info box with gradient border and better contrast */
+.modal-info-box {
+    padding: 14px 16px;
+    background: linear-gradient(180deg, #1c1f26 0%, #151820 100%);
+    position: relative;
+    border-radius: 10px;
+    margin-top: var(--spacing-md);
+    overflow: hidden;
+}
+
+.modal-info-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(63, 74, 90, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%);
+    pointer-events: none;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.modal-info-text {
+    font-size: 12px;
+    color: #8b949e;
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
+}
+
 /* Modal Options */
 .modal-option {
     display: flex;

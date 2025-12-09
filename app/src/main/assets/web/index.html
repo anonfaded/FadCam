@@ -775,24 +775,28 @@
             const uptimeDetails = currentStatus.uptimeDetails || {};
             const content = `
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Formatted Uptime</span>
-                        <span class="modal-value">${uptimeDetails.formatted || uptimeDetails.formatted_uptime || currentStatus.getFormattedUptime() || '—'}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Total Seconds</span>
-                        <span class="modal-value">${uptimeDetails.seconds || currentStatus.uptimeSeconds || '—'}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Formatted Uptime</div>
+                            <div class="modal-row-value">${uptimeDetails.formatted || uptimeDetails.formatted_uptime || currentStatus.getFormattedUptime() || '—'}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Total Seconds</div>
+                            <div class="modal-row-value">${uptimeDetails.seconds || currentStatus.uptimeSeconds || '—'}</div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Session Started Date</span>
-                        <span class="modal-value">${uptimeDetails.session_started_date || 'Not started'}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Session Started Time</span>
-                        <span class="modal-value">${uptimeDetails.start_time || uptimeDetails.session_started_time || 'Not started'}</span>
-                    </div>
+                    <div class="modal-section-title">Session</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Started Date</div>
+                            <div class="modal-row-value">${uptimeDetails.session_started_date || 'Not started'}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Started Time</div>
+                            <div class="modal-row-value">${uptimeDetails.start_time || uptimeDetails.session_started_time || 'Not started'}</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -807,9 +811,11 @@
             if (!currentStatus) return;
             let clientsHtml = `
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Connected Clients</span>
-                        <span class="modal-value">${currentStatus.activeConnections || 0}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Connected Clients</div>
+                            <div class="modal-row-value">${currentStatus.activeConnections || 0}</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -825,70 +831,58 @@
                 
                 clientsHtml += `
                     <div class="modal-section">
-                        <div class="modal-label-section">API Call Summary</div>
-                        <div class="modal-row">
-                            <span class="modal-label">Total GET Requests</span>
-                            <span class="modal-value">${totalGetCalls}</span>
-                        </div>
-                        <div style="padding-left: 16px; margin-bottom: 8px; font-size: 11px; color: #8b949e;">
-                            📥 Requests from clients to server (status polls, audio volume queries)
-                        </div>
-                        <div class="modal-row">
-                            <span class="modal-label">Total POST Requests</span>
-                            <span class="modal-value">${totalPostCalls}</span>
-                        </div>
-                        <div style="padding-left: 16px; margin-bottom: 12px; font-size: 11px; color: #8b949e;">
-                            📤 Requests from clients that modify server state (torch toggle, volume control)
-                        </div>
-                        <div class="modal-row">
-                            <span class="modal-label">Total API Calls</span>
-                            <span class="modal-value">${totalGetCalls + totalPostCalls}</span>
+                        <div class="modal-section-title">API Summary</div>
+                        <div class="modal-rows-group">
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total GET Requests</div>
+                                <div class="modal-row-value">${totalGetCalls}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total POST Requests</div>
+                                <div class="modal-row-value">${totalPostCalls}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total API Calls</div>
+                                <div class="modal-row-value">${totalGetCalls + totalPostCalls}</div>
+                            </div>
                         </div>
                     </div>
                 `;
             }
             
             if (currentStatus.clients && currentStatus.clients.length > 0) {
-                clientsHtml += '<div class="modal-section"><div class="modal-label-section">Client Details</div>';
+                clientsHtml += '<div class="modal-section"><div class="modal-section-title">Client Details</div>';
                 currentStatus.clients.forEach((client, idx) => {
                     const sessionMinutes = Math.floor((client.session_duration_seconds || 0) / 60);
                     clientsHtml += `
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #2d3439;" ${idx === 0 ? 'style="margin-top: 0; padding-top: 0; border-top: none;"' : ''}>
-                            <div class="modal-row">
-                                <span class="modal-label">IP Address</span>
-                                <span class="modal-value" style="font-family: var(--font-mono); font-size: 11px;">${client.ip || 'N/A'}</span>
+                        <div class="modal-rows-group">
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">IP Address</div>
+                                <div class="modal-row-value" style="font-size: 11px;">${client.ip || 'N/A'}</div>
                             </div>
-                            <div class="modal-row">
-                                <span class="modal-label">Data Served</span>
-                                <span class="modal-value">${client.mb_served ? client.mb_served.toFixed(1) : '0'} MB</span>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Data Served</div>
+                                <div class="modal-row-value">${client.mb_served ? client.mb_served.toFixed(1) : '0'} MB</div>
                             </div>
-                            <div class="modal-row">
-                                <span class="modal-label">Avg Bitrate</span>
-                                <span class="modal-value">${(client.average_bitrate_mbps || 0).toFixed(2)} Mbps</span>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Avg Bitrate</div>
+                                <div class="modal-row-value">${(client.average_bitrate_mbps || 0).toFixed(2)} Mbps</div>
                             </div>
-                            <div class="modal-row">
-                                <span class="modal-label">Session Duration</span>
-                                <span class="modal-value">${sessionMinutes}m ${(client.session_duration_seconds || 0) % 60}s</span>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Session Duration</div>
+                                <div class="modal-row-value">${sessionMinutes}m ${(client.session_duration_seconds || 0) % 60}s</div>
                             </div>
-                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(45, 52, 57, 0.5);">
-                                <div class="modal-row">
-                                    <span class="modal-label">API Calls (GET)</span>
-                                    <span class="modal-value">${client.get_requests || 0}</span>
-                                </div>
-                                <div style="padding-left: 16px; margin-bottom: 8px; font-size: 11px; color: #8b949e;">
-                                    📥 Status polls, info queries
-                                </div>
-                                <div class="modal-row">
-                                    <span class="modal-label">API Calls (POST)</span>
-                                    <span class="modal-value">${client.post_requests || 0}</span>
-                                </div>
-                                <div style="padding-left: 16px; margin-bottom: 8px; font-size: 11px; color: #8b949e;">
-                                    📤 Control commands (torch, volume, mode)
-                                </div>
-                                <div class="modal-row">
-                                    <span class="modal-label">Total API Calls</span>
-                                    <span class="modal-value">${(client.total_api_calls || 0)}</span>
-                                </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">GET Requests</div>
+                                <div class="modal-row-value">${client.get_requests || 0}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">POST Requests</div>
+                                <div class="modal-row-value">${client.post_requests || 0}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total API Calls</div>
+                                <div class="modal-row-value">${(client.total_api_calls || 0)}</div>
                             </div>
                         </div>
                     `;
@@ -928,33 +922,43 @@
             const content = `
                 ${warningSection}
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Level</span>
-                        <span class="modal-value">${currentStatus.battery.percent}%</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">State</span>
-                        <span class="modal-value">${currentStatus.battery.status.toUpperCase()}</span>
-                    </div>
-                </div>
-                <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Consumed</span>
-                        <span class="modal-value">${currentStatus.battery.consumed}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Remaining Time</span>
-                        <span class="modal-value">${currentStatus.battery.remainingHours > 0 ? currentStatus.battery.remainingHours.toFixed(1) + 'h' : 'N/A'}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Level</div>
+                            <div class="modal-row-value">${currentStatus.battery.percent}%</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">State</div>
+                            <div class="modal-row-value">${currentStatus.battery.status.toUpperCase()}</div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-section">
-                    <div class="modal-label-section">Low Battery Warning Threshold</div>
-                    <div class="modal-row">
-                        <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warning_threshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
-                        <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
+                    <div class="modal-section-title">Usage</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Consumed</div>
+                            <div class="modal-row-value">${currentStatus.battery.consumed}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Remaining Time</div>
+                            <div class="modal-row-value">${currentStatus.battery.remainingHours > 0 ? currentStatus.battery.remainingHours.toFixed(1) + 'h' : 'N/A'}</div>
+                        </div>
                     </div>
-                    <div style="margin-top: 8px; font-size: 12px; color: #8b949e; line-height: 1.4;">
-                        When battery drops to or below this percentage, a warning will be displayed. Valid range: 5-100%
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Low Battery Warning</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container" style="border-bottom: none;">
+                            <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warning_threshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
+                            <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
+                        ℹ️ When battery drops to or below this percentage, a warning will be displayed. Valid range: 5-100%
                     </div>
                 </div>
             `;
@@ -1027,43 +1031,52 @@
             
             const content = `
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Status</span>
-                        <span class="modal-value">${currentStatus.networkHealth.charAt(0).toUpperCase() + currentStatus.networkHealth.slice(1).toUpperCase()}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Status</div>
+                            <div class="modal-row-value">${currentStatus.networkHealth.charAt(0).toUpperCase() + currentStatus.networkHealth.slice(1)}</div>
+                        </div>
                     </div>
                 </div>
+                
                 <div class="modal-section">
-                    <div class="modal-label-section">Speed Metrics</div>
-                    <div class="modal-row">
-                        <span class="modal-label">↓ Download</span>
-                        <span class="modal-value">${downloadSpeed}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">↑ Upload</span>
-                        <span class="modal-value">${uploadSpeed}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Latency (Ping)</span>
-                        <span class="modal-value">${latency}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Last Tested</span>
-                        <span class="modal-value" style="font-size: 12px;">${lastTested}</span>
+                    <div class="modal-section-title">Speed Metrics</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">↓ Download</div>
+                            <div class="modal-row-value">${downloadSpeed}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">↑ Upload</div>
+                            <div class="modal-row-value">${uploadSpeed}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Latency (Ping)</div>
+                            <div class="modal-row-value">${latency}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Last Tested</div>
+                            <div class="modal-row-value" style="font-size: 11px;">${lastTested}</div>
+                        </div>
                     </div>
                 </div>
+                
                 <div class="modal-section">
-                    <div class="modal-label-section">Streaming</div>
-                    <div class="modal-row">
-                        <span class="modal-label">Bitrate</span>
-                        <span class="modal-value">${currentStatus.bitrate}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">FPS</span>
-                        <span class="modal-value">${currentStatus.fps}</span>
+                    <div class="modal-section-title">Streaming</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Bitrate</div>
+                            <div class="modal-row-value">${currentStatus.bitrate}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">FPS</div>
+                            <div class="modal-row-value">${currentStatus.fps}</div>
+                        </div>
                     </div>
                 </div>
-                <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 12px;">
-                    <div style="font-size: 12px; color: #8b949e; line-height: 1.5;">
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
                         ℹ️ Speed tests use small file downloads and may show lower values than your actual bandwidth. Network health is automatically measured every 2 minutes.
                     </div>
                 </div>
@@ -1106,26 +1119,22 @@
                     const isActive = client.is_active !== false; // Default to active if not specified
                     
                     return `
-                        <div style="background: #1a1f26; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
-                            <!-- IP and Status Row -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 13sp; font-weight: 700; color: #e6edf3; font-family: monospace;">${client.ip || 'Unknown'}</span>
-                                <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${isActive ? '#3fb950' : '#6e7681'}; padding: 4px 8px; border-radius: 4px;">${isActive ? 'Active' : 'Inactive'}</span>
+                        <div class="modal-rows-group" style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #24272d;">
+                                <div style="font-size: 13px; font-weight: 700; color: #e6edf3; font-family: monospace;">${client.ip || 'Unknown'}</div>
+                                <div style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${isActive ? '#3fb950' : '#6e7681'}; padding: 4px 8px; border-radius: 4px;">${isActive ? 'Active' : 'Inactive'}</div>
                             </div>
-                            <!-- Metrics Grid -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                                <div>
-                                    <div style="font-size: 11px; color: #8b949e; margin-bottom: 4px;">Data Served</div>
-                                    <div style="font-size: 13px; font-weight: 700; color: #e6edf3;">${dataMb.toFixed(1)} MB</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 11px; color: #8b949e; margin-bottom: 4px;">Duration</div>
-                                    <div style="font-size: 13px; font-weight: 700; color: #e6edf3;">${durationDisplay}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 11px; color: #8b949e; margin-bottom: 4px;">Fragments</div>
-                                    <div style="font-size: 13px; font-weight: 700; color: #e6edf3;">${fragments}</div>
-                                </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Data Served</div>
+                                <div class="modal-row-value">${dataMb.toFixed(1)} MB</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Duration</div>
+                                <div class="modal-row-value">${durationDisplay}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Fragments</div>
+                                <div class="modal-row-value">${fragments}</div>
                             </div>
                         </div>
                     `;
@@ -1136,21 +1145,26 @@
             
             const content = `
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Total Served</span>
-                        <span class="modal-value">${displayValue}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Active Clients</span>
-                        <span class="modal-value">${activeClientsCount}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Total Served</div>
+                            <div class="modal-row-value">${displayValue}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Active Clients</div>
+                            <div class="modal-row-value">${activeClientsCount}</div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-section">
-                    <div class="modal-label-section">Per-Client Breakdown</div>
-                    ${clientsHtml}
+                    <div class="modal-section-title">Per-Client Breakdown</div>
+                    <div style="margin-top: 8px;">
+                        ${clientsHtml}
+                    </div>
                 </div>
-                <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 12px;">
-                    <div style="font-size: 12px; color: #8b949e; line-height: 1.5;">
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
                         ℹ️ Shows detailed data transmission metrics for each connected client.
                     </div>
                 </div>
@@ -1166,17 +1180,19 @@
             if (!currentStatus) return;
             const content = `
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Buffered Fragments</span>
-                        <span class="modal-value">${currentStatus.fragmentsBuffered || 0}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Buffer Size</span>
-                        <span class="modal-value">${(currentStatus.bufferSizeMb || 0).toFixed(1)} MB</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Init Segment</span>
-                        <span class="modal-value">${currentStatus.hasInitSegment ? 'Present' : 'Missing'}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Buffered Fragments</div>
+                            <div class="modal-row-value">${currentStatus.fragmentsBuffered || 0}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Buffer Size</div>
+                            <div class="modal-row-value">${(currentStatus.bufferSizeMb || 0).toFixed(1)} MB</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Init Segment</div>
+                            <div class="modal-row-value">${currentStatus.hasInitSegment ? 'Present' : 'Missing'}</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1191,13 +1207,15 @@
             if (!currentStatus) return;
             const content = `
                 <div class="modal-section">
-                    <div class="modal-row">
-                        <span class="modal-label">Used</span>
-                        <span class="modal-value">${currentStatus.storage.used}</span>
-                    </div>
-                    <div class="modal-row">
-                        <span class="modal-label">Total</span>
-                        <span class="modal-value">${currentStatus.storage.total}</span>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Used</div>
+                            <div class="modal-row-value">${currentStatus.storage.used}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Total</div>
+                            <div class="modal-row-value">${currentStatus.storage.total}</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1575,72 +1593,74 @@
         function showMemoryModal() {
             if (!currentStatus) return;
             const memoryContent = document.getElementById('memoryContent');
-            memoryContent.innerHTML = `<p style="color: #8b949e;">${currentStatus.memory || '—'}</p>`;
-            document.getElementById('memoryModal').classList.add('show');
+            memoryContent.innerHTML = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Memory Usage</div>
+                            <div class="modal-row-value">${currentStatus.memory || '—'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('memoryModal').classList.add('visible');
         }
 
         function hideMemoryModal() {
-            document.getElementById('memoryModal').classList.remove('show');
+            closeModalAnimated('memoryModal');
         }
 
         function showEndpointsModal() {
             const endpointsContent = document.getElementById('endpointsContent');
             const serverUrl = document.getElementById('serverUrl')?.textContent || CONFIG.BASE_URL;
             
-            endpointsContent.innerHTML = `
-                <!-- Server URL Card -->
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid #3d4349; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                    <div style="font-size: 10px; color: #8b949e; margin-bottom: 6px; font-weight: 600;">Server URL</div>
-                    <div style="font-size: 12px; color: #e6edf3; font-family: monospace; word-break: break-all; line-height: 1.4;">${serverUrl}</div>
+            const endpoints = [
+                { method: 'GET', path: '/status', desc: 'Server status, metrics, battery, network, torch, volume, recording mode, stream quality' },
+                { method: 'GET', path: '/live.m3u8', desc: 'HLS stream playlist for video playback' },
+                { method: 'POST', path: '/torch/toggle', desc: 'Toggle flashlight on/off, returns updated state' },
+                { method: 'GET', path: '/audio/volume', desc: 'Get current device volume level and percentage' },
+                { method: 'POST', path: '/audio/volume', desc: 'Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)' },
+                { method: 'POST', path: '/config/recordingMode', desc: 'Set recording mode: stream_only, stream_and_save' },
+                { method: 'POST', path: '/config/streamQuality', desc: 'Set stream quality: low, medium, high' },
+                { method: 'POST', path: '/config/batteryWarning', desc: 'Set battery warning threshold percentage' },
+                { method: 'GET', path: '/health', desc: 'Server health check endpoint' }
+            ];
+            
+            let endpointsHtml = `
+                <div class="modal-section">
+                    <div class="modal-section-title">Server URL</div>
+                    <div style="padding: 10px; background: #1a1e24; border: 1px solid #2d3439; border-radius: 6px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: #8b949e; word-break: break-all; font-family: monospace; line-height: 1.4;">${serverUrl}</div>
+                    </div>
                 </div>
-
-                <!-- Endpoints List -->
-                <ul style="list-style: none; padding: 0; margin: 0; color: #8b949e; font-size: 12px;">
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">GET /status</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Server status, metrics, battery, network, torch, volume, recording mode, stream quality</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">GET /live.m3u8</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">HLS stream playlist for video playback</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">POST /torch/toggle</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Toggle flashlight on/off, returns updated state</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">GET /audio/volume</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Get current device volume level and percentage</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">POST /audio/volume</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">POST /config/recordingMode</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Set recording mode: stream_only, stream_and_save</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">POST /config/streamQuality</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Set stream quality: low, medium, high</span>
-                    </li>
-                    <li style="padding: 12px 0; border-bottom: 1px solid #3d4349;">
-                        <strong style="color: #e6edf3; font-size: 13px;">POST /config/batteryWarning</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Set battery warning threshold percentage</span>
-                    </li>
-                    <li style="padding: 12px 0;">
-                        <strong style="color: #e6edf3; font-size: 13px;">GET /health</strong><br/>
-                        <span style="font-size: 11px; color: #6e7681;">Server health check endpoint</span>
-                    </li>
-                </ul>
-
-                <!-- Helper Text -->
-                <div style="padding: 12px; background: #1e2329; border-radius: 6px; margin-top: 16px;">
-                    <div style="font-size: 11px; color: #8b949e; line-height: 1.6;">
-                        <strong style="color: #e6edf3;">Base URL:</strong> Use the server URL above with these endpoints. Example: ${serverUrl}/status
+                
+                <div class="modal-section">
+                    <div class="modal-section-title">API Endpoints</div>
+            `;
+            
+            endpoints.forEach((ep, idx) => {
+                endpointsHtml += `
+                    <div style="margin-bottom: ${idx === endpoints.length - 1 ? '0' : '12px'}; padding-bottom: ${idx === endpoints.length - 1 ? '0' : '12px'}; ${idx === endpoints.length - 1 ? '' : 'border-bottom: 1px solid #2d3439;'}">
+                        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+                            <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${ep.method === 'GET' ? '#3fb950' : '#f85149'}; padding: 3px 8px; border-radius: 4px; min-width: 38px; text-align: center;">${ep.method}</span>
+                            <span style="font-size: 12px; font-weight: 600; color: #e6edf3; font-family: monospace;">${ep.path}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #8b949e; line-height: 1.4; margin-left: 46px;">${ep.desc}</div>
+                    </div>
+                `;
+            });
+            
+            endpointsHtml += `
+                </div>
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
+                        ℹ️ Use the server URL above with these endpoints. Example: ${serverUrl}/status
                     </div>
                 </div>
             `;
+            
+            endpointsContent.innerHTML = endpointsHtml;
             document.getElementById('endpointsModal').classList.add('visible');
         }
 
