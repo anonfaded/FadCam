@@ -125,14 +125,27 @@ body {
     width: 420px;
     background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
     border-right: 1px solid var(--border-color);
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    padding: var(--spacing-md);
-    gap: var(--spacing-sm);
+    padding: 0;
+    gap: 0;
     transition: transform 300ms ease, width 300ms ease;
+    position: relative;
+}
+
+/* Sidebar scrollable content wrapper */
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--spacing-md);
+    padding-bottom: 200px;
+    gap: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar.collapsed {
@@ -143,12 +156,19 @@ body {
 }
 
 .sidebar-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 420px;
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: auto;
-    padding-top: 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, rgba(26, 26, 26, 0.95) 0%, rgba(0, 0, 0, 0.95) 100%);
     border-top: 1px solid var(--border-color);
+    z-index: 10;
 }
 
 .footer-card {
@@ -161,24 +181,24 @@ body {
 
 .footer-links {
     display: flex;
-    gap: 8px;
-    justify-content: space-around;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0;
 }
 
 .footer-link {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 8px;
-    border-radius: 6px;
+    justify-content: center;
+    padding: 4px 6px;
+    border-radius: 4px;
     color: #8b949e;
     text-decoration: none;
-    font-size: 10px;
+    font-size: 0;
     font-weight: 600;
     transition: all 200ms ease;
-    text-align: center;
-    flex: 1;
+    flex: 0 0 auto;
 }
 
 .footer-link:hover {
@@ -187,7 +207,7 @@ body {
 }
 
 .footer-link i {
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -902,12 +922,12 @@ video {
 }
 
 /* Content layer - stays on top */
-.card-ios-content {
+.card-battery-ios .card-ios-content {
     position: relative;
     z-index: 2;
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
     gap: 10px;
     width: 100%;
 }
@@ -1044,7 +1064,24 @@ video {
     }
 }
 
-/* Battery Info Text */
+/* Battery Info Text - uses card-sm-content structure */
+.card-battery-ios .card-sm-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.battery-value-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 3;
+}
+
+/* Deprecated - kept for reference */
 .battery-info-container {
     display: flex;
     flex-direction: column;
@@ -1061,7 +1098,21 @@ video {
     z-index: 3;
 }
 
-/* Battery label - first row */
+/* Battery label - uses card-label-sm */
+.card-battery-ios .card-label-sm {
+    color: #2c3338;
+}
+
+.card-battery-ios.charging .card-label-sm {
+    color: #1a1f26;
+}
+
+.card-battery-ios.low .card-label-sm {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Battery label - first row (deprecated) */
 .battery-label {
     font-size: 11px;
     font-weight: 600;
@@ -1423,11 +1474,11 @@ video {
     color: #e6edf3;
 }
 
-/* Server Hero Card */
+
 /* Server Hero Card */
 .server-hero-card {
     position: relative;
-    height: 240px;
+    min-height: 220px;
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 12px;
@@ -1453,7 +1504,7 @@ video {
     z-index: 2;
 }
 
-/* Removed .indicator-title-section styling - no longer used */
+
 
 .server-status-indicators {
     position: absolute;

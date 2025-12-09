@@ -50,7 +50,8 @@
     <div class="main-layout">
         <!-- Left Sidebar -->
         <div class="sidebar" id="sidebar">
-            <!-- Server Hero Card -->
+            <!-- Sidebar Scrollable Content -->
+            <div class="sidebar-content">
             <div class="server-hero-card">
                 <div class="server-hero-bg" style="background-image: url('assets/images/fadcam_server_room_bg_rounded.png');"></div>
                 <div class="server-hero-content">
@@ -139,18 +140,20 @@
                                 </div>
                             </div>
                             
-                            <!-- Battery Info Container - Two Rows -->
-                            <div class="battery-info-container">
-                                <!-- Row 1: Label -->
-                                <div class="battery-label">Battery</div>
+                            <!-- Battery Info Container - Matches card-sm-content structure -->
+                            <div class="card-sm-content">
+                                <!-- Label -->
+                                <div class="card-label-sm">Battery</div>
                                 
-                                <!-- Row 2: Percentage, Badge, and Arrow -->
-                                <div class="battery-info-right">
+                                <!-- Value with status badge -->
+                                <div class="battery-value-row">
                                     <div class="battery-percentage" id="batteryPercentage">—%</div>
                                     <div class="battery-status-badge" id="batteryStatusBadge">—</div>
-                                    <i class="fas fa-chevron-right card-arrow-sm"></i>
                                 </div>
                             </div>
+                            
+                            <!-- Arrow -->
+                            <i class="fas fa-chevron-right card-arrow-sm"></i>
                         </div>
                     </div>
                 </div>
@@ -305,10 +308,15 @@
                 </div>
             </div>
 
+            <!-- End Sidebar Scrollable Content -->
+            </div>
+
             <!-- Sidebar Footer -->
             <div class="sidebar-footer">
-                <!-- Footer Links -->
-                <div class="footer-links">
+                <!-- Footer Info Text -->
+                <div style="font-size: 11px; color: #8b949e; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 12px;">
+                    <span>© 2025 faded.dev</span>
+                    <div class="footer-links">
                     <a href="https://discord.gg/kvAZvdkuuN" target="_blank" title="Discord Community" class="footer-link">
                         <i class="fab fa-discord"></i>
                         <span>Discord</span>
@@ -319,13 +327,13 @@
                     </a>
                     <a href="" id="endpointsFooterLink" onclick="showEndpointsModal(); return false;" title="API Endpoints" class="footer-link">
                         <i class="fas fa-code"></i>
-                        <span>API</span>
                     </a>
+                    </div>
                 </div>
 
                 <!-- Version Info -->
-                <div style="font-size: 10px; color: #6e7681; text-align: center; padding-top: 8px; border-top: 1px solid #3d4349;">
-                    FadCam v3.0.0
+                <div style="display: none; font-size: 8px; color: #4d5561; text-align: center; padding-top: 4px; border-top: 1px solid #3d4349;">
+                    v3.0.0
                 </div>
             </div>
         </div>
