@@ -1,0 +1,224 @@
+/**
+ * Interactive Avatar Component - Styles
+ * Created by Faded - https://github.com/anonfaded
+ * December 9, 2025
+ */
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Avatar Container - Fixed position on page */
+.avatar-container {
+  position: fixed;
+  bottom: -2rem;
+  right: 1rem;
+  z-index: 9999;
+  user-select: none;
+  pointer-events: none;
+  transform: translateY(0);
+  transition: all 0.3s ease-out;
+}
+
+/* Position variants */
+.avatar-container.pos-bottom-right {
+  bottom: 0;
+  right: 1rem;
+  left: auto;
+  top: auto;
+}
+
+.avatar-container.pos-bottom-left {
+  bottom: 0;
+  left: 1rem;
+  right: auto;
+  top: auto;
+}
+
+.avatar-container.pos-top-right {
+  top: 1rem;
+  right: 1rem;
+  bottom: auto;
+  left: auto;
+}
+
+.avatar-container.pos-top-left {
+  top: 1rem;
+  left: 1rem;
+  bottom: auto;
+  right: auto;
+}
+
+/* Avatar Wrapper */
+.avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: filter 0.3s ease;
+}
+
+/* Avatar Head - Floating effect */
+.avatar-head {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  background: linear-gradient(to bottom right, #1f2937, #000000, #1f2937);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Avatar Body - D-shaped with rounded top */
+.avatar-body {
+  width: 7rem;
+  height: 4rem;
+  background: linear-gradient(to bottom, #1f2937, #000000, #1f2937);
+  border-radius: 50% 50% 0 0;
+  position: relative;
+  animation: float 3s ease-in-out infinite 0.5s;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Eyes Container */
+.eyes-container {
+  position: relative;
+  display: flex;
+  gap: 1rem;
+  margin-top: -0.25rem;
+}
+
+/* Eye Socket - Semi-circular cavity for eyes */
+.eye-socket {
+  position: relative;
+  width: 1.5rem;
+  height: 1rem;
+  background: #000000;
+  border-radius: 0 0 100% 100%;
+  overflow: hidden;
+}
+
+/* Eyeball - Glowing white/red sphere */
+.eyeball {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  background: white;
+  box-shadow: 
+    0 0 8px rgba(255, 255, 255, 0.8),
+    0 0 16px rgba(255, 255, 255, 0.4);
+  transition: none;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Performance optimizations */
+.avatar-wrapper * {
+  will-change: transform;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .avatar-wrapper {
+    transform: scale(0.8);
+    transform-origin: bottom right;
+  }
+  
+  .avatar-container.pos-bottom-left .avatar-wrapper,
+  .avatar-container.pos-top-left .avatar-wrapper {
+    transform-origin: bottom left;
+  }
+  
+  .avatar-container.pos-top-right .avatar-wrapper,
+  .avatar-container.pos-top-left .avatar-wrapper {
+    transform-origin: top left;
+  }
+}
+
+/* Tablet optimization */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .avatar-wrapper {
+    transform: scale(0.9);
+  }
+}
+
+/* Reduced motion support - Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .eyeball {
+    transition: none !important;
+  }
+  
+  .avatar-wrapper {
+    transition: none !important;
+  }
+  
+  .eye-socket {
+    transition: none !important;
+  }
+  
+  .avatar-head,
+  .avatar-body {
+    animation: none !important;
+  }
+  
+  .avatar-container {
+    transition: none !important;
+  }
+}
+
+/* High contrast mode support - Accessibility */
+@media (prefers-contrast: high) {
+  .avatar-head,
+  .avatar-body {
+    border: 3px solid #000000;
+  }
+  
+  .eyeball {
+    background: #f5f5f5 !important;
+    box-shadow: 0 0 8px rgba(245, 245, 245, 0.8) !important;
+  }
+  
+  .eye-socket {
+    border: 2px solid #f5f5f5;
+  }
+}
+
+/* Dark theme compatibility (optional) */
+@media (prefers-color-scheme: dark) {
+  /* Avatar already uses dark colors, no changes needed */
+}
+
+/* Print styles - Hide avatar when printing */
+@media print {
+  .avatar-container {
+    display: none !important;
+  }
+}
+
+/* Hover effects for interactive feedback (subtle) */
+.avatar-wrapper:hover {
+  filter: brightness(1.05);
+}
+
+/* Focus visible for accessibility (keyboard navigation) */
+.avatar-container:focus-visible {
+  outline: 2px solid #00d4aa;
+  outline-offset: 4px;
+}

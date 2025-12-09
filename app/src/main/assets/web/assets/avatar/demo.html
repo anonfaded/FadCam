@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<!--
+  Interactive Avatar Component - Demo
+  Created by Faded - https://github.com/anonfaded
+  December 9, 2025
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Avatar Component Demo - Mouse-following eyes with 3D effects">
+  <title>Interactive Avatar Demo</title>
+  
+  <!-- Avatar CSS -->
+  <link rel="stylesheet" href="avatar.css">
+  
+  <style>
+    /* Demo page styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 2rem;
+      overflow-x: hidden;
+    }
+    
+    .demo-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .subtitle {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+    
+    .feature-list {
+      list-style: none;
+      margin: 2rem 0;
+    }
+    
+    .feature-list li {
+      padding: 0.75rem 0;
+      padding-left: 2rem;
+      position: relative;
+    }
+    
+    .feature-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #00d4aa;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    
+    .controls {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    
+    .controls h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    
+    button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00d4aa, #00a885);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #00e6c0, #00c099);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .code-section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
+    
+    .code-section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    pre {
+      background: #1a1a1a;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    
+    code {
+      color: #00d4aa;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .instruction {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      border-left: 4px solid #00d4aa;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .demo-container {
+        padding: 1.5rem;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1>🎯 Interactive Avatar</h1>
+    <p class="subtitle">Move your mouse around to see the avatar's eyes follow you!</p>
+    
+    <div class="instruction">
+      <strong>👁️ Watch the eyes:</strong> Eyes follow your cursor and change color! Stay close for white eyes, move far away to see them turn red!
+    </div>
+    
+    <ul class="feature-list">
+      <li><strong>Mouse Following:</strong> Eyes smoothly track cursor movement</li>
+      <li><strong>Color Change:</strong> White when near, red when far (distance-based)</li>
+      <li><strong>Blinking:</strong> Natural blinking animation every 3-7 seconds</li>
+      <li><strong>Floating Animation:</strong> Subtle 3D floating effect</li>
+      <li><strong>Touch Support:</strong> Works on mobile devices</li>
+      <li><strong>Responsive:</strong> Adapts to all screen sizes</li>
+      <li><strong>Accessible:</strong> Respects reduced motion preferences</li>
+      <li><strong>Pure Vanilla JS:</strong> No dependencies required</li>
+    </ul>
+    
+    <div class="controls">
+      <h2>🎮 Controls</h2>
+      <div class="button-group">
+        <button onclick="avatar.toggle()">Toggle Visibility</button>
+        <button onclick="avatar.setPosition('bottom-right')">Bottom Right</button>
+        <button onclick="avatar.setPosition('bottom-left')">Bottom Left</button>
+        <button onclick="avatar.setPosition('top-right')">Top Right</button>
+        <button onclick="avatar.setPosition('top-left')">Top Left</button>
+        <button onclick="avatar.enableDebugMode()">Enable Debug Mode</button>
+      </div>
+    </div>
+    
+    <div class="code-section">
+      <h2>📦 Quick Integration</h2>
+      <p style="margin-bottom: 1rem;">Add these 3 simple steps to any website:</p>
+      
+      <pre><code>&lt;!-- Step 1: Include CSS --&gt;
+&lt;link rel="stylesheet" href="avatar.css"&gt;
+
+&lt;!-- Step 2: Include JavaScript --&gt;
+&lt;script src="avatar.js"&gt;&lt;/script&gt;
+
+&lt;!-- Step 3: Initialize (after DOM loads) --&gt;
+&lt;script&gt;
+  // Wait for DOM to be ready
+  document.addEventListener('DOMContentLoaded', function() {
+    const avatar = new Avatar();
+    
+    // Optional: Enable debug mode
+    // avatar.enableDebugMode();
+    
+    // Optional: Change position
+    // avatar.setPosition('bottom-right');
+  });
+&lt;/script&gt;</code></pre>
+    </div>
+    
+    <div class="code-section">
+      <h2>🔧 Available Methods</h2>
+      <pre><code>// Toggle visibility
+avatar.toggle();          // Toggle on/off
+avatar.toggle(true);      // Show
+avatar.toggle(false);     // Hide
+
+// Change position
+avatar.setPosition('bottom-right');
+avatar.setPosition('bottom-left');
+avatar.setPosition('top-right');
+avatar.setPosition('top-left');
+
+// Debug mode
+avatar.enableDebugMode(); // Show tracking info
+
+// Cleanup
+avatar.destroy();         // Remove avatar</code></pre>
+    </div>
+    
+    <div class="instruction">
+      <strong>💡 Tip:</strong> Move cursor close to the avatar for white eyes, far away for red eyes. Scroll to see fade effect!
+    </div>
+  </div>
+  
+  <!-- Avatar JavaScript -->
+  <script src="avatar.js"></script>
+  
+  <!-- Initialize Avatar -->
+  <script>
+    // Global avatar instance for demo controls
+    let avatar;
+    
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+      avatar = new Avatar();
+      
+      console.log('✅ Avatar initialized successfully!');
+      console.log('📍 Position: bottom-right (default)');
+      console.log('🎯 Try moving your mouse around!');
+    });
+  </script>
+</body>
+</html>
