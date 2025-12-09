@@ -5,8 +5,9 @@
  */
 
 class Avatar {
-  constructor() {
+  constructor(parentContainer = null) {
     this.container = null;
+    this.parentContainer = parentContainer; // Accept optional parent container
     this.leftEye = null;
     this.rightEye = null;
     this.mouseX = window.innerWidth / 2;
@@ -61,7 +62,9 @@ class Avatar {
       </div>
     `;
 
-    document.body.appendChild(this.container);
+    // Append to parent container if provided, otherwise append to body
+    const targetParent = this.parentContainer || document.body;
+    targetParent.appendChild(this.container);
     
     // Get eye references
     this.leftEye = document.getElementById('leftEye');

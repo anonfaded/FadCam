@@ -55,8 +55,9 @@
             <div class="server-hero-card">
                 <div class="server-hero-bg" style="background-image: url('assets/images/fadcam_server_room_bg_rounded.png');"></div>
                 <div class="server-hero-content">
+                    <!-- Status Indicators - TOP RIGHT -->
                     <div class="server-status-indicators">
-                        <!-- Status Grid - 2 columns, bottom-left positioned -->
+                        <!-- Status Grid - 2 columns, top-right positioned -->
                         <div class="status-grid">
                             <!-- Server Status Indicator -->
                             <div class="status-group">
@@ -77,6 +78,9 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Avatar Container - BOTTOM RIGHT -->
+                    <div id="heroAvatarContainer" class="hero-avatar-container"></div>
                 </div>
             </div>
 
@@ -2291,8 +2295,77 @@
         // Initialize avatar when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
             try {
-                const avatar = new Avatar();
-                console.log('✅ Avatar component initialized successfully');
+                // Get the hero avatar container
+                const heroAvatarContainer = document.getElementById('heroAvatarContainer');
+                
+                if (heroAvatarContainer) {
+                    // Initialize avatar in hero card (bottom right)
+                    const avatar = new Avatar(heroAvatarContainer);
+                    console.log('✅ Avatar component initialized in hero card');
+                    
+                    // Create floating tooltip for avatar - speech bubble
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'avatar-floating-tooltip';
+                    tooltip.textContent = '???';
+                    document.body.appendChild(tooltip);
+                    
+                    // Get the avatar wrapper
+                    const avatarWrapper = heroAvatarContainer.querySelector('.avatar-wrapper');
+                    
+                    if (avatarWrapper) {
+                        // Function to position tooltip responsively
+                        const positionTooltip = () => {
+                            const rect = avatarWrapper.getBoundingClientRect();
+                            const viewportWidth = window.innerWidth;
+                            const viewportHeight = window.innerHeight;
+                            
+                            let left, top;
+                            
+                            // On small screens (phone), show on left side
+                            if (viewportWidth <= 480) {
+                                // Left side positioning for small screens
+                                tooltip.classList.add('left-position');
+                                tooltip.classList.remove('right-position');
+                                left = Math.max(10, rect.left - 90);
+                                top = Math.max(80, rect.top - 20);
+                            } else {
+                                // Right side positioning for larger screens
+                                tooltip.classList.add('right-position');
+                                tooltip.classList.remove('left-position');
+                                left = Math.min(viewportWidth - 120, rect.right + 10);
+                                top = Math.max(10, rect.top - 20);
+                            }
+                            
+                            tooltip.style.left = left + 'px';
+                            tooltip.style.top = top + 'px';
+                        };
+                        
+                        // Show/hide tooltip on hover
+                        avatarWrapper.addEventListener('mouseenter', () => {
+                            positionTooltip();
+                            tooltip.classList.add('visible');
+                        });
+                        
+                        avatarWrapper.addEventListener('mouseleave', () => {
+                            tooltip.classList.remove('visible');
+                        });
+                        
+                        // Reposition on scroll/resize
+                        let repositionTimer;
+                        const handleReposition = () => {
+                            if (tooltip.classList.contains('visible')) {
+                                clearTimeout(repositionTimer);
+                                repositionTimer = setTimeout(positionTooltip, 10);
+                            }
+                        };
+                        window.addEventListener('scroll', handleReposition, { passive: true });
+                        window.addEventListener('resize', handleReposition, { passive: true });
+                    }
+                } else {
+                    // Fallback: initialize avatar on body if container not found
+                    const avatar = new Avatar();
+                    console.log('✅ Avatar component initialized on body (fallback)');
+                }
             } catch (error) {
                 console.error('❌ Failed to initialize avatar:', error);
             }

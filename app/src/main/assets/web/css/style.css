@@ -653,7 +653,7 @@ video {
     background: rgba(0, 0, 0, 0.7);
     display: none;
     align-items: flex-end;
-    z-index: 1000;
+    z-index: 1100;
     animation: modal-backdrop 300ms ease forwards;
 }
 
@@ -965,7 +965,7 @@ video {
         margin: 12px;
         margin-right: 0;
         border-radius: 16px;
-        z-index: 1001;
+        z-index: 1050;
         transform: translateX(0);
         transition: transform 300ms ease;
         overflow: hidden;
@@ -1002,6 +1002,10 @@ video {
         padding-right: 12px;
         padding-bottom: 12px;
         gap: 0;
+    }
+
+    .server-status-indicators {
+        top: 24px;
     }
 
     .sidebar {
@@ -1071,6 +1075,10 @@ video {
         gap: 0;
     }
 
+    .server-status-indicators {
+        top: 20px;
+    }
+
     .sidebar {
         position: fixed;
         left: 0;
@@ -1081,7 +1089,7 @@ video {
         margin: 12px;
         margin-right: 0;
         border-radius: 16px;
-        z-index: 1001;
+        z-index: 1050;
         transform: translateX(0);
         transition: transform 300ms ease;
         overflow: hidden;
@@ -1113,6 +1121,10 @@ video {
 
     .card-label {
         font-size: 13px;
+    }
+
+    .modal {
+        z-index: 1100;
     }
 
     .modal-content {
@@ -1866,7 +1878,7 @@ video {
 
 .server-status-indicators {
     position: absolute;
-    bottom: 12px;
+    top: 32px;
     right: 12px;
     display: flex;
     flex-direction: column;
@@ -1957,6 +1969,15 @@ video {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Hero Avatar Container */
+.hero-avatar-container {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 4;
+    pointer-events: none;
 }
 
 .section-heading {
