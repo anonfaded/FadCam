@@ -573,7 +573,7 @@ body {
     background: #000;
     overflow: hidden;
     padding: 12px;
-    padding-left: 0;
+    padding-left: 16px;
 }
 
 .video-container {
@@ -850,7 +850,8 @@ video {
         width: 100%;
         height: calc(100vh - 76px);
         order: 0;
-        padding: 0;
+        padding: 12px;
+        padding-left: 16px;
         margin-left: 0;
     }
 
@@ -895,12 +896,12 @@ video {
         margin: 0;
     }
     }
-
     .player-area {
         width: 100%;
         height: calc(100vh - 76px);
         order: 0;
-        padding: 0;
+        padding: 12px;
+        padding-left: 16px;
     }
 
     .cards-grid {
@@ -947,11 +948,11 @@ video {
     }
         margin-right: 0;
     }
-
     .player-area {
         width: 100%;
         height: calc(100vh - 76px);
-        padding: 0;
+        padding: 12px;
+        padding-left: 16px;
     }
 
     .cards-grid {
