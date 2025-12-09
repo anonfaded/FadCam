@@ -1,0 +1,23 @@
+/*
+ * Fadex Push Notification Configuration
+ * 
+ * IMPORTANT: Increment the "version" number every time you update this file.
+ * The client will detect version changes and display the notification.
+ * 
+ * Priority Levels: "info" (green), "warning" (yellow), "critical" (red)
+ * 
+ * Guidelines:
+ * - version: increment on each update (required)
+ * - title: short, attention-grabbing (required, max 50 chars)
+ * - subtitle: brief context, appears in notification list (optional, max 100 chars)
+ * - description: full message, use \n for line breaks (optional)
+ * - priority: "info", "warning", or "critical" (optional, default "info")
+ */
+
+{
+  "version": 17,
+  "title": "Welcome to FadCam Remote",
+  "subtitle": "Control your device from a feature rich web dashboard",
+  "description": "Welcome to FadCam Remote Dashboard!\n\nUse the sidebar to control your device:\n• Toggle recording on/off\n• Adjust camera settings\n• Monitor stream quality\n• View real-time status\n• Change system preferences\n\nYou can manage everything directly from this interface. Enjoy seamless remote control!\n\nIf you love FadCam and want to support development, consider becoming a patron: https://patreon.com/Fadedx",
+  "priority": "info"
+}

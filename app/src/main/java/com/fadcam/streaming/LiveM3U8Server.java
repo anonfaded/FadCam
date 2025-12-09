@@ -76,6 +76,16 @@ public class LiveM3U8Server extends NanoHTTPD {
         // Add CORS headers for web player compatibility
         Response response;
         
+        // Handle OPTIONS preflight requests for CORS
+        if (Method.OPTIONS.equals(method)) {
+            response = newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "");
+            response.addHeader("Access-Control-Allow-Origin", "*");
+            response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            response.addHeader("Access-Control-Allow-Headers", "Content-Type, Cache-Control, Pragma");
+            response.addHeader("Access-Control-Max-Age", "3600");
+            return response;
+        }
+        
         if (Method.GET.equals(method)) {
             if ("/live.m3u8".equals(uri) || "/stream.m3u8".equals(uri)) {
                 // HLS playlist - industry standard for live streaming
@@ -88,10 +98,15 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = serveStatus();
             } else if ("/audio/volume".equals(uri)) {
                 response = getVolume();
+            } else if ("/api/github/notification".equals(uri)) {
+                // GitHub notification proxy - avoids CORS issues
+                response = fetchGitHubNotification();
+            } else if ("/api/notifications".equals(uri)) {
+                response = getNotifications();
             } else if ("/".equals(uri)) {
                 response = serveLandingPage();
-            } else if (uri.startsWith("/css/") || uri.startsWith("/js/") || uri.startsWith("/assets/")) {
-                // Serve static web assets (CSS, JS, images, fonts)
+            } else if (uri.startsWith("/css/") || uri.startsWith("/js/") || uri.startsWith("/assets/") || uri.startsWith("/fadex/")) {
+                // Serve static web assets (CSS, JS, images, fonts, notification configs)
                 response = serveStaticFile(uri);
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
@@ -111,17 +126,26 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = ringAlarm(session);
             } else if ("/alarm/stop".equals(uri)) {
                 response = stopAlarm();
+            } else if ("/api/notifications".equals(uri)) {
+                response = handleNotifications(session);
+            } else {
+                response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
+            }
+        } else if (Method.GET.equals(method)) {
+            if ("/api/notifications".equals(uri)) {
+                response = getNotifications();
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
         } else {
-            response = newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, MIME_PLAINTEXT, "Only GET and POST requests supported");
+            response = newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, MIME_PLAINTEXT, "Only GET, POST and OPTIONS requests supported");
         }
         
-        // Add CORS headers
+        // Add CORS headers to all responses
         response.addHeader("Access-Control-Allow-Origin", "*");
-        response.addHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-        response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+        response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        response.addHeader("Access-Control-Allow-Headers", "Content-Type, Cache-Control, Pragma");
+        response.addHeader("Access-Control-Max-Age", "3600");
         
         return response;
     }
@@ -758,6 +782,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             String mimeType = getMimeType(uri);
             
             // Load from assets
+            Log.d(TAG, "🔍 Attempting to load asset: " + assetPath);
             InputStream fileStream = context.getAssets().open(assetPath);
             Response response = newFixedLengthResponse(Response.Status.OK, mimeType, fileStream, -1);
             
@@ -769,7 +794,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             Log.d(TAG, "✅ Served static file: " + assetPath + " (" + mimeType + ")");
             return response;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to load static file: " + uri, e);
+            Log.e(TAG, "❌ Failed to load static file: " + uri + " (asset path: web" + uri + ")", e);
             return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found: " + uri);
         }
     }
@@ -780,7 +805,7 @@ public class LiveM3U8Server extends NanoHTTPD {
     private String getMimeType(String uri) {
         if (uri.endsWith(".css")) return "text/css";
         if (uri.endsWith(".js")) return "application/javascript";
-        if (uri.endsWith(".json")) return "application/json";
+        if (uri.endsWith(".json") || uri.endsWith(".jsonc")) return "application/json";
         if (uri.endsWith(".png")) return "image/png";
         if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) return "image/jpeg";
         if (uri.endsWith(".svg")) return "image/svg+xml";
@@ -938,6 +963,166 @@ public class LiveM3U8Server extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
+    }
+
+    /**
+     * Handle POST /api/notifications
+     * Body: { "action": "save" | "clear", "history": JSON array (for save action) }
+     */
+    private Response handleNotifications(IHTTPSession session) {
+        try {
+            int contentLength = Integer.parseInt(session.getHeaders().getOrDefault("content-length", "0"));
+            if (contentLength == 0) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Empty request body\"}");
+            }
+
+            byte[] buffer = new byte[Math.min(contentLength, 1024 * 1024)]; // Max 1MB
+            int bytesRead = session.getInputStream().read(buffer, 0, buffer.length);
+            String body = new String(buffer, 0, bytesRead, "UTF-8");
+
+            org.json.JSONObject request = new org.json.JSONObject(body);
+            String action = request.optString("action");
+
+            com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
+
+            if ("save".equals(action)) {
+                // Save notification history
+                String history = request.optString("history", "[]");
+                prefs.saveNotificationHistory(history);
+                Log.d(TAG, "✅ Notification history saved from JS");
+                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                    "{\"status\": \"success\", \"message\": \"Notifications saved\"}");
+            } else if ("clear".equals(action)) {
+                // Clear all notifications
+                prefs.clearNotificationHistory();
+                Log.d(TAG, "✅ Notification history cleared");
+                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                    "{\"status\": \"success\", \"message\": \"Notifications cleared\"}");
+            } else {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Unknown action\"}");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling notifications", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Handle GET /api/notifications
+     * Returns cached notification history
+     */
+    private Response getNotifications() {
+        try {
+            com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
+            String history = prefs.getNotificationHistory();
+            
+            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"history\": " + history + "}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting notifications", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Proxy GitHub notification file fetch to avoid browser CORS issues
+     * GET /api/github/notification - Fetches JSONC from GitHub and returns as JSON
+     */
+    private Response fetchGitHubNotification() {
+        try {
+            String githubUrl = "https://raw.githubusercontent.com/anonfaded/FadCam/master/app/src/main/assets/web/fadex/pushnotification.jsonc";
+            
+            // Create URL connection
+            java.net.URL url = new java.net.URL(githubUrl);
+            java.net.URLConnection conn = url.openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestProperty("User-Agent", "FadCam-NotificationManager");
+            
+            // Read response
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line).append("\n");
+            }
+            reader.close();
+            
+            String jsonc = response.toString();
+            
+            // Parse JSONC (strip comments) to JSON
+            String json = parseJSONCToJSON(jsonc);
+            
+            return newFixedLengthResponse(Response.Status.OK, "application/json", json);
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error fetching GitHub notification", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Parse JSONC (JSON with comments) to valid JSON
+     * Strips single-line and multi-line comments before returning
+     */
+    private String parseJSONCToJSON(String jsonc) {
+        // Remove multi-line comments first /* ... */
+        String cleaned = jsonc.replaceAll("/\\*[\\s\\S]*?\\*/", "");
+        
+        // Remove single-line comments // ... (handle all line endings: \r\n, \n, \r)
+        // Split by lines, remove comment from each line, rejoin
+        String[] lines = cleaned.split("\r?\n|\r");
+        StringBuilder result = new StringBuilder();
+        
+        for (String line : lines) {
+            // Find // that's not inside a string
+            int commentIndex = -1;
+            boolean inString = false;
+            boolean escaped = false;
+            
+            for (int i = 0; i < line.length(); i++) {
+                char c = line.charAt(i);
+                
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+                
+                if (c == '\\') {
+                    escaped = true;
+                    continue;
+                }
+                
+                if (c == '"') {
+                    inString = !inString;
+                    continue;
+                }
+                
+                // If we find // outside a string, remove from here
+                if (!inString && i < line.length() - 1 && c == '/' && line.charAt(i + 1) == '/') {
+                    commentIndex = i;
+                    break;
+                }
+            }
+            
+            // Add the line (without comment part if found)
+            if (commentIndex >= 0) {
+                result.append(line.substring(0, commentIndex));
+            } else {
+                result.append(line);
+            }
+            result.append("\n");
+        }
+        
+        // Remove trailing commas before } and ]
+        String finalCleaned = result.toString().replaceAll(",\\s*([}\\]])", "$1");
+        
+        return finalCleaned.trim();
     }
 }
 

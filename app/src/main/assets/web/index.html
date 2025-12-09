@@ -41,9 +41,34 @@
             <span class="hamburger-line short-left"></span>
         </button>
         <h1>
-            <img src="assets/images/favicon.png" alt="FadCam" style="width: 28px; height: 28px; border-radius: 6px;">
-            FadCam Remote
+            <a href="https://fadcam.faded.dev" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
+                <img src="assets/images/favicon.png" alt="FadCam" style="width: 28px; height: 28px; border-radius: 6px;">
+                FadCam Remote
+            </a>
         </h1>
+        <!-- Fadex Notification Bell Icon -->
+        <div class="fadex-notification-container">
+            <button class="fadex-bell-btn" id="fadex-notification-bell" title="Fadex Notifications">
+                <i class="fas fa-bell"></i>
+                <div class="fadex-badge" id="fadex-notification-badge">1</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Fadex Notification History Panel -->
+    <div class="fadex-notification-panel" id="fadexNotificationPanel">
+        <div class="fadex-panel-header">
+            <h3>Notifications</h3>
+            <div class="fadex-panel-controls">
+                <button class="fadex-panel-refresh" id="fadexPanelRefresh" title="Refresh notifications">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="fadex-panel-close" id="fadexPanelClose" title="Close">✕</button>
+            </div>
+        </div>
+        <div class="fadex-panel-list" id="fadexPanelList">
+            <!-- Notification items will be populated here -->
+        </div>
     </div>
 
     <!-- Main Layout -->
@@ -577,14 +602,32 @@
         </div>
     </div>
 
+    <!-- Fadex Notification Modal -->
+    <div class="modal fadex-notification-modal" id="fadexNotificationModal">
+        <div class="modal-content fadex-notification-content">
+            <div class="fadex-notification-header">
+                <button class="notification-close-btn" title="Dismiss">✕</button>
+            </div>
+            <div class="fadex-notification-body">
+                <div class="notification-message">
+                    <h2 id="fadex-notification-title"></h2>
+                    <p id="fadex-notification-subtitle" class="notification-subtitle"></p>
+                    <div id="fadex-notification-description" class="notification-description"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
     <script src="js/config.js"></script>
     <script src="js/utils/EventBus.js"></script>
     <script src="js/utils/Formatter.js"></script>
+    <script src="js/constants/NotificationConstants.js"></script>
     <script src="js/services/ApiService.js"></script>
     <script src="js/services/HlsService.js"></script>
+    <script src="js/services/FadexNotificationManager.js"></script>
     <script src="js/models/ServerStatus.js"></script>
     <script src="js/viewmodels/DashboardViewModel.js"></script>
     
@@ -2368,6 +2411,88 @@
                 }
             } catch (error) {
                 console.error('❌ Failed to initialize avatar:', error);
+            }
+        });
+
+        // ===== FADEX NOTIFICATION MANAGER INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Initialize Fadex Notification Manager
+                const notificationManager = initFadexNotificationManager();
+                
+                // Store globally for HTML onclick handlers
+                window.fadexManager = notificationManager;
+
+                // Setup bell icon click handler
+                const bellBtn = document.getElementById('fadex-notification-bell');
+                if (bellBtn) {
+                    bellBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        notificationManager.toggleNotificationPanel();
+                    });
+                }
+                
+                // Setup panel close button
+                const panelCloseBtn = document.getElementById('fadexPanelClose');
+                if (panelCloseBtn) {
+                    panelCloseBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        notificationManager.toggleNotificationPanel();
+                    });
+                }
+
+                // Setup panel refresh button
+                const panelRefreshBtn = document.getElementById('fadexPanelRefresh');
+                if (panelRefreshBtn) {
+                    panelRefreshBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        panelRefreshBtn.classList.add('loading');
+                        console.log('🔄 [Fadex Refresh] User triggered manual refresh');
+                        notificationManager.checkForUpdates().finally(() => {
+                            panelRefreshBtn.classList.remove('loading');
+                        });
+                    });
+                }
+                
+                // Close panel when clicking outside
+                document.addEventListener('click', (e) => {
+                    const panel = document.getElementById('fadexNotificationPanel');
+                    const bell = document.getElementById('fadex-notification-bell');
+                    if (panel && !panel.contains(e.target) && !bell.contains(e.target)) {
+                        panel.classList.remove('visible');
+                    }
+                });
+
+                // Setup modal close button
+                const modalCloseBtn = document.querySelector('.notification-close-btn');
+                if (modalCloseBtn) {
+                    modalCloseBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const modal = document.getElementById('fadexNotificationModal');
+                        if (modal) modal.classList.remove('visible');
+                    });
+                }
+
+                // Close modal when clicking outside
+                const modal = document.getElementById('fadexNotificationModal');
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.classList.remove('visible');
+                        }
+                    });
+                }
+
+                // GitHub URL is set in NotificationConstants.js (points to master branch)
+                // In DEBUG mode: Local file is tried first (/fadex/pushnotification.jsonc)
+                // In PRODUCTION mode: GitHub URL is used only
+                const mode = NotificationConstants.DEBUG_MODE ? 'DEBUG (local + GitHub fallback)' : 'PRODUCTION (GitHub only)';
+                console.log(`✅ Fadex Notification Manager initialized - Mode: ${mode}`);
+
+                // Start notification polling
+                notificationManager.start();
+            } catch (error) {
+                console.error('❌ Failed to initialize Fadex Notification Manager:', error);
             }
         });
     </script>

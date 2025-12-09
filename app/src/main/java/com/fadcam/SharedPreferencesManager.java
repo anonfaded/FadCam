@@ -1798,4 +1798,79 @@ public class SharedPreferencesManager {
     }
 
     // -------------- FadRec (Screen Recording) Preferences End --------------
+
+    // -------------- Fadex Notification Preferences Start --------------
+    private static final String PREF_NOTIFICATION_HISTORY = "fadex_notification_history";
+    private static final long NOTIFICATION_CACHE_DURATION_MS = 30 * 24 * 60 * 60 * 1000L; // 30 days
+
+    /**
+     * Get all cached notifications from SharedPreferences
+     * Automatically cleans up notifications older than 30 days
+     *
+     * @return Notification history as JSON string array, or empty array if none exist
+     */
+    public String getNotificationHistory() {
+        try {
+            String cached = sharedPreferences.getString(PREF_NOTIFICATION_HISTORY, "[]");
+            // Parse and clean in JS, or optionally do cleanup here if needed
+            return cached;
+        } catch (Exception e) {
+            android.util.Log.e("SharedPrefs", "Error getting notification history", e);
+            return "[]";
+        }
+    }
+
+    /**
+     * Save notification history to SharedPreferences
+     * Called by JS bridge to persist notifications
+     *
+     * @param historyJson JSON array string of notifications
+     */
+    public void saveNotificationHistory(String historyJson) {
+        try {
+            sharedPreferences
+                .edit()
+                .putString(PREF_NOTIFICATION_HISTORY, historyJson)
+                .apply();
+            android.util.Log.d("SharedPrefs", "Notification history saved");
+        } catch (Exception e) {
+            android.util.Log.e("SharedPrefs", "Error saving notification history", e);
+        }
+    }
+
+    /**
+     * Clear all notifications
+     */
+    public void clearNotificationHistory() {
+        sharedPreferences
+            .edit()
+            .remove(PREF_NOTIFICATION_HISTORY)
+            .apply();
+        android.util.Log.d("SharedPrefs", "Notification history cleared");
+    }
+
+    /**
+     * Get unread notification count
+     * Simple count - actual filtering done by JS which has the history
+     *
+     * @return Last known unread count
+     */
+    public int getNotificationUnreadCount() {
+        return sharedPreferences.getInt("fadex_unread_count", 0);
+    }
+
+    /**
+     * Save unread notification count
+     * Updated by JS bridge when notifications are marked as read
+     *
+     * @param count Unread count
+     */
+    public void setNotificationUnreadCount(int count) {
+        sharedPreferences
+            .edit()
+            .putInt("fadex_unread_count", Math.max(0, count))
+            .apply();
+    }
+
+    // -------------- Fadex Notification Preferences End --------------
 }
