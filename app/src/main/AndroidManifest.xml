@@ -306,6 +306,10 @@
 
         <service android:name=".services.TorchService" android:foregroundServiceType="camera" android:exported="true">
         </service>
+        
+        <service android:name=".services.AlarmService" android:foregroundServiceType="mediaPlayback" android:exported="true">
+        </service>
+        
         <receiver android:name=".receivers.TorchToggleReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="com.fadcam.TOGGLE_TORCH"/>

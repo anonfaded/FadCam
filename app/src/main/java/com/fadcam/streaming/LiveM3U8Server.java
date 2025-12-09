@@ -107,6 +107,10 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = setBatteryWarning(session);
             } else if ("/audio/volume".equals(uri)) {
                 response = setVolume(session);
+            } else if ("/alarm/ring".equals(uri)) {
+                response = ringAlarm(session);
+            } else if ("/alarm/stop".equals(uri)) {
+                response = stopAlarm();
             } else {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
@@ -843,4 +847,97 @@ public class LiveM3U8Server extends NanoHTTPD {
         }
         return "localhost";
     }
+
+    /**
+     * Ring alarm (security buzzer) with specified sound and duration.
+     * Expects JSON: {"sound": "office_phone.mp3", "duration_ms": 10000} or {"sound": "office_phone.mp3", "duration_ms": -1} for infinite
+     */
+    private Response ringAlarm(IHTTPSession session) {
+        try {
+            Log.i(TAG, "🚨 Alarm ring requested via web interface");
+            
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String postData = files.get("postData");
+            if (postData == null || postData.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Missing request body\"}");
+            }
+            
+            org.json.JSONObject json = new org.json.JSONObject(postData);
+            
+            // Get sound filename (required)
+            String soundFile = json.optString("sound", "office_phone.mp3");
+            if (soundFile.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Sound file not specified\"}");
+            }
+            
+            // Get duration in milliseconds (-1 = infinite)
+            long durationMs = json.optLong("duration_ms", -1);
+            
+            // Update stream manager state
+            streamManager.setSelectedAlarmSound(soundFile);
+            streamManager.setAlarmDurationMs(durationMs);
+            streamManager.setAlarmRinging(true);
+            
+            // Start alarm playback via AlarmService
+            android.content.Intent alarmIntent = new android.content.Intent(context, com.fadcam.services.AlarmService.class);
+            alarmIntent.setAction("com.fadcam.action.RING_ALARM");
+            alarmIntent.putExtra("sound", soundFile);
+            alarmIntent.putExtra("duration_ms", durationMs);
+            
+            try {
+                android.os.Build.VERSION_CODES versionCodes = null;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(alarmIntent);
+                } else {
+                    context.startService(alarmIntent);
+                }
+                Log.i(TAG, "AlarmService started");
+            } catch (Exception e) {
+                Log.e(TAG, "Error starting AlarmService", e);
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Failed to start alarm service\"}");
+            }
+            
+            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Alarm ringing\", \"sound\": \"" + soundFile + "\", \"duration_ms\": " + durationMs + "}");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error ringing alarm", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Stop alarm (security buzzer).
+     */
+    private Response stopAlarm() {
+        try {
+            Log.i(TAG, "🔇 Alarm stop requested via web interface");
+            
+            // Update stream manager state
+            streamManager.setAlarmRinging(false);
+            
+            // Stop alarm playback via AlarmService
+            android.content.Intent alarmIntent = new android.content.Intent(context, com.fadcam.services.AlarmService.class);
+            alarmIntent.setAction("com.fadcam.action.STOP_ALARM");
+            context.startService(alarmIntent);
+            
+            Log.i(TAG, "Stop alarm service command sent");
+            
+            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Alarm stopped\"}");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping alarm", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
 }
+

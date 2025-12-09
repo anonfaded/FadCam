@@ -71,6 +71,12 @@ public class RemoteStreamManager {
     private int mediaVolume = 15; // Device media volume level (0-15)
     private int maxMediaVolume = 15; // Maximum media volume (initialized from AudioManager)
     
+    // Alarm state (security buzzer for CCTV)
+    private boolean alarmRinging = false; // Is alarm currently playing
+    private String selectedAlarmSound = "office_phone.mp3"; // Default alarm sound (office phone)
+    private long alarmDurationMs = -1; // Duration in milliseconds (-1 = infinite)
+    private long alarmStartTime = 0; // When alarm started ringing
+    
     /**
      * Streaming mode options.
      */
@@ -608,6 +614,7 @@ public class RemoteStreamManager {
                 "\"stream_quality\": %s, " +
                 "\"torch_state\": %s, " +
                 "\"volume\": %d, \"max_volume\": %d, \"volume_percentage\": %.1f, " +
+                "\"alarm\": {\"is_ringing\": %s, \"sound\": \"%s\", \"duration_ms\": %d, \"remaining_ms\": %d}, " +
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
                 "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
@@ -634,6 +641,10 @@ public class RemoteStreamManager {
                 mediaVolume,
                 maxMediaVolume,
                 volumePercentage,
+                alarmRinging,
+                selectedAlarmSound,
+                alarmDurationMs,
+                alarmRinging ? getRemainingAlarmDurationMs() : 0,
                 eventsJson.toString(),
                 clientsJson.toString(),
                 memoryUsage,
@@ -701,8 +712,90 @@ public class RemoteStreamManager {
         return maxMediaVolume;
     }
     
+    // ===== ALARM STATE MANAGEMENT =====
+    
     /**
-     * Track client IP address and create ClientMetrics if new.
+     * Check if alarm is currently ringing.
+     */
+    public boolean isAlarmRinging() {
+        return alarmRinging;
+    }
+    
+    /**
+     * Set alarm ringing state.
+     */
+    public void setAlarmRinging(boolean ringing) {
+        this.alarmRinging = ringing;
+        if (ringing) {
+            this.alarmStartTime = System.currentTimeMillis();
+            Log.i(TAG, "🚨 Alarm started ringing: " + selectedAlarmSound + " (Duration: " + (alarmDurationMs == -1 ? "infinite" : alarmDurationMs + "ms") + ")");
+        } else {
+            Log.i(TAG, "🔇 Alarm stopped");
+        }
+    }
+    
+    /**
+     * Get selected alarm sound filename.
+     */
+    public String getSelectedAlarmSound() {
+        return selectedAlarmSound;
+    }
+    
+    /**
+     * Set selected alarm sound.
+     */
+    public void setSelectedAlarmSound(String soundFileName) {
+        if (soundFileName != null && !soundFileName.isEmpty()) {
+            this.selectedAlarmSound = soundFileName;
+            Log.d(TAG, "Selected alarm sound: " + soundFileName);
+        }
+    }
+    
+    /**
+     * Get alarm duration in milliseconds (-1 = infinite).
+     */
+    public long getAlarmDurationMs() {
+        return alarmDurationMs;
+    }
+    
+    /**
+     * Set alarm duration. Use -1 for infinite.
+     */
+    public void setAlarmDurationMs(long durationMs) {
+        this.alarmDurationMs = durationMs;
+        Log.d(TAG, "Alarm duration set to: " + (durationMs == -1 ? "infinite" : durationMs + "ms"));
+    }
+    
+    /**
+     * Get alarm start time (Unix timestamp).
+     */
+    public long getAlarmStartTime() {
+        return alarmStartTime;
+    }
+    
+    /**
+     * Get remaining alarm duration in milliseconds (0 if alarm not ringing or expired).
+     */
+    public long getRemainingAlarmDurationMs() {
+        if (!alarmRinging || alarmDurationMs == -1) {
+            return alarmDurationMs; // Return -1 for infinite
+        }
+        long elapsed = System.currentTimeMillis() - alarmStartTime;
+        long remaining = alarmDurationMs - elapsed;
+        return Math.max(0, remaining);
+    }
+    
+    /**
+     * Tracking method to check if alarm should still be playing.
+     */
+    public boolean shouldAlarmStillPlay() {
+        if (!alarmRinging) return false;
+        if (alarmDurationMs == -1) return true; // Infinite duration
+        return getRemainingAlarmDurationMs() > 0;
+    }
+    
+    /**
+     * Streaming mode options.
      */
     public void trackClientIP(String clientIP) {
         if (clientIP != null && !clientIP.isEmpty()) {

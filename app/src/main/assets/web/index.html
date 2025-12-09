@@ -308,6 +308,20 @@
                 </div>
             </div>
 
+            <!-- Alarm Control Card -->
+            <div class="cards-grid">
+                <div class="card-sm" onclick="showAlarmModal()" id="alarmCard">
+                    <div class="card-clickable">
+                        <i class="fas fa-bell card-icon-sm" style="color: #ef4444;" id="alarmIcon"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Alarm</div>
+                            <div class="card-value-sm" id="alarmState">READY</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+            </div>
+
             <!-- End Sidebar Scrollable Content -->
             </div>
 
@@ -476,6 +490,83 @@
                 <button class="modal-close" onclick="hideStreamQualityModal()">✕</button>
             </div>
             <div class="modal-body" id="streamQualityContent"></div>
+        </div>
+    </div>
+
+    <!-- Security Alarm Modal -->
+    <div class="modal" id="alarmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🚨 Security Alarm</h2>
+                <button class="modal-close" onclick="hideAlarmModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Helper Text -->
+                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #8b949e;">
+                    <strong>💡 How to use:</strong> Ring alarm to alert when intrusion detected, locate lost phone at full volume, or send security warnings. Select sound, preview, set duration, then activate. Loops until stopped or duration expires.
+                </div>
+
+                <!-- Sound Selection -->
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #e6edf3;">Select Sound</label>
+                    <select id="alarmSoundSelect" style="width: 100%; padding: 10px; background: #0a0e11; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                        <option value="office_phone.mp3">📞 Office Phone (Default)</option>
+                        <option value="alert_alarm.mp3">⚠️ Alert Alarm</option>
+                        <option value="car_alarm.mp3">🚗 Car Alarm</option>
+                        <option value="nuclear_alarm.mp3">☢️ Nuclear Siren</option>
+                        <option value="police_patrol.mp3">🚔 Police Patrol</option>
+                        <option value="rooster.mp3">🐓 Rooster Crow</option>
+                        <option value="siren.mp3">🚨 Emergency Siren</option>
+                    </select>
+                </div>
+
+                <!-- Preview Button -->
+                <div style="margin-bottom: 16px;">
+                    <button id="previewBtn" class="modal-action-btn" onclick="previewAlarmSound()" style="width: 100%; padding: 10px; background: #3b82f6; border: none; border-radius: 8px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 200ms;">
+                        ▶️ Preview Sound (2s)
+                    </button>
+                </div>
+
+                <!-- Duration Selection -->
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #e6edf3;">Duration</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                        <select id="durationValue" style="padding: 10px; background: #0a0e11; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="30" selected>30</option>
+                            <option value="60">60</option>
+                            <option value="300">5 min</option>
+                            <option value="600">10 min</option>
+                            <option value="-1">Infinite</option>
+                        </select>
+                        <select id="durationUnit" style="padding: 10px; background: #0a0e11; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                            <option value="seconds" selected>Seconds</option>
+                            <option value="minutes">Minutes</option>
+                            <option value="infinite">Infinite</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 12px; color: #6e7681;">⏱️ <span id="durationDisplay">30 seconds</span></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button id="ringBtn" class="modal-action-btn" onclick="ringAlarm()" style="padding: 12px; background: #ef4444; border: none; border-radius: 8px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms;">
+                        🔔 Ring Alarm
+                    </button>
+                    <button id="stopBtn" class="modal-action-btn" onclick="stopAlarm()" style="padding: 12px; background: #6b7280; border: none; border-radius: 8px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; opacity: 0.5;" disabled>
+                        ⏹️ Stop
+                    </button>
+                </div>
+
+                <!-- Status Display -->
+                <div id="alarmStatusDisplay" style="display: none; margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px;">
+                    <div style="font-size: 13px; color: #e6edf3;">
+                        <strong id="alarmStatusText">🚨 Alarm Ringing</strong><br>
+                        <span id="alarmDurationRemaining" style="color: #8b949e; font-size: 12px;"></span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -757,7 +848,7 @@
 
         // Close modals on outside click
         document.addEventListener('click', (e) => {
-            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal'];
+            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal', 'alarmModal'];
             modals.forEach(id => {
                 const modal = document.getElementById(id);
                 if (e.target === modal && modal.classList.contains('visible')) {
@@ -1543,6 +1634,12 @@
                 }
             }
             
+            // Update alarm display state
+            if (status.alarm) {
+                updateAlarmCardState(status.alarm.is_ringing, status.alarm.duration_ms);
+                updateAlarmUIState();
+            }
+            
             const serverUrlEl = document.getElementById('serverUrl');
             if (serverUrlEl) serverUrlEl.textContent = CONFIG.BASE_URL;
         }
@@ -1789,14 +1886,215 @@
             closeModalAnimated('endpointsModal');
         }
 
+        // ===== ALARM FUNCTIONS =====
+        
+        let alarmPreviewPlayer = null;
+        let alarmRingingIntervalId = null;
+        
+        /**
+         * Show alarm modal.
+         */
+        function showAlarmModal() {
+            document.getElementById('alarmModal').classList.add('visible');
+            updateDurationDisplay();
+        }
+        
+        /**
+         * Hide alarm modal.
+         */
+        function hideAlarmModal() {
+            closeModalAnimated('alarmModal');
+        }
+        
+        /**
+         * Update duration display based on selected value and unit.
+         */
+        function updateDurationDisplay() {
+            const value = parseInt(document.getElementById('durationValue').value);
+            const unit = document.getElementById('durationUnit').value;
+            let display = '';
+            
+            if (value === -1 || unit === 'infinite') {
+                display = 'Infinite';
+            } else if (unit === 'minutes') {
+                display = value === 1 ? '1 minute' : value + ' minutes';
+            } else if (unit === 'seconds') {
+                display = value === 1 ? '1 second' : value + ' seconds';
+            }
+            
+            document.getElementById('durationDisplay').textContent = display;
+        }
+        
+        /**
+         * Preview alarm sound (2 seconds).
+         */
+        function previewAlarmSound() {
+            const soundFile = document.getElementById('alarmSoundSelect').value;
+            const audioPath = '/assets/alarms/' + soundFile;
+            
+            // Stop previous preview if any
+            if (alarmPreviewPlayer) {
+                try {
+                    alarmPreviewPlayer.pause();
+                    alarmPreviewPlayer = null;
+                } catch (e) {}
+            }
+            
+            try {
+                alarmPreviewPlayer = new Audio(audioPath);
+                alarmPreviewPlayer.play();
+                
+                // Stop after 2 seconds
+                setTimeout(() => {
+                    if (alarmPreviewPlayer) {
+                        alarmPreviewPlayer.pause();
+                        alarmPreviewPlayer = null;
+                    }
+                }, 2000);
+                
+                showToast('Playing preview...', 2500);
+            } catch (e) {
+                console.error('Error playing preview', e);
+                showToast('Error playing preview sound', 2000);
+            }
+        }
+        
+        /**
+         * Ring alarm with selected sound and duration.
+         */
+        function ringAlarm() {
+            const soundFile = document.getElementById('alarmSoundSelect').value;
+            let value = parseInt(document.getElementById('durationValue').value);
+            const unit = document.getElementById('durationUnit').value;
+            
+            // Calculate duration in milliseconds
+            let durationMs;
+            if (value === -1 || unit === 'infinite') {
+                durationMs = -1; // Infinite
+            } else if (unit === 'minutes') {
+                durationMs = value * 60 * 1000;
+            } else {
+                durationMs = value * 1000;
+            }
+            
+            // Send request to server
+            fetch('/alarm/ring', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sound: soundFile,
+                    duration_ms: durationMs
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('🚨 Alarm ringing', 3000);
+                    updateAlarmCardState(true, durationMs);
+                    updateAlarmUIState();
+                } else {
+                    showToast('Error: ' + data.message, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error ringing alarm:', error);
+                showToast('Failed to ring alarm', 3000);
+            });
+        }
+        
+        /**
+         * Stop alarm.
+         */
+        function stopAlarm() {
+            fetch('/alarm/stop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('🔇 Alarm stopped', 2000);
+                    updateAlarmCardState(false, 0);
+                    updateAlarmUIState();
+                } else {
+                    showToast('Error: ' + data.message, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping alarm:', error);
+                showToast('Failed to stop alarm', 3000);
+            });
+        }
+        
+        /**
+         * Update alarm card state based on ringing status.
+         */
+        function updateAlarmCardState(isRinging, durationMs) {
+            const card = document.getElementById('alarmCard');
+            const stateEl = document.getElementById('alarmState');
+            const iconEl = document.getElementById('alarmIcon');
+            
+            if (isRinging) {
+                card.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(211, 47, 47, 0.1) 100%)';
+                card.style.borderColor = '#ef4444';
+                stateEl.textContent = durationMs === -1 ? '∞ RINGING' : 'RINGING';
+                iconEl.style.color = '#ef4444';
+                iconEl.style.animation = 'pulse 1s infinite';
+            } else {
+                card.style.background = '';
+                card.style.borderColor = '';
+                stateEl.textContent = 'READY';
+                iconEl.style.color = '#ef4444';
+                iconEl.style.animation = 'none';
+            }
+        }
+        
+        /**
+         * Update modal UI state (button enabled/disabled).
+         */
+        function updateAlarmUIState() {
+            if (currentStatus && currentStatus.alarm) {
+                const isRinging = currentStatus.alarm.is_ringing;
+                const ringBtn = document.getElementById('ringBtn');
+                const stopBtn = document.getElementById('stopBtn');
+                const statusDisplay = document.getElementById('alarmStatusDisplay');
+                
+                if (isRinging) {
+                    ringBtn.style.opacity = '0.5';
+                    ringBtn.disabled = true;
+                    stopBtn.style.opacity = '1';
+                    stopBtn.disabled = false;
+                    statusDisplay.style.display = 'block';
+                    
+                    // Update remaining duration display
+                    if (currentStatus.alarm.remaining_ms > 0 || currentStatus.alarm.duration_ms === -1) {
+                        if (currentStatus.alarm.duration_ms === -1) {
+                            document.getElementById('alarmDurationRemaining').textContent = '⏱️ Duration: Infinite';
+                        } else {
+                            const remaining = Math.max(0, currentStatus.alarm.remaining_ms);
+                            const seconds = Math.ceil(remaining / 1000);
+                            document.getElementById('alarmDurationRemaining').textContent = '⏱️ Remaining: ' + seconds + 's';
+                        }
+                    }
+                } else {
+                    ringBtn.style.opacity = '1';
+                    ringBtn.disabled = false;
+                    stopBtn.style.opacity = '0.5';
+                    stopBtn.disabled = true;
+                    statusDisplay.style.display = 'none';
+                }
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
             
-            // Initialize volume +/- buttons
-            const volumeMinus = document.getElementById('volumeMinus');
+            // Initialize alarm duration listeners
+            document.getElementById('durationValue').addEventListener('change', updateDurationDisplay);
+            document.getElementById('durationUnit').addEventListener('change', updateDurationDisplay);
             const volumePlus = document.getElementById('volumePlus');
             
             if (volumeMinus && volumePlus) {
