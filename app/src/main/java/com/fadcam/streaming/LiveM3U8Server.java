@@ -126,6 +126,8 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = ringAlarm(session);
             } else if ("/alarm/stop".equals(uri)) {
                 response = stopAlarm();
+            } else if ("/alarm/schedule".equals(uri)) {
+                response = scheduleAlarm(session);
             } else if ("/api/notifications".equals(uri)) {
                 response = handleNotifications(session);
             } else {
@@ -960,6 +962,94 @@ public class LiveM3U8Server extends NanoHTTPD {
             
         } catch (Exception e) {
             Log.e(TAG, "Error stopping alarm", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Schedule alarm for future time.
+     */
+    private Response scheduleAlarm(IHTTPSession session) {
+        try {
+            Log.i(TAG, "📅 Alarm schedule requested via web interface");
+            
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String postData = files.get("postData");
+            if (postData == null || postData.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Missing request body\"}");
+            }
+            
+            org.json.JSONObject json = new org.json.JSONObject(postData);
+            
+            // Get scheduled time (required)
+            long scheduledTime = json.optLong("scheduledTime", -1);
+            if (scheduledTime <= 0) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Invalid scheduled time\"}");
+            }
+            
+            // Get sound filename (required)
+            String soundFile = json.optString("sound", "office_phone.mp3");
+            if (soundFile.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Sound file not specified\"}");
+            }
+            
+            // Get duration in milliseconds (-1 = infinite)
+            long durationMs = json.optLong("duration_ms", 30000);
+            
+            // Calculate delay in milliseconds
+            long currentTime = System.currentTimeMillis();
+            long delayMs = scheduledTime - currentTime;
+            
+            if (delayMs <= 0) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Scheduled time must be in the future\"}");
+            }
+            
+            // Use AlarmManager to schedule the alarm
+            android.app.AlarmManager alarmManager = (android.app.AlarmManager) context.getSystemService(android.content.Context.ALARM_SERVICE);
+            android.content.Intent alarmIntent = new android.content.Intent(context, com.fadcam.services.AlarmService.class);
+            alarmIntent.setAction("com.fadcam.action.RING_ALARM");
+            alarmIntent.putExtra("sound", soundFile);
+            alarmIntent.putExtra("duration_ms", durationMs);
+            
+            android.app.PendingIntent pendingIntent = android.app.PendingIntent.getService(
+                context, 
+                1001, // Unique ID for scheduled alarms
+                alarmIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+            );
+            
+            // Schedule using setAndAllowWhileIdle for reliability even in doze mode
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                alarmManager.setAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    scheduledTime,
+                    pendingIntent
+                );
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    scheduledTime,
+                    pendingIntent
+                );
+            }
+            
+            Log.i(TAG, "✅ Alarm scheduled for " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(scheduledTime)) + 
+                " (in " + (delayMs / 1000) + " seconds)");
+            
+            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Alarm scheduled\", \"sound\": \"" + soundFile + 
+                "\", \"duration_ms\": " + durationMs + ", \"scheduled_for\": " + scheduledTime + "}");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error scheduling alarm", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }

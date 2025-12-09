@@ -2680,6 +2680,61 @@ video {
     to { transform: rotate(360deg); }
 }
 
+/* Alarm State Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes alarmWaiting {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02) rotate(-2deg);
+    }
+}
+
+@keyframes alarmRinging {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.5));
+    }
+    25% {
+        transform: scale(1.1) rotate(-5deg);
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+    }
+    50% {
+        transform: scale(1.05) rotate(0deg);
+    }
+    75% {
+        transform: scale(1.1) rotate(5deg);
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+    }
+}
+
+@keyframes bellShake {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    10% { transform: translateX(-2px) rotate(-5deg); }
+    20% { transform: translateX(2px) rotate(5deg); }
+    30% { transform: translateX(-2px) rotate(-5deg); }
+    40% { transform: translateX(2px) rotate(5deg); }
+    50% { transform: translateX(0) rotate(0deg); }
+    60% { transform: translateX(-1px) rotate(-3deg); }
+    70% { transform: translateX(1px) rotate(3deg); }
+    80% { transform: translateX(-1px) rotate(-3deg); }
+    90% { transform: translateX(1px) rotate(3deg); }
+}
+
 .fadex-panel-close {
     background: none;
     border: none;
