@@ -310,12 +310,15 @@
 
             <!-- Alarm Control Card -->
             <div class="cards-grid">
-                <div class="card-sm" onclick="showAlarmModal()" id="alarmCard">
+                <div class="card-sm" onclick="showAlarmModal()" id="alarmCard" style="transition: all 300ms ease; cursor: pointer;">
                     <div class="card-clickable">
-                        <i class="fas fa-bell card-icon-sm" style="color: #ef4444;" id="alarmIcon"></i>
+                        <i class="fas fa-bell card-icon-sm" style="color: #ef4444; font-size: 24px;" id="alarmIcon"></i>
                         <div class="card-sm-content">
                             <div class="card-label-sm">Alarm</div>
-                            <div class="card-value-sm" id="alarmState">READY</div>
+                            <div class="card-value-sm" id="alarmState" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                                <span id="alarmStateText">READY</span>
+                                <span id="alarmCountdown" style="font-size: 12px; color: #8b949e; font-weight: normal;"></span>
+                            </div>
                         </div>
                         <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
@@ -495,21 +498,22 @@
 
     <!-- Security Alarm Modal -->
     <div class="modal" id="alarmModal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 420px;">
             <div class="modal-header">
-                <h2>🚨 Security Alarm</h2>
+                <h2 style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 28px;">🚨</span> Security Alarm</h2>
                 <button class="modal-close" onclick="hideAlarmModal()">✕</button>
             </div>
             <div class="modal-body">
-                <!-- Helper Text -->
-                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #8b949e;">
-                    <strong>💡 How to use:</strong> Ring alarm to alert when intrusion detected, locate lost phone at full volume, or send security warnings. Select sound, preview, set duration, then activate. Loops until stopped or duration expires.
+                <!-- Use Cases Info -->
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid #3b82f6; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 13px; color: #8b949e;">
+                    <div style="margin-bottom: 6px;"><strong style="color: #60a5fa;">💡 Use Cases:</strong></div>
+                    <div style="line-height: 1.4;">🔐 Security alerts • 📱 Find lost phone • 🚨 Emergency response</div>
                 </div>
 
                 <!-- Sound Selection -->
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #e6edf3;">Select Sound</label>
-                    <select id="alarmSoundSelect" style="width: 100%; padding: 10px; background: #0a0e11; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                <div style="margin-bottom: 18px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px;">🔊 Sound</label>
+                    <select id="alarmSoundSelect" style="width: 100%; padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer; transition: all 200ms;" onchange="updateDurationDisplay()">
                         <option value="office_phone.mp3">📞 Office Phone (Default)</option>
                         <option value="alert_alarm.mp3">⚠️ Alert Alarm</option>
                         <option value="car_alarm.mp3">🚗 Car Alarm</option>
@@ -521,49 +525,48 @@
                 </div>
 
                 <!-- Preview Button -->
-                <div style="margin-bottom: 16px;">
-                    <button id="previewBtn" class="modal-action-btn" onclick="previewAlarmSound()" style="width: 100%; padding: 10px; background: #3b82f6; border: none; border-radius: 8px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 200ms;">
-                        ▶️ Preview Sound (2s)
+                <div style="margin-bottom: 18px;">
+                    <button id="previewBtn" class="modal-action-btn" onclick="previewAlarmSound()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                        ▶️ Preview Sound (2 seconds)
                     </button>
                 </div>
 
-                <!-- Duration Selection -->
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #e6edf3;">Duration</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                        <select id="durationValue" style="padding: 10px; background: #0a0e11; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; cursor: pointer;">
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="30" selected>30</option>
-                            <option value="60">60</option>
-                            <option value="300">5 min</option>
-                            <option value="600">10 min</option>
-                            <option value="-1">Infinite</option>
-                        </select>
-                        <select id="durationUnit" style="padding: 10px; background: #0a0e11; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; cursor: pointer;">
-                            <option value="seconds" selected>Seconds</option>
-                            <option value="minutes">Minutes</option>
-                            <option value="infinite">Infinite</option>
-                        </select>
+                <!-- Duration Selection - Unified -->
+                <div style="margin-bottom: 18px;">
+                    <label style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px;">⏱️ Duration</label>
+                    <select id="durationSelect" style="width: 100%; padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer; transition: all 200ms;" onchange="updateAlarmDurationFromSelect()">
+                        <option value="10">10 seconds</option>
+                        <option value="20">20 seconds</option>
+                        <option value="30" selected>30 seconds (Default)</option>
+                        <option value="60">1 minute</option>
+                        <option value="120">2 minutes</option>
+                        <option value="300">5 minutes</option>
+                        <option value="600">10 minutes</option>
+                        <option value="-1">Infinite (Never stops)</option>
+                    </select>
+                    <div style="font-size: 12px; color: #6e7681; margin-top: 8px; padding: 8px 10px; background: rgba(139, 148, 158, 0.1); border-radius: 6px;">
+                        📌 Selected: <span id="durationDisplayText" style="font-weight: 600; color: #8b949e;">30 seconds</span>
                     </div>
-                    <div style="font-size: 12px; color: #6e7681;">⏱️ <span id="durationDisplay">30 seconds</span></div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <button id="ringBtn" class="modal-action-btn" onclick="ringAlarm()" style="padding: 12px; background: #ef4444; border: none; border-radius: 8px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms;">
-                        🔔 Ring Alarm
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <button id="ringBtn" class="modal-action-btn" onclick="ringAlarm()" style="padding: 13px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                        🔔 Ring Now
                     </button>
-                    <button id="stopBtn" class="modal-action-btn" onclick="stopAlarm()" style="padding: 12px; background: #6b7280; border: none; border-radius: 8px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; opacity: 0.5;" disabled>
+                    <button id="stopBtn" class="modal-action-btn" onclick="stopAlarm()" style="padding: 13px; background: #6b7280; border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; opacity: 0.5;" disabled>
                         ⏹️ Stop
                     </button>
                 </div>
 
                 <!-- Status Display -->
-                <div id="alarmStatusDisplay" style="display: none; margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px;">
-                    <div style="font-size: 13px; color: #e6edf3;">
-                        <strong id="alarmStatusText">🚨 Alarm Ringing</strong><br>
-                        <span id="alarmDurationRemaining" style="color: #8b949e; font-size: 12px;"></span>
+                <div id="alarmStatusDisplay" style="display: none; padding: 14px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%); border: 2px solid #ef4444; border-radius: 10px;">
+                    <div style="font-size: 13px; color: #e6edf3; line-height: 1.5;">
+                        <div style="font-weight: 600; margin-bottom: 6px;"><span style="font-size: 16px;">🚨</span> Alarm Active</div>
+                        <div id="alarmDurationRemaining" style="color: #8b949e; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+                            <span>Monitoring...</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1717,17 +1720,24 @@
             const progressBar = toastData.element.querySelector('.toast-progress-bar');
             if (!progressBar) return;
             
-            // Initialize timing properly - reset startTime
-            if (!toastData.pauseTime) toastData.pauseTime = 0;
+            // Initialize timing properly - reset startTime and pauseTime
+            toastData.pauseTime = 0;
             toastData.startTime = Date.now();
+            
+            // Clear any existing timers
+            if (toastData.progressInterval) clearInterval(toastData.progressInterval);
+            if (toastData.timeout) clearTimeout(toastData.timeout);
             
             const updateProgress = () => {
                 if (toastData.isPaused) return;
                 
+                // Verify toast is still in stack
+                if (!toastStack.find(t => t.id === toastId)) return;
+                
                 const currentTime = Date.now();
-                const elapsed = Math.max(0, currentTime - toastData.startTime - toastData.pauseTime);
+                const elapsed = Math.max(0, currentTime - toastData.startTime - (toastData.pauseTime || 0));
                 const remaining = Math.max(0, toastData.duration - elapsed);
-                const percentage = remaining <= 0 ? 100 : Math.min(100, (remaining / toastData.duration) * 100);
+                const percentage = Math.min(100, (elapsed / toastData.duration) * 100);
                 
                 progressBar.style.width = percentage + '%';
                 
@@ -1738,15 +1748,12 @@
             };
             
             // Update progress every 30ms
-            if (toastData.progressInterval) clearInterval(toastData.progressInterval);
             toastData.progressInterval = setInterval(updateProgress, 30);
             
-            // Set timeout for auto-close with proper duration
-            if (toastData.timeout) clearTimeout(toastData.timeout);
-            const minDuration = Math.max(toastData.duration, 500);
+            // Set timeout for auto-close - add 100ms buffer to ensure closure
             toastData.timeout = setTimeout(() => {
                 closeToastById(toastId);
-            }, minDuration);
+            }, toastData.duration + 100);
         }
 
         function pauseToastTimerById(toastId) {
@@ -1790,16 +1797,26 @@
             
             const toastData = toastStack[index];
             
-            // Cleanup
-            if (toastData.timeout) clearTimeout(toastData.timeout);
-            if (toastData.progressInterval) clearInterval(toastData.progressInterval);
+            // Cleanup all timers and intervals
+            if (toastData.timeout) {
+                clearTimeout(toastData.timeout);
+                toastData.timeout = null;
+            }
+            if (toastData.progressInterval) {
+                clearInterval(toastData.progressInterval);
+                toastData.progressInterval = null;
+            }
             
-            // Remove animation and element
-            toastData.element.classList.remove('show');
-            setTimeout(() => {
-                toastData.element.remove();
-                toastStack.splice(index, 1);
-            }, 300);
+            // Immediately remove from stack and DOM
+            toastStack.splice(index, 1);
+            if (toastData.element && toastData.element.parentNode) {
+                toastData.element.classList.remove('show');
+                setTimeout(() => {
+                    if (toastData.element && toastData.element.parentNode) {
+                        toastData.element.remove();
+                    }
+                }, 300);
+            }
         }
 
         function closeToast() {
@@ -1907,22 +1924,32 @@
         }
         
         /**
-         * Update duration display based on selected value and unit.
+         * Update duration display based on selected value.
          */
-        function updateDurationDisplay() {
-            const value = parseInt(document.getElementById('durationValue').value);
-            const unit = document.getElementById('durationUnit').value;
+        function updateAlarmDurationFromSelect() {
+            const value = parseInt(document.getElementById('durationSelect').value);
             let display = '';
             
-            if (value === -1 || unit === 'infinite') {
-                display = 'Infinite';
-            } else if (unit === 'minutes') {
-                display = value === 1 ? '1 minute' : value + ' minutes';
-            } else if (unit === 'seconds') {
+            if (value === -1) {
+                display = 'Infinite (Never stops)';
+            } else if (value >= 60) {
+                const minutes = value / 60;
+                display = minutes === 1 ? '1 minute' : minutes + ' minutes';
+            } else {
                 display = value === 1 ? '1 second' : value + ' seconds';
             }
             
-            document.getElementById('durationDisplay').textContent = display;
+            document.getElementById('durationDisplayText').textContent = display;
+        }
+        
+        /**
+         * Update duration display based on selected value and unit (legacy).
+         */
+        function updateDurationDisplay() {
+            const selectEl = document.getElementById('durationSelect');
+            if (selectEl) {
+                updateAlarmDurationFromSelect();
+            }
         }
         
         /**
@@ -1964,15 +1991,12 @@
          */
         function ringAlarm() {
             const soundFile = document.getElementById('alarmSoundSelect').value;
-            let value = parseInt(document.getElementById('durationValue').value);
-            const unit = document.getElementById('durationUnit').value;
+            const value = parseInt(document.getElementById('durationSelect').value);
             
             // Calculate duration in milliseconds
             let durationMs;
-            if (value === -1 || unit === 'infinite') {
+            if (value === -1) {
                 durationMs = -1; // Infinite
-            } else if (unit === 'minutes') {
-                durationMs = value * 60 * 1000;
             } else {
                 durationMs = value * 1000;
             }
@@ -1992,6 +2016,7 @@
                     showToast('🚨 Alarm ringing', 3000);
                     updateAlarmCardState(true, durationMs);
                     updateAlarmUIState();
+                    startAlarmCountdown(durationMs);
                 } else {
                     showToast('Error: ' + data.message, 3000);
                 }
@@ -2016,6 +2041,7 @@
                     showToast('🔇 Alarm stopped', 2000);
                     updateAlarmCardState(false, 0);
                     updateAlarmUIState();
+                    stopAlarmCountdown();
                 } else {
                     showToast('Error: ' + data.message, 3000);
                 }
@@ -2026,24 +2052,80 @@
             });
         }
         
+        let alarmCountdownInterval = null;
+        let alarmStartTime = null;
+        let alarmDurationMs = null;
+        
+        /**
+         * Start countdown timer for alarm card.
+         */
+        function startAlarmCountdown(durationMs) {
+            // Clear existing countdown
+            stopAlarmCountdown();
+            
+            if (durationMs === -1) return; // Don't count infinite
+            
+            alarmDurationMs = durationMs;
+            alarmStartTime = Date.now();
+            
+            const updateCountdown = () => {
+                const elapsed = Date.now() - alarmStartTime;
+                const remaining = Math.max(0, durationMs - elapsed);
+                const seconds = Math.ceil(remaining / 1000);
+                
+                const countdownEl = document.getElementById('alarmCountdown');
+                if (countdownEl) {
+                    if (remaining > 0) {
+                        countdownEl.textContent = seconds + 's left';
+                    } else {
+                        countdownEl.textContent = '';
+                        stopAlarmCountdown();
+                    }
+                }
+            };
+            
+            updateCountdown(); // Initial call
+            alarmCountdownInterval = setInterval(updateCountdown, 500);
+        }
+        
+        /**
+         * Stop countdown timer.
+         */
+        function stopAlarmCountdown() {
+            if (alarmCountdownInterval) {
+                clearInterval(alarmCountdownInterval);
+                alarmCountdownInterval = null;
+            }
+            const countdownEl = document.getElementById('alarmCountdown');
+            if (countdownEl) {
+                countdownEl.textContent = '';
+            }
+        }
+        
         /**
          * Update alarm card state based on ringing status.
          */
         function updateAlarmCardState(isRinging, durationMs) {
             const card = document.getElementById('alarmCard');
-            const stateEl = document.getElementById('alarmState');
+            const stateTextEl = document.getElementById('alarmStateText');
+            const countdownEl = document.getElementById('alarmCountdown');
             const iconEl = document.getElementById('alarmIcon');
             
             if (isRinging) {
                 card.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(211, 47, 47, 0.1) 100%)';
                 card.style.borderColor = '#ef4444';
-                stateEl.textContent = durationMs === -1 ? '∞ RINGING' : 'RINGING';
+                stateTextEl.textContent = durationMs === -1 ? '∞ RINGING' : 'RINGING';
+                if (countdownEl && durationMs > 0) {
+                    const seconds = Math.ceil(durationMs / 1000);
+                    countdownEl.textContent = seconds + 's left';
+                }
                 iconEl.style.color = '#ef4444';
                 iconEl.style.animation = 'pulse 1s infinite';
             } else {
                 card.style.background = '';
                 card.style.borderColor = '';
-                stateEl.textContent = 'READY';
+                stateTextEl.textContent = 'READY';
+                if (countdownEl) countdownEl.textContent = '';
                 iconEl.style.color = '#ef4444';
                 iconEl.style.animation = 'none';
             }
@@ -2092,9 +2174,19 @@
                 lucide.createIcons();
             }
             
-            // Initialize alarm duration listeners
-            document.getElementById('durationValue').addEventListener('change', updateDurationDisplay);
-            document.getElementById('durationUnit').addEventListener('change', updateDurationDisplay);
+            // Initialize alarm duration display
+            const durationSelectEl = document.getElementById('durationSelect');
+            if (durationSelectEl) {
+                durationSelectEl.addEventListener('change', updateAlarmDurationFromSelect);
+                updateAlarmDurationFromSelect(); // Initial call
+            }
+            
+            // Backward compatibility for old duration elements
+            const durationValueEl = document.getElementById('durationValue');
+            const durationUnitEl = document.getElementById('durationUnit');
+            if (durationValueEl) durationValueEl.addEventListener('change', updateDurationDisplay);
+            if (durationUnitEl) durationUnitEl.addEventListener('change', updateDurationDisplay);
+            
             const volumePlus = document.getElementById('volumePlus');
             
             if (volumeMinus && volumePlus) {
