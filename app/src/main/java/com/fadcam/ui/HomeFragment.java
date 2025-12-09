@@ -7034,6 +7034,13 @@ public class HomeFragment extends BaseFragment {
         try {
             isTorchOn = !isTorchOn;
             cameraManager.setTorchMode(currentCameraId, isTorchOn);
+            
+            // Update SharedPreferences so RemoteStreamManager can read current torch state
+            android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(getContext());
+            prefs.edit()
+                .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn)
+                .apply();
+            
             Log.d(
                 TAG,
                 "Torch toggled directly via CameraManager. New state: " +

@@ -2669,6 +2669,12 @@ public class RecordingService extends Service {
                     Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
                     intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
                     sendBroadcast(intent);
+                    
+                    // Update SharedPreferences so RemoteStreamManager can read current torch state
+                    android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+                    prefs.edit()
+                        .putBoolean(Constants.PREF_TORCH_STATE, isRecordingTorchEnabled)
+                        .apply();
 
                 } catch (CameraAccessException e) {
                     Log.e(TAG, "Could not toggle recording torch via CaptureRequest: " + e.getMessage());

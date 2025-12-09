@@ -1319,9 +1319,8 @@
                     currentStatus.torchOn = newState;
                     console.log('[Torch] Updated immediately:', oldState, '→', newState);
                     updateUI(currentStatus);
+                    // Note: Toast is shown by updateUI() listener, not here to avoid double notifications
                 }
-                
-                showToast(currentStatus?.torchOn ? '🔦 Torch ON' : '🔦 Torch OFF');
             } catch (error) {
                 console.error('[Torch] Failed to toggle:', error);
                 showToast('Failed to toggle torch');
@@ -1381,7 +1380,7 @@
             if (previousStatus) {
                 // Only show notifications if status actually changed
                 const torchChanged = previousStatus.torchOn !== status.torchOn;
-                const volumeChanged = previousStatus.volume_percentage && status.volume_percentage && Math.abs(previousStatus.volume_percentage - status.volume_percentage) > 5;
+                const volumeChanged = status.volume_percentage !== undefined && previousStatus.volume_percentage !== undefined && Math.abs(previousStatus.volume_percentage - status.volume_percentage) > 5;
                 const recordingChanged = previousStatus.isRecording !== status.isRecording;
                 const qualityChanged = previousStatus.qualityPreset !== status.qualityPreset;
                 const modeChanged = previousStatus.mode !== status.mode;
@@ -1533,11 +1532,6 @@
             // Update torch display and show notification if changed
             const torchState = document.getElementById('torchState');
             if (torchState) {
-                if (previousStatus && previousStatus.torchOn !== status.torchOn) {
-                    console.log('[Torch] State changed from server:', previousStatus.torchOn, '→', status.torchOn);
-                    showToast(status.torchOn ? '🔦 Torch turned ON' : '🔦 Torch turned OFF', 2000);
-                }
-                
                 if (status.torchOn) {
                     torchState.textContent = 'ON';
                     torchState.style.color = '#f59e0b';
@@ -1624,17 +1618,24 @@
             if (!toastData) return;
             
             const progressBar = toastData.element.querySelector('.toast-progress-bar');
+            if (!progressBar) return;
+            
+            // Initialize timing properly - reset startTime
+            if (!toastData.pauseTime) toastData.pauseTime = 0;
+            toastData.startTime = Date.now();
+            
             const updateProgress = () => {
                 if (toastData.isPaused) return;
                 
                 const currentTime = Date.now();
-                const elapsed = currentTime - toastData.startTime - (toastData.pauseTime || 0);
+                const elapsed = Math.max(0, currentTime - toastData.startTime - toastData.pauseTime);
                 const remaining = Math.max(0, toastData.duration - elapsed);
-                const percentage = (remaining / toastData.duration) * 100;
+                const percentage = remaining <= 0 ? 100 : Math.min(100, (remaining / toastData.duration) * 100);
                 
                 progressBar.style.width = percentage + '%';
                 
-                if (remaining <= 0) {
+                // Close when progress reaches 100%
+                if (percentage >= 100) {
                     closeToastById(toastId);
                 }
             };
@@ -1643,16 +1644,17 @@
             if (toastData.progressInterval) clearInterval(toastData.progressInterval);
             toastData.progressInterval = setInterval(updateProgress, 30);
             
-            // Set timeout for auto-close
+            // Set timeout for auto-close with proper duration
             if (toastData.timeout) clearTimeout(toastData.timeout);
+            const minDuration = Math.max(toastData.duration, 500);
             toastData.timeout = setTimeout(() => {
                 closeToastById(toastId);
-            }, toastData.duration);
+            }, minDuration);
         }
 
         function pauseToastTimerById(toastId) {
             const toastData = toastStack.find(t => t.id === toastId);
-            if (!toastData) return;
+            if (!toastData || toastData.isPaused) return;
             
             toastData.isPaused = true;
             toastData.pauseStartTime = Date.now();
@@ -1665,17 +1667,18 @@
 
         function resumeToastTimerById(toastId) {
             const toastData = toastStack.find(t => t.id === toastId);
-            if (!toastData) return;
+            if (!toastData || !toastData.isPaused) return;
             
             toastData.isPaused = false;
             if (toastData.pauseStartTime) {
-                toastData.pauseTime = (toastData.pauseTime || 0) + (Date.now() - toastData.pauseStartTime);
+                const pauseDuration = Date.now() - toastData.pauseStartTime;
+                toastData.pauseTime = (toastData.pauseTime || 0) + pauseDuration;
                 toastData.pauseStartTime = null;
             }
             
             // Recalculate remaining time
             const currentTime = Date.now();
-            const elapsed = currentTime - toastData.startTime - (toastData.pauseTime || 0);
+            const elapsed = Math.max(0, currentTime - toastData.startTime - toastData.pauseTime);
             const remaining = Math.max(0, toastData.duration - elapsed);
             
             if (toastData.timeout) clearTimeout(toastData.timeout);

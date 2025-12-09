@@ -630,7 +630,7 @@ public class RemoteStreamManager {
                 isNetworkConnected,
                 networkHealthJson,
                 qualityJson,
-                torchState,
+                isTorchOn(),  // Read from SharedPreferences to get current actual state
                 mediaVolume,
                 maxMediaVolume,
                 volumePercentage,
@@ -654,9 +654,21 @@ public class RemoteStreamManager {
 
     /**
      * Get torch state (on/off).
+     * Reads from SharedPreferences to always get the actual current state
+     * set by TorchService or RecordingService.
      */
     public boolean isTorchOn() {
-        return torchState;
+        if (context != null) {
+            try {
+                android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                boolean torchStateFromPrefs = prefs.getBoolean(com.fadcam.Constants.PREF_TORCH_STATE, false);
+                return torchStateFromPrefs;
+            } catch (Exception e) {
+                Log.e(TAG, "Error reading torch state from SharedPreferences", e);
+                return torchState; // Fallback to cached value
+            }
+        }
+        return torchState; // Fallback when context is not set
     }
 
     /**
@@ -1312,3 +1324,5 @@ public class RemoteStreamManager {
     }
     
 }
+
+

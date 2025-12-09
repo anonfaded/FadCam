@@ -965,7 +965,7 @@ video {
         margin: 12px;
         margin-right: 0;
         border-radius: 16px;
-        z-index: 100;
+        z-index: 1001;
         transform: translateX(0);
         transition: transform 300ms ease;
         overflow: hidden;
@@ -1043,7 +1043,23 @@ video {
     .modal-content {
         max-height: 70vh;
     }
-}
+
+    /* Tablet toast positioning */
+    .toast-container {
+        width: calc(100vw - 48px);
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 100px);
+        right: 12px;
+        left: auto;
+        bottom: auto;
+        top: 68px;
+        transform: none;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
 
 @media (max-width: 480px) {
     .main-layout {
@@ -1065,7 +1081,7 @@ video {
         margin: 12px;
         margin-right: 0;
         border-radius: 16px;
-        z-index: 100;
+        z-index: 1001;
         transform: translateX(0);
         transition: transform 300ms ease;
         overflow: hidden;
@@ -1105,6 +1121,29 @@ video {
 
     .top-bar h1 {
         font-size: 14px;
+    }
+
+    /* Mobile toast positioning - centered at top with proper sizing */
+    .toast-container {
+        top: 68px;
+        right: auto;
+        bottom: auto;
+        left: 12px;
+        transform: none;
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 100px);
+        padding: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    .toast-notification {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 }
 
@@ -1693,21 +1732,28 @@ video {
 
 /* ============ End iOS Components ============ */
 
-/* Toast Container */
+/* Toast Container - Desktop */
 .toast-container {
     position: fixed;
-    top: 80px;
-    right: 20px;
-    z-index: 9998;
+    top: 68px;
+    right: 12px;
+    bottom: auto;
+    left: auto;
+    z-index: 9999;
     pointer-events: none;
     width: 420px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 /* Toast Notification */
 .toast-notification {
     position: relative;
     margin-bottom: 12px;
-    transform: translateX(120%);
     background: linear-gradient(135deg, #0f1217 0%, #0a0d11 100%);
     border: 1px solid #30363d;
     border-radius: 10px;
@@ -1715,6 +1761,7 @@ video {
     padding-bottom: 16px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 
                 inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    width: 100%;
     max-width: 100%;
     display: flex;
     flex-direction: column;
@@ -1724,11 +1771,11 @@ video {
     visibility: hidden;
     overflow: hidden;
     pointer-events: auto;
-    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: opacity 300ms ease, visibility 300ms ease;
+    box-sizing: border-box;
 }
 
 .toast-notification.show {
-    transform: translateX(0);
     opacity: 1;
     visibility: visible;
 }
@@ -1754,14 +1801,14 @@ video {
 .toast-progress-bar {
     height: 3px;
     background: linear-gradient(90deg, #3fb950 0%, #2ea043 50%, #238636 100%);
-    width: 100%;
-    border-radius: 2px;
-    transition: width 30ms linear;
-    box-shadow: 0 0 8px rgba(63, 185, 80, 0.3);
+    width: calc(100% + 32px);
     margin-left: -16px;
     margin-right: -16px;
     margin-bottom: -16px;
-    padding: 0 16px;
+    margin-top: 8px;
+    border-radius: 0 0 10px 10px;
+    transition: width 30ms linear;
+    box-shadow: 0 0 8px rgba(63, 185, 80, 0.3);
 }
 
 .toast-close {

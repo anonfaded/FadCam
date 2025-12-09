@@ -73,6 +73,9 @@ public class RemoteStreamService extends Service {
         super.onCreate();
         Log.d(TAG, "Service created");
         createNotificationChannel();
+        
+        // Initialize RemoteStreamManager with context for status reporting
+        RemoteStreamManager.getInstance().setContext(this);
     }
     
     @Override
