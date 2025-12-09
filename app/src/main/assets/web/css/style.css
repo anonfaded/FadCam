@@ -1693,32 +1693,44 @@ video {
 
 /* ============ End iOS Components ============ */
 
-/* Toast Notification */
-.toast-notification {
+/* Toast Container */
+.toast-container {
     position: fixed;
     top: 80px;
     right: 20px;
+    z-index: 9998;
+    pointer-events: none;
+    width: 420px;
+}
+
+/* Toast Notification */
+.toast-notification {
+    position: relative;
+    margin-bottom: 12px;
     transform: translateX(120%);
-    background: linear-gradient(135deg, #1a1e24 0%, #151920 100%);
-    border: 1px solid #3fb950;
-    border-radius: 8px;
-    padding: 12px 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 9999;
-    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    max-width: 350px;
+    background: linear-gradient(135deg, #0f1217 0%, #0a0d11 100%);
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 14px 16px;
+    padding-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    max-width: 100%;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     opacity: 0;
     visibility: hidden;
+    overflow: hidden;
+    pointer-events: auto;
+    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .toast-notification.show {
     transform: translateX(0);
     opacity: 1;
     visibility: visible;
-    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .toast-content {
@@ -1727,8 +1739,29 @@ video {
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    color: #e6edf3;
+    color: #f0f6fc;
     font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    margin-bottom: 8px;
+}
+
+.toast-message {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.toast-progress-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #3fb950 0%, #2ea043 50%, #238636 100%);
+    width: 100%;
+    border-radius: 2px;
+    transition: width 30ms linear;
+    box-shadow: 0 0 8px rgba(63, 185, 80, 0.3);
+    margin-left: -16px;
+    margin-right: -16px;
+    margin-bottom: -16px;
+    padding: 0 16px;
 }
 
 .toast-close {
@@ -1739,12 +1772,17 @@ video {
     font-size: 16px;
     padding: 0;
     line-height: 1;
-    transition: color 200ms;
+    transition: all 200ms;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
 }
 
 .toast-close:hover {
-    color: #e6edf3;
+    color: #f0f6fc;
+    transform: scale(1.1);
 }
 
 

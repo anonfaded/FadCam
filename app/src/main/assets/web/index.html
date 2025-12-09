@@ -352,13 +352,8 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toastNotification" class="toast-notification">
-        <div class="toast-content">
-            <span id="toastMessage"></span>
-            <button class="toast-close" onclick="closeToast()">✕</button>
-        </div>
-    </div>
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <!-- Modals -->
     <!-- Uptime Details Modal -->
@@ -1556,38 +1551,159 @@
             if (serverUrlEl) serverUrlEl.textContent = CONFIG.BASE_URL;
         }
 
-        let currentToastTimeout = null;
+        // Toast Stack Management
+        const MAX_TOASTS = 5;
+        const toastStack = [];
+
         function showToast(message, duration = 5000) {
-            const toast = document.getElementById('toastNotification');
-            const messageEl = document.getElementById('toastMessage');
-            
-            // Clear existing timeout
-            if (currentToastTimeout) {
-                clearTimeout(currentToastTimeout);
-                toast.classList.remove('show');
+            const container = document.getElementById('toastContainer');
+            if (!container) {
+                console.error('Toast container not found');
+                return;
             }
             
-            // Set new message and show
-            messageEl.textContent = message;
+            // Create unique toast ID
+            const toastId = 'toast-' + Date.now() + Math.random();
             
-            // Small delay to allow CSS transition to reset
+            // Create toast element
+            const toastElement = document.createElement('div');
+            toastElement.className = 'toast-notification';
+            toastElement.id = toastId;
+            toastElement.innerHTML = `
+                <div class="toast-content">
+                    <span class="toast-message">${message}</span>
+                    <button class="toast-close" onclick="closeToastById('${toastId}')">✕</button>
+                </div>
+                <div class="toast-progress-bar"></div>
+            `;
+            
+            // Add to container at the beginning (latest on top)
+            container.insertBefore(toastElement, container.firstChild);
+            
+            // Add to stack
+            toastStack.unshift({
+                id: toastId,
+                element: toastElement,
+                duration: duration,
+                startTime: Date.now(),
+                pauseTime: null,
+                progressInterval: null,
+                timeout: null,
+                isPaused: false
+            });
+            
+            // Remove if exceeds max
+            while (toastStack.length > MAX_TOASTS) {
+                const removed = toastStack.pop();
+                removed.element.remove();
+                if (removed.timeout) clearTimeout(removed.timeout);
+                if (removed.progressInterval) clearInterval(removed.progressInterval);
+            }
+            
+            // Show toast with animation
             setTimeout(() => {
-                toast.classList.add('show');
+                toastElement.classList.add('show');
             }, 10);
             
-            // Auto-hide after duration
-            currentToastTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-                currentToastTimeout = null;
-            }, duration);
+            // Setup toast-specific handlers
+            toastElement.addEventListener('mouseenter', () => pauseToastTimerById(toastId));
+            toastElement.addEventListener('mouseleave', () => resumeToastTimerById(toastId));
+            
+            // Start progress bar and auto-close
+            startToastProgressBarById(toastId);
+        }
+
+        function updateToastPositions() {
+            // No longer needed with relative positioning
+        }
+
+        function startToastProgressBarById(toastId) {
+            const toastData = toastStack.find(t => t.id === toastId);
+            if (!toastData) return;
+            
+            const progressBar = toastData.element.querySelector('.toast-progress-bar');
+            const updateProgress = () => {
+                if (toastData.isPaused) return;
+                
+                const currentTime = Date.now();
+                const elapsed = currentTime - toastData.startTime - (toastData.pauseTime || 0);
+                const remaining = Math.max(0, toastData.duration - elapsed);
+                const percentage = (remaining / toastData.duration) * 100;
+                
+                progressBar.style.width = percentage + '%';
+                
+                if (remaining <= 0) {
+                    closeToastById(toastId);
+                }
+            };
+            
+            // Update progress every 30ms
+            if (toastData.progressInterval) clearInterval(toastData.progressInterval);
+            toastData.progressInterval = setInterval(updateProgress, 30);
+            
+            // Set timeout for auto-close
+            if (toastData.timeout) clearTimeout(toastData.timeout);
+            toastData.timeout = setTimeout(() => {
+                closeToastById(toastId);
+            }, toastData.duration);
+        }
+
+        function pauseToastTimerById(toastId) {
+            const toastData = toastStack.find(t => t.id === toastId);
+            if (!toastData) return;
+            
+            toastData.isPaused = true;
+            toastData.pauseStartTime = Date.now();
+            
+            if (toastData.timeout) {
+                clearTimeout(toastData.timeout);
+                toastData.timeout = null;
+            }
+        }
+
+        function resumeToastTimerById(toastId) {
+            const toastData = toastStack.find(t => t.id === toastId);
+            if (!toastData) return;
+            
+            toastData.isPaused = false;
+            if (toastData.pauseStartTime) {
+                toastData.pauseTime = (toastData.pauseTime || 0) + (Date.now() - toastData.pauseStartTime);
+                toastData.pauseStartTime = null;
+            }
+            
+            // Recalculate remaining time
+            const currentTime = Date.now();
+            const elapsed = currentTime - toastData.startTime - (toastData.pauseTime || 0);
+            const remaining = Math.max(0, toastData.duration - elapsed);
+            
+            if (toastData.timeout) clearTimeout(toastData.timeout);
+            toastData.timeout = setTimeout(() => {
+                closeToastById(toastId);
+            }, remaining);
+        }
+
+        function closeToastById(toastId) {
+            const index = toastStack.findIndex(t => t.id === toastId);
+            if (index === -1) return;
+            
+            const toastData = toastStack[index];
+            
+            // Cleanup
+            if (toastData.timeout) clearTimeout(toastData.timeout);
+            if (toastData.progressInterval) clearInterval(toastData.progressInterval);
+            
+            // Remove animation and element
+            toastData.element.classList.remove('show');
+            setTimeout(() => {
+                toastData.element.remove();
+                toastStack.splice(index, 1);
+            }, 300);
         }
 
         function closeToast() {
-            if (currentToastTimeout) {
-                clearTimeout(currentToastTimeout);
-                currentToastTimeout = null;
+            if (toastStack.length > 0) {
+                closeToastById(toastStack[0].id);
             }
-            document.getElementById('toastNotification').classList.remove('show');
         }
 
         function showMemoryModal() {
