@@ -2323,17 +2323,17 @@
                             
                             // On small screens (phone), show on left side
                             if (viewportWidth <= 480) {
-                                // Left side positioning for small screens
+                                // Left side positioning - balanced distance
                                 tooltip.classList.add('left-position');
                                 tooltip.classList.remove('right-position');
-                                left = Math.max(10, rect.left - 90);
-                                top = Math.max(80, rect.top - 20);
+                                left = Math.max(10, rect.left - 45);
+                                top = Math.max(80, rect.top - 10);
                             } else {
-                                // Right side positioning for larger screens
+                                // Right side positioning - adjusted up and left
                                 tooltip.classList.add('right-position');
                                 tooltip.classList.remove('left-position');
-                                left = Math.min(viewportWidth - 120, rect.right + 10);
-                                top = Math.max(10, rect.top - 20);
+                                left = Math.min(viewportWidth - 120, rect.right - 10);
+                                top = Math.max(10, rect.top - 10);
                             }
                             
                             tooltip.style.left = left + 'px';
