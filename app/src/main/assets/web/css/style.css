@@ -162,7 +162,7 @@ body {
     flex-direction: column;
 }
 
-.sidebar.collapsed {
+.sidebar.sidebar-hidden {
     transform: translateX(-100%);
     width: 0;
     padding: 0;
@@ -464,19 +464,32 @@ body {
 .card-sm {
     padding: 0;
     position: relative;
-    min-height: 60px;
+    min-height: 38px;
     display: flex;
     flex-direction: column;
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: background 200ms ease, border-color 200ms ease;
+    cursor: pointer;
+}
+
+.card-sm:hover {
+    border-color: #3d4349;
+    background: rgba(248, 81, 73, 0.08);
 }
 
 .card-sm .card-clickable {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 14px;
-    gap: 10px;
+    padding: 8px 8px;
+    gap: 6px;
     flex: 1;
     display: flex;
+    cursor: pointer;
+    transition: none;
 }
 
 .card-sm-content {
@@ -490,11 +503,11 @@ body {
 }
 
 .card-icon-sm {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     color: var(--accent-red);
     flex-shrink: 0;
-    font-size: 14px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -502,19 +515,21 @@ body {
 
 .card-sm .card-label-sm {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--text-secondary);
     white-space: nowrap;
+    line-height: 1;
 }
 
 .card-sm .card-value-sm {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--text-primary);
     font-family: var(--font-mono);
     white-space: nowrap;
+    line-height: 1;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -524,15 +539,15 @@ body {
     flex-shrink: 0;
     color: var(--text-muted);
     transition: transform 200ms ease, color 200ms ease;
-    font-size: 12px;
-    width: 14px;
-    height: 14px;
+    font-size: 10px;
+    width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.card-sm .card-clickable:hover .card-arrow-sm {
+.card-sm:hover .card-arrow-sm {
     color: var(--accent-red);
     transform: translateX(2px);
 }
@@ -567,7 +582,6 @@ body {
     position: relative;
     border-radius: 16px;
     overflow: hidden;
-}
     display: flex;
     align-items: center;
     justify-content: center;
@@ -577,6 +591,7 @@ video {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    background: #000;
 }
 
 .video-overlay {
@@ -798,30 +813,94 @@ video {
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        position: absolute;
-        left: 0;
-        top: 44px;
-        height: calc(100% - 44px);
-        max-height: 50vh;
-        z-index: 100;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        width: 340px;
-        transform: translateX(0);
-    }
-
-    .sidebar.collapsed {
-        transform: translateX(-100%);
-    }
-
+@media (max-width: 1024px) {
     .main-layout {
-        flex-direction: column;
+        flex-direction: row;
+        padding: 0;
+        padding-top: 12px;
+        padding-right: 12px;
+        padding-bottom: 12px;
+        gap: 0;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 64px;
+        width: 90vw;
+        height: calc(100% - 76px);
+        max-height: none;
+        margin: 12px;
+        margin-right: 0;
+        border-radius: 16px;
+        z-index: 100;
+        transform: translateX(0);
+        transition: transform 300ms ease;
+        overflow: hidden;
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+
+    .sidebar.sidebar-hidden {
+        transform: translateX(-110%);
+        margin: 0;
     }
 
     .player-area {
-        order: -1;
+        width: 100%;
+        height: calc(100vh - 76px);
+        order: 0;
+        padding: 0;
+        margin-left: 0;
+    }
+
+    .video-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-layout {
+        flex-direction: row;
+        padding: 0;
+        padding-top: 12px;
+        padding-right: 12px;
+        padding-bottom: 12px;
+        gap: 0;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 64px;
+        width: 95vw;
+        height: calc(100% - 76px);
+        max-height: none;
+        margin: 12px;
+        margin-right: 0;
+        border-radius: 16px;
+        z-index: 100;
+        transform: translateX(0);
+        transition: transform 300ms ease;
+        overflow: hidden;
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+
+    .sidebar.sidebar-hidden {
+        transform: translateX(-110%);
+        width: 85vw;
+        margin: 0;
+    }
+    }
+
+    .player-area {
+        width: 100%;
+        height: calc(100vh - 76px);
+        order: 0;
+        padding: 0;
     }
 
     .cards-grid {
@@ -834,13 +913,49 @@ video {
 }
 
 @media (max-width: 480px) {
+    .main-layout {
+        flex-direction: row;
+        padding: 0;
+        padding-top: 12px;
+        padding-right: 12px;
+        padding-bottom: 12px;
+        gap: 0;
+    }
+
     .sidebar {
+        position: fixed;
+        left: 0;
+        top: 64px;
+        width: 98vw;
+        height: calc(100% - 76px);
+        max-height: none;
+        margin: 12px;
+        margin-right: 0;
+        border-radius: 16px;
+        z-index: 100;
+        transform: translateX(0);
+        transition: transform 300ms ease;
+        overflow: hidden;
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+
+    .sidebar.sidebar-hidden {
+        transform: translateX(-110%);
+        width: 90vw;
+        margin: 0;
+    }
+        margin-right: 0;
+    }
+
+    .player-area {
         width: 100%;
-        max-height: 60vh;
+        height: calc(100vh - 76px);
+        padding: 0;
     }
 
     .cards-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .card {
