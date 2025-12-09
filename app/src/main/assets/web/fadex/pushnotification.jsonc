@@ -19,7 +19,7 @@
 
 {
   // ===== VERSION (REQUIRED - INCREMENT ON EACH UPDATE) =====
-  "version": 10,
+  "version": 11,
 
   // ===== TITLE (REQUIRED - Short, attention-grabbing) =====
   "title": "Welcome to FadCam Remote",
