@@ -19,10 +19,10 @@
 
 {
   // ===== VERSION (REQUIRED - INCREMENT ON EACH UPDATE) =====
-  "version": 9,
+  "version": 10,
 
   // ===== TITLE (REQUIRED - Short, attention-grabbing) =====
-  "title": "Welcome to Fadex Notifications",
+  "title": "Welcome to FadCam Remote",
 
   // ===== SUBTITLE (OPTIONAL - Brief context, appears in list) =====
   "subtitle": "You'll now receive updates and alerts from Faded via Fadex",
@@ -32,7 +32,7 @@
 
   // ===== PRIORITY (OPTIONAL - default: "info") =====
   // Use "info" for general updates (no modal, just jiggle), "warning" for important alerts, "critical" for urgent matters
-  "priority": "info"
+  "priority": "Warning"
 
   // ===== EXAMPLE: Update the version to display a new notification =====
   // Increment version: "version": 2
