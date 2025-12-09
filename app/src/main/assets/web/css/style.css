@@ -654,11 +654,16 @@ video {
     display: none;
     align-items: flex-end;
     z-index: 1000;
-    animation: modal-backdrop 300ms ease;
+    animation: modal-backdrop 300ms ease forwards;
 }
 
 .modal.visible {
     display: flex;
+    animation: modal-backdrop 300ms ease forwards;
+}
+
+.modal.closing {
+    animation: modal-backdrop-out 300ms ease forwards;
 }
 
 @keyframes modal-backdrop {
@@ -667,6 +672,15 @@ video {
     }
     to {
         opacity: 1;
+    }
+}
+
+@keyframes modal-backdrop-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
     }
 }
 
@@ -680,7 +694,11 @@ video {
     border: 1px solid var(--border-color);
     border-bottom: none;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-    animation: modal-slide-up 300ms ease;
+    animation: modal-slide-up 300ms ease forwards;
+}
+
+.modal.closing .modal-content {
+    animation: modal-slide-down 300ms ease forwards;
 }
 
 @keyframes modal-slide-up {
@@ -689,6 +707,15 @@ video {
     }
     to {
         transform: translateY(0);
+    }
+}
+
+@keyframes modal-slide-down {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
     }
 }
 

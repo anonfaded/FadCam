@@ -747,13 +747,24 @@
             }
         });
 
+        // Helper function to close modal with animation
+        function closeModalAnimated(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal && modal.classList.contains('visible')) {
+                modal.classList.add('closing');
+                setTimeout(() => {
+                    modal.classList.remove('visible', 'closing');
+                }, 300);
+            }
+        }
+
         // Close modals on outside click
         document.addEventListener('click', (e) => {
             const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal'];
             modals.forEach(id => {
                 const modal = document.getElementById(id);
-                if (e.target === modal) {
-                    modal.classList.remove('visible');
+                if (e.target === modal && modal.classList.contains('visible')) {
+                    closeModalAnimated(id);
                 }
             });
         });
@@ -789,7 +800,7 @@
             document.getElementById('uptimeModal').classList.add('visible');
         }
         function hideUptimeModal() {
-            document.getElementById('uptimeModal').classList.remove('visible');
+            closeModalAnimated('uptimeModal');
         }
 
         function showClientsModal() {
@@ -889,7 +900,7 @@
             document.getElementById('clientsModal').classList.add('visible');
         }
         function hideClientsModal() {
-            document.getElementById('clientsModal').classList.remove('visible');
+            closeModalAnimated('clientsModal');
         }
 
         function showBatteryModal() {
@@ -951,7 +962,7 @@
             document.getElementById('batteryModal').classList.add('visible');
         }
         function hideBatteryModal() {
-            document.getElementById('batteryModal').classList.remove('visible');
+            closeModalAnimated('batteryModal');
         }
 
         /**
@@ -1061,7 +1072,7 @@
             document.getElementById('networkModal').classList.add('visible');
         }
         function hideNetworkModal() {
-            document.getElementById('networkModal').classList.remove('visible');
+            closeModalAnimated('networkModal');
         }
 
         function showDataTransferModal() {
@@ -1148,7 +1159,7 @@
             document.getElementById('dataTransferModal').classList.add('visible');
         }
         function hideDataTransferModal() {
-            document.getElementById('dataTransferModal').classList.remove('visible');
+            closeModalAnimated('dataTransferModal');
         }
 
         function showSegmentsModal() {
@@ -1173,7 +1184,7 @@
             document.getElementById('segmentsModal').classList.add('visible');
         }
         function hideSegmentsModal() {
-            document.getElementById('segmentsModal').classList.remove('visible');
+            closeModalAnimated('segmentsModal');
         }
 
         function showStorageModal() {
@@ -1194,7 +1205,7 @@
             document.getElementById('storageModal').classList.add('visible');
         }
         function hideStorageModal() {
-            document.getElementById('storageModal').classList.remove('visible');
+            closeModalAnimated('storageModal');
         }
 
         function showRecordingModeModal() {
@@ -1221,7 +1232,7 @@
             document.getElementById('recordingModeModal').classList.add('visible');
         }
         function hideRecordingModeModal() {
-            document.getElementById('recordingModeModal').classList.remove('visible');
+            closeModalAnimated('recordingModeModal');
         }
 
         async function setRecordingMode(mode) {
@@ -1265,7 +1276,7 @@
             document.getElementById('streamQualityModal').classList.add('visible');
         }
         function hideStreamQualityModal() {
-            document.getElementById('streamQualityModal').classList.remove('visible');
+            closeModalAnimated('streamQualityModal');
         }
 
         async function setStreamQuality(quality) {
@@ -1634,7 +1645,7 @@
         }
 
         function hideEndpointsModal() {
-            document.getElementById('endpointsModal').classList.remove('visible');
+            closeModalAnimated('endpointsModal');
         }
 
         // Initialize
