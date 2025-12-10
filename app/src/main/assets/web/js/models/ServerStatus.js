@@ -110,6 +110,23 @@ class ServerStatus {
         this.max_volume = data.max_volume ?? 15;
         this.volume_percentage = data.volume_percentage ?? 0;
         
+        // Alarm state (nested object)
+        if (data.alarm && typeof data.alarm === 'object') {
+            this.alarm = {
+                is_ringing: data.alarm.is_ringing || false,
+                sound: data.alarm.sound || 'office_phone.mp3',
+                duration_ms: data.alarm.duration_ms ?? -1,
+                remaining_ms: data.alarm.remaining_ms ?? 0
+            };
+        } else {
+            this.alarm = {
+                is_ringing: false,
+                sound: 'office_phone.mp3',
+                duration_ms: -1,
+                remaining_ms: 0
+            };
+        }
+        
         // Stats
         this.dataTransferredMb = data.total_data_transferred_mb || 0;
         this.uptimeSeconds = data.uptime_seconds || 0;

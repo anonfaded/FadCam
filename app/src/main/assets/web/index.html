@@ -1763,6 +1763,35 @@
             };
             currentStatus = status;
 
+            // ===== RESTORE ALARM STATE FROM SERVER =====
+            // Sync alarm state from server to restore UI after page reload
+            if (status.alarm) {
+                console.log('[Alarm] Server state:', status.alarm);
+                if (status.alarm.is_ringing && !alarmIsActive) {
+                    console.log('[Alarm] Restoring active alarm from server state');
+                    alarmIsActive = true;
+                    alarmActiveDurationMs = status.alarm.duration_ms;
+                    updateAlarmUIState();
+                    updateAlarmCardState(true, status.alarm.duration_ms);
+                    startAlarmCountdown(status.alarm.duration_ms);
+                    
+                    // Restore selected sound in UI
+                    const soundSelect = document.getElementById('alarmSoundSelect');
+                    if (soundSelect && status.alarm.sound) {
+                        soundSelect.value = status.alarm.sound;
+                    }
+                } else if (!status.alarm.is_ringing && alarmIsActive) {
+                    // Alarm was stopped on server, reset local state
+                    console.log('[Alarm] Alarm stopped on server, resetting local state');
+                    alarmIsActive = false;
+                    stopAlarmCountdown();
+                    updateAlarmUIState();
+                    updateAlarmCardState(false, 0);
+                }
+            } else {
+                console.log('[Alarm] No alarm state from server');
+            }
+
             // Update video overlay cursor based on stream readiness
             const videoOverlay = document.getElementById('videoOverlay');
             if (status.state === 'ready' && status.isRecording) {
