@@ -290,17 +290,19 @@
 
             <!-- Torch & Volume Row -->
             <div class="cards-grid">
-                <!-- Torch Card - iOS Style with state -->
-                <div class="card-sm card-torch-ios" onclick="toggleTorch()">
-                    <div class="card-clickable">
+                <!-- Torch Card - Standalone Custom Card -->
+                <div class="torch-card" onclick="toggleTorch()">
+                    <div class="torch-card-inner">
                         <!-- Background Fill -->
-                        <div class="card-ios-fill" id="torchFill"></div>
+                        <div class="torch-fill" id="torchFill"></div>
                         <!-- Content -->
-                        <div class="card-ios-content">
-                            <i class="fas fa-lightbulb card-icon-sm torch-icon" id="torchIcon"></i>
-                            <div class="card-sm-content">
-                                <div class="card-label-sm">Torch</div>
-                                <div class="card-value-sm" id="torchState">OFF</div>
+                        <div class="torch-content">
+                            <!-- Torch Icon -->
+                            <i class="far fa-lightbulb torch-icon-fa" id="torchIcon"></i>
+                            <!-- Text -->
+                            <div class="torch-text">
+                                <div class="torch-label">Torch</div>
+                                <div class="torch-value" id="torchState">OFF</div>
                             </div>
                         </div>
                     </div>
@@ -1093,6 +1095,11 @@
         document.addEventListener('click', function(e) {
             // Skip if hamburger button was clicked or just toggled
             if (justToggledSidebar || e.target.closest('#sidebarToggle')) {
+                return;
+            }
+            
+            // Skip if clicking inside a modal - modals have their own close logic
+            if (e.target.closest('.modal')) {
                 return;
             }
             
@@ -1925,7 +1932,7 @@
             
             // Update torch display and show notification if changed
             const torchState = document.getElementById('torchState');
-            const torchCard = document.querySelector('.card-torch-ios');
+            const torchCard = document.querySelector('.torch-card');
             const torchIcon = document.getElementById('torchIcon');
             const torchFill = document.getElementById('torchFill');
             
@@ -1935,11 +1942,15 @@
                 if (status.torchOn) {
                     torchState.textContent = 'ON';
                     torchCard.classList.add('on');
-                    if (torchIcon) torchIcon.className = 'fas fa-lightbulb-on card-icon-sm torch-icon';
+                    if (torchIcon) {
+                        torchIcon.className = 'fas fa-lightbulb torch-icon-fa';
+                    }
                 } else {
                     torchState.textContent = 'OFF';
                     torchCard.classList.add('off');
-                    if (torchIcon) torchIcon.className = 'fas fa-lightbulb card-icon-sm torch-icon';
+                    if (torchIcon) {
+                        torchIcon.className = 'far fa-lightbulb torch-icon-fa';
+                    }
                 }
             }
             

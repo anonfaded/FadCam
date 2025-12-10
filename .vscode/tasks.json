@@ -6,7 +6,7 @@
         {
             "label": "FadCam: build and install debug",
             "type": "shell",
-            "command": "./gradlew assembleDefaultDebug installDefaultDebug && APK_PATH=$(find app/build/outputs/apk -name '*debug.apk' -type f 2>/dev/null | head -1) && APK_DIR=$(dirname \"$APK_PATH\") && APK_NAME=$(basename \"$APK_PATH\") && echo '' && echo '\\033[1;32m✅ BUILD SUCCESSFUL!\\033[0m' && echo '\\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\033[0m' && echo '' && echo '\\033[1;36m📁 Output Directory:\\033[0m' && echo \"   $APK_DIR\" && echo '' && echo '\\033[1;36m📦 APK Name:\\033[0m' && echo \"   $APK_NAME\" && echo '' && echo '\\033[1;36m📍 Full Path:\\033[0m' && echo \"   $APK_PATH\" && echo '' && echo '\\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\033[0m' && echo ''"
+            "command": "./gradlew assembleDefaultDebug installDefaultDebug && APK_PATH=$(find app/build/outputs/apk -name '*debug.apk' -type f 2>/dev/null | head -1) && APK_DIR=$(dirname \"$APK_PATH\") && APK_NAME=$(basename \"$APK_PATH\") && echo '' && echo '\\033[1;32m✅ BUILD SUCCESSFUL!\\033[0m' && echo '\\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\033[0m' && echo '' && echo '\\033[1;36m📁 Output Directory:\\033[0m' && echo \"   $APK_DIR\" && echo '' && echo '\\033[1;36m📦 APK Name:\\033[0m' && echo \"   $APK_NAME\" && echo '' && echo '\\033[1;36m📍 Full Path:\\033[0m' && echo \"   $APK_PATH\" && echo '' && echo '\\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\033[0m' && echo '' && echo '\\033[1;33m🚀 Launching FadCam...\\033[0m' && adb shell am start -n com.fadcam.beta/com.fadcam.SplashActivity && echo '\\033[1;32m✅ App Launched!\\033[0m' && echo ''"
         }
     ]
 }

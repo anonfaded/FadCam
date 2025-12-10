@@ -1,5 +1,5 @@
 /**
- * FadCam Remote - Web Dashboard (Matches Phone App Design Exactly)
+ * FadCam Remote - Web Dashboard
  */
 :root {
     /* Colors matching phone app */
@@ -1259,6 +1259,20 @@ video {
     width: 100%;
 }
 
+/* Base iOS Icon Style */
+.card-ios-icon {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border-radius: 6px;
+    transition: color 300ms ease, background 300ms ease;
+}
+
 /* Battery Icon */
 .battery-icon {
     position: relative;
@@ -1621,105 +1635,98 @@ video {
     font-weight: 600 !important;
 }
 
-/* -------- TORCH CARD -------- */
+/* -------- TORCH CARD (STANDALONE) -------- */
 
-.card-torch-ios {
-    padding: 0 !important;
-    position: relative !important;
-    overflow: hidden !important;
-    cursor: pointer !important;
+.torch-card {
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    min-height: 38px;
+    transition: border-color 200ms ease;
 }
 
-.card-torch-ios .card-clickable {
-    position: relative !important;
-    padding: 10px 12px !important;
-    gap: 10px !important;
-    overflow: hidden !important;
-    align-items: center !important;
+.torch-card:hover {
+    border-color: #3d4349;
 }
 
-/* Fill background layer */
-.card-torch-ios .card-ios-fill {
+.torch-card-inner {
+    position: relative;
+    padding: 10px 12px;
+    overflow: hidden;
+}
+
+/* Background Fill - Yellow when ON */
+.torch-fill {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    width: 0%;
     background: linear-gradient(90deg, #ffd700 0%, #ffb700 100%);
-    transition: width 300ms cubic-bezier(0.34, 0.69, 0.5, 1);
-    z-index: 1;
-    border-radius: 8px;
     opacity: 0;
+    transition: opacity 400ms ease-in-out;
+    z-index: 1;
 }
 
-/* Torch ON state - show fill */
-.card-torch-ios.on .card-ios-fill {
-    width: 100%;
+.torch-card.on .torch-fill {
     opacity: 1;
 }
 
-/* Content layer - stays on top */
-.card-torch-ios .card-ios-content {
+/* Content Layer */
+.torch-content {
     position: relative;
-    z-index: 2;
+    z-index: 10;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 10px;
-    width: 100%;
 }
 
-/* Torch Icon */
-.torch-icon {
+/* Icon Container */
+.torch-icon-fa {
     width: 20px;
     height: 20px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #f59e0b;
-    transition: color 300ms ease;
     font-size: 20px;
-    position: relative;
-    z-index: 3;
-}
-
-/* Torch OFF state - dimmed icon */
-.card-torch-ios.off .torch-icon {
+    flex-shrink: 0;
     color: #8b949e;
+    transition: color 300ms ease;
+    line-height: 20px;
+    text-align: center;
 }
 
-/* Torch ON state - dark icon for visibility on yellow background */
-.card-torch-ios.on .torch-icon {
-    color: #1a1f26;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+.torch-card.on .torch-icon-fa {
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 0 0 4px rgba(255, 215, 0, 0.6);
+}
+
+/* Text Container */
+.torch-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.torch-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.torch-value {
+    font-size: 12px;
     font-weight: 700;
-}
-
-/* Torch label styling - matches volume label */
-.card-torch-ios .card-label-sm {
-    color: #ffffff !important;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-    font-weight: 600 !important;
-    font-size: 12px !important;
-}
-
-/* Torch value text */
-.card-torch-ios .card-value-sm {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    white-space: nowrap;
+    color: #8b949e;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
     transition: color 300ms ease;
 }
 
-.card-torch-ios.off .card-value-sm {
-    color: #8b949e !important;
-}
-
-.card-torch-ios.on .card-value-sm {
-    color: #1a1f26 !important;
-    text-shadow: none;
+.torch-card.on .torch-value {
+    color: #ffffff;
 }
 
 /* -------- NETWORK CARD -------- */
