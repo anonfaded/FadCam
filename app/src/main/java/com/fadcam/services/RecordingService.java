@@ -759,6 +759,22 @@ public class RecordingService extends Service {
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH.equals(action)) {
             // Handle torch toggle requests
+            // If service was started via startForegroundService(), we MUST call startForeground()
+            // within 5 seconds to avoid crash
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isWorkingInProgress()) {
+                // Service is not recording, so start a minimal foreground notification
+                try {
+                    NotificationCompat.Builder minimalBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                            .setContentTitle(getString(R.string.app_name))
+                            .setContentText("Torch toggled")
+                            .setSmallIcon(R.drawable.ic_notification_icon);
+                    startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    // Stop the service immediately after torch toggle since we're not recording
+                    new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error starting foreground for torch toggle", e);
+                }
+            }
             toggleRecordingTorch();
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION.equals(action)) {
