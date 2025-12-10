@@ -1,0 +1,12 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "FadCam: build and install debug",
+            "type": "shell",
+            "command": "./gradlew assembleDefaultDebug installDefaultDebug && APK_PATH=$(find app/build/outputs/apk -name '*debug.apk' -type f 2>/dev/null | head -1) && APK_DIR=$(dirname \"$APK_PATH\") && APK_NAME=$(basename \"$APK_PATH\") && echo '' && echo '\\033[1;32m✅ BUILD SUCCESSFUL!\\033[0m' && echo '\\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\033[0m' && echo '' && echo '\\033[1;36m📁 Output Directory:\\033[0m' && echo \"   $APK_DIR\" && echo '' && echo '\\033[1;36m📦 APK Name:\\033[0m' && echo \"   $APK_NAME\" && echo '' && echo '\\033[1;36m📍 Full Path:\\033[0m' && echo \"   $APK_PATH\" && echo '' && echo '\\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\033[0m' && echo ''"
+        }
+    ]
+}

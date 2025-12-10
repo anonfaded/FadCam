@@ -78,7 +78,7 @@
             <!-- Sidebar Scrollable Content -->
             <div class="sidebar-content">
             <div class="server-hero-card">
-                <div class="server-hero-bg" style="background-image: url('assets/images/fadcam_server_room_bg_rounded.png');"></div>
+                <div class="server-hero-bg" id="heroBackground"></div>
                 <div class="server-hero-content">
                     <!-- Status Indicators - TOP RIGHT -->
                     <div class="server-status-indicators">
@@ -246,7 +246,7 @@
                 <!-- Memory Card - iOS Style -->
                 <div class="card card-sm card-memory-ios">
                     <div class="card-clickable">
-                        <i class="fas fa-microchip card-icon-sm" style="color: #ec4899;"></i>
+                        <i class="fas fa-microchip card-icon-sm" style="color: #0ea5e9;"></i>
                         <div class="memory-info">
                             <div class="memory-label">Memory</div>
                             <div class="memory-value" id="memoryValue">—</div>
@@ -290,15 +290,19 @@
 
             <!-- Torch & Volume Row -->
             <div class="cards-grid">
-                <!-- Torch Card - Compact -->
-                <div class="card-sm" onclick="toggleTorch()">
+                <!-- Torch Card - iOS Style with state -->
+                <div class="card-sm card-torch-ios" onclick="toggleTorch()">
                     <div class="card-clickable">
-                        <i class="fas fa-lightbulb card-icon-sm" style="color: #f59e0b;"></i>
-                        <div class="card-sm-content">
-                            <div class="card-label-sm">Torch</div>
-                            <div class="card-value-sm" id="torchState">OFF</div>
+                        <!-- Background Fill -->
+                        <div class="card-ios-fill" id="torchFill"></div>
+                        <!-- Content -->
+                        <div class="card-ios-content">
+                            <i class="fas fa-lightbulb card-icon-sm torch-icon" id="torchIcon"></i>
+                            <div class="card-sm-content">
+                                <div class="card-label-sm">Torch</div>
+                                <div class="card-value-sm" id="torchState">OFF</div>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right card-arrow-sm"></i>
                     </div>
                 </div>
 
@@ -387,14 +391,14 @@
         <!-- Player Area -->
         <div class="player-area">
             <div class="video-container">
-                <video id="videoPlayer" playsinline muted autoplay controls></video>
+                <video id="videoPlayer" playsinline muted autoplay></video>
                 <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="play-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <polygon points="5 3 19 12 5 21 5 3"/>
                         </svg>
                     </div>
-                    <div class="overlay-text">Click to play live stream</div>
+                    <div class="overlay-text">Stream will auto-start when you begin recording.<br/><br/>If it doesn't, hard refresh the page:<br/><strong>Android:</strong> Long-press refresh icon<br/><strong>Desktop:</strong> Ctrl+Shift+R or Ctrl+F5</div>
                 </div>
             </div>
         </div>
@@ -832,6 +836,33 @@
         let sidebarOpen = true; // Open by default
         let justToggledSidebar = false; // Prevent immediate close on mobile
         let hlsService = null;
+
+        /**
+         * Detect WebP support and load appropriate hero background image
+         */
+        function detectWebPAndLoadHero() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            if (ctx && ctx.fillStyle) {
+                ctx.fillStyle = 'rgba(0,0,0,0)';
+                ctx.fillRect(0, 0, 1, 1);
+                const supportsWebP = canvas.toDataURL('image/webp').indexOf('image/webp') === 5;
+                const heroElement = document.getElementById('heroBackground');
+                if (heroElement && !supportsWebP) {
+                    heroElement.classList.add('no-webp');
+                    console.log('[Image] WebP not supported, using PNG fallback');
+                }
+            }
+        }
+
+        // Detect WebP support on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', detectWebPAndLoadHero);
+        } else {
+            detectWebPAndLoadHero();
+        }
 
         // Toast notification functions - see showToast implementation at end of script
         
@@ -1894,15 +1925,21 @@
             
             // Update torch display and show notification if changed
             const torchState = document.getElementById('torchState');
-            if (torchState) {
+            const torchCard = document.querySelector('.card-torch-ios');
+            const torchIcon = document.getElementById('torchIcon');
+            const torchFill = document.getElementById('torchFill');
+            
+            if (torchState && torchCard) {
+                torchCard.classList.remove('on', 'off');
+                
                 if (status.torchOn) {
                     torchState.textContent = 'ON';
-                    torchState.style.color = '#f59e0b';
-                    torchState.style.fontWeight = '700';
+                    torchCard.classList.add('on');
+                    if (torchIcon) torchIcon.className = 'fas fa-lightbulb-on card-icon-sm torch-icon';
                 } else {
                     torchState.textContent = 'OFF';
-                    torchState.style.color = '#8b949e';
-                    torchState.style.fontWeight = '600';
+                    torchCard.classList.add('off');
+                    if (torchIcon) torchIcon.className = 'fas fa-lightbulb card-icon-sm torch-icon';
                 }
             }
             
