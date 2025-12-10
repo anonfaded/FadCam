@@ -131,6 +131,7 @@ public class RecordingService extends Service {
 
     private CameraManager cameraManager; // Primary camera manager
     private Handler backgroundHandler; // For camera operations
+    private HandlerThread backgroundThread; // Background thread for camera operations
 
     private long recordingStartTime;
 
@@ -198,7 +199,7 @@ public class RecordingService extends Service {
             return;
         }
 
-        HandlerThread backgroundThread = new HandlerThread("CameraBackground");
+        backgroundThread = new HandlerThread("CameraBackground");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
 
@@ -920,6 +921,18 @@ public class RecordingService extends Service {
                 Log.d(TAG, "Recording WakeLock released during service destruction.");
             } catch (Exception e) {
                 Log.e(TAG, "Error releasing wake lock", e);
+            }
+        }
+
+        // Stop background thread to prevent memory leak
+        if (backgroundThread != null) {
+            try {
+                backgroundThread.quitSafely();
+                backgroundThread.join(1000);
+                Log.d(TAG, "Background thread stopped successfully.");
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Error stopping background thread", e);
+                Thread.currentThread().interrupt();
             }
         }
 
