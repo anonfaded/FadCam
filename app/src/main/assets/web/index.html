@@ -1726,7 +1726,12 @@
                     </div>
                 `;
             });
-            content += '</div>';
+            content += `</div>
+                <div style="background: rgba(100, 150, 255, 0.1); border-left: 3px solid #4a90e2; border-radius: 6px; padding: 12px; margin-top: 16px;">
+                    <p style="color: #7aa3f0; font-size: 11px; margin: 0; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="margin-right: 6px;"></i><strong>Note:</strong> After changing the mode, you must stop recording and start again for the change to take effect.
+                    </p>
+                </div>`;
             document.getElementById('recordingModeContent').innerHTML = content;
             document.getElementById('recordingModeModal').classList.add('visible');
         }
@@ -1771,7 +1776,12 @@
                     </div>
                 `;
             });
-            content += '</div>';
+            content += `</div>
+                <div style="background: rgba(100, 150, 255, 0.1); border-left: 3px solid #4a90e2; border-radius: 6px; padding: 12px; margin-top: 16px;">
+                    <p style="color: #7aa3f0; font-size: 11px; margin: 0; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="margin-right: 6px;"></i><strong>Note:</strong> After changing the quality, you must stop recording and start again for the change to take effect.
+                    </p>
+                </div>`;
             document.getElementById('streamQualityContent').innerHTML = content;
             document.getElementById('streamQualityModal').classList.add('visible');
         }
@@ -2362,7 +2372,7 @@
                         <div style="display: flex; gap: 8px; margin-bottom: 6px; align-items: center;">
                             <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${ep.method === 'GET' ? '#3fb950' : '#f85149'}; padding: 3px 8px; border-radius: 4px; min-width: 38px; text-align: center;">${ep.method}</span>
                             <span style="font-size: 12px; font-weight: 600; color: #e6edf3; font-family: monospace; flex: 1;">${ep.path}</span>
-                            <button onclick="copyToClipboard('${fullUrl}')" style="background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 12px; padding: 4px 6px; transition: all 200ms;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#58a6ff'" title="Copy endpoint URL">
+                            <button data-copy-url="${fullUrl}" class="endpoint-copy-btn" style="background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 12px; padding: 4px 6px; transition: all 200ms;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#58a6ff'" title="Copy endpoint URL">
                                 <i class="fas fa-link"></i>
                             </button>
                         </div>
@@ -2383,6 +2393,47 @@
             
             endpointsContent.innerHTML = endpointsHtml;
             document.getElementById('endpointsModal').classList.add('visible');
+            
+            // Attach click handlers to copy buttons
+            document.querySelectorAll('.endpoint-copy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.getAttribute('data-copy-url');
+                    copyToClipboardFallback(url);
+                });
+            });
+        }
+        
+        function copyToClipboardFallback(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('<i class="fas fa-check"></i> Copied to clipboard');
+                }).catch(() => {
+                    showToast('<i class="fas fa-times"></i> Failed to copy');
+                });
+            } else {
+                // Fallback for older browsers or secure contexts
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showToast('<i class="fas fa-check"></i> Copied to clipboard');
+                    } else {
+                        showToast('<i class="fas fa-times"></i> Failed to copy');
+                    }
+                } catch (err) {
+                    console.error('Copy failed:', err);
+                    showToast('<i class="fas fa-times"></i> Failed to copy');
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
         }
 
         function hideEndpointsModal() {
