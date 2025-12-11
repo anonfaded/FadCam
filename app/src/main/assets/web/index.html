@@ -359,10 +359,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Alarm Control Card -->
-            <div class="cards-grid">
+                <!-- Alarm Control Card (moved to same row) -->
                 <div class="card-sm" onclick="showAlarmModal()" id="alarmCard" style="transition: all 300ms ease; cursor: pointer;">
                     <div class="card-clickable">
                         <i class="fas fa-bell card-icon-sm" style="color: #ef4444; font-size: 18px;" id="alarmIcon"></i>
@@ -378,14 +376,24 @@
                 </div>
             </div>
 
+            <!-- Removed duplicate Alarm card grid that was here -->
+
             <!-- End Sidebar Scrollable Content -->
             </div>
+
+            <!-- FadCam Pro Premium Button -->
+            <button id="proButton" onclick="showProModal(); return false;" class="pro-shimmer-button" title="FadCam Pro - Premium Features">
+                <span class="pro-shimmer"></span>
+                <span class="pro-button-text">
+                    <i class="fas fa-crown" style="margin-right: 8px;"></i>FadCam Pro
+                </span>
+            </button>
 
             <!-- Sidebar Footer (outside scrollable content) -->
             <div class="sidebar-footer">
                 <!-- Footer Info Text -->
                 <div style="font-size: 11px; color: #8b949e; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 12px;">
-                    <span>© 2025 faded.dev</span>
+                    <span>© 2024-2025 <a href="https://faded.dev" target="_blank" style="color: #ff6b6b; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#ff5252'" onmouseout="this.style.color='#ff6b6b'">faded.dev</a></span>
                     <div class="footer-links">
                     <a href="https://discord.gg/kvAZvdkuuN" target="_blank" title="Discord Community" class="footer-link">
                         <i class="fab fa-discord"></i>
@@ -524,6 +532,92 @@
                 <button class="modal-close" onclick="hideEndpointsModal()">✕</button>
             </div>
             <div class="modal-body" id="endpointsContent"></div>
+        </div>
+    </div>
+
+    <!-- FadCam Pro Modal -->
+    <div class="modal" id="proModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #d4af37 0%, #c19a3a 100%); border-bottom: 2px solid #d4af37;">
+                <h2 style="color: #1a1a1a; display: flex; align-items: center; gap: 8px;"><i class="fas fa-crown"></i>FadCam Pro</h2>
+                <button class="modal-close" onclick="hideProModal()" style="color: #1a1a1a;">✕</button>
+            </div>
+            <div class="modal-body" style="background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); padding: 24px; max-height: 80vh; overflow-y: auto;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;"><i class="fas fa-star" style="color: #d4af37;"></i></div>
+                    <h3 style="font-size: 20px; font-weight: 700; color: #e6edf3; margin: 0 0 8px 0;">FadCam Pro</h3>
+                    <p style="color: #8b949e; margin: 0; font-size: 13px;">Premium features for complete discretion</p>
+                </div>
+
+                <!-- Features comparison table -->
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid #30363d; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #30363d; background: rgba(255, 255, 255, 0.03);">
+                                <th style="padding: 12px; text-align: left; color: #8b949e; font-weight: 600; border-right: 1px solid #30363d;"></th>
+                                <th style="padding: 12px; text-align: center; color: #3fb950; font-weight: 700; border-right: 1px solid #30363d;">Free</th>
+                                <th style="padding: 12px; text-align: center; color: #d4af37; font-weight: 700; border-right: 1px solid #30363d;">Pro</th>
+                                <th style="padding: 12px; text-align: center; color: #ef4444; font-weight: 700; border-right: 1px solid #30363d;">Pro+</th>
+                                <th style="padding: 12px; text-align: center; color: #00bcd4; font-weight: 700;">Lab</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <td style="padding: 12px; color: #e6edf3; font-weight: 600; border-right: 1px solid #30363d;">Everything</td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-check" style="color: #3fb950;"></i></td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-check" style="color: #d4af37;"></i></td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <td style="padding: 12px; color: #e6edf3; font-weight: 600; border-right: 1px solid #30363d;">Notification Discreet Icon</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-check" style="color: #d4af37;"></i></td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <td style="padding: 12px; color: #e6edf3; font-weight: 600; border-right: 1px solid #30363d;">User Uploaded Icon</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-circle" style="color: #ef4444; font-size: 8px;"></i></td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <td style="padding: 12px; color: #e6edf3; font-weight: 600; border-right: 1px solid #30363d;">Custom App Name</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-circle" style="color: #ef4444; font-size: 8px;"></i></td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; color: #e6edf3; font-weight: 600; border-right: 1px solid #30363d;">FadDrive Cloud Sync</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;">−</td>
+                                <td style="padding: 12px; text-align: center;"><i class="fas fa-circle" style="color: #00bcd4; font-size: 10px;"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Alert messages -->
+                <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4caf50; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                    <p style="color: #4caf50; font-size: 12px; margin: 0; line-height: 1.5;"><i class="fas fa-gift" style="margin-right: 6px;"></i><strong>Early bird offer!</strong> FadCam Pro is currently free. Soon transitioning to paid access.</p>
+                </div>
+
+                <div style="background: rgba(244, 67, 54, 0.1); border-left: 3px solid #f44336; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+                    <p style="color: #f44336; font-size: 12px; margin: 0; line-height: 1.5;"><i class="fas fa-info-circle" style="margin-right: 6px;"></i>Pro+ and Lab features coming soon with custom icon uploads, custom app names, and FadDrive cloud sync.</p>
+                </div>
+
+                <a href="https://www.patreon.com/posts/fadcam-pro-free-145013262" target="_blank" style="display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, #d4af37 0%, #c19a3a 100%); color: #1a1a1a; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 700; border: none; cursor: pointer; font-size: 14px; transition: all 200ms ease;">
+                    <i class="fas fa-crown" style="margin-right: 6px;"></i>Get FadCam Pro
+                </a>
+
+                <p style="text-align: left; color: #6e7681; font-size: 11px; margin-top: 16px; margin-bottom: 0; line-height: 1.6;">
+                    FadCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing work. Upgrading to Pro (currently free) helps support development, and in return I'm able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)
+                </p>
+            </div>
         </div>
     </div>
 
@@ -1147,7 +1241,7 @@
 
         // Close modals on outside click
         document.addEventListener('click', (e) => {
-            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal', 'alarmModal'];
+            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal', 'alarmModal', 'proModal'];
             modals.forEach(id => {
                 const modal = document.getElementById(id);
                 if (e.target === modal && modal.classList.contains('visible')) {
@@ -2231,15 +2325,22 @@
             const serverUrl = document.getElementById('serverUrl')?.textContent || CONFIG.BASE_URL;
             
             const endpoints = [
+                // GET Endpoints
                 { method: 'GET', path: '/status', desc: 'Server status, metrics, battery, network, torch, volume, recording mode, stream quality' },
-                { method: 'GET', path: '/live.m3u8', desc: 'HLS stream playlist for video playback' },
-                { method: 'POST', path: '/torch/toggle', desc: 'Toggle flashlight on/off, returns updated state' },
+                { method: 'GET', path: '/live.m3u8', desc: 'HLS stream playlist for video playback. Use this link to play stream in other software like VLC.' },
+                { method: 'GET', path: '/init.mp4', desc: 'CMAF init segment for video playback' },
                 { method: 'GET', path: '/audio/volume', desc: 'Get current device volume level and percentage' },
-                { method: 'POST', path: '/audio/volume', desc: 'Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)' },
+                
+                // POST Endpoints
+                { method: 'POST', path: '/torch/toggle', desc: 'Toggle flashlight on/off' },
+                { method: 'POST', path: '/recording/toggle', desc: 'Toggle recording on/off' },
                 { method: 'POST', path: '/config/recordingMode', desc: 'Set recording mode: stream_only, stream_and_save' },
                 { method: 'POST', path: '/config/streamQuality', desc: 'Set stream quality: low, medium, high, ultra' },
                 { method: 'POST', path: '/config/batteryWarning', desc: 'Set battery warning threshold percentage' },
-                { method: 'GET', path: '/health', desc: 'Server health check endpoint' }
+                { method: 'POST', path: '/audio/volume', desc: 'Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)' },
+                { method: 'POST', path: '/alarm/ring', desc: 'Ring security alarm/buzzer with specified sound and duration' },
+                { method: 'POST', path: '/alarm/stop', desc: 'Stop ringing security alarm' },
+                { method: 'POST', path: '/alarm/schedule', desc: 'Schedule alarm for future time' }
             ];
             
             let endpointsHtml = `
@@ -2255,11 +2356,15 @@
             `;
             
             endpoints.forEach((ep, idx) => {
+                const fullUrl = serverUrl + ep.path;
                 endpointsHtml += `
                     <div style="margin-bottom: ${idx === endpoints.length - 1 ? '0' : '12px'}; padding-bottom: ${idx === endpoints.length - 1 ? '0' : '12px'}; ${idx === endpoints.length - 1 ? '' : 'border-bottom: 1px solid #2d3439;'}">
-                        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+                        <div style="display: flex; gap: 8px; margin-bottom: 6px; align-items: center;">
                             <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${ep.method === 'GET' ? '#3fb950' : '#f85149'}; padding: 3px 8px; border-radius: 4px; min-width: 38px; text-align: center;">${ep.method}</span>
-                            <span style="font-size: 12px; font-weight: 600; color: #e6edf3; font-family: monospace;">${ep.path}</span>
+                            <span style="font-size: 12px; font-weight: 600; color: #e6edf3; font-family: monospace; flex: 1;">${ep.path}</span>
+                            <button onclick="copyToClipboard('${fullUrl}')" style="background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 12px; padding: 4px 6px; transition: all 200ms;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#58a6ff'" title="Copy endpoint URL">
+                                <i class="fas fa-link"></i>
+                            </button>
                         </div>
                         <div style="font-size: 11px; color: #8b949e; line-height: 1.4; margin-left: 46px;">${ep.desc}</div>
                     </div>
@@ -2282,6 +2387,25 @@
 
         function hideEndpointsModal() {
             closeModalAnimated('endpointsModal');
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('<i class="fas fa-check"></i> Copied to clipboard', 2000);
+            }).catch(() => {
+                showToast('<i class="fas fa-times"></i> Failed to copy', 2000);
+            });
+        }
+
+        /**
+         * Show FadCam Pro modal
+         */
+        function showProModal() {
+            document.getElementById('proModal').classList.add('visible');
+        }
+
+        function hideProModal() {
+            closeModalAnimated('proModal');
         }
 
         // ===== ALARM FUNCTIONS =====

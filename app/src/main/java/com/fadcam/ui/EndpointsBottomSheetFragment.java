@@ -56,13 +56,21 @@ public class EndpointsBottomSheetFragment extends BottomSheetDialogFragment {
         LinearLayout postContainer = view.findViewById(R.id.post_endpoints_container);
 
         // GET Endpoints
-        addEndpoint(getContainer, "Server Root", "/", "GET");
-        addEndpoint(getContainer, "Live Stream", "/live.m3u8", "GET");
-        addEndpoint(getContainer, "Status API", "/status", "GET");
+        addEndpoint(getContainer, "Live Stream (HLS)", "/live.m3u8", "GET");
         addEndpoint(getContainer, "Init Segment", "/init.mp4", "GET");
+        addEndpoint(getContainer, "Status API", "/status", "GET");
+        addEndpoint(getContainer, "Get Volume Level", "/audio/volume", "GET");
 
         // POST Endpoints
-        addEndpoint(postContainer, "Torch Toggle", "/torch/toggle", "POST");
+        addEndpoint(postContainer, "Toggle Torch", "/torch/toggle", "POST");
+        addEndpoint(postContainer, "Toggle Recording", "/recording/toggle", "POST");
+        addEndpoint(postContainer, "Set Recording Mode", "/config/recordingMode", "POST");
+        addEndpoint(postContainer, "Set Stream Quality", "/config/streamQuality", "POST");
+        addEndpoint(postContainer, "Set Battery Warning", "/config/batteryWarning", "POST");
+        addEndpoint(postContainer, "Set Volume Level", "/audio/volume", "POST");
+        addEndpoint(postContainer, "Ring Alarm", "/alarm/ring", "POST");
+        addEndpoint(postContainer, "Stop Alarm", "/alarm/stop", "POST");
+        addEndpoint(postContainer, "Schedule Alarm", "/alarm/schedule", "POST");
     }
 
     private void addEndpoint(LinearLayout container, String label, String endpoint, String method) {
