@@ -296,7 +296,11 @@ public class RemoteStreamManager {
                 Log.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
             }
             
-            Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
+            if (initData != null) {
+                Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
+            } else {
+                Log.w(TAG, "⚠️ Initialization segment is NULL");
+            }
         } finally {
             bufferLock.writeLock().unlock();
         }
