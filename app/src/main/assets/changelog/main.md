@@ -28,7 +28,10 @@
     NOTE: This file is parsed to render dividers, headers, and content dynamically.
 -->
 
+# Note
+`Many users are unaware of a hidden feature in FadCam. Yes, there is a trash directory, but it is normally inaccessible for the user’s privacy. To access it, simply long-press the FadCam icon you see in the header of the Home tab, and you will enter it. From there, you can recover deleted files or permanently delete them. Hopefully, this will reduce emails about “Where is my deleted video?” :)`
 
+---
 
 # ✨ New Features  
 

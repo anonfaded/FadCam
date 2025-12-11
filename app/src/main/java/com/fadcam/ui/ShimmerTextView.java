@@ -32,7 +32,7 @@ public class ShimmerTextView extends AppCompatTextView {
     private int shimmerWidth = 50;
     private int shimmerColor = 0x45FFFFFF;
     private long shimmerDuration = 1200;
-    private long shimmerDelay = 4000;
+    private long shimmerDelay = 0;
     private float cornerRadius = 0f;
 
     public ShimmerTextView(@NonNull Context context) {
@@ -113,7 +113,6 @@ public class ShimmerTextView extends AppCompatTextView {
         shimmerAnimator.setInterpolator(new LinearInterpolator());
         shimmerAnimator.setRepeatCount(ValueAnimator.INFINITE);
         shimmerAnimator.setRepeatMode(ValueAnimator.RESTART);
-        shimmerAnimator.setStartDelay(shimmerDelay);
         shimmerAnimator.addUpdateListener(animation -> {
             shimmerTranslate = (float) animation.getAnimatedValue();
             invalidate();

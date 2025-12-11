@@ -64,7 +64,8 @@ public class ShimmerButton extends MaterialButton {
             cornerRadius = h / 2f; // Pill shape radius
             buttonRect.set(0, 0, w, h);
             createShimmerGradient();
-            startShimmer();
+            // Start shimmer immediately without delay
+            post(this::startShimmer);
         }
     }
 
@@ -112,13 +113,24 @@ public class ShimmerButton extends MaterialButton {
             return;
         }
 
+        int width = getWidth();
+        if (width <= 0) {
+            // Width not ready yet, will be called from onSizeChanged
+            return;
+        }
+
         isShimmering = true;
-        shimmerAnimator = ValueAnimator.ofFloat(-shimmerWidth, getWidth() + shimmerWidth);
+        shimmerAnimator = ValueAnimator.ofFloat(-shimmerWidth, width + shimmerWidth);
         shimmerAnimator.setDuration(shimmerDuration);
         shimmerAnimator.setInterpolator(new LinearInterpolator());
         shimmerAnimator.setRepeatCount(ValueAnimator.INFINITE);
         shimmerAnimator.setRepeatMode(ValueAnimator.RESTART);
-        shimmerAnimator.setStartDelay(shimmerDelay);
+        
+        // Set initial value to show shimmer immediately at the start position
+        shimmerTranslate = -shimmerWidth;
+        isShimmering = true;
+        invalidate();
+        
         shimmerAnimator.addUpdateListener(animation -> {
             shimmerTranslate = (float) animation.getAnimatedValue();
             invalidate();
@@ -158,9 +170,12 @@ public class ShimmerButton extends MaterialButton {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (getWidth() > 0) {
-            startShimmer();
-        }
+        // Start shimmer as soon as view is attached, don't wait for size
+        post(() -> {
+            if (getWidth() > 0) {
+                startShimmer();
+            }
+        });
     }
 
     @Override
