@@ -1642,8 +1642,9 @@
             if (!currentStatus) return;
             const qualities = [
                 { id: 'low', label: 'Low', subtitle: '1 Mbps • 15 FPS • Best for slow networks' },
-                { id: 'medium', label: 'Medium', subtitle: '3 Mbps • 24 FPS • Balanced quality' },
-                { id: 'high', label: 'High', subtitle: '5 Mbps • 30 FPS • Best quality' }
+                { id: 'medium', label: 'Medium', subtitle: '2.5 Mbps • 24 FPS • Balanced quality' },
+                { id: 'high', label: 'High', subtitle: '5 Mbps • 30 FPS • Best quality' },
+                { id: 'ultra', label: 'Ultra', subtitle: '8 Mbps • 30 FPS • Maximum quality' }
             ];
             let content = '<div class="modal-section">';
             qualities.forEach(quality => {
@@ -2173,7 +2174,7 @@
                 { method: 'GET', path: '/audio/volume', desc: 'Get current device volume level and percentage' },
                 { method: 'POST', path: '/audio/volume', desc: 'Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)' },
                 { method: 'POST', path: '/config/recordingMode', desc: 'Set recording mode: stream_only, stream_and_save' },
-                { method: 'POST', path: '/config/streamQuality', desc: 'Set stream quality: low, medium, high' },
+                { method: 'POST', path: '/config/streamQuality', desc: 'Set stream quality: low, medium, high, ultra' },
                 { method: 'POST', path: '/config/batteryWarning', desc: 'Set battery warning threshold percentage' },
                 { method: 'GET', path: '/health', desc: 'Server health check endpoint' }
             ];
