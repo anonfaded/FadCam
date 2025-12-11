@@ -174,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             
+            // Handle Remote badge
             boolean shouldShowRemoteBadge = NewFeatureManager.shouldShowBadge(this, "remote");
             Log.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowRemoteBadge=" + shouldShowRemoteBadge);
             
@@ -197,6 +198,35 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("MainActivity", "Badge removed for remote");
                 } catch (Exception e) {
                     Log.e("MainActivity", "Error removing badge", e);
+                }
+            }
+            
+            // Handle Settings Nav Badge (separate from watermark option inside settings)
+            boolean shouldShowSettingsNavBadge = NewFeatureManager.shouldShowBadge(this, "settings_nav");
+            Log.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowSettingsNavBadge=" + shouldShowSettingsNavBadge);
+            
+            if (shouldShowSettingsNavBadge) {
+                // Show badge on Settings nav item as a small dot (no text, no number)
+                try {
+                    com.google.android.material.badge.BadgeDrawable badge = 
+                        bottomNavigationView.getOrCreateBadge(R.id.navigation_settings);
+                    badge.setVisible(true);
+                    badge.clearNumber();
+                    badge.clearText();
+                    badge.setHorizontalPadding(0);
+                    badge.setVerticalPadding(0);
+                    badge.setBackgroundColor(0xFF4CAF50); // Green background
+                    Log.d("MainActivity", "Badge shown for settings");
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error creating settings badge", e);
+                }
+            } else {
+                // Remove badge from Settings nav item
+                try {
+                    bottomNavigationView.removeBadge(R.id.navigation_settings);
+                    Log.d("MainActivity", "Badge removed for settings");
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error removing settings badge", e);
                 }
             }
         } catch (Exception e) {
@@ -498,6 +528,10 @@ public class MainActivity extends AppCompatActivity {
                         // Reset nav and status bar color when leaving remote
                         setBottomNavColor(0);
                         setStatusBarColor(0);
+                        // Mark settings nav badge as seen when entering Settings
+                        NewFeatureManager.markFeatureAsSeen(MainActivity.this, "settings_nav");
+                        // Refresh badges after marking
+                        updateFeatureBadgeVisibility();
                         break;
                 }
             }
