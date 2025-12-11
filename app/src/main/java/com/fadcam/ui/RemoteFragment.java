@@ -200,6 +200,7 @@ public class RemoteFragment extends BaseFragment {
             @Override
             public void run() {
                 updateUI();
+                updateModeDisplay(); // ---------- Fix: Refresh mode display every update cycle like quality
                 statusUpdateHandler.postDelayed(this, 2000);
             }
         };
@@ -235,6 +236,7 @@ public class RemoteFragment extends BaseFragment {
         }
         
         updateUI();
+        updateModeDisplay(); // Refresh mode display in case web client changed it
     }
     
     @Override
@@ -466,9 +468,11 @@ public class RemoteFragment extends BaseFragment {
     private void updateRequirementsDisplay() {
         // Display current stream quality preset
         // NOTE: Resolution and orientation now use normal recording settings
-        RemoteStreamManager manager = RemoteStreamManager.getInstance();
-        StreamQuality quality = manager.getStreamQuality();
-        StreamQuality.Preset preset = quality.getCurrentPreset();
+        
+        // Read quality preset from SharedPreferences to get real-time updates from web changes
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        String presetName = prefs.getString("quality_preset", "HIGH");
+        StreamQuality.Preset preset = StreamQuality.Preset.valueOf(presetName);
         
         // Format: "High • 30fps cap • 5 Mbps"
         // (Resolution comes from normal recording settings)
