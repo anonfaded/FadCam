@@ -1,6 +1,7 @@
 package com.fadcam.ui.utils;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.fadcam.SharedPreferencesManager;
 
@@ -18,6 +19,7 @@ import com.fadcam.SharedPreferencesManager;
  */
 public class NewFeatureManager {
 
+    private static final String TAG = "NewFeatureManager";
     private static final String BADGE_SEEN_PREFIX = "badge_";
     private static final String BADGE_SEEN_SUFFIX = "_seen";
 
@@ -31,8 +33,9 @@ public class NewFeatureManager {
     public static boolean shouldShowBadge(Context context, String featureKey) {
         SharedPreferencesManager prefsManager = SharedPreferencesManager.getInstance(context);
         String key = BADGE_SEEN_PREFIX + featureKey + BADGE_SEEN_SUFFIX;
-        // If key doesn't exist or is false, show badge
-        return !prefsManager.getBoolean(key, false);
+        boolean shouldShow = !prefsManager.getBoolean(key, false);
+        Log.d(TAG, "shouldShowBadge(" + featureKey + "): " + shouldShow + " (key=" + key + ")");
+        return shouldShow;
     }
 
     /**
@@ -46,6 +49,7 @@ public class NewFeatureManager {
         SharedPreferencesManager prefsManager = SharedPreferencesManager.getInstance(context);
         String key = BADGE_SEEN_PREFIX + featureKey + BADGE_SEEN_SUFFIX;
         prefsManager.putBoolean(key, true);
+        Log.d(TAG, "markFeatureAsSeen(" + featureKey + "): Set " + key + " = true");
     }
 
     /**

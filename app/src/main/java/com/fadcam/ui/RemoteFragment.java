@@ -230,9 +230,6 @@ public class RemoteFragment extends BaseFragment {
             mainActivity.setStatusBarColor(0xFF000000); // Pure black
         }
         
-        // Mark remote feature as seen (this dismisses the NEW badge)
-        NewFeatureManager.markFeatureAsSeen(requireContext(), "remote");
-        
         boolean serviceRunning = RemoteStreamManager.getInstance().isStreamingEnabled();
         if (serviceRunning) {
             Intent intent = new Intent(requireContext(), RemoteStreamService.class);
@@ -256,9 +253,15 @@ public class RemoteFragment extends BaseFragment {
     public void onPause() {
         super.onPause();
         
-        // Restore default bottom nav AND status bar color when leaving remote tab
+        // Mark remote feature as seen when user leaves the Remote tab
+        // (This ensures badge is visible until user explicitly views it)
+        Log.d(TAG, "onPause: Marking remote feature as seen");
+        NewFeatureManager.markFeatureAsSeen(requireContext(), "remote");
+        
+        // Refresh badge UI immediately to show the change
         if (getActivity() instanceof MainActivity) {
             MainActivity mainActivity = (MainActivity) getActivity();
+            mainActivity.refreshFeatureBadges(); // Update badge UI immediately
             mainActivity.setBottomNavColor(0); // Restore original
             mainActivity.setStatusBarColor(0); // Restore original from theme
         }

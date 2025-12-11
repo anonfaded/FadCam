@@ -166,28 +166,52 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Update feature badge visibility based on whether features have been seen.
-     * Called in onResume to refresh badge states.
-     * Also removes any Material Design BadgeDrawable from the nav item.
+     * Uses Material Design BadgeDrawable on BottomNavigationView items.
      */
     private void updateFeatureBadgeVisibility() {
         try {
-            android.widget.TextView remoteBadge = findViewById(R.id.remote_nav_badge);
-            if (remoteBadge != null) {
-                boolean shouldShow = NewFeatureManager.shouldShowBadge(this, "remote");
-                remoteBadge.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+            if (bottomNavigationView == null) {
+                return;
             }
             
-            // Remove any Material Design BadgeDrawable from the remote nav item
-            try {
-                bottomNavigationView.removeBadge(R.id.navigation_remote);
-            } catch (Exception e) {
-                Log.e("MainActivity", "Error removing Material badge from nav", e);
+            boolean shouldShowRemoteBadge = NewFeatureManager.shouldShowBadge(this, "remote");
+            Log.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowRemoteBadge=" + shouldShowRemoteBadge);
+            
+            if (shouldShowRemoteBadge) {
+                // Show badge on Remote nav item
+                try {
+                    com.google.android.material.badge.BadgeDrawable badge = 
+                        bottomNavigationView.getOrCreateBadge(R.id.navigation_remote);
+                    badge.setVisible(true);
+                    badge.setText("NEW"); // Show "NEW" text instead of number
+                    badge.setBackgroundColor(0xFF4CAF50); // Green background
+                    badge.setBadgeTextColor(0xFFFFFFFF); // White text color
+                    Log.d("MainActivity", "Badge shown for remote");
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error creating badge", e);
+                }
+            } else {
+                // Remove badge from Remote nav item
+                try {
+                    bottomNavigationView.removeBadge(R.id.navigation_remote);
+                    Log.d("MainActivity", "Badge removed for remote");
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error removing badge", e);
+                }
             }
         } catch (Exception e) {
             Log.e("MainActivity", "Error updating badge visibility", e);
         }
     }
     // -------------- Fix Ended for this method(updateFeatureBadgeVisibility)-----------
+
+    /**
+     * Public method to refresh feature badges immediately.
+     * Called by fragments after marking features as seen.
+     */
+    public void refreshFeatureBadges() {
+        updateFeatureBadgeVisibility();
+    }
 
     // -------------- Fix Start for this method(showOverlayFragment)-----------
     /**
