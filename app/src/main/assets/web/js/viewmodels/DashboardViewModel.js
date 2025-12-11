@@ -101,6 +101,27 @@ class DashboardViewModel {
     }
 
     /**
+     * Toggle recording on/off
+     */
+    async toggleRecording() {
+        try {
+            const result = await apiService.post('/recording/toggle', {});
+            console.log('[DashboardViewModel] Recording toggled:', result);
+            
+            // Emit event
+            eventBus.emit('recording-toggled', result);
+            
+            // Force status update to get new state
+            await this.updateStatus();
+            
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to toggle recording:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Toggle server on/off
      */
     async toggleServer() {

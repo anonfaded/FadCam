@@ -114,6 +114,8 @@ public class LiveM3U8Server extends NanoHTTPD {
         } else if (Method.POST.equals(method)) {
             if ("/torch/toggle".equals(uri)) {
                 response = toggleTorch();
+            } else if ("/recording/toggle".equals(uri)) {
+                response = toggleRecording();
             } else if ("/config/recordingMode".equals(uri)) {
                 response = setRecordingMode(session);
             } else if ("/config/streamQuality".equals(uri)) {
@@ -595,6 +597,53 @@ public class LiveM3U8Server extends NanoHTTPD {
                 "{\"status\": \"error\", \"message\": \"Invalid JSON: " + e.getMessage() + "\"}");
         } catch (Exception e) {
             Log.e(TAG, "Error setting volume", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * Handle POST /recording/toggle - Start/Stop recording based on current state.
+     * Mirrors torch pattern: checks if recording is already in progress.
+     */
+    @NonNull
+    private Response toggleRecording() {
+        try {
+            Log.i(TAG, "⏹️ Recording toggle requested via web interface");
+            
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            boolean isRecording = spManager.isRecordingInProgress();
+            
+            android.content.Intent intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
+            
+            if (isRecording) {
+                // Stop recording
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_RECORDING);
+                Log.d(TAG, "Recording in progress - sending STOP_RECORDING intent");
+            } else {
+                // Start recording
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_START_RECORDING);
+                Log.d(TAG, "Recording not in progress - sending START_RECORDING intent");
+            }
+            
+            // Start the service
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+            
+            String action = isRecording ? "stop" : "start";
+            String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"is_recording\": %s}", 
+                action, !isRecording);
+            
+            Log.i(TAG, "✅ Recording " + action + " intent sent");
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling recording", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }

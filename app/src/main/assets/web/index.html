@@ -265,7 +265,7 @@
                     <div class="card-clickable">
                         <i class="fas fa-circle-dot card-icon-sm"></i>
                         <div class="card-sm-content">
-                            <div class="card-label-sm">Recording</div>
+                            <div class="card-label-sm">Mode</div>
                             <div class="card-value-sm" id="recordingModeValue">—</div>
                         </div>
                         <i class="fas fa-chevron-right card-arrow-sm"></i>
@@ -303,6 +303,24 @@
                             <div class="torch-text">
                                 <div class="torch-label">Torch</div>
                                 <div class="torch-value" id="torchState">OFF</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recording Card - Standalone Custom Card -->
+                <div class="torch-card recording-card" onclick="toggleRecording()">
+                    <div class="torch-card-inner">
+                        <!-- Background Fill -->
+                        <div class="torch-fill recording-fill" id="recordingFill"></div>
+                        <!-- Content -->
+                        <div class="torch-content">
+                            <!-- Recording Icon -->
+                            <i class="fas fa-circle recording-icon-fa" id="recordingIcon"></i>
+                            <!-- Text -->
+                            <div class="torch-text">
+                                <div class="torch-label">Recording</div>
+                                <div class="torch-value" id="recordingState">STOPPED</div>
                             </div>
                         </div>
                     </div>
@@ -393,7 +411,7 @@
         <!-- Player Area -->
         <div class="player-area">
             <div class="video-container">
-                <video id="videoPlayer" playsinline muted autoplay></video>
+                <video id="videoPlayer" playsinline muted autoplay controls></video>
                 <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="play-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1700,6 +1718,27 @@
             }
         }
 
+        async function toggleRecording() {
+            try {
+                console.log('[Recording] Toggle requested');
+                const oldState = currentStatus?.isRecording;
+                
+                // Call the API
+                await dashboardViewModel.toggleRecording();
+                
+                // Update UI immediately with the expected new state
+                if (currentStatus) {
+                    const newState = !oldState;
+                    currentStatus.isRecording = newState;
+                    console.log('[Recording] Updated immediately:', oldState, '→', newState);
+                    updateUI(currentStatus);
+                }
+            } catch (error) {
+                console.error('[Recording] Failed to toggle:', error);
+                showToast('Failed to toggle recording');
+            }
+        }
+
         async function toggleServer() {
             try {
                 await dashboardViewModel.toggleServer();
@@ -1951,6 +1990,30 @@
                     torchCard.classList.add('off');
                     if (torchIcon) {
                         torchIcon.className = 'far fa-lightbulb torch-icon-fa';
+                    }
+                }
+            }
+            
+            // Update recording state display
+            const recordingState = document.getElementById('recordingState');
+            const recordingCard = document.querySelector('.recording-card');
+            const recordingIcon = document.getElementById('recordingIcon');
+            const recordingFill = document.getElementById('recordingFill');
+            
+            if (recordingState && recordingCard) {
+                recordingCard.classList.remove('on', 'off');
+                
+                if (status.isRecording) {
+                    recordingState.textContent = 'RECORDING';
+                    recordingCard.classList.add('on');
+                    if (recordingIcon) {
+                        recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                    }
+                } else {
+                    recordingState.textContent = 'STOPPED';
+                    recordingCard.classList.add('off');
+                    if (recordingIcon) {
+                        recordingIcon.className = 'fas fa-circle recording-icon-fa';
                     }
                 }
             }

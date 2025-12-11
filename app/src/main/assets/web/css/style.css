@@ -1729,6 +1729,68 @@ video {
     color: #ffffff;
 }
 
+/* -------- RECORDING CARD -------- */
+
+.recording-card {
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    min-height: 38px;
+    transition: border-color 200ms ease;
+}
+
+.recording-card:hover {
+    border-color: #3d4349;
+}
+
+/* Recording Fill - Red/Crimson when ON */
+.recording-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%);
+    opacity: 0;
+    transition: opacity 400ms ease-in-out;
+    z-index: 1;
+}
+
+.recording-card.on .recording-fill {
+    opacity: 1;
+}
+
+/* Recording Icon */
+.recording-icon-fa {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    flex-shrink: 0;
+    color: #8b949e;
+    transition: color 300ms ease;
+    line-height: 20px;
+    text-align: center;
+}
+
+.recording-card.on .recording-icon-fa {
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 68, 68, 0.8), 0 0 4px rgba(255, 68, 68, 0.6);
+    animation: pulse-recording 1s infinite;
+}
+
+/* Pulsing animation for recording indicator */
+@keyframes pulse-recording {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
 /* -------- NETWORK CARD -------- */
 
 .card-network-ios {
