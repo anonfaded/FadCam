@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/whatsNewRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="false">
+
+    <!-- Gradient background is set programmatically -->
+
+    <!-- Main Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:fitsSystemWindows="true"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp">
+
+        <!-- Header with Close Button on LEFT -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="2dp">
+
+            <!-- Close Button (LEFT SIDE) -->
+            <ImageButton
+                android:id="@+id/btnCloseWhatsNew"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_close"
+                android:contentDescription="Close"
+                android:scaleType="centerInside"
+                android:tint="@android:color/white"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Title -->
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="✨ What's New"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:fontFamily="@font/ubuntu_regular" />
+        </LinearLayout>
+
+        <!-- Info Card explaining What's New -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/settings_group_card_bg"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginVertical="3dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="New features, improvements, and bug fixes in this version."
+                android:textColor="#E0E0E0"
+                android:textSize="11sp"
+                android:lineSpacingExtra="0.5dp"
+                android:fontFamily="@font/ubuntu_regular" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Re-enable in Settings → 'Show Intro' toggle"
+                android:textColor="#888888"
+                android:textSize="10sp"
+                android:lineSpacingExtra="0.5dp"
+                android:fontFamily="@font/ubuntu_regular"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Divider with side margins (not full width) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333333"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp" />
+
+        <!-- Shimmer loading skeleton -->
+        <LinearLayout
+            android:id="@+id/shimmerContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="4dp"
+            android:visibility="visible">
+
+            <!-- Shimmer placeholder lines with visible shimmer effect -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                android:background="#444444"
+                android:layout_marginVertical="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:alpha="0.7" />
+
+            <View
+                android:layout_width="280dp"
+                android:layout_height="16dp"
+                android:background="#444444"
+                android:layout_marginVertical="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:alpha="0.7" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                android:background="#444444"
+                android:layout_marginVertical="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="16dp"
+                android:alpha="0.7" />
+
+            <View
+                android:layout_width="260dp"
+                android:layout_height="16dp"
+                android:background="#444444"
+                android:layout_marginVertical="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:alpha="0.7" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                android:background="#444444"
+                android:layout_marginVertical="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="16dp"
+                android:alpha="0.7" />
+
+            <View
+                android:layout_width="240dp"
+                android:layout_height="16dp"
+                android:background="#444444"
+                android:layout_marginVertical="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:alpha="0.7" />
+        </LinearLayout>
+
+        <!-- Changelog WebView (supports images) -->
+        <WebView
+            android:id="@+id/changelogWebView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone" />
+
+        <!-- Bottom CTA Button with Countdown -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="6dp"
+            android:gravity="center">
+
+            <!-- Countdown Text -->
+            <TextView
+                android:id="@+id/countdownText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ready in 3 seconds..."
+                android:textColor="#888888"
+                android:textSize="10sp"
+                android:fontFamily="@font/ubuntu_regular"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Got It Button with very rounded corners -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGotIt"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:text="Got It!"
+                android:textSize="14sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#4CAF50"
+                app:cornerRadius="21dp"
+                android:enabled="false"
+                android:alpha="0.5" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

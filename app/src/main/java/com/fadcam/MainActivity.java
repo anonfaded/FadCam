@@ -326,13 +326,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Check for onboarding BEFORE applying theme or language
+        boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
         boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
+        android.util.Log.d("MainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
+        android.util.Log.d("MainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
         android.util.Log.d("MainActivity", "Should show onboarding: " + showOnboarding);
 
         if (showOnboarding) {
-            // Launch onboarding activity if needed
-            Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
-            startActivity(intent);
+            // Check if we should show What's New instead of full onboarding
+            boolean isFirstInstall = !sharedPreferencesManager.sharedPreferences.getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
+            
+            if (isFirstInstall) {
+                // Show full onboarding on first install
+                Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
+                startActivity(intent);
+            } else {
+                // Show What's New screen on subsequent app launches when option is enabled
+                Intent intent = new Intent(this, com.fadcam.ui.WhatsNewActivity.class);
+                startActivity(intent);
+            }
             finish(); // Finish this activity so it's not in the back stack
             return;
         }

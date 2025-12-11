@@ -274,6 +274,7 @@
         <activity android:name=".RecordingStopActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" />
 
         <activity android:name=".ui.OnboardingActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+        <activity android:name=".ui.WhatsNewActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
 
         <activity 
             android:name=".ui.FadCamProActivity" 
