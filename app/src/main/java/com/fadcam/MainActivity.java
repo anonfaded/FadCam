@@ -333,15 +333,13 @@ public class MainActivity extends AppCompatActivity {
         android.util.Log.d("MainActivity", "Should show onboarding: " + showOnboarding);
 
         if (showOnboarding) {
-            // Check if we should show What's New instead of full onboarding
-            boolean isFirstInstall = !sharedPreferencesManager.sharedPreferences.getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
-            
-            if (isFirstInstall) {
-                // Show full onboarding on first install
+            // Check if onboarding was actually completed (user went through it)
+            if (!completedOnboarding) {
+                // User has NOT completed onboarding yet - show full onboarding first
                 Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
                 startActivity(intent);
             } else {
-                // Show What's New screen on subsequent app launches when option is enabled
+                // User HAS completed onboarding - show What's New screen instead
                 Intent intent = new Intent(this, com.fadcam.ui.WhatsNewActivity.class);
                 startActivity(intent);
             }

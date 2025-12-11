@@ -28,7 +28,7 @@ import com.google.android.material.button.MaterialButton;
  */
 public class WhatsNewActivity extends AppCompatActivity {
     private static final String TAG = "WhatsNewActivity";
-    private static final long COUNTDOWN_DURATION = 3000; // 3 seconds in milliseconds
+    private static final long COUNTDOWN_DURATION = 5000; // 5 seconds in milliseconds
     
     private WebView changelogWebView;
     private TextView countdownText;

@@ -833,10 +833,13 @@ public class OnboardingActivity extends AppIntro {
         android.util.Log.d("OnboardingActivity", "Onboarding marked as completed");
         // ----- Fix End: Ensure onboarding completion is properly saved -----
 
-        // Return to MainActivity or just finish
-        Intent intent = new Intent(this, MainActivity.class);
+        // START: Navigate to What's New screen after onboarding completes
+        // Show What's New screen if onboarding display is enabled (which it should be on first install)
+        // This ensures the What's New screen appears right after onboarding completes
+        Intent intent = new Intent(this, WhatsNewActivity.class);
         startActivity(intent);
         finish();
+        // END: Navigate to What's New screen after onboarding completes
     }
 
     /**
