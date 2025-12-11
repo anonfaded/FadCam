@@ -1822,6 +1822,92 @@
             }
         }
 
+        /**
+         * Show codec compatibility dialog when recording with streaming enabled.
+         * H.265/HEVC is not supported for HLS streaming in browsers.
+         */
+        function showCodecCompatibilityDialog(onConfirm, onCancel) {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            `;
+            
+            // Create dialog
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                background: #0d1117;
+                border: 1px solid #30363d;
+                border-radius: 12px;
+                padding: 24px;
+                max-width: 400px;
+                box-shadow: 0 20px 25px rgba(0, 0, 0, 0.5);
+            `;
+            
+            dialog.innerHTML = `
+                <h2 style="color: #e6edf3; font-size: 18px; margin: 0 0 12px 0; font-weight: 700;">
+                    <i class="fas fa-exclamation-triangle" style="color: #f85149; margin-right: 8px;"></i>
+                    Codec Incompatibility
+                </h2>
+                <p style="color: #8b949e; margin: 0 0 20px 0; line-height: 1.5; font-size: 14px;">
+                    Your device is set to use H.265 (HEVC) codec, which is not supported for HLS streaming in web browsers. 
+                    To record with streaming enabled, we need to switch to H.264 (AVC) codec.
+                </p>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button id="cancelCodecBtn" style="
+                        padding: 10px 16px;
+                        background: transparent;
+                        color: #58a6ff;
+                        border: 1px solid #58a6ff;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: all 200ms;
+                    " onmouseover="this.style.background='rgba(88, 166, 255, 0.1)'" onmouseout="this.style.background='transparent'">
+                        Cancel
+                    </button>
+                    <button id="confirmCodecBtn" style="
+                        padding: 10px 16px;
+                        background: #238636;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: all 200ms;
+                    " onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
+                        <i class="fas fa-check" style="margin-right: 6px;"></i>Switch to H.264 & Record
+                    </button>
+                </div>
+            `;
+            
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            
+            // Handle button clicks
+            const cancelBtn = dialog.querySelector('#cancelCodecBtn');
+            const confirmBtn = dialog.querySelector('#confirmCodecBtn');
+            
+            cancelBtn.addEventListener('click', () => {
+                overlay.remove();
+                onCancel();
+            });
+            
+            confirmBtn.addEventListener('click', () => {
+                overlay.remove();
+                onConfirm();
+            });
+        }
+
         async function toggleRecording() {
             try {
                 console.log('[Recording] Toggle requested');

@@ -122,6 +122,8 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = setStreamQuality(session);
             } else if ("/config/batteryWarning".equals(uri)) {
                 response = setBatteryWarning(session);
+            } else if ("/config/videoCodec".equals(uri)) {
+                response = setVideoCodec(session);
             } else if ("/audio/volume".equals(uri)) {
                 response = setVolume(session);
             } else if ("/alarm/ring".equals(uri)) {
@@ -809,6 +811,68 @@ public class LiveM3U8Server extends NanoHTTPD {
     }
 
     
+    // START: VideoCodec Config Endpoint
+    @NonNull
+    private Response setVideoCodec(IHTTPSession session) {
+        try {
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            
+            String body = files.get("postData");
+            if (body == null || body.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Missing request body\"}");
+            }
+            
+            // Parse JSON: {"codec": "AVC"} or {"codec": "HEVC"}
+            String codec = null;
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                codec = json.getString("codec");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to parse video codec JSON", e);
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Invalid JSON\"}");
+            }
+            
+            if (codec == null || codec.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Missing or invalid codec field\"}");
+            }
+            
+            // Validate codec is one of the supported values
+            codec = codec.trim().toUpperCase();
+            if (!codec.equals("AVC") && !codec.equals("HEVC")) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                    "{\"status\": \"error\", \"message\": \"Invalid codec. Must be AVC or HEVC\"}");
+            }
+            
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            
+            // Store in SharedPreferences
+            android.content.SharedPreferences.Editor editor = spManager.sharedPreferences.edit();
+            editor.putString(com.fadcam.Constants.PREF_VIDEO_CODEC, codec);
+            editor.apply();
+            
+            Log.i(TAG, "✅ Video codec set to: " + codec);
+            
+            // Verify it was stored
+            String storedCodec = spManager.getVideoCodec().toString();
+            Log.d(TAG, "[VideoCodec] Verified stored codec: " + storedCodec);
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+                "{\"status\": \"success\", \"message\": \"Video codec set to " + codec + "\"}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting video codec", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+    // END: VideoCodec Config Endpoint
+
     @NonNull
     private Response serveStatus() {
         String statusJson = streamManager.getStatusJson();

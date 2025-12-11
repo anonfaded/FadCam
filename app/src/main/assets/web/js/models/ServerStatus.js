@@ -47,7 +47,8 @@ class ServerStatus {
         
         // Resolution from message or construct from width/height
         this.resolution = data.resolution || '0x0';
-        this.codec = data.codec || 'H.264';
+        this.videoCodec = data.video_codec || 'unknown';
+        this.isHevcCodec = this.videoCodec && this.videoCodec.toUpperCase().includes('HEVC');
         
         // Buffer info
         this.fragmentsBuffered = data.fragments_buffered || 0;

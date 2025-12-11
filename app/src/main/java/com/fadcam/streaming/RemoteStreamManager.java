@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.streaming.model.ClientEvent;
 import com.fadcam.streaming.model.ClientMetrics;
 import com.fadcam.streaming.model.NetworkHealth;
@@ -603,6 +604,10 @@ public class RemoteStreamManager {
             // Get stream quality info
             String qualityJson = streamQuality.toJson();
             
+            // Get video codec
+            String codecName = context != null ? 
+                SharedPreferencesManager.getInstance(context).getVideoCodec().toString() : "unknown";
+            
             // Calculate volume percentage
             float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
             
@@ -616,6 +621,7 @@ public class RemoteStreamManager {
                 "\"network_type\": \"%s\", \"network_connected\": %s, " +
                 "\"network_health\": %s, " +
                 "\"stream_quality\": %s, " +
+                "\"video_codec\": \"%s\", " +
                 "\"torch_state\": %s, " +
                 "\"volume\": %d, \"max_volume\": %d, \"volume_percentage\": %.1f, " +
                 "\"alarm\": {\"is_ringing\": %s, \"sound\": \"%s\", \"duration_ms\": %d, \"remaining_ms\": %d}, " +
@@ -641,6 +647,7 @@ public class RemoteStreamManager {
                 isNetworkConnected,
                 networkHealthJson,
                 qualityJson,
+                codecName,
                 isTorchOn(),  // Read from SharedPreferences to get current actual state
                 mediaVolume,
                 maxMediaVolume,

@@ -105,6 +105,49 @@ class DashboardViewModel {
      */
     async toggleRecording() {
         try {
+            // Check if streaming is enabled AND codec is HEVC
+            if (this.statusModel.streaming && this.statusModel.isHevcCodec) {
+                // H.265/HEVC is not browser-compatible for HLS streaming
+                // Show Material Dialog with option to switch to AVC
+                return new Promise((resolve, reject) => {
+                    showCodecCompatibilityDialog(async () => {
+                        try {
+                            // User confirmed - switch codec to AVC first
+                            console.log('[DashboardViewModel] Switching codec to AVC...');
+                            await apiService.post('/config/videoCodec', { codec: 'AVC' });
+                            console.log('[DashboardViewModel] Codec switched successfully');
+                            
+                            // Now proceed with recording
+                            this._proceedWithRecordingToggle()
+                                .then(resolve)
+                                .catch(reject);
+                        } catch (error) {
+                            console.error('[DashboardViewModel] Failed to switch codec:', error);
+                            // Still try to proceed with recording even if codec switch failed
+                            this._proceedWithRecordingToggle()
+                                .then(resolve)
+                                .catch(reject);
+                        }
+                    }, () => {
+                        // User cancelled
+                        reject(new Error('User cancelled recording due to codec check'));
+                    });
+                });
+            }
+            
+            // No streaming or codec is already H.264, just proceed normally
+            return await this._proceedWithRecordingToggle();
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to toggle recording:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Actually proceed with recording toggle (after codec checks)
+     */
+    async _proceedWithRecordingToggle() {
+        try {
             const result = await apiService.post('/recording/toggle', {});
             console.log('[DashboardViewModel] Recording toggled:', result);
             
