@@ -3632,15 +3632,18 @@ public class RecordingService extends Service {
                 public String getWatermarkText() {
                     String watermarkOption = sharedPreferencesManager.getWatermarkOption();
                     String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
+                    String customText = sharedPreferencesManager.getWatermarkCustomText();
+                    String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+                    
                     switch (watermarkOption) {
                         case "timestamp_fadcam":
-                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                         case "timestamp":
-                            return getCurrentTimestamp() + locationText;
+                            return getCurrentTimestamp() + locationText + customTextLine;
                         case "no_watermark":
                             return "";
                         default:
-                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                     }
                 }
             };

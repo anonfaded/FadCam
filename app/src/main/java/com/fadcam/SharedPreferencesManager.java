@@ -826,6 +826,24 @@ public class SharedPreferencesManager {
         );
     }
 
+    /**
+     * Get custom watermark text.
+     * @return Custom watermark text or empty string if not set
+     */
+    public String getWatermarkCustomText() {
+        return sharedPreferences.getString(Constants.PREF_WATERMARK_CUSTOM_TEXT, "");
+    }
+
+    /**
+     * Set custom watermark text.
+     * @param text Custom text to display on watermark (line 2)
+     */
+    public void setWatermarkCustomText(String text) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_WATERMARK_CUSTOM_TEXT, text != null ? text : "")
+            .apply();
+    }
+
     // Method to retrieve the preview state
     public Boolean isPreviewEnabled() {
         // Default to true if the preference doesn't exist yet

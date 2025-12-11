@@ -30,16 +30,16 @@ public class SettingsHomeFragment extends Fragment {
     // Removed redundant Location & Privacy group (location embedding moved into Video settings)
     int[] ids = new int[]{
         R.id.group_appearance,
-        R.id.group_video,
+        R.id.group_video_quick,
         R.id.group_video_player_settings,
-        R.id.group_audio,
+        R.id.group_audio_quick,
         R.id.group_storage,
         R.id.group_notifications,
         R.id.group_security,
         R.id.group_widgets,
         R.id.group_about,
         R.id.group_review,
-        R.id.group_watermark,
+        R.id.group_watermark_quick,
         R.id.group_readme
     };
     String[] labels = new String[]{
@@ -62,7 +62,7 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AppearanceSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_video){
+            } else if(ids[i] == R.id.group_video_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new VideoSettingsFragment()));
@@ -73,7 +73,7 @@ public class SettingsHomeFragment extends Fragment {
             // Open dedicated screen; inside that screen rows still open bottom pickers
             row.setOnClickListener(v -> openSubFragment(new VideoPlayerSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_audio){
+            } else if(ids[i] == R.id.group_audio_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AudioSettingsFragment()));
@@ -98,7 +98,7 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new NotificationSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_watermark){
+            } else if(ids[i] == R.id.group_watermark_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new WatermarkSettingsFragment()));

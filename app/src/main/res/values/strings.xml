@@ -439,6 +439,10 @@
     <string name="helper_theme_option">Select a theme. Applies instantly.</string>
     <string name="helper_language_option">Choose the app language.</string>
     <string name="watermark_disabled_message" translatable="false">Watermark disabled (no watermark will appear in recordings).</string>
+    <string name="watermark_custom_text_title">Custom Watermark Text</string>
+    <string name="watermark_custom_text_hint">Enter custom text</string>
+    <string name="watermark_custom_text_empty">Not set</string>
+    <string name="helper_watermark_custom_text">Add a custom line of text that will appear below the timestamp and location (if enabled) in your watermark.\n\nExamples: ABC-1234 (dashcam), Camera #3, Conference Hall A</string>
     <string name="helper_app_icon_option" translatable="false">Select an alternative launcher icon.</string>
     <!-- End watermark unified strings -->
     <string name="torch_shortcut_short_label">Torch</string>
@@ -690,7 +694,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
     <string name="video_orientation_landscape">Landscape</string>
     <!-- Video Bitrate Settings -->
-    <string name="setting_video_bitrate_title">Video Bitrate</string>
+    <string name="setting_video_bitrate_title">Recording Quality &amp; Performance</string>
     <string name="button_video_bitrate_settings">Set Bitrate</string>
     <string name="bitrate_mode_default">Default</string>
     <string name="bitrate_mode_custom">Custom</string>
@@ -967,6 +971,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Settings Home section headers and rows -->
     <string name="general">General</string>
+    <string name="recording_quick_access">Recording Quick Access</string>
     <string name="settings_section_app">App</string>
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_notifications_subtitle">Recording &amp; preset</string>

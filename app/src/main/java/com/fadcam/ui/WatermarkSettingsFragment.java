@@ -26,6 +26,8 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
 
+import org.json.JSONObject;
+
 /**
  * WatermarkSettingsFragment
  * Unified design migration: bottom sheet picker + live preview replacing spinner.
@@ -37,6 +39,7 @@ public class WatermarkSettingsFragment extends Fragment {
     private SharedPreferencesManager prefs;
     private TextView valueLocationWatermark;
     private TextView valueWatermarkStyle;
+    private TextView valueCustomText;
     private TextView previewText;
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> permissionLauncher;
@@ -56,11 +59,14 @@ public class WatermarkSettingsFragment extends Fragment {
         prefs = SharedPreferencesManager.getInstance(requireContext());
     valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
     valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
+    valueCustomText = view.findViewById(R.id.value_custom_text);
     previewText = view.findViewById(R.id.text_watermark_preview);
     View rowStyle = view.findViewById(R.id.row_watermark_option);
     if(rowStyle!=null){ rowStyle.setOnClickListener(v -> showWatermarkStyleBottomSheet()); }
     locationRow = view.findViewById(R.id.row_location_watermark);
     if(locationRow!=null){ locationRow.setOnClickListener(v -> { if(locationRow.isEnabled()) showLocationWatermarkSheet(); }); }
+    View rowCustomText = view.findViewById(R.id.row_custom_text);
+    if(rowCustomText!=null){ rowCustomText.setOnClickListener(v -> showCustomTextBottomSheet()); }
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
@@ -74,6 +80,7 @@ public class WatermarkSettingsFragment extends Fragment {
         });
     refreshLocationValue();
     refreshWatermarkStyleValue();
+    refreshCustomTextValue();
     updateLocationRowState();
     updatePreview();
         // -------------- Fix Ended for this method(onViewCreated)-----------
@@ -250,8 +257,62 @@ public class WatermarkSettingsFragment extends Fragment {
             // Anonymized dummy coordinates (x placeholders prevent revealing real location structure)
             baseLine += "\nLat: 24.x6xx  Lon: 67.x0xx";
         }
+        // Add custom text on line 2 (or line 3 if location enabled)
+        String customText = prefs.getWatermarkCustomText();
+        if(customText != null && !customText.isEmpty()){
+            baseLine += "\n" + customText;
+        }
         previewText.setText(baseLine);
         previewText.setVisibility(View.VISIBLE);
+    }
+
+    private void refreshCustomTextValue(){
+        if(valueCustomText==null) return;
+        String customText = prefs.getWatermarkCustomText();
+        if(customText == null || customText.isEmpty()){
+            valueCustomText.setText(getString(R.string.watermark_custom_text_empty));
+        } else {
+            valueCustomText.setText(customText);
+        }
+    }
+
+    private void showCustomTextBottomSheet(){
+        String currentText = prefs.getWatermarkCustomText();
+        
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newInput(
+            getString(R.string.watermark_custom_text_title),
+            currentText != null ? currentText : "",
+            getString(R.string.watermark_custom_text_hint),
+            getString(R.string.shortcuts_rename_action_title),
+            getString(R.string.helper_watermark_custom_text),
+            R.drawable.ic_draw_edit,
+            getString(R.string.helper_watermark_custom_text)
+        );
+
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override
+            public void onImportConfirmed(JSONObject json) {
+                // Not used for custom text input
+            }
+            
+            @Override
+            public void onResetConfirmed() {
+                // Not used for custom text input
+            }
+            
+            @Override
+            public void onInputConfirmed(String input) {
+                if(input != null){
+                    prefs.setWatermarkCustomText(input.trim());
+                    refreshCustomTextValue();
+                    updatePreview();
+                    Log.d(TAG, "Custom watermark text set: " + input);
+                }
+                sheet.dismiss();
+            }
+        });
+        
+        sheet.show(getParentFragmentManager(), "custom_text_sheet");
     }
 
     private String formatNow(){

@@ -144,7 +144,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_audio"
+                    android:src="@drawable/ic_volume_off_24"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"
