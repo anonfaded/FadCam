@@ -194,10 +194,14 @@
                 </LinearLayout>
                 <View style="@style/SettingsDivider" />
 
-                <!-- Custom Text Row -->
-                <LinearLayout
-                    android:id="@+id/row_custom_text"
-                    style="@style/SettingsGroupRow">
+                <!-- Custom Text Row with NEW badge -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    
+                    <LinearLayout
+                        android:id="@+id/row_custom_text"
+                        style="@style/SettingsGroupRow">
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -232,7 +236,26 @@
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
                         android:tint="@android:color/darker_gray"/>
-                </LinearLayout>
+                    </LinearLayout>
+                    
+                    <!-- NEW Badge -->
+                    <TextView
+                        android:id="@+id/badge_custom_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|end"
+                        android:layout_marginEnd="44dp"
+                        android:background="@drawable/new_badge_background"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:text="NEW"
+                        android:textColor="#FFFFFF"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:visibility="visible" />
+                </FrameLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

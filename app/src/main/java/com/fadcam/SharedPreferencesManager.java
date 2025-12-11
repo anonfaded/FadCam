@@ -1891,4 +1891,35 @@ public class SharedPreferencesManager {
     }
 
     // -------------- Fadex Notification Preferences End --------------
+
+    // -------------- Generic Boolean Preferences (for new features badges) ------
+
+    /**
+     * Generic method to get a boolean preference value by key.
+     * Used for storing arbitrary boolean preferences like feature badge status.
+     *
+     * @param key Preference key
+     * @param defaultValue Default value if key doesn't exist
+     * @return Boolean value
+     */
+    public boolean getBoolean(String key, boolean defaultValue) {
+        return sharedPreferences.getBoolean(key, defaultValue);
+    }
+
+    /**
+     * Generic method to set a boolean preference value by key.
+     * Used for storing arbitrary boolean preferences like feature badge status.
+     *
+     * @param key Preference key
+     * @param value Value to store
+     */
+    public void putBoolean(String key, boolean value) {
+        sharedPreferences
+            .edit()
+            .putBoolean(key, value)
+            .apply();
+    }
+
+    // -------------- Generic Boolean Preferences End ------
 }
+

@@ -21,26 +21,28 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 
-    <!-- Custom badge overlay for Remote tab -->
+    <!-- Custom NEW badge overlay for Remote tab -->
     <TextView
         android:id="@+id/remote_nav_badge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Soon"
+        android:text="@string/remote_coming_soon_badge"
         android:textColor="@android:color/white"
-        android:textSize="10sp"
+        android:textSize="9sp"
+        android:textStyle="bold"
         android:background="@drawable/new_badge_background"
-        android:paddingLeft="6dp"
-        android:paddingRight="6dp"
-        android:paddingTop="1dp"
-        android:paddingBottom="1dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
         android:visibility="gone"
         android:elevation="8dp"
         android:maxLines="1"
         android:ellipsize="end"
-        app:layout_constraintBottom_toBottomOf="@id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="@id/bottom_navigation"
-        app:layout_constraintEnd_toEndOf="@id/bottom_navigation"/>
+        app:layout_constraintTop_toBottomOf="@id/bottom_navigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintHorizontal_bias="0.85"/>
 
     <!-- ********************************************************** -->
     <!-- *** ADD THIS FRAMELAYOUT FOR OVERLAY FRAGMENTS (like TrashFragment) *** -->

@@ -27,6 +27,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
 
 import org.json.JSONObject;
+import com.fadcam.ui.utils.NewFeatureManager;
 
 /**
  * WatermarkSettingsFragment
@@ -56,6 +57,10 @@ public class WatermarkSettingsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // -------------- Fix Start for this method(onViewCreated)-----------
+        
+        // Mark main watermark feature as seen (dismisses NEW badge on Quick Access)
+        NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
+        
         prefs = SharedPreferencesManager.getInstance(requireContext());
     valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
     valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
@@ -66,7 +71,19 @@ public class WatermarkSettingsFragment extends Fragment {
     locationRow = view.findViewById(R.id.row_location_watermark);
     if(locationRow!=null){ locationRow.setOnClickListener(v -> { if(locationRow.isEnabled()) showLocationWatermarkSheet(); }); }
     View rowCustomText = view.findViewById(R.id.row_custom_text);
-    if(rowCustomText!=null){ rowCustomText.setOnClickListener(v -> showCustomTextBottomSheet()); }
+    if(rowCustomText!=null){ 
+        rowCustomText.setOnClickListener(v -> {
+            // Mark custom text badge as seen when clicking this specific row
+            NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark_custom_text");
+            // Hide badge immediately
+            TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
+            if (badgeCustomText != null) {
+                badgeCustomText.setVisibility(View.GONE);
+            }
+            // Show the bottom sheet
+            showCustomTextBottomSheet();
+        });
+    }
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
@@ -78,6 +95,14 @@ public class WatermarkSettingsFragment extends Fragment {
                 onPermissionDeniedPostRequest();
             }
         });
+        
+    // Manage badge visibility for custom text row
+    TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
+    if (badgeCustomText != null) {
+        boolean shouldShowCustomTextBadge = NewFeatureManager.shouldShowBadge(requireContext(), "watermark_custom_text");
+        badgeCustomText.setVisibility(shouldShowCustomTextBadge ? View.VISIBLE : View.GONE);
+    }
+        
     refreshLocationValue();
     refreshWatermarkStyleValue();
     refreshCustomTextValue();

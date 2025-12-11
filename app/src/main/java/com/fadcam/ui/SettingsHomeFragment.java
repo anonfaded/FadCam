@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.fadcam.R;
+import com.fadcam.ui.utils.NewFeatureManager;
+import android.widget.TextView;
 
 /**
  * SettingsHomeFragment
@@ -101,7 +103,14 @@ public class SettingsHomeFragment extends Fragment {
             } else if(ids[i] == R.id.group_watermark_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new WatermarkSettingsFragment()));
+                    row.setOnClickListener(v -> {
+                        // Mark watermark badge as seen when clicking the row
+                        NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
+                        // Hide the badge immediately for instant feedback
+                        manageBadgeVisibility(root);
+                        // Open watermark settings
+                        openSubFragment(new WatermarkSettingsFragment());
+                    });
                 }
             } else if(ids[i] == R.id.group_about){
                 LinearLayout row = root.findViewById(ids[i]);
@@ -124,8 +133,26 @@ public class SettingsHomeFragment extends Fragment {
         }
     wireAppInlineRows(root);
     refreshAppInlineValues(root);
+    
+    // Show/hide watermark NEW badge based on whether user has seen it
+    manageBadgeVisibility(root);
         // -------------- Fix Ended for this method(onCreateView)-----------
         return root;
+    }
+    
+    /**
+     * Show or hide the watermark NEW badge based on whether the feature has been seen.
+     */
+    private void manageBadgeVisibility(View root) {
+        try {
+            TextView watermarkBadge = root.findViewById(R.id.watermark_new_badge);
+            if (watermarkBadge != null) {
+                boolean shouldShow = NewFeatureManager.shouldShowBadge(requireContext(), "watermark");
+                watermarkBadge.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+            }
+        } catch (Exception e) {
+            // Silently fail if badge view not found
+        }
     }
 
     /**
@@ -374,6 +401,11 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        // Refresh badge visibility when returning to this fragment
+        View root = getView();
+        if (root != null) {
+            manageBadgeVisibility(root);
+        }
         // Future: update dynamic subtitles (e.g., current theme, language) when preferences change.
     }
 }

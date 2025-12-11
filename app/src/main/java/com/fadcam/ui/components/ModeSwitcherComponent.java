@@ -72,9 +72,18 @@ public class ModeSwitcherComponent {
                 return;
             }
 
-            // Remove FadRec badge (now available)
+            // Show/hide FadRec NEW badge based on NewFeatureManager
             View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
-            if (badgeFadRec != null) badgeFadRec.setVisibility(View.GONE);
+            if (badgeFadRec != null) {
+                try {
+                    boolean shouldShowFadRecBadge = com.fadcam.ui.utils.NewFeatureManager.shouldShowBadge(context, "fadrec");
+                    badgeFadRec.setVisibility(shouldShowFadRecBadge ? View.VISIBLE : View.GONE);
+                    Log.d(TAG, "FadRec badge visibility: " + (shouldShowFadRecBadge ? "VISIBLE" : "GONE"));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error managing FadRec badge visibility", e);
+                    badgeFadRec.setVisibility(View.GONE);
+                }
+            }
 
             // Resolve persisted mode (fallback if invalid / coming soon)
             String persisted = sharedPreferencesManager.getCurrentRecordingMode();
@@ -286,6 +295,17 @@ public class ModeSwitcherComponent {
                 
             case Constants.MODE_FADREC:
                 // FadRec (Screen Recording) mode selected
+                // Mark FadRec feature as seen to hide the NEW badge
+                try {
+                    com.fadcam.ui.utils.NewFeatureManager.markFeatureAsSeen(context, "fadrec");
+                    // Hide the badge immediately
+                    View badgeFadRec = segmentFadRec.getRootView().findViewById(R.id.badge_fadrec);
+                    if (badgeFadRec != null) {
+                        badgeFadRec.setVisibility(View.GONE);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error marking FadRec badge as seen", e);
+                }
                 if (listener != null) {
                     listener.onModeSelected(mode);
                 }

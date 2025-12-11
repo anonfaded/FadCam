@@ -28,6 +28,7 @@ import com.fadcam.ui.RecordsFragment;
 import com.fadcam.ui.TrashFragment;
 import com.fadcam.ui.ViewPagerAdapter;
 import com.fadcam.ui.FadePageTransformer;
+import com.fadcam.ui.utils.NewFeatureManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.File;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
     private BottomNavigationView bottomNavigationView;
+    private int originalBottomNavColor = 0; // Store original bottom nav color
 
     // ----- Fix Start: Add fields for double-back to exit -----
     private boolean doubleBackToExitPressedOnce = false;
@@ -104,6 +106,88 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     // -------------- Fix Ended for this method(hideOverlayIfNoFragments)-----------
+
+    // -------------- Fix Start for this method(setBottomNavColor)-----------
+    /**
+     * Set bottom navigation bar color dynamically.
+     * Used by fragments to change bottom nav color (e.g., Remote tab makes it black).
+     *
+     * @param color Color as integer (e.g., 0xFF000000 for black), or 0 to restore original
+     */
+    public void setBottomNavColor(int color) {
+        if (bottomNavigationView != null) {
+            if (color == 0) {
+                // Restore original color
+                if (originalBottomNavColor != 0) {
+                    bottomNavigationView.setBackgroundColor(originalBottomNavColor);
+                }
+            } else {
+                // Set custom color
+                bottomNavigationView.setBackgroundColor(color);
+            }
+        }
+    }
+    // -------------- Fix Ended for this method(setBottomNavColor)-----------
+
+    // -------------- Fix Start for this method(setStatusBarColor)-----------
+    /**
+     * Set the status bar (notification bar at top) color dynamically.
+     * Used by fragments to change status bar color (e.g., Remote tab makes it black).
+     *
+     * @param color Color as integer (e.g., 0xFF000000 for black), or 0 to restore original from theme
+     */
+    public void setStatusBarColor(int color) {
+        if (getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            if (color == 0) {
+                // Restore status bar to match header/nav (colorTopBar)
+                try {
+                    android.util.TypedValue typedValue = new android.util.TypedValue();
+                    int colorTopBarAttr = getResources().getIdentifier("colorTopBar", "attr", getPackageName());
+                    if (colorTopBarAttr != 0 && getTheme().resolveAttribute(colorTopBarAttr, typedValue, true)) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                            int statusColor = getColor(typedValue.resourceId);
+                            getWindow().setStatusBarColor(statusColor);
+                        } else {
+                            int statusColor = getResources().getColor(typedValue.resourceId);
+                            getWindow().setStatusBarColor(statusColor);
+                        }
+                        Log.d("MainActivity", "Restored status bar color from colorTopBar: " + Integer.toHexString(typedValue.resourceId));
+                    }
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error restoring status bar color from colorTopBar", e);
+                }
+            } else {
+                // Set custom color
+                getWindow().setStatusBarColor(color);
+            }
+        }
+    }
+    // -------------- Fix Ended for this method(setStatusBarColor)-----------
+
+    /**
+     * Update feature badge visibility based on whether features have been seen.
+     * Called in onResume to refresh badge states.
+     * Also removes any Material Design BadgeDrawable from the nav item.
+     */
+    private void updateFeatureBadgeVisibility() {
+        try {
+            android.widget.TextView remoteBadge = findViewById(R.id.remote_nav_badge);
+            if (remoteBadge != null) {
+                boolean shouldShow = NewFeatureManager.shouldShowBadge(this, "remote");
+                remoteBadge.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+            }
+            
+            // Remove any Material Design BadgeDrawable from the remote nav item
+            try {
+                bottomNavigationView.removeBadge(R.id.navigation_remote);
+            } catch (Exception e) {
+                Log.e("MainActivity", "Error removing Material badge from nav", e);
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error updating badge visibility", e);
+        }
+    }
+    // -------------- Fix Ended for this method(updateFeatureBadgeVisibility)-----------
 
     // -------------- Fix Start for this method(showOverlayFragment)-----------
     /**
@@ -305,6 +389,23 @@ public class MainActivity extends AppCompatActivity {
         }
         // -------------- Fix Ended for this block(init cloak overlay)-----------
 
+        // Save the original bottom nav background color for restoration later
+        // Get colorTopBar from theme (same color as header bar)
+        try {
+            android.util.TypedValue typedValue = new android.util.TypedValue();
+            int colorTopBarAttr = getResources().getIdentifier("colorTopBar", "attr", getPackageName());
+            if (colorTopBarAttr != 0 && getTheme().resolveAttribute(colorTopBarAttr, typedValue, true)) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    originalBottomNavColor = getColor(typedValue.resourceId);
+                } else {
+                    originalBottomNavColor = getResources().getColor(typedValue.resourceId);
+                }
+                Log.d("MainActivity", "Saved bottom nav color from colorTopBar: " + Integer.toHexString(originalBottomNavColor));
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error getting bottom nav color from colorTopBar", e);
+        }
+
         ViewPagerAdapter adapter = new ViewPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
@@ -313,6 +414,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Keep all pages in memory to prevent content disappearing
         viewPager.setOffscreenPageLimit(adapter.getItemCount());
+
+        // Initialize badge visibility
+        updateFeatureBadgeVisibility();
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
@@ -336,9 +440,15 @@ public class MainActivity extends AppCompatActivity {
                 switch (position) {
                     case 0:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_home);
+                        // Reset nav and status bar color when leaving remote
+                        setBottomNavColor(0);
+                        setStatusBarColor(0);
                         break;
                     case 1:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_records);
+                        // Reset nav and status bar color when leaving remote
+                        setBottomNavColor(0);
+                        setStatusBarColor(0);
                         // Trigger lazy loading when user navigates to Records tab
                         try {
                             Fragment recordsFragment = getSupportFragmentManager().findFragmentByTag("f" + position);
@@ -351,41 +461,35 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 2:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
+                        // Remote tab will handle its own nav and status bar colors in onResume()
                         break;
                     case 3:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_faditor_mini);
+                        // Reset nav and status bar color when leaving remote
+                        setBottomNavColor(0);
+                        setStatusBarColor(0);
                         break;
                     case 4:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
+                        // Reset nav and status bar color when leaving remote
+                        setBottomNavColor(0);
+                        setStatusBarColor(0);
                         break;
                 }
             }
         });
 
-        // Add custom badge to the Remote tab and Faditor Mini tab in
-        // BottomNavigationView
+        // Add custom "soon" badge to Faditor Mini tab only (Remote uses NewFeatureBadge system)
         bottomNavigationView.post(() -> {
             ViewGroup menuView = (ViewGroup) bottomNavigationView.getChildAt(0);
             if (menuView != null && menuView.getChildCount() > 3) {
-                // Add badge to Remote tab (index 2)
-                View remoteTab = menuView.getChildAt(2); // 0:home, 1:records, 2:remote
-                if (remoteTab instanceof ViewGroup) {
-                    // Prevent duplicate badge
-                    View existingBadge = ((ViewGroup) remoteTab).findViewById(R.id.badge_text);
-                    if (existingBadge == null) {
-                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) remoteTab, false);
-                        ((ViewGroup) remoteTab).addView(badge);
-                    }
-                }
-
                 // Add badge to Faditor Mini tab (index 3)
                 View faditorMiniTab = menuView.getChildAt(3); // 0:home, 1:records, 2:remote, 3:faditor_mini
                 if (faditorMiniTab instanceof ViewGroup) {
                     // Prevent duplicate badge
                     View existingBadge = ((ViewGroup) faditorMiniTab).findViewById(R.id.badge_text);
                     if (existingBadge == null) {
-                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) faditorMiniTab,
-                                false);
+                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) faditorMiniTab, false);
                         ((ViewGroup) faditorMiniTab).addView(badge);
                     }
                 }
@@ -738,6 +842,9 @@ public class MainActivity extends AppCompatActivity {
         }
         // -------------- Fix Ended for this method(onResume - enforce preference
         // state)-----------
+
+        // Update badge visibility for new features
+        updateFeatureBadgeVisibility();
 
         // Update UI for current theme
         String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences

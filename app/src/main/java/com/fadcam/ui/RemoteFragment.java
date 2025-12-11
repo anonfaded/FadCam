@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.fadcam.Constants;
+import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.streaming.RemoteStreamManager;
@@ -35,6 +36,8 @@ import com.fadcam.streaming.model.StreamQuality;
 import com.fadcam.ui.bottomsheet.BatteryInfoBottomSheet;
 import com.fadcam.ui.bottomsheet.QualityPresetBottomSheet;
 import com.fadcam.ui.bottomsheet.UptimeInfoBottomSheet;
+import com.fadcam.ui.utils.NewFeatureManager;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.List;
 
@@ -220,6 +223,16 @@ public class RemoteFragment extends BaseFragment {
     public void onResume() {
         super.onResume();
         
+        // Set bottom nav AND status bar to black when remote tab is visible
+        if (getActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) getActivity();
+            mainActivity.setBottomNavColor(0xFF000000); // Pure black
+            mainActivity.setStatusBarColor(0xFF000000); // Pure black
+        }
+        
+        // Mark remote feature as seen (this dismisses the NEW badge)
+        NewFeatureManager.markFeatureAsSeen(requireContext(), "remote");
+        
         boolean serviceRunning = RemoteStreamManager.getInstance().isStreamingEnabled();
         if (serviceRunning) {
             Intent intent = new Intent(requireContext(), RemoteStreamService.class);
@@ -242,6 +255,13 @@ public class RemoteFragment extends BaseFragment {
     @Override
     public void onPause() {
         super.onPause();
+        
+        // Restore default bottom nav AND status bar color when leaving remote tab
+        if (getActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) getActivity();
+            mainActivity.setBottomNavColor(0); // Restore original
+            mainActivity.setStatusBarColor(0); // Restore original from theme
+        }
         
         if (serviceBound) {
             try {
