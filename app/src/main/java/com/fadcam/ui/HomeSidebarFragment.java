@@ -87,6 +87,15 @@ public class HomeSidebarFragment extends DialogFragment {
             closeButton.setOnClickListener(v -> dismiss());
         }
 
+        // What's New row
+        View whatsNewRow = view.findViewById(R.id.row_whats_new);
+        if (whatsNewRow != null) {
+            whatsNewRow.setOnClickListener(v -> {
+                openWhatsNew();
+                dismiss();
+            });
+        }
+
         // Tips row
         View tipsRow = view.findViewById(R.id.row_tips);
         if (tipsRow != null) {
@@ -206,6 +215,12 @@ public class HomeSidebarFragment extends DialogFragment {
                 guard++;
             }
         }
+    }
+
+    private void openWhatsNew() {
+        // Open WhatsNewActivity
+        android.content.Intent intent = new android.content.Intent(requireContext(), com.fadcam.ui.WhatsNewActivity.class);
+        startActivity(intent);
     }
 
     private void openTipsPicker() {
