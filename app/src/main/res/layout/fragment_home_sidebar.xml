@@ -86,7 +86,10 @@
             <LinearLayout
                 android:id="@+id/row_preview_toggle"
                 style="@style/SettingsGroupRow"
-                android:layout_height="56dp">
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
                 <!-- Preview icon using Material Icons ligature -->
                 <TextView
@@ -234,7 +237,10 @@
             <LinearLayout
                 android:id="@+id/row_tips"
                 style="@style/SettingsGroupRow"
-                android:layout_height="56dp">
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
                 <!-- Tips icon using Material Icons ligature -->
                 <TextView
