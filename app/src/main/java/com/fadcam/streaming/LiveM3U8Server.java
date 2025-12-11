@@ -96,6 +96,8 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = serveFragment(uri, clientIP);
             } else if ("/status".equals(uri)) {
                 response = serveStatus();
+            } else if ("/auth/check".equals(uri)) {
+                response = handleAuthCheck(session);
             } else if ("/audio/volume".equals(uri)) {
                 response = getVolume();
             } else if ("/api/github/notification".equals(uri)) {
@@ -112,7 +114,14 @@ public class LiveM3U8Server extends NanoHTTPD {
                 response = newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found");
             }
         } else if (Method.POST.equals(method)) {
-            if ("/torch/toggle".equals(uri)) {
+            // Authentication endpoints (no token required)
+            if ("/auth/login".equals(uri)) {
+                response = handleLogin(session, clientIP);
+            } else if ("/auth/logout".equals(uri)) {
+                response = handleLogout(session);
+            } else if ("/auth/changePassword".equals(uri)) {
+                response = handleChangePassword(session);
+            } else if ("/torch/toggle".equals(uri)) {
                 response = toggleTorch();
             } else if ("/recording/toggle".equals(uri)) {
                 response = toggleRecording();
@@ -880,6 +889,226 @@ public class LiveM3U8Server extends NanoHTTPD {
         response.addHeader("Cache-Control", "no-cache");
         return response;
     }
+    
+    // START: Authentication Endpoints
+    /**
+     * Handle POST /auth/login - Authenticate and return session token
+     */
+    @NonNull
+    private Response handleLogin(IHTTPSession session, String clientIP) {
+        try {
+            RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
+            
+            // If auth is disabled, return success without token
+            if (!authManager.isAuthEnabled()) {
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.authDisabled();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+            }
+            
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            String body = files.get("postData");
+            
+            if (body == null || body.isEmpty()) {
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.failure("Missing request body");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+            }
+            
+            // Extract password from JSON
+            String password = null;
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                password = json.getString("password");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to parse login JSON", e);
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.failure("Invalid JSON");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+            }
+            
+            // Verify password
+            if (!authManager.verifyPassword(password)) {
+                Log.w(TAG, "Invalid login attempt from " + clientIP);
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.invalidCredentials();
+                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());
+            }
+            
+            // Create session
+            String userAgent = session.getHeaders().get("user-agent");
+            String deviceInfo = clientIP + " - " + (userAgent != null ? userAgent : "unknown");
+            com.fadcam.streaming.model.SessionToken token = authManager.createSession(deviceInfo);
+            
+            Log.i(TAG, "✅ Successful login from " + clientIP);
+            
+            com.fadcam.streaming.model.AuthResponse authResponse = 
+                com.fadcam.streaming.model.AuthResponse.success(token.getToken(), token.getExpiresAtMs());
+            return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling login", e);
+            com.fadcam.streaming.model.AuthResponse authResponse = 
+                com.fadcam.streaming.model.AuthResponse.failure("Internal error");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", authResponse.toJson());
+        }
+    }
+    
+    /**
+     * Handle POST /auth/logout - Invalidate session token
+     */
+    @NonNull
+    private Response handleLogout(IHTTPSession session) {
+        try {
+            String token = extractAuthToken(session);
+            if (token != null) {
+                RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
+                authManager.revokeSession(token);
+                Log.i(TAG, "Session logged out");
+            }
+            
+            com.fadcam.streaming.model.AuthResponse authResponse = 
+                new com.fadcam.streaming.model.AuthResponse(true, "Logged out successfully");
+            return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling logout", e);
+            com.fadcam.streaming.model.AuthResponse authResponse = 
+                com.fadcam.streaming.model.AuthResponse.failure("Internal error");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", authResponse.toJson());
+        }
+    }
+    
+    /**
+     * Handle GET /auth/check - Check if auth is enabled and token is valid
+     */
+    @NonNull
+    private Response handleAuthCheck(IHTTPSession session) {
+        try {
+            RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
+            
+            boolean authEnabled = authManager.isAuthEnabled();
+            String token = extractAuthToken(session);
+            boolean tokenValid = false;
+            
+            if (authEnabled && token != null) {
+                com.fadcam.streaming.model.SessionToken sessionToken = authManager.validateToken(token);
+                tokenValid = sessionToken != null && sessionToken.isValid();
+            }
+            
+            String json = String.format(
+                "{\"authEnabled\":%b,\"authenticated\":%b,\"tokenValid\":%b}",
+                authEnabled, !authEnabled || tokenValid, tokenValid
+            );
+            
+            return newFixedLengthResponse(Response.Status.OK, "application/json", json);
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking auth", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"error\":\"Internal error\"}");
+        }
+    }
+    
+    /**
+     * Handle POST /auth/changePassword - Change password (requires valid session)
+     */
+    @NonNull
+    private Response handleChangePassword(IHTTPSession session) {
+        try {
+            // Validate current session
+            if (!validateAuthToken(session)) {
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.unauthorized();
+                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());
+            }
+            
+            // Parse JSON body
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            String body = files.get("postData");
+            
+            if (body == null || body.isEmpty()) {
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.failure("Missing request body");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+            }
+            
+            // Extract passwords from JSON
+            String oldPassword, newPassword;
+            try {
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                oldPassword = json.getString("oldPassword");
+                newPassword = json.getString("newPassword");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to parse change password JSON", e);
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.failure("Invalid JSON");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+            }
+            
+            RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
+            
+            // Verify old password
+            if (!authManager.verifyPassword(oldPassword)) {
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.failure("Current password is incorrect");
+                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());
+            }
+            
+            // Set new password
+            if (!authManager.setPassword(newPassword)) {
+                com.fadcam.streaming.model.AuthResponse authResponse = 
+                    com.fadcam.streaming.model.AuthResponse.failure("New password invalid (4-32 characters required)");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+            }
+            
+            Log.i(TAG, "Password changed successfully");
+            com.fadcam.streaming.model.AuthResponse authResponse = 
+                new com.fadcam.streaming.model.AuthResponse(true, "Password changed successfully");
+            return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error changing password", e);
+            com.fadcam.streaming.model.AuthResponse authResponse = 
+                com.fadcam.streaming.model.AuthResponse.failure("Internal error");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", authResponse.toJson());
+        }
+    }
+    
+    /**
+     * Extract Bearer token from Authorization header
+     */
+    private String extractAuthToken(IHTTPSession session) {
+        String authHeader = session.getHeaders().get("authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+    
+    /**
+     * Validate auth token for protected endpoints
+     * Returns true if auth is disabled OR token is valid
+     */
+    private boolean validateAuthToken(IHTTPSession session) {
+        RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
+        
+        // If auth is disabled, allow access
+        if (!authManager.isAuthEnabled()) {
+            return true;
+        }
+        
+        // Extract and validate token
+        String token = extractAuthToken(session);
+        if (token == null) {
+            return false;
+        }
+        
+        com.fadcam.streaming.model.SessionToken sessionToken = authManager.validateToken(token);
+        return sessionToken != null && sessionToken.isValid();
+    }
+    // END: Authentication Endpoints
     
     /**
      * Serve landing page HTML from streaming/web/index.html (stored in assets)

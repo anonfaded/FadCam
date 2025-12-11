@@ -9,6 +9,23 @@ class ApiService {
     }
     
     /**
+     * Get headers with auth token injected
+     */
+    getHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Inject auth token if available
+        if (typeof authService !== 'undefined') {
+            const authHeaders = authService.getAuthHeaders();
+            Object.assign(headers, authHeaders);
+        }
+        
+        return headers;
+    }
+    
+    /**
      * GET /status - Fetch server status
      * @returns {Promise<Object>} Status data
      */
@@ -16,9 +33,7 @@ class ApiService {
         try {
             const response = await fetch(`${this.baseUrl}/status`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: this.getHeaders()
             });
             
             if (!response.ok) {
@@ -42,9 +57,7 @@ class ApiService {
         try {
             const response = await fetch(`${this.baseUrl}/torch/toggle`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: this.getHeaders()
             });
             
             if (!response.ok) {
@@ -69,9 +82,7 @@ class ApiService {
             console.log(`[ApiService] POST ${endpoint} with data:`, data);
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: this.getHeaders(),
                 body: JSON.stringify(data)
             });
             

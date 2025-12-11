@@ -550,21 +550,34 @@ class FadexNotificationManager {
      * Toggle notification panel (history)
      */
     toggleNotificationPanel() {
+        console.log('[Bell Panel] toggleNotificationPanel called');
         const panel = document.getElementById('fadexNotificationPanel');
         if (!panel) {
             this.log('Notification panel not found');
+            console.error('[Bell Panel] Panel element NOT found!');
             return;
         }
 
+        console.log('[Bell Panel] Panel found:', panel);
         const isVisible = panel.classList.contains('visible');
+        console.log('[Bell Panel] Current state - isVisible:', isVisible);
+        console.log('[Bell Panel] Current classes:', panel.className);
+        console.log('[Bell Panel] Computed display:', window.getComputedStyle(panel).display);
+        console.log('[Bell Panel] Computed position:', window.getComputedStyle(panel).position);
+        console.log('[Bell Panel] Computed z-index:', window.getComputedStyle(panel).zIndex);
         
         if (isVisible) {
+            console.log('[Bell Panel] Hiding panel');
             panel.classList.remove('visible');
         } else {
+            console.log('[Bell Panel] Showing panel');
             // Show panel with all notifications
             this.renderNotificationHistory();
             panel.classList.add('visible');
         }
+        
+        console.log('[Bell Panel] After toggle - classes:', panel.className);
+        console.log('[Bell Panel] After toggle - display:', window.getComputedStyle(panel).display);
     }
 
     /**

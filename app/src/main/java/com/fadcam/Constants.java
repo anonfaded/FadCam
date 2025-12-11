@@ -43,6 +43,16 @@ public abstract class Constants {
     public static final String PREF_WATERMARK_CUSTOM_TEXT = "watermark_custom_text";
     public static final String PREF_VIDEO_CODEC = "video_codec";
     public static final String PREF_APP_THEME = "app_theme";
+    
+    // Remote Authentication Constants
+    public static final String PREF_REMOTE_AUTH_ENABLED = "remote_auth_enabled";
+    public static final String PREF_REMOTE_AUTH_PASSWORD_HASH = "remote_auth_password_hash";
+    public static final String PREF_REMOTE_AUTH_AUTO_LOCK_TIMEOUT = "remote_auth_auto_lock_timeout"; // in minutes, 0 = never
+    public static final String PREF_REMOTE_AUTH_SESSIONS = "remote_auth_sessions"; // JSON string of active sessions
+    public static final long REMOTE_AUTH_TOKEN_EXPIRY_MS = 24L * 60 * 60 * 1000; // 24 hours
+    public static final int REMOTE_AUTH_MIN_PASSWORD_LENGTH = 4;
+    public static final int REMOTE_AUTH_MAX_PASSWORD_LENGTH = 32;
+    
     /**
      * Default theme used throughout the app.
      * This constant should be used as the fallback value whenever getting the theme

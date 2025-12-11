@@ -80,6 +80,24 @@ class DashboardViewModel {
     }
     
     /**
+     * Pause polling (for lock screen)
+     */
+    pausePolling() {
+        this.stopPolling();
+        console.log('[DashboardViewModel] Paused polling for auth lock');
+    }
+    
+    /**
+     * Resume polling (after unlock)
+     */
+    resumePolling() {
+        if (!this.isPolling) {
+            this.startPolling();
+            console.log('[DashboardViewModel] Resumed polling after unlock');
+        }
+    }
+    
+    /**
      * Toggle torch (flashlight)
      */
     async toggleTorch() {

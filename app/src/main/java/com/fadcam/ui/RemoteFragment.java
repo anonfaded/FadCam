@@ -26,19 +26,25 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONObject;
+
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.streaming.RemoteAuthManager;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
 import com.fadcam.streaming.model.StreamQuality;
 import com.fadcam.ui.bottomsheet.BatteryInfoBottomSheet;
 import com.fadcam.ui.bottomsheet.QualityPresetBottomSheet;
 import com.fadcam.ui.bottomsheet.UptimeInfoBottomSheet;
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.ui.utils.NewFeatureManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RemoteFragment extends BaseFragment {
@@ -71,6 +77,14 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout dataSentRow;
     private LinearLayout segmentsRow;
     private LinearLayout networkHealthRow;
+    
+    // Remote Security UI
+    private Switch remoteAuthToggle;
+    private LinearLayout remoteAuthPasswordRow;
+    private TextView remoteAuthPasswordValue;
+    private LinearLayout remoteAuthAutoLockRow;
+    private TextView remoteAuthAutoLockValue;
+    private LinearLayout remoteAuthLogoutAllRow;
     
     private RemoteStreamService streamService;
     private boolean serviceBound = false;
@@ -143,8 +157,22 @@ public class RemoteFragment extends BaseFragment {
         segmentsRow = view.findViewById(R.id.segments_row);
         networkHealthRow = view.findViewById(R.id.network_health_row);
         
+        // Initialize Remote Security views
+        remoteAuthToggle = view.findViewById(R.id.remote_auth_toggle);
+        remoteAuthPasswordRow = view.findViewById(R.id.remote_auth_password_row);
+        remoteAuthPasswordValue = view.findViewById(R.id.remote_auth_password_value);
+        remoteAuthAutoLockRow = view.findViewById(R.id.remote_auth_auto_lock_row);
+        remoteAuthAutoLockValue = view.findViewById(R.id.remote_auth_auto_lock_value);
+        remoteAuthLogoutAllRow = view.findViewById(R.id.remote_auth_logout_all_row);
+        
         // Set context for status reporting
         RemoteStreamManager.getInstance().setContext(requireContext());
+        
+        // Initialize RemoteAuthManager
+        RemoteAuthManager.getInstance(requireContext());
+        
+        // Setup Remote Security
+        setupRemoteSecurity();
         
         // Update FPS and resolution display
         updateRequirementsDisplay();
@@ -608,6 +636,219 @@ public class RemoteFragment extends BaseFragment {
     private void showNetworkHealth() {
         NetworkHealthBottomSheet sheet = new NetworkHealthBottomSheet();
         sheet.show(getParentFragmentManager(), "network_health_sheet");
+    }
+    
+    /**
+     * Setup Remote Security UI and event listeners
+     */
+    private void setupRemoteSecurity() {
+        RemoteAuthManager authManager = RemoteAuthManager.getInstance(requireContext());
+        
+        // Load initial state
+        boolean authEnabled = authManager.isAuthEnabled();
+        remoteAuthToggle.setChecked(authEnabled);
+        updateSecurityRowsVisibility(authEnabled);
+        
+        // Auth toggle listener
+        remoteAuthToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            RemoteAuthManager.getInstance(requireContext()).setAuthEnabled(isChecked);
+            updateSecurityRowsVisibility(isChecked);
+            
+            if (isChecked && !authManager.hasPassword()) {
+                // First time enabling - prompt for password
+                showSetPasswordSheet();
+            }
+        });
+        
+        // Set Password row
+        remoteAuthPasswordRow.setOnClickListener(v -> {
+            if (!authManager.isAuthEnabled()) {
+                Toast.makeText(requireContext(), R.string.remote_security_enable_first, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showSetPasswordSheet();
+        });
+        
+        // Auto-Lock Timeout row
+        remoteAuthAutoLockRow.setOnClickListener(v -> {
+            if (!authManager.isAuthEnabled()) {
+                Toast.makeText(requireContext(), R.string.remote_security_enable_first, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showAutoLockTimeoutPicker();
+        });
+        
+        // Logout All Sessions row
+        remoteAuthLogoutAllRow.setOnClickListener(v -> {
+            if (!authManager.isAuthEnabled()) {
+                Toast.makeText(requireContext(), R.string.remote_security_enable_first, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            handleLogoutAllSessions();
+        });
+        
+        // Update auto-lock display
+        updateAutoLockDisplay();
+    }
+    
+    /**
+     * Show/hide security rows based on auth enabled state
+     */
+    private void updateSecurityRowsVisibility(boolean authEnabled) {
+        int visibility = authEnabled ? View.VISIBLE : View.GONE;
+        remoteAuthPasswordRow.setVisibility(visibility);
+        remoteAuthAutoLockRow.setVisibility(visibility);
+        remoteAuthLogoutAllRow.setVisibility(visibility);
+    }
+    
+    /**
+     * Show InputActionBottomSheetFragment for password setting
+     */
+    private void showSetPasswordSheet() {
+        RemoteAuthManager authManager = RemoteAuthManager.getInstance(requireContext());
+        String initialValue = ""; // Empty, not dots
+        String hint = "Enter new password";
+        String helperText = "Change your authentication password here. Minimum 4 characters. This is basic HTTP authentication - not highly secure but better than none. When you change the password, all other devices will be logged out automatically.";
+        
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newInput(
+            getString(R.string.remote_security_password),
+            initialValue,
+            hint,
+            getString(android.R.string.ok),
+            getString(R.string.remote_security_password_desc),
+            android.R.drawable.ic_lock_idle_lock,
+            helperText
+        );
+        
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override
+            public void onImportConfirmed(JSONObject json) {
+                // Not used
+            }
+            
+            @Override
+            public void onResetConfirmed() {
+                // Not used
+            }
+            
+            @Override
+            public void onInputConfirmed(String password) {
+                if (password == null || password.trim().isEmpty()) {
+                    Toast.makeText(requireContext(), R.string.remote_security_password_empty, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Validate password length
+                if (password.length() < Constants.REMOTE_AUTH_MIN_PASSWORD_LENGTH || 
+                    password.length() > Constants.REMOTE_AUTH_MAX_PASSWORD_LENGTH) {
+                    Toast.makeText(requireContext(), R.string.remote_security_password_required, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Set password (hashed internally)
+                authManager.setPassword(password);
+                Toast.makeText(requireContext(), R.string.remote_security_password_set, Toast.LENGTH_SHORT).show();
+                
+                // Update password value display
+                remoteAuthPasswordValue.setText("••••••••");
+            }
+        });
+        
+        sheet.show(getParentFragmentManager(), "set_password_sheet");
+    }
+    
+    /**
+     * Show auto-lock timeout picker
+     */
+    private void showAutoLockTimeoutPicker() {
+        if (!RemoteAuthManager.getInstance(requireContext()).isAuthEnabled()) {
+            Toast.makeText(requireContext(), R.string.remote_security_enable_first, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Create timeout options
+        ArrayList<OptionItem> options = new ArrayList<>();
+        options.add(new OptionItem("never", "Never", "Keep sessions active indefinitely"));
+        options.add(new OptionItem("30min", "30 Minutes", "Lock after 30 minutes of inactivity"));
+        options.add(new OptionItem("1hr", "1 Hour", "Lock after 1 hour of inactivity"));
+        options.add(new OptionItem("3hr", "3 Hours", "Lock after 3 hours of inactivity"));
+        options.add(new OptionItem("6hr", "6 Hours", "Lock after 6 hours of inactivity"));
+        
+        // Get current selection (default to "never")
+        String currentTimeout = "never";
+        
+        PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
+            getString(R.string.remote_security_auto_lock),
+            options,
+            currentTimeout,
+            "auto_lock_timeout_result"
+        );
+        
+        // Listen for selection
+        getParentFragmentManager().setFragmentResultListener(
+            "auto_lock_timeout_result",
+            getViewLifecycleOwner(),
+            (requestKey, result) -> {
+                String selectedId = result.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if (selectedId != null) {
+                    // Update display
+                    String displayText = getTimeoutDisplayText(selectedId);
+                    remoteAuthAutoLockValue.setText(displayText);
+                    
+                    // TODO: Save to SharedPreferences when implementing timeout logic
+                    Toast.makeText(requireContext(), "Auto-lock timeout set to: " + displayText, Toast.LENGTH_SHORT).show();
+                }
+            }
+        );
+        
+        picker.show(getParentFragmentManager(), "auto_lock_timeout_picker");
+    }
+    
+    /**
+     * Get display text for timeout value
+     */
+    private String getTimeoutDisplayText(String timeoutId) {
+        switch (timeoutId) {
+            case "never":
+                return "Never";
+            case "30min":
+                return "30 Minutes";
+            case "1hr":
+                return "1 Hour";
+            case "3hr":
+                return "3 Hours";
+            case "6hr":
+                return "6 Hours";
+            default:
+                return "Never";
+        }
+    }
+    
+    /**
+     * Update auto-lock timeout display
+     */
+    private void updateAutoLockDisplay() {
+        // For now, show "Never" - will be implemented with timeout feature
+        remoteAuthAutoLockValue.setText("Never");
+    }
+    
+    /**
+     * Handle logout all sessions action
+     */
+    private void handleLogoutAllSessions() {
+        RemoteAuthManager authManager = RemoteAuthManager.getInstance(requireContext());
+        int sessionCount = authManager.getActiveSessions().size();
+        
+        if (sessionCount == 0) {
+            Toast.makeText(requireContext(), R.string.remote_security_no_active_sessions, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Clear all sessions
+        authManager.clearAllSessions();
+        Toast.makeText(requireContext(), 
+            getString(R.string.remote_security_sessions_cleared), 
+            Toast.LENGTH_SHORT).show();
     }
     
     private int resolveThemeColor(int attr) {

@@ -46,12 +46,21 @@
                 FadCam Remote
             </a>
         </h1>
-        <!-- Fadex Notification Bell Icon -->
-        <div class="fadex-notification-container">
-            <button class="fadex-bell-btn" id="fadex-notification-bell" title="Fadex Notifications">
-                <i class="fas fa-bell"></i>
-                <div class="fadex-badge" id="fadex-notification-badge">1</div>
-            </button>
+        <!-- Header Actions (Notification + Profile) -->
+        <div class="header-actions">
+            <!-- Fadex Notification Bell Icon -->
+            <div class="fadex-notification-container">
+                <button class="fadex-bell-btn" id="fadex-notification-bell" title="Fadex Notifications">
+                    <i class="fas fa-bell"></i>
+                    <div class="fadex-badge" id="fadex-notification-badge">1</div>
+                </button>
+            </div>
+            <!-- Profile Button -->
+            <div class="profile-container">
+                <button class="profile-btn" id="profileBtn" title="Profile & Security">
+                    <i class="fas fa-user"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -68,6 +77,16 @@
         </div>
         <div class="fadex-panel-list" id="fadexPanelList">
             <!-- Notification items will be populated here -->
+        </div>
+    </div>
+
+    <!-- Profile Dropdown (positioned at root for proper z-index stacking) -->
+    <div class="profile-dropdown" id="profileDropdown">
+        <div class="profile-item" onclick="showSecuritySettingsModal()">
+            <i class="fas fa-shield-alt"></i> Security
+        </div>
+        <div class="profile-item" onclick="logoutNow()">
+            <i class="fas fa-sign-out-alt"></i> Logout
         </div>
     </div>
 
@@ -643,6 +662,63 @@
         </div>
     </div>
 
+    <!-- Security Settings Modal -->
+    <div class="modal" id="securitySettingsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-shield-alt"></i>Security Settings
+                </h2>
+                <button class="modal-close" onclick="hideSecuritySettingsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Security Warning -->
+                <div style="background: rgba(248, 159, 73, 0.15); border: 2px solid #f89f49; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="font-size: 13px; color: #f89f49; font-weight: 600; margin-bottom: 6px;">
+                        <i class="fas fa-shield-alt" style="margin-right: 6px;"></i>Low Security Notice
+                    </div>
+                    <div style="font-size: 12px; color: #e6edf3; line-height: 1.5;">
+                        This HTTP authentication is basic password-based and easily bypassable. For sensitive data, use HTTPS with proper TLS. This is better than no authentication but should not be relied upon for critical security.
+                    </div>
+                </div>
+
+                <!-- Auto-Lock Timeout -->
+                <div class="modal-section">
+                    <div class="modal-section-title">Auto-Lock Timeout</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;" id="autoLockButtons">
+                        <button onclick="setAutoLockTimeout('never')" class="timeout-btn" data-timeout="never" style="padding: 12px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e6edf3; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 200ms;">Never</button>
+                        <button onclick="setAutoLockTimeout('30min')" class="timeout-btn" data-timeout="30min" style="padding: 12px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e6edf3; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 200ms;">30 Minutes</button>
+                        <button onclick="setAutoLockTimeout('1hr')" class="timeout-btn" data-timeout="1hr" style="padding: 12px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e6edf3; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 200ms;">1 Hour</button>
+                        <button onclick="setAutoLockTimeout('3hr')" class="timeout-btn" data-timeout="3hr" style="padding: 12px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #e6edf3; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 200ms;">3 Hours</button>
+                    </div>
+                    <div style="font-size: 12px; color: #8b949e; padding: 10px; background: rgba(139, 148, 158, 0.1); border-radius: 6px; margin-bottom: 16px;">
+                        <i class="fas fa-info-circle" style="margin-right: 6px;"></i>Session will automatically lock after the selected period of inactivity
+                    </div>
+                </div>
+
+                <!-- Active Sessions -->
+                <div class="modal-section">
+                    <div class="modal-section-title">Active Sessions</div>
+                    <div id="activeSessionsList" style="margin-bottom: 12px;">
+                        <div style="padding: 12px; background: rgba(139, 148, 158, 0.1); border-radius: 6px; color: #8b949e; font-size: 13px; text-align: center;">
+                            Loading sessions...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout All Sessions -->
+                <div class="modal-section">
+                    <button onclick="logoutAllDevices()" style="width: 100%; padding: 13px; background: linear-gradient(135deg, #f85149 0%, #da3633 100%); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3);">
+                        <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>Logout All Sessions
+                    </button>
+                    <div style="font-size: 11px; color: #8b949e; padding: 8px 10px; margin-top: 10px; background: rgba(248, 81, 73, 0.1); border-radius: 6px;">
+                        <i class="fas fa-warning" style="margin-right: 6px;"></i>This will log out all connected devices and require re-authentication
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Security Alarm Modal -->
     <div class="modal" id="alarmModal">
         <div class="modal-content" style="max-width: 440px;">
@@ -936,6 +1012,7 @@
     <script src="js/utils/EventBus.js"></script>
     <script src="js/utils/Formatter.js"></script>
     <script src="js/constants/NotificationConstants.js"></script>
+    <script src="js/services/AuthService.js"></script>
     <script src="js/services/ApiService.js"></script>
     <script src="js/services/HlsService.js"></script>
     <script src="js/services/FadexNotificationManager.js"></script>
@@ -3439,11 +3516,16 @@
 
                 // Setup bell icon click handler
                 const bellBtn = document.getElementById('fadex-notification-bell');
+                console.log('[Bell] bellBtn found:', bellBtn);
                 if (bellBtn) {
+                    console.log('[Bell] Adding click listener to bell');
                     bellBtn.addEventListener('click', (e) => {
+                        console.log('[Bell] Bell clicked!');
                         e.stopPropagation();
                         notificationManager.toggleNotificationPanel();
                     });
+                } else {
+                    console.error('[Bell] Bell button NOT found!');
                 }
                 
                 // Setup panel close button
@@ -3509,6 +3591,319 @@
                 console.error('❌ Failed to initialize Fadex Notification Manager:', error);
             }
         });
+
+        // ========================================
+        // AUTHENTICATION HANDLERS
+        // ========================================
+
+        /**
+         * Initialize authentication system on page load
+         */
+        async function initializeAuth() {
+            try {
+                const status = await authService.checkAuthStatus();
+                console.log('[Auth] Initial check:', status);
+                
+                if (status.authEnabled && !status.authenticated) {
+                    showLockScreen();
+                } else if (status.authEnabled && status.authenticated) {
+                    console.log('[Auth] Already authenticated, session valid');
+                }
+            } catch (error) {
+                console.error('[Auth] Initialization failed:', error);
+            }
+        }
+
+        /**
+         * Show lock screen overlay
+         */
+        function showLockScreen() {
+            const overlay = document.getElementById('lockScreenOverlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('visible');
+                document.getElementById('lockPassword').focus();
+                document.getElementById('lockError').textContent = '';
+            }
+        }
+
+        /**
+         * Hide lock screen overlay
+         */
+        function hideLockScreen() {
+            const overlay = document.getElementById('lockScreenOverlay');
+            if (overlay) {
+                overlay.classList.remove('visible');
+                overlay.classList.add('hidden');
+                document.getElementById('lockPassword').value = '';
+                document.getElementById('lockError').textContent = '';
+            }
+        }
+
+        /**
+         * Attempt to unlock with entered password
+         */
+        async function attemptUnlock() {
+            const passwordInput = document.getElementById('lockPassword');
+            const rememberMeCheckbox = document.getElementById('lockRememberMe');
+            const errorDiv = document.getElementById('lockError');
+            const unlockBtn = document.querySelector('.lock-unlock-btn');
+            
+            const password = passwordInput.value.trim();
+            if (!password) {
+                errorDiv.textContent = 'Please enter password';
+                return;
+            }
+            
+            try {
+                unlockBtn.disabled = true;
+                unlockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unlocking...';
+                errorDiv.textContent = '';
+                
+                const result = await authService.login(password, rememberMeCheckbox.checked);
+                
+                if (result.success) {
+                    hideLockScreen();
+                    showToast('🔓 Unlocked successfully', 2000);
+                    
+                    // Resume dashboard updates
+                    if (dashboardViewModel) {
+                        dashboardViewModel.resumePolling();
+                    }
+                } else {
+                    errorDiv.textContent = result.message || 'Invalid password';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            } catch (error) {
+                console.error('[Auth] Unlock failed:', error);
+                errorDiv.textContent = 'Authentication error';
+            } finally {
+                unlockBtn.disabled = false;
+                unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> Unlock';
+            }
+        }
+
+        /**
+         * Handle Enter key on password input
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('lockPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        attemptUnlock();
+                    }
+                });
+            }
+        });
+
+        /**
+         * Lock screen immediately
+         */
+        async function lockNow() {
+            try {
+                await authService.logout();
+                showLockScreen();
+                showToast('🔒 Locked', 1500);
+                
+                // Pause dashboard updates
+                if (dashboardViewModel) {
+                    dashboardViewModel.pausePolling();
+                }
+            } catch (error) {
+                console.error('[Auth] Lock failed:', error);
+            }
+        }
+
+        /**
+         * Logout and clear session
+         */
+        async function logoutNow() {
+            try {
+                await authService.logout();
+                showLockScreen();
+                showToast('👋 Logged out', 1500);
+                
+                // Pause dashboard updates
+                if (dashboardViewModel) {
+                    dashboardViewModel.pausePolling();
+                }
+            } catch (error) {
+                console.error('[Auth] Logout failed:', error);
+            }
+        }
+
+        /**
+         * Show security settings modal
+         */
+        function showSecuritySettingsModal() {
+            document.getElementById('securitySettingsModal').classList.add('visible');
+            loadActiveSessions();
+            updateAutoLockButtonState();
+        }
+
+        function hideSecuritySettingsModal() {
+            closeModalAnimated('securitySettingsModal');
+        }
+
+        /**
+         * Load and display active sessions
+         */
+        function loadActiveSessions() {
+            const sessionsList = document.getElementById('activeSessionsList');
+            sessionsList.innerHTML = `
+                <div style="padding: 12px; background: rgba(139, 148, 158, 0.1); border-radius: 6px; color: #e6edf3; font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <i class="fas fa-check-circle" style="color: #3fb950;"></i>
+                        <strong>This Browser</strong>
+                    </div>
+                    <div style="font-size: 12px; color: #8b949e;">Logged in as <strong>${new Date().toLocaleString()}</strong></div>
+                </div>
+            `;
+        }
+
+        /**
+         * Update auto-lock button active state
+         */
+        function updateAutoLockButtonState() {
+            const timeout = localStorage.getItem('autoLockTimeout') || 'never';
+            document.querySelectorAll('.timeout-btn').forEach(btn => {
+                if (btn.getAttribute('data-timeout') === timeout) {
+                    btn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+                    btn.style.borderColor = '#3b82f6';
+                    btn.style.color = '#ffffff';
+                    btn.style.fontWeight = '700';
+                } else {
+                    btn.style.background = 'rgba(255, 255, 255, 0.1)';
+                    btn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    btn.style.color = '#e6edf3';
+                    btn.style.fontWeight = '600';
+                }
+            });
+        }
+
+        /**
+         * Set auto-lock timeout
+         */
+        function setAutoLockTimeout(timeout) {
+            console.log('[Security] Auto-lock timeout set to:', timeout);
+            localStorage.setItem('autoLockTimeout', timeout);
+            updateAutoLockButtonState();
+            showToast('Auto-lock timeout set to: ' + timeout, 2000);
+        }
+
+        /**
+         * Logout all devices (call server to clear all sessions)
+         */
+        async function logoutAllDevices() {
+            try {
+                console.log('[Security] Logging out all devices...');
+                // Call the change password endpoint which clears all sessions
+                const response = await fetch(CONFIG.BASE_URL + '/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...authService.getAuthHeaders()
+                    }
+                });
+
+                if (response.status === 401 || response.status === 200) {
+                    // Clear local session
+                    await authService.logout();
+                    showLockScreen();
+                    hideSecuritySettingsModal();
+                    showToast('✅ All sessions logged out', 2000);
+                    
+                    // Pause dashboard
+                    if (dashboardViewModel) {
+                        dashboardViewModel.pausePolling();
+                    }
+                } else {
+                    showToast('Failed to logout all sessions', 2000);
+                }
+            } catch (error) {
+                console.error('[Security] Logout all failed:', error);
+                showToast('Error logging out all sessions', 2000);
+            }
+        }
+
+        /**
+         * Setup profile dropdown toggle
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Profile] DOM loaded, setting up dropdown');
+            const profileBtn = document.getElementById('profileBtn');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            console.log('[Profile] profileBtn:', profileBtn);
+            console.log('[Profile] profileDropdown:', profileDropdown);
+            
+            if (profileBtn && profileDropdown) {
+                console.log('[Profile] Elements found, adding click listener');
+                profileBtn.addEventListener('click', (e) => {
+                    console.log('[Profile] Button clicked!');
+                    e.stopPropagation();
+                    
+                    const isVisible = profileDropdown.classList.contains('visible');
+                    console.log('[Profile] Current state - isVisible:', isVisible);
+                    console.log('[Profile] Current classes:', profileDropdown.className);
+                    console.log('[Profile] Computed display:', window.getComputedStyle(profileDropdown).display);
+                    console.log('[Profile] Computed position:', window.getComputedStyle(profileDropdown).position);
+                    console.log('[Profile] Computed z-index:', window.getComputedStyle(profileDropdown).zIndex);
+                    
+                    profileDropdown.classList.toggle('visible');
+                    
+                    console.log('[Profile] After toggle - classes:', profileDropdown.className);
+                    console.log('[Profile] After toggle - display:', window.getComputedStyle(profileDropdown).display);
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
+                        console.log('[Profile] Clicking outside, closing dropdown');
+                        profileDropdown.classList.remove('visible');
+                    }
+                });
+            } else {
+                console.error('[Profile] Elements NOT found! profileBtn:', profileBtn, 'profileDropdown:', profileDropdown);
+            }
+            
+            // Initialize auth on page load
+            initializeAuth();
+        });
+
+        /**
+         * Handle 401 Unauthorized responses (session expired)
+         */
+        authService.onAuthStateChange((authenticated) => {
+            if (!authenticated) {
+                showLockScreen();
+                if (dashboardViewModel) {
+                    dashboardViewModel.pausePolling();
+                }
+            }
+        });
     </script>
+
+    <!-- Lock Screen Overlay -->
+    <div id="lockScreenOverlay" class="lock-screen hidden">
+        <div class="lock-screen-backdrop"></div>
+        <div class="lock-screen-content">
+            <div class="lock-screen-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2>FadCam Remote Locked</h2>
+            <p>Enter your password to unlock</p>
+            <div class="lock-screen-form">
+                <input type="password" id="lockPassword" class="lock-password-input" placeholder="Password" autocomplete="current-password">
+                <button class="lock-unlock-btn" onclick="attemptUnlock()">
+                    <i class="fas fa-unlock"></i> Unlock
+                </button>
+                <div id="lockError" class="lock-error-message"></div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

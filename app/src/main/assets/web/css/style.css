@@ -35,6 +35,15 @@
     box-sizing: border-box;
 }
 
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block;
+}
+
 html, body {
     width: 100%;
     height: 100%;
@@ -120,6 +129,13 @@ body {
 
 .top-bar svg {
     stroke: var(--accent-red);
+}
+
+/* Header Actions Container */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Main Layout */
@@ -2551,12 +2567,10 @@ video {
 
 /* Notification Container in Top Bar */
 .fadex-notification-container {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
-    right: 16px;
-    height: 52px;
 }
 
 .fadex-bell-btn {
@@ -2828,8 +2842,250 @@ video {
    FADEX NOTIFICATION PANEL (History Dropdown)
    ======================================== */
 
-.fadex-notification-container {
+/* ========================================
+   PROFILE DROPDOWN
+   ======================================== */
+
+.profile-container {
     position: relative;
+    margin-left: 8px;
+}
+
+.profile-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 200ms ease;
+    color: var(--text-secondary);
+}
+
+.profile-btn:hover {
+    background: rgba(50, 50, 50, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+.profile-btn i {
+    font-size: 20px;
+}
+
+.profile-dropdown {
+    position: fixed;
+    top: 76px;
+    right: 12px;
+    width: 180px;
+    background: linear-gradient(135deg, rgba(20, 15, 10, 0.98) 0%, rgba(30, 20, 15, 0.98) 100%);
+    border: 2px solid rgba(60, 45, 30, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 200ms ease;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+    pointer-events: auto;
+}
+
+.profile-dropdown.visible {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+.profile-item {
+    padding: 12px 16px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 150ms ease;
+}
+
+.profile-item:last-child {
+    border-bottom: none;
+}
+
+.profile-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.profile-item i {
+    width: 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   LOCK SCREEN OVERLAY
+   ======================================== */
+
+.lock-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 300ms ease;
+}
+
+.lock-screen.visible {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+.lock-screen-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+}
+
+.lock-screen-content {
+    position: relative;
+    z-index: 1;
+    width: 90%;
+    max-width: 400px;
+    background: linear-gradient(135deg, rgba(26, 30, 36, 0.95) 0%, rgba(18, 22, 27, 0.95) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 40px 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 300ms ease;
+}
+
+.lock-screen.visible .lock-screen-content {
+    transform: scale(1);
+}
+
+.lock-screen-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, rgba(248, 81, 73, 0.2) 0%, rgba(248, 81, 73, 0.1) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lock-screen-icon i {
+    font-size: 28px;
+    color: var(--accent-red);
+}
+
+.lock-screen-content h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.lock-screen-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+}
+
+.lock-screen-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.lock-password-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: var(--font-sans);
+    outline: none;
+    transition: all 200ms ease;
+}
+
+.lock-password-input:focus {
+    border-color: var(--accent-red);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.lock-password-input::placeholder {
+    color: var(--text-muted);
+}
+
+.lock-remember-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.lock-remember-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.lock-unlock-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--accent-red) 0%, #d13f39 100%);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 200ms ease;
+}
+
+.lock-unlock-btn:hover {
+    background: linear-gradient(135deg, #ff5850 0%, var(--accent-red) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(248, 81, 73, 0.4);
+}
+
+.lock-unlock-btn:active {
+    transform: translateY(0);
+}
+
+.lock-error-message {
+    font-size: 13px;
+    color: var(--accent-red);
+    min-height: 18px;
+    text-align: left;
 }
 
 .fadex-notification-panel {
