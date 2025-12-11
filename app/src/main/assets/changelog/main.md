@@ -41,8 +41,13 @@
 ## This What's New Page
 - New in-app **What's New** page to showcase new features after updates.
 
-## 📸 FadRec - Screen Recorder
+## 📸 FadRec - Screen Recorder & Annotation
 - Record your screen using the **FadRec** tab. Videos are saved in the `Records` tab with the `FadRec_` prefix.
+- **Screen annotation tools** including pen, eraser, text, and shapes
+- **Layer and page management** for complex multi-page designs
+- **Version control system** with undo/redo and soft delete architecture
+- **Automatic project saving** with full recovery options
+- **Sidebar overlay menu** for quick-access recording controls from any app
 
 ## 🏠 FadCam Remote - Live Streaming & Remote Control
 ![fadcam_remote_demo.png](fadcam_remote_demo.png)
@@ -67,4 +72,5 @@
 # 🐞 Bug Fixes & Improvements  
 - Fixed video corruption issues - videos now remain playable even if the app crashes or phone shuts down unexpectedly.
 - Patched a memory leak issue.
+- **Standalone Beta Installation** — FadCam Beta now installs alongside the main app with fully isolated storage without needing to uninstall the main app.
 - Various minor bug fixes and improvements.
