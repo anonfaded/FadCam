@@ -9,26 +9,44 @@
 
         <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:layout_gravity="center" android:layout_marginTop="0dp" android:src="@drawable/menu_icon_unknown" app:layout_constraintBottom_toBottomOf="@id/topAppBar" app:layout_constraintEnd_toEndOf="@id/topAppBar" app:layout_constraintStart_toStartOf="@id/topAppBar" app:layout_constraintTop_toTopOf="@id/topAppBar" />
 
-        <!-- Golden Pro Button with Shimmer -->
-        <com.fadcam.ui.ShimmerTextView 
-            android:id="@+id/btnGetPro"
+        <!-- Golden Pro Button with Shimmer and Badge -->
+        <FrameLayout
+            android:id="@+id/proBtnContainer"
             android:layout_width="wrap_content"
             android:layout_height="26dp"
-            android:paddingHorizontal="8dp"
             android:layout_gravity="end|center_vertical"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_golden_header_button"
-            android:text="@string/fadcam_pro_header_button"
-            android:textColor="#1A1A1A"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:fontFamily="@font/ubuntu_regular"
-            android:gravity="center_vertical"
-            android:drawableStart="@drawable/ic_crown"
-            android:drawablePadding="0dp"
-            android:drawableTint="#1A1A1A"
-            android:focusable="true"
-            android:clickable="true" />
+            android:layout_marginEnd="8dp">
+
+            <com.fadcam.ui.ShimmerTextView 
+                android:id="@+id/btnGetPro"
+                android:layout_width="wrap_content"
+                android:layout_height="26dp"
+                android:paddingHorizontal="8dp"
+                android:background="@drawable/bg_golden_header_button"
+                android:text="@string/fadcam_pro_header_button"
+                android:textColor="#1A1A1A"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/ubuntu_regular"
+                android:gravity="center_vertical"
+                android:drawableStart="@drawable/ic_crown"
+                android:drawablePadding="0dp"
+                android:drawableTint="#1A1A1A"
+                android:focusable="true"
+                android:clickable="true" />
+
+            <!-- Pro Badge Dot -->
+            <View
+                android:id="@+id/proBadgeDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/badge_dot_green"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
     </com.google.android.material.appbar.MaterialToolbar>
 

@@ -243,6 +243,14 @@ public class MainActivity extends AppCompatActivity {
         updateFeatureBadgeVisibility();
     }
 
+    /**
+     * Check if Pro feature badge should be shown.
+     * Called from HomeFragment to determine badge visibility.
+     */
+    public boolean shouldShowProBadge() {
+        return NewFeatureManager.shouldShowBadge(this, "pro");
+    }
+
     // -------------- Fix Start for this method(showOverlayFragment)-----------
     /**
      * Present a fragment in the overlay container, avoiding duplicate dark blank
