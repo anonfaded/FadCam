@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Video Segments (Fragments)"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Buffered segments ready for streaming"
+        android:textSize="13sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Buffer Status -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <!-- Buffered Count -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/settings_home_row_bg"
+            android:padding="12dp"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Buffered"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/buffered_count_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+
+        <!-- Buffer Size -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/settings_home_row_bg"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Buffer Size"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/buffer_size_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 MB"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Sequence Info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_home_row_bg"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sequence Range"
+            android:textSize="11sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginEnd="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Oldest"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/darker_gray" />
+
+                <TextView
+                    android:id="@+id/oldest_sequence_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#0"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    android:textColor="?attr/colorHeading" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Latest"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/darker_gray" />
+
+                <TextView
+                    android:id="@+id/latest_sequence_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#0"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    android:textColor="?attr/colorHeading" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Explanation -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="What are segments?"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Segments (also called fragments in fMP4) are small video chunks that make up your live stream. The app maintains a circular buffer of recent segments, allowing clients to start watching from any point in the buffer.\n\n• Each segment = ~1 second of video\n• Buffer holds last 15 segments (~15 seconds)\n• Clients request segments via HLS playlist\n• Old segments are replaced as new ones arrive"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:lineSpacingExtra="4dp" />
+
+</LinearLayout>

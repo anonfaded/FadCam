@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Network Health"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Status Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/settings_home_row_bg"
+        android:padding="14dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/network_status_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Excellent"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"
+                android:textColor="#4CAF50" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/test_now_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Test Now"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:background="@drawable/settings_home_row_bg"
+            android:padding="10dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Metrics Grid -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Speed Metrics"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <!-- Download Speed -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/settings_home_row_bg"
+            android:padding="12dp"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="↓ Download"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/download_speed_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.0 Mbps"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+
+        <!-- Upload Speed -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/settings_home_row_bg"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="↑ Upload"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/upload_speed_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.0 Mbps"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Latency -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/settings_home_row_bg"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Latency (Ping)"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/latency_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 ms"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/last_tested_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Last tested: Never"
+            android:textSize="11sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_gravity="center_vertical" />
+    </LinearLayout>
+
+    <!-- Info -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ℹ️ Speed tests use small file downloads and may show lower values than your actual bandwidth. Tests run automatically every 2 minutes."
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:lineSpacingExtra="4dp" />
+
+</LinearLayout>

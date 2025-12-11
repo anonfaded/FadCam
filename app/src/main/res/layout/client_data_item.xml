@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/settings_home_row_bg"
+    android:padding="14dp"
+    android:layout_marginBottom="8dp">
+
+    <!-- Client IP and Status -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/client_ip_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="192.168.1.100"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/client_status_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Active"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/badge_bg_green"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
+    </LinearLayout>
+
+    <!-- Metrics Grid -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Data Served -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Data Served"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/client_data_served_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 MB"
+                android:textSize="13sp"
+                android:layout_marginTop="4dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+
+        <!-- Session Duration -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Duration"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/client_duration_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0m"
+                android:textSize="13sp"
+                android:layout_marginTop="4dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+
+        <!-- Fragments -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fragments"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/client_fragments_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="13sp"
+                android:layout_marginTop="4dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

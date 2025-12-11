@@ -257,10 +257,16 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.localbroadcastmanager)
     
-    // Media3 for fragmented MP4 muxing (crash-safe recording)
+    // Media3 for fragmented MP4 muxing (patched for live streaming via composite build)
     implementation(libs.media3.muxer)
     implementation(libs.media3.common)
     implementation(libs.media3.container)
+    
+    // NanoHTTPD for HTTP streaming server
+    implementation(libs.nanohttpd.core)
+    
+    // MP4Parser for reliable MP4 box structure parsing
+    implementation("com.googlecode.mp4parser:isoparser:1.1.22")
 
     annotationProcessor(libs.compiler)
 

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/stream_quality_preset"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:paddingBottom="16dp" />
+
+    <!-- Quality Options (Row Style - No RadioGroup) -->
+
+    <!-- LOW -->
+    <LinearLayout
+        android:id="@+id/rowLow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_home_row_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingVertical="12dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Low (480p)"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1 Mbps, max 15fps\nGood for very poor connections"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkLow"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check"
+            android:tint="?attr/colorHeading"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- MEDIUM -->
+    <LinearLayout
+        android:id="@+id/rowMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_home_row_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingVertical="12dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medium (720p)"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2.5 Mbps, max 24fps\nBalanced quality"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkMedium"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check"
+            android:tint="?attr/colorHeading"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- HIGH -->
+    <LinearLayout
+        android:id="@+id/rowHigh"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_home_row_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingVertical="12dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="High (1080p)"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5 Mbps, max 30fps\nHD streaming (default)"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkHigh"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check"
+            android:tint="?attr/colorHeading"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- ULTRA -->
+    <LinearLayout
+        android:id="@+id/rowUltra"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_home_row_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingVertical="12dp"
+        android:layout_marginBottom="12dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ultra (1080p Max)"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="8 Mbps, max 30fps\nMaximum quality"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkUltra"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check"
+            android:tint="?attr/colorHeading"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Info Note -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ℹ️ Changing quality requires stopping and restarting recording."
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:paddingTop="8dp" />
+
+</LinearLayout>

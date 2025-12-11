@@ -12,8 +12,8 @@
 
         <TextView android:id="@+id/text_fadrec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="FadRec" android:textSize="11sp" />
 
-        <!-- Soon Badge for FadRec -->
-        <TextView android:id="@+id/badge_fadrec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/badge_background_red" android:text="Soon" android:textColor="#FFF8F8F8" android:textStyle="bold" android:textSize="7sp" android:paddingStart="3dp" android:paddingEnd="3dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:minWidth="10dp" android:gravity="center" android:layout_gravity="top|end" android:layout_marginTop="1dp" android:layout_marginEnd="1dp" />
+        <!-- NEW Badge for FadRec -->
+        <TextView android:id="@+id/badge_fadrec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/new_badge_background" android:text="NEW" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="7sp" android:paddingStart="3dp" android:paddingEnd="3dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:minWidth="10dp" android:gravity="center" android:layout_gravity="top|end" android:layout_marginTop="1dp" android:layout_marginEnd="1dp" android:visibility="visible" />
     </FrameLayout>
 
     <!-- FadMic Segment -->

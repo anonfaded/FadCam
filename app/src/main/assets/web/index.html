@@ -1,0 +1,3253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>FadCam Remote</title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=1.2">
+    <!-- Avatar Component -->
+    <link rel="stylesheet" href="assets/avatar/avatar.css">
+    <style>
+        /* Hero card and LED styles are in style.css - removed inline !important overrides */
+    </style>
+    <script>
+        // Check if CSS loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            const testEl = document.createElement('div');
+            testEl.className = 'led-dot';
+            document.body.appendChild(testEl);
+            const bg = window.getComputedStyle(testEl).background;
+            console.log('CSS Load Test - LED background:', bg);
+            if (bg === 'none' || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') {
+                console.error('❌ CSS NOT LOADED! Using inline fallback.');
+            } else {
+                console.log('✅ CSS loaded successfully');
+            }
+            document.body.removeChild(testEl);
+        });
+    </script>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <button class="hamburger-btn" id="sidebarToggle" title="Toggle sidebar">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line short-left"></span>
+        </button>
+        <h1>
+            <a href="https://fadcam.faded.dev" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
+                <img src="assets/images/favicon.png" alt="FadCam" style="width: 28px; height: 28px; border-radius: 6px;">
+                FadCam Remote
+            </a>
+        </h1>
+        <!-- Fadex Notification Bell Icon -->
+        <div class="fadex-notification-container">
+            <button class="fadex-bell-btn" id="fadex-notification-bell" title="Fadex Notifications">
+                <i class="fas fa-bell"></i>
+                <div class="fadex-badge" id="fadex-notification-badge">1</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Fadex Notification History Panel -->
+    <div class="fadex-notification-panel" id="fadexNotificationPanel">
+        <div class="fadex-panel-header">
+            <h3>Notifications</h3>
+            <div class="fadex-panel-controls">
+                <button class="fadex-panel-refresh" id="fadexPanelRefresh" title="Refresh notifications">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="fadex-panel-close" id="fadexPanelClose" title="Close">✕</button>
+            </div>
+        </div>
+        <div class="fadex-panel-list" id="fadexPanelList">
+            <!-- Notification items will be populated here -->
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <!-- Sidebar Scrollable Content -->
+            <div class="sidebar-content">
+            <div class="server-hero-card">
+                <div class="server-hero-bg" id="heroBackground"></div>
+                <div class="server-hero-content">
+                    <!-- Status Indicators - TOP RIGHT -->
+                    <div class="server-status-indicators">
+                        <!-- Status Grid - 2 columns, top-right positioned -->
+                        <div class="status-grid">
+                            <!-- Server Status Indicator -->
+                            <div class="status-group">
+                                <div class="led-dot online" id="serverLED"></div>
+                                <div class="status-text-col">
+                                    <span class="led-label">Server Status</span>
+                                    <span id="serverStatusLabel" class="status-value online-text">ONLINE</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Recording Status Indicator -->
+                            <div class="status-group">
+                                <div class="led-dot recording-led" id="recordingLED"></div>
+                                <div class="status-text-col">
+                                    <span class="led-label">Recording</span>
+                                    <span id="recordingStatusLabel" class="status-value recording-text">NOT RECORDING</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Avatar Container - BOTTOM RIGHT -->
+                    <div id="heroAvatarContainer" class="hero-avatar-container"></div>
+                </div>
+            </div>
+
+            <!-- Recording Message -->
+            <div id="recordingMessage" class="recording-message"></div>
+
+            <!-- Server Room Section -->
+            <div class="section-heading" style="color: #f85149;">Server Room</div>
+
+            <!-- Info Cards Grid -->
+            <div class="cards-grid">
+                <!-- Uptime Card -->
+                <div class="card-sm" onclick="showUptimeModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-clock card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Uptime</div>
+                            <div class="card-value-sm" id="uptimeValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Clients Card -->
+                <div class="card-sm" onclick="showClientsModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-users card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Clients</div>
+                            <div class="card-value-sm" id="clientsValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Battery Card - iOS Style -->
+                <div class="card-sm card-battery-ios" onclick="showBatteryModal()">
+                    <div class="card-clickable battery-card-display">
+                        <!-- Background Fill -->
+                        <div class="card-ios-fill" id="batteryFill"></div>
+                        
+                        <!-- Content Layer -->
+                        <div class="card-ios-content">
+                            <!-- Battery Icon with Charging Indicator -->
+                            <div class="card-ios-icon battery-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Battery outline -->
+                                    <path d="M4 7C3.44772 7 3 7.44772 3 8v8c0 .5523.44772 1 1 1h14c.5523 0 1-.4477 1-1V8c0-.55228-.4477-1-1-1H4z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                                    <!-- Battery terminal -->
+                                    <rect x="19" y="9" width="1.5" height="6" rx="0.5" fill="currentColor"/>
+                                    <!-- Battery fill -->
+                                    <rect class="battery-level" x="4.5" y="8.5" width="13" height="7" rx="0.5" fill="currentColor" opacity="0.8"/>
+                                </svg>
+                                <!-- Charging Bolt -->
+                                <div class="charging-bolt" id="chargingBolt">⚡</div>
+                                <!-- Charging Bubbles -->
+                                <div class="charging-indicator" id="batteryCharges">
+                                    <span class="bubble" style="animation-delay: 0s"></span>
+                                    <span class="bubble" style="animation-delay: 0.2s"></span>
+                                    <span class="bubble" style="animation-delay: 0.4s"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Battery Info Container - Matches card-sm-content structure -->
+                            <div class="card-sm-content">
+                                <!-- Label -->
+                                <div class="card-label-sm">Battery</div>
+                                
+                                <!-- Value with status badge -->
+                                <div class="battery-value-row">
+                                    <div class="battery-percentage" id="batteryPercentage">—%</div>
+                                    <div class="battery-status-badge" id="batteryStatusBadge">—</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Arrow -->
+                            <i class="fas fa-chevron-right card-arrow-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segments Card -->
+                <div class="card-sm" onclick="showSegmentsModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-list card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Segments</div>
+                            <div class="card-value-sm" id="segmentsValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Data Transfer Card -->
+                <div class="card-sm" onclick="showDataTransferModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-arrow-down" style="font-size: 10px; color: #f85149; width: 12px; height: 12px; flex-shrink: 0;"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Data Received</div>
+                            <div class="card-value-sm" id="dataTransferValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Network Card - iOS Style with WiFi Bars -->
+                <div class="card card-sm card-network-ios" onclick="showNetworkModal()">
+                    <div class="card-clickable">
+                        <div class="wifi-bars" id="wifiBars">
+                            <div class="wifi-bar"></div>
+                            <div class="wifi-bar"></div>
+                            <div class="wifi-bar"></div>
+                            <div class="wifi-bar"></div>
+                        </div>
+                        <div class="network-info">
+                            <div class="network-label">Network</div>
+                            <div class="network-value" id="networkValue">—</div>
+                            <div class="network-status" id="networkStatus">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Storage Card - iOS Style -->
+                <div class="card card-sm card-storage-ios">
+                    <div class="card-clickable">
+                        <i class="fas fa-hard-drive card-icon-sm" style="color: #6366f1;"></i>
+                        <div class="storage-info">
+                            <div class="storage-label">Storage</div>
+                            <div class="storage-value" id="storageValue">—</div>
+                            <div class="storage-bar" id="storageBar">
+                                <div class="storage-fill" id="storageFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Card - iOS Style -->
+                <div class="card card-sm card-memory-ios">
+                    <div class="card-clickable">
+                        <i class="fas fa-microchip card-icon-sm" style="color: #0ea5e9;"></i>
+                        <div class="memory-info">
+                            <div class="memory-label">Memory</div>
+                            <div class="memory-value" id="memoryValue">—</div>
+                            <div class="memory-bar" id="memoryBar">
+                                <div class="memory-fill" id="memoryFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Cards Grid - Recording & Quality -->
+            <div class="cards-grid">
+                <!-- Recording Mode Card -->
+                <div class="card-sm" onclick="showRecordingModeModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-circle-dot card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Mode</div>
+                            <div class="card-value-sm" id="recordingModeValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Stream Quality Card -->
+                <div class="card-sm" onclick="showStreamQualityModal()">
+                    <div class="card-clickable">
+                        <i class="fas fa-signal card-icon-sm"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Quality</div>
+                            <div class="card-value-sm" id="streamQualityValue">—</div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remote Control Section -->
+            <div class="section-heading" style="color: #f85149;">Remote Control</div>
+
+            <!-- Torch & Volume Row -->
+            <div class="cards-grid">
+                <!-- Torch Card - Standalone Custom Card -->
+                <div class="torch-card" onclick="toggleTorch()">
+                    <div class="torch-card-inner">
+                        <!-- Background Fill -->
+                        <div class="torch-fill" id="torchFill"></div>
+                        <!-- Content -->
+                        <div class="torch-content">
+                            <!-- Torch Icon -->
+                            <i class="far fa-lightbulb torch-icon-fa" id="torchIcon"></i>
+                            <!-- Text -->
+                            <div class="torch-text">
+                                <div class="torch-label">Torch</div>
+                                <div class="torch-value" id="torchState">OFF</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recording Card - Standalone Custom Card -->
+                <div class="torch-card recording-card" onclick="toggleRecording()">
+                    <div class="torch-card-inner">
+                        <!-- Background Fill -->
+                        <div class="torch-fill recording-fill" id="recordingFill"></div>
+                        <!-- Content -->
+                        <div class="torch-content">
+                            <!-- Recording Icon -->
+                            <i class="fas fa-circle recording-icon-fa" id="recordingIcon"></i>
+                            <!-- Text -->
+                            <div class="torch-text">
+                                <div class="torch-label">Recording</div>
+                                <div class="torch-value" id="recordingState">STOPPED</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Volume Control Card -->
+                <div class="card-sm card-battery-ios volume-card">
+                    <div class="card-clickable battery-card-display" style="cursor: default;">
+                        <!-- Background Fill -->
+                        <div class="card-ios-fill" id="volumeFill"></div>
+                        
+                        <!-- Content Layer -->
+                        <div class="card-ios-content">
+                            <!-- Volume Icon -->
+                            <div class="card-ios-icon volume-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Speaker -->
+                                    <path d="M11 5 6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round"/>
+                                    <!-- Sound waves -->
+                                    <path class="volume-wave volume-wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path class="volume-wave volume-wave-2" d="M18.37 5.63a9 9 0 0 1 0 12.73" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            
+                            <!-- Volume Info -->
+                            <div class="battery-info-container">
+                                <div class="battery-label volume-label">Volume</div>
+                                <div class="battery-percentage volume-percentage" id="volumePercentage">0%</div>
+                            </div>
+                            
+                            <!-- Volume Control Buttons (right-aligned) -->
+                            <div class="volume-button-group">
+                                <button id="volumeMinus" class="volume-btn volume-btn-minus" onclick="volumeDecrease()" title="Decrease volume">−</button>
+                                <button id="volumePlus" class="volume-btn volume-btn-plus" onclick="volumeIncrease()" title="Increase volume">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alarm Control Card -->
+            <div class="cards-grid">
+                <div class="card-sm" onclick="showAlarmModal()" id="alarmCard" style="transition: all 300ms ease; cursor: pointer;">
+                    <div class="card-clickable">
+                        <i class="fas fa-bell card-icon-sm" style="color: #ef4444; font-size: 18px;" id="alarmIcon"></i>
+                        <div class="card-sm-content">
+                            <div class="card-label-sm">Alarm</div>
+                            <div class="card-value-sm" id="alarmState" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                                <span id="alarmStateText">READY</span>
+                                <span id="alarmCountdown" style="font-size: 12px; color: #8b949e; font-weight: normal;"></span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right card-arrow-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- End Sidebar Scrollable Content -->
+            </div>
+
+            <!-- Sidebar Footer (outside scrollable content) -->
+            <div class="sidebar-footer">
+                <!-- Footer Info Text -->
+                <div style="font-size: 11px; color: #8b949e; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 12px;">
+                    <span>© 2025 faded.dev</span>
+                    <div class="footer-links">
+                    <a href="https://discord.gg/kvAZvdkuuN" target="_blank" title="Discord Community" class="footer-link">
+                        <i class="fab fa-discord"></i>
+                        <span>Discord</span>
+                    </a>
+                    <a href="https://github.com/anonfaded/FadCam" target="_blank" title="GitHub Repository" class="footer-link">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                    <a href="" id="endpointsFooterLink" onclick="showEndpointsModal(); return false;" title="API Endpoints" class="footer-link">
+                        <i class="fas fa-code"></i>
+                    </a>
+                    </div>
+                </div>
+
+                <!-- Version Info -->
+                <div style="display: none; font-size: 8px; color: #4d5561; text-align: center; padding-top: 4px; border-top: 1px solid #3d4349;">
+                    v3.0.0
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Area -->
+        <div class="player-area">
+            <div class="video-container">
+                <video id="videoPlayer" playsinline muted autoplay controls></video>
+                <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
+                    <div class="play-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                    </div>
+                    <div class="overlay-text">Stream will auto-start when you begin recording.<br/><br/>If it doesn't, hard refresh the page:<br/><strong>Android:</strong> Long-press refresh icon<br/><strong>Desktop:</strong> Ctrl+Shift+R or Ctrl+F5</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Modals -->
+    <!-- Uptime Details Modal -->
+    <div class="modal" id="uptimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Uptime Details</h2>
+                <button class="modal-close" onclick="hideUptimeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="uptimeContent"></div>
+        </div>
+    </div>
+
+    <!-- Clients Modal -->
+    <div class="modal" id="clientsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Connected Clients</h2>
+                <button class="modal-close" onclick="hideClientsModal()">✕</button>
+            </div>
+            <div class="modal-body" id="clientsContent"></div>
+        </div>
+    </div>
+
+    <!-- Battery Modal -->
+    <div class="modal" id="batteryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Battery Status</h2>
+                <button class="modal-close" onclick="hideBatteryModal()">✕</button>
+            </div>
+            <div class="modal-body" id="batteryContent"></div>
+        </div>
+    </div>
+
+    <!-- Network Modal -->
+    <div class="modal" id="networkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Network Status</h2>
+                <button class="modal-close" onclick="hideNetworkModal()">✕</button>
+            </div>
+            <div class="modal-body" id="networkContent"></div>
+        </div>
+    </div>
+
+    <!-- Data Transfer Modal -->
+    <div class="modal" id="dataTransferModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Client Data Usage</h2>
+                <button class="modal-close" onclick="hideDataTransferModal()">✕</button>
+            </div>
+            <div class="modal-body" id="dataTransferContent"></div>
+        </div>
+    </div>
+
+    <!-- Segments Modal -->
+    <div class="modal" id="segmentsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Segments</h2>
+                <button class="modal-close" onclick="hideSegmentsModal()">✕</button>
+            </div>
+            <div class="modal-body" id="segmentsContent"></div>
+        </div>
+    </div>
+
+    <!-- Storage Modal -->
+    <div class="modal" id="storageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Storage</h2>
+                <button class="modal-close" onclick="hideStorageModal()">✕</button>
+            </div>
+            <div class="modal-body" id="storageContent"></div>
+        </div>
+    </div>
+
+    <!-- Memory Modal -->
+    <div class="modal" id="memoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Memory Usage</h2>
+                <button class="modal-close" onclick="hideMemoryModal()">✕</button>
+            </div>
+            <div class="modal-body" id="memoryContent"></div>
+        </div>
+    </div>
+
+    <!-- Endpoints Modal -->
+    <div class="modal" id="endpointsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>API Endpoints</h2>
+                <button class="modal-close" onclick="hideEndpointsModal()">✕</button>
+            </div>
+            <div class="modal-body" id="endpointsContent"></div>
+        </div>
+    </div>
+
+    <!-- Recording Mode Modal -->
+    <div class="modal" id="recordingModeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Recording Mode</h2>
+                <button class="modal-close" onclick="hideRecordingModeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="recordingModeContent"></div>
+        </div>
+    </div>
+
+    <!-- Stream Quality Modal -->
+    <div class="modal" id="streamQualityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Stream Quality</h2>
+                <button class="modal-close" onclick="hideStreamQualityModal()">✕</button>
+            </div>
+            <div class="modal-body" id="streamQualityContent"></div>
+        </div>
+    </div>
+
+    <!-- Security Alarm Modal -->
+    <div class="modal" id="alarmModal">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <h2 style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-bell" style="font-size: 24px; color: #ef4444;"></i>
+                    <span>Security Alarm</span>
+                </h2>
+                <button class="modal-close" onclick="hideAlarmModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Tab Selection -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <button id="alarmTabInstant" class="alarm-tab active" onclick="switchAlarmTab('instant')" style="padding: 12px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms;">
+                        <i class="fas fa-zap" style="margin-right: 6px;"></i>Activate Now
+                    </button>
+                    <button id="alarmTabScheduled" class="alarm-tab" onclick="switchAlarmTab('scheduled')" style="padding: 12px; background: #30363d; border: none; border-radius: 10px; color: #8b949e; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms;">
+                        <i class="fas fa-clock" style="margin-right: 6px;"></i>Schedule
+                    </button>
+                </div>
+
+                <!-- INSTANT TAB -->
+                <div id="alarmInstantTab">
+                    <!-- Use Cases Info -->
+                    <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid #3b82f6; border-radius: 12px; padding: 14px; margin-bottom: 18px; font-size: 13px; color: #8b949e;">
+                        <div style="margin-bottom: 6px;"><strong style="color: #60a5fa;"><i class="fas fa-lightbulb" style="margin-right: 6px;"></i>Quick Activation:</strong></div>
+                        <div style="line-height: 1.5;">Activate alarm immediately with selected sound and duration</div>
+                    </div>
+
+                    <!-- Sound Selection -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-volume-up" style="margin-right: 6px;"></i>Sound
+                        </label>
+                        <select id="alarmSoundSelect" style="width: 100%; padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer; transition: all 200ms;">
+                            <option value="office_phone.mp3"><i class="fas fa-phone"></i> Office Phone (Default)</option>
+                            <option value="alert_alarm.mp3">Alert Alarm</option>
+                            <option value="car_alarm.mp3">Car Alarm</option>
+                            <option value="nuclear_alarm.mp3">Nuclear Siren</option>
+                            <option value="police_patrol.mp3">Police Patrol</option>
+                            <option value="rooster.mp3">Rooster Crow</option>
+                            <option value="siren.mp3">Emergency Siren</option>
+                        </select>
+                        <div style="font-size: 12px; color: #6e7681; margin-top: 8px; padding: 8px 10px; background: rgba(139, 148, 158, 0.1); border-radius: 6px;">
+                            <i class="fas fa-info-circle" style="margin-right: 6px; color: #60a5fa;"></i><strong>7 unique alarm sounds</strong> • Use preview to test before activation
+                        </div>
+                    </div>
+
+                    <!-- Preview & Duration Row -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                        <button id="previewBtn" onclick="previewAlarmSound()" style="padding: 11px; background: #1f2937; border: 2px solid #30363d; border-radius: 10px; color: #60a5fa; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms;">
+                            <i class="fas fa-play" style="margin-right: 6px;"></i>Preview
+                        </button>
+                        <select id="durationSelect" style="padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer; transition: all 200ms;">
+                            <option value="10">10 sec</option>
+                            <option value="20">20 sec</option>
+                            <option value="30" selected>30 sec</option>
+                            <option value="60">1 min</option>
+                            <option value="120">2 min</option>
+                            <option value="300">5 min</option>
+                            <option value="600">10 min</option>
+                            <option value="-1">Infinite</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 12px; color: #6e7681; padding: 8px 10px; background: rgba(139, 148, 158, 0.1); border-radius: 6px; margin-bottom: 16px;">
+                        <i class="fas fa-clock" style="margin-right: 6px; color: #60a5fa;"></i><strong>Duration:</strong> How long the alarm will sound before stopping automatically
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                        <button id="ringBtn" onclick="ringAlarm()" style="padding: 13px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                            <i class="fas fa-bell" style="margin-right: 6px;"></i>Activate
+                        </button>
+                        <button id="stopBtn" onclick="stopAlarm()" style="padding: 13px; background: #6b7280; border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; opacity: 0.5;" disabled>
+                            <i class="fas fa-stop" style="margin-right: 6px;"></i>Stop
+                        </button>
+                    </div>
+
+                    <!-- Status Display -->
+                    <div id="alarmStatusDisplay" style="display: none; padding: 14px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%); border: 2px solid #ef4444; border-radius: 10px;">
+                        <div style="font-size: 13px; color: #e6edf3; line-height: 1.5;">
+                            <div style="font-weight: 600; margin-bottom: 6px;">
+                                <i class="fas fa-exclamation-circle" style="margin-right: 6px; color: #ef4444;"></i>Alarm Active
+                            </div>
+                            <div id="alarmDurationRemaining" style="color: #8b949e; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+                                <span>Ringing now...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCHEDULED TAB -->
+                <div id="alarmScheduledTab" style="display: none;">
+                    <!-- Schedule Info -->
+                    <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid #22c55e; border-radius: 12px; padding: 14px; margin-bottom: 18px; font-size: 13px; color: #8b949e;">
+                        <div style="margin-bottom: 6px;"><strong style="color: #22c55e;"><i class="fas fa-info-circle" style="margin-right: 6px;"></i>Schedule Alarm:</strong></div>
+                        <div style="line-height: 1.5;">Server will trigger alarm at scheduled time. Set date, time, sound & duration.</div>
+                    </div>
+
+                    <!-- Date & Time Selection (Single Picker) -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-calendar-clock" style="margin-right: 6px;"></i>When to Trigger
+                        </label>
+                        <input type="text" id="scheduleDateTimePicker" placeholder="Select date & time" style="width: 100%; padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                        <div style="font-size: 12px; color: #6e7681; margin-top: 8px; padding: 8px 10px; background: rgba(139, 148, 158, 0.1); border-radius: 6px;">
+                            <i class="fas fa-info-circle" style="margin-right: 6px; color: #60a5fa;"></i>Pick any future date and time
+                        </div>
+                    </div>
+
+                    <!-- Sound Selection (Schedule) -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-volume-up" style="margin-right: 6px;"></i>Sound
+                        </label>
+                        <select id="scheduleAlarmSoundSelect" style="width: 100%; padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                            <option value="office_phone.mp3">Office Phone (Default)</option>
+                            <option value="alert_alarm.mp3">Alert Alarm</option>
+                            <option value="car_alarm.mp3">Car Alarm</option>
+                            <option value="nuclear_alarm.mp3">Nuclear Siren</option>
+                            <option value="police_patrol.mp3">Police Patrol</option>
+                            <option value="rooster.mp3">Rooster Crow</option>
+                            <option value="siren.mp3">Emergency Siren</option>
+                        </select>
+                    </div>
+
+                    <!-- Duration Selection (Schedule) -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-hourglass-end" style="margin-right: 6px;"></i>Duration
+                        </label>
+                        <select id="scheduleDurationSelect" style="width: 100%; padding: 11px 12px; background: #0a0e11; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; cursor: pointer;">
+                            <option value="10">10 sec</option>
+                            <option value="20">20 sec</option>
+                            <option value="30" selected>30 sec</option>
+                            <option value="60">1 min</option>
+                            <option value="120">2 min</option>
+                            <option value="300">5 min</option>
+                            <option value="600">10 min</option>
+                            <option value="-1">Infinite</option>
+                        </select>
+                        <div style="font-size: 12px; color: #6e7681; margin-top: 8px; padding: 8px 10px; background: rgba(139, 148, 158, 0.1); border-radius: 6px;">
+                            <i class="fas fa-info-circle" style="margin-right: 6px; color: #60a5fa;"></i>How long alarm sounds when triggered
+                        </div>
+                    </div>
+
+                    <!-- Schedule Buttons -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; position: relative; z-index: 100; pointer-events: auto;">
+                        <button id="scheduleSetBtn" onclick="scheduleAlarm()" style="padding: 13px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); pointer-events: auto;">
+                            <i class="fas fa-check-circle" style="margin-right: 6px;"></i>Set Alarm
+                        </button>
+                        <button id="scheduleCancelBtn" onclick="cancelScheduledAlarm()" style="padding: 13px; background: #6b7280; border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 200ms; opacity: 0.5; pointer-events: auto;" disabled>
+                            <i class="fas fa-times" style="margin-right: 6px;"></i>Cancel
+                        </button>
+                    </div>
+
+                    <!-- Helper Text for Scheduling -->
+                    <div style="font-size: 12px; color: #6e7681; padding: 10px 10px; background: rgba(34, 197, 94, 0.15); border-left: 3px solid #22c55e; border-radius: 6px; margin-bottom: 14px;">
+                        <div style="margin-bottom: 6px;"><i class="fas fa-lightbulb" style="margin-right: 6px; color: #22c55e;"></i><strong>How it works:</strong></div>
+                        <div style="line-height: 1.5;">Server receives schedule and triggers alarm at exact time automatically. No need to keep dashboard open. Card shows countdown until alarm triggers.</div>
+                    </div>
+
+                    <!-- Scheduled Alarm Display -->
+                    <div id="scheduleStatusDisplay" style="display: none; padding: 14px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%); border: 2px solid #22c55e; border-radius: 10px; margin-bottom: 14px;">
+                        <div style="font-size: 13px; color: #e6edf3; line-height: 1.6;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">
+                                <i class="fas fa-hourglass-start" style="margin-right: 6px; color: #22c55e;"></i>Alarm Scheduled
+                            </div>
+                            <div id="scheduleCountdown" style="color: #8b949e; font-size: 12px; display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+                                <span id="scheduleCountdownText">Waiting...</span>
+                            </div>
+                            <div style="font-size: 11px; color: #6e7681; padding-top: 8px; border-top: 1px solid rgba(34, 197, 94, 0.2);">
+                                <i class="fas fa-info-circle" style="margin-right: 5px; color: #22c55e;"></i>Click "Cancel" to remove this scheduled alarm
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fadex Notification Modal -->
+    <div class="modal fadex-notification-modal" id="fadexNotificationModal">
+        <div class="modal-content fadex-notification-content">
+            <div class="fadex-notification-header">
+                <button class="notification-close-btn" title="Dismiss">✕</button>
+            </div>
+            <div class="fadex-notification-body">
+                <div class="notification-message">
+                    <h2 id="fadex-notification-title"></h2>
+                    <p id="fadex-notification-subtitle" class="notification-subtitle"></p>
+                    <div id="fadex-notification-description" class="notification-description"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Flatpickr Date-Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <style>
+        /* Flatpickr Dark Theme Override - Improved Contrast */
+        .flatpickr-calendar {
+            background: #0d1117 !important;
+            border: 2px solid #3d444d !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+        }
+        .flatpickr-calendar.open {
+            display: block !important;
+        }
+        .flatpickr-month {
+            background: #0d1117 !important;
+            color: #e6edf3 !important;
+        }
+        .flatpickr-weekdays {
+            background: #161b22 !important;
+        }
+        .flatpickr-innerContainer {
+            background: #0d1117 !important;
+        }
+        .flatpickr-weekday {
+            color: #79c0ff !important;
+            font-weight: 600;
+        }
+        .flatpickr-day.today {
+            color: #79c0ff !important;
+            border-color: #79c0ff !important;
+        }
+        .flatpickr-day {
+            color: #c9d1d9 !important;
+        }
+        .flatpickr-day:hover,
+        .flatpickr-day.prevMonthDay:hover,
+        .flatpickr-day.nextMonthDay:hover {
+            background: #3d444d !important;
+            color: #79c0ff !important;
+            font-weight: 600;
+        }
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:focus,
+        .flatpickr-day.selected:hover {
+            background: #ef4444 !important;
+            border-color: #ef4444 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+        .flatpickr-time {
+            background: #161b22 !important;
+            border-top: 1px solid #3d444d !important;
+        }
+        .flatpickr-time input,
+        .flatpickr-time .numInputWrapper input {
+            background: #0a0e11 !important;
+            color: #79c0ff !important;
+            border: 2px solid #3d444d !important;
+            font-weight: 600;
+        }
+        .flatpickr-time input:focus {
+            border-color: #79c0ff !important;
+        }
+        .flatpickr-time .separator {
+            color: #79c0ff !important;
+            font-weight: 600;
+        }
+        .flatpickr-am-pm {
+            color: #79c0ff !important;
+            background: #0a0e11 !important;
+            border: 2px solid #3d444d !important;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .flatpickr-am-pm:hover {
+            border-color: #79c0ff !important;
+        }
+        .flatpickr-calendar {
+            pointer-events: auto !important;
+        }
+        /* Ensure buttons are above picker */
+        button {
+            position: relative;
+            z-index: 100;
+        }
+    </style>
+    
+    <script src="js/config.js"></script>
+    <script src="js/utils/EventBus.js"></script>
+    <script src="js/utils/Formatter.js"></script>
+    <script src="js/constants/NotificationConstants.js"></script>
+    <script src="js/services/ApiService.js"></script>
+    <script src="js/services/HlsService.js"></script>
+    <script src="js/services/FadexNotificationManager.js"></script>
+    <script src="js/models/ServerStatus.js"></script>
+    <script src="js/viewmodels/DashboardViewModel.js"></script>
+    
+    <script>
+        let dashboardViewModel = null;
+        let videoElement = null;
+        let currentStatus = null;
+        let previousStatus = null; // Track previous status for change detection
+        let sidebarOpen = true; // Open by default
+        let justToggledSidebar = false; // Prevent immediate close on mobile
+        let hlsService = null;
+
+        /**
+         * Detect WebP support and load appropriate hero background image
+         */
+        function detectWebPAndLoadHero() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            if (ctx && ctx.fillStyle) {
+                ctx.fillStyle = 'rgba(0,0,0,0)';
+                ctx.fillRect(0, 0, 1, 1);
+                const supportsWebP = canvas.toDataURL('image/webp').indexOf('image/webp') === 5;
+                const heroElement = document.getElementById('heroBackground');
+                if (heroElement && !supportsWebP) {
+                    heroElement.classList.add('no-webp');
+                    console.log('[Image] WebP not supported, using PNG fallback');
+                }
+            }
+        }
+
+        // Detect WebP support on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', detectWebPAndLoadHero);
+        } else {
+            detectWebPAndLoadHero();
+        }
+
+        // Toast notification functions - see showToast implementation at end of script
+        
+        /**
+         * Update battery card with iOS-style visualization
+         */
+        function updateBatteryCard(status) {
+            const percent = status.battery?.percent ?? -1;
+            const isCharging = status.battery?.status?.toLowerCase() === 'charging';
+            const isLow = percent > 0 && percent <= (status.battery?.warning_threshold ?? 20);
+            
+            const batteryCard = document.querySelector('.card-battery-ios');
+            const batteryFill = document.getElementById('batteryFill');
+            const batteryPercentage = document.getElementById('batteryPercentage');
+            const batteryStatusBadge = document.getElementById('batteryStatusBadge');
+            const batteryLabel = document.querySelector('.battery-label');
+            const batteryLevel = document.querySelector('.battery-level');
+            
+            if (!batteryCard || !batteryFill || !batteryPercentage || !batteryStatusBadge) {
+                console.log('[Battery] Card elements not ready yet');
+                return;
+            }
+            
+            if (percent < 0) {
+                batteryPercentage.textContent = '—%';
+                batteryStatusBadge.textContent = '—';
+                return;
+            }
+            
+            const fillPercent = Math.max(0, Math.min(100, percent));
+            batteryFill.style.width = fillPercent + '%';
+            batteryPercentage.textContent = percent + '%';
+            
+            if (batteryLevel) {
+                batteryLevel.style.width = fillPercent + '%';
+            }
+            
+            batteryCard.classList.remove('charging', 'low', 'dim-text');
+            
+            // Add dim-text class if battery is below 30% and not charging (to switch text to white for contrast)
+            if (!isCharging && percent > 0 && percent < 30) {
+                batteryCard.classList.add('dim-text');
+            }
+            
+            if (isCharging) {
+                batteryCard.classList.add('charging');
+                batteryStatusBadge.textContent = 'Charging';
+            } else if (isLow) {
+                batteryCard.classList.add('low');
+                batteryStatusBadge.textContent = 'Low';
+            } else {
+                batteryStatusBadge.textContent = 'Normal';
+            }
+        }
+
+        /**
+         * Update storage card with color-coded bar
+         */
+        function updateStorageCard(status) {
+            const storageValue = document.getElementById('storageValue');
+            const storageFill = document.getElementById('storageFill');
+            const storageBar = document.getElementById('storageBar');
+            
+            if (!storageValue || !storageFill || !storageBar) {
+                console.log('[Storage] Card elements not ready yet');
+                return;
+            }
+            
+            if (status.storageUsedGb > 0 && status.storageTotalGb > 0) {
+                const percent = (status.storageUsedGb / status.storageTotalGb) * 100;
+                storageValue.textContent = `${percent.toFixed(0)}% (${status.storageUsedGb.toFixed(1)}/${status.storageTotalGb.toFixed(1)} GB)`;
+                storageFill.style.width = percent + '%';
+                
+                storageBar.classList.remove('warning', 'critical');
+                if (percent > 85) {
+                    storageBar.classList.add('critical');
+                } else if (percent > 70) {
+                    storageBar.classList.add('warning');
+                }
+            } else {
+                storageValue.textContent = '—';
+                storageFill.style.width = '0%';
+            }
+        }
+
+        /**
+         * Update memory card with color-coded bar
+         */
+        function updateMemoryCard(status) {
+            const memoryValue = document.getElementById('memoryValue');
+            const memoryFill = document.getElementById('memoryFill');
+            const memoryBar = document.getElementById('memoryBar');
+            
+            if (!memoryValue || !memoryFill || !memoryBar) {
+                console.log('[Memory] Card elements not ready yet');
+                return;
+            }
+            
+            if (status.memoryTotalMb > 0) {
+                // Use real data from backend: percentage from "75% (1024/1366 MB)"
+                const percent = status.memoryPercent || 0;
+                const usedGb = status.memoryUsedMb / 1024;
+                const totalGb = status.memoryTotalMb / 1024;
+                
+                memoryValue.textContent = `${percent.toFixed(0)}% (${usedGb.toFixed(1)}/${totalGb.toFixed(1)} GB)`;
+                memoryFill.style.width = percent + '%';
+                
+                memoryBar.classList.remove('warning', 'critical');
+                if (percent > 85) {
+                    memoryBar.classList.add('critical');
+                } else if (percent > 70) {
+                    memoryBar.classList.add('warning');
+                }
+            } else {
+                memoryValue.textContent = '—';
+                memoryFill.style.width = '0%';
+            }
+        }
+
+        /**
+         * Update network card with WiFi bars based on health
+         */
+        function updateNetworkCard(status) {
+            const wifiBars = document.getElementById('wifiBars');
+            const networkValue = document.getElementById('networkValue');
+            const networkStatus = document.getElementById('networkStatus');
+            
+            if (!wifiBars || !networkValue || !networkStatus) {
+                console.log('[Network] Card elements not ready yet');
+                return;
+            }
+            
+            networkValue.textContent = status.bitrate || '—';
+            
+            wifiBars.classList.remove('good', 'moderate', 'poor');
+            
+            const health = status.networkHealth || 'unknown';
+            if (health === 'good') {
+                wifiBars.classList.add('good');
+                networkStatus.textContent = 'Good';
+            } else if (health === 'moderate') {
+                wifiBars.classList.add('moderate');
+                networkStatus.textContent = 'Moderate';
+            } else if (health === 'poor') {
+                wifiBars.classList.add('poor');
+                networkStatus.textContent = 'Poor';
+            } else {
+                networkStatus.textContent = '—';
+            }
+        }
+
+        /**
+         * Update volume card with color-coded fill and draggable slider
+         */
+        function updateVolumeCard(status) {
+            const volumeFill = document.getElementById('volumeFill');
+            const volumePercentage = document.getElementById('volumePercentage');
+            const volumeWaves = document.querySelectorAll('.volume-wave');
+            
+            // Return early if elements don't exist yet
+            if (!volumeFill || !volumePercentage) {
+                console.log('[Volume] Card elements not ready yet');
+                return;
+            }
+            
+            const percent = status.volume_percentage ?? 0;
+            
+            // Update fill bar
+            volumeFill.style.width = percent + '%';
+            
+            // Update text displays
+            volumePercentage.textContent = Math.round(percent) + '%';
+            
+            // Determine color based on volume level: Green (0-33%) → Orange (33-66%) → Red (66%+)
+            const volumeCard = document.querySelector('.volume-card');
+            if (volumeCard) {
+                volumeCard.classList.remove('low', 'medium', 'high', 'muted');
+                
+                if (percent === 0) {
+                    // Muted - Gray
+                    volumeCard.classList.add('muted');
+                } else if (percent <= 33) {
+                    // Low - Green (quiet)
+                    volumeCard.classList.add('low');
+                } else if (percent <= 66) {
+                    // Medium - Orange (normal)
+                    volumeCard.classList.add('medium');
+                } else {
+                    // High - Red (loud)
+                    volumeCard.classList.add('high');
+                }
+            }
+            
+            // Animate volume waves based on level
+            volumeWaves.forEach((wave, index) => {
+                if (percent === 0) {
+                    wave.style.opacity = '0.2';
+                } else if (index === 0) {
+                    wave.style.opacity = percent > 0 ? '0.8' : '0.2';
+                } else if (index === 1) {
+                    wave.style.opacity = percent > 50 ? '0.8' : '0.2';
+                }
+            });
+        }
+        
+        // Sidebar toggle with hamburger animation
+        document.getElementById('sidebarToggle').addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            const sidebar = document.getElementById('sidebar');
+            sidebarOpen = !sidebarOpen;
+            
+            if (sidebarOpen) {
+                sidebar.classList.remove('sidebar-hidden');
+                this.classList.add('active');
+            } else {
+                sidebar.classList.add('sidebar-hidden');
+                this.classList.remove('active');
+            }
+            
+            // Prevent immediate close on mobile
+            justToggledSidebar = true;
+            setTimeout(() => { justToggledSidebar = false; }, 300);
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            // Skip if hamburger button was clicked or just toggled
+            if (justToggledSidebar || e.target.closest('#sidebarToggle')) {
+                return;
+            }
+            
+            // Skip if clicking inside a modal - modals have their own close logic
+            if (e.target.closest('.modal')) {
+                return;
+            }
+            
+            const sidebar = document.getElementById('sidebar');
+            
+            // Only close on mobile/tablet
+            if (window.innerWidth <= 1024 && sidebarOpen) {
+                // Don't close if clicking inside sidebar
+                if (!e.target.closest('#sidebar')) {
+                    sidebarOpen = false;
+                    sidebar.classList.add('sidebar-hidden');
+                    document.getElementById('sidebarToggle').classList.remove('active');
+                }
+            }
+        });
+
+        // Helper function to close modal with animation
+        function closeModalAnimated(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal && modal.classList.contains('visible')) {
+                modal.classList.add('closing');
+                setTimeout(() => {
+                    modal.classList.remove('visible', 'closing');
+                }, 300);
+            }
+        }
+
+        // Close modals on outside click
+        document.addEventListener('click', (e) => {
+            const modals = ['uptimeModal', 'clientsModal', 'batteryModal', 'networkModal', 'dataTransferModal', 'segmentsModal', 'storageModal', 'recordingModeModal', 'streamQualityModal', 'memoryModal', 'endpointsModal', 'alarmModal'];
+            modals.forEach(id => {
+                const modal = document.getElementById(id);
+                if (e.target === modal && modal.classList.contains('visible')) {
+                    closeModalAnimated(id);
+                }
+            });
+        });
+
+        // Modal helpers
+        function showUptimeModal() {
+            if (!currentStatus) return;
+            const uptimeDetails = currentStatus.uptimeDetails || {};
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Formatted Uptime</div>
+                            <div class="modal-row-value">${uptimeDetails.formatted || uptimeDetails.formatted_uptime || currentStatus.getFormattedUptime() || '—'}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Total Seconds</div>
+                            <div class="modal-row-value">${uptimeDetails.seconds || currentStatus.uptimeSeconds || '—'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Session</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Started Date</div>
+                            <div class="modal-row-value">${uptimeDetails.session_started_date || 'Not started'}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Started Time</div>
+                            <div class="modal-row-value">${uptimeDetails.start_time || uptimeDetails.session_started_time || 'Not started'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('uptimeContent').innerHTML = content;
+            document.getElementById('uptimeModal').classList.add('visible');
+        }
+        function hideUptimeModal() {
+            closeModalAnimated('uptimeModal');
+        }
+
+        function showClientsModal() {
+            if (!currentStatus) return;
+            let clientsHtml = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Connected Clients</div>
+                            <div class="modal-row-value">${currentStatus.activeConnections || 0}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Show total API calls across all clients
+            if (currentStatus.clients && currentStatus.clients.length > 0) {
+                let totalGetCalls = 0;
+                let totalPostCalls = 0;
+                currentStatus.clients.forEach(client => {
+                    totalGetCalls += client.get_requests || 0;
+                    totalPostCalls += client.post_requests || 0;
+                });
+                
+                clientsHtml += `
+                    <div class="modal-section">
+                        <div class="modal-section-title">API Summary</div>
+                        <div class="modal-rows-group">
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total GET Requests</div>
+                                <div class="modal-row-value">${totalGetCalls}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total POST Requests</div>
+                                <div class="modal-row-value">${totalPostCalls}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total API Calls</div>
+                                <div class="modal-row-value">${totalGetCalls + totalPostCalls}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (currentStatus.clients && currentStatus.clients.length > 0) {
+                clientsHtml += '<div class="modal-section"><div class="modal-section-title">Client Details</div>';
+                currentStatus.clients.forEach((client, idx) => {
+                    const sessionMinutes = Math.floor((client.session_duration_seconds || 0) / 60);
+                    clientsHtml += `
+                        <div class="modal-rows-group">
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">IP Address</div>
+                                <div class="modal-row-value" style="font-size: 11px;">${client.ip || 'N/A'}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Data Served</div>
+                                <div class="modal-row-value">${client.mb_served ? client.mb_served.toFixed(1) : '0'} MB</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Avg Bitrate</div>
+                                <div class="modal-row-value">${(client.average_bitrate_mbps || 0).toFixed(2)} Mbps</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Session Duration</div>
+                                <div class="modal-row-value">${sessionMinutes}m ${(client.session_duration_seconds || 0) % 60}s</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">GET Requests</div>
+                                <div class="modal-row-value">${client.get_requests || 0}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">POST Requests</div>
+                                <div class="modal-row-value">${client.post_requests || 0}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Total API Calls</div>
+                                <div class="modal-row-value">${(client.total_api_calls || 0)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                clientsHtml += '</div>';
+            }
+            
+            document.getElementById('clientsContent').innerHTML = clientsHtml;
+            document.getElementById('clientsModal').classList.add('visible');
+        }
+        function hideClientsModal() {
+            closeModalAnimated('clientsModal');
+        }
+
+        function showBatteryModal() {
+            if (!currentStatus) return;
+            
+            // Debug logging
+            console.log('[Battery Modal] currentStatus.battery:', currentStatus.battery);
+            console.log('[Battery Modal] warning_threshold:', currentStatus.battery.warning_threshold);
+            
+            // Build warning section if battery is low
+            let warningSection = '';
+            if (currentStatus.battery.warning && currentStatus.battery.warning.length > 0) {
+                warningSection = `
+                    <div class="modal-section">
+                        <div style="padding: 12px; background: #f85149; border-radius: 8px; text-align: center;">
+                            <span style="color: white; font-weight: bold; font-size: 14px;">${currentStatus.battery.warning}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const thresholdValue = currentStatus.battery.warning_threshold || 20;
+            console.log('[Battery Modal] Using threshold:', thresholdValue);
+            
+            const content = `
+                ${warningSection}
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Level</div>
+                            <div class="modal-row-value">${currentStatus.battery.percent}%</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">State</div>
+                            <div class="modal-row-value">${currentStatus.battery.status.toUpperCase()}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Usage</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Consumed</div>
+                            <div class="modal-row-value">${currentStatus.battery.consumed}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Remaining Time</div>
+                            <div class="modal-row-value">${currentStatus.battery.remainingHours > 0 ? currentStatus.battery.remainingHours.toFixed(1) + 'h' : 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Low Battery Warning</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container" style="border-bottom: none;">
+                            <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warning_threshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
+                            <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
+                        ℹ️ When battery drops to or below this percentage, a warning will be displayed. Valid range: 5-100%
+                    </div>
+                </div>
+            `;
+            document.getElementById('batteryContent').innerHTML = content;
+            document.getElementById('batteryModal').classList.add('visible');
+        }
+        function hideBatteryModal() {
+            closeModalAnimated('batteryModal');
+        }
+
+        /**
+         * Decrease volume by 5%
+         */
+        async function volumeDecrease() {
+            const volumePercentageEl = document.getElementById('volumePercentage');
+            if (!volumePercentageEl) return;
+            const currentPercent = parseInt(volumePercentageEl.textContent) || 0;
+            const newPercent = Math.max(0, currentPercent - 5);
+            setVolume(newPercent);
+        }
+
+        /**
+         * Increase volume by 5%
+         */
+        async function volumeIncrease() {
+            const volumePercentageEl = document.getElementById('volumePercentage');
+            if (!volumePercentageEl) return;
+            const currentPercent = parseInt(volumePercentageEl.textContent) || 0;
+            const newPercent = Math.min(100, currentPercent + 5);
+            setVolume(newPercent);
+        }
+
+        async function setBatteryWarning() {
+            const threshold = document.getElementById('batteryWarningInput').value;
+            console.log('[Battery] setBatteryWarning called with:', threshold);
+            
+            if (!threshold || threshold < 5 || threshold > 100) {
+                showToast('Please enter a value between 5 and 100');
+                return;
+            }
+            try {
+                console.log('[Battery] Sending POST request to set threshold:', threshold);
+                await dashboardViewModel.setBatteryWarning(threshold);
+                console.log('[Battery] POST request completed, forcing status update...');
+                showToast('Battery warning threshold set to ' + threshold + '%');
+                
+                // Force immediate status update to see the change
+                await dashboardViewModel.updateStatus();
+                console.log('[Battery] Status updated, new threshold should be:', currentStatus?.battery?.warning_threshold);
+            } catch (error) {
+                console.error('Failed to set battery warning:', error);
+                showToast('Failed to set battery warning threshold');
+            }
+        }
+
+        function showNetworkModal() {
+            if (!currentStatus) return;
+            
+            // Get network data from parsed properties
+            const downloadSpeed = currentStatus.networkDownloadMbps !== null ? currentStatus.networkDownloadMbps.toFixed(2) + ' Mbps' : 'N/A';
+            const uploadSpeed = currentStatus.networkUploadMbps !== null ? currentStatus.networkUploadMbps.toFixed(2) + ' Mbps' : 'N/A';
+            const latency = currentStatus.networkLatencyMs !== null ? currentStatus.networkLatencyMs + ' ms' : 'N/A';
+            
+            // Format last measurement time
+            let lastTested = 'Never';
+            if (currentStatus.networkLastMeasurementMs > 0) {
+                const lastMeasureDate = new Date(currentStatus.networkLastMeasurementMs);
+                lastTested = lastMeasureDate.toLocaleTimeString();
+            }
+            
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Status</div>
+                            <div class="modal-row-value">${currentStatus.networkHealth.charAt(0).toUpperCase() + currentStatus.networkHealth.slice(1)}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <div class="modal-section-title">Speed Metrics</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">↓ Download</div>
+                            <div class="modal-row-value">${downloadSpeed}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">↑ Upload</div>
+                            <div class="modal-row-value">${uploadSpeed}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Latency (Ping)</div>
+                            <div class="modal-row-value">${latency}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Last Tested</div>
+                            <div class="modal-row-value" style="font-size: 11px;">${lastTested}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <div class="modal-section-title">Streaming</div>
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Bitrate</div>
+                            <div class="modal-row-value">${currentStatus.bitrate}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">FPS</div>
+                            <div class="modal-row-value">${currentStatus.fps}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
+                        ℹ️ Speed tests use small file downloads and may show lower values than your actual bandwidth. Network health is automatically measured every 2 minutes.
+                    </div>
+                </div>
+            `;
+            document.getElementById('networkContent').innerHTML = content;
+            document.getElementById('networkModal').classList.add('visible');
+        }
+        function hideNetworkModal() {
+            closeModalAnimated('networkModal');
+        }
+
+        function showDataTransferModal() {
+            if (!currentStatus) return;
+            const dataTransferred = currentStatus.dataTransferredMb || 0;
+            const displayValue = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
+            const activeClientsCount = currentStatus.clients ? currentStatus.clients.length : 0;
+            
+            // Build per-client breakdown with all metrics
+            let clientsHtml = '';
+            if (currentStatus.clients && currentStatus.clients.length > 0) {
+                clientsHtml = currentStatus.clients.map(client => {
+                    // Calculate duration display
+                    let durationDisplay = '0m';
+                    if (client.session_duration_seconds) {
+                        const seconds = client.session_duration_seconds;
+                        if (seconds < 60) {
+                            durationDisplay = seconds + 's';
+                        } else if (seconds < 3600) {
+                            durationDisplay = Math.floor(seconds / 60) + 'm';
+                        } else {
+                            const hours = Math.floor(seconds / 3600);
+                            const mins = Math.floor((seconds % 3600) / 60);
+                            durationDisplay = hours + 'h ' + mins + 'm';
+                        }
+                    }
+                    
+                    // Get data served
+                    const dataMb = client.mb_served || 0;
+                    const fragments = client.fragments_served || 0;
+                    const isActive = client.is_active !== false; // Default to active if not specified
+                    
+                    return `
+                        <div class="modal-rows-group" style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #24272d;">
+                                <div style="font-size: 13px; font-weight: 700; color: #e6edf3; font-family: monospace;">${client.ip || 'Unknown'}</div>
+                                <div style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${isActive ? '#3fb950' : '#6e7681'}; padding: 4px 8px; border-radius: 4px;">${isActive ? 'Active' : 'Inactive'}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Data Served</div>
+                                <div class="modal-row-value">${dataMb.toFixed(1)} MB</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Duration</div>
+                                <div class="modal-row-value">${durationDisplay}</div>
+                            </div>
+                            <div class="modal-row-container">
+                                <div class="modal-row-label">Fragments</div>
+                                <div class="modal-row-value">${fragments}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                clientsHtml = '<div style="text-align: center; padding: 16px; color: #8b949e; font-size: 12px;">No clients connected</div>';
+            }
+            
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Total Served</div>
+                            <div class="modal-row-value">${displayValue}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Active Clients</div>
+                            <div class="modal-row-value">${activeClientsCount}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Per-Client Breakdown</div>
+                    <div style="margin-top: 8px;">
+                        ${clientsHtml}
+                    </div>
+                </div>
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
+                        ℹ️ Shows detailed data transmission metrics for each connected client.
+                    </div>
+                </div>
+            `;
+            document.getElementById('dataTransferContent').innerHTML = content;
+            document.getElementById('dataTransferModal').classList.add('visible');
+        }
+        function hideDataTransferModal() {
+            closeModalAnimated('dataTransferModal');
+        }
+
+        function showSegmentsModal() {
+            if (!currentStatus) return;
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Buffered Fragments</div>
+                            <div class="modal-row-value">${currentStatus.fragmentsBuffered || 0}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Buffer Size</div>
+                            <div class="modal-row-value">${(currentStatus.bufferSizeMb || 0).toFixed(1)} MB</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Init Segment</div>
+                            <div class="modal-row-value">${currentStatus.hasInitSegment ? 'Present' : 'Missing'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('segmentsContent').innerHTML = content;
+            document.getElementById('segmentsModal').classList.add('visible');
+        }
+        function hideSegmentsModal() {
+            closeModalAnimated('segmentsModal');
+        }
+
+        function showStorageModal() {
+            if (!currentStatus) return;
+            const content = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Used</div>
+                            <div class="modal-row-value">${currentStatus.storage.used}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Total</div>
+                            <div class="modal-row-value">${currentStatus.storage.total}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('storageContent').innerHTML = content;
+            document.getElementById('storageModal').classList.add('visible');
+        }
+        function hideStorageModal() {
+            closeModalAnimated('storageModal');
+        }
+
+        function showRecordingModeModal() {
+            if (!currentStatus) return;
+            const modes = [
+                { id: 'stream_only', label: 'Stream Only', subtitle: 'Live stream without saving to device' },
+                { id: 'stream_and_save', label: 'Stream And Save', subtitle: 'Live stream + save video file locally' }
+            ];
+            let content = '<div class="modal-section">';
+            modes.forEach(mode => {
+                const isSelected = currentStatus.mode === mode.id;
+                content += `
+                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setRecordingMode('${mode.id}')">
+                        <div class="option-radio ${isSelected ? 'checked' : ''}"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #e6edf3; margin-bottom: 2px;">${mode.label}</div>
+                            <div style="font-size: 11px; color: #8b949e;">${mode.subtitle}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            content += '</div>';
+            document.getElementById('recordingModeContent').innerHTML = content;
+            document.getElementById('recordingModeModal').classList.add('visible');
+        }
+        function hideRecordingModeModal() {
+            closeModalAnimated('recordingModeModal');
+        }
+
+        async function setRecordingMode(mode) {
+            try {
+                await dashboardViewModel.setRecordingMode(mode);
+                showToast(`Recording mode changed to: ${mode.replace(/_/g, ' ')}`);
+                hideRecordingModeModal();
+                // Update UI immediately
+                if (currentStatus) {
+                    currentStatus.mode = mode;
+                    updateUI(currentStatus);
+                }
+            } catch (error) {
+                console.error('Failed to set recording mode:', error);
+                showToast('Failed to change recording mode');
+            }
+        }
+
+        function showStreamQualityModal() {
+            if (!currentStatus) return;
+            const qualities = [
+                { id: 'low', label: 'Low', subtitle: '1 Mbps • 15 FPS • Best for slow networks' },
+                { id: 'medium', label: 'Medium', subtitle: '2.5 Mbps • 24 FPS • Balanced quality' },
+                { id: 'high', label: 'High', subtitle: '5 Mbps • 30 FPS • Best quality' },
+                { id: 'ultra', label: 'Ultra', subtitle: '8 Mbps • 30 FPS • Maximum quality' }
+            ];
+            let content = '<div class="modal-section">';
+            qualities.forEach(quality => {
+                const isSelected = currentStatus.qualityPreset && currentStatus.qualityPreset.toLowerCase() === quality.id;
+                content += `
+                    <div class="modal-option ${isSelected ? 'selected' : ''}" onclick="setStreamQuality('${quality.id}')">
+                        <div class="option-radio ${isSelected ? 'checked' : ''}"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #e6edf3; margin-bottom: 2px;">${quality.label}</div>
+                            <div style="font-size: 11px; color: #8b949e;">${quality.subtitle}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            content += '</div>';
+            document.getElementById('streamQualityContent').innerHTML = content;
+            document.getElementById('streamQualityModal').classList.add('visible');
+        }
+        function hideStreamQualityModal() {
+            closeModalAnimated('streamQualityModal');
+        }
+
+        async function setStreamQuality(quality) {
+            try {
+                await dashboardViewModel.setStreamQuality(quality);
+                showToast(`Stream quality set to: ${quality}`);
+                showStreamQualityModal();
+            } catch (error) {
+                console.error('Failed to set stream quality:', error);
+                showToast('Failed to set stream quality');
+            }
+        }
+
+        async function toggleTorch() {
+            try {
+                console.log('[Torch] Toggle requested');
+                const oldState = currentStatus?.torchOn;
+                
+                // Call the API
+                await dashboardViewModel.toggleTorch();
+                
+                // Update UI immediately with the expected new state
+                if (currentStatus) {
+                    const newState = !oldState;
+                    currentStatus.torchOn = newState;
+                    console.log('[Torch] Updated immediately:', oldState, '→', newState);
+                    updateUI(currentStatus);
+                    // Note: Toast is shown by updateUI() listener, not here to avoid double notifications
+                }
+            } catch (error) {
+                console.error('[Torch] Failed to toggle:', error);
+                showToast('Failed to toggle torch');
+            }
+        }
+
+        async function toggleRecording() {
+            try {
+                console.log('[Recording] Toggle requested');
+                const oldState = currentStatus?.isRecording;
+                
+                // Call the API
+                await dashboardViewModel.toggleRecording();
+                
+                // Update UI immediately with the expected new state
+                if (currentStatus) {
+                    const newState = !oldState;
+                    currentStatus.isRecording = newState;
+                    console.log('[Recording] Updated immediately:', oldState, '→', newState);
+                    updateUI(currentStatus);
+                }
+            } catch (error) {
+                console.error('[Recording] Failed to toggle:', error);
+                showToast('Failed to toggle recording');
+            }
+        }
+
+        async function toggleServer() {
+            try {
+                await dashboardViewModel.toggleServer();
+            } catch (error) {
+                console.error('Failed to toggle server:', error);
+            }
+        }
+
+        let lastRecordingState = false;
+        let hlsLoaded = false;
+
+        function playStream() {
+            if (!CONFIG || !CONFIG.ENDPOINTS) {
+                setTimeout(playStream, 500);
+                return;
+            }
+            
+            // Only load stream once
+            if (hlsLoaded) {
+                console.log('[HlsService] Stream already loaded, skipping');
+                return;
+            }
+            
+            hlsLoaded = true;
+            const streamUrl = CONFIG.BASE_URL + CONFIG.ENDPOINTS.HLS;
+            console.log('[HlsService] Loading stream from:', streamUrl);
+            
+            // Debug: Fetch manifest to see what's being served
+            fetch(streamUrl)
+                .then(r => r.text())
+                .then(manifest => {
+                    console.log('[DEBUG] Raw M3U8 Manifest:');
+                    console.log(manifest);
+                })
+                .catch(e => console.log('[DEBUG] Manifest fetch error:', e.message));
+            
+            // Fresh HLS.js instance for clean state
+            // This ensures no cached init segment from previous recording
+            if (hlsService && hlsService.hls) {
+                hlsService.destroy();
+            }
+            hlsService = new HlsService(); // Fresh instance
+            
+            hlsService.load(streamUrl, videoElement);
+            videoElement.play().catch(err => console.log('[Video] Play deferred, will play when ready'));
+            document.getElementById('videoOverlay').classList.add('hidden');
+        }
+
+        function updateUI(status) {
+            // Detect state changes and show notifications
+            if (previousStatus) {
+                // Only show notifications if status actually changed
+                const torchChanged = previousStatus.torchOn !== status.torchOn;
+                const volumeChanged = status.volume_percentage !== undefined && previousStatus.volume_percentage !== undefined && Math.abs(previousStatus.volume_percentage - status.volume_percentage) > 5;
+                const recordingChanged = previousStatus.isRecording !== status.isRecording;
+                const qualityChanged = previousStatus.qualityPreset !== status.qualityPreset;
+                const modeChanged = previousStatus.mode !== status.mode;
+                
+                // Torch state change
+                if (torchChanged) {
+                    console.log('[Toast] Torch state changed:', previousStatus.torchOn, '→', status.torchOn);
+                    showToast(status.torchOn ? '🔦 Torch turned ON' : '🔦 Torch turned OFF', 2000);
+                }
+                
+                // Volume change (only notify if significant change > 5%)
+                if (volumeChanged) {
+                    console.log('[Toast] Volume changed:', previousStatus.volume_percentage, '→', status.volume_percentage);
+                    showToast(`🔊 Volume: ${Math.round(status.volume_percentage)}%`, 1500);
+                }
+                
+                // Recording state change - only notify if changed, not on initialization
+                if (recordingChanged) {
+                    console.log('[Toast] Recording state changed:', previousStatus.isRecording, '→', status.isRecording);
+                    showToast(status.isRecording ? '🔴 Recording started' : '⏹️ Recording stopped', 3000);
+                }
+                
+                // Stream quality change
+                if (qualityChanged) {
+                    console.log('[Toast] Quality changed:', previousStatus.qualityPreset, '→', status.qualityPreset);
+                    showToast(`📹 Quality: ${status.qualityPreset}`, 2000);
+                }
+                
+                // Recording mode change
+                if (modeChanged) {
+                    const modeName = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    console.log('[Toast] Mode changed:', previousStatus.mode, '→', status.mode);
+                    showToast(`📼 Mode: ${modeName}`, 2000);
+                }
+            } else {
+                console.log('[Toast] First status load - not showing change notifications');
+            }
+            
+            // Store current status as previous for next comparison (shallow copy sufficient)
+            previousStatus = {
+                torchOn: status.torchOn,
+                volume_percentage: status.volume_percentage,
+                isRecording: status.isRecording,
+                qualityPreset: status.qualityPreset,
+                mode: status.mode
+            };
+            currentStatus = status;
+
+            // ===== RESTORE ALARM STATE FROM SERVER =====
+            // Sync alarm state from server to restore UI after page reload
+            if (status.alarm) {
+                console.log('[Alarm] Server state:', status.alarm);
+                if (status.alarm.is_ringing && !alarmIsActive) {
+                    console.log('[Alarm] Restoring active alarm from server state');
+                    alarmIsActive = true;
+                    alarmActiveDurationMs = status.alarm.duration_ms;
+                    updateAlarmUIState();
+                    updateAlarmCardState(true, status.alarm.duration_ms);
+                    startAlarmCountdown(status.alarm.duration_ms);
+                    
+                    // Restore selected sound in UI
+                    const soundSelect = document.getElementById('alarmSoundSelect');
+                    if (soundSelect && status.alarm.sound) {
+                        soundSelect.value = status.alarm.sound;
+                    }
+                } else if (!status.alarm.is_ringing && alarmIsActive) {
+                    // Alarm was stopped on server, reset local state
+                    console.log('[Alarm] Alarm stopped on server, resetting local state');
+                    alarmIsActive = false;
+                    stopAlarmCountdown();
+                    updateAlarmUIState();
+                    updateAlarmCardState(false, 0);
+                }
+            } else {
+                console.log('[Alarm] No alarm state from server');
+            }
+
+            // Update video overlay cursor based on stream readiness
+            const videoOverlay = document.getElementById('videoOverlay');
+            if (status.state === 'ready' && status.isRecording) {
+                videoOverlay.style.cursor = 'pointer';
+            } else {
+                videoOverlay.style.cursor = 'not-allowed';
+                videoOverlay.style.opacity = '0.5';
+            }
+
+            // AUTO-LOAD STREAM when status becomes ready (manifest available)
+            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
+                console.log('📺 Stream ready! Loading now...');
+                playStream();
+            }
+            
+            // Track recording state for logging
+            if (status.isRecording && !lastRecordingState) {
+                console.log('🔴 Recording started');
+                lastRecordingState = true;
+                // CRITICAL: Reset HLS stream when recording restarts
+                // This ensures we load fresh init segment and don't mix old/new codec data
+                console.log('[Stream] Recording restarted - resetting HLS instance');
+                hlsLoaded = false;
+                if (hlsService && hlsService.hls) {
+                    console.log('[Stream] Destroying old HLS instance');
+                    hlsService.destroy();
+                }
+            } else if (!status.isRecording && lastRecordingState) {
+                console.log('⏹️ Recording stopped');
+                lastRecordingState = false;
+                // Allow reload when recording starts again
+                hlsLoaded = false;
+            }
+
+            // Server status - ALWAYS ONLINE (server is always on when website loads)
+            const serverLED = document.getElementById('serverLED');
+            serverLED.className = 'led-dot online';
+            
+            const serverStatusLabel = document.getElementById('serverStatusLabel');
+            if (serverStatusLabel) {
+                serverStatusLabel.textContent = 'ONLINE';
+                serverStatusLabel.className = 'status-value online-text';
+            }
+
+            // Recording status LED
+            const recordingLED = document.getElementById('recordingLED');
+            const isRecording = status.isRecording;
+            recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
+            
+            // Update recording status label
+            const recordingStatusLabel = document.getElementById('recordingStatusLabel');
+            if (recordingStatusLabel) {
+                if (isRecording) {
+                    recordingStatusLabel.textContent = 'RECORDING';
+                    recordingStatusLabel.className = 'status-value recording-text-active';
+                } else {
+                    recordingStatusLabel.textContent = 'NOT RECORDING';
+                    recordingStatusLabel.className = 'status-value recording-text';
+                }
+            }
+            
+            // Display recording message if available
+            const msgEl = document.getElementById('recordingMessage');
+            if (status.message && !isRecording) {
+                msgEl.textContent = status.message;
+                msgEl.style.display = 'none'; // Keep hidden to avoid height issues
+            } else {
+                msgEl.style.display = 'none';
+            }
+
+            // Quick values - use formatted uptime from uptimeDetails
+            const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
+            const uptimeEl = document.getElementById('uptimeValue');
+            if (uptimeEl) uptimeEl.textContent = formattedUptime;
+            
+            const clientsEl = document.getElementById('clientsValue');
+            if (clientsEl) clientsEl.textContent = status.activeConnections || '0';
+            
+            // Update iOS-style cards with visualizations
+            updateBatteryCard(status);
+            updateStorageCard(status);
+            updateMemoryCard(status);
+            updateNetworkCard(status);
+            updateVolumeCard(status);
+            
+            const segmentsEl = document.getElementById('segmentsValue');
+            if (segmentsEl) segmentsEl.textContent = status.fragmentsBuffered || '0';
+            
+            // Update data transfer card
+            const dataTransferred = status.dataTransferredMb || 0;
+            const displayDataTransfer = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
+            const dataTransferEl = document.getElementById('dataTransferValue');
+            if (dataTransferEl) dataTransferEl.textContent = displayDataTransfer;
+            
+            const recordingModeEl = document.getElementById('recordingModeValue');
+            if (recordingModeEl) recordingModeEl.textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            
+            const streamQualityEl = document.getElementById('streamQualityValue');
+            if (streamQualityEl) streamQualityEl.textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
+            
+            // Update torch display and show notification if changed
+            const torchState = document.getElementById('torchState');
+            const torchCard = document.querySelector('.torch-card');
+            const torchIcon = document.getElementById('torchIcon');
+            const torchFill = document.getElementById('torchFill');
+            
+            if (torchState && torchCard) {
+                torchCard.classList.remove('on', 'off');
+                
+                if (status.torchOn) {
+                    torchState.textContent = 'ON';
+                    torchCard.classList.add('on');
+                    if (torchIcon) {
+                        torchIcon.className = 'fas fa-lightbulb torch-icon-fa';
+                    }
+                } else {
+                    torchState.textContent = 'OFF';
+                    torchCard.classList.add('off');
+                    if (torchIcon) {
+                        torchIcon.className = 'far fa-lightbulb torch-icon-fa';
+                    }
+                }
+            }
+            
+            // Update recording state display
+            const recordingState = document.getElementById('recordingState');
+            const recordingCard = document.querySelector('.recording-card');
+            const recordingIcon = document.getElementById('recordingIcon');
+            const recordingFill = document.getElementById('recordingFill');
+            
+            if (recordingState && recordingCard) {
+                recordingCard.classList.remove('on', 'off');
+                
+                if (status.isRecording) {
+                    recordingState.textContent = 'RECORDING';
+                    recordingCard.classList.add('on');
+                    if (recordingIcon) {
+                        recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                    }
+                } else {
+                    recordingState.textContent = 'STOPPED';
+                    recordingCard.classList.add('off');
+                    if (recordingIcon) {
+                        recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                    }
+                }
+            }
+            
+            // Update alarm display state
+            if (status.alarm) {
+                updateAlarmCardState(status.alarm.is_ringing, status.alarm.duration_ms);
+                updateAlarmUIState();
+            }
+            
+            const serverUrlEl = document.getElementById('serverUrl');
+            if (serverUrlEl) serverUrlEl.textContent = CONFIG.BASE_URL;
+        }
+
+        // Toast Stack Management
+        const MAX_TOASTS = 5;
+        const toastStack = [];
+
+        function showToast(message, duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) {
+                console.error('Toast container not found');
+                return;
+            }
+            
+            // Create unique toast ID
+            const toastId = 'toast-' + Date.now() + Math.random();
+            
+            // Create toast element
+            const toastElement = document.createElement('div');
+            toastElement.className = 'toast-notification';
+            toastElement.id = toastId;
+            toastElement.innerHTML = `
+                <div class="toast-content">
+                    <span class="toast-message">${message}</span>
+                    <button class="toast-close" onclick="closeToastById('${toastId}')">✕</button>
+                </div>
+                <div class="toast-progress-bar"></div>
+            `;
+            
+            // Add to container at the beginning (latest on top)
+            container.insertBefore(toastElement, container.firstChild);
+            
+            // Add to stack
+            toastStack.unshift({
+                id: toastId,
+                element: toastElement,
+                duration: duration,
+                startTime: Date.now(),
+                pauseTime: null,
+                progressInterval: null,
+                timeout: null,
+                isPaused: false
+            });
+            
+            // Remove if exceeds max
+            while (toastStack.length > MAX_TOASTS) {
+                const removed = toastStack.pop();
+                removed.element.remove();
+                if (removed.timeout) clearTimeout(removed.timeout);
+                if (removed.progressInterval) clearInterval(removed.progressInterval);
+            }
+            
+            // Show toast with animation
+            setTimeout(() => {
+                toastElement.classList.add('show');
+            }, 10);
+            
+            // Setup toast-specific handlers
+            toastElement.addEventListener('mouseenter', () => pauseToastTimerById(toastId));
+            toastElement.addEventListener('mouseleave', () => resumeToastTimerById(toastId));
+            
+            // Start progress bar and auto-close
+            startToastProgressBarById(toastId);
+        }
+
+        function updateToastPositions() {
+            // No longer needed with relative positioning
+        }
+
+        function startToastProgressBarById(toastId) {
+            const toastData = toastStack.find(t => t.id === toastId);
+            if (!toastData) return;
+            
+            const progressBar = toastData.element.querySelector('.toast-progress-bar');
+            if (!progressBar) return;
+            
+            // Initialize timing properly - reset startTime and pauseTime
+            toastData.pauseTime = 0;
+            toastData.startTime = Date.now();
+            
+            // Clear any existing timers
+            if (toastData.progressInterval) clearInterval(toastData.progressInterval);
+            if (toastData.timeout) clearTimeout(toastData.timeout);
+            
+            const updateProgress = () => {
+                if (toastData.isPaused) return;
+                
+                // Verify toast is still in stack
+                if (!toastStack.find(t => t.id === toastId)) return;
+                
+                const currentTime = Date.now();
+                const elapsed = Math.max(0, currentTime - toastData.startTime - (toastData.pauseTime || 0));
+                const remaining = Math.max(0, toastData.duration - elapsed);
+                const percentage = Math.min(100, (elapsed / toastData.duration) * 100);
+                
+                progressBar.style.width = percentage + '%';
+                
+                // Close when progress reaches 100%
+                if (percentage >= 100) {
+                    closeToastById(toastId);
+                }
+            };
+            
+            // Update progress every 30ms
+            toastData.progressInterval = setInterval(updateProgress, 30);
+            
+            // Set timeout for auto-close - add 100ms buffer to ensure closure
+            toastData.timeout = setTimeout(() => {
+                closeToastById(toastId);
+            }, toastData.duration + 100);
+        }
+
+        function pauseToastTimerById(toastId) {
+            const toastData = toastStack.find(t => t.id === toastId);
+            if (!toastData || toastData.isPaused) return;
+            
+            toastData.isPaused = true;
+            toastData.pauseStartTime = Date.now();
+            
+            if (toastData.timeout) {
+                clearTimeout(toastData.timeout);
+                toastData.timeout = null;
+            }
+        }
+
+        function resumeToastTimerById(toastId) {
+            const toastData = toastStack.find(t => t.id === toastId);
+            if (!toastData || !toastData.isPaused) return;
+            
+            toastData.isPaused = false;
+            if (toastData.pauseStartTime) {
+                const pauseDuration = Date.now() - toastData.pauseStartTime;
+                toastData.pauseTime = (toastData.pauseTime || 0) + pauseDuration;
+                toastData.pauseStartTime = null;
+            }
+            
+            // Recalculate remaining time
+            const currentTime = Date.now();
+            const elapsed = Math.max(0, currentTime - toastData.startTime - toastData.pauseTime);
+            const remaining = Math.max(0, toastData.duration - elapsed);
+            
+            if (toastData.timeout) clearTimeout(toastData.timeout);
+            toastData.timeout = setTimeout(() => {
+                closeToastById(toastId);
+            }, remaining);
+        }
+
+        function closeToastById(toastId) {
+            const index = toastStack.findIndex(t => t.id === toastId);
+            if (index === -1) return;
+            
+            const toastData = toastStack[index];
+            
+            // Cleanup all timers and intervals
+            if (toastData.timeout) {
+                clearTimeout(toastData.timeout);
+                toastData.timeout = null;
+            }
+            if (toastData.progressInterval) {
+                clearInterval(toastData.progressInterval);
+                toastData.progressInterval = null;
+            }
+            
+            // Immediately remove from stack and DOM
+            toastStack.splice(index, 1);
+            if (toastData.element && toastData.element.parentNode) {
+                toastData.element.classList.remove('show');
+                setTimeout(() => {
+                    if (toastData.element && toastData.element.parentNode) {
+                        toastData.element.remove();
+                    }
+                }, 300);
+            }
+        }
+
+        function closeToast() {
+            if (toastStack.length > 0) {
+                closeToastById(toastStack[0].id);
+            }
+        }
+
+        function showMemoryModal() {
+            if (!currentStatus) return;
+            const memoryContent = document.getElementById('memoryContent');
+            memoryContent.innerHTML = `
+                <div class="modal-section">
+                    <div class="modal-rows-group">
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Memory Usage</div>
+                            <div class="modal-row-value">${currentStatus.memory || '—'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('memoryModal').classList.add('visible');
+        }
+
+        function hideMemoryModal() {
+            closeModalAnimated('memoryModal');
+        }
+
+        function showEndpointsModal() {
+            const endpointsContent = document.getElementById('endpointsContent');
+            const serverUrl = document.getElementById('serverUrl')?.textContent || CONFIG.BASE_URL;
+            
+            const endpoints = [
+                { method: 'GET', path: '/status', desc: 'Server status, metrics, battery, network, torch, volume, recording mode, stream quality' },
+                { method: 'GET', path: '/live.m3u8', desc: 'HLS stream playlist for video playback' },
+                { method: 'POST', path: '/torch/toggle', desc: 'Toggle flashlight on/off, returns updated state' },
+                { method: 'GET', path: '/audio/volume', desc: 'Get current device volume level and percentage' },
+                { method: 'POST', path: '/audio/volume', desc: 'Set device volume level (accepts "volume" 0-15 or "percentage" 0-100)' },
+                { method: 'POST', path: '/config/recordingMode', desc: 'Set recording mode: stream_only, stream_and_save' },
+                { method: 'POST', path: '/config/streamQuality', desc: 'Set stream quality: low, medium, high, ultra' },
+                { method: 'POST', path: '/config/batteryWarning', desc: 'Set battery warning threshold percentage' },
+                { method: 'GET', path: '/health', desc: 'Server health check endpoint' }
+            ];
+            
+            let endpointsHtml = `
+                <div class="modal-section">
+                    <div class="modal-section-title">Server URL</div>
+                    <div style="padding: 10px; background: #1a1e24; border: 1px solid #2d3439; border-radius: 6px; margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: #8b949e; word-break: break-all; font-family: monospace; line-height: 1.4;">${serverUrl}</div>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <div class="modal-section-title">API Endpoints</div>
+            `;
+            
+            endpoints.forEach((ep, idx) => {
+                endpointsHtml += `
+                    <div style="margin-bottom: ${idx === endpoints.length - 1 ? '0' : '12px'}; padding-bottom: ${idx === endpoints.length - 1 ? '0' : '12px'}; ${idx === endpoints.length - 1 ? '' : 'border-bottom: 1px solid #2d3439;'}">
+                        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+                            <span style="font-size: 11px; font-weight: 700; color: #ffffff; background: ${ep.method === 'GET' ? '#3fb950' : '#f85149'}; padding: 3px 8px; border-radius: 4px; min-width: 38px; text-align: center;">${ep.method}</span>
+                            <span style="font-size: 12px; font-weight: 600; color: #e6edf3; font-family: monospace;">${ep.path}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #8b949e; line-height: 1.4; margin-left: 46px;">${ep.desc}</div>
+                    </div>
+                `;
+            });
+            
+            endpointsHtml += `
+                </div>
+                
+                <div class="modal-info-box">
+                    <div class="modal-info-text">
+                        ℹ️ Use the server URL above with these endpoints. Example: ${serverUrl}/status
+                    </div>
+                </div>
+            `;
+            
+            endpointsContent.innerHTML = endpointsHtml;
+            document.getElementById('endpointsModal').classList.add('visible');
+        }
+
+        function hideEndpointsModal() {
+            closeModalAnimated('endpointsModal');
+        }
+
+        // ===== ALARM FUNCTIONS =====
+        
+        let alarmPreviewPlayer = null;
+        let alarmRingingIntervalId = null;
+        
+        /**
+         * Show alarm modal.
+         */
+        function showAlarmModal() {
+            document.getElementById('alarmModal').classList.add('visible');
+            updateDurationDisplay();
+            syncScheduleUI();
+            // Initialize Flatpickr date-time picker on modal open
+            initializeDateTimePicker();
+        }
+        
+        /**
+         * Initialize Flatpickr date-time picker.
+         */
+        function initializeDateTimePicker() {
+            const picker = document.getElementById('scheduleDateTimePicker');
+            if (!picker) {
+                console.warn('[Flatpickr] Input element not found');
+                return;
+            }
+            
+            // Destroy old instance if exists
+            if (picker._flatpickr) {
+                try {
+                    picker._flatpickr.destroy();
+                } catch(e) {}
+            }
+            
+            try {
+                // Create minDate as today's date at midnight, then add 1 minute for safety
+                const now = new Date();
+                const minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 1);
+                
+                picker._flatpickr = flatpickr(picker, {
+                    enableTime: true,
+                    dateFormat: 'Y-m-d h:i K',
+                    minDate: minDate,
+                    time_24hr: false,
+                    position: 'below',
+                    static: false,
+                    disableMobile: false,
+                    allowInput: false,
+                    minuteIncrement: 1,
+                    weekNumbers: false,
+                    closeOnSelect: false,
+                    onChange: function(selectedDates, dateStr, instance) {
+                        console.log('[Flatpickr] Date selected:', dateStr);
+                    },
+                    onClose: function(selectedDates, dateStr, instance) {
+                        console.log('[Flatpickr] Picker closed');
+                        // Auto-close after selection
+                        if (selectedDates.length > 0) {
+                            instance.close();
+                        }
+                    },
+                    onOpen: function(selectedDates, dateStr, instance) {
+                        console.log('[Flatpickr] Picker opened');
+                        // Ensure dropdown is visible on top
+                        if (instance.calendarContainer) {
+                            instance.calendarContainer.style.zIndex = '5000';
+                            instance.calendarContainer.style.position = 'absolute';
+                        }
+                    }
+                });
+                console.log('[Flatpickr] Initialized successfully');
+            } catch(e) {
+                console.error('[Flatpickr] Initialization error:', e);
+            }
+        }
+        
+        /**
+         * Hide alarm modal.
+         */
+        function hideAlarmModal() {
+            closeModalAnimated('alarmModal');
+        }
+
+        /**
+         * Switch between Instant and Scheduled tabs.
+         */
+        function switchAlarmTab(tab) {
+            const instantTab = document.getElementById('alarmInstantTab');
+            const scheduledTab = document.getElementById('alarmScheduledTab');
+            const instantBtn = document.getElementById('alarmTabInstant');
+            const scheduledBtn = document.getElementById('alarmTabScheduled');
+
+            if (tab === 'instant') {
+                instantTab.style.display = 'block';
+                scheduledTab.style.display = 'none';
+                instantBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                instantBtn.style.color = '#ffffff';
+                scheduledBtn.style.background = '#30363d';
+                scheduledBtn.style.color = '#8b949e';
+            } else {
+                instantTab.style.display = 'none';
+                scheduledTab.style.display = 'block';
+                instantBtn.style.background = '#30363d';
+                instantBtn.style.color = '#8b949e';
+                scheduledBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                scheduledBtn.style.color = '#ffffff';
+                syncScheduleUI();
+            }
+        }
+
+        /**
+         * Set when to schedule alarm (today, tomorrow, or date).
+         */
+        /**
+         * Schedule alarm via server endpoint.
+         */
+        function scheduleAlarm() {
+            const dateTimeStr = document.getElementById('scheduleDateTimePicker').value;
+            const sound = document.getElementById('scheduleAlarmSoundSelect').value;
+            const durationSecs = parseInt(document.getElementById('scheduleDurationSelect').value);
+            
+            if (!dateTimeStr) {
+                showToast('⏰ Please select date and time', 2000);
+                return;
+            }
+
+            // Parse the date-time string (Flatpickr format: "YYYY-MM-DD HH:MM")
+            const scheduledDate = new Date(dateTimeStr);
+            const now = new Date();
+            
+            if (scheduledDate <= now) {
+                showToast('⏰ Time must be in the future', 2000);
+                return;
+            }
+
+            const durationMs = durationSecs === -1 ? -1 : durationSecs * 1000;
+            
+            // Send to server API
+            fetch('/alarm/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduledTime: scheduledDate.getTime(),
+                    sound: sound,
+                    duration_ms: durationMs
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('✅ Alarm scheduled for ' + dateTimeStr, 2500);
+                    alarmScheduled = {
+                        scheduledTime: scheduledDate.getTime(),
+                        sound: sound,
+                        duration_ms: durationMs
+                    };
+                    localStorage.setItem('scheduledAlarm', JSON.stringify(alarmScheduled));
+                    updateScheduleDisplay();
+                    startScheduleCountdown();
+                    updateAlarmCardState(false, 0);
+                    
+                    // Update button states
+                    const setBtn = document.getElementById('scheduleSetBtn');
+                    const cancelBtn = document.getElementById('scheduleCancelBtn');
+                    if (setBtn) {
+                        setBtn.disabled = true;
+                        setBtn.style.opacity = '0.5';
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.disabled = false;
+                        cancelBtn.style.opacity = '1';
+                    }
+                } else {
+                    showToast('Error: ' + data.message, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error scheduling alarm:', error);
+                showToast('Failed to schedule alarm', 3000);
+            });
+        }
+
+        /**
+         * Update schedule display when modal opens.
+         */
+        function syncScheduleUI() {
+            if (alarmScheduled) {
+                const statusEl = document.getElementById('scheduleStatusDisplay');
+                const setBtn = document.getElementById('scheduleSetBtn');
+                const cancelBtn = document.getElementById('scheduleCancelBtn');
+                
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    updateScheduleDisplay();
+                    startScheduleCountdown();
+                }
+                
+                // Disable set button, enable cancel button
+                if (setBtn) {
+                    setBtn.disabled = true;
+                    setBtn.style.opacity = '0.5';
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                    cancelBtn.style.opacity = '1';
+                }
+            } else {
+                // No scheduled alarm, enable set button, disable cancel
+                const setBtn = document.getElementById('scheduleSetBtn');
+                const cancelBtn = document.getElementById('scheduleCancelBtn');
+                
+                if (setBtn) {
+                    setBtn.disabled = false;
+                    setBtn.style.opacity = '1';
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = true;
+                    cancelBtn.style.opacity = '0.5';
+                }
+            }
+        }
+
+        /**
+         * Update schedule countdown display.
+         */
+        function updateScheduleDisplay() {
+            if (!alarmScheduled) return;
+            
+            const now = new Date().getTime();
+            const remaining = alarmScheduled.scheduledTime - now;
+            
+            if (remaining <= 0) {
+                // Scheduled time reached, stop countdown
+                return;
+            }
+
+            const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((remaining % (1000 * 60)) / 1000);
+
+            let countdownText = '';
+            if (days > 0) {
+                countdownText = days + 'd ' + hours + 'h ' + mins + 'm';
+            } else if (hours > 0) {
+                countdownText = hours + 'h ' + mins + 'm ' + secs + 's';
+            } else {
+                countdownText = mins + 'm ' + secs + 's';
+            }
+
+            document.getElementById('scheduleCountdownText').textContent = countdownText;
+        }
+
+        /**
+         * Start schedule countdown interval.
+         */
+        function startScheduleCountdown() {
+            if (scheduleCountdownInterval) {
+                clearInterval(scheduleCountdownInterval);
+            }
+
+            scheduleCountdownInterval = setInterval(() => {
+                if (!alarmScheduled) {
+                    clearInterval(scheduleCountdownInterval);
+                    return;
+                }
+
+                const now = new Date().getTime();
+                const remaining = alarmScheduled.scheduledTime - now;
+
+                if (remaining <= 0) {
+                    // Trigger scheduled alarm
+                    clearInterval(scheduleCountdownInterval);
+                    triggerScheduledAlarm();
+                } else {
+                    updateScheduleDisplay();
+                }
+            }, 1000);
+        }
+
+        /**
+         * Cancel scheduled alarm.
+         */
+        function cancelScheduledAlarm() {
+            if (!alarmScheduled) return;
+
+            // Clear schedule from memory
+            alarmScheduled = null;
+            localStorage.removeItem('scheduledAlarm');
+
+            // Clear countdown interval
+            if (scheduleCountdownInterval) {
+                clearInterval(scheduleCountdownInterval);
+                scheduleCountdownInterval = null;
+            }
+
+            // Reset UI
+            document.getElementById('scheduleStatusDisplay').style.display = 'none';
+            document.getElementById('scheduleDateTimePicker').value = '';
+            document.getElementById('scheduleSetBtn').disabled = false;
+            document.getElementById('scheduleSetBtn').style.opacity = '1';
+            document.getElementById('scheduleCancelBtn').disabled = true;
+            document.getElementById('scheduleCancelBtn').style.opacity = '0.5';
+
+            showToast('❌ Scheduled alarm cancelled', 2000);
+        }
+
+        /**
+         * Trigger the scheduled alarm.
+         */
+        function triggerScheduledAlarm() {
+            if (!alarmScheduled) return;
+
+            const soundFile = alarmScheduled.sound;
+            const durationMs = alarmScheduled.duration_ms;
+
+            // Update UI immediately (optimistic update) - same as instant alarm
+            alarmIsActive = true;
+            alarmActiveDurationMs = durationMs;
+            updateAlarmUIState();
+            updateAlarmCardState(true, durationMs);
+            startAlarmCountdown(durationMs);
+
+            // Hide schedule status display since alarm is now ringing
+            const scheduleStatusDisplay = document.getElementById('scheduleStatusDisplay');
+            if (scheduleStatusDisplay) {
+                scheduleStatusDisplay.style.display = 'none';
+            }
+
+            // Clear scheduled alarm from UI
+            document.getElementById('scheduleDateTimePicker').value = '';
+            const setBtn = document.getElementById('scheduleSetBtn');
+            const cancelBtn = document.getElementById('scheduleCancelBtn');
+            if (setBtn) {
+                setBtn.disabled = false;
+                setBtn.style.opacity = '1';
+            }
+            if (cancelBtn) {
+                cancelBtn.disabled = true;
+                cancelBtn.style.opacity = '0.5';
+            }
+
+            fetch('/alarm/ring', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sound: soundFile,
+                    duration_ms: durationMs
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('⏰ Scheduled alarm triggered!', 3000);
+                    // Clear scheduled alarm from memory
+                    alarmScheduled = null;
+                    localStorage.removeItem('scheduledAlarm');
+                } else {
+                    console.error('Error triggering scheduled alarm:', data.message);
+                    showToast('Error triggering alarm', 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error triggering scheduled alarm:', error);
+                showToast('Failed to trigger alarm', 3000);
+            });
+        }
+        
+        /**
+         * Update duration display based on selected value.
+         */
+        function updateAlarmDurationFromSelect() {
+            const value = parseInt(document.getElementById('durationSelect').value);
+            let display = '';
+            
+            if (value === -1) {
+                display = 'Infinite (Never stops)';
+            } else if (value >= 60) {
+                const minutes = value / 60;
+                display = minutes === 1 ? '1 minute' : minutes + ' minutes';
+            } else {
+                display = value === 1 ? '1 second' : value + ' seconds';
+            }
+            
+            // Only update if element exists
+            const displayEl = document.getElementById('durationDisplayText');
+            if (displayEl) {
+                displayEl.textContent = display;
+            }
+        }
+        
+        /**
+         * Update duration display based on selected value and unit (legacy).
+         */
+        function updateDurationDisplay() {
+            const selectEl = document.getElementById('durationSelect');
+            if (selectEl) {
+                updateAlarmDurationFromSelect();
+            }
+        }
+        
+        /**
+         * Preview alarm sound (2 seconds).
+         */
+        function previewAlarmSound() {
+            const soundFile = document.getElementById('alarmSoundSelect').value;
+            const audioPath = '/assets/alarms/' + soundFile;
+            
+            // Stop previous preview if any
+            if (alarmPreviewPlayer) {
+                try {
+                    alarmPreviewPlayer.pause();
+                    alarmPreviewPlayer = null;
+                } catch (e) {}
+            }
+            
+            try {
+                alarmPreviewPlayer = new Audio(audioPath);
+                alarmPreviewPlayer.play();
+                
+                // Stop after 2 seconds
+                setTimeout(() => {
+                    if (alarmPreviewPlayer) {
+                        alarmPreviewPlayer.pause();
+                        alarmPreviewPlayer = null;
+                    }
+                }, 2000);
+                
+                showToast('▶️ Playing preview...', 2500);
+            } catch (e) {
+                console.error('Error playing preview', e);
+                showToast('Error playing preview sound', 2000);
+            }
+        }
+        
+        /**
+         * Ring alarm with selected sound and duration.
+         */
+        function ringAlarm() {
+            const soundFile = document.getElementById('alarmSoundSelect').value;
+            const value = parseInt(document.getElementById('durationSelect').value);
+            
+            // Calculate duration in milliseconds
+            let durationMs;
+            if (value === -1) {
+                durationMs = -1; // Infinite
+            } else {
+                durationMs = value * 1000;
+            }
+            
+            // Update UI immediately (optimistic update)
+            alarmIsActive = true;
+            alarmActiveDurationMs = durationMs;
+            updateAlarmUIState();
+            updateAlarmCardState(true, durationMs);
+            startAlarmCountdown(durationMs);
+            
+            // Send request to server
+            fetch('/alarm/ring', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sound: soundFile,
+                    duration_ms: durationMs
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('🚨 Alarm activated', 3000);
+                } else {
+                    showToast('Error: ' + data.message, 3000);
+                    alarmIsActive = false;
+                    updateAlarmUIState();
+                }
+            })
+            .catch(error => {
+                console.error('Error ringing alarm:', error);
+                showToast('Failed to activate alarm', 3000);
+                alarmIsActive = false;
+                updateAlarmUIState();
+            });
+        }
+        
+        /**
+         * Stop alarm.
+         */
+        function stopAlarm() {
+            // Update UI immediately (optimistic update)
+            alarmIsActive = false;
+            stopAlarmCountdown();
+            updateAlarmCardState(false, 0);
+            updateAlarmUIState();
+            
+            // Send request to server
+            fetch('/alarm/stop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('⏹️ Alarm stopped', 2000);
+                } else {
+                    showToast('Error: ' + data.message, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping alarm:', error);
+                showToast('Failed to stop alarm', 3000);
+            });
+        }
+        
+        let alarmCountdownInterval = null;
+        let alarmStartTime = null;
+        let alarmDurationMs = null;
+        let scheduleCountdownInterval = null;
+        let alarmScheduled = null;
+        let alarmScheduleWhen = 'today';
+        let alarmIsActive = false; // Track local active state
+        let alarmActiveDurationMs = 0; // Track local active duration
+        
+        // Load scheduled alarm from localStorage on startup
+        try {
+            const saved = localStorage.getItem('scheduledAlarm');
+            if (saved) {
+                alarmScheduled = JSON.parse(saved);
+                if (alarmScheduled.scheduledTime > new Date().getTime()) {
+                    startScheduleCountdown();
+                    // Update card to show scheduled state
+                    updateAlarmCardState(false, 0);
+                } else {
+                    alarmScheduled = null;
+                    localStorage.removeItem('scheduledAlarm');
+                }
+            }
+        } catch (e) {
+            console.error('Error loading scheduled alarm:', e);
+        }
+        
+        /**
+         * Start countdown timer for alarm card.
+         */
+        function startAlarmCountdown(durationMs) {
+            // Clear existing countdown
+            stopAlarmCountdown();
+            
+            if (durationMs === -1) return; // Don't count infinite
+            
+            alarmDurationMs = durationMs;
+            alarmStartTime = Date.now();
+            
+            const updateCountdown = () => {
+                const elapsed = Date.now() - alarmStartTime;
+                const remaining = Math.max(0, durationMs - elapsed);
+                const seconds = Math.ceil(remaining / 1000);
+                
+                const countdownEl = document.getElementById('alarmCountdown');
+                if (countdownEl) {
+                    if (remaining > 0) {
+                        countdownEl.textContent = seconds + 's left';
+                    } else {
+                        countdownEl.textContent = '';
+                        stopAlarmCountdown();
+                        // Auto-reset alarm state when duration expires naturally
+                        alarmIsActive = false;
+                        updateAlarmUIState();
+                        updateAlarmCardState(false, 0);
+                    }
+                }
+            };
+            
+            updateCountdown(); // Initial call
+            alarmCountdownInterval = setInterval(updateCountdown, 500);
+        }
+        
+        /**
+         * Stop countdown timer.
+         */
+        function stopAlarmCountdown() {
+            if (alarmCountdownInterval) {
+                clearInterval(alarmCountdownInterval);
+                alarmCountdownInterval = null;
+            }
+            const countdownEl = document.getElementById('alarmCountdown');
+            if (countdownEl) {
+                countdownEl.textContent = '';
+            }
+        }
+        
+        /**
+         * Update alarm card state based on ringing status.
+         */
+        function updateAlarmCardState(isRinging, durationMs) {
+            const card = document.getElementById('alarmCard');
+            const stateTextEl = document.getElementById('alarmStateText');
+            const countdownEl = document.getElementById('alarmCountdown');
+            const iconEl = document.getElementById('alarmIcon');
+            
+            if (isRinging) {
+                card.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(211, 47, 47, 0.1) 100%)';
+                card.style.borderColor = '#ef4444';
+                card.style.borderWidth = '2px';
+                stateTextEl.textContent = durationMs === -1 ? '∞ RINGING' : 'RINGING';
+                stateTextEl.style.color = '#ef4444';
+                if (countdownEl && durationMs > 0) {
+                    const seconds = Math.ceil(durationMs / 1000);
+                    countdownEl.textContent = seconds + 's left';
+                }
+                // Intense ringing animation with bell shake
+                iconEl.style.animation = 'bellShake 0.4s infinite';
+                iconEl.style.color = '#ef4444';
+            } else if (alarmScheduled && !isRinging) {
+                // Waiting state - smooth pulse animation
+                card.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)';
+                card.style.borderColor = '#22c55e';
+                card.style.borderWidth = '2px';
+                stateTextEl.textContent = 'SCHEDULED';
+                stateTextEl.style.color = '#22c55e';
+                if (countdownEl && alarmScheduled.scheduledTime) {
+                    const remaining = alarmScheduled.scheduledTime - Date.now();
+                    const hours = Math.floor(remaining / (1000 * 60 * 60));
+                    const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                    countdownEl.textContent = hours + 'h ' + mins + 'm';
+                }
+                // Waiting animation - gentle pulse
+                iconEl.style.animation = 'alarmWaiting 2s ease-in-out infinite';
+                iconEl.style.color = '#22c55e';
+            } else {
+                // Ready state - no animation
+                card.style.background = '';
+                card.style.borderColor = '';
+                card.style.borderWidth = '';
+                stateTextEl.textContent = 'READY';
+                stateTextEl.style.color = '';
+                if (countdownEl) countdownEl.textContent = '';
+                iconEl.style.animation = 'none';
+                iconEl.style.color = '#ef4444';
+            }
+        }
+        
+        /**
+         * Update modal UI state (button enabled/disabled).
+         */
+        function updateAlarmUIState() {
+            const ringBtn = document.getElementById('ringBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const statusDisplay = document.getElementById('alarmStatusDisplay');
+            
+            // Use local state first, fallback to server state
+            let isRinging = alarmIsActive;
+            if (currentStatus && currentStatus.alarm) {
+                isRinging = alarmIsActive || currentStatus.alarm.is_ringing;
+            }
+            
+            if (isRinging) {
+                ringBtn.style.opacity = '0.5';
+                ringBtn.disabled = true;
+                stopBtn.style.opacity = '1';
+                stopBtn.disabled = false;
+                statusDisplay.style.display = 'block';
+                
+                // Update remaining duration display
+                let remaining = alarmActiveDurationMs;
+                if (currentStatus && currentStatus.alarm) {
+                    remaining = currentStatus.alarm.remaining_ms || alarmActiveDurationMs;
+                }
+                
+                if (remaining > 0 || remaining === -1) {
+                    if (remaining === -1) {
+                        document.getElementById('alarmDurationRemaining').textContent = '∞ Duration: Infinite';
+                    } else {
+                        const seconds = Math.ceil(remaining / 1000);
+                        document.getElementById('alarmDurationRemaining').textContent = '⏱️ ' + seconds + 's remaining';
+                    }
+                }
+            } else {
+                ringBtn.style.opacity = '1';
+                ringBtn.disabled = false;
+                stopBtn.style.opacity = '0.5';
+                stopBtn.disabled = true;
+                statusDisplay.style.display = 'none';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Initialize alarm duration display
+            const durationSelectEl = document.getElementById('durationSelect');
+            if (durationSelectEl) {
+                durationSelectEl.addEventListener('change', updateAlarmDurationFromSelect);
+                updateAlarmDurationFromSelect(); // Initial call
+            }
+            
+            // Backward compatibility for old duration elements
+            const durationValueEl = document.getElementById('durationValue');
+            const durationUnitEl = document.getElementById('durationUnit');
+            if (durationValueEl) durationValueEl.addEventListener('change', updateDurationDisplay);
+            if (durationUnitEl) durationUnitEl.addEventListener('change', updateDurationDisplay);
+            
+            const volumePlus = document.getElementById('volumePlus');
+            
+            if (volumeMinus && volumePlus) {
+                console.log('[Volume] Buttons found: YES');
+                
+                volumeMinus.addEventListener('click', () => {
+                    console.log('[Volume] ➖ Minus button pressed');
+                    const currentPercent = currentStatus?.volume_percentage || 0;
+                    const newPercent = Math.max(0, currentPercent - 10);
+                    console.log('[Volume] Current:', currentPercent, '% → New:', newPercent, '%');
+                    setVolume(newPercent);
+                });
+                
+                volumePlus.addEventListener('click', () => {
+                    console.log('[Volume] ➕ Plus button pressed');
+                    const currentPercent = currentStatus?.volume_percentage || 0;
+                    const newPercent = Math.min(100, currentPercent + 10);
+                    console.log('[Volume] Current:', currentPercent, '% → New:', newPercent, '%');
+                    setVolume(newPercent);
+                });
+            } else {
+                console.error('[Volume] ❌ Buttons not found!');
+            }
+        });
+
+        /**
+         * Set device volume via API
+         */
+        async function setVolume(percentage) {
+            try {
+                console.log('[Volume] setVolume called with percentage:', percentage);
+                const response = await fetch('/audio/volume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ percentage: percentage })
+                });
+                
+                console.log('[Volume] Response status:', response.status);
+                const result = await response.json();
+                console.log('[Volume] Response:', result);
+                
+                if (result.status === 'success') {
+                    console.log('✅ Volume set to:', result.percentage + '%', '(' + result.volume + '/' + result.max_volume + ')');
+                    
+                    // Update currentStatus immediately with the actual values from server
+                    if (currentStatus) {
+                        currentStatus.volume = result.volume;
+                        currentStatus.max_volume = result.max_volume;
+                        currentStatus.volume_percentage = result.percentage;
+                        console.log('[Volume] Updated currentStatus immediately to:', currentStatus.volume_percentage + '%');
+                        updateUI(currentStatus);
+                    }
+                } else {
+                    console.error('❌ Failed to set volume:', result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error setting volume:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize sidebar state based on screen size
+            const sidebar = document.getElementById('sidebar');
+            sidebarOpen = window.innerWidth > 1024; // true on desktop, false on mobile
+            if (!sidebarOpen) {
+                sidebar.classList.add('sidebar-hidden'); // On mobile, add hidden class
+            }
+            
+            videoElement = document.getElementById('videoPlayer');
+
+            let attempts = 0;
+            while (!CONFIG && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+
+            if (!CONFIG) {
+                console.error('[DOMContentLoaded] CONFIG failed to load');
+                return;
+            }
+
+            dashboardViewModel = new DashboardViewModel();
+            
+            // Listen for status updates before initializing
+            eventBus.on('status-updated', (status) => {
+                updateUI(status);
+            });
+            
+            // Initialize will fetch first status and emit event
+            await dashboardViewModel.initialize();
+            // Don't auto-load stream - wait for recording to start
+
+            }
+            // ===== END TEMPORARY SLIDER =====
+        );
+    </script>
+
+    <!-- Avatar Component -->
+    <script src="assets/avatar/avatar.js"></script>
+    <script>
+        // Initialize avatar when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Get the hero avatar container
+                const heroAvatarContainer = document.getElementById('heroAvatarContainer');
+                
+                if (heroAvatarContainer) {
+                    // Initialize avatar in hero card (bottom right)
+                    const avatar = new Avatar(heroAvatarContainer);
+                    console.log('✅ Avatar component initialized in hero card');
+                    
+                    // Create floating tooltip for avatar - speech bubble
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'avatar-floating-tooltip';
+                    tooltip.textContent = '???';
+                    document.body.appendChild(tooltip);
+                    
+                    // Get the avatar wrapper
+                    const avatarWrapper = heroAvatarContainer.querySelector('.avatar-wrapper');
+                    
+                    if (avatarWrapper) {
+                        // Function to position tooltip responsively
+                        const positionTooltip = () => {
+                            const rect = avatarWrapper.getBoundingClientRect();
+                            const viewportWidth = window.innerWidth;
+                            const viewportHeight = window.innerHeight;
+                            
+                            let left, top;
+                            
+                            // On small screens (phone), show on left side
+                            if (viewportWidth <= 480) {
+                                // Left side positioning - balanced distance
+                                tooltip.classList.add('left-position');
+                                tooltip.classList.remove('right-position');
+                                left = Math.max(10, rect.left - 45);
+                                top = Math.max(80, rect.top - 10);
+                            } else {
+                                // Right side positioning - adjusted up and left
+                                tooltip.classList.add('right-position');
+                                tooltip.classList.remove('left-position');
+                                left = Math.min(viewportWidth - 120, rect.right - 10);
+                                top = Math.max(10, rect.top - 10);
+                            }
+                            
+                            tooltip.style.left = left + 'px';
+                            tooltip.style.top = top + 'px';
+                        };
+                        
+                        // Show/hide tooltip on hover
+                        avatarWrapper.addEventListener('mouseenter', () => {
+                            positionTooltip();
+                            tooltip.classList.add('visible');
+                        });
+                        
+                        avatarWrapper.addEventListener('mouseleave', () => {
+                            tooltip.classList.remove('visible');
+                        });
+                        
+                        // Reposition on scroll/resize
+                        let repositionTimer;
+                        const handleReposition = () => {
+                            if (tooltip.classList.contains('visible')) {
+                                clearTimeout(repositionTimer);
+                                repositionTimer = setTimeout(positionTooltip, 10);
+                            }
+                        };
+                        window.addEventListener('scroll', handleReposition, { passive: true });
+                        window.addEventListener('resize', handleReposition, { passive: true });
+                    }
+                } else {
+                    // Fallback: initialize avatar on body if container not found
+                    const avatar = new Avatar();
+                    console.log('✅ Avatar component initialized on body (fallback)');
+                }
+            } catch (error) {
+                console.error('❌ Failed to initialize avatar:', error);
+            }
+        });
+
+        // ===== FADEX NOTIFICATION MANAGER INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Initialize Fadex Notification Manager
+                const notificationManager = initFadexNotificationManager();
+                
+                // Store globally for HTML onclick handlers
+                window.fadexManager = notificationManager;
+
+                // Setup bell icon click handler
+                const bellBtn = document.getElementById('fadex-notification-bell');
+                if (bellBtn) {
+                    bellBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        notificationManager.toggleNotificationPanel();
+                    });
+                }
+                
+                // Setup panel close button
+                const panelCloseBtn = document.getElementById('fadexPanelClose');
+                if (panelCloseBtn) {
+                    panelCloseBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        notificationManager.toggleNotificationPanel();
+                    });
+                }
+
+                // Setup panel refresh button
+                const panelRefreshBtn = document.getElementById('fadexPanelRefresh');
+                if (panelRefreshBtn) {
+                    panelRefreshBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        panelRefreshBtn.classList.add('loading');
+                        console.log('🔄 [Fadex Refresh] User triggered manual refresh');
+                        notificationManager.checkForUpdates().finally(() => {
+                            panelRefreshBtn.classList.remove('loading');
+                        });
+                    });
+                }
+                
+                // Close panel when clicking outside
+                document.addEventListener('click', (e) => {
+                    const panel = document.getElementById('fadexNotificationPanel');
+                    const bell = document.getElementById('fadex-notification-bell');
+                    if (panel && !panel.contains(e.target) && !bell.contains(e.target)) {
+                        panel.classList.remove('visible');
+                    }
+                });
+
+                // Setup modal close button
+                const modalCloseBtn = document.querySelector('.notification-close-btn');
+                if (modalCloseBtn) {
+                    modalCloseBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const modal = document.getElementById('fadexNotificationModal');
+                        if (modal) modal.classList.remove('visible');
+                    });
+                }
+
+                // Close modal when clicking outside
+                const modal = document.getElementById('fadexNotificationModal');
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.classList.remove('visible');
+                        }
+                    });
+                }
+
+                // GitHub URL is set in NotificationConstants.js (points to master branch)
+                // In DEBUG mode: Local file is tried first (/fadex/pushnotification.jsonc)
+                // In PRODUCTION mode: GitHub URL is used only
+                const mode = NotificationConstants.DEBUG_MODE ? 'DEBUG (local + GitHub fallback)' : 'PRODUCTION (GitHub only)';
+                console.log(`✅ Fadex Notification Manager initialized - Mode: ${mode}`);
+
+                // Start notification polling
+                notificationManager.start();
+            } catch (error) {
+                console.error('❌ Failed to initialize Fadex Notification Manager:', error);
+            }
+        });
+    </script>
+</body>
+</html>

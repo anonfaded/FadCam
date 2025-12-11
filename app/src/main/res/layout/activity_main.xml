@@ -10,37 +10,23 @@
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
+        app:layout_constraintBottom_toTopOf="@+id/nav_container"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
+    <!-- Container for bottom navigation -->
+    <FrameLayout
+        android:id="@+id/nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
+        app:layout_constraintBottom_toBottomOf="parent">
 
-    <!-- Custom badge overlay for Remote tab -->
-    <TextView
-        android:id="@+id/remote_nav_badge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Soon"
-        android:textColor="@android:color/white"
-        android:textSize="10sp"
-        android:background="@drawable/new_badge_background"
-        android:paddingLeft="6dp"
-        android:paddingRight="6dp"
-        android:paddingTop="1dp"
-        android:paddingBottom="1dp"
-        android:visibility="gone"
-        android:elevation="8dp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        app:layout_constraintBottom_toBottomOf="@id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="@id/bottom_navigation"
-        app:layout_constraintEnd_toEndOf="@id/bottom_navigation"/>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            app:menu="@menu/bottom_nav_menu" />
+    </FrameLayout>
 
     <!-- ********************************************************** -->
     <!-- *** ADD THIS FRAMELAYOUT FOR OVERLAY FRAGMENTS (like TrashFragment) *** -->

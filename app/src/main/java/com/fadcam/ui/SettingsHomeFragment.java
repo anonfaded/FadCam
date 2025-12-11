@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.fadcam.R;
+import com.fadcam.ui.utils.NewFeatureManager;
+import android.widget.TextView;
 
 /**
  * SettingsHomeFragment
@@ -30,16 +32,16 @@ public class SettingsHomeFragment extends Fragment {
     // Removed redundant Location & Privacy group (location embedding moved into Video settings)
     int[] ids = new int[]{
         R.id.group_appearance,
-        R.id.group_video,
+        R.id.group_video_quick,
         R.id.group_video_player_settings,
-        R.id.group_audio,
+        R.id.group_audio_quick,
         R.id.group_storage,
         R.id.group_notifications,
         R.id.group_security,
         R.id.group_widgets,
         R.id.group_about,
         R.id.group_review,
-        R.id.group_watermark,
+        R.id.group_watermark_quick,
         R.id.group_readme
     };
     String[] labels = new String[]{
@@ -62,7 +64,7 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AppearanceSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_video){
+            } else if(ids[i] == R.id.group_video_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new VideoSettingsFragment()));
@@ -73,7 +75,7 @@ public class SettingsHomeFragment extends Fragment {
             // Open dedicated screen; inside that screen rows still open bottom pickers
             row.setOnClickListener(v -> openSubFragment(new VideoPlayerSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_audio){
+            } else if(ids[i] == R.id.group_audio_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AudioSettingsFragment()));
@@ -98,10 +100,17 @@ public class SettingsHomeFragment extends Fragment {
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new NotificationSettingsFragment()));
                 }
-            } else if(ids[i] == R.id.group_watermark){
+            } else if(ids[i] == R.id.group_watermark_quick){
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new WatermarkSettingsFragment()));
+                    row.setOnClickListener(v -> {
+                        // Mark watermark badge as seen when clicking the row
+                        NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
+                        // Hide the badge immediately for instant feedback
+                        manageBadgeVisibility(root);
+                        // Open watermark settings
+                        openSubFragment(new WatermarkSettingsFragment());
+                    });
                 }
             } else if(ids[i] == R.id.group_about){
                 LinearLayout row = root.findViewById(ids[i]);
@@ -124,8 +133,26 @@ public class SettingsHomeFragment extends Fragment {
         }
     wireAppInlineRows(root);
     refreshAppInlineValues(root);
+    
+    // Show/hide watermark NEW badge based on whether user has seen it
+    manageBadgeVisibility(root);
         // -------------- Fix Ended for this method(onCreateView)-----------
         return root;
+    }
+    
+    /**
+     * Show or hide the watermark NEW badge based on whether the feature has been seen.
+     */
+    private void manageBadgeVisibility(View root) {
+        try {
+            TextView watermarkBadge = root.findViewById(R.id.watermark_new_badge);
+            if (watermarkBadge != null) {
+                boolean shouldShow = NewFeatureManager.shouldShowBadge(requireContext(), "watermark");
+                watermarkBadge.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+            }
+        } catch (Exception e) {
+            // Silently fail if badge view not found
+        }
     }
 
     /**
@@ -374,6 +401,11 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        // Refresh badge visibility when returning to this fragment
+        View root = getView();
+        if (root != null) {
+            manageBadgeVisibility(root);
+        }
         // Future: update dynamic subtitles (e.g., current theme, language) when preferences change.
     }
 }

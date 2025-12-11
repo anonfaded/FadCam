@@ -192,6 +192,70 @@
                         android:src="@drawable/ic_arrow_right"
                         android:tint="@android:color/darker_gray"/>
                 </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <!-- Custom Text Row with NEW badge -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    
+                    <LinearLayout
+                        android:id="@+id/row_custom_text"
+                        style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_draw_edit"
+                        android:tint="@android:color/darker_gray"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/watermark_custom_text_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_custom_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                    </LinearLayout>
+                    
+                    <!-- NEW Badge -->
+                    <TextView
+                        android:id="@+id/badge_custom_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|end"
+                        android:layout_marginEnd="44dp"
+                        android:background="@drawable/new_badge_background"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:text="NEW"
+                        android:textColor="#FFFFFF"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:visibility="visible" />
+                </FrameLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

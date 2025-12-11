@@ -1,0 +1,430 @@
+/**
+ * Interactive Avatar Component - Styles
+ * Created by Faded - https://github.com/anonfaded
+ * December 9, 2025
+ */
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Avatar Container - Fixed position on page */
+.avatar-container {
+  position: fixed;
+  bottom: -2rem;
+  right: 1rem;
+  z-index: 100;
+  user-select: none;
+  pointer-events: none;
+  transform: translateY(0);
+  transition: all 0.3s ease-out;
+}
+
+/* Avatar Container inside Hero Card - Relative positioning */
+#heroAvatarContainer .avatar-container {
+  position: absolute;
+  bottom: -50px;
+  right: -8px;
+  left: auto;
+  top: auto;
+  width: 140px;
+  height: 180px;
+  padding: 0;
+  overflow: visible;
+  z-index: 4;
+}
+
+/* Position variants */
+.avatar-container.pos-bottom-right {
+  bottom: 0;
+  right: 1rem;
+  left: auto;
+  top: auto;
+}
+
+.avatar-container.pos-bottom-left {
+  bottom: 0;
+  left: 1rem;
+  right: auto;
+  top: auto;
+}
+
+.avatar-container.pos-top-right {
+  top: 1rem;
+  right: 1rem;
+  bottom: auto;
+  left: auto;
+}
+
+.avatar-container.pos-top-left {
+  top: 1rem;
+  left: 1rem;
+  bottom: auto;
+  right: auto;
+}
+
+/* Avatar Wrapper */
+.avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: filter 0.3s ease;
+  position: relative;
+}
+
+/* Scale down avatar in hero card */
+#heroAvatarContainer .avatar-wrapper {
+  transform: scale(0.75);
+  transform-origin: bottom right;
+  gap: 0.4rem;
+  cursor: help;
+  pointer-events: auto;
+}
+
+/* Hover state for avatar */
+#heroAvatarContainer .avatar-wrapper:hover {
+  filter: brightness(1.15);
+}
+
+/* Floating tooltip - Torn pirate flag style chat bubble */
+.avatar-floating-tooltip {
+  position: fixed;
+  background: 
+    linear-gradient(135deg, 
+      rgba(20, 15, 10, 0.95) 0%, 
+      rgba(30, 20, 15, 0.98) 50%, 
+      rgba(25, 18, 12, 0.95) 100%);
+  color: #d4a574;
+  min-width: 70px;
+  max-width: 82px;
+  height: 46px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 20px;
+  font-family: 'Georgia', serif;
+  letter-spacing: 2px;
+  text-shadow: 
+    2px 2px 4px rgba(0, 0, 0, 0.8),
+    0 0 8px rgba(212, 165, 116, 0.3);
+  border: 2px solid rgba(60, 45, 30, 0.8);
+  border-left: 3px solid rgba(80, 60, 40, 0.6);
+  border-top: 2px solid rgba(50, 40, 30, 0.7);
+  box-shadow: 
+    0 0 25px rgba(0, 0, 0, 0.9),
+    inset 3px 3px 8px rgba(0, 0, 0, 0.7),
+    inset -2px -2px 6px rgba(80, 60, 40, 0.2),
+    0 12px 30px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 350ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 350ms ease;
+  z-index: 10000;
+  transform: scale(0) translateY(10px) rotate(-2deg);
+  clip-path: polygon(
+    0% 8%, 3% 0%, 97% 0%, 100% 6%,
+    100% 92%, 97% 100%, 4% 100%, 0% 95%
+  );
+  overflow: visible;
+}
+
+/* Stain/dirt marks on the flag */
+.avatar-floating-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.4), transparent 70%);
+  border-radius: 50%;
+  box-shadow: 
+    -15px 5px 6px 4px rgba(0, 0, 0, 0.3),
+    -8px 18px 4px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Torn arrow/pointer for right position */
+.avatar-floating-tooltip.right-position::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-right: 20px solid #d4a574;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  filter: drop-shadow(-3px 0 4px rgba(212, 165, 116, 0.7))
+          drop-shadow(-5px 0 8px rgba(0, 0, 0, 0.6));
+  z-index: 10001;
+}
+
+/* Torn arrow/pointer for left position */
+.avatar-floating-tooltip.left-position::before {
+  content: '';
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-left: 20px solid #d4a574;
+  clip-path: polygon(100% 0, 0 50%, 100% 100%);
+  filter: drop-shadow(3px 0 4px rgba(212, 165, 116, 0.7))
+          drop-shadow(5px 0 8px rgba(0, 0, 0, 0.6));
+  z-index: 10001;
+}
+
+.avatar-floating-tooltip.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0) rotate(-1deg);
+  animation: flag-wave 3s ease-in-out infinite;
+}
+
+/* Subtle waving animation like a torn flag */
+@keyframes flag-wave {
+  0%, 100% {
+    transform: scale(1) translateY(0) rotate(-1deg);
+  }
+  25% {
+    transform: scale(1) translateY(-1px) rotate(-0.5deg);
+  }
+  50% {
+    transform: scale(1) translateY(0) rotate(-1.5deg);
+  }
+  75% {
+    transform: scale(1) translateY(1px) rotate(-0.8deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .avatar-floating-tooltip {
+    min-width: 66px;
+    max-width: 78px;
+    height: 42px;
+    font-size: 19px;
+    padding: 7px 11px;
+  }
+  
+  .avatar-floating-tooltip.right-position::before,
+  .avatar-floating-tooltip.left-position::before {
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+  }
+  
+  .avatar-floating-tooltip.right-position::before {
+    left: -13px;
+    border-right-width: 14px;
+  }
+  
+  .avatar-floating-tooltip.left-position::before {
+    right: -13px;
+    border-left-width: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar-floating-tooltip {
+    min-width: 62px;
+    max-width: 72px;
+    height: 38px;
+    font-size: 17px;
+    padding: 6px 10px;
+  }
+  
+  .avatar-floating-tooltip.right-position::before,
+  .avatar-floating-tooltip.left-position::before {
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+  }
+  
+  .avatar-floating-tooltip.right-position::before {
+    left: -12px;
+    border-right-width: 13px;
+  }
+  
+  .avatar-floating-tooltip.left-position::before {
+    right: -12px;
+    border-left-width: 13px;
+  }
+  
+  .avatar-floating-tooltip::after {
+    width: 6px;
+    height: 6px;
+    top: 6px;
+    right: 10px;
+  }
+}
+
+/* Avatar Head - Floating effect */
+.avatar-head {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  background: linear-gradient(to bottom right, #1f2937, #000000, #1f2937);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Avatar Body - D-shaped with rounded top */
+.avatar-body {
+  width: 7rem;
+  height: 4rem;
+  background: linear-gradient(to bottom, #1f2937, #000000, #1f2937);
+  border-radius: 50% 50% 0 0;
+  position: relative;
+  animation: float 3s ease-in-out infinite 0.5s;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Eyes Container */
+.eyes-container {
+  position: relative;
+  display: flex;
+  gap: 1rem;
+  margin-top: -0.25rem;
+}
+
+/* Eye Socket - Semi-circular cavity for eyes */
+.eye-socket {
+  position: relative;
+  width: 1.5rem;
+  height: 1rem;
+  background: #000000;
+  border-radius: 0 0 100% 100%;
+  overflow: hidden;
+}
+
+/* Eyeball - Glowing white/red sphere */
+.eyeball {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  background: white;
+  box-shadow: 
+    0 0 8px rgba(255, 255, 255, 0.8),
+    0 0 16px rgba(255, 255, 255, 0.4);
+  transition: none;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Performance optimizations */
+.avatar-wrapper * {
+  will-change: transform;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .avatar-wrapper {
+    transform: scale(0.8);
+    transform-origin: bottom right;
+  }
+  
+  .avatar-container.pos-bottom-left .avatar-wrapper,
+  .avatar-container.pos-top-left .avatar-wrapper {
+    transform-origin: bottom left;
+  }
+  
+  .avatar-container.pos-top-right .avatar-wrapper,
+  .avatar-container.pos-top-left .avatar-wrapper {
+    transform-origin: top left;
+  }
+}
+
+/* Tablet optimization */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .avatar-wrapper {
+    transform: scale(0.9);
+  }
+}
+
+/* Reduced motion support - Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .eyeball {
+    transition: none !important;
+  }
+  
+  .avatar-wrapper {
+    transition: none !important;
+  }
+  
+  .eye-socket {
+    transition: none !important;
+  }
+  
+  .avatar-head,
+  .avatar-body {
+    animation: none !important;
+  }
+  
+  .avatar-container {
+    transition: none !important;
+  }
+}
+
+/* High contrast mode support - Accessibility */
+@media (prefers-contrast: high) {
+  .avatar-head,
+  .avatar-body {
+    border: 3px solid #000000;
+  }
+  
+  .eyeball {
+    background: #f5f5f5 !important;
+    box-shadow: 0 0 8px rgba(245, 245, 245, 0.8) !important;
+  }
+  
+  .eye-socket {
+    border: 2px solid #f5f5f5;
+  }
+}
+
+/* Dark theme compatibility (optional) */
+@media (prefers-color-scheme: dark) {
+  /* Avatar already uses dark colors, no changes needed */
+}
+
+/* Print styles - Hide avatar when printing */
+@media print {
+  .avatar-container {
+    display: none !important;
+  }
+}
+
+/* Hover effects for interactive feedback (subtle) */
+.avatar-wrapper:hover {
+  filter: brightness(1.05);
+}
+
+/* Focus visible for accessibility (keyboard navigation) */
+.avatar-container:focus-visible {
+  outline: 2px solid #00d4aa;
+  outline-offset: 4px;
+}

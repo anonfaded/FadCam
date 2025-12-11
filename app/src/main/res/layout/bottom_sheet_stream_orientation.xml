@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stream Orientation"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:paddingBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose orientation for streaming only"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Portrait Card -->
+    <LinearLayout
+        android:id="@+id/rowPortrait"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Portrait"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vertical orientation (9:16)"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkPortrait"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check_circle"
+            android:tint="@android:color/holo_green_dark"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Landscape Card -->
+    <LinearLayout
+        android:id="@+id/rowLandscape"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Landscape"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Horizontal orientation (16:9)"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkLandscape"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check_circle"
+            android:tint="@android:color/holo_green_dark"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Auto Card -->
+    <LinearLayout
+        android:id="@+id/rowAuto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Auto (Default)"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Follow app recording orientation"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/checkAuto"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check_circle"
+            android:tint="@android:color/holo_green_dark"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

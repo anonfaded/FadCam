@@ -107,7 +107,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_debug"
+                    android:src="@drawable/ic_lens"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"
@@ -140,7 +140,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_avc"
+                    android:src="@drawable/ic_grid"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"
@@ -173,7 +173,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_debug"
+                    android:src="@drawable/ic_fps"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"
@@ -198,7 +198,7 @@
             </LinearLayout>
             <View style="@style/SettingsDivider" />
 
-            <!-- Codec Row -->
+            <!-- Codec Selection -->
             <LinearLayout
                 android:id="@+id/row_codec"
                 style="@style/SettingsGroupRow">
@@ -239,7 +239,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_settings"
+                    android:src="@drawable/ic_bitrate"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"
@@ -307,7 +307,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_debug"
+                    android:src="@drawable/ic_split_file"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"
@@ -340,7 +340,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_settings"
+                    android:src="@drawable/ic_screen_rotation"
                     android:tint="@android:color/darker_gray"/>
                 <TextView
                     android:layout_width="0dp"

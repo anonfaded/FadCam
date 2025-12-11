@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/client_ip_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Event Logs"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:paddingBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client events"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="400dp">
+
+        <LinearLayout
+            android:id="@+id/events_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="0dp" />
+    </ScrollView>
+</LinearLayout>

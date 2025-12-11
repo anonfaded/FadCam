@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Uptime Details"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:paddingBottom="16dp" />
+
+    <!-- Formatted Uptime Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Server Uptime"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/formattedUptime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2h 17m 23s"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/uptimeSeconds"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="8,243 seconds"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Session Start Time Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Session Started At"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/startDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dec 7, 2025"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/startTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2:31:02 PM"
+            android:textSize="16sp"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/startTimestamp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unix: 1765117862672"
+            android:textSize="11sp"
+            android:textColor="@android:color/darker_gray"
+            android:fontFamily="monospace"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+</LinearLayout>

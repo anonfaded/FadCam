@@ -40,6 +40,7 @@ public abstract class Constants {
     public static final String PREF_EMBED_LOCATION_DATA = "embed_location_data";
     public static final String PREF_DEBUG_DATA = "debug_data";
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
+    public static final String PREF_WATERMARK_CUSTOM_TEXT = "watermark_custom_text";
     public static final String PREF_VIDEO_CODEC = "video_codec";
     public static final String PREF_APP_THEME = "app_theme";
     /**

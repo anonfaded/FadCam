@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+        android:padding="20dp">
+
+    <!-- Header with gradient -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Battery Information"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorHeading"
+        android:paddingBottom="16dp" />
+
+    <!-- Low Battery Warning Card -->
+    <LinearLayout
+        android:id="@+id/lowBatteryWarningCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FF6B6B"
+        android:padding="14dp"
+        android:layout_marginBottom="12dp"
+        android:layout_marginStart="-20dp"
+        android:layout_marginEnd="-20dp"
+        android:layout_marginTop="-4dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/lowBatteryWarningText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚠️ Low Battery - Plug charger ASAP"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="center" />
+    </LinearLayout>
+
+    <!-- Current Battery Level Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Current Level"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/currentBatteryLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="75%"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Battery Consumption Card -->
+    <LinearLayout
+        android:id="@+id/consumptionCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Battery Consumed (Streaming)"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/consumedPercentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="15%"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/consumptionRate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Consumption rate: ~5% per hour"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Estimated Time Remaining Card -->
+    <LinearLayout
+        android:id="@+id/timeRemainingCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Estimated Streaming Time Remaining"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/timeRemaining"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="~3.2 hours"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Charging Status Card -->
+    <LinearLayout
+        android:id="@+id/chargingStatusCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Charging Status"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+
+        <TextView
+            android:id="@+id/chargingStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Not Charging"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Battery Warning Threshold Card -->
+    <LinearLayout
+        android:id="@+id/warningThresholdCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Low Battery Warning Threshold"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:hint="Percentage (5-100)"
+                app:hintTextColor="#b0bec5"
+                app:boxStrokeColor="#546e7a"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/batteryWarningInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="20"
+                    android:textColor="#e6edf3"
+                    android:textColorHint="#90a4ae"
+                    android:minEms="3" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Button
+                android:id="@+id/setBatteryWarningBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Set"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/warningThresholdStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Current threshold: 20%"
+            android:textSize="11sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="When battery drops to or below this percentage, a warning will be displayed"
+            android:textSize="10sp"
+            android:textColor="#8b949e"
+            android:layout_marginTop="8dp"
+            android:lineSpacingMultiplier="1.1" />
+    </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

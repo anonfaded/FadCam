@@ -24,6 +24,11 @@ public class SharedPreferencesManager {
     public static final String PREF_AUTO_UPDATE_CHECK = "auto_update_check_enabled";
     // --- END UPDATE CHECK CONSTANTS ---
     
+    // --- BATTERY WARNING CONSTANTS ---
+    public static final String PREF_BATTERY_WARNING_THRESHOLD = "battery_warning_threshold";
+    public static final int DEFAULT_BATTERY_WARNING_THRESHOLD = 20;
+    // --- END BATTERY WARNING CONSTANTS ---
+    
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris"; // Defined in Constants now
 
     private static SharedPreferencesManager instance;
@@ -175,6 +180,32 @@ public class SharedPreferencesManager {
     }
 
     // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
+
+    // ----- Battery Warning Threshold Methods -----
+    /**
+     * Get the battery warning threshold percentage.
+     * Default: 20%
+     */
+    public int getBatteryWarningThreshold() {
+        return sharedPreferences.getInt(
+            PREF_BATTERY_WARNING_THRESHOLD,
+            DEFAULT_BATTERY_WARNING_THRESHOLD
+        );
+    }
+
+    /**
+     * Set the battery warning threshold percentage.
+     */
+    public void setBatteryWarningThreshold(int percentage) {
+        if (percentage < 5 || percentage > 100) {
+            percentage = DEFAULT_BATTERY_WARNING_THRESHOLD;
+        }
+        sharedPreferences
+            .edit()
+            .putInt(PREF_BATTERY_WARNING_THRESHOLD, percentage)
+            .apply();
+    }
+    // ----- End Battery Warning Threshold Methods -----
 
     // ----- Fix Start for this class (SharedPreferencesManager_playback_muted) -----
     /** Returns whether playback should start muted by default. Default: false (unmuted). */
@@ -498,6 +529,32 @@ public class SharedPreferencesManager {
             .putBoolean(Constants.PREF_PLAYER_KEEP_SCREEN_ON, keepOn)
             .apply();
     }
+    
+    // --- Remote Streaming preferences ---
+    private static final String PREF_KEY_STREAMING_MODE = "pref_streaming_mode";
+    
+    /**
+     * Get the current streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
+     * Defaults to STREAM_AND_SAVE.
+     */
+    public com.fadcam.streaming.RemoteStreamManager.StreamingMode getStreamingMode() {
+        String mode = sharedPreferences.getString(PREF_KEY_STREAMING_MODE, "STREAM_AND_SAVE");
+        try {
+            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.valueOf(mode);
+        } catch (IllegalArgumentException e) {
+            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+        }
+    }
+    
+    /**
+     * Set the streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
+     */
+    public void setStreamingMode(com.fadcam.streaming.RemoteStreamManager.StreamingMode mode) {
+        sharedPreferences
+            .edit()
+            .putString(PREF_KEY_STREAMING_MODE, mode.toString())
+            .apply();
+    }
 
     // --- Player seek seconds preference ---
     private static final String PREF_KEY_PLAYER_SEEK_SECONDS =
@@ -767,6 +824,24 @@ public class SharedPreferencesManager {
             Constants.PREF_WATERMARK_OPTION,
             Constants.DEFAULT_WATERMARK_OPTION
         );
+    }
+
+    /**
+     * Get custom watermark text.
+     * @return Custom watermark text or empty string if not set
+     */
+    public String getWatermarkCustomText() {
+        return sharedPreferences.getString(Constants.PREF_WATERMARK_CUSTOM_TEXT, "");
+    }
+
+    /**
+     * Set custom watermark text.
+     * @param text Custom text to display on watermark (line 2)
+     */
+    public void setWatermarkCustomText(String text) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_WATERMARK_CUSTOM_TEXT, text != null ? text : "")
+            .apply();
     }
 
     // Method to retrieve the preview state
@@ -1741,4 +1816,110 @@ public class SharedPreferencesManager {
     }
 
     // -------------- FadRec (Screen Recording) Preferences End --------------
+
+    // -------------- Fadex Notification Preferences Start --------------
+    private static final String PREF_NOTIFICATION_HISTORY = "fadex_notification_history";
+    private static final long NOTIFICATION_CACHE_DURATION_MS = 30 * 24 * 60 * 60 * 1000L; // 30 days
+
+    /**
+     * Get all cached notifications from SharedPreferences
+     * Automatically cleans up notifications older than 30 days
+     *
+     * @return Notification history as JSON string array, or empty array if none exist
+     */
+    public String getNotificationHistory() {
+        try {
+            String cached = sharedPreferences.getString(PREF_NOTIFICATION_HISTORY, "[]");
+            // Parse and clean in JS, or optionally do cleanup here if needed
+            return cached;
+        } catch (Exception e) {
+            android.util.Log.e("SharedPrefs", "Error getting notification history", e);
+            return "[]";
+        }
+    }
+
+    /**
+     * Save notification history to SharedPreferences
+     * Called by JS bridge to persist notifications
+     *
+     * @param historyJson JSON array string of notifications
+     */
+    public void saveNotificationHistory(String historyJson) {
+        try {
+            sharedPreferences
+                .edit()
+                .putString(PREF_NOTIFICATION_HISTORY, historyJson)
+                .apply();
+            android.util.Log.d("SharedPrefs", "Notification history saved");
+        } catch (Exception e) {
+            android.util.Log.e("SharedPrefs", "Error saving notification history", e);
+        }
+    }
+
+    /**
+     * Clear all notifications
+     */
+    public void clearNotificationHistory() {
+        sharedPreferences
+            .edit()
+            .remove(PREF_NOTIFICATION_HISTORY)
+            .apply();
+        android.util.Log.d("SharedPrefs", "Notification history cleared");
+    }
+
+    /**
+     * Get unread notification count
+     * Simple count - actual filtering done by JS which has the history
+     *
+     * @return Last known unread count
+     */
+    public int getNotificationUnreadCount() {
+        return sharedPreferences.getInt("fadex_unread_count", 0);
+    }
+
+    /**
+     * Save unread notification count
+     * Updated by JS bridge when notifications are marked as read
+     *
+     * @param count Unread count
+     */
+    public void setNotificationUnreadCount(int count) {
+        sharedPreferences
+            .edit()
+            .putInt("fadex_unread_count", Math.max(0, count))
+            .apply();
+    }
+
+    // -------------- Fadex Notification Preferences End --------------
+
+    // -------------- Generic Boolean Preferences (for new features badges) ------
+
+    /**
+     * Generic method to get a boolean preference value by key.
+     * Used for storing arbitrary boolean preferences like feature badge status.
+     *
+     * @param key Preference key
+     * @param defaultValue Default value if key doesn't exist
+     * @return Boolean value
+     */
+    public boolean getBoolean(String key, boolean defaultValue) {
+        return sharedPreferences.getBoolean(key, defaultValue);
+    }
+
+    /**
+     * Generic method to set a boolean preference value by key.
+     * Used for storing arbitrary boolean preferences like feature badge status.
+     *
+     * @param key Preference key
+     * @param value Value to store
+     */
+    public void putBoolean(String key, boolean value) {
+        sharedPreferences
+            .edit()
+            .putBoolean(key, value)
+            .apply();
+    }
+
+    // -------------- Generic Boolean Preferences End ------
 }
+

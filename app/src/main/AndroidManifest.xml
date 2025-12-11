@@ -36,6 +36,7 @@
     <!-- Network permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <uses-permission android:name="android.permission.CAMERA"/>
 
@@ -282,6 +283,9 @@
         <!-- Services and receivers remain unchanged -->
         <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 
+        <!-- Remote Streaming Service for HTTP LAN streaming -->
+        <service android:name=".streaming.RemoteStreamService" android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
+
         <!-- Screen Recording Service for FadRec feature -->
         <service android:name=".fadrec.services.ScreenRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="mediaProjection|microphone" />
 
@@ -302,6 +306,10 @@
 
         <service android:name=".services.TorchService" android:foregroundServiceType="camera" android:exported="true">
         </service>
+        
+        <service android:name=".services.AlarmService" android:foregroundServiceType="mediaPlayback" android:exported="true">
+        </service>
+        
         <receiver android:name=".receivers.TorchToggleReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="com.fadcam.TOGGLE_TORCH"/>

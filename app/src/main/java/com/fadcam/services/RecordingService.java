@@ -131,6 +131,7 @@ public class RecordingService extends Service {
 
     private CameraManager cameraManager; // Primary camera manager
     private Handler backgroundHandler; // For camera operations
+    private HandlerThread backgroundThread; // Background thread for camera operations
 
     private long recordingStartTime;
 
@@ -198,7 +199,7 @@ public class RecordingService extends Service {
             return;
         }
 
-        HandlerThread backgroundThread = new HandlerThread("CameraBackground");
+        backgroundThread = new HandlerThread("CameraBackground");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
 
@@ -759,6 +760,22 @@ public class RecordingService extends Service {
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH.equals(action)) {
             // Handle torch toggle requests
+            // If service was started via startForegroundService(), we MUST call startForeground()
+            // within 5 seconds to avoid crash
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isWorkingInProgress()) {
+                // Service is not recording, so start a minimal foreground notification
+                try {
+                    NotificationCompat.Builder minimalBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                            .setContentTitle(getString(R.string.app_name))
+                            .setContentText("Torch toggled")
+                            .setSmallIcon(R.drawable.ic_notification_icon);
+                    startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    // Stop the service immediately after torch toggle since we're not recording
+                    new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error starting foreground for torch toggle", e);
+                }
+            }
             toggleRecordingTorch();
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION.equals(action)) {
@@ -907,6 +924,18 @@ public class RecordingService extends Service {
             }
         }
 
+        // Stop background thread to prevent memory leak
+        if (backgroundThread != null) {
+            try {
+                backgroundThread.quitSafely();
+                backgroundThread.join(1000);
+                Log.d(TAG, "Background thread stopped successfully.");
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Error stopping background thread", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+
         Log.d(TAG, "Service destroyed.");
         // Clean up GeotagHelper when service is destroyed
         super.onDestroy();
@@ -956,6 +985,14 @@ public class RecordingService extends Service {
         // First update the state to prevent any new operations
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
+        
+        // Notify RemoteStreamManager that recording stopped
+        try {
+            com.fadcam.streaming.RemoteStreamManager.getInstance().stopRecording();
+            Log.i(TAG, "🛑 RemoteStreamManager notified: recording stopped");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to notify RemoteStreamManager about recording stop", e);
+        }
 
         // ✅ SERVICE CLEANUP: Clear timer from SharedPreferences
         // CRITICAL: Must use same prefs name as SharedPreferencesManager
@@ -997,7 +1034,7 @@ public class RecordingService extends Service {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-
+                
                 // Stop and release the GL pipeline
                 if (glRecordingPipeline != null) {
                     try {
@@ -1007,6 +1044,20 @@ public class RecordingService extends Service {
                         Log.e(TAG, "Error stopping GLRecordingPipeline", e);
                     } finally {
                         glRecordingPipeline = null;
+                    }
+                }
+
+                // Delete temporary file if in STREAM_ONLY mode
+                if (currentSegmentFile != null && currentSegmentFile.exists()) {
+                    com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                    if (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY) {
+                        boolean deleted = currentSegmentFile.delete();
+                        if (deleted) {
+                            Log.i(TAG, "🗑️ STREAM_ONLY: Deleted temporary file: " + currentSegmentFile.getName());
+                        } else {
+                            Log.w(TAG, "⚠️ Failed to delete temporary file: " + currentSegmentFile.getAbsolutePath());
+                        }
                     }
                 }
 
@@ -1781,6 +1832,16 @@ public class RecordingService extends Service {
             // Use per-camera FPS setting and only choose HSR if selected resolution
             // supports it
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            
+            // ROBUST FIX: Apply streaming FPS cap BEFORE creating camera session
+            // This ensures camera captures at capped framerate, not just pipeline drops frames
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+            if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
+                Log.d(TAG, "[STREAMING] Capping camera FPS from " + targetFrameRate + " to " + streamFpsCap + " (streaming preset)");
+                targetFrameRate = streamFpsCap;
+            }
+            
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
             Size selected = sharedPreferencesManager.getCameraResolution();
@@ -1851,6 +1912,15 @@ public class RecordingService extends Service {
             // -------------- Fix Start: Use per-camera FPS --------------
             // Get target frame rate from settings for specific camera
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            
+            // ROBUST FIX: Apply streaming FPS cap BEFORE creating camera session
+            // This ensures camera captures at capped framerate, not just pipeline drops frames
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+            if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
+                Log.d(TAG, "[STREAMING] Capping camera FPS from " + targetFrameRate + " to " + streamFpsCap + " (streaming preset)");
+                targetFrameRate = streamFpsCap;
+            }
             // -------------- Fix End: Use per-camera FPS --------------
 
             // Log device info once for debugging
@@ -2181,7 +2251,16 @@ public class RecordingService extends Service {
 
     private int getVideoBitrate() {
         int videoBitrate;
-        if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
+        
+        // Check if streaming bitrate is set (from remote streaming quality preset)
+        android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", android.content.Context.MODE_PRIVATE);
+        int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
+        
+        if (streamBitrate > 0) {
+            // Use streaming quality preset bitrate (already stored in bps, no conversion needed!)
+            videoBitrate = streamBitrate;
+            Log.d(TAG, "[DEBUG] Using streaming bitrate: " + videoBitrate + " bps (" + (videoBitrate / 1_000_000) + " Mbps)");
+        } else if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
             videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000; // stored
                                                                                                                     // as
                                                                                                                     // kbps,
@@ -2619,6 +2698,12 @@ public class RecordingService extends Service {
                     Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
                     intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
                     sendBroadcast(intent);
+                    
+                    // Update SharedPreferences so RemoteStreamManager can read current torch state
+                    android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+                    prefs.edit()
+                        .putBoolean(Constants.PREF_TORCH_STATE, isRecordingTorchEnabled)
+                        .apply();
 
                 } catch (CameraAccessException e) {
                     Log.e(TAG, "Could not toggle recording torch via CaptureRequest: " + e.getMessage());
@@ -2695,6 +2780,14 @@ public class RecordingService extends Service {
     private File createNextSegmentOutputFile(int nextSegmentNumber) {
         // ----- Fix Start for this method(createNextSegmentOutputFile)-----
         String storageMode = sharedPreferencesManager.getStorageMode();
+        
+        // Use "Stream_" prefix only if streaming is actually enabled (server running)
+        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/DocumentFile mode
             String customUriString = sharedPreferencesManager.getCustomStorageUri();
@@ -2710,8 +2803,7 @@ public class RecordingService extends Service {
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            // Use FadCam prefix for consistent naming
-            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+            String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                     + Constants.RECORDING_FILE_EXTENSION;
             DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION,
                     baseFilename);
@@ -2738,7 +2830,7 @@ public class RecordingService extends Service {
             // Internal storage mode - Use same directory and naming as first segment
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-            String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+            String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                     + Constants.RECORDING_FILE_EXTENSION;
 
             // Use the same directory as the first segment (app's external files directory)
@@ -3338,6 +3430,17 @@ public class RecordingService extends Service {
                 broadcastOnRecordingStarted();
 
                 Log.d(TAG, "Recording started successfully");
+                
+                // Notify RemoteStreamManager about active recording file
+                if (currentSegmentFile != null) {
+                    try {
+                        com.fadcam.streaming.RemoteStreamManager.getInstance()
+                            .startRecording(currentSegmentFile);
+                        Log.i(TAG, "🎬 RemoteStreamManager notified: recording started");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
+                    }
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start recording", e);
                 stopRecording();
@@ -3356,12 +3459,24 @@ public class RecordingService extends Service {
     // Add these fields to RecordingService class
     private GLRecordingPipeline glRecordingPipeline;
     private WatermarkInfoProvider watermarkInfoProvider;
-
+    
+    // Track current segment file for streaming
+    private File currentSegmentFile;
+    private String currentSegmentPath;
+    
     // Add this helper method for OpenGL pipeline direct output
     private File getFinalOutputFile() {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String segmentSuffix = ""; // No segment number for the initial file
-        String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + "."
+        
+        // Use "Stream_" prefix only if streaming is actually enabled (server running)
+        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        
+        String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                 + Constants.RECORDING_FILE_EXTENSION;
         File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
         if (!videoDir.exists() && !videoDir.mkdirs()) {
@@ -3427,6 +3542,17 @@ public class RecordingService extends Service {
                 }
             } else {
                 Log.d(TAG, "Using internal storage for segment rollover");
+                
+                // Notify RemoteStreamManager about COMPLETED segment (before creating next)
+                // Fragments are delivered via FragmentedMp4MuxerWrapper callbacks (patched Media3)
+                if (currentSegmentFile != null && currentSegmentFile.exists()) {
+                    long fileSize = currentSegmentFile.length();
+                    Log.i(TAG, "📹 SEGMENT ROLLOVER: #" + (nextSegmentNumber - 1) + 
+                        ", Size: " + (fileSize / 1024) + " KB, Path: " + currentSegmentFile.getName());
+                } else {
+                    Log.w(TAG, "⚠️ Segment rollover but no current segment file");
+                }
+                
                 // Internal: use createNextSegmentOutputFile()
                 File nextFile = createNextSegmentOutputFile(nextSegmentNumber);
                 if (nextFile == null) {
@@ -3435,6 +3561,11 @@ public class RecordingService extends Service {
                     return;
                 }
                 Log.d(TAG, "Successfully created new segment file: " + nextFile.getAbsolutePath());
+                
+                // Track this as current segment
+                currentSegmentFile = nextFile;
+                currentSegmentPath = nextFile.getAbsolutePath();
+                
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
                     Log.d(TAG, "Set next output to path: " + nextFile.getAbsolutePath() + " for segment "
@@ -3501,23 +3632,42 @@ public class RecordingService extends Service {
                 public String getWatermarkText() {
                     String watermarkOption = sharedPreferencesManager.getWatermarkOption();
                     String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
+                    String customText = sharedPreferencesManager.getWatermarkCustomText();
+                    String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+                    
                     switch (watermarkOption) {
                         case "timestamp_fadcam":
-                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                         case "timestamp":
-                            return getCurrentTimestamp() + locationText;
+                            return getCurrentTimestamp() + locationText + customTextLine;
                         case "no_watermark":
                             return "";
                         default:
-                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText;
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                     }
                 }
             };
 
+            // -------------- Fix Start: Apply streaming bitrate and FPS cap to encoder ------
+            // Check for active streaming bitrate + FPS cap (quality preset)
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
+            int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+            
+            // Use normal recording resolution and orientation
+            // Only streaming bitrate and FPS cap are applied from quality preset
             Size resolution = sharedPreferencesManager.getCameraResolution();
-            String orientation = sharedPreferencesManager.getVideoOrientation();
             int videoWidth = resolution.getWidth();
             int videoHeight = resolution.getHeight();
+            String orientation = sharedPreferencesManager.getVideoOrientation();
+            
+            if (streamBitrate > 0) {
+                Log.d(TAG, "[STREAMING] Using quality preset bitrate: " + (streamBitrate / 1_000_000) + " Mbps");
+            }
+            if (streamFpsCap > 0) {
+                Log.d(TAG, "[STREAMING] Using quality preset FPS cap: " + streamFpsCap + " fps");
+            }
+            Log.d(TAG, "[STREAMING] Using normal recording resolution: " + videoWidth + "x" + videoHeight + " (" + orientation + ")");
 
             // Get sensor orientation
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -3535,9 +3685,15 @@ public class RecordingService extends Service {
                 }
             }
             int videoBitrate = getVideoBitrate();
-            // -------------- Fix Start: Use per-camera FPS for encoder --------------
+            
+            // Get camera's target framerate (already capped by streaming FPS cap if needed)
             int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
-            // -------------- Fix End: Use per-camera FPS for encoder --------------
+            // Apply streaming FPS cap again here as safety (main cap is applied at camera session creation)
+            if (streamFpsCap > 0 && videoFramerate > streamFpsCap) {
+                Log.d(TAG, "[STREAMING] Applying secondary FPS cap: " + videoFramerate + " -> " + streamFpsCap);
+                videoFramerate = streamFpsCap;
+            }
+            // -------------- Fix End: Apply streaming bitrate and FPS cap to encoder ------
             // ----- Fix Start for video splitting -----
             // Set splitSizeBytes to 0 if video splitting is disabled
             long splitSizeBytes = 0;
@@ -3608,7 +3764,8 @@ public class RecordingService extends Service {
                     Log.d(TAG, "No location available for SAF recording metadata");
                 }
                 
-                Log.d(TAG, "Creating GLRecordingPipeline with SAF file descriptor");
+                Log.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
+                    " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
                         initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
@@ -3629,8 +3786,28 @@ public class RecordingService extends Service {
                     Log.d(TAG, "No location available for internal recording metadata");
                 }
                 
-                File outputFile = getFinalOutputFile();
-                Log.d(TAG, "Creating GLRecordingPipeline with internal file: " + outputFile.getAbsolutePath());
+                // Check streaming mode to determine output file handling
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamOnly = (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                
+                File outputFile;
+                if (isStreamOnly) {
+                    // STREAM_ONLY: Use temporary file that will be deleted after recording
+                    outputFile = new File(getCacheDir(), "stream_temp_" + System.currentTimeMillis() + ".mp4");
+                    Log.i(TAG, "📺 STREAM_ONLY mode: Using temporary file: " + outputFile.getName());
+                } else {
+                    // STREAM_AND_SAVE: Use normal output file
+                    outputFile = getFinalOutputFile();
+                    Log.d(TAG, "💾 STREAM_AND_SAVE mode: Creating file: " + outputFile.getAbsolutePath());
+                }
+                
+                // Track initial segment file for streaming
+                currentSegmentFile = outputFile;
+                currentSegmentPath = outputFile.getAbsolutePath();
+                
+                Log.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
+                    " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
                         segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec, latitude, longitude);
@@ -3638,6 +3815,14 @@ public class RecordingService extends Service {
 
             Log.d(TAG, "Preparing GLRecordingPipeline surfaces");
             glRecordingPipeline.prepareSurfaces();
+
+            // Notify RemoteStreamManager that recording started
+            try {
+                com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: " + currentSegmentFile.getAbsolutePath());
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
+            }
 
             Log.d(TAG, "Creating camera preview session");
             createCameraPreviewSession();
