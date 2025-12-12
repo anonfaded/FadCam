@@ -172,11 +172,13 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
             
             requireActivity().runOnUiThread(() -> {
                 if (!changelogHtml.isEmpty()) {
+                    // Parse for TextView - strips CSS since Html.fromHtml doesn't support it
+                    String cleanChangelogHtml = ChangelogParser.parseChangelogForTextView(changelogHtml);
                     // Use the original HTML string we stored earlier
                     String updatedText = originalVariationHtml + 
                         "<br><br><font color='#E43C3C'><b>" + 
                         getString(R.string.changelog_label) + 
-                        ":</b></font><br>" + changelogHtml;
+                        ":</b></font><br>" + cleanChangelogHtml;
                     tvUpdateDescription.setText(fromHtml(updatedText));
                 }
             });

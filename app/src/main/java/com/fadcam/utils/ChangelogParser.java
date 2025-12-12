@@ -84,97 +84,47 @@ public class ChangelogParser {
             lines.add(line);
         }
         
-        // Elegant animations with fade-in
-        html.append("<style>")
-            .append("@keyframes flow {")
-            .append("  0%, 100% { background-position: 0% 0%; }")
-            .append("  50% { background-position: 0% 100%; }")
-            .append("}")
-            .append("@keyframes glow {")
-            .append("  0%, 100% { filter: drop-shadow(0 0 1.5px rgba(170, 31, 31, 0.5)); }")
-            .append("  50% { filter: drop-shadow(0 0 2.5px rgba(170, 31, 31, 0.7)); }")
-            .append("}")
-            .append("@keyframes fadeSlideIn {")
-            .append("  0% { opacity: 0; transform: translateY(-15px); }")
-            .append("  100% { opacity: 1; transform: translateY(0); }")
-            .append("}")
-            .append("/* Responsive Table Styles */")
-            .append(".table-container {")
-            .append("  margin: 12px 0;")
-            .append("  padding: 0 4px 0 18px;")
-            .append("  animation: fadeSlideIn 0.6s ease-out forwards;")
-            .append("  opacity: 0;")
-            .append("  overflow-x: auto;")
-            .append("  -webkit-overflow-scrolling: touch;")
-            .append("}")
-            .append("table {")
-            .append("  width: 100%;")
-            .append("  border-collapse: collapse;")
-            .append("  background: transparent;")
-            .append("  font-size: 13px;")
-            .append("  min-width: 280px;")
-            .append("  border-radius: 8px;")
-            .append("  overflow: hidden;")
-            .append("}")
-            .append("thead {")
-            .append("  background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);")
-            .append("  position: sticky;")
-            .append("  top: 0;")
-            .append("  z-index: 10;")
-            .append("}")
-            .append("thead tr:first-child th:first-child {")
-            .append("  border-radius: 8px 0 0 0;")
-            .append("}")
-            .append("thead tr:first-child th:last-child {")
-            .append("  border-radius: 0 8px 0 0;")
-            .append("}")
-            .append("tbody tr:last-child td:first-child {")
-            .append("  border-radius: 0 0 0 8px;")
-            .append("}")
-            .append("tbody tr:last-child td:last-child {")
-            .append("  border-radius: 0 0 8px 0;")
-            .append("}")
-            .append("th {")
-            .append("  padding: 10px 8px;")
-            .append("  text-align: left;")
-            .append("  color: #E43C3C;")
-            .append("  font-weight: 600;")
-            .append("  border-bottom: 2px solid #E43C3C;")
-            .append("  white-space: nowrap;")
-            .append("}")
-            .append("td {")
-            .append("  padding: 8px;")
-            .append("  border-bottom: 1px solid #333333;")
-            .append("  color: #E0E0E0;")
-            .append("  word-break: break-word;")
-            .append("}")
-            .append("tbody tr {")
-            .append("  transition: all 0.2s ease;")
-            .append("}")
-            .append("tbody tr:hover {")
-            .append("  background: rgba(228, 60, 60, 0.08);")
-            .append("}")
-            .append("tbody tr:hover td:last-child {")
-            .append("  background: rgba(228, 60, 60, 0.15);")
-            .append("}")
-            .append("tbody td:last-child {")
-            .append("  background: rgba(228, 60, 60, 0.08);")
-            .append("  color: #4CAF50;")
-            .append("  font-weight: 500;")
-            .append("}")
-            .append("tbody tr:last-child td {")
-            .append("  border-bottom: none;")
-            .append("}")
-            .append(".tree {")
-            .append("  background: linear-gradient(180deg, #AA1F1F, #661111, #AA1F1F);")
-            .append("  background-size: 100% 200%;")
-            .append("  animation: flow 4s ease-in-out infinite, glow 3s ease-in-out infinite;")
-            .append("}")
-            .append(".fade-in {")
-            .append("  animation: fadeSlideIn 0.6s ease-out forwards;")
-            .append("  opacity: 0;")
-            .append("}")
-            .append("</style>");
+        // Start HTML content with Font Awesome CDN and CSS styling (for WebView)
+        html.append("<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'>")
+            .append("<style>")
+            .append("* { margin: 0; padding: 0; box-sizing: border-box; }")
+            .append("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #E0E0E0; font-size: 13px; }")
+            .append("table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #1a1a1a; border-radius: 8px; overflow: hidden; font-size: 12px; }")
+            .append("thead { background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%); position: sticky; top: 0; z-index: 10; }")
+            .append("thead tr:first-child th:first-child { border-radius: 8px 0 0 0; }")
+            .append("thead tr:first-child th:last-child { border-radius: 0 8px 0 0; }")
+            .append("tbody tr:last-child td:first-child { border-radius: 0 0 0 8px; }")
+            .append("tbody tr:last-child td:last-child { border-radius: 0 0 8px 0; }")
+            .append("th { padding: 8px 6px; text-align: left; color: #E43C3C; font-weight: 600; font-size: 12px; border-bottom: 2px solid #E43C3C; white-space: nowrap; }")
+            .append("th:last-child { color: #4CAF50; background: rgba(76, 175, 80, 0.12); border-bottom: 2px solid #4CAF50; }")
+            .append("td { padding: 6px 8px; border-bottom: 1px solid #333333; color: #E0E0E0; word-break: break-word; font-size: 12px; }")
+            .append("tbody tr:hover { background: rgba(228, 60, 60, 0.08); }")
+            .append("tbody tr:hover td.improvement-cell { background: rgba(76, 175, 80, 0.2) !important; }")
+            .append("tbody td.improvement-cell { background: rgba(76, 175, 80, 0.15) !important; color: #4CAF50; font-weight: 500; }")
+            .append(".fa-external-link-alt { color: #4CAF50; margin-left: 4px; font-size: 10px; }")
+            .append("tbody tr:last-child td { border-bottom: none; }")
+            .append(".fa-arrow-up, .fa-arrow-down { color: #4CAF50; margin-right: 4px; font-size: 11px; }")
+            .append(".thank-you-section { margin-top: 20px; padding: 20px 18px; text-align: center; animation: fadeSlideIn 0.8s ease-out forwards; opacity: 0; animation-delay: 800ms; }")
+            .append(".thank-you-text { font-size: 14px; color: #A0A0A0; line-height: 1.6; }")
+            .append(".tree { background: linear-gradient(180deg, #AA1F1F, #661111, #AA1F1F); background-size: 100% 200%; animation: flow 4s ease-in-out infinite, glow 3s ease-in-out infinite; }")
+            .append(".fade-in { animation: fadeSlideIn 0.6s ease-out forwards; opacity: 0; }")
+            .append("@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }")
+            .append("@keyframes flow { 0%, 100% { background-position: 100% 0%; } 50% { background-position: 0% 100%; } }")
+            .append("@keyframes glow { 0%, 100% { text-shadow: 0 0 10px rgba(228, 60, 60, 0.5); } 50% { text-shadow: 0 0 20px rgba(228, 60, 60, 0.8); } }")
+            .append(".table-container { margin: 12px 18px; overflow-x: auto; }")
+            .append("@keyframes progressPulse { 0% { box-shadow: inset 0 0 0px rgba(76, 175, 80, 0.5); } 50% { box-shadow: inset 0 0 20px rgba(76, 175, 80, 0.8); } 100% { box-shadow: inset 0 0 0px rgba(76, 175, 80, 0.5); } }")
+            .append("@keyframes slideGradient { 0% { background-position: -200% 0%; } 100% { background-position: 200% 0%; } }")
+            .append("</style>")
+            .append("<script>")
+            .append("  window.addEventListener('scroll', function() {")
+            .append("    var scrollHeight = document.documentElement.scrollHeight - window.innerHeight;")
+            .append("    var scrolled = window.scrollY;")
+            .append("    var progress = scrollHeight > 0 ? Math.round((scrolled / scrollHeight) * 100) : 0;")
+            .append("    if (window.ProgressBridge) {")
+            .append("      window.ProgressBridge.updateProgress(progress);")
+            .append("    }")
+            .append("  });")
+            .append("</script>");
         
         boolean inTreeSection = false;
         int animationDelay = 0; // Staggered fade-in effect
@@ -294,6 +244,13 @@ public class ChangelogParser {
             html.append("</div>");
         }
         
+        // Add thank you section
+        html.append("<div class='thank-you-section'>")
+            .append("<div class='thank-you-text'>")
+            .append("Thank you for using FadCam :)")
+            .append("</div>")
+            .append("</div>");
+        
         return html.toString();
     }
 
@@ -301,15 +258,15 @@ public class ChangelogParser {
      * Process inline formatting in text:
      * - `code` → renders as code block with monospace font and background
      * - **bold** → renders as bold white text
-     * - [text](url) → renders as clickable link with external link icon
+     * - [text](url) → renders as clickable link with Font Awesome external link icon
      * @param text Text containing inline formatting
      * @return HTML with processed inline formatting
      */
     private static String processInlineFormatting(String text) {
-        // Process links first: [text](url) → <a href="url">text ↗️</a>
+        // Process links first: [text](url) → <a href="url">text <i class="fas fa-external-link-alt"></i></a>
         // Pattern: [text](url)
         text = text.replaceAll("\\[([^\\]]+)\\]\\(([^\\)]+)\\)", 
-            "<a href='$2' style='color:#4CAF50;text-decoration:none;font-weight:bold;'>$1&nbsp;<font style='font-size:11px;'>&#x2197;</font></a>");
+            "<a href='$2' style='color:#4CAF50;text-decoration:none;font-weight:bold;'>$1&nbsp;<i class='fas fa-external-link-alt'></i></a>");
         
         // Process backticks (code blocks)
         // Pattern: `code` → <code style="...">code</code>
@@ -445,9 +402,15 @@ public class ChangelogParser {
         tableHtml.append("<table>")
                  .append("<thead><tr>");
         
-        // Add header cells
-        for (String header : headers) {
-            tableHtml.append("<th>").append(processInlineFormatting(header)).append("</th>");
+        // Add header cells - highlight last column (Improvement)
+        for (int i = 0; i < headers.length; i++) {
+            boolean isLastColumn = (i == headers.length - 1);
+            if (isLastColumn) {
+                tableHtml.append("<th style='background: rgba(76, 175, 80, 0.12); color: #4CAF50;'>");
+            } else {
+                tableHtml.append("<th>");
+            }
+            tableHtml.append(processInlineFormatting(headers[i])).append("</th>");
         }
         
         tableHtml.append("</tr></thead>")
@@ -464,8 +427,17 @@ public class ChangelogParser {
             String[] cells = parseTableRow(line);
             tableHtml.append("<tr>");
             
-            for (String cell : cells) {
-                tableHtml.append("<td>").append(processInlineFormatting(cell)).append("</td>");
+            for (int j = 0; j < cells.length; j++) {
+                String cell = cells[j];
+                boolean isLastColumn = (j == cells.length - 1);
+                // Process last column (Improvement) to add Font Awesome icons
+                if (isLastColumn) {
+                    cell = convertArrowsToIcons(cell);
+                    tableHtml.append("<td class='improvement-cell'>");
+                } else {
+                    tableHtml.append("<td>");
+                }
+                tableHtml.append(processInlineFormatting(cell)).append("</td>");
             }
             
             tableHtml.append("</tr>");
@@ -493,5 +465,38 @@ public class ChangelogParser {
         }
         
         return cells;
+    }
+
+    /**
+     * Convert emoji arrows to Font Awesome icons
+     * ↓ → <i class="fas fa-arrow-down"></i>
+     * ↑ → <i class="fas fa-arrow-up"></i>
+     */
+    private static String convertArrowsToIcons(String text) {
+        text = text.replace("↓", "<i class=\"fas fa-arrow-down\"></i>");
+        text = text.replace("↑", "<i class=\"fas fa-arrow-up\"></i>");
+        return text;
+    }
+
+    /**
+     * Parse changelog for TextView display (strips CSS since Html.fromHtml doesn't support it)
+     * @param rawContent Raw changelog content
+     * @return Formatted HTML string without CSS/style tags
+     */
+    public static String parseChangelogForTextView(String rawContent) {
+        String fullHtml = parseChangelogInternal(rawContent);
+        return stripCssFromHtml(fullHtml);
+    }
+
+    /**
+     * Removes CSS style tags from HTML to make it compatible with Android's Html.fromHtml()
+     * @param html HTML string with style tags
+     * @return HTML string without style tags
+     */
+    private static String stripCssFromHtml(String html) {
+        html = html.replaceAll("<link[^>]*>", "");
+        html = html.replaceAll("<style[^>]*>.*?</style>", "");
+        html = html.replaceAll("<script[^>]*>.*?</script>", "");
+        return html;
     }
 }

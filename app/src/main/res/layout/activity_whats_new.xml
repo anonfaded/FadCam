@@ -17,6 +17,35 @@
         android:paddingTop="4dp"
         android:paddingBottom="8dp">
 
+        <!-- Scroll Progress Bar with gradient and glow -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginBottom="0dp"
+            android:elevation="8dp">
+            
+            <ProgressBar
+                android:id="@+id/scrollProgressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/progress_bar_gradient"
+                android:scaleY="1.0"
+                android:layout_gravity="center_vertical"
+                android:layout_marginBottom="2dp" />
+            
+            <!-- Animated glow line beneath progress -->
+            <View
+                android:id="@+id/progressGlow"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/gradient_glow_line"
+                android:alpha="0.6" />
+        </FrameLayout>
+
         <!-- Header with Close Button on LEFT -->
         <LinearLayout
             android:layout_width="match_parent"

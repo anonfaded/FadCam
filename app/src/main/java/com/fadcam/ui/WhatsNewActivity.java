@@ -9,10 +9,12 @@ import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
+import android.webkit.JavascriptInterface;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -36,6 +38,7 @@ public class WhatsNewActivity extends AppCompatActivity {
     private ImageButton btnClose;
     private CountDownTimer countdownTimer;
     private View shimmerContainer;
+    private ProgressBar scrollProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,17 +55,21 @@ public class WhatsNewActivity extends AppCompatActivity {
         countdownText = findViewById(R.id.countdownText);
         btnGotIt = findViewById(R.id.btnGotIt);
         shimmerContainer = findViewById(R.id.shimmerContainer);
+        scrollProgressBar = findViewById(R.id.scrollProgressBar);
 
         // Configure WebView
         if (changelogWebView != null) {
-            changelogWebView.getSettings().setJavaScriptEnabled(false);
             changelogWebView.setBackgroundColor(0x00000000);
             
-            // Disable zoom and pinch-to-zoom
+            // Enable JavaScript for scroll progress tracking
             WebSettings webSettings = changelogWebView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
             webSettings.setBuiltInZoomControls(false);
             webSettings.setDisplayZoomControls(false);
             webSettings.setSupportZoom(false);
+            
+            // Add JavaScript interface for progress updates
+            changelogWebView.addJavascriptInterface(new ProgressBridge(), "ProgressBridge");
             
             // Set WebViewClient to handle link clicks and open them in browser
             changelogWebView.setWebViewClient(new WebViewClient() {
@@ -265,5 +272,36 @@ public class WhatsNewActivity extends AppCompatActivity {
         // Note: Onboarding is now marked complete in navigateToHome() before navigation
         // to ensure persistence before activity destruction
         Log.d(TAG, "onDestroy: WhatsNewActivity destroyed");
+    }
+
+    /**
+     * JavaScript Interface for WebView to communicate scroll progress
+     */
+    public class ProgressBridge {
+        @JavascriptInterface
+        public void updateProgress(int progress) {
+            runOnUiThread(() -> {
+                if (scrollProgressBar != null) {
+                    // Smooth animation with color shift based on progress
+                    int targetProgress = Math.min(progress, 100);
+                    scrollProgressBar.setProgress(targetProgress);
+                    
+                    // Add color shift: green -> bright green -> lime as progress increases
+                    if (targetProgress >= 80) {
+                        scrollProgressBar.setProgressTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF66BB6A) // Bright green
+                        );
+                    } else if (targetProgress >= 50) {
+                        scrollProgressBar.setProgressTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF4CAF50) // Medium green
+                        );
+                    } else {
+                        scrollProgressBar.setProgressTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF45a049) // Dark green
+                        );
+                    }
+                }
+            });
+        }
     }
 }
