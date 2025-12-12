@@ -9,9 +9,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
-import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -36,6 +33,8 @@ import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.ScreenRecordingState;
+import com.fadcam.fadrec.encoding.ScreenRecordingPipeline;
+import com.fadcam.opengl.WatermarkInfoProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,10 +56,9 @@ public class ScreenRecordingService extends Service {
     // MediaProjection components
     private MediaProjectionManager mediaProjectionManager;
     private MediaProjection mediaProjection;
-    private VirtualDisplay virtualDisplay;
     
-    // Recording components
-    private MediaRecorder mediaRecorder;
+    // Recording pipeline (MediaCodec + FragmentedMp4)
+    private ScreenRecordingPipeline recordingPipeline;
     private File outputFile;
     
     // State management
@@ -157,6 +155,10 @@ public class ScreenRecordingService extends Service {
             case Constants.INTENT_ACTION_RESUME_SCREEN_RECORDING:
                 handleResumeRecording();
                 break;
+
+            case Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE:
+                handleQueryRecordingState();
+                break;
                 
             default:
                 Log.w(TAG, "Unknown action: " + action);
@@ -164,6 +166,19 @@ public class ScreenRecordingService extends Service {
         }
 
         return START_STICKY;
+    }
+
+    /**
+     * Sends a state callback broadcast with the current state.
+     * Used by UI to reconcile stale persisted state after app updates/crashes.
+     */
+    private void handleQueryRecordingState() {
+        Log.d(TAG, "handleQueryRecordingState: state=" + recordingState);
+
+        // Broadcast current state
+        Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
+        stateIntent.putExtra("recordingState", recordingState.name());
+        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
     }
 
     /**
@@ -269,10 +284,10 @@ public class ScreenRecordingService extends Service {
 
     /**
      * Starts the actual screen recording.
-     * Configures MediaRecorder, creates VirtualDisplay, and begins recording.
+     * Initializes ScreenRecordingPipeline using MediaCodec + FragmentedMp4Muxer for crash-safe fMP4 output.
      */
     private void startScreenRecording() throws IOException {
-        Log.d(TAG, "startScreenRecording: Configuring MediaRecorder");
+        Log.d(TAG, "startScreenRecording: Initializing ScreenRecordingPipeline");
         
         // Validate MediaProjection
         if (mediaProjection == null) {
@@ -285,119 +300,45 @@ public class ScreenRecordingService extends Service {
             throw new IOException("Failed to create output file - check storage permissions and available space");
         }
         
-        // Configure MediaRecorder
-        mediaRecorder = new MediaRecorder();
+        // Get audio config
+        String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
+        boolean enableAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
         
+        // Calculate bitrate based on resolution
+        int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
+        
+        Log.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d, audio=%s",
+            screenWidth, screenHeight,
+            Constants.DEFAULT_SCREEN_RECORDING_FPS,
+            calculatedBitrate,
+            enableAudio ? "enabled" : "disabled"));
+        
+        // Build recording pipeline
         try {
-            // Audio source (microphone)
-            String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
-            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                Log.d(TAG, "Audio source: Microphone");
-            } else {
-                Log.d(TAG, "Audio source: None");
-            }
+            recordingPipeline = new ScreenRecordingPipeline.Builder(this)
+                .setScreenDimensions(screenWidth, screenHeight, screenDensity)
+                .setVideoConfig(Constants.DEFAULT_SCREEN_RECORDING_FPS, calculatedBitrate)
+                .setEnableAudio(enableAudio)
+                .setOutputFile(outputFile.getAbsolutePath())
+                .setMediaProjection(mediaProjection)
+                .setWatermarkInfoProvider(createWatermarkInfoProvider())
+                .build();
             
-            // Video source
-            mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+            Log.d(TAG, "ScreenRecordingPipeline built successfully");
             
-            // Output format
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            
-            // Video encoder
-            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            Log.d(TAG, "Video encoder: H.264");
-            
-            // Audio encoder (if audio enabled)
-            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
-                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-                mediaRecorder.setAudioEncodingBitRate(Constants.DEFAULT_AUDIO_BITRATE);
-                mediaRecorder.setAudioSamplingRate(Constants.DEFAULT_AUDIO_SAMPLING_RATE);
-            }
-            
-            // Video configuration - Use actual screen resolution
-            mediaRecorder.setVideoSize(screenWidth, screenHeight);
-            mediaRecorder.setVideoFrameRate(Constants.DEFAULT_SCREEN_RECORDING_FPS);
-            
-            // Calculate bitrate based on resolution (higher res = higher bitrate)
-            int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
-            mediaRecorder.setVideoEncodingBitRate(calculatedBitrate);
-            
-            Log.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d",
-                screenWidth, screenHeight,
-                Constants.DEFAULT_SCREEN_RECORDING_FPS,
-                calculatedBitrate));
-            
-            // Set output file
-            mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
-            Log.d(TAG, "Output file set: " + outputFile.getAbsolutePath());
-            
-            // Prepare MediaRecorder
-            mediaRecorder.prepare();
-            Log.d(TAG, "MediaRecorder prepared successfully");
-            
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "IllegalStateException - MediaRecorder in wrong state: " + e.getMessage(), e);
-            mediaRecorder.release();
-            mediaRecorder = null;
-            throw new IOException("MediaRecorder state error: " + e.getMessage(), e);
         } catch (IOException e) {
-            Log.e(TAG, "IOException preparing MediaRecorder: " + e.getMessage(), e);
-            mediaRecorder.release();
-            mediaRecorder = null;
-            throw new IOException("Failed to prepare MediaRecorder: " + e.getMessage(), e);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error preparing MediaRecorder: " + e.getMessage(), e);
-            mediaRecorder.release();
-            mediaRecorder = null;
-            throw new IOException("Unexpected error: " + e.getMessage(), e);
+            Log.e(TAG, "Failed to build ScreenRecordingPipeline", e);
+            throw new IOException("Pipeline build error: " + e.getMessage(), e);
         }
         
-        // Create VirtualDisplay - MUST use same resolution as MediaRecorder
+        // Start recording pipeline
         try {
-            if (mediaRecorder.getSurface() == null) {
-                throw new IOException("MediaRecorder surface is null - cannot create VirtualDisplay");
-            }
-            
-            virtualDisplay = mediaProjection.createVirtualDisplay(
-                "FadRecDisplay",
-                screenWidth,  // Use actual screen width
-                screenHeight, // Use actual screen height
-                screenDensity,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                mediaRecorder.getSurface(),
-                null,
-                backgroundHandler
-            );
-            
-            if (virtualDisplay == null) {
-                throw new IOException("VirtualDisplay creation returned null - device may not support this resolution");
-            }
-            
-            Log.d(TAG, String.format("VirtualDisplay created: %dx%d @%ddpi", 
-                screenWidth, screenHeight, screenDensity));
-            
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "IllegalArgumentException - Invalid VirtualDisplay parameters: " + e.getMessage(), e);
-            if (mediaRecorder != null) {
-                mediaRecorder.release();
-                mediaRecorder = null;
-            }
-            throw new IOException("Invalid display parameters: " + e.getMessage(), e);
-        } catch (Exception e) {
-            Log.e(TAG, "Error creating VirtualDisplay: " + e.getMessage(), e);
-            if (mediaRecorder != null) {
-                mediaRecorder.release();
-                mediaRecorder = null;
-            }
-            throw new IOException("Failed to create VirtualDisplay: " + e.getMessage(), e);
-        }
-        
-        // Start recording
-        try {
-            mediaRecorder.start();
+            recordingPipeline.startRecording();
             recordingStartTime = SystemClock.elapsedRealtime();
             recordingState = ScreenRecordingState.IN_PROGRESS;
+
+            // Persist state immediately so UI can restore reliably across tab switches.
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
             
             // Reset pause tracking for new recording
             pauseStartTime = 0;
@@ -428,42 +369,67 @@ public class ScreenRecordingService extends Service {
                 
                 // Save state to preferences
                 sharedPreferencesManager.setScreenRecordingInProgress(true);
+                sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
                 
                 Toast.makeText(ScreenRecordingService.this, "Screen recording started", Toast.LENGTH_SHORT).show();
             });
             
+            // Notify RemoteStreamManager for potential streaming
+            if (outputFile != null) {
+                try {
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(outputFile);
+                    Log.i(TAG, "🎬 RemoteStreamManager notified: screen recording started");
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to notify RemoteStreamManager", e);
+                }
+            }
+            
         } catch (IllegalStateException e) {
-            Log.e(TAG, "IllegalStateException - MediaRecorder in wrong state: " + e.getMessage(), e);
-            if (mediaRecorder != null) {
-                mediaRecorder.release();
-                mediaRecorder = null;
-            }
-            if (virtualDisplay != null) {
-                virtualDisplay.release();
-                virtualDisplay = null;
-            }
-            if (mediaProjection != null) {
-                mediaProjection.stop();
-                mediaProjection = null;
-            }
+            Log.e(TAG, "IllegalStateException - Pipeline in wrong state: " + e.getMessage(), e);
+            cleanupPipeline();
             recordingState = ScreenRecordingState.NONE;
-            throw new IOException("MediaRecorder error: " + e.getMessage(), e);
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
+            throw new IOException("Pipeline error: " + e.getMessage(), e);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error starting MediaRecorder: " + e.getMessage(), e);
-            if (mediaRecorder != null) {
-                mediaRecorder.release();
-                mediaRecorder = null;
-            }
-            if (virtualDisplay != null) {
-                virtualDisplay.release();
-                virtualDisplay = null;
-            }
-            if (mediaProjection != null) {
-                mediaProjection.stop();
-                mediaProjection = null;
-            }
+            Log.e(TAG, "Unexpected error starting pipeline: " + e.getMessage(), e);
+            cleanupPipeline();
             recordingState = ScreenRecordingState.NONE;
-            throw new IOException("Failed to start MediaRecorder: " + e.getMessage(), e);
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
+            throw new IOException("Failed to start pipeline: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Creates watermark info provider for screen recordings
+     */
+    private WatermarkInfoProvider createWatermarkInfoProvider() {
+        return () -> {
+            // For now, return simple "FadRec" text
+            // Will be enhanced with timestamp and user customization later
+            return "FadRec";
+        };
+    }
+    
+    /**
+     * Clean up recording pipeline
+     */
+    private void cleanupPipeline() {
+        if (recordingPipeline != null) {
+            try {
+                recordingPipeline.release();
+            } catch (Exception e) {
+                Log.e(TAG, "Error releasing pipeline", e);
+            }
+            recordingPipeline = null;
+        }
+        
+        if (mediaProjection != null) {
+            try {
+                mediaProjection.stop();
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping MediaProjection", e);
+            }
+            mediaProjection = null;
         }
     }
 
@@ -490,33 +456,21 @@ public class ScreenRecordingService extends Service {
         Log.d(TAG, "stopScreenRecording: Finalizing recording");
         
         try {
-            // Stop MediaRecorder
-            if (mediaRecorder != null) {
+            // Stop recording pipeline
+            if (recordingPipeline != null) {
                 try {
-                    mediaRecorder.stop();
-                    Log.d(TAG, "MediaRecorder stopped");
+                    recordingPipeline.stopRecording();
+                    Log.d(TAG, "Recording pipeline stopped");
                 } catch (RuntimeException e) {
-                    Log.w(TAG, "MediaRecorder stop failed: " + e.getMessage());
+                    Log.w(TAG, "Pipeline stop failed: " + e.getMessage());
                 }
-                
-                mediaRecorder.reset();
-                mediaRecorder.release();
-                mediaRecorder = null;
             }
             
-            // Release VirtualDisplay
-            if (virtualDisplay != null) {
-                virtualDisplay.release();
-                virtualDisplay = null;
-                Log.d(TAG, "VirtualDisplay released");
-            }
-            
-            // Stop MediaProjection
-            if (mediaProjection != null) {
-                mediaProjection.stop();
-                mediaProjection = null;
-                Log.d(TAG, "MediaProjection stopped");
-            }
+            // Cleanup resources
+            cleanupPipeline();
+
+            // Persist state on background thread before any UI callbacks.
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
             
             // Calculate duration
             long duration = SystemClock.elapsedRealtime() - recordingStartTime;
@@ -536,6 +490,7 @@ public class ScreenRecordingService extends Service {
                 // Save state
                 sharedPreferencesManager.setScreenRecordingInProgress(false);
                 recordingState = ScreenRecordingState.NONE;
+                sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
                 
                 // Clear recording start time
                 sharedPreferencesManager.sharedPreferences.edit()
@@ -569,6 +524,7 @@ public class ScreenRecordingService extends Service {
             
         } catch (Exception e) {
             Log.e(TAG, "Error stopping screen recording", e);
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
             mainHandler.post(() -> stopSelf());
         }
     }
@@ -586,8 +542,11 @@ public class ScreenRecordingService extends Service {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
-                mediaRecorder.pause();
+                if (recordingPipeline != null) {
+                    recordingPipeline.pauseRecording();
+                }
                 recordingState = ScreenRecordingState.PAUSED;
+                sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.PAUSED.name());
                 
                 // Record when pause started
                 pauseStartTime = SystemClock.elapsedRealtime();
@@ -624,8 +583,11 @@ public class ScreenRecordingService extends Service {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
-                mediaRecorder.resume();
+                if (recordingPipeline != null) {
+                    recordingPipeline.resumeRecording();
+                }
                 recordingState = ScreenRecordingState.IN_PROGRESS;
+                sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
                 
                 // Calculate pause duration and adjust start time
                 if (pauseStartTime > 0) {

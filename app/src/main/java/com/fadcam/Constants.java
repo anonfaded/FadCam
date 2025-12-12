@@ -144,6 +144,10 @@ public abstract class Constants {
         "com.fadcam.ACTION_PAUSE_SCREEN_RECORDING";
     public static final String INTENT_ACTION_RESUME_SCREEN_RECORDING =
         "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
+
+    // Query current screen recording state (service will respond via state broadcast)
+    public static final String INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE =
+        "com.fadcam.ACTION_QUERY_SCREEN_RECORDING_STATE";
     
     // Floating controls actions (from overlay)
     public static final String ACTION_START_SCREEN_RECORDING_FROM_OVERLAY =

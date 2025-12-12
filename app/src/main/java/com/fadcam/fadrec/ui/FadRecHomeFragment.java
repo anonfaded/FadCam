@@ -28,7 +28,9 @@ import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ScreenRecordingState;
+import com.fadcam.fadrec.services.ScreenRecordingService;
 import com.fadcam.ui.HomeFragment;
+import com.fadcam.utils.ServiceUtils;
 import com.fadcam.utils.StorageInfoCache;
 import com.google.android.material.button.MaterialButton;
 
@@ -85,7 +87,9 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "FadRecHomeFragment created");
+        Log.e(TAG, "============================================");
+        Log.e(TAG, "FadRecHomeFragment.onCreate() - FRAGMENT CLASS: " + this.getClass().getName());
+        Log.e(TAG, "============================================");
         
         // Initialize SharedPreferences
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
@@ -168,13 +172,19 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "========== onViewCreated START ==========");
+        Log.d(TAG, "Calling super.onViewCreated...");
         super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "super.onViewCreated completed");
         
         // Apply FadRec-specific UI customizations
+        Log.d(TAG, "Customizing UI for screen recording...");
         customizeUIForScreenRecording(view);
         
         // Setup button click handlers
+        Log.d(TAG, "Setting up button handlers...");
         setupButtonHandlers(view);
+        Log.d(TAG, "========== onViewCreated COMPLETE ==========");
         
         // NOTE: Receiver registration moved to onStart() to avoid double-registration
         // on fragment recreation and to maintain proper lifecycle coordination
@@ -183,7 +193,12 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "FadRecHomeFragment onStart");
+        Log.e(TAG, "============================================");
+        Log.e(TAG, "FadRecHomeFragment.onStart()");
+        Log.e(TAG, "buttonStartStop: " + buttonStartStop);
+        Log.e(TAG, "buttonStartStop enabled: " + (buttonStartStop != null ? buttonStartStop.isEnabled() : "NULL"));
+        Log.e(TAG, "buttonStartStop hasOnClickListeners: " + (buttonStartStop != null ? buttonStartStop.hasOnClickListeners() : "NULL"));
+        Log.e(TAG, "============================================");
         // Note: Broadcast receivers are now registered in onCreate()
         // to ensure they persist and are ready to receive state updates
     }
@@ -293,9 +308,9 @@ public class FadRecHomeFragment extends HomeFragment {
             
             // Only reset to idle if actually idle, otherwise preserve recording state
             if (currentState == ScreenRecordingState.NONE) {
-                // Reset Start/Stop button to green "Start" state (using inherited protected field)
+                // Reset Start/Stop button to green "Start Screen Recording" state
                 if (buttonStartStop != null) {
-                    buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
+                    buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);  // ALWAYS use full text
                     buttonStartStop.setIcon(
                         AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
                     );
@@ -307,7 +322,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
                 }
-                Log.d(TAG, "FadRec: Start button reset to idle (green Start)");
+                Log.d(TAG, "FadRec: Start button reset to idle (Start Screen Recording)");
             } else {
                 // Recording in progress or paused - keep stop button state
                 if (buttonStartStop != null) {
@@ -373,17 +388,25 @@ public class FadRecHomeFragment extends HomeFragment {
      */
     @Override
     protected void updateStartButtonAvailability() {
+        Log.e(TAG, "============================================");
+        Log.e(TAG, "FadRecHomeFragment.updateStartButtonAvailability() CALLED");
+        Log.e(TAG, "screenRecordingState: " + screenRecordingState);
+        Log.e(TAG, "============================================");
+        
         if (!isAdded() || buttonStartStop == null) {
+            Log.e(TAG, "Button or fragment not available");
             return;
         }
         
-        // For screen recording, start button is always enabled when idle
-        // (no camera resource dependency like parent has)
-        if (screenRecordingState == ScreenRecordingState.NONE) {
-            buttonStartStop.setEnabled(true);
-            buttonStartStop.setAlpha(1.0f);
-            Log.d(TAG, "Start button availability updated: always enabled for screen recording");
-        }
+        // For screen recording, the Start/Stop button must ALWAYS be enabled:
+        // - When idle, user must be able to start
+        // - While recording/paused, user must be able to stop
+        buttonStartStop.setEnabled(true);
+        buttonStartStop.setClickable(true);
+        buttonStartStop.setAlpha(1.0f);
+        Log.e(TAG, "!!! BUTTON FORCE ENABLED IN updateStartButtonAvailability !!!");
+        Log.e(TAG, "Button enabled: " + buttonStartStop.isEnabled());
+        Log.e(TAG, "Button alpha: " + buttonStartStop.getAlpha());
         
         // Also ensure camera controls stay hidden
         if (buttonCamSwitch != null) {
@@ -846,9 +869,15 @@ public class FadRecHomeFragment extends HomeFragment {
      * No need to force-enable buttons - our override handles that.
      */
     private void setupButtonHandlers(View rootView) {
-        // Find buttons
-        MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
-        MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
+        Log.d(TAG, "========== setupButtonHandlers() CALLED ==========");
+        
+        // Use inherited protected fields from parent HomeFragment instead of local variables
+        // This ensures we override the parent's camera click listener with screen recording logic
+        buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
+        buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
+        
+        Log.d(TAG, "buttonStartStop found: " + (buttonStartStop != null));
+        Log.d(TAG, "buttonPauseResume found: " + (buttonPauseResume != null));
         
         // NOTE: Don't load persisted state here - it interferes with broadcast-based state
         // State will be loaded from broadcasts or set to NONE if no broadcasts arrive
@@ -856,6 +885,10 @@ public class FadRecHomeFragment extends HomeFragment {
         // Start/Stop button
         if (buttonStartStop != null) {
             buttonStartStop.setOnClickListener(v -> {
+                Log.d(TAG, "=== FADREC START/STOP BUTTON CLICKED ===");
+                Log.d(TAG, "Current screenRecordingState: " + screenRecordingState);
+                Toast.makeText(requireContext(), "FadRec button clicked!", Toast.LENGTH_SHORT).show();
+                
                 // Debounce rapid clicks
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastClickTime < DEBOUNCE_DELAY_MS) {
@@ -872,6 +905,15 @@ public class FadRecHomeFragment extends HomeFragment {
                     stopScreenRecording();
                 }
             });
+            
+            Log.e(TAG, "============================================");
+            Log.e(TAG, "Click listener SET on Start/Stop button");
+            Log.e(TAG, "Button now has onClickListener: " + buttonStartStop.hasOnClickListeners());
+            Log.e(TAG, "Button enabled: " + buttonStartStop.isEnabled());
+            Log.e(TAG, "Button clickable: " + buttonStartStop.isClickable());
+            Log.e(TAG, "============================================");
+        } else {
+            Log.e(TAG, "ERROR: buttonStartStop is NULL!");
         }
         
         // Pause/Resume button
@@ -893,9 +935,24 @@ public class FadRecHomeFragment extends HomeFragment {
                     mediaProjectionHelper.resumeScreenRecording();
                 }
             });
+            Log.d(TAG, "Click listener successfully attached to buttonStartStop");
+        } else {
+            Log.e(TAG, "buttonStartStop is NULL - cannot setup click listener!");
         }
         
-        Log.d(TAG, "Button handlers setup complete");
+        Log.d(TAG, "========== SETUP BUTTON HANDLERS COMPLETE ==========");
+
+        // Safety: HomeFragment can disable this button based on camera resources.
+        // FadRec must keep it enabled at all times.
+        try {
+            if (buttonStartStop != null) {
+                buttonStartStop.setEnabled(true);
+                buttonStartStop.setClickable(true);
+                buttonStartStop.setAlpha(1.0f);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to force-enable Start/Stop button", e);
+        }
     }
     
     /**
@@ -1174,6 +1231,10 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Update Start/Stop button with animation
         if (buttonStartStop != null) {
+            // Never allow this button to be disabled in FadRec.
+            buttonStartStop.setEnabled(true);
+            buttonStartStop.setClickable(true);
+            buttonStartStop.setAlpha(1.0f);
             if (screenRecordingState == ScreenRecordingState.NONE) {
                 // IDLE STATE: Green start button
                 buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
@@ -1460,18 +1521,7 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     public void onResume() {
-        // CRITICAL FIX: Restore the persisted recording state BEFORE calling super.onResume()
-        // This ensures button state reflects actual recording status when fragment resumes
-        // Happens when user returns from TextEditorActivity or other activities
-        String savedState = sharedPreferencesManager.getScreenRecordingState();
-        try {
-            screenRecordingState = ScreenRecordingState.valueOf(savedState);
-            Log.d(TAG, "onResume: Restored persisted recording state: " + screenRecordingState);
-        } catch (IllegalArgumentException e) {
-            // Invalid saved state, default to NONE
-            screenRecordingState = ScreenRecordingState.NONE;
-            Log.w(TAG, "onResume: Invalid saved state '" + savedState + "', defaulting to NONE");
-        }
+        reconcileScreenRecordingStateWithReality();
         
         super.onResume(); // MUST call super - Android requirement
         // NOTE: Parent's onResume() calls fetchRecordingState() which starts RecordingService (camera recording)
@@ -1479,6 +1529,22 @@ public class FadRecHomeFragment extends HomeFragment {
         // Workaround: We create shadow methods below that do nothing to prevent parent from affecting us
         
         Log.d(TAG, "FadRecHomeFragment resumed");
+        
+        // CRITICAL FIX: Re-setup button handlers after parent's onResume() to ensure
+        // screen recording click listeners override any camera recording listeners
+        // that the parent may have set up
+        if (getView() != null) {
+            setupButtonHandlers(getView());
+            Log.d(TAG, "Button handlers re-setup after parent onResume()");
+        }
+        
+        // CRITICAL FIX: Force update button availability to override parent's camera-based logic
+        // Parent disables button based on camera resource availability, but we need it always enabled
+        updateStartButtonAvailability();
+        Log.e(TAG, "!!! updateStartButtonAvailability() called at end of onResume !!!");
+
+        // Sync UI with persisted state after tab switches / fragment resume.
+        updateUIForRecordingState();
         
         // CRITICAL FIX: If annotation service is already running (app reopened with service active),
         // dismiss any loading dialog since onCreate() won't be called again and READY broadcast won't fire
@@ -1496,10 +1562,62 @@ public class FadRecHomeFragment extends HomeFragment {
         // from ScreenRecordingService. The UI will update automatically when broadcasts arrive.
         // This avoids the timing issue where state requests arrive before recording fully starts.
         
-        // Start timer updates if recording is active
-        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
-            screenRecordingState == ScreenRecordingState.PAUSED) {
-            startTimerUpdates();
+        // Timer updates are handled by updateUIForRecordingState().
+    }
+
+    /**
+     * Reconciles persisted screen recording state with the actual running ScreenRecordingService.
+     * This prevents stale UI (e.g. showing Stop when nothing is recording) after app updates/crashes.
+     */
+    private void reconcileScreenRecordingStateWithReality() {
+        boolean isServiceRunning = false;
+        try {
+            isServiceRunning = ServiceUtils.isServiceRunning(requireContext(), ScreenRecordingService.class);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to check ScreenRecordingService running state", e);
+        }
+
+        ScreenRecordingState restoredState;
+        String savedState = sharedPreferencesManager.getScreenRecordingState();
+        try {
+            restoredState = ScreenRecordingState.valueOf(savedState);
+        } catch (IllegalArgumentException e) {
+            restoredState = ScreenRecordingState.NONE;
+        }
+
+        if (!isServiceRunning) {
+            // Service isn't running -> cannot be recording. Clear stale flags.
+            if (restoredState != ScreenRecordingState.NONE || sharedPreferencesManager.isScreenRecordingInProgress()) {
+                Log.w(TAG, "Clearing stale screen recording state (service not running). savedState=" + savedState);
+            }
+            screenRecordingState = ScreenRecordingState.NONE;
+            sharedPreferencesManager.setScreenRecordingInProgress(false);
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
+            try {
+                sharedPreferencesManager.sharedPreferences.edit().remove("screen_recording_start_time").apply();
+            } catch (Exception e) {
+                Log.w(TAG, "Failed clearing screen_recording_start_time", e);
+            }
+            return;
+        }
+
+        // Service is running. Use persisted state as a hint, then immediately query service
+        // to broadcast the authoritative current state when we suspect prefs might be stale.
+        screenRecordingState = restoredState;
+
+        // If prefs already say NONE, don't spam a query during the START flow; we'll get
+        // real broadcasts from the service as it transitions to IN_PROGRESS.
+        if (restoredState != ScreenRecordingState.NONE || sharedPreferencesManager.isScreenRecordingInProgress()) {
+            Log.d(TAG, "onResume: ScreenRecordingService running, restoredState=" + restoredState + " - querying");
+            try {
+                Intent queryIntent = new Intent(requireContext(), ScreenRecordingService.class);
+                queryIntent.setAction(Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE);
+                requireContext().startService(queryIntent);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to query ScreenRecordingService state", e);
+            }
+        } else {
+            Log.d(TAG, "onResume: ScreenRecordingService running, restoredState=NONE - waiting for broadcasts");
         }
     }
 

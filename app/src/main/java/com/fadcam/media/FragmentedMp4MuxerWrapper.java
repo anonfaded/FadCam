@@ -37,6 +37,7 @@ public class FragmentedMp4MuxerWrapper {
 
     private final FragmentedMp4Muxer muxer;
     private final FileOutputStream fileOutputStream;
+    private final Object muxerLock = new Object();
     private boolean started = false;
     private boolean released = false;
     private int orientationHint = 0;
@@ -114,38 +115,40 @@ public class FragmentedMp4MuxerWrapper {
      * @throws IllegalStateException If the muxer has already been started.
      */
     public int addTrack(@NonNull MediaFormat format) {
-        if (started) {
-            throw new IllegalStateException("Cannot add track after muxer has started");
-        }
-        if (released) {
-            throw new IllegalStateException("Muxer has been released");
-        }
-
-        // If this is a video track and we have an orientation hint, add it to the format
-        String mimeType = format.getString(MediaFormat.KEY_MIME);
-        boolean isVideo = mimeType != null && mimeType.startsWith("video/");
-        if (isVideo && orientationHint != 0) {
-            format.setInteger(MediaFormat.KEY_ROTATION, orientationHint);
-        }
-
-        Format media3Format = convertToMedia3Format(format);
-        
-        try {
-            int trackId = muxer.addTrack(media3Format);
-            Log.d(TAG, "Added track with id: " + trackId + ", format: " + mimeType);
-            
-            // Track video track ID for EOS handling
-            if (isVideo) {
-                videoTrackId = trackId;
+        synchronized (muxerLock) {
+            if (started) {
+                throw new IllegalStateException("Cannot add track after muxer has started");
             }
-            
-            // Initialize last presentation time for this track
-            lastPresentationTimeUs.put(trackId, 0L);
-            
-            return trackId;
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to add track", e);
-            throw new RuntimeException("Failed to add track: " + e.getMessage(), e);
+            if (released) {
+                throw new IllegalStateException("Muxer has been released");
+            }
+
+            // If this is a video track and we have an orientation hint, add it to the format
+            String mimeType = format.getString(MediaFormat.KEY_MIME);
+            boolean isVideo = mimeType != null && mimeType.startsWith("video/");
+            if (isVideo && orientationHint != 0) {
+                format.setInteger(MediaFormat.KEY_ROTATION, orientationHint);
+            }
+
+            Format media3Format = convertToMedia3Format(format);
+
+            try {
+                int trackId = muxer.addTrack(media3Format);
+                Log.d(TAG, "Added track with id: " + trackId + ", format: " + mimeType);
+
+                // Track video track ID for EOS handling
+                if (isVideo) {
+                    videoTrackId = trackId;
+                }
+
+                // Initialize last presentation time for this track
+                lastPresentationTimeUs.put(trackId, 0L);
+
+                return trackId;
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to add track", e);
+                throw new RuntimeException("Failed to add track: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -153,43 +156,45 @@ public class FragmentedMp4MuxerWrapper {
      * Starts the muxer. Must be called after all tracks have been added.
      */
     public void start() {
-        if (started) {
-            Log.w(TAG, "Muxer already started");
-            return;
-        }
-        if (released) {
-            throw new IllegalStateException("Muxer has been released");
-        }
-        
-        // Add orientation metadata if set
-        if (orientationHint != 0) {
-            try {
-                muxer.addMetadataEntry(new Mp4OrientationData(orientationHint));
-                Log.d(TAG, "Added orientation metadata: " + orientationHint);
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to add orientation metadata", e);
+        synchronized (muxerLock) {
+            if (started) {
+                Log.w(TAG, "Muxer already started");
+                return;
             }
-        }
-        
-        // Add timestamp metadata for creation/modification times
-        try {
-            long currentTimeSeconds = System.currentTimeMillis() / 1000;
-            muxer.addMetadataEntry(new androidx.media3.container.Mp4TimestampData(
-                currentTimeSeconds, currentTimeSeconds));
-            Log.d(TAG, "Added timestamp metadata: " + currentTimeSeconds);
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to add timestamp metadata", e);
-        }
-        
-        started = true;
-        
-        // CRITICAL: Force flush to disk so moov atom is written immediately
-        // This makes the file streamable right away
-        try {
-            fileOutputStream.flush();
-            Log.d(TAG, "Muxer started and flushed - file is now streamable");
-        } catch (IOException e) {
-            Log.w(TAG, "Failed to flush after start", e);
+            if (released) {
+                throw new IllegalStateException("Muxer has been released");
+            }
+
+            // Add orientation metadata if set
+            if (orientationHint != 0) {
+                try {
+                    muxer.addMetadataEntry(new Mp4OrientationData(orientationHint));
+                    Log.d(TAG, "Added orientation metadata: " + orientationHint);
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to add orientation metadata", e);
+                }
+            }
+
+            // Add timestamp metadata for creation/modification times
+            try {
+                long currentTimeSeconds = System.currentTimeMillis() / 1000;
+                muxer.addMetadataEntry(new androidx.media3.container.Mp4TimestampData(
+                    currentTimeSeconds, currentTimeSeconds));
+                Log.d(TAG, "Added timestamp metadata: " + currentTimeSeconds);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to add timestamp metadata", e);
+            }
+
+            started = true;
+
+            // CRITICAL: Force flush to disk so moov atom is written immediately
+            // This makes the file streamable right away
+            try {
+                fileOutputStream.flush();
+                Log.d(TAG, "Muxer started and flushed - file is now streamable");
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to flush after start", e);
+            }
         }
     }
 
@@ -202,14 +207,15 @@ public class FragmentedMp4MuxerWrapper {
      */
     public void writeSampleData(int trackIndex, @NonNull ByteBuffer byteBuf,
                                  @NonNull MediaCodec.BufferInfo bufferInfo) {
-        if (!started) {
-            throw new IllegalStateException("Muxer has not been started");
-        }
-        if (released) {
-            throw new IllegalStateException("Muxer has been released");
-        }
+        synchronized (muxerLock) {
+            if (!started) {
+                throw new IllegalStateException("Muxer has not been started");
+            }
+            if (released) {
+                throw new IllegalStateException("Muxer has been released");
+            }
 
-        try {
+            try {
             // CRITICAL FIX: Normalize timestamps to start from 0 for each recording
             // MediaCodec provides timestamps based on system uptime which accumulates across sessions
             // This causes HLS players to show 45+ minute old timestamps
@@ -263,10 +269,11 @@ public class FragmentedMp4MuxerWrapper {
             data.position(bufferInfo.offset);
             data.limit(bufferInfo.offset + bufferInfo.size);
 
-            muxer.writeSampleData(trackIndex, data, media3BufferInfo);
-        } catch (MuxerException e) {
-            Log.e(TAG, "Failed to write sample data", e);
-            throw new RuntimeException("Failed to write sample data: " + e.getMessage(), e);
+                muxer.writeSampleData(trackIndex, data, media3BufferInfo);
+            } catch (MuxerException e) {
+                Log.e(TAG, "Failed to write sample data", e);
+                throw new RuntimeException("Failed to write sample data: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -275,25 +282,27 @@ public class FragmentedMp4MuxerWrapper {
      * Writes end-of-stream samples to ensure proper duration calculation.
      */
     public void stop() {
-        if (!started) {
-            Log.w(TAG, "Muxer was not started, nothing to stop");
-            return;
-        }
-        if (released) {
-            Log.w(TAG, "Muxer already released");
-            return;
-        }
+        synchronized (muxerLock) {
+            if (!started) {
+                Log.w(TAG, "Muxer was not started, nothing to stop");
+                return;
+            }
+            if (released) {
+                Log.w(TAG, "Muxer already released");
+                return;
+            }
 
-        try {
-            // Write end-of-stream samples for all tracks to finalize duration
-            // This is critical for fragmented MP4 to have correct duration metadata
-            writeEndOfStreamSamples();
-            
-            muxer.close();
-            Log.d(TAG, "Muxer stopped successfully");
-        } catch (MuxerException e) {
-            Log.e(TAG, "Error stopping muxer", e);
-            throw new RuntimeException("Failed to stop muxer: " + e.getMessage(), e);
+            try {
+                // Write end-of-stream samples for all tracks to finalize duration
+                // This is critical for fragmented MP4 to have correct duration metadata
+                writeEndOfStreamSamples();
+
+                muxer.close();
+                Log.d(TAG, "Muxer stopped successfully");
+            } catch (MuxerException e) {
+                Log.e(TAG, "Error stopping muxer", e);
+                throw new RuntimeException("Failed to stop muxer: " + e.getMessage(), e);
+            }
         }
     }
     
@@ -302,12 +311,13 @@ public class FragmentedMp4MuxerWrapper {
      * This is required for FragmentedMp4Muxer to calculate proper duration.
      */
     private void writeEndOfStreamSamples() {
+        // Caller must hold muxerLock.
         ByteBuffer emptyBuffer = ByteBuffer.allocateDirect(0);
-        
+
         for (int i = 0; i < lastPresentationTimeUs.size(); i++) {
             int trackId = lastPresentationTimeUs.keyAt(i);
             Long lastPts = lastPresentationTimeUs.valueAt(i);
-            
+
             if (lastPts != null && lastPts > 0) {
                 try {
                     // Write EOS sample with the final timestamp
@@ -317,7 +327,7 @@ public class FragmentedMp4MuxerWrapper {
                             0, // size = 0 for EOS
                             C.BUFFER_FLAG_END_OF_STREAM
                         );
-                    
+
                     muxer.writeSampleData(trackId, emptyBuffer.duplicate(), eosBufferInfo);
                     Log.d(TAG, "Wrote EOS for track " + trackId + " at pts=" + lastPts + "us (" + (lastPts / 1000000.0) + "s)");
                 } catch (Exception e) {
@@ -331,23 +341,25 @@ public class FragmentedMp4MuxerWrapper {
      * Releases resources used by the muxer.
      */
     public void release() {
-        if (released) {
-            return;
-        }
-        released = true;
-
-        try {
-            if (started) {
-                try {
-                    muxer.close();
-                } catch (MuxerException e) {
-                    Log.e(TAG, "Error closing muxer", e);
-                }
+        synchronized (muxerLock) {
+            if (released) {
+                return;
             }
-            fileOutputStream.close();
-            Log.d(TAG, "Muxer released");
-        } catch (IOException e) {
-            Log.e(TAG, "Error releasing muxer", e);
+            released = true;
+
+            try {
+                if (started) {
+                    try {
+                        muxer.close();
+                    } catch (MuxerException e) {
+                        Log.e(TAG, "Error closing muxer", e);
+                    }
+                }
+                fileOutputStream.close();
+                Log.d(TAG, "Muxer released");
+            } catch (IOException e) {
+                Log.e(TAG, "Error releasing muxer", e);
+            }
         }
     }
 
@@ -539,7 +551,11 @@ public class FragmentedMp4MuxerWrapper {
      * @param segment ProcessedSegment containing either init segment or media fragment
      */
     private void handleProcessedSegment(ProcessedSegment segment) {
-        try {
+        synchronized (muxerLock) {
+            if (released) {
+                return;
+            }
+            try {
             // Extract data from ByteBuffer
             // CRITICAL: The patched Media3's combine() method doesn't flip the buffer after put(),
             // so position is at end. We need to flip it first to read from start.
@@ -594,8 +610,9 @@ public class FragmentedMp4MuxerWrapper {
                 
                 nextFragmentNumber++;
             }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error handling processed segment", e);
+            } catch (Exception e) {
+                Log.e(TAG, "❌ Error handling processed segment", e);
+            }
         }
     }
 }
