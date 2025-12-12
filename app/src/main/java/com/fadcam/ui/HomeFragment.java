@@ -1095,6 +1095,10 @@ public class HomeFragment extends BaseFragment {
             R.string.video_recording_started
         );
         acquireWakeLock(); // Acquire wake lock
+        
+        // OPTIMIZATION: Disable debug logging during recording to save CPU/battery
+        com.fadcam.Log.setRecordingActive(true);
+        
         updateStats(); // Update stats when recording starts
 
         // Always start the info update timer to keep elapsed time current
@@ -1216,6 +1220,9 @@ public class HomeFragment extends BaseFragment {
     private void onRecordingStopped() {
         // ----- Fix Start: Restructure for better state management -----
         Log.d(TAG, "onRecordingStopped broadcast received.");
+
+        // OPTIMIZATION: Re-enable debug logging now that recording has stopped
+        com.fadcam.Log.setRecordingActive(false);
 
         // First update the recording state
         recordingState = RecordingState.NONE;
@@ -3771,7 +3778,8 @@ public class HomeFragment extends BaseFragment {
         // Initial stats update
         Log.d(TAG, "onViewCreated: Triggering initial stats update.");
         updateStats();
-        startUpdatingClock();
+        // NOTE: Clock update is started in onStart(), not here, to avoid duplicate handlers
+        // startUpdatingClock(); // Removed - handled in onStart()
 
         // Update clock and date initially
         updateClock();
@@ -5061,7 +5069,7 @@ public class HomeFragment extends BaseFragment {
      * Changed from private to protected to allow FadRecHomeFragment to override with screen recording logic.
      */
     protected void updateStorageInfo() {
-        Log.d(TAG, "updateStorageInfo: Updating storage information");
+        // NOTE: Logging here is minimized to reduce spam during 1s update loop in startUpdatingInfo()
 
         // -------------- Fix Start (updateStorageInfo) - Professional storage caching
         // -----------
@@ -5070,7 +5078,7 @@ public class HomeFragment extends BaseFragment {
         StorageInfoCache.StorageInfo cachedInfo =
             StorageInfoCache.getCachedStorageInfo();
         if (cachedInfo != null) {
-            Log.d(TAG, "Using cached storage info - displaying instantly");
+            // Silent - called every 1 second during recording; no frequent logging
             updateStorageUiWithCachedInfo(cachedInfo);
             return;
         }
@@ -5120,15 +5128,12 @@ public class HomeFragment extends BaseFragment {
                 0
             );
             
-            long currentTime = SystemClock.elapsedRealtime();
-            Log.d(TAG, "🔍 Reading timer: serviceStartTime=" + serviceStartTime + ", currentTime=" + currentTime);
-            
             if (serviceStartTime > 0) {
                 elapsedTime = Math.max(
                     0,
                     SystemClock.elapsedRealtime() - serviceStartTime
                 );
-                Log.d(TAG, "✅ Timer: elapsed=" + (elapsedTime/1000) + "s");
+                // Verbose timer logging removed - called too frequently (every 1s during recording)
             } else {
                 Log.e(TAG, "❌ Timer: Service start time is ZERO in SharedPreferences!");
                 elapsedTime = 0;
@@ -5601,10 +5606,11 @@ public class HomeFragment extends BaseFragment {
 
     // update storage and stats in real time while recording is started
     private void startUpdatingInfo() {
-        // Cancel any existing runnable first
+        // IMPORTANT: Check if already running to prevent duplicate handlers
+        // Similar fix to clock update - prevent calling startUpdatingInfo twice in lifecycle
         if (updateInfoRunnable != null) {
-            handlerClock.removeCallbacks(updateInfoRunnable);
-            updateInfoRunnable = null;
+            // Already running - don't create a second handler
+            return;
         }
 
         // Create a new runnable
@@ -5618,18 +5624,19 @@ public class HomeFragment extends BaseFragment {
                     // Timer calculation now reads directly from SharedPreferences in updateStorageUiWithCachedInfo
                     updateStorageInfo();
 
-                    // Update stats every 5 seconds during recording to avoid performance impact
+                    // Update stats every 10 seconds during recording to avoid performance impact
+                    // OPTIMIZATION: Increased from 5 to 10 seconds to reduce CPU load during streaming
                     updateCounter++;
-                    if (updateCounter >= 5) {
+                    if (updateCounter >= 10) {
                         Log.d(
                             TAG,
-                            "Update timer: Refreshing stats during recording (every 5s)"
+                            "Update timer: Refreshing stats during recording (every 10s)"
                         );
                         updateStats();
                         updateCounter = 0;
                     }
 
-                    handlerClock.postDelayed(this, 1000); // Update every second
+                    handlerClock.postDelayed(this, 1000); // Update storage every second
                 } else {
                     Log.d(
                         TAG,
@@ -5642,17 +5649,15 @@ public class HomeFragment extends BaseFragment {
 
         // Post immediately to start updates
         handlerClock.post(updateInfoRunnable);
-        Log.d(
-            TAG,
-            "startUpdatingInfo: Started real-time storage/stats updates"
-        );
+        Log.d(TAG, "startUpdatingInfo: Started real-time storage/stats updates (1s intervals)");
     }
 
     private void stopUpdatingInfo() {
-        Log.d(TAG, "stopUpdatingInfo: Stopping real-time updates");
         if (updateInfoRunnable != null) {
             handlerClock.removeCallbacks(updateInfoRunnable);
             updateInfoRunnable = null;
+            // Only log when we actually stop (not at every opportunity)
+            Log.d(TAG, "stopUpdatingInfo: Stopped real-time storage/stats updates");
         }
     }
 

@@ -42,6 +42,9 @@ public class Log {
     private static Uri fileUri;
 
     private static boolean isDebugEnabled = false;
+    
+    // Auto-disable debug logging during recording/streaming to save CPU and battery
+    private static volatile boolean recordingActive = false;
 
     public static void init(Context context)
     {
@@ -96,6 +99,31 @@ public class Log {
             // -------------- Fix Ended for this method(setDebugEnabled-disable)-----------
         }
     }
+    
+    /**
+     * Signal to Log system that recording/streaming is active.
+     * Automatically disables debug logging during recording to save CPU/battery.
+     * 
+     * @param active true when recording or streaming, false when stopped
+     */
+    public static void setRecordingActive(boolean active) {
+        recordingActive = active;
+        if (active && isDebugEnabled) {
+            // Recording started - pause debug logging to save CPU/battery
+            // Do NOT disable the feature; just pause writes
+            // Re-enable automatically when recording stops
+        } else if (!active && isDebugEnabled) {
+            // Recording stopped - resume normal debug logging
+        }
+    }
+    
+    /**
+     * Check if debug logging is actually enabled.
+     * Returns false if recording is active (even if debug mode is on).
+     */
+    private static boolean isDebugLoggingActive() {
+        return isDebugEnabled && !recordingActive;
+    }
 
     private static String getCurrentTimeStamp() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
@@ -103,21 +131,22 @@ public class Log {
     }
 
     public static void d(String tag, String message) {
-        if (!isDebugEnabled) return;
+        if (!isDebugLoggingActive()) return;
         
         String logMessage = "<font color=\"34495e\">" + getCurrentTimeStamp() + " INFO: [" + tag + "]" + message + "</font>";
         appendHtmlToFile(logMessage);
     }
 
     public static void w(String tag, String message) {
-        if (!isDebugEnabled) return;
+        if (!isDebugLoggingActive()) return;
         
         String logMessage = "<font color=\"f1c40f\">" + getCurrentTimeStamp() + " WARNING: [" + tag + "]" + message + "</font>";
         appendHtmlToFile(logMessage);
     }
 
     public static void e(String tag, Object... objects) {
-        if (!isDebugEnabled) return;
+        // NOTE: Keep ERROR logs even during recording - they indicate real problems
+        // Only suppress DEBUG and WARN logs to save CPU during active recording
         
         StringBuilder message = new StringBuilder();
         for(Object object: objects)
