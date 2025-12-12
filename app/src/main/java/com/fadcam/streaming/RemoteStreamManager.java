@@ -611,6 +611,14 @@ public class RemoteStreamManager {
             // Calculate volume percentage
             float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
             
+            // Get auth status from RemoteAuthManager
+            RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
+            boolean authEnabled = authManager.isAuthEnabled();
+            int autoLockTimeoutMinutes = authManager.getAutoLockTimeout();
+            long autoLockTimeoutMs = autoLockTimeoutMinutes == 0 ? 0 : (long) autoLockTimeoutMinutes * 60 * 1000;
+            int activeSessionsCount = authManager.getActiveSessions().size();
+            boolean authSessionsCleared = authManager.checkAndResetSessionsClearedFlag();
+            
             return String.format(
                 "{\"streaming\": %s, \"mode\": \"%s\", \"state\": \"%s\", \"message\": \"%s\", " +
                 "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
@@ -625,6 +633,7 @@ public class RemoteStreamManager {
                 "\"torch_state\": %s, " +
                 "\"volume\": %d, \"max_volume\": %d, \"volume_percentage\": %.1f, " +
                 "\"alarm\": {\"is_ringing\": %s, \"sound\": \"%s\", \"duration_ms\": %d, \"remaining_ms\": %d}, " +
+                "\"auth_enabled\": %s, \"auth_timeout_ms\": %d, \"auth_sessions_count\": %d, \"auth_sessions_cleared\": %s, " +
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
                 "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
@@ -656,6 +665,10 @@ public class RemoteStreamManager {
                 selectedAlarmSound,
                 alarmDurationMs,
                 alarmRinging ? getRemainingAlarmDurationMs() : 0,
+                authEnabled,
+                autoLockTimeoutMs,
+                activeSessionsCount,
+                authSessionsCleared,
                 eventsJson.toString(),
                 clientsJson.toString(),
                 memoryUsage,

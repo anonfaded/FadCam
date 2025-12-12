@@ -675,10 +675,10 @@
                 <!-- Security Warning -->
                 <div style="background: rgba(248, 159, 73, 0.15); border: 2px solid #f89f49; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
                     <div style="font-size: 13px; color: #f89f49; font-weight: 600; margin-bottom: 6px;">
-                        <i class="fas fa-shield-alt" style="margin-right: 6px;"></i>Low Security Notice
+                        <i class="fas fa-shield-alt" style="margin-right: 6px;"></i>Network Security Notice:
                     </div>
                     <div style="font-size: 12px; color: #e6edf3; line-height: 1.5;">
-                        This HTTP authentication is basic password-based and easily bypassable. For sensitive data, use HTTPS with proper TLS. This is better than no authentication but should not be relied upon for critical security.
+                       Traffic is sent over unencrypted HTTP. Anyone on your local WiFi network can potentially see data in transit. This password system provides basic authorization but <strong>does not encrypt</strong> the stream. Future versions may include cryptographic security to encrypt traffic. For now, this password acts as a barrier to access the dashboard on your local network.
                     </div>
                 </div>
 
@@ -3409,9 +3409,64 @@
 
             dashboardViewModel = new DashboardViewModel();
             
+            // Track last activity time for auto-lock timeout
+            let lastActivityTime = Date.now();
+            let previousAuthSessionsCleared = false;
+            let previousAuthEnabled = null;
+            
             // Listen for status updates before initializing
             eventBus.on('status-updated', (status) => {
                 updateUI(status);
+                
+                // ===== AUTH STATE CHANGE DETECTION =====
+                
+                // Check if auth was disabled on server side
+                if (previousAuthEnabled === true && status.authEnabled === false) {
+                    console.warn('[AuthIntegration] Authentication disabled on server, hiding lock screen');
+                    previousAuthEnabled = status.authEnabled;
+                    authService.logout();
+                    hideLockScreen();
+                    return;
+                }
+                previousAuthEnabled = status.authEnabled;
+                
+                // Check if logout all sessions was triggered on server
+                if (status.authSessionsCleared && !previousAuthSessionsCleared) {
+                    console.warn('[AuthIntegration] Server cleared all sessions, forcing logout');
+                    previousAuthSessionsCleared = true;
+                    authService.logout();
+                    setTimeout(() => showLockScreen(), 100);
+                    return;
+                }
+                previousAuthSessionsCleared = status.authSessionsCleared || false;
+                
+                // Check auto-lock timeout enforcement
+                if (status.authEnabled && status.authTimeoutMs > 0) {
+                    // Get current token to check if still valid
+                    const token = localStorage.getItem('auth_token');
+                    if (token && !authService.isAuthenticated()) {
+                        // Already locked, no need to check timeout
+                        return;
+                    }
+                    
+                    // Check if timeout has expired since last activity
+                    const timeSinceLastActivity = Date.now() - lastActivityTime;
+                    if (timeSinceLastActivity > status.authTimeoutMs) {
+                        console.warn('[AuthIntegration] Auto-lock timeout expired (' + Math.round(timeSinceLastActivity / 1000) + 's > ' + Math.round(status.authTimeoutMs / 1000) + 's)');
+                        authService.logout();
+                        setTimeout(() => showLockScreen(), 100);
+                        return;
+                    }
+                }
+            });
+            
+            // Track user activity for auto-lock timeout
+            ['click', 'keypress', 'mousemove', 'touchstart'].forEach(eventType => {
+                document.addEventListener(eventType, () => {
+                    if (authService.isAuthenticated()) {
+                        lastActivityTime = Date.now();
+                    }
+                }, { passive: true });
             });
             
             // Initialize will fetch first status and emit event
@@ -3645,7 +3700,6 @@
          */
         async function attemptUnlock() {
             const passwordInput = document.getElementById('lockPassword');
-            const rememberMeCheckbox = document.getElementById('lockRememberMe');
             const errorDiv = document.getElementById('lockError');
             const unlockBtn = document.querySelector('.lock-unlock-btn');
             
@@ -3660,7 +3714,7 @@
                 unlockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unlocking...';
                 errorDiv.textContent = '';
                 
-                const result = await authService.login(password, rememberMeCheckbox.checked);
+                const result = await authService.login(password, false);
                 
                 if (result.success) {
                     hideLockScreen();
@@ -3707,10 +3761,9 @@
                 showLockScreen();
                 showToast('🔒 Locked', 1500);
                 
-                // Pause dashboard updates
-                if (dashboardViewModel) {
-                    dashboardViewModel.pausePolling();
-                }
+                // DON'T pause polling - we need to continue checking auth status changes
+                // for real-time updates (e.g., when auth is disabled on phone side)
+                // Polling will pause stream but will keep checking auth state
             } catch (error) {
                 console.error('[Auth] Lock failed:', error);
             }
@@ -3725,10 +3778,9 @@
                 showLockScreen();
                 showToast('👋 Logged out', 1500);
                 
-                // Pause dashboard updates
-                if (dashboardViewModel) {
-                    dashboardViewModel.pausePolling();
-                }
+                // DON'T pause polling - we need to continue checking auth status changes
+                // for real-time updates (e.g., when auth is disabled on phone side)
+                // Polling will pause stream but will keep checking auth state
             } catch (error) {
                 console.error('[Auth] Logout failed:', error);
             }
@@ -3815,10 +3867,7 @@
                     hideSecuritySettingsModal();
                     showToast('✅ All sessions logged out', 2000);
                     
-                    // Pause dashboard
-                    if (dashboardViewModel) {
-                        dashboardViewModel.pausePolling();
-                    }
+                    // DON'T pause dashboard - keep polling for real-time auth status updates
                 } else {
                     showToast('Failed to logout all sessions', 2000);
                 }
@@ -3874,14 +3923,12 @@
         });
 
         /**
-         * Handle 401 Unauthorized responses (session expired)
+         * Handle auth state changes (when unauthenticated)
          */
-        authService.onAuthStateChange((authenticated) => {
+        authService.setAuthStateChangeListener((authenticated) => {
             if (!authenticated) {
                 showLockScreen();
-                if (dashboardViewModel) {
-                    dashboardViewModel.pausePolling();
-                }
+                // DON'T pause polling - keep it running for real-time auth status updates
             }
         });
     </script>

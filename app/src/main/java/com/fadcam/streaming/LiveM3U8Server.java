@@ -922,6 +922,10 @@ public class LiveM3U8Server extends NanoHTTPD {
             try {
                 org.json.JSONObject json = new org.json.JSONObject(body);
                 password = json.getString("password");
+                // Trim whitespace from password
+                if (password != null) {
+                    password = password.trim();
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to parse login JSON", e);
                 com.fadcam.streaming.model.AuthResponse authResponse = 
@@ -931,7 +935,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             // Verify password
             if (!authManager.verifyPassword(password)) {
-                Log.w(TAG, "Invalid login attempt from " + clientIP);
+                Log.w(TAG, "Invalid login attempt from " + clientIP + " (password mismatch)");
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.invalidCredentials();
                 return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());

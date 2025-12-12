@@ -795,7 +795,11 @@ public class RemoteFragment extends BaseFragment {
                     String displayText = getTimeoutDisplayText(selectedId);
                     remoteAuthAutoLockValue.setText(displayText);
                     
-                    // TODO: Save to SharedPreferences when implementing timeout logic
+                    // Save to RemoteAuthManager
+                    RemoteAuthManager authManager = RemoteAuthManager.getInstance(requireContext());
+                    int timeoutMinutes = parseTimeoutMinutes(selectedId);
+                    authManager.setAutoLockTimeout(timeoutMinutes);
+                    
                     Toast.makeText(requireContext(), "Auto-lock timeout set to: " + displayText, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -825,11 +829,52 @@ public class RemoteFragment extends BaseFragment {
     }
     
     /**
+     * Parse timeout ID to minutes
+     */
+    private int parseTimeoutMinutes(String timeoutId) {
+        switch (timeoutId) {
+            case "never":
+                return 0;  // 0 = never auto-lock
+            case "30min":
+                return 30;
+            case "1hr":
+                return 60;
+            case "3hr":
+                return 180;
+            case "6hr":
+                return 360;
+            default:
+                return 0;
+        }
+    }
+    
+    /**
      * Update auto-lock timeout display
      */
     private void updateAutoLockDisplay() {
-        // For now, show "Never" - will be implemented with timeout feature
-        remoteAuthAutoLockValue.setText("Never");
+        RemoteAuthManager authManager = RemoteAuthManager.getInstance(requireContext());
+        int timeoutMinutes = authManager.getAutoLockTimeout();
+        String displayText = formatTimeoutMinutesToText(timeoutMinutes);
+        remoteAuthAutoLockValue.setText(displayText);
+    }
+    
+    /**
+     * Format timeout minutes to human-readable text
+     */
+    private String formatTimeoutMinutesToText(int minutes) {
+        if (minutes == 0) {
+            return "Never";
+        } else if (minutes == 30) {
+            return "30 Minutes";
+        } else if (minutes == 60) {
+            return "1 Hour";
+        } else if (minutes == 180) {
+            return "3 Hours";
+        } else if (minutes == 360) {
+            return "6 Hours";
+        } else {
+            return "Never";
+        }
     }
     
     /**

@@ -27,6 +27,7 @@ public class RemoteAuthManager {
     private final SharedPreferences prefs;
     private final Map<String, SessionToken> activeSessions;
     private final SecureRandom secureRandom;
+    private volatile boolean sessionsJustCleared = false;
     
     private RemoteAuthManager(Context context) {
         this.context = context.getApplicationContext();
@@ -65,9 +66,17 @@ public class RemoteAuthManager {
      * Set password (stores SHA-256 hash)
      */
     public boolean setPassword(String password) {
-        if (password == null || password.length() < Constants.REMOTE_AUTH_MIN_PASSWORD_LENGTH ||
+        if (password == null) {
+            Log.w(TAG, "Password is null");
+            return false;
+        }
+        
+        // Trim whitespace
+        password = password.trim();
+        
+        if (password.length() < Constants.REMOTE_AUTH_MIN_PASSWORD_LENGTH ||
             password.length() > Constants.REMOTE_AUTH_MAX_PASSWORD_LENGTH) {
-            Log.w(TAG, "Invalid password length");
+            Log.w(TAG, "Invalid password length: " + password.length());
             return false;
         }
         
@@ -88,7 +97,13 @@ public class RemoteAuthManager {
      * Verify password against stored hash
      */
     public boolean verifyPassword(String password) {
-        if (password == null) return false;
+        if (password == null) {
+            Log.w(TAG, "Password is null");
+            return false;
+        }
+        
+        // Trim whitespace
+        password = password.trim();
         
         String storedHash = prefs.getString(Constants.PREF_REMOTE_AUTH_PASSWORD_HASH, null);
         if (storedHash == null) {
@@ -97,7 +112,13 @@ public class RemoteAuthManager {
         }
         
         String inputHash = hashPassword(password);
-        return storedHash.equals(inputHash);
+        boolean isValid = storedHash.equals(inputHash);
+        
+        if (!isValid) {
+            Log.d(TAG, "Password verification failed: hash mismatch");
+        }
+        
+        return isValid;
     }
     
     /**
@@ -165,7 +186,17 @@ public class RemoteAuthManager {
         int count = activeSessions.size();
         activeSessions.clear();
         saveSessionsToStorage();
+        sessionsJustCleared = true;  // Set flag for real-time detection
         Log.i(TAG, "Cleared " + count + " session(s)");
+    }
+    
+    /**
+     * Check if sessions were just cleared and reset the flag
+     */
+    public boolean checkAndResetSessionsClearedFlag() {
+        boolean wasClearedJustNow = sessionsJustCleared;
+        sessionsJustCleared = false;
+        return wasClearedJustNow;
     }
     
     /**

@@ -145,6 +145,12 @@ class ServerStatus {
             this.uptimeStartTimestamp = 0;
         }
         
+        // Authentication state
+        this.authEnabled = data.auth_enabled || false;
+        this.authTimeoutMs = data.auth_timeout_ms || 0;  // 0 means never auto-lock
+        this.authSessionsCount = data.auth_sessions_count || 0;
+        this.authSessionsCleared = data.auth_sessions_cleared || false;  // Flag for logout all
+        
         // Parse memory and storage from strings
         // Memory format from backend: "75% (1024/1366 MB)"
         if (data.memory_usage) {
