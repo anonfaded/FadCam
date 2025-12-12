@@ -322,7 +322,6 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         @Nullable Bundle savedInstanceState
     ) {
         super.onViewCreated(view, savedInstanceState);
-    // -------------- Fix Start for this method(onViewCreated)-----------
     Bundle args = getArguments();
     // Reset items at the start of view creation so we don't accidentally
     // reuse items from a previously created fragment instance. This ensures
@@ -1166,7 +1165,6 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             1
                         );
-                    // -------------- Fix Start for this method(onViewCreated)-----------
                     // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
                     // Row now has 12dp outer margins + 14dp inner start and 12dp inner end paddings
                     // Keep divider aligned with inner paddings, but also inset by the outer margins
@@ -1176,7 +1174,6 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         dp(12) + dp(12),
                         dp(2)
                     );
-                    // -------------- Fix Ended for this method(onViewCreated)-----------
                     rowDivider.setLayoutParams(lp);
                     rowDivider.setBackgroundColor(0x33FFFFFF);
                     containerLayout.addView(rowDivider);
@@ -1204,16 +1201,13 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
 
         // Apply Snow Veil theme text color fixes for dark backgrounds
         applySnowVeilThemeTextFixes(view);
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    // -------------- Fix Start for this method(dp)-----------
     private int dp(int value) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(value * density);
     }
 
-    // -------------- Fix Ended for this method(dp)-----------
 
     private void buildGrid(LinearLayout containerLayout, View root) {
         // Build a simple wrapping grid manually (3 columns)

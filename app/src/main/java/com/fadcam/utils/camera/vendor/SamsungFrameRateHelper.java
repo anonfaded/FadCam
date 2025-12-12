@@ -51,7 +51,6 @@ public class SamsungFrameRateHelper {
      * @param builder The CaptureRequest.Builder to modify.
      * @param targetFrameRate The desired frame rate (e.g., 60).
      */
-    // -------------- Fix Start for this method(applyFrameRateSettings)-----------
     public static void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, @Nullable CameraCharacteristics characteristics) {
         if (builder == null) {
             Log.e(TAG, "CaptureRequest.Builder is null, cannot apply Samsung frame rate settings.");
@@ -98,7 +97,6 @@ public class SamsungFrameRateHelper {
             Log.d(TAG, "API < 29: Skipping Samsung vendor keys to avoid compatibility issues");
         }
     }
-    // -------------- Fix Ended for this method(applyFrameRateSettings)-----------
 
     /**
      * Determines the Samsung FPS compatibility status for the current device model.
@@ -108,7 +106,6 @@ public class SamsungFrameRateHelper {
      * @return The SamsungFpsStatus for the current device.
      */
     public static SamsungFpsStatus getDeviceFpsStatus() {
-    // -------------- Fix Start for this method(getDeviceFpsStatus)-----------
     String model = Build.MODEL == null ? "" : Build.MODEL.toLowerCase(Locale.ROOT);
 
         // Known fully compatible devices - These will prioritize standard session with vendor keys (if supported)
@@ -155,7 +152,6 @@ public class SamsungFrameRateHelper {
         }
 
     return SamsungFpsStatus.UNKNOWN;
-    // -------------- Fix Ended for this method(getDeviceFpsStatus)-----------
     }
 
     /**

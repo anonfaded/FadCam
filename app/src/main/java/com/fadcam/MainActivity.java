@@ -50,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
     private int originalBottomNavColor = 0; // Store original bottom nav color
 
-    // ----- Fix Start: Add fields for double-back to exit -----
     private boolean doubleBackToExitPressedOnce = false;
     private boolean skipNextBackHandling = false; // New flag to skip toast on next back press
     private Handler backPressHandler = new Handler();
@@ -69,9 +68,7 @@ public class MainActivity extends AppCompatActivity {
             doubleBackToExitPressedOnce = false;
         }
     };
-    // ----- Fix End: Add fields for double-back to exit -----
 
-    // ----- Fix Start: Add method to disable back toast temporarily -----
     /**
      * Public method to be called from fragments that need to disable the
      * double-back toast temporarily
@@ -83,12 +80,10 @@ public class MainActivity extends AppCompatActivity {
         // Reset automatically after a delay
         backPressHandler.postDelayed(() -> skipNextBackHandling = false, 1000);
     }
-    // ----- Fix End: Add method to disable back toast temporarily -----
 
     // Removed Trash-specific visibility checks; overlay back handling is unified
     // below.
 
-    // -------------- Fix Start for this method(hideOverlayIfNoFragments)-----------
     /**
      * Utility so child fragments can request overlay dismissal after popping back
      * stack.
@@ -105,9 +100,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-    // -------------- Fix Ended for this method(hideOverlayIfNoFragments)-----------
 
-    // -------------- Fix Start for this method(setBottomNavColor)-----------
     /**
      * Set bottom navigation bar color dynamically.
      * Used by fragments to change bottom nav color (e.g., Remote tab makes it black).
@@ -127,9 +120,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-    // -------------- Fix Ended for this method(setBottomNavColor)-----------
 
-    // -------------- Fix Start for this method(setStatusBarColor)-----------
     /**
      * Set the status bar (notification bar at top) color dynamically.
      * Used by fragments to change status bar color (e.g., Remote tab makes it black).
@@ -162,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-    // -------------- Fix Ended for this method(setStatusBarColor)-----------
 
     /**
      * Update feature badge visibility based on whether features have been seen.
@@ -233,7 +223,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("MainActivity", "Error updating badge visibility", e);
         }
     }
-    // -------------- Fix Ended for this method(updateFeatureBadgeVisibility)-----------
 
     /**
      * Public method to refresh feature badges immediately.
@@ -251,7 +240,6 @@ public class MainActivity extends AppCompatActivity {
         return NewFeatureManager.shouldShowBadge(this, "pro");
     }
 
-    // -------------- Fix Start for this method(showOverlayFragment)-----------
     /**
      * Present a fragment in the overlay container, avoiding duplicate dark blank
      * state.
@@ -271,7 +259,6 @@ public class MainActivity extends AppCompatActivity {
                 .commitAllowingStateLoss();
         overlayContainer.animate().alpha(1f).setDuration(120).start();
     }
-    // -------------- Fix Ended for this method(showOverlayFragment)-----------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -282,7 +269,6 @@ public class MainActivity extends AppCompatActivity {
         // dynamic choice
         applyTheme();
 
-        // -------------- Fix Start for this block(apply cloak as early as
         // possible)-----------
         try {
             if (this.sharedPreferencesManager == null) {
@@ -304,10 +290,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (Throwable t) {
             android.util.Log.w("Cloak", "early cloak apply fail", t);
         }
-        // -------------- Fix Ended for this block(apply cloak as early as
         // possible)-----------
 
-        // ----- Fix Start: Ensure onboarding shows on first install -----
         // Initialize SharedPreferencesManager instance first
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
 
@@ -346,7 +330,6 @@ public class MainActivity extends AppCompatActivity {
             finish(); // Finish this activity so it's not in the back stack
             return;
         }
-        // ----- Fix End: Ensure onboarding shows on first install -----
 
         // Now that we know we're not showing onboarding, continue with normal
         // initialization
@@ -362,16 +345,13 @@ public class MainActivity extends AppCompatActivity {
             getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
 
-        // ----- Fix Start: Remove duplicate onboarding check -----
         // The onboarding check was already done at the beginning of onCreate
-        // ----- Fix End: Remove duplicate onboarding check -----
 
         setContentView(R.layout.activity_main);
 
         // Enable edge-to-edge display for Android 15 compatibility
         enableEdgeToEdge();
 
-        // -------------- Fix Start for this block(apply persistent cloak at
         // startup)-----------
         try {
             if (this.sharedPreferencesManager == null) {
@@ -404,13 +384,11 @@ public class MainActivity extends AppCompatActivity {
         } catch (Throwable t) {
             android.util.Log.w("Cloak", "init cloak state fail", t);
         }
-        // -------------- Fix Ended for this block(apply persistent cloak at
         // startup)-----------
 
         viewPager = findViewById(R.id.view_pager);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // -------------- Fix Start for this block(init cloak overlay)-----------
         // A simple overlay that we can show/hide to mask the UI before recents
         // snapshot.
         try {
@@ -459,7 +437,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             android.util.Log.w("Cloak", "Failed to init cloak overlay", e);
         }
-        // -------------- Fix Ended for this block(init cloak overlay)-----------
 
         // Save the original bottom nav background color for restoration later
         // Get colorTopBar from theme (same color as header bar)
@@ -600,7 +577,6 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(colorStatusBar);
         getWindow().setNavigationBarColor(colorBottomNav);
 
-        // -------------- Fix Start for this logic(reopen appearance/theme sheet after
         // theme change)-----------
         try {
             SharedPreferences reopenPrefs = sharedPreferencesManager.sharedPreferences;
@@ -641,13 +617,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             android.util.Log.e("ThemeReopen", "Outer fail", e);
         }
-        // -------------- Fix Ended for this logic(reopen appearance/theme sheet after
         // theme change)-----------
 
-        // -------------- Fix Start for this logic(handle widget intent to open
         // shortcuts)-----------
         handleWidgetIntent();
-        // -------------- Fix Ended for this logic(handle widget intent to open
         // shortcuts)-----------
     }
 
@@ -782,7 +755,6 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    // -------------- Fix Start for this method(applyCloakIfNeeded)-----------
     /** Shows or hides the cloak overlay based on preference. */
     private void applyCloakIfNeeded(boolean show) {
         try {
@@ -804,9 +776,7 @@ public class MainActivity extends AppCompatActivity {
             android.util.Log.w("Cloak", "applyCloakIfNeeded failed", e);
         }
     }
-    // -------------- Fix Ended for this method(applyCloakIfNeeded)-----------
 
-    // -------------- Fix Start for this method(applyCloakPreferenceNow)-----------
     /**
      * Immediately applies or removes recents cloaking flags at runtime based on
      * user toggle.
@@ -843,9 +813,7 @@ public class MainActivity extends AppCompatActivity {
             android.util.Log.w("Cloak", "applyCloakPreferenceNow failed", e);
         }
     }
-    // -------------- Fix Ended for this method(applyCloakPreferenceNow)-----------
 
-    // ----- Fix Start: Proper back button handling with double-press to exit -----
     @Override
     public void onBackPressed() {
         // Unified: handle any visible overlay fragment (trash or settings)
@@ -885,7 +853,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // -------------- Fix Start for this method(onResume - enforce preference
         // state)-----------
         applyCloakIfNeeded(false); // hide decoy overlay while active
         try {
@@ -916,7 +883,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (Throwable t) {
             android.util.Log.w("Cloak", "onResume preference apply fail", t);
         }
-        // -------------- Fix Ended for this method(onResume - enforce preference
         // state)-----------
 
         // Update badge visibility for new features
@@ -1001,7 +967,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // -------------- Fix Start for this method(onPause)-----------
     @Override
     protected void onPause() {
         // Show cloak just before going into background to affect recents snapshot
@@ -1011,7 +976,6 @@ public class MainActivity extends AppCompatActivity {
             }
             boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
             if (enabled) {
-                // -------------- Fix Start for this block(onPause - enforce
                 // secure/recents)-----------
                 applyCloakIfNeeded(true);
                 // For Android 14+, explicitly disable recents screenshots
@@ -1026,7 +990,6 @@ public class MainActivity extends AppCompatActivity {
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
                 } catch (Throwable ignored) {
                 }
-                // -------------- Fix Ended for this block(onPause - enforce
                 // secure/recents)-----------
             }
         } catch (Exception e) {
@@ -1034,9 +997,7 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onPause();
     }
-    // -------------- Fix Ended for this method(onPause)-----------
 
-    // -------------- Fix Start for this method(onUserLeaveHint)-----------
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
@@ -1047,7 +1008,6 @@ public class MainActivity extends AppCompatActivity {
             }
             boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
             if (enabled) {
-                // -------------- Fix Start for this block(onUserLeaveHint - enforce
                 // secure/recents)-----------
                 applyCloakIfNeeded(true);
                 if (Build.VERSION.SDK_INT >= 34) {
@@ -1060,16 +1020,13 @@ public class MainActivity extends AppCompatActivity {
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
                 } catch (Throwable ignored) {
                 }
-                // -------------- Fix Ended for this block(onUserLeaveHint - enforce
                 // secure/recents)-----------
             }
         } catch (Exception e) {
             android.util.Log.w("Cloak", "onUserLeaveHint cloak fail", e);
         }
     }
-    // -------------- Fix Ended for this method(onUserLeaveHint)-----------
 
-    // -------------- Fix Start for this method(handleOverlayBack)-----------
     /** Handles back press for any visible overlay fragment (settings or trash). */
     private boolean handleOverlayBack() {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
@@ -1079,7 +1036,6 @@ public class MainActivity extends AppCompatActivity {
         if (top == null)
             return false;
         // Animate fade out then pop
-        // -------------- Fix Start for this
         // method(handleOverlayBack_raceGuard)-----------
         final Fragment beforeTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
         overlayContainer.animate().alpha(0f).setDuration(160).withEndAction(() -> {
@@ -1096,11 +1052,9 @@ public class MainActivity extends AppCompatActivity {
                 overlayContainer.setAlpha(1f);
             }
         }).start();
-        // -------------- Fix Ended for this
         // method(handleOverlayBack_raceGuard)-----------
         return true;
     }
-    // -------------- Fix Ended for this method(handleOverlayBack)-----------
 
     @Override
     protected void onDestroy() {
@@ -1108,7 +1062,6 @@ public class MainActivity extends AppCompatActivity {
         // Clean up handler callbacks to prevent memory leaks
         backPressHandler.removeCallbacks(backPressRunnable);
     }
-    // ----- Fix End: Proper back button handling with double-press to exit -----
 
     // Helper to resolve theme color attribute
     private int resolveThemeColor(Context context, int attr) {
@@ -1247,7 +1200,6 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferencesManager.updateDefaultClockColorForTheme();
     }
 
-    // -------------- Fix Start for this method(applyThemeFromSettings)-----------
     /**
      * Public wrapper so settings fragments can request a theme change.
      * Persists preference already written by caller and recreates activity to apply
@@ -1257,9 +1209,7 @@ public class MainActivity extends AppCompatActivity {
         applyTheme(themeName);
         recreate();
     }
-    // -------------- Fix Ended for this method(applyThemeFromSettings)-----------
 
-    // -------------- Fix Start: Manual orientation change handling -----------
     @Override
     public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -1304,7 +1254,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("MainActivity", "Error recreating ViewPager adapter for orientation change", e);
         }
     }
-    // -------------- Fix End: Manual orientation change handling -----------
 
     /**
      * Enable edge-to-edge display following Android 15 guidelines

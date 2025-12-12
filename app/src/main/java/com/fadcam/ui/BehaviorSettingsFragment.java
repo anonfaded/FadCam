@@ -47,7 +47,6 @@ public class BehaviorSettingsFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         prefs = SharedPreferencesManager.getInstance(requireContext());
         valueOnboardingState = view.findViewById(R.id.value_onboarding_state);
         valueAutoUpdateState = view.findViewById(R.id.value_auto_update_state);
@@ -55,7 +54,6 @@ public class BehaviorSettingsFragment extends BaseFragment {
         toggleAutoUpdate = view.findViewById(R.id.toggle_auto_update);
     View back = view.findViewById(R.id.back_button);
     if (back != null) back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
-        // -------------- Fix Start for this method(onViewCreated - onboarding & auto update toggles)-----------
         if (toggleOnboarding != null) {
             boolean show = prefs.isShowOnboarding();
             toggleOnboarding.setChecked(show);
@@ -76,15 +74,12 @@ public class BehaviorSettingsFragment extends BaseFragment {
                 refreshValues();
             });
         }
-        // -------------- Fix Ended for this method(onViewCreated - onboarding & auto update toggles)-----------
         refreshValues();
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValues() {
-        // -------------- Fix Start for this method(refreshValues)-----------
         if (valueOnboardingState != null) {
             valueOnboardingState.setText(prefs.isShowOnboarding() ? "Enabled" : "Disabled");
         }
@@ -92,7 +87,6 @@ public class BehaviorSettingsFragment extends BaseFragment {
             boolean enabled = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
             valueAutoUpdateState.setText(enabled ? "Enabled" : "Disabled");
         }
-        // -------------- Fix Ended for this method(refreshValues)-----------
     }
 
 }

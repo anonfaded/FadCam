@@ -47,7 +47,6 @@ public class StorageSettingsFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // -------------- Fix Start for this method(onCreate)-----------
         prefs = SharedPreferencesManager.getInstance(requireContext());
         openDocumentTreeLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
             if (uri != null) {
@@ -74,13 +73,11 @@ public class StorageSettingsFragment extends Fragment {
                 refreshValue();
             }
         });
-        // -------------- Fix Ended for this method(onCreate)-----------
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         valueStorageMode = view.findViewById(R.id.value_storage_mode);
         view.findViewById(R.id.row_storage_mode).setOnClickListener(v -> showStorageOptionsSheet());
         View back = view.findViewById(R.id.back_button);
@@ -88,13 +85,11 @@ public class StorageSettingsFragment extends Fragment {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         }
         refreshValue();
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValue() {
-        // -------------- Fix Start for this method(refreshValue)-----------
         String mode = prefs.getStorageMode();
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode)) {
             String uri = prefs.getCustomStorageUri();
@@ -103,11 +98,9 @@ public class StorageSettingsFragment extends Fragment {
         } else {
             valueStorageMode.setText(getString(R.string.storage_value_internal));
         }
-        // -------------- Fix Ended for this method(refreshValue)-----------
     }
 
     private void showStorageOptionsSheet() {
-        // -------------- Fix Start for this method(showStorageOptionsSheet)-----------
         final String rk = "picker_result_storage";
         getParentFragmentManager().setFragmentResultListener(rk, this, (k, b) -> {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
@@ -169,21 +162,17 @@ public class StorageSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.storage_sheet_title), items, selectedId, rk, helper);
         sheet.show(getParentFragmentManager(), "storage_picker");
-        // -------------- Fix Ended for this method(showStorageOptionsSheet)-----------
     }
 
     private void launchDirectoryPicker() {
-        // -------------- Fix Start for this method(launchDirectoryPicker)-----------
         try {
             openDocumentTreeLauncher.launch(null);
         } catch (Exception e) {
             Log.e(TAG, "Error launching directory picker", e);
         }
-        // -------------- Fix Ended for this method(launchDirectoryPicker)-----------
     }
 
     private String buildDisplayPath(String uriString) {
-        // -------------- Fix Start for this method(buildDisplayPath)-----------
         if (uriString == null)
             return getString(R.string.storage_value_none);
         try {
@@ -199,11 +188,9 @@ public class StorageSettingsFragment extends Fragment {
             Log.e(TAG, "buildDisplayPath error", e);
         }
         return getString(R.string.storage_value_selected_folder);
-        // -------------- Fix Ended for this method(buildDisplayPath)-----------
     }
 
     private String decodeTreeUriToReadablePath(String uriString) {
-        // -------------- Fix Start for this
         // method(decodeTreeUriToReadablePath)-----------
         if (uriString == null)
             return "";
@@ -228,12 +215,10 @@ public class StorageSettingsFragment extends Fragment {
             Log.e(TAG, "decodeTreeUriToReadablePath error", e);
         }
         return uriString;
-        // -------------- Fix Ended for this
         // method(decodeTreeUriToReadablePath)-----------
     }
 
     private void sendStorageChangedBroadcast() {
-        // -------------- Fix Start for this
         // method(sendStorageChangedBroadcast)-----------
         if (getContext() == null)
             return;
@@ -247,7 +232,6 @@ public class StorageSettingsFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "Broadcast error", e);
         }
-        // -------------- Fix Ended for this
         // method(sendStorageChangedBroadcast)-----------
     }
 

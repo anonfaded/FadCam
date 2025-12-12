@@ -216,7 +216,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
 
 
-    // ----- Fix Start: Add isSnowVeilTheme flag and method to set it -----
     private boolean isSnowVeilTheme = false;
 
     /**
@@ -230,7 +229,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             notifyDataSetChanged();
         }
     }
-    // ----- Fix End: Add isSnowVeilTheme flag and method to set it -----
 
     @NonNull
     @Override
@@ -264,10 +262,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return;
         }
 
-        // -------------- Fix Start (clearSkeletonEffects) - Clear skeleton state when
         // binding real data -----------
         clearSkeletonEffects(holder);
-        // -------------- Fix End (clearSkeletonEffects) -----------
 
         // --- 1. Basic Checks & Get Data ---
         if (records == null || position < 0 || position >= records.size() || records.get(position) == null
@@ -303,7 +299,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.textViewFileSize != null)
             holder.textViewFileSize.setText(formatFileSize(videoItem.size));
 
-        // ----- Fix Start: Apply Snow Veil theme card colors -----
         // Apply proper background and text colors based on theme
         if (isSnowVeilTheme) {
             // For Snow Veil theme, ALWAYS use white card background with black text for
@@ -353,7 +348,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 holder.textViewTimeAgo.setTextColor(holder.defaultTextColor);
             }
         }
-        // ----- Fix End: Apply Snow Veil theme card colors -----
 
         // Optimize time-consuming operations using lightweight caching
         if (holder.textViewFileTime != null) {
@@ -368,7 +362,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 // Calculate duration on background thread - this is one of the main causes of
                 // lag
                 executorService.execute(() -> {
-                    // -------------- Fix Start (duration calculation for new videos) -----------
                     // Add a small delay for newly recorded videos to ensure file is fully written
                     if (videoItem.isNew) {
                         try {
@@ -378,7 +371,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                             Thread.currentThread().interrupt();
                         }
                     }
-                    // -------------- Fix End (duration calculation for new videos) -----------
 
                     long duration = getVideoDuration(videoUri);
                     String formattedDuration = formatVideoDuration(duration);
@@ -575,7 +567,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return allowGeneralInteractions;
         });
 
-        // -------------- Fix Start (thumbnail click and long press listeners)
         // -----------
         // Set the same click and long press listeners on the thumbnail for better UX
         if (holder.imageViewThumbnail != null) {
@@ -607,11 +598,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 return allowGeneralInteractions;
             });
         }
-        // -------------- Fix End (thumbnail click and long press listeners) -----------
 
         // INSTEAD, set a click listener on the menuButtonContainer
         if (holder.menuButtonContainer != null) {
-            // -------------- Fix Start for this method(onBindViewHolder)-----------
             holder.menuButtonContainer.setOnClickListener(v -> {
                 boolean isStillAllowMenuClick = !this.currentlyProcessingUris.contains(videoItem.uri)
                         && !this.isSelectionModeActive;
@@ -619,7 +608,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     showVideoActionsSheet(holder, videoItem);
                 }
             });
-            // -------------- Fix Ended for this method(onBindViewHolder)-----------
         }
 
     } // End onBindViewHolder
@@ -752,7 +740,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         } catch (Exception ignored) {
         }
 
-        // -------------- Fix Start (loadThumbnail with cache)-----------
         // Skip Glide loading for skeleton URIs
         if ("skeleton".equals(videoUri.getScheme())) {
             holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
@@ -836,7 +823,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                         holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
                     }
                 });
-        // -------------- Fix End (loadThumbnail with cache)-----------
     }
 
     // Override onViewRecycled to cancel thumbnail loading for recycled views
@@ -971,14 +957,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         return typedValue.data;
     }
 
-    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
     /**
      * showVideoActionsSheet
      * Replaces legacy PopupMenu with our unified bottom sheet picker using ligature
      * icons.
      * Preserves existing behaviors by mapping item ids to the same handlers.
      */
-    // -------------- Fix Start for this method(showVideoActionsSheet)-----------
     private void showVideoActionsSheet(RecordViewHolder holder, VideoItem videoItem) {
         Context ctx = holder.itemView.getContext();
         if (!(ctx instanceof FragmentActivity)) {
@@ -992,7 +976,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         ArrayList<OptionItem> items = new ArrayList<>();
         // Order mirrors existing menu; use contextual ligatures per repo policy and
         // helper subtitles
-        // -------------- Fix Start for this method(showVideoActionsSheet)-----------
         items.add(new OptionItem(
                 "action_save",
                 ctx.getString(R.string.video_menu_save),
@@ -1006,12 +989,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 null,
                 null,
                 null));
-        // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
-        // -------------- Fix Start for this method(showVideoActionsSheet)-----------
         // Temporarily hide Fix Video from UI; keep feature intact for later re-enable
         // items.add(OptionItem.withLigature("action_fix_video",
         // ctx.getString(R.string.fix_video_menu_title), "build"));
-        // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
         items.add(OptionItem.withLigature("action_rename", ctx.getString(R.string.video_menu_rename),
                 "drive_file_rename_outline"));
         items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
@@ -1093,7 +1073,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         sheet.show(fm, "video_actions_sheet");
     }
-    // -------------- Fix Ended for this method(showVideoActionsSheet)-----------
 
     // -------------- Save Options Sheet (Copy vs Move) -----------
     private void showSaveOptionsSheet(VideoItem videoItem, Context ctx) {
@@ -1534,9 +1513,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 if (!fadCamDir.mkdirs()) {
                     Log.e(TAG, "Failed to create FadCam directory in Downloads.");
                     message = "Save Failed: Cannot create directory.";
-                    // ----- Fix Start for this method(saveVideoToGalleryInternal)-----
                     final String finalMessageForLambda = message;
-                    // ----- Fix Ended for this method(saveVideoToGalleryInternal)-----
                     // Notify listener on UI thread
                     if (context instanceof Activity && actionListener != null) {
                         ((Activity) context).runOnUiThread(
@@ -1670,7 +1647,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
-    // -------------- Fix Start (showVideoInfoDialog)-----------
     /**
      * Shows comprehensive video information in a custom 2-column bottom sheet
      * with enhanced metadata including FPS, codec, bitrate, and geotag data.
@@ -1704,7 +1680,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
         }
     }
-    // -------------- Fix Ended (showVideoInfoDialog)-----------
 
     /**
      * Opens the selected video directly in the YouTube app for uploading
@@ -1958,7 +1933,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         Log.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) +
                 " to " + newRecords.size() + " records");
 
-        // -------------- Fix Start (updateRecords) - Only disable skeleton mode for
         // real data -----------
 
         // Check if we're updating with skeleton data or real data
@@ -1972,7 +1946,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             // Keep skeleton mode enabled
         }
 
-        // -------------- Fix End (updateRecords) -----------
 
         // Use DiffUtil to calculate the differences and dispatch updates efficiently
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
@@ -2142,7 +2115,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     // Get video duration from URI (Helper) using FFprobeKit for reliability
-    // -------------- Fix Start (getVideoDuration)-----------
     private long getVideoDuration(Uri videoUri) {
         if (context == null || videoUri == null)
             return 0;
@@ -2151,7 +2123,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if ("skeleton".equals(videoUri.getScheme())) {
             return 0;
         }
-        // -------------- Fix End (getVideoDuration)-----------
         
         // Get file path for FFprobe - use SAF protocol for content:// URIs
         String filePath;
@@ -2355,7 +2326,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      * Binds skeleton placeholder content to view holder with shimmer effect
      */
     private void bindSkeletonItem(@NonNull RecordViewHolder holder, int position) {
-        // -------------- Fix Start (bindSkeletonItem) - Professional shimmer skeleton
         // -----------
 
         // Step 1: Clear any existing content and animations
@@ -2424,14 +2394,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         Log.v(TAG, "Professional shimmer skeleton bound at position " + position);
 
-        // -------------- Fix End (bindSkeletonItem) -----------
     }
 
     /**
      * Clears skeleton effects and restores normal appearance for data binding
      */
     private void clearSkeletonEffects(@NonNull RecordViewHolder holder) {
-        // -------------- Fix Start (clearSkeletonEffects) - Remove skeleton effects
         // when binding real data -----------
 
         // Step 1: Remove shimmer effect from the card
@@ -2474,7 +2442,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         Log.v(TAG, "Skeleton effects cleared for data binding");
 
-        // -------------- Fix End (clearSkeletonEffects) -----------
     }
 
     // --- Delete Helper (Must be accessible or copied here) ---
@@ -2509,7 +2476,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     public void clearCaches() {
         loadedThumbnailCache.clear();
-        // -------------- Fix Start (clear duration cache) -----------
         // Also clear duration cache to prevent stale duration data for new videos
         synchronized (durationCache) {
             durationCache.clear();
@@ -2518,7 +2484,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             savedPositionCache.clear();
         }
         Log.d(TAG, "Cleared all adapter caches including duration and position caches");
-        // -------------- Fix End (clear duration cache) -----------
     }
 
     // For dialogs, use themed MaterialAlertDialogBuilder as in SettingsFragment

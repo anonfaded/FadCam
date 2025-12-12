@@ -61,7 +61,6 @@ public abstract class BaseFragment extends Fragment {
         });
     }
 
-    // -------------- Fix Start for this method(onDestroyView_cleanup)-----------
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -71,5 +70,4 @@ public abstract class BaseFragment extends Fragment {
             ((com.fadcam.MainActivity) getActivity()).hideOverlayIfNoFragments();
         }
     }
-    // -------------- Fix Ended for this method(onDestroyView_cleanup)-----------
 } 

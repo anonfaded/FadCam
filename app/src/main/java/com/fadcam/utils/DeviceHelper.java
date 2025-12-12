@@ -34,7 +34,6 @@ public class DeviceHelper {
      * @return true if the device is likely a high-end device
      */
     public static boolean isHighEndDevice() {
-        // -------------- Fix Start for this method(isHighEndDevice)-----------
         String model = Build.MODEL.toLowerCase();
         String device = Build.DEVICE.toLowerCase();
         String manufacturer = Build.MANUFACTURER.toLowerCase();
@@ -64,7 +63,6 @@ public class DeviceHelper {
                model.contains("premium") ||
                model.contains("flagship") || 
                model.contains("elite");
-    // -------------- Fix Ended for this method(isHighEndDevice)-----------
     }
     
     /**

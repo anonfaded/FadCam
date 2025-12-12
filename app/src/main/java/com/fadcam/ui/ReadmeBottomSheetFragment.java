@@ -32,7 +32,6 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
     // 1. Set title text (retain standard unified spacing; no compact modifications)
     TextView title = view.findViewById(R.id.picker_title);
     if(title!=null){ title.setText(R.string.note_from_developer_title); }
@@ -107,7 +106,6 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
             closeButton.setOnClickListener(v -> dismiss());
         }
         // 7. Disable dragging outside content causing accidental dismiss? Keep default for now.
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     /** Build a settings-style action row with leading icon, label + helper, trailing arrow. */

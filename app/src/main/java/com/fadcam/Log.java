@@ -55,7 +55,6 @@ public class Log {
         isDebugEnabled = sharedPreferencesManager.isDebugLoggingEnabled();
 
     if (isDebugEnabled) {
-            // -------------- Fix Start for this method(init)-----------
             // Try to create the debug log target; gracefully degrade if unavailable
             try {
         Uri created = createHtmlFile(context, DEBUG_FILE_NAME);
@@ -81,22 +80,17 @@ public class Log {
                     });
                 }
             }
-            // -------------- Fix Ended for this method(init)-----------
         }
     }
 
     public static void setDebugEnabled(boolean enabled) {
         isDebugEnabled = enabled;
         if (enabled) {
-            // -------------- Fix Start for this method(setDebugEnabled)-----------
             // Ensure the single log file exists; do NOT wipe it. We keep a rolling window via trim.
             createHtmlFile(context, DEBUG_FILE_NAME);
             startWorkerIfNeeded();
-            // -------------- Fix Ended for this method(setDebugEnabled)-----------
         } else {
-            // -------------- Fix Start for this method(setDebugEnabled-disable)-----------
             stopWorkerAndFlush();
-            // -------------- Fix Ended for this method(setDebugEnabled-disable)-----------
         }
     }
     
@@ -170,7 +164,6 @@ public class Log {
     }
 
     public static Uri createHtmlFile(Context context, String fileName) {
-        // -------------- Fix Start for this method(createHtmlFile)-----------
         try {
             // Use a static filename for debug log to simplify discovery
             String debugFileName = DEBUG_FILE_NAME;
@@ -217,13 +210,11 @@ public class Log {
             e.printStackTrace();
             return null;
         }
-        // -------------- Fix Ended for this method(createHtmlFile)-----------
     }
 
     public static void appendHtmlToFile(String htmlContent) {
         if (!isDebugEnabled) return;
 
-        // -------------- Fix Start for this method(appendHtmlToFile)-----------
         // Ensure target URI exists or disable logging to avoid NPE on OEMs
         if (fileUri == null) {
             Uri created = createHtmlFile(context, DEBUG_FILE_NAME);
@@ -246,10 +237,8 @@ public class Log {
                 droppedSinceLastNote++;
             }
         }
-        // -------------- Fix Ended for this method(appendHtmlToFile)-----------
     }
 
-    // -------------- Fix Start: Helpers for manage/share/delete/read -----------
     /** Returns the current log Uri if available, creating it if needed. */
     public static Uri getLogUri(Context ctx) {
         if (fileUri == null) {
@@ -379,7 +368,6 @@ public class Log {
             if (os != null) try { os.close(); } catch (Exception ignored) {}
         }
     }
-    // -------------- Fix End: Helpers for manage/share/delete/read -----------
 
     private static Uri checkIfFileExists(Context context, String fileName) {
         Uri uri = null;

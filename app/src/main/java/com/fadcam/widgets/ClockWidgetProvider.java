@@ -34,41 +34,32 @@ public class ClockWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        // -------------- Fix Start for this method(onUpdate)-----------
         for (int id : appWidgetIds) {
             updateClock(context, appWidgetManager, id);
         }
         scheduleMinuteUpdates(context);
-        // -------------- Fix Ended for this method(onUpdate)-----------
     }
 
     @Override
     public void onEnabled(Context context) {
-        // -------------- Fix Start for this method(onEnabled)-----------
         scheduleMinuteUpdates(context);
-        // -------------- Fix Ended for this method(onEnabled)-----------
     }
 
     @Override
     public void onDisabled(Context context) {
-        // -------------- Fix Start for this method(onDisabled)-----------
         cancelMinuteUpdates(context);
-        // -------------- Fix Ended for this method(onDisabled)-----------
     }
 
     @Override
     public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, android.os.Bundle newOptions) {
-        // -------------- Fix Start for this method(onAppWidgetOptionsChanged)-----------
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
         // Update widget when size changes
         updateClock(context, appWidgetManager, appWidgetId);
-        // -------------- Fix Ended for this method(onAppWidgetOptionsChanged)-----------
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        // -------------- Fix Start for this method(onReceive)-----------
         if (Intent.ACTION_TIME_CHANGED.equals(intent.getAction()) ||
                 Intent.ACTION_TIME_TICK.equals(intent.getAction()) ||
                 Intent.ACTION_TIMEZONE_CHANGED.equals(intent.getAction()) ||
@@ -79,11 +70,9 @@ public class ClockWidgetProvider extends AppWidgetProvider {
                 updateClock(context, mgr, id);
             }
         }
-        // -------------- Fix Ended for this method(onReceive)-----------
     }
 
     private void updateClock(Context context, AppWidgetManager manager, int appWidgetId) {
-        // -------------- Fix Start for this method(updateClock)-----------
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_clock);
         WidgetPreferences prefs = new WidgetPreferences(context);
 
@@ -192,18 +181,14 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         views.setOnClickPendingIntent(R.id.clock_root, pi);
 
     manager.updateAppWidget(appWidgetId, views);
-    // -------------- Fix Ended for this method(updateClock)-----------
     }
 
-    // -------------- Fix Start for this method(dpToPx)-----------
     private static int dpToPx(Context context, float dp) {
         final float density = context.getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
     }
-    // -------------- Fix Ended for this method(dpToPx)-----------
 
     private void scheduleMinuteUpdates(Context context) {
-        // -------------- Fix Start for this method(scheduleMinuteUpdates)-----------
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
         Intent i = new Intent(context, ClockWidgetProvider.class).setAction(ACTION_UPDATE_CLOCK);
@@ -212,21 +197,17 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         long triggerAt = SystemClock.elapsedRealtime() + interval;
         am.cancel(pi);
         am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, interval, pi);
-        // -------------- Fix Ended for this method(scheduleMinuteUpdates)-----------
     }
 
     private void cancelMinuteUpdates(Context context) {
-        // -------------- Fix Start for this method(cancelMinuteUpdates)-----------
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
         Intent i = new Intent(context, ClockWidgetProvider.class).setAction(ACTION_UPDATE_CLOCK);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, PendingIntent.FLAG_IMMUTABLE);
         am.cancel(pi);
-        // -------------- Fix Ended for this method(cancelMinuteUpdates)-----------
     }
 
     private android.util.Size getWidgetSize(Context context, AppWidgetManager manager, int appWidgetId) {
-        // -------------- Fix Start for this method(getWidgetSize)-----------
         android.os.Bundle options = manager.getAppWidgetOptions(appWidgetId);
         if (options == null) {
             // Return default size if options not available
@@ -240,11 +221,9 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         
         // Use max dimensions for better scaling
         return new android.util.Size(maxWidth, maxHeight);
-        // -------------- Fix Ended for this method(getWidgetSize)-----------
     }
 
     private float calculateScaleFactor(android.util.Size widgetSize) {
-        // -------------- Fix Start for this method(calculateScaleFactor)-----------
         // Base size is approximately a 4x1 widget (250x110 dp)
         int baseWidth = 250;
         int baseHeight = 110;
@@ -257,10 +236,8 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         
         // Clamp scale between 0.7 and 2.0 for reasonable sizing
         return Math.max(0.7f, Math.min(2.0f, scale));
-        // -------------- Fix Ended for this method(calculateScaleFactor)-----------
     }
 
-    // -------------- Fix Start for this method(renderTextBitmap)-----------
     private Bitmap renderTextBitmap(Context context, String text, float textSizeSp, int color,
                                     boolean addShadow, boolean rtl, int maxWidthPx,
                                     android.graphics.Typeface typeface) {
@@ -309,5 +286,4 @@ public class ClockWidgetProvider extends AppWidgetProvider {
         canvas.drawText(text, x, y, paint);
         return bmp;
     }
-    // -------------- Fix Ended for this method(renderTextBitmap)-----------
 }

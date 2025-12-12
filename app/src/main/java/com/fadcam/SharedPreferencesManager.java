@@ -80,16 +80,13 @@ public class SharedPreferencesManager {
     private static final String PREF_KEY_VIDEO_ORIENTATION =
         "video_orientation";
 
-    // ----- Fix Start for this class (SharedPreferencesManager_trash_auto_delete)
     // -----
     private static final String PREF_KEY_TRASH_AUTO_DELETE_MINUTES =
         "trash_auto_delete_minutes";
     public static final int DEFAULT_TRASH_AUTO_DELETE_MINUTES = 30 * 24 * 60; // 30 days in minutes
     public static final int TRASH_AUTO_DELETE_NEVER = -1; // This constant can remain as is, representing manual delete
-    // ----- Fix Ended for this class (SharedPreferencesManager_trash_auto_delete)
     // -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_clock_color) -----
     private static final String PREF_KEY_CLOCK_CARD_COLOR = "clock_card_color";
 
     // This will be set dynamically based on theme
@@ -179,7 +176,6 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix Ended for this class (SharedPreferencesManager_clock_color) -----
 
     // ----- Battery Warning Threshold Methods -----
     /**
@@ -207,7 +203,6 @@ public class SharedPreferencesManager {
     }
     // ----- End Battery Warning Threshold Methods -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_playback_muted) -----
     /** Returns whether playback should start muted by default. Default: false (unmuted). */
     public boolean isPlaybackMuted() {
         return sharedPreferences.getBoolean(
@@ -224,31 +219,25 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix Ended for this class (SharedPreferencesManager_playback_muted) -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_video_splitting)
     // -----
     public static final String PREF_VIDEO_SPLITTING_ENABLED =
         "video_splitting_enabled";
     public static final boolean DEFAULT_VIDEO_SPLITTING_ENABLED = false;
     public static final String PREF_VIDEO_SPLIT_SIZE_MB = "video_split_size_mb";
     public static final int DEFAULT_VIDEO_SPLIT_SIZE_MB = 2048; // 2GB
-    // ----- Fix Ended for this class (SharedPreferencesManager_video_splitting)
     // -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source)
     // -----
     private static final String PREF_KEY_AUDIO_INPUT_SOURCE =
         "audio_input_source";
     public static final String AUDIO_INPUT_SOURCE_PHONE = "phone_mic";
     public static final String AUDIO_INPUT_SOURCE_WIRED = "wired_mic";
-    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source)
     // -----
 
     // App Lock preferences
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
 
-    // ----- Fix Start: AppLock session unlock state -----
     private static final String KEY_APPLOCK_SESSION_UNLOCKED =
         "applock_session_unlocked";
     private volatile boolean sessionUnlockedCache = false;
@@ -278,7 +267,6 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix End: AppLock session unlock state -----
 
     private SharedPreferencesManager(Context context) {
         // Use PREFS_NAME from Constants class
@@ -513,7 +501,6 @@ public class SharedPreferencesManager {
         return VideoCodec.valueOf(videoCodec);
     }
 
-    // -------------- Fix Start for this class (SharedPreferencesManager_keep_screen_awake)-----------
     /** Returns whether the video player should keep the screen on during playback. Default: true. */
     public boolean isPlayerKeepScreenOn() {
         return sharedPreferences.getBoolean(
@@ -610,9 +597,7 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // -------------- Fix Ended for this class (SharedPreferencesManager_keep_screen_awake)-----------
 
-    // -------------- Fix Start for this class (SharedPreferencesManager_background_playback)-----------
     /** Returns whether background playback is enabled. Default: false. */
     public boolean isBackgroundPlaybackEnabled() {
         return sharedPreferences.getBoolean(
@@ -714,7 +699,6 @@ public class SharedPreferencesManager {
         return getSavedPlaybackPositionMsByFilename(filename);
     }
 
-    // -------------- Fix Ended for this class (SharedPreferencesManager_background_playback)-----------
     // --- End Camera / Video settings ---
 
     // --- STORAGE METHODS ---
@@ -942,7 +926,6 @@ public class SharedPreferencesManager {
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists
     public static final boolean DEFAULT_PREVIEW_ENABLED = true; // Check default exists
 
-    // -------------- Fix Start for this section(Cloak Recents preference)-----------
     /** Preference key controlling whether the app should cloak its snapshot in the Android Recents screen. */
     public static final String PREF_CLOAK_RECENTS_ENABLED =
         "cloak_recents_enabled";
@@ -965,7 +948,6 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // -------------- Fix Ended for this section(Cloak Recents preference)-----------
 
     /**
      * Gets the preferred physical camera ID for the back camera.
@@ -1069,7 +1051,6 @@ public class SharedPreferencesManager {
 
     // --- End Video Orientation ---
 
-    // ----- Fix Start for this class
     // (SharedPreferencesManager_trash_auto_delete_methods) -----
     public void setTrashAutoDeleteMinutes(int minutes) {
         sharedPreferences
@@ -1094,10 +1075,8 @@ public class SharedPreferencesManager {
         return minutes;
     }
 
-    // ----- Fix Ended for this class
     // (SharedPreferencesManager_trash_auto_delete_methods) -----
 
-    // ----- Fix Start for this class
     // (SharedPreferencesManager_video_splitting_methods) -----
     public boolean isVideoSplittingEnabled() {
         return sharedPreferences.getBoolean(
@@ -1127,10 +1106,8 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix Ended for this class
     // (SharedPreferencesManager_video_splitting_methods) -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_audio_input_source)
     // -----
     public void setAudioInputSource(String source) {
         sharedPreferences
@@ -1146,10 +1123,8 @@ public class SharedPreferencesManager {
         );
     }
 
-    // ----- Fix Ended for this class (SharedPreferencesManager_audio_input_source)
     // -----
 
-    // ----- Fix Start for method(onboarding) -----
     // Using the proper constant from Constants class
     public boolean isShowOnboarding() {
         // Return true if onboarding hasn't been completed
@@ -1171,9 +1146,7 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix End for method(onboarding) -----
 
-    // ----- Fix Start for this class(SharedPreferencesManager_location_methods)
     // -----
     /**
      * Sets whether location embedding is enabled
@@ -1199,10 +1172,8 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix Ended for this class(SharedPreferencesManager_location_methods)
     // -----
 
-    // ----- Fix Start for this class (SharedPreferencesManager_applock) -----
     /**
      * Checks if app lock is enabled
      *
@@ -1224,9 +1195,7 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // ----- Fix Ended for this class (SharedPreferencesManager_applock) -----
 
-    // ----- Fix Start for this class
     // (SharedPreferencesManager_notification_customization) -----
     // Notification customization constants
     public static final String PREF_NOTIFICATION_PRESET = "notification_preset";
@@ -1462,10 +1431,8 @@ public class SharedPreferencesManager {
         }
     }
 
-    // ----- Fix Ended for this class
     // (SharedPreferencesManager_notification_customization) -----
 
-    // ----- Fix Start for this method(getVideoSplitSizeBytes)-----
     /**
      * Returns the video split size in bytes, based on the value in MB.
      *
@@ -1476,7 +1443,6 @@ public class SharedPreferencesManager {
         return mb > 0 ? mb * 1024L * 1024L : 0L;
     }
 
-    // ----- Fix Ended for this method(getVideoSplitSizeBytes)-----
 
     public static final String PREF_AUDIO_NOISE_SUPPRESSION =
         "audio_noise_suppression";
@@ -1512,7 +1478,6 @@ public class SharedPreferencesManager {
         }
     }
 
-    // -------------- Fix Start for this method(getCurrentAppIcon)-----------
     /**
      * Gets the currently selected app icon key.
      * This is used by the notification system to display the same icon as the launcher.
@@ -1526,9 +1491,7 @@ public class SharedPreferencesManager {
         );
     }
 
-    // -------------- Fix Ended for this method(getCurrentAppIcon)-----------
 
-    // -------------- Fix Start for this method(getCurrentAppIconResId)-----------
     /**
      * Returns the mipmap resource ID corresponding to the currently selected app icon.
      * Centralizes icon-key -> resource-ID mapping so callers (e.g., notifications) don't duplicate it.
@@ -1598,9 +1561,7 @@ public class SharedPreferencesManager {
         return com.fadcam.R.mipmap.ic_launcher;
     }
 
-    // -------------- Fix Ended for this method(getCurrentAppIconResId)-----------
 
-    // -------------- Fix Start for this method(getAppIconDisplayName)-----------
     /**
      * Returns a human-readable display name for the currently selected app icon.
      * Falls back to the default app name when unknown.
@@ -1666,7 +1627,6 @@ public class SharedPreferencesManager {
             return "";
         }
     }
-    // -------------- Fix Ended for this method(getAppIconDisplayName)-----------
     
     /**
      * Check if auto update checking is enabled

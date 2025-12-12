@@ -232,7 +232,6 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         }));
     }
 
-    // -------------- Fix Start for this method(buildInput)-----------
     private void buildInput(LinearLayout parent, String initialValue, String hint) {
         final EditText input = new EditText(requireContext());
         input.setSingleLine(true);
@@ -268,9 +267,7 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
             }
         }));
     }
-    // -------------- Fix Ended for this method(buildInput)-----------
 
-    // -------------- Fix Start for this method(buildPreview)-----------
     private void buildPreview(LinearLayout parent, String jsonStr) {
         JSONObject json = null;
         String pretty = "";
@@ -319,7 +316,6 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                 }));
     }
-    // -------------- Fix Ended for this method(buildPreview)-----------
 
     /**
      * Apply lightweight JSON syntax highlighting over line-numbered text using
@@ -378,7 +374,6 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         return sb.toString();
     }
 
-    // -------------- Fix Start for this method(buildReset)-----------
     private void buildReset(LinearLayout parent, String phrase) {
         TextView info = new TextView(requireContext());
         info.setText(getString(R.string.prefs_reset_type_delete));
@@ -426,7 +421,6 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
             }
         }));
     }
-    // -------------- Fix Ended for this method(buildReset)-----------
 
     private View makeDivider() {
         View d = new View(requireContext());

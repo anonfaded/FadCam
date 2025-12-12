@@ -29,7 +29,6 @@ public class VideoPlayerSettingsFragment extends Fragment {
             container,
             false
         );
-        // -------------- Fix Start for this method(onCreateView)-----------
         LinearLayout rowPlayback = root.findViewById(R.id.row_playback_speed);
         LinearLayout rowQuick = root.findViewById(R.id.row_quick_speed);
         TextView subPlayback = root.findViewById(R.id.sub_playback_speed);
@@ -225,7 +224,6 @@ public class VideoPlayerSettingsFragment extends Fragment {
                 showControllerTimeoutPicker()
             );
         }
-        // -------------- Fix Ended for this method(onCreateView)-----------
         return root;
     }
 
@@ -519,7 +517,6 @@ public class VideoPlayerSettingsFragment extends Fragment {
     }
 
     private void showKeepScreenOnSwitchSheet() {
-        // -------------- Fix Start for this method(showKeepScreenOnSwitchSheet)-----------
         final String RK = "rk_vps_keep_screen_on_switch";
         boolean enabled = com.fadcam.SharedPreferencesManager.getInstance(
             requireContext()
@@ -570,7 +567,6 @@ public class VideoPlayerSettingsFragment extends Fragment {
             getParentFragmentManager(),
             "vps_keep_screen_on_switch_sheet"
         );
-        // -------------- Fix Ended for this method(showKeepScreenOnSwitchSheet)-----------
     }
 
     private void showBackgroundPlaybackSwitchSheet() {
@@ -940,7 +936,6 @@ public class VideoPlayerSettingsFragment extends Fragment {
     }
 
     private void showMuteSwitchSheet() {
-        // -------------- Fix Start for this method(showMuteSwitchSheet)-----------
         final String RK = "rk_vps_mute_switch";
         boolean enabled = com.fadcam.SharedPreferencesManager.getInstance(
             requireContext()
@@ -996,11 +991,9 @@ public class VideoPlayerSettingsFragment extends Fragment {
                 enabled
             );
         sheet.show(getParentFragmentManager(), "vps_mute_switch_sheet");
-        // -------------- Fix Ended for this method(showMuteSwitchSheet)-----------
     }
 
     private void showPlaybackSpeedPicker() {
-        // -------------- Fix Start for this method(showPlaybackSpeedPicker)-----------
         final String RK = "rk_vps_playback_speed";
         float[] speedValues = new float[] {
             0.25f,
@@ -1104,11 +1097,9 @@ public class VideoPlayerSettingsFragment extends Fragment {
                 }
             );
         sheet.show(getParentFragmentManager(), "vps_playback_speed_picker");
-        // -------------- Fix Ended for this method(showPlaybackSpeedPicker)-----------
     }
 
     private void showQuickSpeedPicker() {
-        // -------------- Fix Start for this method(showQuickSpeedPicker)-----------
         final String RK = "rk_vps_quick_speed";
         float[] speedValues = new float[] {
             0.25f,
@@ -1204,7 +1195,6 @@ public class VideoPlayerSettingsFragment extends Fragment {
                 }
             );
         sheet.show(getParentFragmentManager(), "vps_quick_speed_picker");
-        // -------------- Fix Ended for this method(showQuickSpeedPicker)-----------
     }
 
     private void showSeekAmountPicker() {

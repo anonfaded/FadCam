@@ -33,7 +33,6 @@ public class AdvancedSettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         prefs = SharedPreferencesManager.getInstance(requireContext());
         debugSwitch = view.findViewById(R.id.switch_debug_logging);
         if (debugSwitch != null) {
@@ -55,7 +54,6 @@ public class AdvancedSettingsFragment extends Fragment {
                 f.show(getParentFragmentManager(), "debug_log_tools");
             });
         }
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     private void handleBack() {

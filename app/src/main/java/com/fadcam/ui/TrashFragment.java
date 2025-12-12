@@ -99,10 +99,8 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         setHasOptionsMenu(true);
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
-        // ----- Fix Start: Remove custom back press handler -----
         // We no longer need our own back handler since MainActivity now detects
         // and handles TrashFragment visibility directly
-        // ----- Fix End: Remove custom back press handler -----
     }
 
     @Nullable
@@ -138,11 +136,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     }
 
     private void initializeViews(@NonNull View view) {
-        // -------------- Fix Start for this method(initializeViews)-----------
         ImageView backButton = view.findViewById(R.id.back_button);
         if (backButton != null) {
             backButton.setOnClickListener(v -> {
-                // -------------- Fix Start for this method(backButtonOnClick)-----------
                 // If we're in selection mode, exit it instead of leaving the screen
                 if (isInSelectionMode()) {
                     exitSelectionMode();
@@ -150,7 +146,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 }
                 // Otherwise dismiss the overlay directly to avoid cascading back logic
                 try { com.fadcam.ui.OverlayNavUtil.dismiss(requireActivity()); } catch (Throwable ignored) {}
-                // -------------- Fix Ended for this method(backButtonOnClick)-----------
             });
         }
         
@@ -159,7 +154,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (menuButton != null) {
             menuButton.setOnClickListener(v -> showAutoDeleteBottomSheet());
         }
-        // -------------- Fix Ended for this method(initializeViews)-----------
         titleText = view.findViewById(R.id.title_text);
         recyclerViewTrashItems = view.findViewById(R.id.recycler_view_trash_items);
         buttonRestoreSelected = view.findViewById(R.id.button_restore_selected);
@@ -416,7 +410,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         buttonDeleteSelectedPermanently.setEnabled(anySelected);
 
         // Update toolbar title
-        // -------------- Fix Start for this method(updateToolbarTitle)-----------
         if (titleText != null) {
             if (isInSelectionMode && trashAdapter != null) {
                 int selectedCount = trashAdapter.getSelectedItemsCount();
@@ -425,7 +418,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 titleText.setText(getString(R.string.trash_fragment_title_text));
             }
         }
-        // -------------- Fix Ended for this method(updateToolbarTitle)-----------
 
         // Show select-all slot; keep container present to preserve toolbar height.
         boolean inSel = isInSelectionMode && !trashItems.isEmpty();
@@ -552,14 +544,12 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             updateRestoreButtonAppearance(hasSelectedItems);
 
             // Update toolbar title if in selection mode
-            // -------------- Fix Start for this method(updateSelectionUI)-----------
             if (titleText != null && isInSelectionMode) {
                 int selectedCount = trashAdapter.getSelectedItemsCount();
                 titleText.setText(selectedCount + " selected");
             } else if (titleText != null) {
                 titleText.setText(getString(R.string.trash_fragment_title_text));
             }
-            // -------------- Fix Ended for this method(updateSelectionUI)-----------
 
             // Update select all checkbox state
             updateSelectAllCheckboxState();
@@ -608,9 +598,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_trash_auto_delete_settings) {
-            // -------------- Fix Start for this method(onOptionsItemSelected:routeToBottomSheet)-----------
             showAutoDeleteBottomSheet();
-            // -------------- Fix Ended for this method(onOptionsItemSelected:routeToBottomSheet)-----------
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -622,7 +610,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private void showAutoDeleteBottomSheet() {
         if (getContext() == null || sharedPreferencesManager == null) return;
 
-        // -------------- Fix Start for this method(showAutoDeleteBottomSheet)-----------
         // Define options
         final String[] ids = new String[]{
                 "immediate", "1h", "5h", "10h", "1d", "7d", "30d", "60d", "90d", "never"
@@ -701,7 +688,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 getString(R.string.auto_delete_dialog_title), items, selectedId, resultKey, helper
         );
         sheet.show(getParentFragmentManager(), "TrashAutoDeletePicker");
-        // -------------- Fix Ended for this method(showAutoDeleteBottomSheet)-----------
     }
 
     private void showAutoDeleteSettingsDialog() {
@@ -710,7 +696,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             return;
         }
 
-        // ----- Fix Start for this method(showAutoDeleteSettingsDialog)-----
         final String[] items = {
                 getString(R.string.auto_delete_immediate), // new immediate option
                 getString(R.string.auto_delete_1_hour),
@@ -736,7 +721,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 90 * 24 * 60, // 90 Days
                 SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER
         };
-        // ----- Fix Ended for this method(showAutoDeleteSettingsDialog)-----
 
         int currentSettingMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
         int checkedItem = -1;
@@ -892,7 +876,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
 
         int totalMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
 
-        // ----- Fix Start for this method(updateAutoDeleteInfoText)-----
         if (totalMinutes == 0) {
             tvAutoDeleteInfo.setText(getString(R.string.trash_auto_delete_info_immediate));
         } else if (totalMinutes == SharedPreferencesManager.TRASH_AUTO_DELETE_NEVER) {
@@ -911,7 +894,6 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             tvAutoDeleteInfo
                     .setText(getResources().getQuantityString(R.plurals.trash_auto_delete_info_days, days, days));
         }
-        // ----- Fix Ended for this method(updateAutoDeleteInfoText)-----
     }
 
     @Override
@@ -943,12 +925,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             isInSelectionMode = false;
             trashAdapter.clearSelections();
             updateActionButtonsState();
-            // -------------- Fix Start for this method(exitSelectionMode)-----------
             // Reset any UI elements that change in selection mode
             if (titleText != null) {
                 titleText.setText(getString(R.string.trash_fragment_title_text));
             }
-            // -------------- Fix Ended for this method(exitSelectionMode)-----------
 
             // Explicitly update button appearances
             updateDeleteButtonAppearance(false);

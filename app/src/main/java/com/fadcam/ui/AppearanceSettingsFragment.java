@@ -103,7 +103,6 @@ public class AppearanceSettingsFragment extends Fragment {
                             com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID
                         );
                         if (id != null) {
-                            // -------------- Fix Start for this logic(theme selection defer recreate)-----------
                             // Persist immediately
                             sharedPreferencesManager.sharedPreferences
                                 .edit()
@@ -138,7 +137,6 @@ public class AppearanceSettingsFragment extends Fragment {
                                     260
                                 ); // picker uses 160ms dismiss delay; add buffer
                             }
-                            // -------------- Fix Ended for this logic(theme selection defer recreate)-----------
                         }
                     }
                 }
@@ -252,7 +250,6 @@ public class AppearanceSettingsFragment extends Fragment {
 
     // -------------- Refactor End: language row wrapper -----------
 
-    // -------------- Fix Start for language setup(copy)-----------
     private void saveLanguagePreference(String languageCode) {
         SharedPreferences.Editor editor =
             sharedPreferencesManager.sharedPreferences.edit();
@@ -402,9 +399,7 @@ public class AppearanceSettingsFragment extends Fragment {
         }
     }
 
-    // -------------- Fix Ended for language setup(copy)-----------
 
-    // -------------- Fix Start for app icon setup(copy)-----------
     private void setupAppIconRow(View root) {
         View row = root.findViewById(R.id.row_app_icon);
         TextView value = root.findViewById(R.id.value_app_icon);
@@ -796,5 +791,4 @@ public class AppearanceSettingsFragment extends Fragment {
     private void vibrateTouch() {
         // no-op placeholder (original logic in SettingsFragment). Safe to omit for now.
     }
-    // -------------- Fix Ended for app icon setup(copy)-----------
 }

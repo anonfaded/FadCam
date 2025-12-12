@@ -56,7 +56,6 @@ public class WatermarkSettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         
         // Mark main watermark feature as seen (dismisses NEW badge on Quick Access)
         NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
@@ -108,17 +107,14 @@ public class WatermarkSettingsFragment extends Fragment {
     refreshCustomTextValue();
     updateLocationRowState();
     updatePreview();
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshLocationValue() {
-        // -------------- Fix Start for this method(refreshLocationValue)-----------
         if (valueLocationWatermark != null) {
             valueLocationWatermark.setText(prefs.isLocalisationEnabled() ? "Enabled" : "Disabled");
         }
-        // -------------- Fix Ended for this method(refreshLocationValue)-----------
     }
 
     private void toggleLocationDirect(boolean target){
@@ -167,7 +163,6 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void showPermissionDialog(Runnable proceed) {
-        // -------------- Fix Start for this method(showPermissionDialog)-----------
         new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
                 .setTitle(R.string.location_permission_title)
                 .setMessage(R.string.location_permission_description)
@@ -177,7 +172,6 @@ public class WatermarkSettingsFragment extends Fragment {
                 })
                 .setNegativeButton(R.string.universal_cancel, (d, w) -> { })
                 .show();
-        // -------------- Fix Ended for this method(showPermissionDialog)-----------
     }
 
     private void onPermissionGrantedPostRequest() {
@@ -239,7 +233,6 @@ public class WatermarkSettingsFragment extends Fragment {
         else valueWatermarkStyle.setText(getString(R.string.watermark_style_none_label));
     }
 
-    // -------------- Fix Start for this method(updateLocationRowState)-----------
     private void updateLocationRowState(){
         if(locationRow==null) return;
         boolean watermarkNone = "no_watermark".equals(prefs.getWatermarkOption());
@@ -255,7 +248,6 @@ public class WatermarkSettingsFragment extends Fragment {
             locationRow.setAlpha(1f);
         }
     }
-    // -------------- Fix Ended for this method(updateLocationRowState)-----------
 
     private void updatePreview(){
         if(previewText==null) return;

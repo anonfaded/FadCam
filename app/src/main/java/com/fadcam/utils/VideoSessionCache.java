@@ -1,4 +1,3 @@
-// -------------- Fix Start (VideoSessionCache Utility)-----------
 package com.fadcam.utils;
 
 import android.content.Context;
@@ -473,4 +472,3 @@ public class VideoSessionCache {
         return null;
     }
 }
-// -------------- Fix Ended (VideoSessionCache Utility)-----------

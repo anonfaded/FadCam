@@ -41,13 +41,11 @@ public final class OverlayNavUtil {
         if(container==null || container.getVisibility()!=View.VISIBLE){
             return;
         }
-        // -------------- Fix Start for this method(dismiss_guard_against_race)-----------
         // Capture the current top fragment; only pop/hide if it is still the same when the
         // animation finishes to avoid dismissing a newly opened overlay.
         final androidx.fragment.app.Fragment beforeTop = activity.getSupportFragmentManager()
                 .findFragmentById(R.id.overlay_fragment_container);
         final int beforeBackStackCount = activity.getSupportFragmentManager().getBackStackEntryCount();
-        // -------------- Fix Ended for this method(dismiss_guard_against_race)-----------
         int currentPosition = 0;
         ViewPager2 vp = activity.findViewById(R.id.view_pager);
         if(vp!=null){
@@ -55,7 +53,6 @@ public final class OverlayNavUtil {
             try { vp.setUserInputEnabled(true); } catch (Throwable ignored) { }
         }
         container.animate().alpha(0f).setDuration(160).withEndAction(() -> {
-            // -------------- Fix Start for this method(dismiss_guard_against_race_endAction)-----------
             androidx.fragment.app.Fragment currentTop = activity.getSupportFragmentManager()
                     .findFragmentById(R.id.overlay_fragment_container);
             boolean sameInstance = currentTop == beforeTop; // instance equality
@@ -71,7 +68,6 @@ public final class OverlayNavUtil {
                 // A new overlay was shown during animation; keep container visible and do not pop.
                 container.setAlpha(1f);
             }
-            // -------------- Fix Ended for this method(dismiss_guard_against_race_endAction)-----------
         }).start();
     }
 }

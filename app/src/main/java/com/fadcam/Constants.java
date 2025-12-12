@@ -72,12 +72,10 @@ public abstract class Constants {
     public static final String PREF_AE_LOCK = "pref_ae_lock"; // boolean
     public static final String PREF_AF_MODE = "pref_af_mode"; // int
 
-    // -------------- Fix Start (ModeSwitcher Constants) --------------
     // Mode switcher constants
     public static final String MODE_FADCAM = "FADCAM";
     public static final String MODE_FADREC = "FADREC";
     public static final String MODE_FADMIC = "FADMIC";
-    // -------------- Fix Ended (ModeSwitcher Constants) --------------
 
     // Fragment result keys used by PickerBottomSheetFragment listeners
     public static final String RK_EXPOSURE_COMPENSATION =
@@ -229,11 +227,9 @@ public abstract class Constants {
     public static final boolean DEFAULT_RECORD_AUDIO = true;
     public static final int DEFAULT_AUDIO_BITRATE = 192000; // 192 kbps stereo AAC
     public static final int DEFAULT_AUDIO_SAMPLING_RATE = 48000; // 48 kHz
-    // -------------- Fix Start for this
     // class(Constants_video_bitrate_defaults)-----------
     public static final String PREF_VIDEO_BITRATE = "video_bitrate"; // stored in raw bps
     public static final int DEFAULT_VIDEO_BITRATE = 8_000_000; // 8 Mbps default
-    // -------------- Fix Ended for this
     // class(Constants_video_bitrate_defaults)-----------
 
     public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH =
@@ -272,7 +268,6 @@ public abstract class Constants {
     public static final String EXTRA_PROCESSING_URI_STRING =
         "com.fadcam.EXTRA_PROCESSING_URI_STRING";
 
-    // -------------- Fix Start: Add constant for recording failure broadcast
     // -----------
     // Broadcast action sent by RecordingService when it fails to start
     public static final String ACTION_RECORDING_FAILED =
@@ -281,9 +276,7 @@ public abstract class Constants {
         "com.fadcam.EXTRA_ERROR_MESSAGE";
     public static final String EXTRA_STACK_TRACE =
         "com.fadcam.EXTRA_STACK_TRACE";
-    // -------------- Fix Ended for this constant -----------
 
-    // ----- Fix Start for this class (Constants_video_splitting_broadcast) -----
     // Broadcast action sent by RecordingService when a video segment is complete
     // (due to splitting)
     public static final String ACTION_RECORDING_SEGMENT_COMPLETE =
@@ -299,7 +292,6 @@ public abstract class Constants {
     // Extra key for the segment number that just completed
     public static final String INTENT_EXTRA_SEGMENT_NUMBER =
         "com.fadcam.EXTRA_SEGMENT_NUMBER";
-    // ----- Fix Ended for this class (Constants_video_splitting_broadcast) -----
 
     // SharedPreferences key for opened videos
     public static final String PREF_OPENED_VIDEO_URIS = "opened_video_uris";
@@ -322,14 +314,12 @@ public abstract class Constants {
     // replacement
     // tracking
 
-    // ----- Fix Start for camera resource availability -----
     // Broadcast for camera resource availability status
     public static final String ACTION_CAMERA_RESOURCE_AVAILABILITY =
         "com.fadcam.ACTION_CAMERA_RESOURCE_AVAILABILITY";
     public static final String EXTRA_CAMERA_RESOURCES_AVAILABLE =
         "com.fadcam.EXTRA_CAMERA_RESOURCES_AVAILABLE";
     public static final int CAMERA_RESOURCE_COOLDOWN_MS = 1500; // 1.5 seconds cooldown for camera resources
-    // ----- Fix End for camera resource availability -----
 
     // Add the location reinitialize intent action
     public static final String INTENT_ACTION_REINITIALIZE_LOCATION =

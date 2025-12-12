@@ -150,7 +150,6 @@ public class ShortcutsPreferences {
         }
     }
 
-    // -------------- Fix Start for this method(setCustomIconRes / getCustomIconRes / clearCustomIconRes)-----------
     /**
      * Stores a drawable resource id to be used as the custom icon for this shortcut.
      * Clears any previously saved bitmap path, since the resource will take precedence.
@@ -174,5 +173,4 @@ public class ShortcutsPreferences {
     public void clearCustomIconRes(@NonNull String shortcutId) {
         sp.edit().remove(keyIconRes(shortcutId)).apply();
     }
-    // -------------- Fix Ended for this method(setCustomIconRes / getCustomIconRes / clearCustomIconRes)-----------
 }

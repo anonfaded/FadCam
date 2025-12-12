@@ -256,7 +256,6 @@ public class TrashManager {
                     System.currentTimeMillis(), isSafSource));
             if (saveTrashMetadata(context, trashItems)) {
                 Log.i(TAG, "moveToTrash: Successfully moved and updated metadata for: " + originalDisplayName);
-                // ----- Fix Start for this method(moveToTrash immediate handling)-----
                 // If auto-delete is set to Immediate (0 minutes), delete this item right away
                 int minutes = com.fadcam.SharedPreferencesManager.getInstance(context).getTrashAutoDeleteMinutes();
                 if (minutes == 0) {
@@ -269,7 +268,6 @@ public class TrashManager {
                     List<TrashItem> all = loadTrashMetadata(context);
                     permanentlyDeleteItemsInternal(context, single, all);
                 }
-                // ----- Fix Ended for this method(moveToTrash immediate handling)-----
                 return true;
             } else {
                 Log.e(TAG, "moveToTrash: File moved/copied, but FAILED to save trash metadata for: "
@@ -730,7 +728,6 @@ public class TrashManager {
             Log.e(TAG, "autoDeleteExpiredItems: Context is null.");
             return 0;
         }
-        // ----- Fix Start for this method(autoDeleteExpiredItems)-----
         if (autoDeleteMinutes == 0) {
             // Immediate deletion: delete all items currently in trash
             Log.i(TAG, "autoDeleteExpiredItems: Immediate mode selected. Deleting all items.");

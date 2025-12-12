@@ -52,7 +52,6 @@ public class RecordsSidebarFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        // -------------- Fix Start for this method(onCreateDialog)-----------
         // Create a Material SideSheetDialog to host the sidebar content
         SideSheetDialog dialog = new SideSheetDialog(requireContext());
         // Make window background fully transparent so our gradient shape shows without gray corners
@@ -68,15 +67,12 @@ public class RecordsSidebarFragment extends DialogFragment {
         }
     // No-op: window background already transparent; layout clips to outline.
         return dialog;
-        // -------------- Fix Ended for this method(onCreateDialog)-----------
     }
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // -------------- Fix Start for this method(onCreateView)-----------
         // Inflate the side sheet content (modal side sheet provided by Material components)
         return inflater.inflate(R.layout.fragment_records_sidebar, container, false);
-        // -------------- Fix Ended for this method(onCreateView)-----------
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -169,16 +165,12 @@ public class RecordsSidebarFragment extends DialogFragment {
 
     private void openSortPicker(){
     ArrayList<OptionItem> options = new ArrayList<>();
-    // -------------- Fix Start for this method(openSortPicker_material_symbols)-----------
     // Use Material Symbols ligatures for cleaner, consistent icons
     options.add(OptionItem.withLigature("latest", getString(R.string.sort_latest_first), "arrow_upward"));
     options.add(OptionItem.withLigature("oldest", getString(R.string.sort_oldest_first), "arrow_downward"));
     // Use size icons to imply file size ordering
-    // -------------- Fix Start for this method(openSortPicker_size_icons)-----------
     options.add(OptionItem.withLigature("smallest", getString(R.string.sort_smallest_first), "trending_down"));
     options.add(OptionItem.withLigature("largest", getString(R.string.sort_largest_first), "trending_up"));
-    // -------------- Fix Ended for this method(openSortPicker_size_icons)-----------
-    // -------------- Fix Ended for this method(openSortPicker_material_symbols)-----------
 
         final String pickerKey = "records_sort_picker";
         getParentFragmentManager().setFragmentResultListener(pickerKey, this, (k, bundle)->{
@@ -196,7 +188,6 @@ public class RecordsSidebarFragment extends DialogFragment {
                 }
             }
         });
-    // -------------- Fix Start for this method(openSortPicker_helper_text)-----------
     PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
         getString(R.string.sort_by), options, selectedSortId, pickerKey, getString(R.string.records_sort_helper)
     );
@@ -206,7 +197,6 @@ public class RecordsSidebarFragment extends DialogFragment {
     @Override
     public void onStart() {
         super.onStart();
-        // -------------- Fix Start for this method(onStart_clearContainerBackgrounds)-----------
         // Clear any default container backgrounds from the SideSheet host views to avoid gray edges around rounded corners
         View root = getView();
         if(root != null){
@@ -221,7 +211,6 @@ public class RecordsSidebarFragment extends DialogFragment {
                 guard++;
             }
         }
-        // -------------- Fix Ended for this method(onStart_clearContainerBackgrounds)-----------
     }
 
     private void updateSortSubtitle(TextView tv, String id){

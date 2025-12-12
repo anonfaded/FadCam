@@ -123,7 +123,6 @@ public class ShortcutsManager {
         return prefs.setCustomIconFromUri(id, uri) != null;
     }
 
-    // -------------- Fix Start for this method(setCustomIconFromBitmap)-----------
     /**
      * Persists a custom icon for the given shortcut from a Bitmap.
      * Returns true if saved successfully.
@@ -135,9 +134,7 @@ public class ShortcutsManager {
         return prefs.setCustomIconFromBitmap(id, bitmap) != null;
     }
 
-    // -------------- Fix Ended for this method(setCustomIconFromBitmap)-----------
 
-    // -------------- Fix Start for this method(setCustomIconFromResId)-----------
     /**
      * Persists a custom icon for the given shortcut from a drawable resource (including adaptive icons).
      * The drawable is rasterized to a 192x192 bitmap before saving.
@@ -156,7 +153,6 @@ public class ShortcutsManager {
         }
     }
 
-    // -------------- Fix Ended for this method(setCustomIconFromResId)-----------
 
     public boolean isPinSupported() {
         return ShortcutManagerCompat.isRequestPinShortcutSupported(ctx);

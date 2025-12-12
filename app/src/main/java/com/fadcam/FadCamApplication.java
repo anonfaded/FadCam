@@ -20,16 +20,13 @@ public class FadCamApplication extends Application implements LifecycleObserver 
     public void onAppBackgrounded() {
         // App is in background, reset AppLock session
         SharedPreferencesManager.getInstance(this).setAppLockSessionUnlocked(false);
-        // ----- Fix Start: Notify RecordingService to release GL resources -----
         Intent intent = new Intent(this, com.fadcam.services.RecordingService.class);
         intent.setAction("ACTION_APP_BACKGROUND");
         startService(intent);
-        // ----- Fix End -----
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     public void onAppForegrounded() {
-        // ----- Fix Start: Only send ACTION_APP_FOREGROUND for recording-related activities -----
         // Don't send it for TextEditorActivity, TransparentPermissionActivity, etc.
         // which are transparent/standalone and shouldn't wake up the main app
         
@@ -62,6 +59,5 @@ public class FadCamApplication extends Application implements LifecycleObserver 
         Intent intent = new Intent(this, com.fadcam.services.RecordingService.class);
         intent.setAction("ACTION_APP_FOREGROUND");
         startService(intent);
-        // ----- Fix End -----
     }
 } 

@@ -74,7 +74,6 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         TextView title = view.findViewById(R.id.picker_title);
         if (title != null) { title.setText(R.string.debug_log_tools_title); }
         
@@ -140,19 +139,13 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
                 setRowEnabled(deleteRow, hasContent);
             }
         }
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    // -------------- Fix Start for this method(buildPreviewArea)-----------
     private View buildPreviewArea() {
         LinearLayout container = new LinearLayout(requireContext());
         container.setOrientation(LinearLayout.VERTICAL);
-    // -------------- Fix Start for padding (buildPreviewArea)-----------
     // Apply same gutters as Settings rows: 14dp start / 12dp end, with small vertical padding
-    // -------------- Fix Start for this method(buildPreviewArea padding)-----------
     container.setPadding(dp(14), dp(6), dp(12), dp(6));
-    // -------------- Fix Ended for this method(buildPreviewArea padding)-----------
-    // -------------- Fix Ended for padding (buildPreviewArea)-----------
 
         LinearLayout searchRow = new LinearLayout(requireContext());
         searchRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -204,9 +197,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
 
         return container;
     }
-    // -------------- Fix Ended for this method(buildPreviewArea)-----------
 
-    // -------------- Fix Start for this method(onShare)-----------
     private void onShare() {
         try {
             Uri share = Log.getSharableLogUri(requireContext());
@@ -224,9 +215,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             Toast.makeText(requireContext(), getString(R.string.debug_log_share_fail) + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
-    // -------------- Fix Ended for this method(onShare)-----------
 
-    // -------------- Fix Start for this method(onDeleteWithConfirm)-----------
     private void onDeleteWithConfirm() {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.debug_log_delete_title)
@@ -243,9 +232,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
                 .setNegativeButton(R.string.universal_cancel, (d, which) -> d.dismiss())
                 .show();
     }
-    // -------------- Fix Ended for this method(onDeleteWithConfirm)-----------
 
-    // -------------- Fix Start for this method(onOpenExternal)-----------
     private void onOpenExternal() {
         try {
             Uri uri = Log.getSharableLogUri(requireContext());
@@ -261,9 +248,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             Toast.makeText(requireContext(), getString(R.string.debug_log_open_fail) + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
-    // -------------- Fix Ended for this method(onOpenExternal)-----------
 
-    // -------------- Fix Start for this method(makeDivider)-----------
     private View makeDivider(){
         View d = new View(requireContext());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
@@ -273,16 +258,13 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     d.setBackgroundColor(0xFF262626);
         return d;
     }
-    // -------------- Fix Ended for this method(makeDivider)-----------
 
-    // -------------- Fix Start for this method(buildActionRow)-----------
     private LinearLayout buildActionRow(int iconRes, String title, String subtitle){
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
-        // -------------- Fix Start for this method(buildActionRow)-----------
         // 14dp start / 12dp end gutters, light vertical padding
         row.setPadding(dp(14), dp(6), dp(12), dp(6));
         android.widget.ImageView icon = new android.widget.ImageView(requireContext());
@@ -313,19 +295,15 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         arrow.setImageResource(R.drawable.ic_arrow_right);
         arrow.setImageTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.darker_gray)));
         row.addView(arrow);
-    // -------------- Fix Ended for this method(buildActionRow)-----------
     return row;
     }
-    // -------------- Fix Ended for this method(buildActionRow)-----------
 
-    // -------------- Fix Start for this method(buildToggleRow)-----------
     private LinearLayout buildToggleRow(){
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
-    // -------------- Fix Start for this method(buildToggleRow)-----------
     row.setPadding(dp(14), dp(6), dp(12), dp(6));
         TextView label = new TextView(requireContext());
         label.setText(getString(R.string.setting_debug_title));
@@ -342,10 +320,8 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             Log.setDebugEnabled(isChecked);
         });
     row.addView(sw, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-    // -------------- Fix Ended for this method(buildToggleRow)-----------
     return row;
     }
-    // -------------- Fix Ended for this method(buildToggleRow)-----------
 
     private int dp(int v){ return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
 

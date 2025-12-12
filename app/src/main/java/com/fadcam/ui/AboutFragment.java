@@ -80,15 +80,11 @@ public class AboutFragment extends BaseFragment {
     }
 
     private void initializeViews() {
-        // -------------- Fix Start for this method(initializeViews)-----------
         // Header back button handling (new)
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
-            // -------------- Fix Start for this logic(unified back animation)-----------
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
-            // -------------- Fix Ended for this logic(unified back animation)-----------
         }
-        // -------------- Fix Ended for this method(initializeViews)-----------
         ImageView appIcon = view.findViewById(R.id.app_icon);
         TextView appName = view.findViewById(R.id.app_name);
         TextView appVersion = view.findViewById(R.id.app_version);
@@ -733,7 +729,6 @@ public class AboutFragment extends BaseFragment {
                 checkUpdatesButton.setStrokeColor(ColorStateList.valueOf(Color.BLACK));
             }
             
-            // ----- Fix Start: Only tint email icon for Snow Veil theme -----
             // Find and apply black tint ONLY to the email icon
             TextView emailText = rootView.findViewById(R.id.email_text);
             if (emailText != null) {
@@ -746,7 +741,6 @@ public class AboutFragment extends BaseFragment {
                 }
                 emailText.setTextColor(Color.BLACK);
             }
-            // ----- Fix End: Only tint email icon for Snow Veil theme -----
             
         } catch (Exception e) {
             Log.e("AboutFragment", "Error applying Snow Veil theme to cards: " + e.getMessage());
@@ -772,12 +766,10 @@ public class AboutFragment extends BaseFragment {
                 tintAllIcons(viewGroup.getChildAt(i), color);
             }
         } else if (view instanceof ImageView) {
-            // ----- Fix Start: Exclude app logo from black tint -----
             // Skip applying tint to the app icon
             if (view.getId() == R.id.app_icon) {
                 return; // Don't apply tint to app logo
             }
-            // ----- Fix End: Exclude app logo from black tint -----
             
             ((ImageView) view).setColorFilter(color);
         } else if (view instanceof MaterialButton) {

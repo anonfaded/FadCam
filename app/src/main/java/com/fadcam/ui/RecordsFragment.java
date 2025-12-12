@@ -119,7 +119,6 @@ public class RecordsFragment extends BaseFragment implements
     // Remove duplicate session cache - now using shared VideoSessionCache utility
     // (Moved to com.fadcam.utils.VideoSessionCache for cross-fragment sharing)
 
-    // -------------- Fix Start (Skeleton Loading Methods) --------------
 
     /**
      * Shows skeleton loading placeholders immediately for professional UX
@@ -138,7 +137,6 @@ public class RecordsFragment extends BaseFragment implements
                     skeletonItems.add(VideoItem.createSkeleton());
                 }
 
-                // -------------- Fix Start (showSkeletonLoading) - Proper skeleton setup
                 // -----------
 
                 // Show skeleton items immediately without triggering updateRecords
@@ -154,7 +152,6 @@ public class RecordsFragment extends BaseFragment implements
                     recordsAdapter.setSkeletonData(skeletonItems);
                 }
 
-                // -------------- Fix End (showSkeletonLoading) -----------
 
                 // CRITICAL: Show RecyclerView immediately to prevent empty flash
                 if (recyclerView != null) {
@@ -182,7 +179,6 @@ public class RecordsFragment extends BaseFragment implements
                 Log.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size()
                         + " actual videos");
 
-                // -------------- Fix Start (replaceSkeletonsWithData) - Fixed positioning and
                 // ordering -----------
 
                 // Disable skeleton mode
@@ -220,9 +216,7 @@ public class RecordsFragment extends BaseFragment implements
 
                 Log.d(TAG, "Skeleton replacement complete - proper positioning and ordering achieved");
 
-                // -------------- Fix End (replaceSkeletonsWithData) -----------
 
-                // -------------- Fix End (replaceSkeletonsWithData) -----------
             });
         }
     }
@@ -236,7 +230,6 @@ public class RecordsFragment extends BaseFragment implements
                 if (!isAdded())
                     return;
 
-                // -------------- Fix Start (hideSkeletonLoading) - Proper state cleanup
                 // -----------
 
                 if (recordsAdapter != null) {
@@ -258,7 +251,6 @@ public class RecordsFragment extends BaseFragment implements
                     Log.d(TAG, "Refresh indicator stopped in hideSkeletonLoading");
                 }
 
-                // -------------- Fix End (hideSkeletonLoading) -----------
             });
         }
     }
@@ -288,7 +280,6 @@ public class RecordsFragment extends BaseFragment implements
         return getInternalRecordsList();
     }
 
-    // -------------- Fix Ended (Skeleton Loading Methods) --------------
 
     private AlertDialog progressDialog; // Field to hold the dialog for Save to Gallery
     private AlertDialog moveTrashProgressDialog; // Changed from ProgressDialog to AlertDialog
@@ -302,9 +293,7 @@ public class RecordsFragment extends BaseFragment implements
     private boolean isScrollingDown = true; // Track scroll direction for FAB icon
     private ObjectAnimator currentRotationAnimator; // Smooth rotation animation for FAB icon
 
-    // ----- Fix Start: Add AppLock overlay view field -----
     private View applockOverlay;
-    // ----- Fix End: Add AppLock overlay view field -----
 
     // Use VideoItem and store Uris for selection
     private List<VideoItem> videoItems = new ArrayList<>();
@@ -315,14 +304,12 @@ public class RecordsFragment extends BaseFragment implements
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
-    // -------------- Fix Start for this method(updateHeaderFields)-----------
     private TextView titleText;
     private ImageView menuButton;
     private ImageView closeButton;
     private View selectAllContainer;
     private android.widget.ImageView selectAllCheck;
     private CharSequence originalToolbarTitle;
-    // -------------- Fix Ended for this method(updateHeaderFields)-----------
 
     // --- Selection State ---
     private boolean isInSelectionMode = false;
@@ -621,7 +608,6 @@ public class RecordsFragment extends BaseFragment implements
                         if (success && finalUriString != null) {
                             Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString
                                     + ". Refreshing list.");
-                            // -------------- Fix Start (invalidate cache for new recording) -----------
                             // Clear adapter caches to prevent stale duration data
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
@@ -630,7 +616,6 @@ public class RecordsFragment extends BaseFragment implements
                             // Invalidate cache so loadRecordsList will load fresh data including the new video
                             com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
                             Log.d(TAG, "Cache invalidated for new recording, forcing fresh load");
-                            // -------------- Fix End (invalidate cache for new recording) -----------
                             // For non-SAF or if originalTempSafUriString was null, a full refresh is often
                             // simplest
                             // as the new item should be discoverable by loadRecordsList.
@@ -638,7 +623,6 @@ public class RecordsFragment extends BaseFragment implements
                         } else if (!success) {
                             Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
                                     + ". Refreshing list.");
-                            // -------------- Fix Start (invalidate cache for failed recording) -----------
                             // Clear adapter caches to prevent stale data
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
@@ -647,11 +631,9 @@ public class RecordsFragment extends BaseFragment implements
                             // Invalidate cache so loadRecordsList will load fresh data and clear any temp states
                             com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
                             Log.d(TAG, "Cache invalidated for failed recording, forcing fresh load");
-                            // -------------- Fix End (invalidate cache for failed recording) -----------
                             // Still refresh, as a temp file might need its processing state cleared
                             loadRecordsList();
                         } else if (success && finalUriString == null) {
-                            // -------------- Fix Start (handle success without URI) -----------
                             // Recording was successful but no specific URI provided - refresh anyway
                             Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success without URI. Refreshing list to detect new video.");
                             // Clear adapter caches to prevent stale duration data
@@ -662,7 +644,6 @@ public class RecordsFragment extends BaseFragment implements
                             com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
                             Log.d(TAG, "Cache invalidated for successful recording without URI, forcing fresh load");
                             loadRecordsList(); // This will re-scan and find the new video
-                            // -------------- Fix End (handle success without URI) -----------
                         }
                     }
                 };
@@ -752,7 +733,6 @@ public class RecordsFragment extends BaseFragment implements
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
 
-        // -------------- Fix Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
         // Initialize header elements
@@ -856,7 +836,6 @@ public class RecordsFragment extends BaseFragment implements
         }
 
         originalToolbarTitle = getString(R.string.records_title);
-        // -------------- Fix Ended for this method(onViewCreated)-----------
 
         loadingIndicator = view.findViewById(R.id.loading_indicator);
         recyclerView = view.findViewById(R.id.recycler_view_records);
@@ -874,7 +853,6 @@ public class RecordsFragment extends BaseFragment implements
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 Log.d(TAG, "Swipe to refresh triggered.");
 
-                // -------------- Fix Start (onRefresh) - Professional refresh handling with
                 // skeleton -----------
 
                 // Clear session cache to force fresh data
@@ -910,7 +888,6 @@ public class RecordsFragment extends BaseFragment implements
                 // refresh indicator)
                 loadRecordsList();
 
-                // -------------- Fix End (onRefresh) -----------
             });
         } else {
             Log.e(TAG, "SwipeRefreshLayout is null after findViewById!");
@@ -938,7 +915,6 @@ public class RecordsFragment extends BaseFragment implements
 
             Log.d(TAG, "onViewCreated: Fragment is visible, initiating loadRecordsList.");
 
-            // -------------- Fix Start (immediate skeleton) - Show skeleton immediately to
             // prevent flash -----------
             // CRITICAL: Show skeleton IMMEDIATELY to prevent empty flash
             int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
@@ -947,7 +923,6 @@ public class RecordsFragment extends BaseFragment implements
             }
             Log.d(TAG, "onViewCreated: Showing " + estimatedCount + " skeleton items immediately");
             showSkeletonLoading(estimatedCount);
-            // -------------- Fix End (immediate skeleton) -----------
 
             isInitialLoad = true; // Mark as initial load
             loadRecordsList();
@@ -958,7 +933,6 @@ public class RecordsFragment extends BaseFragment implements
                 recordsAdapter.updateRecords(videoItems); // Make sure adapter has the data
             updateUiVisibility();
         }
-        // ----- Fix Start: Show AppLock overlay immediately if required and not
         // unlocked (session-based) -----
         boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
         boolean isSessionUnlocked = sharedPreferencesManager.isAppLockSessionUnlocked();
@@ -967,16 +941,12 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             fadeOverlay(false);
         }
-        // ----- Fix End: Show AppLock overlay immediately if required and not unlocked
         // (session-based) -----
 
-        // ----- Fix Start: Apply theme colors to FABs, top bar, and bottom sheet in
         // RecordsFragment -----
-        // -------------- Fix Start for this method(applyTheme)-----------
         // Apply theme to top bar - header bar background is handled by
         // ?attr/colorTopBar in XML
         // No need to set background color programmatically
-        // -------------- Fix Ended for this method(applyTheme)-----------
         // Apply theme to FABs
         int colorButton = resolveThemeColor(R.attr.colorButton);
         if (fabDeleteSelected != null) {
@@ -984,7 +954,6 @@ public class RecordsFragment extends BaseFragment implements
             fabDeleteSelected
                     .setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
         }
-        // ----- Fix End: Apply theme colors to FABs, top bar, and bottom sheet in
         // RecordsFragment -----
     } // End onViewCreated
 
@@ -1000,7 +969,6 @@ public class RecordsFragment extends BaseFragment implements
         if (viewPager != null && viewPager.getCurrentItem() == 1 && isVisible()) {
             checkAppLock();
         }
-        // -------------- Fix Start for this method(onResume)-----------
         // Update title text
         if (titleText != null) {
             titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
@@ -1008,12 +976,10 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             Log.w(TAG, "Could not update title in onResume - titleText is null.");
         }
-        // -------------- Fix Ended for this method(onResume)-----------
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         }
 
-        // ----- Fix Start: Check for theme changes and update adapter -----
         if (recordsAdapter != null && sharedPreferencesManager != null) {
             String currentTheme = sharedPreferencesManager.sharedPreferences
                     .getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
@@ -1021,9 +987,7 @@ public class RecordsFragment extends BaseFragment implements
             recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
             Log.d(TAG, "onResume: Updated Snow Veil theme flag on adapter: " + isSnowVeilTheme);
         }
-        // ----- Fix End: Check for theme changes and update adapter -----
 
-        // -------------- Fix Start (onResume) - Smart loading to prevent duplication
         // -----------
 
         // -------------- CRITICAL FIX: Only load when fragment is actually visible to
@@ -1041,7 +1005,6 @@ public class RecordsFragment extends BaseFragment implements
 
         Log.d(TAG, "onResume: Fragment is visible to user, proceeding with load check");
 
-        // -------------- Fix Start (onResume) - Prevent duplicate loading -----------
 
         // Only reload if we actually need to (no data or cache invalidated)
         boolean hasData = recordsAdapter != null && recordsAdapter.getItemCount() > 0 && !videoItems.isEmpty();
@@ -1058,14 +1021,10 @@ public class RecordsFragment extends BaseFragment implements
             Log.d(TAG, "onResume: Already loading, skipping duplicate request");
         }
 
-        // -------------- Fix End (onResume) -----------
 
-        // -------------- Fix End (onResume) -----------
         // no-op: view mode toggle is in Records Options side sheet
-        // ----- Fix Start: Always invalidate options menu to ensure correct menu for
         // Records tab -----
         requireActivity().invalidateOptionsMenu();
-        // ----- Fix End: Always invalidate options menu to ensure correct menu for
         // Records tab -----
     }
 
@@ -1237,7 +1196,6 @@ public class RecordsFragment extends BaseFragment implements
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                // -------------- Fix Start (onScrolled) - Navigation FAB management with scroll
                 // direction tracking -----------
 
                 // Track scroll direction based on dy parameter
@@ -1276,7 +1234,6 @@ public class RecordsFragment extends BaseFragment implements
                     }
                 }
 
-                // -------------- Fix End (onScrolled) -----------
 
                 // Don't do any loading if we're in selection mode or search mode
                 if (isInSelectionMode() || isSearchActive() || isLoading) {
@@ -1353,7 +1310,6 @@ public class RecordsFragment extends BaseFragment implements
             Log.w(TAG, "fabDeleteSelected is null in setupFabListeners (Might be initially GONE).");
         }
 
-        // -------------- Fix Start (setupFabListeners) - Navigation FAB setup
         // -----------
 
         if (fabScrollNavigation != null) {
@@ -1370,7 +1326,6 @@ public class RecordsFragment extends BaseFragment implements
             Log.w(TAG, "fabScrollNavigation is null in setupFabListeners.");
         }
 
-        // -------------- Fix End (setupFabListeners) -----------
     }
 
     private void toggleViewMode() {
@@ -1855,7 +1810,6 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     // --- UI Updates ---
-    // -------------- Fix Start for this method(updateUiForSelectionMode)-----------
     /** Updates Title, FABs based on whether selection mode is active */
     private void updateUiForSelectionMode() {
         if (!isAdded() || titleText == null || getActivity() == null) {
@@ -1899,11 +1853,9 @@ public class RecordsFragment extends BaseFragment implements
             // Restore more-options icon and hide close button
             if (menuButton != null) {
                 menuButton.setVisibility(View.VISIBLE);
-                // -------------- Fix Start for this method(updateHeaderMenuIcon)-----------
                 menuButton.setImageResource(R.drawable.ic_two_line_hamburger);
                 menuButton.setOnClickListener(v -> showRecordsSidebar());
                 menuButton.setContentDescription(getString(R.string.more_options));
-                // -------------- Fix Ended for this method(updateHeaderMenuIcon)-----------
             }
             if (closeButton != null) {
                 closeButton.setVisibility(View.GONE);
@@ -1919,7 +1871,6 @@ public class RecordsFragment extends BaseFragment implements
             getActivity().invalidateOptionsMenu();
         }
     }
-    // -------------- Fix Ended for this method(updateUiForSelectionMode)-----------
     // --- Deletion Logic ---
 
     // --- deleteSelectedVideos (Corrected version from previous step) ---
@@ -2014,7 +1965,6 @@ public class RecordsFragment extends BaseFragment implements
 
     // Inside RecordsFragment.java
     private void deleteAllVideos() {
-        // ----- Fix Start for this method(deleteAllVideos)-----
         // Check if videoItems has content, if not show toast
         if (videoItems.isEmpty()) {
             if (getContext() != null)
@@ -2025,7 +1975,6 @@ public class RecordsFragment extends BaseFragment implements
         // Create a copy of videoItems to avoid concurrent modification issues
         List<VideoItem> itemsToTrash = new ArrayList<>(videoItems);
         Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
-        // ----- Fix Ended for this method(deleteAllVideos)-----
 
         // Show progress dialog for deleting all videos with count information
         onMoveToTrashStarted("all " + itemsToTrash.size() + " videos");
@@ -2218,7 +2167,6 @@ public class RecordsFragment extends BaseFragment implements
     private void showRecordsSidebar() {
         if (getActivity() == null)
             return;
-        // -------------- Fix Start for this method(showRecordsSidebar)-----------
         // Use unified overlay: open a sidebar-style fragment to host row-based options.
         RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), isGridView);
         // Listen for result events from rows (sort picker, delete all, etc.)
@@ -2272,10 +2220,8 @@ public class RecordsFragment extends BaseFragment implements
         sidebar.setResultKey(resultKey);
         // Show as a Material side sheet dialog instead of full-screen overlay
         sidebar.show(getParentFragmentManager(), "RecordsSidebar");
-        // -------------- Fix Ended for this method(showRecordsSidebar)-----------
     }
 
-    // -------------- Fix Start for this class(mapSortHelpers)-----------
     private String mapSortToId(SortOption opt) {
         switch (opt) {
             case LATEST_FIRST:
@@ -2299,7 +2245,6 @@ public class RecordsFragment extends BaseFragment implements
             return SortOption.LARGEST_FILES;
         return SortOption.LATEST_FIRST;
     }
-    // -------------- Fix Ended for this class(mapSortHelpers)-----------
 
     // Updated sorting logic to work with List<VideoItem>
     private void performVideoSort() {
@@ -2373,7 +2318,6 @@ public class RecordsFragment extends BaseFragment implements
      * 
      * @return A List of VideoItem objects representing the found temp files.
      */
-    // -------------- Fix Start (getTempCacheRecordsList) - Remove obsolete temp
     // system -----------
     /**
      * OBSOLETE: Temp cache system removed - now using OpenGL real-time processing
@@ -2385,20 +2329,14 @@ public class RecordsFragment extends BaseFragment implements
         Log.d(TAG, "getTempCacheRecordsList: Obsolete temp cache system - returning empty list");
         return new ArrayList<>();
     }
-    // -------------- Fix End (getTempCacheRecordsList) -----------
 
-    // -------------- Fix Start (Remove obsolete temp file system) --------------
     // Removed scanDirectoryForTempVideos method - temp file system is obsolete
     // Now using OpenGL pipeline, no longer need temp file scanning
-    // -------------- Fix End (Remove obsolete temp file system) --------------
 
-    // ----- Fix Start for this class (RecordsFragment_segment_receiver_fields)
     // -----
     private BroadcastReceiver segmentCompleteReceiver;
     private boolean isSegmentReceiverRegistered = false;
-    // ----- Fix End: Add search-related fields at class level -----
 
-    // ----- Fix Start for this class (RecordsFragment_segment_receiver_methods)
     // -----
     private void registerSegmentCompleteReceiver() {
         if (getContext() == null || isSegmentReceiverRegistered) {
@@ -2453,15 +2391,11 @@ public class RecordsFragment extends BaseFragment implements
             }
         }
     }
-    // ----- Fix Ended for this class (RecordsFragment_segment_receiver_methods)
     // -----
 
-    // ----- Fix Start: Add search-related fields at class level -----
     private SearchView searchView;
     private boolean isSearchViewActive = false;
-    // ----- Fix End: Add search-related fields at class level -----
 
-    // ----- Fix Start: Add search-related methods -----
     /**
      * Checks if search functionality is currently active
      * 
@@ -2483,9 +2417,7 @@ public class RecordsFragment extends BaseFragment implements
             loadRecordsList();
         }
     }
-    // ----- Fix End: Add search-related methods -----
 
-    // ----- Fix Start: Add isInSelectionMode() method -----
     /**
      * Checks if the fragment is currently in selection mode
      * 
@@ -2494,7 +2426,6 @@ public class RecordsFragment extends BaseFragment implements
     private boolean isInSelectionMode() {
         return isInSelectionMode;
     }
-    // ----- Fix End: Add isInSelectionMode() method -----
 
     // Override the onBackPressed method from BaseFragment
     @Override
@@ -2517,7 +2448,6 @@ public class RecordsFragment extends BaseFragment implements
         return false;
     }
 
-    // ----- Fix Start: Add refreshList method -----
     /**
      * Public method to refresh the records list
      * Can be called from other fragments when they need to update this fragment
@@ -2533,7 +2463,6 @@ public class RecordsFragment extends BaseFragment implements
             loadRecordsList();
         }
     }
-    // ----- Fix End: Add refreshList method -----
 
     private void clearResources() {
         // Shutdown the executor service properly
@@ -2701,7 +2630,6 @@ public class RecordsFragment extends BaseFragment implements
         boolean isSessionUnlocked = sharedPreferencesManager.isAppLockSessionUnlocked();
 
         if (isAppLockEnabled && !isSessionUnlocked && AppLock.isEnrolled(requireContext())) {
-            // ----- Fix Start: Fade overlay after successful unlock and restore UI state
             // correctly -----
             new UnlockDialogBuilder(requireActivity())
                     .onUnlocked(() -> {
@@ -2717,7 +2645,6 @@ public class RecordsFragment extends BaseFragment implements
                         }
                     })
                     .show();
-            // ----- Fix End: Fade overlay after successful unlock and restore UI state
             // correctly -----
         } else {
             fadeOverlay(false);
@@ -2767,13 +2694,11 @@ public class RecordsFragment extends BaseFragment implements
         return typedValue.data;
     }
 
-    // ----- Fix Start for this method(onDeleteVideo)-----
     @Override
     public void onDeleteVideo(VideoItem videoItem) {
         // Delegate to the existing move-to-trash logic to avoid duplication
         onMoveToTrashRequested(videoItem);
     }
-    // ----- Fix Ended for this method(onDeleteVideo)-----
 
     // Helper to set text colors recursively for all TextViews and RadioButtons
     private void setTextColorsRecursive(View view, int primary, int secondary) {
@@ -2855,7 +2780,6 @@ public class RecordsFragment extends BaseFragment implements
     private void loadRecordsList() {
         Log.i(TAG, "loadRecordsList: Starting optimized progressive loading");
 
-        // -------------- Fix Start (cache debug) - Enhanced cache state logging
         // -----------
 
         // Debug: Log current cache state with more details
@@ -2868,7 +2792,6 @@ public class RecordsFragment extends BaseFragment implements
                 ", cachedCount=" + cachedCount + ", existingData=" + hasExistingData +
                 ", videoItems.size=" + videoItems.size() + ", isInitialLoad=" + isInitialLoad);
 
-        // -------------- Fix End (cache debug) -----------
 
         // Step 1: Check in-memory session cache first, with disk fallback
         List<VideoItem> cachedVideos = com.fadcam.utils.VideoSessionCache.getSessionCachedVideos(requireContext());
@@ -2913,7 +2836,6 @@ public class RecordsFragment extends BaseFragment implements
             showSkeletonLoading(estimatedCount);
         }
 
-        // -------------- Fix Start (loadRecordsList) - Proper cache utilization
         // -----------
 
         // Step 2: No cache - load progressively in background
@@ -2952,7 +2874,6 @@ public class RecordsFragment extends BaseFragment implements
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems, requireContext());
                 com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size(), sharedPreferencesManager);
 
-                // -------------- Fix Start (shimmer delay) - Show shimmer for minimum time
                 // -----------
 
                 // Add minimum delay to show shimmer animation (professional UX)
@@ -2963,7 +2884,6 @@ public class RecordsFragment extends BaseFragment implements
                     replaceSkeletonsWithData(uniqueItems);
                 }, minShimmerTime);
 
-                // -------------- Fix End (shimmer delay) -----------
 
             } catch (Exception e) {
                 Log.e(TAG, "Error in progressive loading", e);
@@ -3083,7 +3003,6 @@ public class RecordsFragment extends BaseFragment implements
         });
     }
 
-    // -------------- Fix Start (Navigation FAB Methods) - Scroll navigation
     // functionality -----------
 
     /**
@@ -3189,5 +3108,4 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    // -------------- Fix End (Navigation FAB Methods) -----------
 }

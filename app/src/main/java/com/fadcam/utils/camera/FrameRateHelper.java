@@ -27,7 +27,6 @@ public class FrameRateHelper {
     private static final String TAG = "FrameRateHelper";
     private static final int MAX_REASONABLE_FRAME_RATE = 240;
 
-    // -------------- Fix Start for this class(FrameRateHelper)-----------
     public static List<Integer> getHardwareSupportedFrameRates(CameraCharacteristics characteristics) {
         List<Integer> supportedRates = new ArrayList<>();
         try {
@@ -174,5 +173,4 @@ public class FrameRateHelper {
         }
         return false;
     }
-    // -------------- Fix Ended for this class(FrameRateHelper)-----------
 }

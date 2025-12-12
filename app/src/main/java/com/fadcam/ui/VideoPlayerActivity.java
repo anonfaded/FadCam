@@ -134,14 +134,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
             resumeSaveHandler.postDelayed(this, 5000);
         }
     };
-    // -------------- Fix Start for field(video_settings_result_keys)-----------
     private static final String RK_VIDEO_SETTINGS = "rk_video_settings";
     private static final String RK_PLAYBACK_SPEED = "rk_playback_speed";
     private static final String RK_QUICK_SPEED = "rk_quick_speed";
     private static final String RK_KEEP_SCREEN_ON = "rk_keep_screen_on";
     private static final String RK_BACKGROUND_PLAYBACK =
         "rk_background_playback";
-    // -------------- Fix Ended for field(video_settings_result_keys)-----------
 
     // Playback speed options (include more slow-speed choices 0.25 -> 0.9)
     private final CharSequence[] speedOptions = {
@@ -414,7 +412,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 }
             });
         }
-        // ----- Fix End: Programmatically set seekbar colors with fixed red color -----
 
         // Setup animated play/pause button and audio waveform
         setupAnimatedControls();
@@ -940,7 +937,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
-    // -------------- Fix Start for this
     // method(showQuickSpeedPickerSheet)-----------
     private void showQuickSpeedPickerSheet() {
         ArrayList<OptionItem> items = new ArrayList<>();
@@ -999,10 +995,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         sheet.show(getSupportFragmentManager(), "quick_speed_sheet");
     }
 
-    // -------------- Fix Ended for this
     // method(showQuickSpeedPickerSheet)-----------
 
-    // -------------- Fix Start for method(showAudioWaveformSwitchSheet)-----------
     private void showAudioWaveformSwitchSheet() {
         final String RK = "rk_waveform_switch";
         boolean enabled = spm != null ? spm.isAudioWaveformEnabled() : true;
@@ -1055,7 +1049,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
         sheet.show(getSupportFragmentManager(), "waveform_switch_sheet");
     }
 
-    // -------------- Fix Ended for method(showAudioWaveformSwitchSheet)-----------
 
     // Animate playback speed from start to target over duration ms
     private void animatePlaybackSpeed(
@@ -1700,7 +1693,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
-    // -------------- Fix Start for this method(showVideoSettingsSheet)-----------
     private void showVideoSettingsSheet() {
         ArrayList<OptionItem> items = new ArrayList<>();
         // Row: Playback Speed (show current runtime speed label)
@@ -2624,9 +2616,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         sheet.show(getSupportFragmentManager(), "video_settings_sheet");
     }
 
-    // -------------- Fix Ended for this method(showVideoSettingsSheet)-----------
 
-    // -------------- Fix Start for this
     // method(showPlaybackSpeedPickerSheet)-----------
     private void showPlaybackSpeedPickerSheet() {
         if (player == null) return;
@@ -2830,17 +2820,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
     }
 
-    // -------------- Fix Ended for this
     // method(showPlaybackSpeedPickerSheet)-----------
 
-    // ----- Fix Start: Add resolveThemeColor helper -----
     private int resolveThemeColor(int attr) {
         android.util.TypedValue typedValue = new android.util.TypedValue();
         getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
 
-    // ----- Fix End: Add resolveThemeColor helper -----
 
     // --- Lifecycle Management ---
     @Override
@@ -2877,7 +2864,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
             // player.play(); // Uncomment if you want auto-resume on activity resume
         }
 
-        // -------------- Fix Start for this method(onResume)-----------
         // Request notification permission on Android 13+
         try {
             if (android.os.Build.VERSION.SDK_INT >= 33) {
@@ -2921,7 +2907,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         // Do not start the background service while activity is in foreground; handoff
         // occurs onPause only.
-        // -------------- Fix Ended for this method(onResume)-----------
     }
 
     // Show a temporary overlay on double-tap side (reuse a simple TextView overlay
@@ -3252,7 +3237,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
         // Allow screen to turn off when activity is paused
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         // Pause playback when activity goes into background/pause state
-        // -------------- Fix Start for this method(onPause)-----------
         if (player != null) {
             boolean bg = SharedPreferencesManager.getInstance(
                 this
@@ -3327,7 +3311,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 );
             }
         }
-        // -------------- Fix Ended for this method(onPause)-----------
         // Persist current playback position when pausing
         saveCurrentPlaybackPosition();
         // Stop periodic saves while paused
@@ -3381,15 +3364,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     // --- End Lifecycle Management ---
 
-    // ----- Fix Start: Add themedDialogBuilder helper -----
     private MaterialAlertDialogBuilder themedDialogBuilder() {
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;
         return new MaterialAlertDialogBuilder(this, dialogTheme);
     }
 
-    // ----- Fix End: Add themedDialogBuilder helper -----
 
-    // -------------- Fix Start for
     // helper(hasPostNotificationsPermission)-----------
     /**
      * Returns true if either SDK < 33 or POST_NOTIFICATIONS permission is granted.
@@ -3409,10 +3389,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
-    // -------------- Fix Ended for
     // helper(hasPostNotificationsPermission)-----------
 
-    // -------------- Fix Start for method(setupAnimatedControls)-----------
     private void setupAnimatedControls() {
         try {
             // Set up periodic waveform updates during playback
@@ -3524,18 +3502,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
-    // -------------- Fix Ended for method(setupAnimatedControls)-----------
 
-    // -------------- Fix Start for method(setupResetZoomButton)-----------
     private void setupResetZoomButton() {
         if (resetZoomButton != null) {
             resetZoomButton.setOnClickListener(v -> resetVideoTransform());
         }
     }
 
-    // -------------- Fix Ended for method(setupResetZoomButton)-----------
 
-    // -------------- Fix Start for method(applyVideoTransform)-----------
     private void applyVideoTransform() {
         if (playerView != null) {
             try {
@@ -3566,9 +3540,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
-    // -------------- Fix Ended for method(applyVideoTransform)-----------
 
-    // -------------- Fix Start for method(resetVideoTransform)-----------
     private void resetVideoTransform() {
         currentScale = 1.0f;
         currentTranslationX = 0f;
@@ -3617,9 +3589,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         updateResetZoomButtonVisibility();
     }
 
-    // -------------- Fix Ended for method(resetVideoTransform)-----------
 
-    // -------------- Fix Start for
     // method(updateResetZoomButtonVisibility)-----------
     private void updateResetZoomButtonVisibility() {
         if (resetZoomButton != null) {
@@ -3634,7 +3604,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
             }
         }
     }
-    // -------------- Fix Ended for
     // method(updateResetZoomButtonVisibility)-----------
 
     // -------------- Scrub Controller Enforcement Methods -----------

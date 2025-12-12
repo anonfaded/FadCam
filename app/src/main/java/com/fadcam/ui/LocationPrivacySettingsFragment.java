@@ -46,7 +46,6 @@ public class LocationPrivacySettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         prefs = SharedPreferencesManager.getInstance(requireContext());
         valueEmbed = view.findViewById(R.id.value_location_embed);
         view.findViewById(R.id.row_location_embed).setOnClickListener(v -> toggleLocationEmbed());
@@ -56,19 +55,15 @@ public class LocationPrivacySettingsFragment extends Fragment {
             if(granted){ onPermissionGrantedPostRequest(); } else { onPermissionDeniedPostRequest(); }
         });
         refreshValues();
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValues(){
-        // -------------- Fix Start for this method(refreshValues)-----------
         valueEmbed.setText(prefs.isLocationEmbeddingEnabled()? "Enabled" : "Disabled");
-        // -------------- Fix Ended for this method(refreshValues)-----------
     }
 
     private void toggleLocationEmbed(){
-        // -------------- Fix Start for this method(toggleLocationEmbed)-----------
         boolean currently = prefs.isLocationEmbeddingEnabled();
         if(!currently){
             ensurePermissionThen(() -> {
@@ -81,7 +76,6 @@ public class LocationPrivacySettingsFragment extends Fragment {
             stopLocationIfAllDisabled();
             refreshValues();
         }
-        // -------------- Fix Ended for this method(toggleLocationEmbed)-----------
     }
 
     private void startLocationHelperIfNeeded(){
@@ -104,7 +98,6 @@ public class LocationPrivacySettingsFragment extends Fragment {
     }
 
     private void showPermissionDialog(boolean embedding, Runnable proceed){
-        // -------------- Fix Start for this method(showPermissionDialog)-----------
         new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
                 .setTitle(R.string.location_permission_title)
                 .setMessage(R.string.location_permission_description)
@@ -114,7 +107,6 @@ public class LocationPrivacySettingsFragment extends Fragment {
                 })
                 .setNegativeButton(R.string.universal_cancel, (d,w)->{})
                 .show();
-        // -------------- Fix Ended for this method(showPermissionDialog)-----------
     }
 
     private void onPermissionGrantedPostRequest(){

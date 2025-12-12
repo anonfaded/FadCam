@@ -1,4 +1,3 @@
-// ----- Fix Start: Create IconRainView.java for onboarding animated icons (clone of CoffeeRainView, independent) -----
 package com.fadcam.ui;
 
 import android.content.Context;
@@ -175,4 +174,3 @@ public class IconRainView extends View {
         handler.removeCallbacksAndMessages(null);
     }
 }
-// ----- Fix End: Create IconRainView.java for onboarding animated icons (clone of CoffeeRainView, independent) ----- 

@@ -44,7 +44,6 @@ public class SecuritySettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         valueTabLock = view.findViewById(R.id.value_tab_lock_status);
     valueCloakRecents = view.findViewById(R.id.value_cloak_recents_status);
@@ -65,33 +64,27 @@ public class SecuritySettingsFragment extends Fragment {
         if (rowCloak != null) {
             rowCloak.setOnClickListener(v -> showCloakRecentsConfig());
         }
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshAppLockValue() {
-        // -------------- Fix Start for this method(refreshAppLockValue)-----------
         if (valueTabLock != null) {
             boolean enabled = sharedPreferencesManager.isAppLockEnabled();
             // Use existing universal enable/disable strings for consistency
             valueTabLock.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
         }
-        // -------------- Fix Ended for this method(refreshAppLockValue)-----------
     }
 
     private void refreshCloakRecentsValue() {
-        // -------------- Fix Start for this method(refreshCloakRecentsValue)-----------
         if (valueCloakRecents != null) {
             boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
             valueCloakRecents.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
         }
-        // -------------- Fix Ended for this method(refreshCloakRecentsValue)-----------
     }
 
     // Method to show the AppLock configuration dialog
     private void showAppLockConfigDialog() {
-        // -------------- Fix Start for this method(showAppLockConfigDialog)-----------
         boolean isEnrolled = AppLock.isEnrolled(requireContext());
         boolean isEnabled = sharedPreferencesManager.isAppLockEnabled();
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
@@ -174,11 +167,9 @@ public class SecuritySettingsFragment extends Fragment {
             );
         }
         sheet.show(getParentFragmentManager(), "applock_sheet");
-        // -------------- Fix Ended for this method(showAppLockConfigDialog)-----------
     }
 
     private void showCloakRecentsConfig() {
-        // -------------- Fix Start for this method(showCloakRecentsConfig)-----------
         String resultKey = "cloak_recents_sheet_result";
         String helper = getString(R.string.setting_cloak_recents_helper);
         boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
@@ -192,14 +183,12 @@ public class SecuritySettingsFragment extends Fragment {
                 sharedPreferencesManager.setCloakRecentsEnabled(state);
                 refreshCloakRecentsValue();
                 Toast.makeText(requireContext(), state ? R.string.setting_enabled_msg : R.string.setting_disabled_msg, Toast.LENGTH_SHORT).show();
-                // -------------- Fix Start: apply cloak instantly without restart -----------
                 try {
                     android.app.Activity act = requireActivity();
                     if (act instanceof com.fadcam.MainActivity) {
                         ((com.fadcam.MainActivity) act).applyCloakPreferenceNow(state);
                     }
                 } catch (Throwable ignored) {}
-                // -------------- Fix End: apply cloak instantly without restart -----------
             }
         });
 
@@ -207,25 +196,19 @@ public class SecuritySettingsFragment extends Fragment {
                 .newInstanceWithSwitch(getString(R.string.setting_cloak_recents_title), items, null, resultKey, helper,
                         getString(R.string.setting_cloak_recents_switch), enabled);
         sheet.show(getParentFragmentManager(), "cloak_recents_sheet");
-        // -------------- Fix Ended for this method(showCloakRecentsConfig)-----------
     }
 
     private void row_tab_lock_postRefreshOpen(){
-        // -------------- Fix Start for this method(row_tab_lock_postRefreshOpen)-----------
         refreshAppLockValue();
         // Re-open sheet after critical structural change (PIN removed) to reflect new UI state
         row_tab_lock_postDelayed();
-        // -------------- Fix Ended for this method(row_tab_lock_postRefreshOpen)-----------
     }
     private void row_tab_lock_postDelayed(){
-        // -------------- Fix Start for this method(row_tab_lock_postDelayed)-----------
         View view = getView();
         if(view!=null){ view.postDelayed(this::showAppLockConfigDialog, 150); }
-        // -------------- Fix Ended for this method(row_tab_lock_postDelayed)-----------
     }
 
     private void handleEnableDisable(boolean desired){
-        // -------------- Fix Start for this method(handleEnableDisable)-----------
         boolean currently = sharedPreferencesManager.isAppLockEnabled();
         if(desired == currently) return; // no change
         boolean isEnrolled = AppLock.isEnrolled(requireContext());
@@ -240,11 +223,9 @@ public class SecuritySettingsFragment extends Fragment {
         pendingToggleDesiredState = desired;
         verifyPinThenExecute(() -> setAppLockEnabled(false), R.string.applock_verify_to_disable);
         }
-        // -------------- Fix Ended for this method(handleEnableDisable)-----------
     }
 
     private void verifyPinThenExecute(Runnable action, int titleResId) {
-        // -------------- Fix Start for this method(verifyPinThenExecute)-----------
         Toast.makeText(requireContext(), getString(titleResId), Toast.LENGTH_SHORT).show();
         new UnlockDialogBuilder(requireActivity())
                 .onUnlocked(() -> {
@@ -258,11 +239,9 @@ public class SecuritySettingsFragment extends Fragment {
                     revertSwitchUIAfterCancel();
                 })
                 .show();
-        // -------------- Fix Ended for this method(verifyPinThenExecute)-----------
     }
 
     private void revertSwitchUIAfterCancel(){
-        // -------------- Fix Start for this method(revertSwitchUIAfterCancel)-----------
         pendingToggleDesiredState = null; // discard
         // Dismiss existing sheet if present
         androidx.fragment.app.Fragment existing = getParentFragmentManager().findFragmentByTag("applock_sheet");
@@ -272,11 +251,9 @@ public class SecuritySettingsFragment extends Fragment {
         // Reopen with correct current state
         View root = getView();
         if(root!=null){ root.postDelayed(this::showAppLockConfigDialog, 120); }
-        // -------------- Fix Ended for this method(revertSwitchUIAfterCancel)-----------
     }
 
     private void showPinCreationDialog(boolean enableAfterCreation) {
-        // -------------- Fix Start for this method(showPinCreationDialog)-----------
         new LockCreationDialogBuilder(requireActivity())
                 .onCanceled(() -> { /* no-op */ })
                 .onLockCreated(() -> {
@@ -288,16 +265,13 @@ public class SecuritySettingsFragment extends Fragment {
                     row_tab_lock_postDelayed();
                 })
                 .show();
-        // -------------- Fix Ended for this method(showPinCreationDialog)-----------
     }
 
     private void setAppLockEnabled(boolean enabled) {
-        // -------------- Fix Start for this method(setAppLockEnabled)-----------
         sharedPreferencesManager.setAppLockEnabled(enabled);
         String message = enabled ? getString(R.string.applock_enable) + " " + getString(R.string.universal_ok)
                 : getString(R.string.applock_disable) + " " + getString(R.string.universal_ok);
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
         refreshAppLockValue();
-        // -------------- Fix Ended for this method(setAppLockEnabled)-----------
     }
 }

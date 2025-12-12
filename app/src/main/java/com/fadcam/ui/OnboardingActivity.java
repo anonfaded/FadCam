@@ -191,7 +191,6 @@ public class OnboardingActivity extends AppIntro {
                         if (imageView != null && descView != null) {
                             imageView.setAlpha(0f);
                             imageView.setVisibility(View.VISIBLE);
-                            // ----- Fix Start for onboarding intro step-by-step animation flow -----
                             imageView.animate().alpha(1f).setDuration(1200).withEndAction(() -> {
                                 // Only start text animation after image fade-in completes
                                 descView.setTypeface(android.graphics.Typeface.MONOSPACE);
@@ -331,7 +330,6 @@ public class OnboardingActivity extends AppIntro {
                                 final RowFadeAnimator rowAnimator = new RowFadeAnimator(startBlinkingCursor);
                                 handler.postDelayed(rowAnimator::start, 200); // Short pause after image fade-in
                             });
-                            // ----- Fix End for onboarding intro step-by-step animation flow -----
                         }
                         // Slide 2 logic (language selection)
                         MaterialButton languageChooseButton = v.findViewById(R.id.language_choose_button);
@@ -819,7 +817,6 @@ public class OnboardingActivity extends AppIntro {
         // Mark onboarding as completed
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
 
-        // ----- Fix Start: Ensure onboarding completion is properly saved -----
         // Use commit() for immediate effect and make sure we're writing to the correct
         // key
         sharedPreferencesManager.sharedPreferences.edit()
@@ -831,7 +828,6 @@ public class OnboardingActivity extends AppIntro {
 
         // Log the change to verify it happened
         android.util.Log.d("OnboardingActivity", "Onboarding marked as completed");
-        // ----- Fix End: Ensure onboarding completion is properly saved -----
 
         // START: Navigate to What's New screen after onboarding completes
         // Show What's New screen if onboarding display is enabled (which it should be on first install)
@@ -964,7 +960,6 @@ public class OnboardingActivity extends AppIntro {
     }
 }
 
-// ----- Fix Start: AlphaSpan for cursor fade animation -----
 class AlphaSpan extends android.text.style.CharacterStyle {
     private final float alpha;
 
@@ -978,4 +973,3 @@ class AlphaSpan extends android.text.style.CharacterStyle {
         tp.setAlpha((int) (oldAlpha * alpha));
     }
 }
-// ----- Fix End: AlphaSpan for cursor fade animation -----

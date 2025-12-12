@@ -96,7 +96,6 @@ public class VideoSettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         prefs = SharedPreferencesManager.getInstance(requireContext());
         bindViews(view);
         bindRowHandlers(view);
@@ -109,7 +108,6 @@ public class VideoSettingsFragment extends Fragment {
         if (back != null) {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         }
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     private void bindViews(View root) {
@@ -147,7 +145,6 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private void refreshAllValues() {
-        // -------------- Fix Start for this method(refreshAllValues)-----------
         CameraType cam = prefs.getCameraSelection();
         valueCamera.setText(cam == CameraType.FRONT ? getString(R.string.button_settings_cam_front)
                 : getString(R.string.button_settings_cam_back));
@@ -237,13 +234,11 @@ public class VideoSettingsFragment extends Fragment {
         if (lensRow != null) {
             lensRow.setVisibility(cam == CameraType.BACK && availableBackCameras.size() > 0 ? View.VISIBLE : View.GONE);
         }
-        // -------------- Fix Ended for this method(refreshAllValues)-----------
     }
 
     private Runnable pendingLocationGrantedAction;
 
     private void showLocationEmbedSheet() {
-        // -------------- Fix Start for this method(showLocationEmbedSheet)-----------
         final String rk = "picker_result_location_embed";
         getParentFragmentManager().setFragmentResultListener(rk, this, (k, b) -> {
             if (b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)) {
@@ -267,7 +262,6 @@ public class VideoSettingsFragment extends Fragment {
                         getString(R.string.video_setting_location_embed_title), items, null, rk, helper,
                         getString(R.string.video_setting_location_embed_title), prefs.isLocationEmbeddingEnabled());
         sheet.show(getParentFragmentManager(), "location_embed_sheet");
-        // -------------- Fix Ended for this method(showLocationEmbedSheet)-----------
     }
 
     private void ensureLocationPermissionThen(Runnable onGranted) {
@@ -298,7 +292,6 @@ public class VideoSettingsFragment extends Fragment {
     // -------------- Additional methods for location embedding end -----------
 
     private void showCameraBottomSheet() {
-        // -------------- Fix Start for this method(showCameraBottomSheet)-----------
         CameraType current = prefs.getCameraSelection();
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem(CameraType.FRONT.toString(),
@@ -323,11 +316,9 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_cam_title), items, current.toString(), resultKey, helper);
         sheet.show(getParentFragmentManager(), "camera_picker");
-        // -------------- Fix Ended for this method(showCameraBottomSheet)-----------
     }
 
     private void showLensBottomSheet() {
-        // -------------- Fix Start for this method(showLensBottomSheet)-----------
         if (prefs.getCameraSelection() == CameraType.FRONT) {
             return;
         }
@@ -343,10 +334,8 @@ public class VideoSettingsFragment extends Fragment {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (sel != null && !sel.equals(saved)) {
                 prefs.setSelectedBackCameraId(sel);
-                // -------------- Fix Start (clearCacheOnLensChange)-----------
                 // Clear back camera cache when lens changes as different lenses may support different resolutions
                 cachedResolutionsBack.clear();
-                // -------------- Fix Ended (clearCacheOnLensChange)-----------
                 refreshAllValues();
             }
         });
@@ -356,11 +345,9 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_back_lens_title), items, saved, resultKey, helper);
         sheet.show(getParentFragmentManager(), "lens_picker");
-        // -------------- Fix Ended for this method(showLensBottomSheet)-----------
     }
 
     private void showResolutionBottomSheet() {
-        // -------------- Fix Start for this
         // method(showResolutionBottomSheet)-----------
         CameraType cam = prefs.getCameraSelection();
         java.util.List<Size> resolutions = getCompatiblesVideoResolutions(cam);
@@ -397,12 +384,10 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_quailty_title), items, currentId, resultKey, helper);
         sheet.show(getParentFragmentManager(), "resolution_picker");
-        // -------------- Fix Ended for this
         // method(showResolutionBottomSheet)-----------
     }
 
     private void showFrameRateBottomSheet() {
-        // -------------- Fix Start for this method(showFrameRateBottomSheet)-----------
         CameraType cam = prefs.getCameraSelection();
         java.util.List<Integer> rates = getHardwareSupportedFrameRates(cam);
         int current = prefs.getSpecificVideoFrameRate(cam);
@@ -431,11 +416,9 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_framerate_title), items, currentId, resultKey, helper);
         sheet.show(getParentFragmentManager(), "framerate_picker");
-        // -------------- Fix Ended for this method(showFrameRateBottomSheet)-----------
     }
 
     private void showCodecBottomSheet() {
-        // -------------- Fix Start for this method(showCodecBottomSheet)-----------
         VideoCodec saved = prefs.getVideoCodec();
         java.util.List<VideoCodec> codes = getCompatiblesVideoCodecs();
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
@@ -456,11 +439,9 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_codec_title), items, currentId, resultKey, helper);
         sheet.show(getParentFragmentManager(), "codec_picker");
-        // -------------- Fix Ended for this method(showCodecBottomSheet)-----------
     }
 
     private void showBitrateBottomSheet() {
-        // -------------- Fix Start for this method(showBitrateBottomSheet)-----------
         boolean custom = getBitrateMode();
         int currentValueMbps = getBitrateCustomValue() / 1000;
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
@@ -486,11 +467,9 @@ public class VideoSettingsFragment extends Fragment {
                         getString(R.string.setting_video_bitrate_title), items, custom ? "custom" : "auto", resultKey,
                         helper);
         sheet.show(getParentFragmentManager(), "bitrate_mode_picker");
-        // -------------- Fix Ended for this method(showBitrateBottomSheet)-----------
     }
 
     private void showBitrateCustomInput() {
-        // -------------- Fix Start for this method(showBitrateCustomInput)-----------
         int currentMbps = getBitrateCustomValue() / 1000;
         final String resultKey = "picker_result_bitrate_value";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
@@ -508,14 +487,12 @@ public class VideoSettingsFragment extends Fragment {
                         getString(R.string.bitrate_info_warning_low), getString(R.string.bitrate_info_warning_high),
                         resultKey);
         sheet.show(getParentFragmentManager(), "bitrate_value_input");
-        // -------------- Fix Ended for this method(showBitrateCustomInput)-----------
     }
 
     // Removed legacy orientation dialog + feature flag wrapper; always show bottom
     // sheet picker
 
     private void showOrientationBottomSheet() {
-        // -------------- Fix Start for this
         // method(showOrientationBottomSheet)-----------
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem(SharedPreferencesManager.ORIENTATION_PORTRAIT,
@@ -535,14 +512,12 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_video_orientation_title), items, current, resultKey);
         sheet.show(getParentFragmentManager(), "orientation_picker");
-        // -------------- Fix Ended for this
         // method(showOrientationBottomSheet)-----------
     }
 
     // -------- Legacy logic helpers (migrated/adapted) --------
 
     private void detectAvailableBackCameras() {
-        // -------------- Fix Start for this
         // method(detectAvailableBackCameras)-----------
         availableBackCameras.clear();
         Context ctx = getContext();
@@ -669,12 +644,10 @@ public class VideoSettingsFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "Error detecting back cameras", e);
         }
-        // -------------- Fix Ended for this
         // method(detectAvailableBackCameras)-----------
     }
 
     private List<Size> getCompatiblesVideoResolutions(CameraType type) {
-        // -------------- Fix Start for this
         // method(getCompatiblesVideoResolutions)-----------
         // First return cached list if available
         if (type == CameraType.FRONT && !cachedResolutionsFront.isEmpty())
@@ -814,7 +787,6 @@ public class VideoSettingsFragment extends Fragment {
         else
             cachedResolutionsBack = list;
         return list;
-        // -------------- Fix Ended for this
         // method(getCompatiblesVideoResolutions)-----------
     }
 
@@ -856,14 +828,12 @@ public class VideoSettingsFragment extends Fragment {
                     Arrays.sort(videoSizes, (s1, s2) -> Long.compare((long) s2.getWidth() * s2.getHeight(),
                             (long) s1.getWidth() * s1.getHeight()));
                     
-                    // -------------- Fix Start (addResolutionDiagnosticLogging)-----------
                     // Log all supported video sizes for diagnosis
                     Log.d(TAG, "Video Sizes: Camera " + cameraId + " supports " + videoSizes.length + " video resolutions:");
                     for (Size size : videoSizes) {
                         Log.d(TAG, "Video Sizes: " + size.getWidth() + "x" + size.getHeight() + 
                               " (reasonable: " + isReasonableVideoSize(size) + ")");
                     }
-                    // -------------- Fix Ended (addResolutionDiagnosticLogging)-----------
                     
                     for (Size size : videoSizes) {
                         if (isReasonableVideoSize(size))
@@ -877,7 +847,6 @@ public class VideoSettingsFragment extends Fragment {
         return supportedSizes;
     }
 
-    // -------------- Fix Start for this method(isReasonableVideoSize lower
     // threshold)-----------
     private boolean isReasonableVideoSize(Size size) {
         int w = size.getWidth();
@@ -891,7 +860,6 @@ public class VideoSettingsFragment extends Fragment {
         double ar = (double) w / h;
         return ar >= 1.0 && ar <= 2.5;
     }
-    // -------------- Fix Ended for this method(isReasonableVideoSize lower
     // threshold)-----------
 
     private CamcorderProfile createProfileForSize(String cameraId, Size size) {
@@ -899,16 +867,13 @@ public class VideoSettingsFragment extends Fragment {
             int[] qualities = { CamcorderProfile.QUALITY_2160P, CamcorderProfile.QUALITY_1080P,
                     CamcorderProfile.QUALITY_720P, CamcorderProfile.QUALITY_480P, CamcorderProfile.QUALITY_HIGH,
                     CamcorderProfile.QUALITY_LOW };
-            // -------------- Fix Start (simplify8KDetection)-----------
             // Add 8K support without unnecessary API checks - let hasProfile() handle availability
             int[] ext = { CamcorderProfile.QUALITY_8KUHD, CamcorderProfile.QUALITY_2160P,
                     CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_720P, CamcorderProfile.QUALITY_480P,
                     CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_LOW };
             qualities = ext;
-            // -------------- Fix Ended (simplify8KDetection)-----------
             int camIdInt = Integer.parseInt(cameraId);
             
-            // -------------- Fix Start (simplified8KDiagnosticLogging)-----------
             // Simplified diagnostic logging for 8K detection
             if (size.getWidth() == 7680 && size.getHeight() == 4320) {
                 Log.d(TAG, "8K Detection: Checking 8K (7680x4320) for camera " + cameraId);
@@ -923,7 +888,6 @@ public class VideoSettingsFragment extends Fragment {
                     }
                 }
             }
-            // -------------- Fix Ended (simplified8KDiagnosticLogging)-----------
             
             for (int q : qualities) {
                 if (CamcorderProfile.hasProfile(camIdInt, q)) {
@@ -933,7 +897,6 @@ public class VideoSettingsFragment extends Fragment {
                 }
             }
             
-            // -------------- Fix Start (strictProfileMatching)-----------
             // Only allow specific fallbacks for exact resolution matches to prevent phantom options
             // 8K: Only if we have actual 8K profile
             if (size.getWidth() == 7680 && size.getHeight() == 4320) {
@@ -956,7 +919,6 @@ public class VideoSettingsFragment extends Fragment {
                     }
                 }
             }
-            // -------------- Fix Ended (strictProfileMatching)-----------
         } catch (Exception e) {
             Log.e(TAG, "createProfileForSize error", e);
         }
@@ -966,11 +928,9 @@ public class VideoSettingsFragment extends Fragment {
     private List<CamcorderProfile> getCamcorderProfilesFallback(CameraType cameraType) {
         List<CamcorderProfile> profiles = new ArrayList<>();
         int cameraId = cameraType.getCameraId();
-        // -------------- Fix Start (simplify8KFallback)-----------
         // Simplified: treat 8K like 4K - just check if profile exists, no API level checks
         if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_8KUHD))
             profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_8KUHD));
-        // -------------- Fix Ended (simplify8KFallback)-----------
         if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P))
             profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_2160P));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
@@ -1159,7 +1119,6 @@ public class VideoSettingsFragment extends Fragment {
 
     // ---- Zoom Ratio Migration ----
     private void showZoomRatioBottomSheet() {
-        // -------------- Fix Start for this method(showZoomRatioBottomSheet)-----------
         CameraType cam = prefs.getCameraSelection();
         List<Float> ratios = buildZoomRatioOptions(cam);
         if (ratios.isEmpty())
@@ -1191,7 +1150,6 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.setting_zoom_ratio_title), items, currentId, resultKey, helper);
         sheet.show(getParentFragmentManager(), "zoom_ratio_picker");
-        // -------------- Fix Ended for this method(showZoomRatioBottomSheet)-----------
     }
 
     private List<Float> buildZoomRatioOptions(CameraType cam) {
@@ -1237,7 +1195,6 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private void showVideoSplittingBottomSheet() {
-        // -------------- Fix Start for this
         // method(showVideoSplittingBottomSheet)-----------
         boolean enabled = prefs.isVideoSplittingEnabled();
         int mb = prefs.getVideoSplitSizeMb();
@@ -1276,7 +1233,6 @@ public class VideoSettingsFragment extends Fragment {
                         getString(R.string.video_splitting_title), items, null, resultKey, helper,
                         getString(R.string.video_splitting_title), enabled, dep);
         sheet.show(getParentFragmentManager(), "video_splitting_picker");
-        // -------------- Fix Ended for this
         // method(showVideoSplittingBottomSheet)-----------
     }
 
@@ -1299,7 +1255,6 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private void showVideoSplitSizeBottomSheet() {
-        // -------------- Fix Start for this
         // method(showVideoSplitSizeBottomSheet)-----------
         if (!prefs.isVideoSplittingEnabled())
             return;
@@ -1341,12 +1296,10 @@ public class VideoSettingsFragment extends Fragment {
                 .newInstance(
                         getString(R.string.video_splitting_title), items, currentId, resultKey, helper);
         sheet.show(getParentFragmentManager(), "video_split_size_picker");
-        // -------------- Fix Ended for this
         // method(showVideoSplitSizeBottomSheet)-----------
     }
 
     private void showCustomSplitSizeBottomSheet() {
-        // -------------- Fix Start for this
         // method(showCustomSplitSizeBottomSheet)-----------
         int current = prefs.getVideoSplitSizeMb();
         if (current == 500 || current == 1024 || current == 2048 || current == 4096)
@@ -1364,7 +1317,6 @@ public class VideoSettingsFragment extends Fragment {
                         "Custom Split Size (MB)", 10, 102400, current, "10 - 102400", 0, 0,
                         null, null, resultKey);
         sheet.show(getParentFragmentManager(), "video_split_custom_input");
-        // -------------- Fix Ended for this
         // method(showCustomSplitSizeBottomSheet)-----------
     }
 
@@ -1499,7 +1451,6 @@ public class VideoSettingsFragment extends Fragment {
      */
     @ExperimentalCamera2Interop
     private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
-        // ----- Fix Start for this method(getHardwareSupportedFrameRates)-----
         if (getContext() == null) {
             Log.e(TAG, "FPS Query: Context is null.");
             return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
@@ -1529,7 +1480,6 @@ public class VideoSettingsFragment extends Fragment {
             // Fallback to Camera2 API implementation - retain original logic
             return getHardwareSupportedFrameRatesUsingCamera2(cameraType);
         }
-        // ----- Fix Ended for this method(getHardwareSupportedFrameRates)-----
     }
 
     /**

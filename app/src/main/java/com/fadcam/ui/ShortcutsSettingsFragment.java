@@ -51,7 +51,6 @@ public class ShortcutsSettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         // Init image picker for custom shortcut icons
         initImagePicker();
         View back = view.findViewById(R.id.back_button);
@@ -90,10 +89,8 @@ public class ShortcutsSettingsFragment extends Fragment {
 
         // Initialize preview with current preferences
         updatePreview();
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
-    // -------------- Fix Start for this method(wireShortcutRow)-----------
     private void wireShortcutRow(View root, int rowId, int iconId, int iconRes, String title, Intent intent,
             String shortcutId) {
         LinearLayout row = root.findViewById(rowId);
@@ -140,7 +137,6 @@ public class ShortcutsSettingsFragment extends Fragment {
             row.setOnClickListener(v -> showShortcutSheet(title, shortcutId, iconRes, intent));
         }
     }
-    // -------------- Fix Ended for this method(wireShortcutRow)-----------
 
     private int titleIdFor(int rowId) {
         if (rowId == R.id.cell_start)
@@ -152,7 +148,6 @@ public class ShortcutsSettingsFragment extends Fragment {
 
     // Removed codename display; using concise badges instead.
 
-    // -------------- Fix Start for this method(requestPin)-----------
     private void requestPin(String shortcutId, String defaultLabel, int iconRes, Intent intent) {
         Context ctx = requireContext();
         ShortcutsManager sm = new ShortcutsManager(ctx);
@@ -177,9 +172,7 @@ public class ShortcutsSettingsFragment extends Fragment {
         }
         sm.requestPin(infoPin);
     }
-    // -------------- Fix Ended for this method(requestPin)-----------
 
-    // -------------- Fix Start for this method(showShortcutSheet)-----------
     private void showShortcutSheet(String title, String shortcutId, int iconRes, Intent intent) {
         final String resultKey = "picker_result_pin_" + shortcutId;
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
@@ -217,9 +210,7 @@ public class ShortcutsSettingsFragment extends Fragment {
         // in option; alternative is to extend picker layout (deferred)
         sheet.show(getParentFragmentManager(), "pin_sheet_" + shortcutId);
     }
-    // -------------- Fix Ended for this method(showShortcutSheet)-----------
 
-    // -------------- Fix Start for this
     // method(showCustomizeShortcutSheet)-----------
     private void showCustomizeShortcutSheet(String shortcutId, String defaultLabel, int defaultIconRes, Intent intent) {
         final String resultKey = "picker_result_customize_" + shortcutId;
@@ -257,10 +248,8 @@ public class ShortcutsSettingsFragment extends Fragment {
         }
         sheet.show(getParentFragmentManager(), "customize_" + shortcutId);
     }
-    // -------------- Fix Ended for this
     // method(showCustomizeShortcutSheet)-----------
 
-    // -------------- Fix Start for this
     // method(showChangeIconSourceSheet)-----------
     private void showChangeIconSourceSheet(String shortcutId) {
         final String resultKey = "picker_result_icon_source_" + shortcutId;
@@ -299,10 +288,8 @@ public class ShortcutsSettingsFragment extends Fragment {
         }
         sheet.show(getParentFragmentManager(), "icon_source_" + shortcutId);
     }
-    // -------------- Fix Ended for this
     // method(showChangeIconSourceSheet)-----------
 
-    // -------------- Fix Start for this method(promptRename)-----------
     private void promptRename(String shortcutId, String defaultLabel) {
         ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
         String current = sp.getCustomLabel(shortcutId);
@@ -352,9 +339,7 @@ public class ShortcutsSettingsFragment extends Fragment {
             return getString(R.string.shortcut_purpose_torch);
         }
     }
-    // -------------- Fix Ended for this method(promptRename)-----------
 
-    // -------------- Fix Start for this method(refreshShortcutRows)-----------
     private void refreshShortcutRows() {
         View view = getView();
         if (view == null)
@@ -375,9 +360,7 @@ public class ShortcutsSettingsFragment extends Fragment {
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
     }
-    // -------------- Fix Ended for this method(refreshShortcutRows)-----------
 
-    // -------------- Fix Start for this method(loadShortcutIconInto)-----------
     private void loadShortcutIconInto(ImageView imageView, String shortcutId, int defaultIconRes) {
         ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
         int res = sp.getCustomIconRes(shortcutId);
@@ -395,9 +378,7 @@ public class ShortcutsSettingsFragment extends Fragment {
         }
         imageView.setImageResource(defaultIconRes);
     }
-    // -------------- Fix Ended for this method(loadShortcutIconInto)-----------
 
-    // -------------- Fix Start for this method(initImagePicker)-----------
     private ActivityResultLauncher<String[]> imagePickerLauncher;
     private String pendingIconShortcutId;
 
@@ -415,7 +396,6 @@ public class ShortcutsSettingsFragment extends Fragment {
             }
         });
     }
-    // -------------- Fix Ended for this method(initImagePicker)-----------
 
     private void showClockWidgetSheet() {
         final String resultKey = "picker_result_pin_widget_clock";
@@ -747,7 +727,6 @@ public class ShortcutsSettingsFragment extends Fragment {
     }
 
     private void updatePreview() {
-        // -------------- Fix Start for this method(updatePreview)-----------
         if (getView() == null)
             return;
         View preview = getView().findViewById(R.id.clock_widget_preview);
@@ -846,22 +825,17 @@ public class ShortcutsSettingsFragment extends Fragment {
         if (dateContainer != null) {
             dateContainer.setVisibility(anyDateVisible ? android.view.View.VISIBLE : android.view.View.GONE);
         }
-        // -------------- Fix Ended for this method(updatePreview)-----------
     }
 
-    // -------------- Fix Start for this method(dpToPx)-----------
     private int dpToPx(float dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
     }
-    // -------------- Fix Ended for this method(dpToPx)-----------
 
-    // -------------- Fix Start for this method(pxToDp)-----------
     private float pxToDp(float px) {
         float density = getResources().getDisplayMetrics().density;
         return px / density;
     }
-    // -------------- Fix Ended for this method(pxToDp)-----------
 
     private void requestPinClockWidget() {
         android.content.Context ctx = requireContext();
@@ -870,11 +844,9 @@ public class ShortcutsSettingsFragment extends Fragment {
                 com.fadcam.widgets.ClockWidgetProvider.class);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && awm.isRequestPinAppWidgetSupported()) {
-            // -------------- Fix Start for this method(requestPinClockWidget)-----------
             PendingIntent success = PendingIntent.getActivity(
                     ctx, 0, new Intent(ctx, com.fadcam.MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
             awm.requestPinAppWidget(provider, null, success);
-            // -------------- Fix Ended for this method(requestPinClockWidget)-----------
         } else {
             android.widget.Toast.makeText(ctx, R.string.widgets_pin_unsupported, android.widget.Toast.LENGTH_LONG)
                     .show();

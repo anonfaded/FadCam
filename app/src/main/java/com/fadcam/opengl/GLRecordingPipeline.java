@@ -180,7 +180,6 @@ public class GLRecordingPipeline {
     private long firstVideoTimestampNanos = -1;
     private final Object timestampLock = new Object();
 
-    // -------------- Fix Start for GLRecordingPipeline watermark
     // scheduler-----------
     // Update watermark on a low-frequency handler to avoid per-frame overhead and
     // sustain 60fps
@@ -188,7 +187,6 @@ public class GLRecordingPipeline {
     private Runnable updateWatermarkRunnable;
     // Queue for GL-thread-safe renderer operations (processed in render loop)
     private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> rendererActions = new java.util.concurrent.ConcurrentLinkedQueue<>();
-    // -------------- Fix Ended for GLRecordingPipeline watermark
     // scheduler-----------
 
     // Updated constructor for file path (internal storage)
@@ -291,14 +289,10 @@ public class GLRecordingPipeline {
      */
     public void prepareSurfaces() {
         try {
-            // -------------- Fix Start for this method(prepareSurfaces)-----------
-            // -------------- Fix Start for this method(prepareSurfaces)-----------
             try {
                 com.fadcam.Log.d(TAG, "prepareSurfaces() called");
             } catch (Throwable ignore) {
             }
-            // -------------- Fix Ended for this method(prepareSurfaces)-----------
-            // -------------- Fix Ended for this method(prepareSurfaces)-----------
             // Make sure any previous resources are fully released
             if (glRenderer != null) {
                 Log.d(TAG, "Releasing previous renderer before preparing new surfaces");
@@ -328,7 +322,6 @@ public class GLRecordingPipeline {
                         videoWidth, videoHeight);
                 glRenderer.setUserOrientationSetting(orientation);
                 glRenderer.setRecordingPipeline(this); // Set reference for timestamp synchronization
-                // -------------- Fix Start for this method(prepareSurfaces)-----------
                 // Create EGL context and camera surface strictly on the GL render thread
                 // Ensure render thread exists
                 if (renderThread == null || handler == null) {
@@ -400,7 +393,6 @@ public class GLRecordingPipeline {
                     throw new RuntimeException("Camera input surface invalid");
                 }
                 Log.d(TAG, "Successfully obtained valid camera input surface");
-                // -------------- Fix Ended for this method(prepareSurfaces)-----------
 
                 // Set up the frame listener to trigger rendering when new frames arrive
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
@@ -412,7 +404,6 @@ public class GLRecordingPipeline {
                     }
                 });
 
-                // -------------- Fix Start: initialize watermark immediately --------------
                 try {
                     if (watermarkInfoProvider != null) {
                         String initial = watermarkInfoProvider.getWatermarkText();
@@ -422,7 +413,6 @@ public class GLRecordingPipeline {
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to apply initial watermark", e);
                 }
-                // -------------- Fix End: initialize watermark immediately --------------
 
                 Log.d(TAG, "GLWatermarkRenderer setup complete");
             }
@@ -531,7 +521,6 @@ public class GLRecordingPipeline {
                     }
                 }
 
-                // -------------- Fix Start for this method(startRecording)-----------
                 // Start a separate, low-frequency watermark updater (once per second)
                 if (updateWatermarkRunnable == null) {
                     updateWatermarkRunnable = new Runnable() {
@@ -549,7 +538,6 @@ public class GLRecordingPipeline {
                     };
                 }
                 watermarkUpdateHandler.post(updateWatermarkRunnable);
-                // -------------- Fix Ended for this method(startRecording)-----------
 
                 // Start the render loop (which will trigger video encoder format change)
                 startRenderLoop();
@@ -562,7 +550,6 @@ public class GLRecordingPipeline {
         }
     }
 
-    // -------------- Fix Start for this method(emergencyDrainEncoders)-----------
     /**
      * Emergency drain of all encoders to ensure no frames are lost before stopping.
      * This is bulletproof - continues even if individual operations fail.
@@ -700,7 +687,6 @@ public class GLRecordingPipeline {
             // in playable files
         }
     }
-    // -------------- Fix Ended for this method(emergencyDrainEncoders)-----------
 
     /**
      * Configures basic encoder settings for maximum device compatibility.
@@ -978,14 +964,12 @@ public class GLRecordingPipeline {
     }
 
     private void startRenderLoop() {
-        // ----- Fix Start for this method(startRenderLoop)-----
         if (renderThread == null) {
             renderThread = new HandlerThread("GLRenderThread");
             renderThread.start();
             handler = new Handler(renderThread.getLooper());
         }
         // Do not kick off render loop immediately; wait for first camera frame
-        // ----- Fix Ended for this method(startRenderLoop)-----
     }
 
     // Render when a new frame is available (signaled by renderer)
@@ -997,7 +981,6 @@ public class GLRecordingPipeline {
             }
 
             try {
-                // -------------- Fix Start for this method(renderRunnable)-----------
                 // Do NOT update watermark every frame; a separate timer handles it to avoid FPS
                 // drops
                 // Drain any queued GL operations to ensure they run on the GL thread
@@ -1009,7 +992,6 @@ public class GLRecordingPipeline {
                         android.util.Log.w(TAG, "Renderer action failed", t);
                     }
                 }
-                // -------------- Fix Ended for this method(renderRunnable)-----------
 
                 if (glRenderer != null) {
                     glRenderer.renderFrame();
@@ -1177,7 +1159,6 @@ public class GLRecordingPipeline {
                                     com.fadcam.Log.e(TAG, "Error writing video frame to muxer", e);
                                 } catch (Throwable ignore) {
                                 }
-                                // -------------- Fix Start for this method(drainEncoder)-----------
                                 // BULLETPROOF: Continue processing but mark potential corruption
                                 if (e.getMessage() != null && e.getMessage().contains("muxer")) {
                                     Log.w(TAG, "Muxer error detected - file may need emergency finalization");
@@ -1187,7 +1168,6 @@ public class GLRecordingPipeline {
                                     } catch (Throwable ignore) {
                                     }
                                 }
-                                // -------------- Fix Ended for this method(drainEncoder)-----------
                             }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
@@ -1410,7 +1390,6 @@ public class GLRecordingPipeline {
             }
         }
 
-        // -------------- Fix Start for this method(stopRecording)-----------
         // Stop watermark updates
         try {
             watermarkUpdateHandler.removeCallbacksAndMessages(null);
@@ -1422,7 +1401,6 @@ public class GLRecordingPipeline {
             } catch (Throwable ignore) {
             }
         }
-        // -------------- Fix Ended for this method(stopRecording)-----------
 
         if (renderThread != null) {
             try {
@@ -1458,7 +1436,6 @@ public class GLRecordingPipeline {
             }
         }
 
-        // -------------- Fix Start for this method(stopRecording)-----------
         // BULLETPROOF: Emergency drain encoders before stopping
         emergencyDrainEncoders();
 
@@ -1485,7 +1462,6 @@ public class GLRecordingPipeline {
         if (mediaMuxer != null && muxerStarted) {
             emergencyFinalizeMuxer();
         }
-        // -------------- Fix Ended for this method(stopRecording)-----------
 
         // Release encoder input surface
         if (encoderInputSurface != null) {
@@ -1856,7 +1832,6 @@ public class GLRecordingPipeline {
                     audioChannelCount);
             audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
             audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, audioBitrate);
-            // -------------- Fix Start for this method(setupAudio)-----------
             // Increase input size to avoid starvation and crackling under load
             // Empirically validated values from user report
             int desiredMaxInput = 262144; // 256 KiB
@@ -1873,7 +1848,6 @@ public class GLRecordingPipeline {
                     Log.w(TAG, "KEY_PCM_ENCODING not supported", e);
                 }
             }
-            // -------------- Fix Ended for this method(setupAudio)-----------
             audioEncoder = MediaCodec.createEncoderByType(android.media.MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             audioEncoder.start();
@@ -1907,7 +1881,6 @@ public class GLRecordingPipeline {
                 throw new RuntimeException("AudioRecord initialization failed");
             }
             Log.d(TAG, "DEBUG: AudioRecord created successfully with state: " + audioRecord.getState());
-            // ----- Fix Start for this method(setupAudio)-----
             boolean noiseSuppression = com.fadcam.SharedPreferencesManager.getInstance(context)
                     .isNoiseSuppressionEnabled();
             if (noiseSuppression && android.media.audiofx.NoiseSuppressor.isAvailable()) {
@@ -1921,7 +1894,6 @@ public class GLRecordingPipeline {
             } else if (noiseSuppression) {
                 Log.w(TAG, "NoiseSuppressor requested but not available on this device");
             }
-            // ----- Fix Ended for this method(setupAudio)-----
         } catch (Exception e) {
             Log.e(TAG, "Audio setup failed", e);
             audioRecordingEnabled = false;
@@ -1938,7 +1910,6 @@ public class GLRecordingPipeline {
         audioThread = new Thread(() -> {
             try {
                 audioRecord.startRecording();
-                // -------------- Fix Start for this method(startAudioThread)-----------
                 // Use a large byte[] buffer and feed encoder in sane chunks aligned to frames
                 final int bytesPerFrame = audioChannelCount * 2; // 16-bit PCM
                 final int aacFrameSize = 1024 * bytesPerFrame; // 1024 PCM frames per AAC frame
@@ -1946,7 +1917,6 @@ public class GLRecordingPipeline {
                 byte[] readBuffer = new byte[readBufferSize];
                 long audioFramesWritten = 0L; // PCM frames (not bytes)
                 long lastPtsUs =  0L;
-                // -------------- Fix Ended for this method(startAudioThread)-----------
                 while (audioThreadRunning) {
                     int read = audioRecord.read(readBuffer, 0, readBuffer.length);
                     if (read > 0) {

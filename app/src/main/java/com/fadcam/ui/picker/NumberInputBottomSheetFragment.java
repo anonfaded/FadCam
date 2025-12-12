@@ -66,7 +66,6 @@ public class NumberInputBottomSheetFragment extends BottomSheetDialogFragment {
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // -------------- Fix Start for this method(onViewCreated)-----------
         Bundle a = getArguments();
         if(a!=null){
             title = a.getString(ARG_TITLE, "");
@@ -135,7 +134,6 @@ public class NumberInputBottomSheetFragment extends BottomSheetDialogFragment {
         });
         field.addTextChangedListener(new TextWatcher(){ public void beforeTextChanged(CharSequence s,int a,int b,int c){} public void onTextChanged(CharSequence s,int a,int b,int c){ validate(); } public void afterTextChanged(Editable e){} });
         validate();
-        // -------------- Fix Ended for this method(onViewCreated)-----------
     }
 
     private Integer parseField(){ try{ return Integer.parseInt(field.getText().toString().trim()); }catch(Exception e){ return null; } }
