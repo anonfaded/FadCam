@@ -98,6 +98,73 @@ public class ChangelogParser {
             .append("  0% { opacity: 0; transform: translateY(-15px); }")
             .append("  100% { opacity: 1; transform: translateY(0); }")
             .append("}")
+            .append("/* Responsive Table Styles */")
+            .append(".table-container {")
+            .append("  margin: 12px 0;")
+            .append("  padding: 0 4px 0 18px;")
+            .append("  animation: fadeSlideIn 0.6s ease-out forwards;")
+            .append("  opacity: 0;")
+            .append("  overflow-x: auto;")
+            .append("  -webkit-overflow-scrolling: touch;")
+            .append("}")
+            .append("table {")
+            .append("  width: 100%;")
+            .append("  border-collapse: collapse;")
+            .append("  background: transparent;")
+            .append("  font-size: 13px;")
+            .append("  min-width: 280px;")
+            .append("  border-radius: 8px;")
+            .append("  overflow: hidden;")
+            .append("}")
+            .append("thead {")
+            .append("  background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);")
+            .append("  position: sticky;")
+            .append("  top: 0;")
+            .append("  z-index: 10;")
+            .append("}")
+            .append("thead tr:first-child th:first-child {")
+            .append("  border-radius: 8px 0 0 0;")
+            .append("}")
+            .append("thead tr:first-child th:last-child {")
+            .append("  border-radius: 0 8px 0 0;")
+            .append("}")
+            .append("tbody tr:last-child td:first-child {")
+            .append("  border-radius: 0 0 0 8px;")
+            .append("}")
+            .append("tbody tr:last-child td:last-child {")
+            .append("  border-radius: 0 0 8px 0;")
+            .append("}")
+            .append("th {")
+            .append("  padding: 10px 8px;")
+            .append("  text-align: left;")
+            .append("  color: #E43C3C;")
+            .append("  font-weight: 600;")
+            .append("  border-bottom: 2px solid #E43C3C;")
+            .append("  white-space: nowrap;")
+            .append("}")
+            .append("td {")
+            .append("  padding: 8px;")
+            .append("  border-bottom: 1px solid #333333;")
+            .append("  color: #E0E0E0;")
+            .append("  word-break: break-word;")
+            .append("}")
+            .append("tbody tr {")
+            .append("  transition: all 0.2s ease;")
+            .append("}")
+            .append("tbody tr:hover {")
+            .append("  background: rgba(228, 60, 60, 0.08);")
+            .append("}")
+            .append("tbody tr:hover td:last-child {")
+            .append("  background: rgba(228, 60, 60, 0.15);")
+            .append("}")
+            .append("tbody td:last-child {")
+            .append("  background: rgba(228, 60, 60, 0.08);")
+            .append("  color: #4CAF50;")
+            .append("  font-weight: 500;")
+            .append("}")
+            .append("tbody tr:last-child td {")
+            .append("  border-bottom: none;")
+            .append("}")
             .append(".tree {")
             .append("  background: linear-gradient(180deg, #AA1F1F, #661111, #AA1F1F);")
             .append("  background-size: 100% 200%;")
@@ -119,6 +186,18 @@ public class ChangelogParser {
             // Skip <br> tags
             if (line.equalsIgnoreCase("<br>") || line.equalsIgnoreCase("<br/>") || line.equalsIgnoreCase("<br />")) {
                 continue;
+            }
+            // Check if this is a markdown table
+            else if (isMarkdownTableStart(line, i, lines)) {
+                String tableHtml = parseMarkdownTable(i, lines);
+                html.append("<div class='table-container' style='animation-delay:").append(animationDelay).append("ms;'>")
+                    .append(tableHtml)
+                    .append("</div>");
+                
+                // Skip the lines we've already processed
+                int tableRowCount = countTableRows(i, lines);
+                i += tableRowCount;
+                animationDelay += 80;
             }
             // Divider line (---)
             else if (line.equals("---")) {
@@ -286,5 +365,133 @@ public class ChangelogParser {
         // Remove HTML comment blocks using regex
         // Pattern: <!-- anything (including newlines) -->
         return content.replaceAll("(?s)<!--.*?-->", "");
+    }
+
+    /**
+     * Check if a line starts a markdown table
+     * Markdown tables have format: | col1 | col2 | ... |
+     * Followed by a separator line: | --- | --- | ... |
+     */
+    private static boolean isMarkdownTableStart(String line, int currentIndex, List<String> lines) {
+        if (!line.startsWith("|") || !line.endsWith("|")) {
+            return false;
+        }
+        
+        // Check if next line is a separator
+        if (currentIndex + 1 < lines.size()) {
+            String nextLine = lines.get(currentIndex + 1).trim();
+            return isTableSeparator(nextLine);
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if a line is a markdown table separator
+     * Format: | --- | --- | ... |
+     */
+    private static boolean isTableSeparator(String line) {
+        if (!line.startsWith("|") || !line.endsWith("|")) {
+            return false;
+        }
+        
+        // Split by | and check if all parts (except first and last which are empty) contain only dashes and hyphens
+        String[] parts = line.split("\\|");
+        for (int i = 1; i < parts.length - 1; i++) {
+            String part = parts[i].trim();
+            if (!part.matches("-+")) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Count total rows in table (header + separator + data rows)
+     */
+    private static int countTableRows(int startIndex, List<String> lines) {
+        int count = 0;
+        
+        // Count header (1) + separator (1)
+        count = 2;
+        
+        // Count data rows
+        for (int i = startIndex + 2; i < lines.size(); i++) {
+            String line = lines.get(i).trim();
+            if (line.startsWith("|") && line.endsWith("|")) {
+                count++;
+            } else {
+                break;
+            }
+        }
+        
+        // Return total - 1 because we'll skip to the last row index
+        return count - 1;
+    }
+
+    /**
+     * Parse markdown table and return HTML table
+     * Handles: | Header1 | Header2 | ... |
+     *          | --- | --- | ... |
+     *          | Data1 | Data2 | ... |
+     */
+    private static String parseMarkdownTable(int startIndex, List<String> lines) {
+        StringBuilder tableHtml = new StringBuilder();
+        
+        String headerLine = lines.get(startIndex).trim();
+        String[] headers = parseTableRow(headerLine);
+        
+        tableHtml.append("<table>")
+                 .append("<thead><tr>");
+        
+        // Add header cells
+        for (String header : headers) {
+            tableHtml.append("<th>").append(processInlineFormatting(header)).append("</th>");
+        }
+        
+        tableHtml.append("</tr></thead>")
+                 .append("<tbody>");
+        
+        // Process data rows
+        for (int i = startIndex + 2; i < lines.size(); i++) {
+            String line = lines.get(i).trim();
+            
+            if (!line.startsWith("|") || !line.endsWith("|")) {
+                break;
+            }
+            
+            String[] cells = parseTableRow(line);
+            tableHtml.append("<tr>");
+            
+            for (String cell : cells) {
+                tableHtml.append("<td>").append(processInlineFormatting(cell)).append("</td>");
+            }
+            
+            tableHtml.append("</tr>");
+        }
+        
+        tableHtml.append("</tbody>")
+                 .append("</table>");
+        
+        return tableHtml.toString();
+    }
+
+    /**
+     * Parse a markdown table row and extract cell contents
+     * Format: | cell1 | cell2 | cell3 |
+     * Returns array of trimmed cell contents
+     */
+    private static String[] parseTableRow(String row) {
+        // Remove leading and trailing pipes
+        String content = row.replaceAll("^\\|+|\\|+$", "");
+        
+        // Split by pipe and trim each cell
+        String[] cells = content.split("\\|");
+        for (int i = 0; i < cells.length; i++) {
+            cells[i] = cells[i].trim();
+        }
+        
+        return cells;
     }
 }
