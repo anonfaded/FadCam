@@ -1224,6 +1224,23 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_instr_3">3. Open VLC or any HLS player on same WiFi</string>
     <string name="stream_instr_4">4. Paste URL in media player to watch live</string>
     <string name="stream_network_info">Same WiFi network required for streaming</string>
+    <!-- Remote Security -->
+    <string name="remote_security_title">Remote Security</string>
+    <string name="remote_security_enable">Enable Authentication</string>
+    <string name="remote_security_enable_desc">Require password to access remote web interface</string>
+    <string name="remote_security_password">Set Password</string>
+    <string name="remote_security_password_desc">Change your remote access password</string>
+    <string name="remote_security_password_hint">Enter new password</string>
+    <string name="remote_security_auto_lock">Auto-Lock Timeout</string>
+    <string name="remote_security_auto_lock_desc">Automatically lock after inactivity</string>
+    <string name="remote_security_logout_all">Logout All Sessions</string>
+    <string name="remote_security_logout_all_desc">Revoke all active remote sessions</string>
+    <string name="remote_security_password_required">Password must be 4-32 characters</string>
+    <string name="remote_security_password_set">Password updated successfully</string>
+    <string name="remote_security_password_empty">Please enter a password</string>
+    <string name="remote_security_sessions_cleared">All sessions logged out</string>
+    <string name="remote_security_no_active_sessions">No active sessions</string>
+    <string name="remote_security_enable_first">Enable authentication first</string>
     <!-- Stream Notes -->
     <string name="stream_notes_title">Notes</string>
     <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
