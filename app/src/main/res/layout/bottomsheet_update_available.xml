@@ -17,20 +17,28 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Close button at the top right -->
-    <ImageButton
-        android:id="@+id/btnCloseSheet"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:padding="6dp"
-        android:layout_margin="8dp"
-        android:scaleType="fitCenter"
-        android:src="@android:drawable/ic_menu_close_clear_cancel"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Close"
+    <!-- Close button container with larger touch area -->
+    <FrameLayout
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_margin="4dp"
+        android:elevation="20dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="#FFFFFF" />
+        app:layout_constraintEnd_toEndOf="parent">
+        
+        <ImageButton
+            android:id="@+id/btnCloseSheet"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close"
+            android:elevation="20dp"
+            android:layout_gravity="center"
+            android:tint="#FFFFFF" />
+    </FrameLayout>
 
     <ScrollView
         android:id="@+id/updateContentScroll"

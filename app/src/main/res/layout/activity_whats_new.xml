@@ -35,15 +35,6 @@
                 android:scaleY="1.0"
                 android:layout_gravity="center_vertical"
                 android:layout_marginBottom="2dp" />
-            
-            <!-- Animated glow line beneath progress -->
-            <View
-                android:id="@+id/progressGlow"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_gravity="bottom"
-                android:background="@drawable/gradient_glow_line"
-                android:alpha="0.6" />
         </FrameLayout>
 
         <!-- Header with Close Button on LEFT -->
