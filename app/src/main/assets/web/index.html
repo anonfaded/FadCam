@@ -1080,6 +1080,7 @@
             if (percent < 0) {
                 batteryPercentage.textContent = '—%';
                 batteryStatusBadge.textContent = '—';
+                console.log('[Battery] Invalid battery data: percent=' + percent + ', status=' + JSON.stringify(status.battery));
                 return;
             }
             
@@ -1134,6 +1135,7 @@
                     storageBar.classList.add('warning');
                 }
             } else {
+                console.log('[Storage] No storage data: used=' + status.storageUsedGb + ', total=' + status.storageTotalGb);
                 storageValue.textContent = '—';
                 storageFill.style.width = '0%';
             }
@@ -1168,6 +1170,7 @@
                     memoryBar.classList.add('warning');
                 }
             } else {
+                console.log('[Memory] No memory data: percent=' + status.memoryPercent + ', total=' + status.memoryTotalMb);
                 memoryValue.textContent = '—';
                 memoryFill.style.width = '0%';
             }
@@ -1882,19 +1885,26 @@
                 console.log('[Torch] Toggle requested');
                 const oldState = currentStatus?.torchOn;
                 
-                // Call the API
-                await dashboardViewModel.toggleTorch();
+                // Call the API and get the response
+                const result = await dashboardViewModel.toggleTorch();
                 
-                // Update UI immediately with the expected new state
-                if (currentStatus) {
+                // Update UI with the actual state from server response
+                if (currentStatus && result && result.torch_state !== undefined) {
+                    const newState = result.torch_state;
+                    currentStatus.torchOn = newState;
+                    console.log('[Torch] Updated from server response:', oldState, '→', newState);
+                    updateUI(currentStatus);
+                } else if (currentStatus) {
+                    // Fallback: show optimistic update if no response data
                     const newState = !oldState;
                     currentStatus.torchOn = newState;
-                    console.log('[Torch] Updated immediately:', oldState, '→', newState);
+                    console.log('[Torch] Updated optimistically (no server response):', oldState, '→', newState);
                     updateUI(currentStatus);
-                    // Note: Toast is shown by updateUI() listener, not here to avoid double notifications
                 }
             } catch (error) {
                 console.error('[Torch] Failed to toggle:', error);
+                // Force status refresh to sync actual state from server
+                await dashboardViewModel.updateStatus();
                 showToast('Failed to toggle torch');
             }
         }

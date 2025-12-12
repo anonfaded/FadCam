@@ -1350,16 +1350,18 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Get storage info as "available/total GB".
+     * Get storage info as "used/total GB".
+     * Returns the space used (total - available) and total space.
      */
     public String getStorageInfo() {
         try {
             android.os.StatFs stat = new android.os.StatFs(android.os.Environment.getExternalStorageDirectory().getPath());
             long availBytes = stat.getAvailableBlocksLong() * stat.getBlockSizeLong();
             long totalBytes = stat.getBlockCountLong() * stat.getBlockSizeLong();
-            float availGB = availBytes / (1024.0f * 1024.0f * 1024.0f);
+            long usedBytes = totalBytes - availBytes;  // Calculate used space correctly
+            float usedGB = usedBytes / (1024.0f * 1024.0f * 1024.0f);
             float totalGB = totalBytes / (1024.0f * 1024.0f * 1024.0f);
-            return String.format("%.1f/%.1f GB", availGB, totalGB);
+            return String.format("%.1f/%.1f GB", usedGB, totalGB);
         } catch (Exception e) {
             return "unknown";
         }
