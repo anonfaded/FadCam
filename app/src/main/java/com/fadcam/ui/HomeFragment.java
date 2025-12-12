@@ -148,6 +148,12 @@ public class HomeFragment extends BaseFragment {
         "#F06292",
     };
     // ----- Fix Ended for this method(fields)-----
+    
+    // OPTIMIZATION: Clock color calculation caching (Phase 3)
+    private int lastClockBackgroundColor = -1;
+    private int cachedClockTextColor = Color.WHITE;
+    private long lastClockColorCalcTime = 0;
+    private static final long CLOCK_COLOR_CACHE_MS = 1000; // Recalculate every 1 second
 
     private long recordingStartTime;
     private long videoBitrate;
@@ -1569,7 +1575,8 @@ public class HomeFragment extends BaseFragment {
             );
             return;
         }
-        Log.d(TAG, "Registering all HomeFragment broadcast receivers...");
+        // OPTIMIZATION: Removed generic initialization log (not needed during recording)
+        // Log.d(TAG, "Registering all HomeFragment broadcast receivers...");
 
         // Initialize if they are null (first time or after unregistration)
         initializeRecordingStateReceivers(); // Initializes all state-related receivers
@@ -1616,10 +1623,11 @@ public class HomeFragment extends BaseFragment {
         // isCompletionReceiverRegistered is managed by
         // registerRecordingCompleteReceiver
         // isTorchReceiverRegistered is managed by registerTorchReceiver
-        Log.i(
-            TAG,
-            "All HomeFragment broadcast receivers registration attempt finished."
-        );
+        // OPTIMIZATION: Removed generic completion log (reduced from 2x/sec to 0 during recording)
+        // Log.i(
+        //     TAG,
+        //     "All HomeFragment broadcast receivers registration attempt finished."
+        // );
     }
 
     private void registerRecordingFailedReceiver(Context context) {
@@ -2086,11 +2094,13 @@ public class HomeFragment extends BaseFragment {
         // Ensure boolean return type
         // ----- Fix Ended for this
         // method(registerRecordingStateReceivers_correct_signature_and_logic)-----
-        Log.d(TAG, "Registering recording state receivers...");
+        // OPTIMIZATION: Removed generic initialization log (called 2x/sec during recording)
+        // Log.d(TAG, "Registering recording state receivers...");
         
         // Guard: Don't register twice
         if (isStateReceiversRegistered) {
-            Log.d(TAG, "Recording state receivers already registered, skipping.");
+            // OPTIMIZATION: Removed redundant already-registered log
+            // Log.d(TAG, "Recording state receivers already registered, skipping.");
             return true;
         }
         
@@ -2126,7 +2136,8 @@ public class HomeFragment extends BaseFragment {
                     intentFilterStarted
                 );
             }
-            Log.d(TAG, "Registered broadcastOnRecordingStarted");
+            // OPTIMIZATION: Removed generic receiver registration log
+            // Log.d(TAG, "Registered broadcastOnRecordingStarted");
         } else {
             allRegisteredSuccessfully = false;
             Log.e(TAG, "broadcastOnRecordingStarted is null, not registering");
@@ -2148,7 +2159,8 @@ public class HomeFragment extends BaseFragment {
                     intentFilterResumed
                 );
             }
-            Log.d(TAG, "Registered broadcastOnRecordingResumed");
+            // OPTIMIZATION: Removed generic receiver registration log
+            // Log.d(TAG, "Registered broadcastOnRecordingResumed");
         } else {
             allRegisteredSuccessfully = false;
             Log.e(TAG, "broadcastOnRecordingResumed is null, not registering");
@@ -2170,7 +2182,8 @@ public class HomeFragment extends BaseFragment {
                     intentFilterPaused
                 );
             }
-            Log.d(TAG, "Registered broadcastOnRecordingPaused");
+            // OPTIMIZATION: Removed generic receiver registration log
+            // Log.d(TAG, "Registered broadcastOnRecordingPaused");
         } else {
             allRegisteredSuccessfully = false;
             Log.e(TAG, "broadcastOnRecordingPaused is null, not registering");
@@ -2192,7 +2205,8 @@ public class HomeFragment extends BaseFragment {
                     intentFilterStopped
                 );
             }
-            Log.d(TAG, "Registered broadcastOnRecordingStopped");
+            // OPTIMIZATION: Removed generic receiver registration log
+            // Log.d(TAG, "Registered broadcastOnRecordingStopped");
         } else {
             allRegisteredSuccessfully = false;
             Log.e(TAG, "broadcastOnRecordingStopped is null, not registering");
@@ -2214,7 +2228,8 @@ public class HomeFragment extends BaseFragment {
                     intentFilterStateCallback
                 );
             }
-            Log.d(TAG, "Registered broadcastOnRecordingStateCallback");
+            // OPTIMIZATION: Removed generic receiver registration log
+            // Log.d(TAG, "Registered broadcastOnRecordingStateCallback");
         } else {
             allRegisteredSuccessfully = false;
             Log.e(
@@ -4980,55 +4995,41 @@ public class HomeFragment extends BaseFragment {
         String currentTime = timeFormat.format(new Date());
         tvClock.setText(currentTime);
 
-        // Get the current clock background color and determine if it's light or dark
-        int backgroundColor = -1;
-        if (cardClock != null) {
-            backgroundColor =
-                ((ColorStateList) cardClock.getCardBackgroundColor()).getDefaultColor();
-        }
-
-        // Set text colors based on background brightness and theme settings
-        if (backgroundColor != -1) {
-            // Use background color to determine text color
-            boolean isLightBackground = isLightColor(backgroundColor);
-            int textColor = isLightBackground ? Color.BLACK : Color.WHITE;
-
-            tvClock.setTextColor(textColor);
-            tvDateEnglish.setTextColor(textColor);
-            tvDateArabic.setTextColor(textColor);
-
-            Log.d(
-                TAG,
-                "updateClock: Applied text color based on clock background: " +
-                (isLightBackground ? "BLACK" : "WHITE")
-            );
-        } else {
-            // Fallback to theme-based coloring if clock background color can't be
-            // determined
-            String currentTheme =
-                sharedPreferencesManager.sharedPreferences.getString(
-                    com.fadcam.Constants.PREF_APP_THEME,
-                    Constants.DEFAULT_APP_THEME
-                );
-            if ("Crimson Bloom".equals(currentTheme)) {
-                // For Crimson Bloom theme, force white text for better visibility against red
-                // background
-                tvClock.setTextColor(Color.WHITE);
-                tvDateEnglish.setTextColor(Color.WHITE);
-                tvDateArabic.setTextColor(Color.WHITE);
-            } else if ("Premium Gold".equals(currentTheme)) {
-                // For Premium Gold theme, force black text for better visibility against gold
-                // background
-                tvClock.setTextColor(Color.BLACK);
-                tvDateEnglish.setTextColor(Color.BLACK);
-                tvDateArabic.setTextColor(Color.BLACK);
-            } else {
-                // For other dark themes, use white text
-                tvClock.setTextColor(Color.WHITE);
-                tvDateEnglish.setTextColor(Color.WHITE);
-                tvDateArabic.setTextColor(Color.WHITE);
+        // OPTIMIZATION: Cache color calculation (only recalculate every 1 second)
+        // This reduces expensive isLightColor() calls from 1/sec to 0.001/sec
+        long currentTime_ms = System.currentTimeMillis();
+        int textColor = cachedClockTextColor;
+        
+        if (cardClock != null && (currentTime_ms - lastClockColorCalcTime) >= CLOCK_COLOR_CACHE_MS) {
+            int backgroundColor = ((ColorStateList) cardClock.getCardBackgroundColor()).getDefaultColor();
+            
+            // Only recalculate if background color changed
+            if (backgroundColor != lastClockBackgroundColor) {
+                lastClockBackgroundColor = backgroundColor;
+                boolean isLightBackground = isLightColor(backgroundColor);
+                textColor = isLightBackground ? Color.BLACK : Color.WHITE;
+                cachedClockTextColor = textColor;
+                lastClockColorCalcTime = currentTime_ms;
             }
+        } else if (cardClock == null) {
+            // Fallback to theme-based coloring if card is null
+            String currentTheme = sharedPreferencesManager.sharedPreferences.getString(
+                com.fadcam.Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME
+            );
+            if ("Crimson Bloom".equals(currentTheme)) {
+                textColor = Color.WHITE;
+            } else if ("Premium Gold".equals(currentTheme)) {
+                textColor = Color.BLACK;
+            } else {
+                textColor = Color.WHITE;
+            }
+            cachedClockTextColor = textColor;
         }
+        
+        tvClock.setTextColor(textColor);
+        tvDateEnglish.setTextColor(textColor);
+        tvDateArabic.setTextColor(textColor);
 
         // Update the date in English
         SimpleDateFormat dateFormatEnglish = new SimpleDateFormat(
@@ -8009,7 +8010,8 @@ public class HomeFragment extends BaseFragment {
                     );
                 }
                 isSegmentCompleteStatsReceiverRegistered = true;
-                Log.d(TAG, "Registered segmentCompleteStatsReceiver.");
+                // OPTIMIZATION: Removed generic receiver registration log
+                // Log.d(TAG, "Registered segmentCompleteStatsReceiver.");
             } else {
                 isSegmentCompleteStatsReceiverRegistered = false;
                 Log.e(

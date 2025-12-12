@@ -54,8 +54,10 @@ public class LiveM3U8Server extends NanoHTTPD {
         String userAgent = session.getHeaders().get("user-agent");
         String clientIP = session.getRemoteIpAddress();
         
-        Log.i(TAG, "📥 " + method + " " + uri + " from " + clientIP);
-        Log.d(TAG, "   User-Agent: " + (userAgent != null ? userAgent : "unknown"));
+        // OPTIMIZATION: Commented out HTTP request logging (called 10-30x per second during streaming)
+        // Every request was being logged, massive I/O overhead during playback
+        // Log.i(TAG, "📥 " + method + " " + uri + " from " + clientIP);
+        // Log.d(TAG, "   User-Agent: " + (userAgent != null ? userAgent : "unknown"));
         
         // Track unique client IPs (only adds if new, Set handles duplicates)
         streamManager.trackClientIP(clientIP);
