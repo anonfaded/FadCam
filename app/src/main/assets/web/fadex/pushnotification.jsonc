@@ -18,13 +18,22 @@
 {
   "notifications": {
     "placeholder": {
-      "version": 1,
+      "version": 2,
       "title": "FadCam Updates",
       "subtitle": "Stay tuned for notifications",
       "description": "Notifications will appear here. Check back soon!",
       "priority": "info",
       "draft": false,
-      "expiry": 30
+      "expiry": 1
+    },
+    "placeholder": {
+      "version": 2,
+      "title": "FadCam Updates 222222222",
+      "subtitle": "Stay tuned for notifications",
+      "description": "Notifications will appear here. Check back soon!",
+      "priority": "warning",
+      "draft": false,
+      "expiry": 3
     },
     "intro": {
       "version": 1,
@@ -33,7 +42,7 @@
       "description": "Welcome to FadCam Remote Dashboard!\n\nUse the sidebar to control your device:\n• Toggle recording on/off\n• Adjust camera settings\n• Monitor stream quality\n• View real-time status\n• Change system preferences\n\nYou can manage everything directly from this interface. Enjoy seamless remote control!\n\nIf you love FadCam and want to support development, consider becoming a patron: https://patreon.com/Fadedx",
       "priority": "info",
       "draft": false,
-      "expiry": 0
+      "expiry": -1
     }
   }
 }
