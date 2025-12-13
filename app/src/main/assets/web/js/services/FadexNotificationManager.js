@@ -86,15 +86,34 @@ class FadexNotificationManager {
 
             // Compare versions
             if (remoteNotification.version > latestVersion) {
-                // Add to history
+                // NEW: Only clear OLD versions of the SAME notification ID
+                // Keep other notifications (e.g., intro + main can coexist)
+                const sourceId = remoteNotification.id; // This comes from the JSON key (intro, main, etc)
+                console.log(`📝 [UPDATE] New version detected for "${sourceId}": v${remoteNotification.version} > v${latestVersion}`);
+                
+                // Remove OLD cached entries of this SAME notification
+                const oldCount = this.notificationHistory.length;
+                this.notificationHistory = this.notificationHistory.filter(n => {
+                    // Keep notifications from OTHER sources, remove old versions of THIS source
+                    return !n.title || !remoteNotification.title || n.title !== remoteNotification.title;
+                });
+                const removedCount = oldCount - this.notificationHistory.length;
+                
+                if (removedCount > 0) {
+                    console.log(`📝 [UPDATE] Removed ${removedCount} old version(s) of "${sourceId}"`);
+                }
+                
+                // Add the new notification
                 const notification = {
                     ...remoteNotification,
+                    sourceId: sourceId, // Store the source ID for future comparisons
                     timestamp: Date.now(),
                     isRead: false,
                     id: `notif-${Date.now()}`,
                 };
 
                 console.log(`📝 [ADD-HISTORY] Adding notification:`, {
+                    sourceId: sourceId,
                     title: notification.title,
                     version: notification.version,
                     expiry: notification.expiry,
@@ -103,7 +122,6 @@ class FadexNotificationManager {
                 });
                 
                 console.log(`📝 [ADD-HISTORY] Full notification object:`, notification);
-                console.log(`📝 [ADD-HISTORY] All keys in object:`, Object.keys(notification));
 
                 this.notificationHistory.push(notification);
                 this.saveToCache(this.notificationHistory);
