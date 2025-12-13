@@ -67,82 +67,72 @@ class FadexNotificationManager {
 
     /**
      * Check for notification updates
-     * Compares remote version with latest cached version
-     * If new version: adds to history and triggers appropriate UI
+     * Fetches all active notifications and updates history
+     * Handles multiple notification types (intro, main, etc)
      */
     async checkForUpdates() {
         try {
-            const remoteNotification = await this.fetchNotification();
+            const remoteNotifications = await this.fetchNotification();
 
-            if (!remoteNotification) {
+            if (!remoteNotifications || remoteNotifications.length === 0) {
                 this.retryCount = 0;
                 return;
             }
 
-            // Get latest notification from history
-            const latestVersion = this.notificationHistory.length > 0 
-                ? Math.max(...this.notificationHistory.map(n => n.version || 0))
-                : 0;
+            let hasUpdates = false;
 
-            // Compare versions
-            if (remoteNotification.version > latestVersion) {
-                // NEW: Only clear OLD versions of the SAME notification ID
-                // Keep other notifications (e.g., intro + main can coexist)
-                const sourceId = remoteNotification.id; // This comes from the JSON key (intro, main, etc)
-                console.log(`📝 [UPDATE] New version detected for "${sourceId}": v${remoteNotification.version} > v${latestVersion}`);
-                
-                // Remove OLD cached entries of this SAME notification
-                const oldCount = this.notificationHistory.length;
-                this.notificationHistory = this.notificationHistory.filter(n => {
-                    // Keep notifications from OTHER sources, remove old versions of THIS source
-                    return !n.title || !remoteNotification.title || n.title !== remoteNotification.title;
-                });
-                const removedCount = oldCount - this.notificationHistory.length;
-                
-                if (removedCount > 0) {
-                    console.log(`📝 [UPDATE] Removed ${removedCount} old version(s) of "${sourceId}"`);
-                }
-                
-                // Add the new notification
-                const notification = {
-                    ...remoteNotification,
-                    sourceId: sourceId, // Store the source ID for future comparisons
-                    timestamp: Date.now(),
-                    isRead: false,
-                    id: `notif-${Date.now()}`,
-                };
+            // Process each notification independently
+            for (const remoteNotification of remoteNotifications) {
+                // Find latest version of THIS notification in history (by sourceId/title match)
+                const existingVersions = this.notificationHistory.filter(n => 
+                    n.title === remoteNotification.title
+                );
+                const latestVersion = existingVersions.length > 0 
+                    ? Math.max(...existingVersions.map(n => n.version || 0))
+                    : 0;
 
-                console.log(`📝 [ADD-HISTORY] Adding notification:`, {
-                    sourceId: sourceId,
-                    title: notification.title,
-                    version: notification.version,
-                    expiry: notification.expiry,
-                    priority: notification.priority,
-                    draft: notification.draft
-                });
-                
-                console.log(`📝 [ADD-HISTORY] Full notification object:`, notification);
-
-                this.notificationHistory.push(notification);
-                this.saveToCache(this.notificationHistory);
-
-                // Update UI based on priority
-                this.updateNotificationBadge();
-                
-                // Normalize priority to lowercase for comparison
-                const priority = (notification.priority || '').toLowerCase();
-                if (priority === 'warning' || priority === 'critical') {
-                    // Show modal for warning/critical
-                    // Mark as read since user is seeing it
-                    notification.isRead = true;
-                    this.saveToCache(this.notificationHistory);
+                // Check if this notification has a new version
+                if (remoteNotification.version > latestVersion) {
+                    hasUpdates = true;
+                    const sourceId = remoteNotification.id;
+                    console.log(`📝 [UPDATE] New version for "${sourceId}": v${remoteNotification.version} > v${latestVersion}`);
                     
-                    this.startJiggleAnimation();
-                    this.showNotificationPopup(notification);
-                } else {
-                    // Info: just jiggle for 3 seconds
-                    this.startJiggleAnimation(3000);
+                    // Remove OLD versions of this SAME notification (by title)
+                    const oldCount = this.notificationHistory.length;
+                    this.notificationHistory = this.notificationHistory.filter(n => 
+                        n.title !== remoteNotification.title
+                    );
+                    const removedCount = oldCount - this.notificationHistory.length;
+                    
+                    if (removedCount > 0) {
+                        console.log(`📝 [UPDATE] Removed ${removedCount} old version(s) of "${sourceId}"`);
+                    }
+                    
+                    // Add the new notification
+                    const notification = {
+                        ...remoteNotification,
+                        sourceId: sourceId,
+                        timestamp: Date.now(),
+                        isRead: false,
+                        id: `notif-${Date.now()}`,
+                    };
+
+                    console.log(`📝 [ADD-HISTORY] Adding notification:`, {
+                        sourceId: sourceId,
+                        title: notification.title,
+                        version: notification.version,
+                        expiry: notification.expiry,
+                    });
+
+                    this.notificationHistory.push(notification);
                 }
+            }
+
+            if (hasUpdates) {
+                this.saveToCache(this.notificationHistory);
+                this.updateNotificationBadge();
+                // Simple jiggle animation for batch updates
+                this.startJiggleAnimation(3000);
             }
 
             this.retryCount = 0;
@@ -152,11 +142,13 @@ class FadexNotificationManager {
     }
 
     /**
-     * Fetch notification from GitHub only
-     * @returns {Promise<Object|null>} Parsed notification object or null
+     * Fetch all active notifications from GitHub
+     * @returns {Promise<Array>} Array of active notifications or empty array
      */
     async fetchNotification() {
-        return await this.fetchNotificationFromGitHub();
+        const remoteData = await this.fetchNotificationFromGitHub();
+        if (!remoteData) return [];
+        return this.filterAndGetNotifications(remoteData);
     }
 
     /**
@@ -252,16 +244,16 @@ class FadexNotificationManager {
             activeNotifications.push(notifToPush);
         }
 
-        // Return most recent by version (highest version number)
+        // Return all active notifications (not just highest version)
+        // Each notification type (intro, main, etc) can have its own version
         if (activeNotifications.length === 0) {
             console.log(`📋 [FILTER] No active notifications to return`);
-            return null;
+            return [];
         }
-        const result = activeNotifications.reduce((max, notif) => 
-            notif.version > max.version ? notif : max
+        console.log(`📋 [FILTER] Returning ${activeNotifications.length} active notification(s):`, 
+            activeNotifications.map(n => ({ id: n.id, version: n.version, expiry: n.expiry }))
         );
-        console.log(`📋 [FILTER] Returning:`, { id: result.id, version: result.version, expiry: result.expiry });
-        return result;
+        return activeNotifications;
     }
 
     /**
@@ -703,14 +695,14 @@ class FadexNotificationManager {
         // Sort by timestamp (newest first)
         const sorted = [...this.notificationHistory].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-        listEl.innerHTML = sorted.map((notif, index) => {
+        listEl.innerHTML = sorted.map((notif) => {
             const date = new Date(notif.timestamp || Date.now());
             const timeStr = date.toLocaleTimeString();
             const unreadClass = notif.isRead ? '' : 'unread';
             const priorityClass = `priority-${notif.priority || 'info'}`;
 
             return `
-                <div class="fadex-panel-item ${unreadClass} ${priorityClass}" onclick="event.stopPropagation(); window.fadexManager && window.fadexManager.markNotificationAsRead(${index})">
+                <div class="fadex-panel-item ${unreadClass} ${priorityClass}" onclick="event.stopPropagation(); window.fadexManager && window.fadexManager.markNotificationAsReadById('${notif.id}')">
                     <div class="fadex-panel-item-header">
                         <span class="fadex-panel-title">${notif.title || 'Notification'}</span>
                         <span class="fadex-panel-time">${timeStr}</span>
@@ -722,11 +714,11 @@ class FadexNotificationManager {
     }
 
     /**
-     * Mark specific notification as read and show details in modal
+     * Mark specific notification as read by ID and show details in modal
      */
-    markNotificationAsRead(index) {
-        if (index >= 0 && index < this.notificationHistory.length) {
-            const notif = this.notificationHistory[index];
+    markNotificationAsReadById(notifId) {
+        const notif = this.notificationHistory.find(n => n.id === notifId);
+        if (notif) {
             notif.isRead = true;
             this.saveToCache(this.notificationHistory);
             this.updateNotificationBadge();
@@ -735,7 +727,18 @@ class FadexNotificationManager {
             // Show the notification details in modal
             this.showNotificationModal(notif);
             
-            this.log('Notification marked as read and displayed', { index });
+            this.log('Notification marked as read and displayed', { id: notifId });
+        }
+    }
+
+    /**
+     * Mark specific notification as read and show details in modal
+     * @deprecated Use markNotificationAsReadById instead
+     */
+    markNotificationAsRead(index) {
+        if (index >= 0 && index < this.notificationHistory.length) {
+            const notif = this.notificationHistory[index];
+            this.markNotificationAsReadById(notif.id);
         }
     }
 

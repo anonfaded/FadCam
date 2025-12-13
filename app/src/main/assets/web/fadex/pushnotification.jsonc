@@ -27,13 +27,13 @@
       "expiry": -1
     },
     "main": {
-      "version": 1,
+      "version": 2,
       "title": "FadCam Updates",
       "subtitle": "Stay tuned for notifications",
       "description": "Check back soon for latest updates and announcements!",
       "priority": "info",
       "draft": false,
-      "expiry": 30
+      "expiry": 0
     }
   }
 }
