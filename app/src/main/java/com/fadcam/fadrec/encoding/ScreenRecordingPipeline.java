@@ -181,8 +181,8 @@ public class ScreenRecordingPipeline {
         this.screenWidth = initialEncoder[0];
         this.screenHeight = initialEncoder[1];
         
-        Log.d(TAG, "Display dimensions: " + this.displayWidth + "x" + this.displayHeight);
-        Log.d(TAG, "Encoder dimensions: " + this.screenWidth + "x" + this.screenHeight);
+        // Log.d(TAG, "Display dimensions: " + this.displayWidth + "x" + this.displayHeight);
+        // Log.d(TAG, "Encoder dimensions: " + this.screenWidth + "x" + this.screenHeight);
         
         this.screenDensity = builder.screenDensity;
         this.videoFramerate = builder.videoFramerate;
@@ -233,8 +233,8 @@ public class ScreenRecordingPipeline {
     /**     * Initialize all encoding components
      */
     private void initialize() throws IOException {
-        Log.d(TAG, "Initializing ScreenRecordingPipeline: " + screenWidth + "x" + screenHeight + 
-              "@" + videoFramerate + "fps, bitrate=" + videoBitrate);
+        // Log.d(TAG, "Initializing ScreenRecordingPipeline: " + screenWidth + "x" + screenHeight + 
+        //     "@" + videoFramerate + "fps, bitrate=" + videoBitrate);
         
         // Create encoding threads
         videoEncodingThread = new HandlerThread("ScreenVideoEncoding");
@@ -264,7 +264,7 @@ public class ScreenRecordingPipeline {
             initializeAudioEncoder();
         }
         
-        Log.d(TAG, "ScreenRecordingPipeline initialized successfully");
+        // Log.d(TAG, "ScreenRecordingPipeline initialized successfully");
     }
     
     /**
@@ -276,7 +276,7 @@ public class ScreenRecordingPipeline {
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(outputFilePath);
         }
-        Log.d(TAG, "FragmentedMp4Muxer created");
+        // Log.d(TAG, "FragmentedMp4Muxer created");
     }
     
     /**
@@ -356,8 +356,8 @@ public class ScreenRecordingPipeline {
             format.setInteger(MediaFormat.KEY_COMPLEXITY, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR);
         }
         
-        Log.d(TAG, String.format("Configuring %s encoder: %dx%d @%dfps, bitrate=%d",
-            isSoftware ? "software" : "hardware", width, height, videoFramerate, effectiveBitrate));
+        // Log.d(TAG, String.format("Configuring %s encoder: %dx%d @%dfps, bitrate=%d",
+        //     isSoftware ? "software" : "hardware", width, height, videoFramerate, effectiveBitrate));
         
         encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         encoderInputSurface = encoder.createInputSurface();
@@ -410,7 +410,7 @@ public class ScreenRecordingPipeline {
             audioEncoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat_encoder, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             
-            Log.d(TAG, "Audio encoder initialized: AAC, " + sampleRate + "Hz");
+            // Log.d(TAG, "Audio encoder initialized: AAC, " + sampleRate + "Hz");
             
         } catch (IOException e) {
             Log.e(TAG, "Failed to initialize audio encoder", e);
@@ -427,7 +427,7 @@ public class ScreenRecordingPipeline {
             return;
         }
         
-        Log.d(TAG, "Starting screen recording");
+        // Log.d(TAG, "Starting screen recording");
         
         // Start encoders
         videoEncoder.start();
@@ -456,7 +456,7 @@ public class ScreenRecordingPipeline {
             startAudioEncodingLoop();
         }
         
-        Log.d(TAG, "Screen recording started");
+        // Log.d(TAG, "Screen recording started");
     }
     
     /**
@@ -478,7 +478,7 @@ public class ScreenRecordingPipeline {
             null
         );
         
-        Log.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight);
+        // Log.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight);
     }
     
     /**
@@ -519,7 +519,7 @@ public class ScreenRecordingPipeline {
                 // Muxer setup
                 MediaFormat newFormat = videoEncoder.getOutputFormat();
                 videoTrackIndex = mediaMuxer.addTrack(newFormat);
-                Log.d(TAG, "Video track added: " + videoTrackIndex);
+                // Log.d(TAG, "Video track added: " + videoTrackIndex);
                 
                 tryStartMuxer();
                 
@@ -637,7 +637,7 @@ public class ScreenRecordingPipeline {
             if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 MediaFormat newFormat = audioEncoder.getOutputFormat();
                 audioTrackIndex = mediaMuxer.addTrack(newFormat);
-                Log.d(TAG, "Audio track added: " + audioTrackIndex);
+                // Log.d(TAG, "Audio track added: " + audioTrackIndex);
                 
                 tryStartMuxer();
                 
@@ -679,7 +679,7 @@ public class ScreenRecordingPipeline {
         if (!muxerStarted && videoReady && audioReady) {
             mediaMuxer.start();
             muxerStarted = true;
-            Log.d(TAG, "Muxer started");
+            // Log.d(TAG, "Muxer started");
         }
     }
     
@@ -696,7 +696,7 @@ public class ScreenRecordingPipeline {
         }
         
         isPaused = true;
-        Log.d(TAG, "Recording paused");
+        // Log.d(TAG, "Recording paused");
     }
     
     /**

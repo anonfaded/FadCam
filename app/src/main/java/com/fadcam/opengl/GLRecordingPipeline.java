@@ -105,8 +105,8 @@ public class GLRecordingPipeline {
                 if (recordingStartTimeNanos == -1) {
                     recordingStartTimeNanos = System.nanoTime();
                 }
-                Log.d(TAG, "Video timestamp initialized: camera=" + cameraTimestampNanos +
-                        ", recording_start=" + recordingStartTimeNanos);
+                // Log.d(TAG, "Video timestamp initialized: camera=" + cameraTimestampNanos +
+                //     ", recording_start=" + recordingStartTimeNanos);
             }
         }
     }
@@ -309,7 +309,7 @@ public class GLRecordingPipeline {
             }
 
             if (encoderInputSurface == null) {
-                Log.d(TAG, "Setting up video encoder");
+                // Log.d(TAG, "Setting up video encoder");
                 setupEncoder();
                 if (encoderInputSurface == null) {
                     throw new RuntimeException("Failed to create encoder input surface");
@@ -317,7 +317,7 @@ public class GLRecordingPipeline {
             }
 
             if (glRenderer == null) {
-                Log.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
+                // Log.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation,
                         videoWidth, videoHeight);
                 glRenderer.setUserOrientationSetting(orientation);
@@ -338,7 +338,7 @@ public class GLRecordingPipeline {
                         Surface camSurf = glRenderer.getCameraInputSurface();
                         cameraInputSurface = camSurf;
                         if (previewSurface != null && previewSurface.isValid()) {
-                            Log.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
+                            // Log.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
                             glRenderer.setPreviewSurface(previewSurface);
                         } else {
                             Log.d(TAG, "No valid preview surface; optional preview warm-up");
@@ -414,7 +414,7 @@ public class GLRecordingPipeline {
                     Log.w(TAG, "Failed to apply initial watermark", e);
                 }
 
-                Log.d(TAG, "GLWatermarkRenderer setup complete");
+                // Log.d(TAG, "GLWatermarkRenderer setup complete");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error preparing surfaces", e);
@@ -574,7 +574,7 @@ public class GLRecordingPipeline {
                         break; // Exit loop on error
                     }
                 }
-                Log.d(TAG, "Emergency video encoder drain completed");
+                // Log.d(TAG, "Emergency video encoder drain completed");
             } catch (Exception e) {
                 Log.e(TAG, "Error during emergency video encoder drain", e);
             }
@@ -714,9 +714,9 @@ public class GLRecordingPipeline {
         try {
             // This helps ensure the encoder produces constant framerate output
             format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-            Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+            // Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
         } catch (Exception e) {
-            Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+            // Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
         }
 
         // ESSENTIAL: Real-time priority for smooth recording (API 23+)
@@ -729,8 +729,8 @@ public class GLRecordingPipeline {
             }
         }
 
-        Log.d(TAG, "Applied basic encoder configuration: " +
-                "bitrate=" + videoBitrate + ", framerate=" + videoFramerate + ", vbr=enabled, priority=realtime");
+        // Log.d(TAG, "Applied basic encoder configuration: " +
+        //     "bitrate=" + videoBitrate + ", framerate=" + videoFramerate + ", vbr=enabled, priority=realtime");
     }
 
     /**
@@ -750,9 +750,9 @@ public class GLRecordingPipeline {
         // ESSENTIAL: For constant framerate recording, especially on Samsung devices
         try {
             format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-            Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+            // Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
         } catch (Exception e) {
-            Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+            // Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
         }
 
         // Industry Standard: Enhanced encoder configuration for reliability
@@ -797,8 +797,8 @@ public class GLRecordingPipeline {
             }
         }
 
-        Log.d(TAG, "Applied industry-standard encoder configuration with user settings: " +
-                "codec=" + videoCodec + ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate);
+        // Log.d(TAG, "Applied industry-standard encoder configuration with user settings: " +
+        //     "codec=" + videoCodec + ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate);
     }
 
     /**
@@ -830,7 +830,7 @@ public class GLRecordingPipeline {
 
         // Strategy 1: Try user's preferred codec with minimal settings
         try {
-            Log.d(TAG, "Attempting " + currentMimeType + " encoder with minimal settings");
+            // Log.d(TAG, "Attempting " + currentMimeType + " encoder with minimal settings");
             MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
             configureBasicEncoder(format);
 
@@ -838,7 +838,7 @@ public class GLRecordingPipeline {
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             encoderInputSurface = videoEncoder.createInputSurface();
             encoderConfigured = true;
-            Log.d(TAG, "Successfully configured " + currentMimeType + " encoder with basic settings");
+            // Log.d(TAG, "Successfully configured " + currentMimeType + " encoder with basic settings");
         } catch (Exception e) {
             Log.w(TAG, "Failed to configure " + currentMimeType + " with minimal settings: " + e.getMessage());
             if (videoEncoder != null) {
@@ -862,7 +862,7 @@ public class GLRecordingPipeline {
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
                 encoderInputSurface = videoEncoder.createInputSurface();
                 encoderConfigured = true;
-                Log.d(TAG, "Successfully configured H.264 fallback encoder");
+                // Log.d(TAG, "Successfully configured H.264 fallback encoder");
             } catch (Exception e) {
                 Log.e(TAG, "Failed to configure H.264 fallback encoder: " + e.getMessage());
                 if (videoEncoder != null) {
@@ -913,7 +913,7 @@ public class GLRecordingPipeline {
             Log.d(TAG, "Created FragmentedMp4Muxer with file descriptor (fMP4 for streaming)");
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
-            Log.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (fMP4 for streaming)");
+            // Log.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (fMP4 for streaming)");
         }
 
         // Set location metadata if available

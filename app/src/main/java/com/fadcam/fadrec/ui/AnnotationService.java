@@ -3238,7 +3238,7 @@ public class AnnotationService extends Service {
                         // Start recording using MediaProjectionHelper
                         MediaProjectionHelper helper = new MediaProjectionHelper(context);
                         helper.startScreenRecording(resultCode, permissionData);
-                        Log.i(TAG, "Screen recording started from overlay service");
+                        // Log.i(TAG, "Screen recording started from overlay service");
                     } else {
                         Log.e(TAG, "Permission granted but invalid data - resultCode: " + resultCode + ", data: "
                                 + (permissionData != null));

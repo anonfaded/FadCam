@@ -132,7 +132,7 @@ public class ScreenRecordingService extends Service {
         }
 
         String action = intent.getAction();
-        Log.d(TAG, "onStartCommand: action=" + action);
+        // Log.d(TAG, "onStartCommand: action=" + action);
 
         if (action == null) {
             stopSelf();
@@ -349,7 +349,7 @@ public class ScreenRecordingService extends Service {
                 .putLong("screen_recording_start_time", recordingStartTime)
                 .apply();
             
-            Log.i(TAG, "Screen recording started successfully");
+            // Log.i(TAG, "Screen recording started successfully");
             
             // Update UI on main thread
             mainHandler.post(() -> {
@@ -364,14 +364,12 @@ public class ScreenRecordingService extends Service {
                 // Start notification updates
                 startNotificationUpdates();
                 
-                // Broadcast recording started
+                // Broadcast recording started (FadRecHomeFragment will show toast)
                 broadcastRecordingStarted();
                 
                 // Save state to preferences
                 sharedPreferencesManager.setScreenRecordingInProgress(true);
                 sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
-                
-                Toast.makeText(ScreenRecordingService.this, "Screen recording started", Toast.LENGTH_SHORT).show();
             });
             
             // Notify RemoteStreamManager for potential streaming
@@ -497,11 +495,9 @@ public class ScreenRecordingService extends Service {
                     .remove("screen_recording_start_time")
                     .apply();
                 
-                // Show completion message
+                // Show completion notification (no toast - to avoid spam)
                 if (outputFile != null && outputFile.exists()) {
-                    Toast.makeText(this, 
-                        "Screen recording saved: " + outputFile.getName(), 
-                        Toast.LENGTH_LONG).show();
+                    // Log.d(TAG, "Recording file saved: " + outputFile.getName());
                     
                     // Broadcast recording complete for RecordsFragment to refresh
                     try {
@@ -883,44 +879,40 @@ public class ScreenRecordingService extends Service {
         intent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
-        // Also send state callback
+        // Also send STATE_CALLBACK for FloatingControlsService to update button state
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", ScreenRecordingState.IN_PROGRESS.name());
+        stateIntent.putExtra("recordingState", recordingState.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "[BROADCAST-SEND] Recording started - sent IN_PROGRESS state via LocalBroadcastManager");
     }
 
     private void broadcastRecordingStopped() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
-        // Also send state callback
+        // Also send STATE_CALLBACK for FloatingControlsService to update button state
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", ScreenRecordingState.NONE.name());
+        stateIntent.putExtra("recordingState", recordingState.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "[BROADCAST-SEND] Recording stopped - sent NONE state via LocalBroadcastManager");
     }
 
     private void broadcastRecordingPaused() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
-        // Also send state callback
+        // Also send STATE_CALLBACK for FloatingControlsService to update button state
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", ScreenRecordingState.PAUSED.name());
+        stateIntent.putExtra("recordingState", recordingState.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "[BROADCAST-SEND] Recording paused - sent PAUSED state via LocalBroadcastManager");
     }
 
     private void broadcastRecordingResumed() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         
-        // Also send state callback
+        // Also send STATE_CALLBACK for FloatingControlsService to update button state
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", ScreenRecordingState.IN_PROGRESS.name());
+        stateIntent.putExtra("recordingState", recordingState.name());
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
-        Log.d(TAG, "[BROADCAST-SEND] Recording resumed - sent IN_PROGRESS state via LocalBroadcastManager");
     }
 
     @Override

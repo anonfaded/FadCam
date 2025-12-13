@@ -209,14 +209,14 @@ public class RemoteStreamManager {
      * Fragments are received via FragmentedMp4MuxerWrapper callbacks.
      */
     public void startRecording(@NonNull File recordingFile) {
-        Log.i(TAG, "🎬 START RECORDING called: enabled=" + streamingEnabled + ", file=" + recordingFile.getName());
+        // Log.i(TAG, "🎬 START RECORDING called: enabled=" + streamingEnabled + ", file=" + recordingFile.getName());
         
         if (!streamingEnabled) {
             Log.w(TAG, "❌ Streaming NOT enabled - ignoring startRecording call");
             return;
         }
         
-        Log.i(TAG, "✅ Streaming ENABLED - ready to receive fragments via callbacks");
+        // Log.i(TAG, "✅ Streaming ENABLED - ready to receive fragments via callbacks");
         
         bufferLock.writeLock().lock();
         try {
@@ -228,15 +228,15 @@ public class RemoteStreamManager {
             
             if (isNewRecording) {
                 clearBuffer(); // Reset buffer for new recording
-                Log.d(TAG, "📋 Buffer cleared for new recording session");
+                // Log.d(TAG, "📋 Buffer cleared for new recording session");
             } else {
-                Log.d(TAG, "⚠️ Same recording file - buffer NOT cleared (duplicate call)");
+                // Log.d(TAG, "⚠️ Same recording file - buffer NOT cleared (duplicate call)");
             }
         } finally {
             bufferLock.writeLock().unlock();
         }
         
-        Log.i(TAG, "Remote streaming ready (callback-based)");
+        // Log.i(TAG, "Remote streaming ready (callback-based)");
     }
     
     /**
@@ -245,7 +245,7 @@ public class RemoteStreamManager {
      * DOES NOT clear buffer - keeps fragments available for playback until next recording starts.
      */
     public void stopRecording() {
-        Log.i(TAG, "🛑 STOP RECORDING - buffer remains available for playback");
+        // Log.i(TAG, "🛑 STOP RECORDING - buffer remains available for playback");
         
         bufferLock.writeLock().lock();
         try {
@@ -278,7 +278,7 @@ public class RemoteStreamManager {
      * @param initData ftyp + moov boxes
      */
     public void onInitializationSegment(byte[] initData) {
-        Log.i(TAG, "🔔 onInitializationSegment CALLED - data size: " + (initData != null ? initData.length : "NULL"));
+        // Log.i(TAG, "🔔 onInitializationSegment CALLED - data size: " + (initData != null ? initData.length : "NULL"));
         bufferLock.writeLock().lock();
         try {
             this.initializationSegment = initData;
@@ -299,11 +299,11 @@ public class RemoteStreamManager {
             bufferHead = 0;
             
             if (clearedCount > 0) {
-                Log.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
+                // Log.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
             }
             
             if (initData != null) {
-                Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
+                // Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
             } else {
                 Log.w(TAG, "⚠️ Initialization segment is NULL");
             }
@@ -333,7 +333,7 @@ public class RemoteStreamManager {
             // This prevents serving stale fragments when buffer wraps around
             if (fragmentBuffer[bufferHead] != null) {
                 int oldSeq = fragmentBuffer[bufferHead].sequenceNumber;
-                Log.d(TAG, "🗑️ Evicting old fragment #" + oldSeq + " from slot " + bufferHead);
+                // Log.d(TAG, "🗑️ Evicting old fragment #" + oldSeq + " from slot " + bufferHead);
             }
             
             // Create fragment object
@@ -350,7 +350,7 @@ public class RemoteStreamManager {
             // This ensures no stale data from previous buffer cycles
             for (int i = 0; i < BUFFER_SIZE; i++) {
                 if (fragmentBuffer[i] != null && fragmentBuffer[i].sequenceNumber < oldestSequence) {
-                    Log.d(TAG, "🗑️ Purging stale fragment #" + fragmentBuffer[i].sequenceNumber + " (< oldest " + oldestSequence + ")");
+                    // Log.d(TAG, "🗑️ Purging stale fragment #" + fragmentBuffer[i].sequenceNumber + " (< oldest " + oldestSequence + ")");
                     fragmentBuffer[i] = null;
                 }
             }
@@ -358,8 +358,8 @@ public class RemoteStreamManager {
             // Advance head pointer (circular)
             bufferHead = (bufferHead + 1) % BUFFER_SIZE;
             
-            Log.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
-                (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
+            // Log.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
+            //     (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
             
         } finally {
             bufferLock.writeLock().unlock();
@@ -373,7 +373,7 @@ public class RemoteStreamManager {
     public byte[] getInitializationSegment() {
         bufferLock.readLock().lock();
         try {
-            Log.d(TAG, "📥 getInitializationSegment called - returning: " + (initializationSegment != null ? (initializationSegment.length + " bytes") : "NULL"));
+            // Log.d(TAG, "📥 getInitializationSegment called - returning: " + (initializationSegment != null ? (initializationSegment.length + " bytes") : "NULL"));
             return initializationSegment;
         } finally {
             bufferLock.readLock().unlock();
@@ -1036,7 +1036,7 @@ public class RemoteStreamManager {
         // Get configured battery warning threshold from SharedPreferencesManager
         com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
         int warningThreshold = prefs.getBatteryWarningThreshold();
-        Log.d(TAG, "[Battery] Retrieved threshold from prefs: " + warningThreshold);
+        // Log.d(TAG, "[Battery] Retrieved threshold from prefs: " + warningThreshold);
         
         // Warning if battery is below or equal to threshold (only if not charging)
         if (currentLevel <= warningThreshold && !isCharging) {
@@ -1050,7 +1050,7 @@ public class RemoteStreamManager {
             "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remaining_hours\": %.1f, \"warning\": %s, \"warning_threshold\": %d}",
             currentLevel, chargingStatus, consumed, remainingHours, warningJson, warningThreshold
         );
-        Log.d(TAG, "[Battery] Returning JSON: " + result);
+        // Log.d(TAG, "[Battery] Returning JSON: " + result);
         return result;
     }
     

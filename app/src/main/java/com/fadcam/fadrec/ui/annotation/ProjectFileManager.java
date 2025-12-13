@@ -189,8 +189,18 @@ public class ProjectFileManager {
             // Create project folder if it doesn't exist
             File projectFolder = getProjectFolder(projectName);
             if (!projectFolder.exists()) {
-                projectFolder.mkdirs();
+                boolean created = projectFolder.mkdirs();
+                if (!created) {
+                    Log.e(TAG, "❌ Failed to create project folder: " + projectFolder.getAbsolutePath());
+                    throw new IOException("Unable to create project folder: " + projectFolder.getAbsolutePath());
+                }
                 Log.d(TAG, "  Created project folder: " + projectFolder.getAbsolutePath());
+            }
+            
+            // Verify the folder is writable before attempting to write
+            if (!projectFolder.canWrite()) {
+                Log.e(TAG, "❌ Project folder is not writable: " + projectFolder.getAbsolutePath());
+                throw new IOException("Project folder is not writable. Check MANAGE_EXTERNAL_STORAGE permission.");
             }
             
             // Write to project.fadrec file

@@ -81,7 +81,7 @@ public class FragmentedMp4MuxerWrapper {
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(1000) // 1 second per fragment for low-latency streaming
                 .build();
-        Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
+        // Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
     }
 
     /**
@@ -104,7 +104,7 @@ public class FragmentedMp4MuxerWrapper {
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(1000) // 1 second per fragment for low-latency streaming
                 .build();
-        Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
+        // Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
     }
 
     /**
@@ -134,7 +134,7 @@ public class FragmentedMp4MuxerWrapper {
 
             try {
                 int trackId = muxer.addTrack(media3Format);
-                Log.d(TAG, "Added track with id: " + trackId + ", format: " + mimeType);
+                // Log.d(TAG, "Added track with id: " + trackId + ", format: " + mimeType);
 
                 // Track video track ID for EOS handling
                 if (isVideo) {
@@ -243,7 +243,7 @@ public class FragmentedMp4MuxerWrapper {
             boolean isKeyFrame = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
             int logCount = trackSampleLogs.get(trackIndex, 0);
             if (isKeyFrame || logCount < 6) {
-                Log.d(TAG, "PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
+                // Log.d(TAG, "PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
                 trackSampleLogs.put(trackIndex, logCount + 1);
             }
             
@@ -329,7 +329,7 @@ public class FragmentedMp4MuxerWrapper {
                         );
 
                     muxer.writeSampleData(trackId, emptyBuffer.duplicate(), eosBufferInfo);
-                    Log.d(TAG, "Wrote EOS for track " + trackId + " at pts=" + lastPts + "us (" + (lastPts / 1000000.0) + "s)");
+                    // Log.d(TAG, "Wrote EOS for track " + trackId + " at pts=" + lastPts + "us (" + (lastPts / 1000000.0) + "s)");
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to write EOS for track " + trackId + ": " + e.getMessage());
                 }
@@ -572,7 +572,7 @@ public class FragmentedMp4MuxerWrapper {
             
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)
-                Log.i(TAG, "📦 Received init segment: " + data.length + " bytes");
+                // Log.i(TAG, "📦 Received init segment: " + data.length + " bytes");
                 
                 // Send to RemoteStreamManager for HLS streaming
                 RemoteStreamManager.getInstance().onInitializationSegment(data);
@@ -582,14 +582,14 @@ public class FragmentedMp4MuxerWrapper {
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    Log.d(TAG, "✅ Init segment written to file (STREAM_AND_SAVE mode)");
+                    // Log.d(TAG, "✅ Init segment written to file (STREAM_AND_SAVE mode)");
                 } else {
-                    Log.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
+                    // Log.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
                 }
             } else {
                 // Media fragment (moof + mdat)
-                Log.i(TAG, "🎬 Received fragment #" + segment.segmentNr + 
-                    ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
+                // Log.i(TAG, "🎬 Received fragment #" + segment.segmentNr + 
+                //     ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
                 
                 // Send to RemoteStreamManager for HLS streaming
                 if (initSegmentSent) {
@@ -603,9 +603,9 @@ public class FragmentedMp4MuxerWrapper {
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
+                    // Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
                 } else {
-                    Log.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
+                    // Log.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
                 
                 nextFragmentNumber++;
