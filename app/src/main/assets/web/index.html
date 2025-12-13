@@ -2177,8 +2177,24 @@
             } else if (!status.isRecording && lastRecordingState) {
                 console.log('⏹️ Recording stopped');
                 lastRecordingState = false;
-                // Allow reload when recording starts again
-                hlsLoaded = false;
+                
+                // AUTO-STOP VIDEO when recording stops and restore initial overlay state
+                if (videoElement && hlsService) {
+                    console.log('[Stream] Stopping video playback - recording ended');
+                    hlsService.pause();
+                    // Reset video to allow fresh load on next recording
+                    hlsLoaded = false;
+                    if (hlsService.hls) {
+                        hlsService.destroy();
+                    }
+                    
+                    // Restore initial overlay with play icon and message
+                    const videoOverlay = document.getElementById('videoOverlay');
+                    videoOverlay.classList.remove('hidden');
+                    videoOverlay.style.cursor = 'not-allowed';
+                    videoOverlay.style.opacity = '0.5';
+                    console.log('[Stream] Restored initial overlay state');
+                }
             }
 
             // Server status - ALWAYS ONLINE (server is always on when website loads)
