@@ -238,32 +238,31 @@ class FadexNotificationManager {
      */
     async fetchNotificationFromGitHub() {
         try {
-            const fetchUrl = `${this.constants.GITHUB_NOTIFICATION_URL}?t=${Date.now()}`;
-
-            const response = await fetch(fetchUrl, {
-                method: 'GET',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                },
-            });
+            console.log(`🌐 [FETCH] Getting notifications from backend endpoint...`);
+            
+            // Use backend endpoint which handles GitHub fetch server-side
+            // Avoids browser CORS issues since backend fetches from GitHub directly
+            const response = await fetch('/api/github/notification');
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                console.log(`❌ [FETCH] HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
             }
 
-            // Read raw text and parse JSONC (with comments support)
             const text = await response.text();
-            const json = this.parseJSONС(text);
+            console.log(`📄 [RESPONSE] Received from backend`);
             
-            // Handle new structure: notifications object with multiple entries
+            const json = JSON.parse(text); // Backend returns clean JSON (comments stripped)
+            console.log(`✅ [PARSED] JSON:`, json);
+            
             if (!json.notifications || typeof json.notifications !== 'object') {
-                throw new Error('Invalid notification schema: missing notifications object');
+                throw new Error('Invalid schema: missing notifications object');
             }
 
+            console.log(`📋 [NOTIFICATIONS] Found ${Object.keys(json.notifications).length} notifications`);
             return this.filterAndGetNotifications(json.notifications);
         } catch (error) {
+            console.log(`❌ [ERROR] ${error.message}`);
             this.log('ℹ️ Notification fetch failed', { error: error.message });
             return null;
         }
