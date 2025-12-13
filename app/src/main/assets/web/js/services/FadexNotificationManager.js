@@ -69,68 +69,98 @@ class FadexNotificationManager {
      * Check for notification updates
      * Fetches all active notifications and updates history
      * Handles multiple notification types (intro, main, etc)
+     * Also handles expiry=0 (immediate deletion from cache)
      */
     async checkForUpdates() {
         try {
-            const remoteNotifications = await this.fetchNotification();
-
-            if (!remoteNotifications || remoteNotifications.length === 0) {
+            // Fetch raw data (before filtering)
+            const rawData = await this.fetchNotificationFromGitHub();
+            if (!rawData) {
                 this.retryCount = 0;
                 return;
             }
 
+            // Get filtered active notifications
+            const remoteNotifications = this.filterAndGetNotifications(rawData);
+            
+            // Also get ALL notifications (including expiry=0) to check for deletions
+            const allRemoteNotifications = Object.entries(rawData.notifications || {}).map(([id, notif]) => ({
+                id,
+                ...notif
+            }));
+
             let hasUpdates = false;
 
-            // Process each notification independently
-            for (const remoteNotification of remoteNotifications) {
-                // Find latest version of THIS notification in history (by sourceId/title match)
-                const existingVersions = this.notificationHistory.filter(n => 
-                    n.title === remoteNotification.title
-                );
-                const latestVersion = existingVersions.length > 0 
-                    ? Math.max(...existingVersions.map(n => n.version || 0))
-                    : 0;
-
-                // Check if this notification has a new version
-                if (remoteNotification.version > latestVersion) {
-                    hasUpdates = true;
-                    const sourceId = remoteNotification.id;
-                    console.log(`📝 [UPDATE] New version for "${sourceId}": v${remoteNotification.version} > v${latestVersion}`);
-                    
-                    // Remove OLD versions of this SAME notification (by title)
+            // First, handle deletions: check for notifications with expiry=0
+            for (const remoteNotif of allRemoteNotifications) {
+                if (remoteNotif.expiry === 0) {
+                    // Find and remove from cache by matching title
                     const oldCount = this.notificationHistory.length;
                     this.notificationHistory = this.notificationHistory.filter(n => 
-                        n.title !== remoteNotification.title
+                        n.title !== remoteNotif.title
                     );
                     const removedCount = oldCount - this.notificationHistory.length;
                     
                     if (removedCount > 0) {
-                        console.log(`📝 [UPDATE] Removed ${removedCount} old version(s) of "${sourceId}"`);
+                        console.log(`🗑️ [DELETE] Removed "${remoteNotif.title}" from cache (expiry=0)`);
+                        hasUpdates = true;
                     }
-                    
-                    // Add the new notification
-                    const notification = {
-                        ...remoteNotification,
-                        sourceId: sourceId,
-                        timestamp: Date.now(),
-                        isRead: false,
-                        id: `notif-${Date.now()}`,
-                    };
+                }
+            }
 
-                    console.log(`📝 [ADD-HISTORY] Adding notification:`, {
-                        sourceId: sourceId,
-                        title: notification.title,
-                        version: notification.version,
-                        expiry: notification.expiry,
-                    });
+            // Then process active notifications (after filtering)
+            if (remoteNotifications && remoteNotifications.length > 0) {
+                for (const remoteNotification of remoteNotifications) {
+                    // Find latest version of THIS notification in history (by title match)
+                    const existingVersions = this.notificationHistory.filter(n => 
+                        n.title === remoteNotification.title
+                    );
+                    const latestVersion = existingVersions.length > 0 
+                        ? Math.max(...existingVersions.map(n => n.version || 0))
+                        : 0;
 
-                    this.notificationHistory.push(notification);
+                    // Check if this notification has a new version
+                    if (remoteNotification.version > latestVersion) {
+                        hasUpdates = true;
+                        const sourceId = remoteNotification.id;
+                        console.log(`📝 [UPDATE] New version for "${sourceId}": v${remoteNotification.version} > v${latestVersion}`);
+                        
+                        // Remove OLD versions of this SAME notification (by title)
+                        const oldCount = this.notificationHistory.length;
+                        this.notificationHistory = this.notificationHistory.filter(n => 
+                            n.title !== remoteNotification.title
+                        );
+                        const removedCount = oldCount - this.notificationHistory.length;
+                        
+                        if (removedCount > 0) {
+                            console.log(`📝 [UPDATE] Removed ${removedCount} old version(s) of "${sourceId}"`);
+                        }
+                        
+                        // Add the new notification
+                        const notification = {
+                            ...remoteNotification,
+                            sourceId: sourceId,
+                            timestamp: Date.now(),
+                            isRead: false,
+                            id: `notif-${Date.now()}`,
+                        };
+
+                        console.log(`📝 [ADD-HISTORY] Adding notification:`, {
+                            sourceId: sourceId,
+                            title: notification.title,
+                            version: notification.version,
+                            expiry: notification.expiry,
+                        });
+
+                        this.notificationHistory.push(notification);
+                    }
                 }
             }
 
             if (hasUpdates) {
                 this.saveToCache(this.notificationHistory);
                 this.updateNotificationBadge();
+                this.renderNotificationHistory();
                 // Simple jiggle animation for batch updates
                 this.startJiggleAnimation(3000);
             }
