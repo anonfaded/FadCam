@@ -93,12 +93,15 @@ class FadexNotificationManager {
 
             let hasUpdates = false;
 
-            // STEP 1: Handle deletions - remove notifications with expiry=0 from cache
-            console.log(`\n📝 [STEP-1-DELETE] Checking for notifications marked with expiry=0...`);
+            // STEP 1: Handle deletions - remove notifications with expiry=0 OR draft=true from cache
+            console.log(`\n📝 [STEP-1-DELETE] Checking for notifications marked with expiry=0 or draft=true...`);
             for (const remoteNotif of allRemoteNotifications) {
-                if (remoteNotif.expiry === 0) {
-                    console.log(`  🗑️ Remote notification "${remoteNotif.sourceId}" (${remoteNotif.title}) has expiry=0`);
-                    console.log(`     Current cache:`, this.notificationHistory.map(n => ({ sourceId: n.sourceId, title: n.title })));
+                const shouldDelete = remoteNotif.expiry === 0 || remoteNotif.draft === true;
+                
+                if (shouldDelete) {
+                    const reason = remoteNotif.expiry === 0 ? 'expiry=0' : 'draft=true';
+                    console.log(`  🗑️ Remote notification "${remoteNotif.sourceId}" (${remoteNotif.title}) marked for deletion (${reason})`);
+                    console.log(`     Current cache before deletion:`, this.notificationHistory.map(n => ({ sourceId: n.sourceId, title: n.title })));
                     
                     // Remove from cache by matching sourceId
                     const oldCount = this.notificationHistory.length;
@@ -108,7 +111,7 @@ class FadexNotificationManager {
                     const removedCount = oldCount - this.notificationHistory.length;
                     
                     if (removedCount > 0) {
-                        console.log(`  ✅ Deleted ${removedCount} item(s) with sourceId="${remoteNotif.sourceId}" from cache`);
+                        console.log(`  ✅ Deleted ${removedCount} item(s) with sourceId="${remoteNotif.sourceId}" from cache (${reason})`);
                         hasUpdates = true;
                     } else {
                         console.log(`  ℹ️ sourceId="${remoteNotif.sourceId}" not found in cache`);
