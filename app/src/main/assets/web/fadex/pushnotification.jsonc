@@ -33,7 +33,7 @@
       "description": "Check back soon for latest updates and announcements!",
       "priority": "info",
       "draft": false,
-      "expiry": 0
+      "expiry": 1
     }
   }
 }
