@@ -17,8 +17,8 @@
 
 {
   "notifications": {
-    "placeholder": {
-      "version": 3,
+    "placeholder-v2": {
+      "version": 2,
       "title": "This is a second placeholder notification",
       "subtitle": "yeah its 2nd",
       "description": "Notifications will appear here. Check back soon!",
@@ -26,7 +26,7 @@
       "draft": false,
       "expiry": 1
     },
-    "placeholder": {
+    "placeholder-v3": {
       "version": 3,
       "title": "This is a third placeholder notification",
       "subtitle": "yeah its 3rd",
