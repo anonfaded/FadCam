@@ -123,26 +123,11 @@ class FadexNotificationManager {
     }
 
     /**
-     * Fetch notification with dev mode support
-     * DEBUG MODE: Tries local file first → Falls back to GitHub
-     * PRODUCTION MODE: GitHub only
-     *
+     * Fetch notification from GitHub only
      * @returns {Promise<Object|null>} Parsed notification object or null
      */
     async fetchNotification() {
-        if (this.constants.DEBUG_MODE) {
-            // Try local file first
-            const localNotification = await this.fetchLocalNotification();
-            if (localNotification) {
-                return localNotification;
-            }
-
-            // Fall back to GitHub
-            return await this.fetchNotificationFromGitHub();
-        } else {
-            // Production: GitHub only
-            return await this.fetchNotificationFromGitHub();
-        }
+        return await this.fetchNotificationFromGitHub();
     }
 
     /**
@@ -172,12 +157,12 @@ class FadexNotificationManager {
             const text = await response.text();
             const json = this.parseJSONС(text);
 
-            // Validate schema
-            if (!json.version || !json.title) {
-                throw new Error('Invalid notification schema: missing version or title');
+            // Handle new structure: notifications object with multiple entries
+            if (!json.notifications || typeof json.notifications !== 'object') {
+                throw new Error('Invalid notification schema: missing notifications object');
             }
 
-            return json;
+            return this.filterAndGetNotifications(json.notifications);
         } catch (error) {
             this.log('ℹ️ Local file fetch failed', { error: error.message });
             return null;
@@ -185,15 +170,57 @@ class FadexNotificationManager {
     }
 
     /**
-     * Fetch notification JSON from GitHub via server proxy (avoids CORS)
-     * Server-side fetch avoids browser CORS preflight issues with GitHub
+     * Filter notifications: exclude draft, check expiry, return most recent
+     * @param {Object} notifications - Object with notification IDs as keys
+     * @returns {Object|null} Most recent active notification or null
+     */
+    filterAndGetNotifications(notifications) {
+        const activeNotifications = [];
+
+        for (const [id, notification] of Object.entries(notifications)) {
+            // Skip if draft
+            if (notification.draft === true) {
+                this.log(`ℹ️ Skipping draft notification: ${id}`);
+                continue;
+            }
+
+            // Check expiry (default 30 days)
+            const expiry = notification.expiry !== undefined ? notification.expiry : 30;
+            if (expiry === 0) {
+                // Expiry=0 means immediate deletion: remove from server AND client cache
+                this.log(`🗑️ Deleting notification from cache: ${id} (expiry=0)`);
+                const cacheKey = `fadex_notification_${id}`;
+                localStorage.removeItem(cacheKey);
+                // Also remove the main notification cache
+                localStorage.removeItem('fadex_notification_cache');
+                continue;
+            }
+
+            // Validate required fields
+            if (!notification.version || !notification.title) {
+                this.log(`⚠️ Invalid notification schema for ${id}: missing version or title`);
+                continue;
+            }
+
+            activeNotifications.push({ id, ...notification });
+        }
+
+        // Return most recent by version (highest version number)
+        if (activeNotifications.length === 0) return null;
+        return activeNotifications.reduce((max, notif) => 
+            notif.version > max.version ? notif : max
+        );
+    }
+
+    /**
+     * Fetch notification JSON from GitHub raw content URL
+     * Sources directly from master branch for consistent updates
      *
      * @returns {Promise<Object|null>} Parsed notification object or null
      */
     async fetchNotificationFromGitHub() {
         try {
-            const baseUrl = window.location.origin;
-            const fetchUrl = `${baseUrl}/api/github/notification`;
+            const fetchUrl = `${this.constants.GITHUB_NOTIFICATION_URL}?t=${Date.now()}`;
 
             const response = await fetch(fetchUrl, {
                 method: 'GET',
@@ -208,17 +235,18 @@ class FadexNotificationManager {
                 throw new Error(`HTTP ${response.status} ${response.statusText}`);
             }
 
-            // Read raw text to handle parsing better
-            const rawText = await response.text();
-            const json = JSON.parse(rawText);
+            // Read raw text and parse JSONC (with comments support)
+            const text = await response.text();
+            const json = this.parseJSONС(text);
             
-            // Validate schema
-            if (!json.version || !json.title) {
-                throw new Error('Invalid notification schema: missing version or title');
+            // Handle new structure: notifications object with multiple entries
+            if (!json.notifications || typeof json.notifications !== 'object') {
+                throw new Error('Invalid notification schema: missing notifications object');
             }
 
-            return json;
+            return this.filterAndGetNotifications(json.notifications);
         } catch (error) {
+            this.log('ℹ️ Notification fetch failed', { error: error.message });
             return null;
         }
     }
