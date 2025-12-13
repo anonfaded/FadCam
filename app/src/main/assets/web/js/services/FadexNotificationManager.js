@@ -176,18 +176,26 @@ class FadexNotificationManager {
      */
     filterAndGetNotifications(notifications) {
         const activeNotifications = [];
+        console.log(`📋 [FILTER] Processing ${Object.keys(notifications).length} notifications`);
 
         for (const [id, notification] of Object.entries(notifications)) {
+            console.log(`🔍 [FILTER] Checking notification: ${id}`);
+            
             // Skip if draft
             if (notification.draft === true) {
+                console.log(`  ❌ [DRAFT] Skipped: ${id} (draft=true)`);
                 this.log(`ℹ️ Skipping draft notification: ${id}`);
                 continue;
             }
 
             // Check expiry (default 30 days)
+            // Special values: -1 = forever, 0 = delete immediately, >0 = days to keep
             const expiry = notification.expiry !== undefined ? notification.expiry : 30;
+            console.log(`  ⏰ [EXPIRY] ${id}: expiry=${expiry}`);
+            
             if (expiry === 0) {
                 // Expiry=0 means immediate deletion: remove from server AND client cache
+                console.log(`  🗑️ [EXPIRY=0] Deleting from cache: ${id}`);
                 this.log(`🗑️ Deleting notification from cache: ${id} (expiry=0)`);
                 const cacheKey = `fadex_notification_${id}`;
                 localStorage.removeItem(cacheKey);
@@ -195,13 +203,23 @@ class FadexNotificationManager {
                 localStorage.removeItem('fadex_notification_cache');
                 continue;
             }
+            
+            if (expiry === -1) {
+                // Expiry=-1 means keep forever (no time-based expiry)
+                console.log(`  ♾️ [EXPIRY=-1] Keep forever: ${id}`);
+                this.log(`♾️ Keeping notification forever: ${id} (expiry=-1)`);
+            } else {
+                console.log(`  📅 [EXPIRY] Keep for ${expiry} days: ${id}`);
+            }
 
             // Validate required fields
             if (!notification.version || !notification.title) {
+                console.log(`  ⚠️ [INVALID] Missing required fields in: ${id}`);
                 this.log(`⚠️ Invalid notification schema for ${id}: missing version or title`);
                 continue;
             }
 
+            console.log(`  ✅ [ACCEPTED] ${id} (v${notification.version})`);
             activeNotifications.push({ id, ...notification });
         }
 
@@ -542,19 +560,48 @@ class FadexNotificationManager {
     }
 
     /**
-     * Clean up old notifications (older than 30 days)
+     * Clean up old notifications based on their expiry setting
+     * expiry: -1 = forever (never delete)
+     * expiry: 0 = delete immediately
+     * expiry: >0 = delete after N days
      */
     cleanOldCache() {
-        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
         const now = Date.now();
         const originalCount = this.notificationHistory.length;
+        console.log(`🧹 [CACHE-CLEANUP] Starting cleanup of ${originalCount} cached notifications`);
         
         this.notificationHistory = this.notificationHistory.filter(n => {
+            const expiry = n.expiry !== undefined ? n.expiry : 30;  // Default 30 days
+            const title = n.title || n.id || 'unknown';
+            
+            // expiry=-1 means keep forever
+            if (expiry === -1) {
+                console.log(`  ♾️ [KEEP] ${title} (expiry=-1, forever)`);
+                return true;
+            }
+            
+            // expiry=0 means delete immediately
+            if (expiry === 0) {
+                console.log(`  🗑️ [DELETE] ${title} (expiry=0, immediate)`);
+                return false;
+            }
+            
+            // expiry>0 means delete after N days
+            const expiryMs = expiry * 24 * 60 * 60 * 1000;
             const age = now - (n.timestamp || now);  // If no timestamp, treat as current
-            return age < thirtyDaysMs;
+            const ageInDays = (age / (24 * 60 * 60 * 1000)).toFixed(1);
+            
+            if (age < expiryMs) {
+                console.log(`  ✅ [KEEP] ${title} (age: ${ageInDays}d, expiry: ${expiry}d)`);
+                return true;
+            } else {
+                console.log(`  🗑️ [DELETE] ${title} (age: ${ageInDays}d > expiry: ${expiry}d)`);
+                return false;
+            }
         });
         
         const removedCount = originalCount - this.notificationHistory.length;
+        console.log(`🧹 [CACHE-CLEANUP] Complete: removed=${removedCount}, remaining=${this.notificationHistory.length}`);
         if (removedCount > 0) {
             this.saveToCache(this.notificationHistory);
             this.log('Cache cleaned', { removed: removedCount, remaining: this.notificationHistory.length });
