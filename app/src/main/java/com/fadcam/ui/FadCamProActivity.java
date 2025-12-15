@@ -23,7 +23,7 @@ import com.fadcam.R;
  */
 public class FadCamProActivity extends AppCompatActivity {
 
-    private static final String PATREON_SHOP_URL = "https://www.patreon.com/Fadedx";
+    private static final String PATREON_SHOP_URL = "https://www.patreon.com/cw/Fadedx/shop";
     
     private ShimmerButton btnGetPro;
     private ImageView btnBack;
