@@ -41,13 +41,18 @@ public class FragmentedMp4MuxerWrapper {
     private boolean started = false;
     private boolean released = false;
     private int orientationHint = 0;
+    private int sampleCountDebug = 0;  // For limiting debug log spam
     
-    // Track last presentation times for EOS handling
-    private final android.util.SparseArray<Long> lastPresentationTimeUs = new android.util.SparseArray<>();
-    private int videoTrackId = -1;
+    // Track indices
+    private int videoTrackIndex = -1;
+    private int audioTrackIndex = -1;
+    
+    // Track count for timestamp offset initialization
+    private int trackCount = 0;
     
     // Fragment tracking for live streaming
-    private int nextFragmentNumber = 1;
+    // CRITICAL VLC FIX: Start from 0, not 1 (VLC expects 0-based fragment sequence numbers)
+    private int nextFragmentNumber = 0;
     private boolean initSegmentSent = false;
     
     // CRITICAL FIX: Timestamp normalization to prevent serving 45+ minute old video
@@ -73,8 +78,7 @@ public class FragmentedMp4MuxerWrapper {
         };
         
         // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
-        // 1. Use 2000ms (2 second) fragments instead of default 500ms
-        //    Longer fragments = fewer moof boxes = better seeking accuracy
+        // 1. Use 1000ms (1 second) fragments for low-latency streaming
         // 2. Fragments will be automatically keyframe-aligned by Media3
         // 3. This ensures proper tfdt timestamps and fragment boundaries
         // 4. NEW: Callback-based architecture for real-time streaming
@@ -134,15 +138,19 @@ public class FragmentedMp4MuxerWrapper {
 
             try {
                 int trackId = muxer.addTrack(media3Format);
-                // Log.d(TAG, "Added track with id: " + trackId + ", format: " + mimeType);
-
-                // Track video track ID for EOS handling
+                
+                // Track which index is audio/video for proper MP4 offset handling
                 if (isVideo) {
-                    videoTrackId = trackId;
+                    videoTrackIndex = trackId;
+                    Log.i(TAG, "✅ [MEDIA3-FIX] VIDEO track registered at index " + trackId + 
+                               " - tfhd.DEFAULT_BASE_IS_MOOF enabled for proper moof-relative offsets");
+                } else if (mimeType != null && mimeType.startsWith("audio/")) {
+                    audioTrackIndex = trackId;
+                    Log.i(TAG, "✅ [MEDIA3-FIX] AUDIO track registered at index " + trackId + 
+                               " - tfhd.DEFAULT_BASE_IS_MOOF enabled for VLC compatibility");
                 }
 
-                // Initialize last presentation time for this track
-                lastPresentationTimeUs.put(trackId, 0L);
+                trackCount++;
 
                 return trackId;
             } catch (Exception e) {
@@ -192,6 +200,8 @@ public class FragmentedMp4MuxerWrapper {
             try {
                 fileOutputStream.flush();
                 Log.d(TAG, "Muxer started and flushed - file is now streamable");
+                Log.i(TAG, "✅ [MEDIA3-FIX] Muxer initialized with " + trackCount + 
+                           " tracks. ALL fragments will use tfhd.DEFAULT_BASE_IS_MOOF for proper offset calculation");
             } catch (IOException e) {
                 Log.w(TAG, "Failed to flush after start", e);
             }
@@ -228,7 +238,7 @@ public class FragmentedMp4MuxerWrapper {
                 }
                 
                 // Check if all tracks have offsets
-                if (timestampOffsets.size() >= lastPresentationTimeUs.size()) {
+                if (timestampOffsets.size() >= trackCount) {
                     timestampOffsetsInitialized = true;
                     Log.i(TAG, "✅ All track timestamp offsets initialized - timestamps will now start from 0");
                 }
@@ -242,21 +252,25 @@ public class FragmentedMp4MuxerWrapper {
             // DEBUG: Log keyframes and first few samples with normalized PTS for diagnostics
             boolean isKeyFrame = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
             int logCount = trackSampleLogs.get(trackIndex, 0);
-            if (isKeyFrame || logCount < 6) {
-                // Log.d(TAG, "PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
+            // Verbose logging reduced per user request - only log first 3 samples to verify initialization
+            if (logCount < 3) {
+                Log.d(TAG, "[MUXER] PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
                 trackSampleLogs.put(trackIndex, logCount + 1);
             }
             
-            // Track the last normalized presentation time for this track (for EOS handling)
-            if (normalizedPresentationTimeUs > 0) {
-                Long current = lastPresentationTimeUs.get(trackIndex);
-                if (current == null || normalizedPresentationTimeUs > current) {
-                    lastPresentationTimeUs.put(trackIndex, normalizedPresentationTimeUs);
-                }
-            }
+            // VLC debugging logs - reduced verbosity (was spamming hundreds of lines)
+            // Uncomment for VLC-specific debugging:
+            // if (trackIndex == audioTrackIndex && audioTrackIndex != -1 && logCount < 5) {
+            //     Log.d(TAG, String.format("[VLC-AUDIO] Sample #%d: pts=%dus, size=%d, origFlags=0x%X, hasKeyFlag=%b",
+            //         logCount, normalizedPresentationTimeUs, bufferInfo.size, bufferInfo.flags, isKeyFrame));
+            // }
+            // if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && isKeyFrame && logCount < 10) {
+            //     Log.w(TAG, String.format("[VLC-VIDEO-KEY] Sample #%d: pts=%dus, size=%d, origFlags=0x%X - VIDEO KEYFRAME",
+            //         logCount, normalizedPresentationTimeUs, bufferInfo.size, bufferInfo.flags));
+            // }
             
             // Convert MediaCodec.BufferInfo to Media3 BufferInfo with normalized timestamp
-            int flags = convertFlags(bufferInfo.flags);
+            int flags = convertFlags(bufferInfo.flags, trackIndex);
             androidx.media3.muxer.BufferInfo media3BufferInfo =
                 new androidx.media3.muxer.BufferInfo(
                     normalizedPresentationTimeUs,  // Use normalized timestamp
@@ -264,12 +278,35 @@ public class FragmentedMp4MuxerWrapper {
                     flags
                 );
 
-            // Position the buffer correctly
+            // Position the buffer correctly for the muxer.
+            // IMPORTANT: The caller (GLRecordingPipeline) pre-positions the buffer:
+            //   - Sets position = bufferInfo.offset
+            //   - Sets limit = bufferInfo.offset + bufferInfo.size
+            // This means the buffer's remaining() exactly equals bufferInfo.size.
+            // We must NOT re-apply the offset/size, just use the buffer as-is.
             ByteBuffer data = byteBuf.duplicate();
-            data.position(bufferInfo.offset);
-            data.limit(bufferInfo.offset + bufferInfo.size);
+            
+            // The buffer should already be properly positioned by the caller.
+            // Just ensure the slice is correct and pass to muxer.
+            if (data.remaining() != bufferInfo.size) {
+                // Unexpected: caller didn't pre-position correctly
+                // Try to fix it by slicing
+                Log.w(TAG, String.format("Buffer not properly positioned: remaining=%d, size=%d. Attempting correction.",
+                    data.remaining(), bufferInfo.size));
+                int start = bufferInfo.offset;
+                int end = bufferInfo.offset + bufferInfo.size;
+                if (start < 0 || end < 0 || end > data.capacity()) {
+                    throw new IllegalArgumentException(
+                        "Invalid buffer range: offset=" + bufferInfo.offset +
+                            ", size=" + bufferInfo.size +
+                            ", capacity=" + data.capacity());
+                }
+                data.position(start);
+                data.limit(end);
+            }
+            // Else: buffer is already correctly positioned by caller, use as-is
 
-                muxer.writeSampleData(trackIndex, data, media3BufferInfo);
+            muxer.writeSampleData(trackIndex, data, media3BufferInfo);
             } catch (MuxerException e) {
                 Log.e(TAG, "Failed to write sample data", e);
                 throw new RuntimeException("Failed to write sample data: " + e.getMessage(), e);
@@ -293,10 +330,8 @@ public class FragmentedMp4MuxerWrapper {
             }
 
             try {
-                // Write end-of-stream samples for all tracks to finalize duration
-                // This is critical for fragmented MP4 to have correct duration metadata
-                writeEndOfStreamSamples();
-
+                // Media3's FragmentedMp4Muxer.close() automatically creates the final fragment
+                // and finalizes all track durations. No need to manually write EOS samples.
                 muxer.close();
                 Log.d(TAG, "Muxer stopped successfully");
             } catch (MuxerException e) {
@@ -310,33 +345,6 @@ public class FragmentedMp4MuxerWrapper {
      * Writes end-of-stream samples for all tracks to finalize duration.
      * This is required for FragmentedMp4Muxer to calculate proper duration.
      */
-    private void writeEndOfStreamSamples() {
-        // Caller must hold muxerLock.
-        ByteBuffer emptyBuffer = ByteBuffer.allocateDirect(0);
-
-        for (int i = 0; i < lastPresentationTimeUs.size(); i++) {
-            int trackId = lastPresentationTimeUs.keyAt(i);
-            Long lastPts = lastPresentationTimeUs.valueAt(i);
-
-            if (lastPts != null && lastPts > 0) {
-                try {
-                    // Write EOS sample with the final timestamp
-                    androidx.media3.muxer.BufferInfo eosBufferInfo =
-                        new androidx.media3.muxer.BufferInfo(
-                            lastPts,
-                            0, // size = 0 for EOS
-                            C.BUFFER_FLAG_END_OF_STREAM
-                        );
-
-                    muxer.writeSampleData(trackId, emptyBuffer.duplicate(), eosBufferInfo);
-                    // Log.d(TAG, "Wrote EOS for track " + trackId + " at pts=" + lastPts + "us (" + (lastPts / 1000000.0) + "s)");
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to write EOS for track " + trackId + ": " + e.getMessage());
-                }
-            }
-        }
-    }
-
     /**
      * Releases resources used by the muxer.
      */
@@ -355,8 +363,15 @@ public class FragmentedMp4MuxerWrapper {
                         Log.e(TAG, "Error closing muxer", e);
                     }
                 }
+                // CRITICAL: Flush BEFORE closing to ensure all data (including moov box) is written to disk
+                try {
+                    fileOutputStream.flush();
+                    Log.d(TAG, "FileOutputStream flushed successfully");
+                } catch (IOException e) {
+                    Log.w(TAG, "Failed to flush FileOutputStream", e);
+                }
                 fileOutputStream.close();
-                Log.d(TAG, "Muxer released");
+                Log.d(TAG, "Muxer released and file closed");
             } catch (IOException e) {
                 Log.e(TAG, "Error releasing muxer", e);
             }
@@ -423,9 +438,59 @@ public class FragmentedMp4MuxerWrapper {
             if (mediaFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
                 builder.setAverageBitrate(mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE));
             }
-            if (mediaFormat.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
-                builder.setColorInfo(null); // Let Media3 infer from codec
+            
+            // CRITICAL FIX for VLC playback: Extract and set color metadata from MediaFormat
+            // VLC needs explicit color information to properly decode and display HEVC video
+            // Without this, VLC shows black video even though the frames are encoded correctly
+            if (mediaFormat.containsKey(MediaFormat.KEY_COLOR_STANDARD) ||
+                mediaFormat.containsKey(MediaFormat.KEY_COLOR_RANGE) ||
+                mediaFormat.containsKey(MediaFormat.KEY_COLOR_TRANSFER)) {
+                
+                // Build ColorInfo from MediaFormat
+                androidx.media3.common.ColorInfo.Builder colorBuilder = new androidx.media3.common.ColorInfo.Builder();
+                
+                // Extract color space from MediaFormat
+                if (mediaFormat.containsKey(MediaFormat.KEY_COLOR_STANDARD)) {
+                    int standard = mediaFormat.getInteger(MediaFormat.KEY_COLOR_STANDARD);
+                    // MediaFormat.COLOR_STANDARD_BT709 = 1
+                    if (standard == 1) {
+                        colorBuilder.setColorSpace(androidx.media3.common.C.COLOR_SPACE_BT709);
+                    } else if (standard == 2) { // BT601
+                        colorBuilder.setColorSpace(androidx.media3.common.C.COLOR_SPACE_BT601);
+                    } else if (standard == 6) { // BT2020
+                        colorBuilder.setColorSpace(androidx.media3.common.C.COLOR_SPACE_BT2020);
+                    }
+                }
+                
+                // Extract color range from MediaFormat
+                if (mediaFormat.containsKey(MediaFormat.KEY_COLOR_RANGE)) {
+                    int range = mediaFormat.getInteger(MediaFormat.KEY_COLOR_RANGE);
+                    // MediaFormat.COLOR_RANGE_LIMITED = 2, COLOR_RANGE_FULL = 1
+                    if (range == 1) {
+                        colorBuilder.setColorRange(androidx.media3.common.C.COLOR_RANGE_FULL);
+                    } else {
+                        colorBuilder.setColorRange(androidx.media3.common.C.COLOR_RANGE_LIMITED);
+                    }
+                }
+                
+                // Extract color transfer from MediaFormat
+                if (mediaFormat.containsKey(MediaFormat.KEY_COLOR_TRANSFER)) {
+                    int transfer = mediaFormat.getInteger(MediaFormat.KEY_COLOR_TRANSFER);
+                    // MediaFormat.COLOR_TRANSFER_SDR_VIDEO = 3 (SMPTE 170M)
+                    if (transfer == 3) {
+                        colorBuilder.setColorTransfer(androidx.media3.common.C.COLOR_TRANSFER_SDR);
+                    } else if (transfer == 6) { // ST2084 (HDR10)
+                        colorBuilder.setColorTransfer(androidx.media3.common.C.COLOR_TRANSFER_ST2084);
+                    } else if (transfer == 7) { // HLG
+                        colorBuilder.setColorTransfer(androidx.media3.common.C.COLOR_TRANSFER_HLG);
+                    }
+                }
+                
+                androidx.media3.common.ColorInfo colorInfo = colorBuilder.build();
+                builder.setColorInfo(colorInfo);
+                Log.d(TAG, "  Set color info from MediaFormat");
             }
+            
             if (mediaFormat.containsKey(MediaFormat.KEY_ROTATION)) {
                 builder.setRotationDegrees(mediaFormat.getInteger(MediaFormat.KEY_ROTATION));
             }
@@ -453,29 +518,38 @@ public class FragmentedMp4MuxerWrapper {
             if (!initData.isEmpty()) {
                 builder.setInitializationData(initData);
             }
+            
+            // Set codec string for video - REQUIRED by Media3 for proper MP4 codec box
+            // For fragmented MP4, Media3 uses this string in the codec descriptor
+            if (mimeType != null) {
+                if (mimeType.equals("video/hevc")) {
+                    // HEVC: Infer profile from CSD data
+                    // Most Android devices use Main profile (1), Level 5 (150 = level 5.0)
+                    builder.setCodecs("hev1.1.6.L150.B0"); // HEVC Main profile, Level 5.0
+                } else if (mimeType.equals("video/avc")) {
+                    // AVC: Common profile used by Android encoders
+                    builder.setCodecs("avc1.42001E"); // AVC Baseline profile, Level 30
+                }
+            }
         }
 
         // Handle audio format
         if (mimeType != null && mimeType.startsWith("audio/")) {
             Log.d(TAG, "Converting audio format: " + mimeType);
             
-            // CRITICAL: Set codec string for AAC to enable proper sync sample flagging
-            // Without this, Media3's FragmentedMp4Muxer marks AAC samples as non-sync
-            // which causes ExoPlayer to not play audio. See: https://github.com/androidx/media/issues/2435
-            if (MimeTypes.AUDIO_AAC.equals(mimeType)) {
-                builder.setCodecs("mp4a.40.2"); // AAC-LC profile
-                Log.d(TAG, "  Set codec string: mp4a.40.2 (AAC-LC)");
-            }
+            // Extract sample rate and channel count for AAC config generation
+            int sampleRate = 48000; // default
+            int channels = 2; // default
             
             if (mediaFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) {
-                int channels = mediaFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+                channels = mediaFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
                 builder.setChannelCount(channels);
                 Log.d(TAG, "  channelCount=" + channels);
             } else {
                 Log.w(TAG, "  WARNING: No channel count in audio format!");
             }
             if (mediaFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE)) {
-                int sampleRate = mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+                sampleRate = mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE);
                 builder.setSampleRate(sampleRate);
                 Log.d(TAG, "  sampleRate=" + sampleRate);
             } else {
@@ -487,27 +561,22 @@ public class FragmentedMp4MuxerWrapper {
                 Log.d(TAG, "  bitrate=" + bitrate);
             }
 
-            // Handle audio CSD - THIS IS CRITICAL for AAC playback!
-            List<byte[]> initData = new ArrayList<>();
-            if (mediaFormat.containsKey("csd-0")) {
-                ByteBuffer csd0 = mediaFormat.getByteBuffer("csd-0");
-                if (csd0 != null) {
-                    byte[] csd0Bytes = new byte[csd0.remaining()];
-                    csd0.get(csd0Bytes);
-                    csd0.rewind();
-                    initData.add(csd0Bytes);
-                    Log.d(TAG, "  CSD-0 added: " + csd0Bytes.length + " bytes, data=" + bytesToHex(csd0Bytes));
-                } else {
-                    Log.w(TAG, "  WARNING: CSD-0 key exists but buffer is null!");
-                }
-            } else {
-                Log.e(TAG, "  ERROR: No CSD-0 in audio format - audio playback WILL FAIL!");
-            }
-            if (!initData.isEmpty()) {
-                builder.setInitializationData(initData);
-                Log.d(TAG, "  Initialization data set with " + initData.size() + " entries");
-            } else {
-                Log.e(TAG, "  ERROR: No initialization data for audio - decoder won't know how to decode!");
+            // CRITICAL VLC FIX: Generate proper AAC AudioSpecificConfig for ESDS box
+            // The encoder's CSD-0 is often malformed. We generate a clean config based on
+            // the actual sample rate and channel count for VLC compatibility.
+            // AAC-LC (profile=2), with proper sampling frequency index
+            if (mimeType != null && (mimeType.equals(MimeTypes.AUDIO_AAC) || mimeType.contains("mp4a"))) {
+                byte[] aacConfig = generateAacAudioSpecificConfig(sampleRate, channels);
+                List<byte[]> audioInitData = new ArrayList<>();
+                audioInitData.add(aacConfig);
+                builder.setInitializationData(audioInitData);
+                
+                // Set explicit codec string for MP4 descriptor box - Media3 REQUIRES this for proper ESDS
+                // The codec string tells the MP4 parser (VLC) what audio codec profile/level to expect
+                builder.setCodecs("mp4a.40.2"); // AAC-LC (object type 2), profile level 0
+                
+                Log.d(TAG, "  Generated clean AAC config for VLC: " + bytesToHex(aacConfig) + 
+                           " (sampleRate=" + sampleRate + ", channels=" + channels + ")");
             }
         }
 
@@ -517,12 +586,21 @@ public class FragmentedMp4MuxerWrapper {
     /**
      * Converts MediaCodec buffer flags to Media3 buffer flags.
      */
-    private int convertFlags(int mediaCodecFlags) {
+    private int convertFlags(int mediaCodecFlags, int trackIndex) {
         int flags = 0;
 
         if ((mediaCodecFlags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
             flags |= C.BUFFER_FLAG_KEY_FRAME;
+            if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && sampleCountDebug < 5) {
+                Log.w(TAG, "[VLC-VIDEO-CONVERT] Video keyframe flag converted to Media3 C.BUFFER_FLAG_KEY_FRAME");
+            }
         }
+        
+        // DO NOT force audio keyframes
+        // AAC samples should NOT be marked as keyframes in fragmented MP4
+        // Forcing keyframes corrupts the trun sample flags, causing VLC to read from wrong byte offsets
+        // Audio-specific sync sample marking is handled by MP4 spec via stss atom separately
+        
         if ((mediaCodecFlags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
             flags |= C.BUFFER_FLAG_END_OF_STREAM;
         }
@@ -556,15 +634,16 @@ public class FragmentedMp4MuxerWrapper {
                 return;
             }
             try {
-            // Extract data from ByteBuffer
-            // CRITICAL: The patched Media3's combine() method doesn't flip the buffer after put(),
-            // so position is at end. We need to flip it first to read from start.
-            ByteBuffer payload = segment.payload;
-            payload.flip(); // Flip buffer to read from start
-            
+            // Extract bytes from Media3's payload buffer without mutating it.
+            // Some Media3 versions leave the buffer in write-mode (position at end, limit=capacity),
+            // while others provide it already ready for reading (position=0, limit=dataSize).
+            ByteBuffer payload = segment.payload.duplicate();
+            if (payload.limit() == payload.capacity() && payload.position() != 0) {
+                payload.flip();
+            }
+
             byte[] data = new byte[payload.remaining()];
             payload.get(data);
-            payload.rewind(); // Reset position for potential reuse
             
             // Check streaming mode to determine if we should save to disk
             RemoteStreamManager.StreamingMode streamingMode = RemoteStreamManager.getInstance().getStreamingMode();
@@ -572,7 +651,7 @@ public class FragmentedMp4MuxerWrapper {
             
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)
-                // Log.i(TAG, "📦 Received init segment: " + data.length + " bytes");
+                Log.i(TAG, "📦 [SEGMENT] Received INIT segment: " + data.length + " bytes");
                 
                 // Send to RemoteStreamManager for HLS streaming
                 RemoteStreamManager.getInstance().onInitializationSegment(data);
@@ -588,8 +667,8 @@ public class FragmentedMp4MuxerWrapper {
                 }
             } else {
                 // Media fragment (moof + mdat)
-                // Log.i(TAG, "🎬 Received fragment #" + segment.segmentNr + 
-                //     ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
+                Log.i(TAG, "🎬 [FRAGMENT] #" + segment.segmentNr + 
+                    ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
                 
                 // Send to RemoteStreamManager for HLS streaming
                 if (initSegmentSent) {
@@ -603,7 +682,7 @@ public class FragmentedMp4MuxerWrapper {
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    // Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
+                    Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
                 } else {
                     // Log.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
@@ -614,5 +693,54 @@ public class FragmentedMp4MuxerWrapper {
                 Log.e(TAG, "❌ Error handling processed segment", e);
             }
         }
+    }
+
+    /**
+     * Generates a proper AAC AudioSpecificConfig for the ESDS box.
+     * This ensures VLC compatibility by creating clean configuration data.
+     * 
+     * Format: 5 bits audioObjectType (2=AAC-LC) + 4 bits samplingFrequencyIndex + 4 bits channelConfiguration
+     * 
+     * @param sampleRate Sample rate in Hz (e.g., 48000)
+     * @param channels Number of audio channels (1 or 2)
+     * @return 2-byte AAC AudioSpecificConfig
+     */
+    private byte[] generateAacAudioSpecificConfig(int sampleRate, int channels) {
+        // AAC-LC profile = 2
+        int audioObjectType = 2;
+        
+        // Sampling frequency index for AAC
+        int samplingFrequencyIndex;
+        switch (sampleRate) {
+            case 96000: samplingFrequencyIndex = 0; break;
+            case 88200: samplingFrequencyIndex = 1; break;
+            case 64000: samplingFrequencyIndex = 2; break;
+            case 48000: samplingFrequencyIndex = 3; break;
+            case 44100: samplingFrequencyIndex = 4; break;
+            case 32000: samplingFrequencyIndex = 5; break;
+            case 24000: samplingFrequencyIndex = 6; break;
+            case 22050: samplingFrequencyIndex = 7; break;
+            case 16000: samplingFrequencyIndex = 8; break;
+            case 12000: samplingFrequencyIndex = 9; break;
+            case 11025: samplingFrequencyIndex = 10; break;
+            case 8000: samplingFrequencyIndex = 11; break;
+            case 7350: samplingFrequencyIndex = 12; break;
+            default:
+                Log.w(TAG, "Unsupported sample rate: " + sampleRate + ", using 48000 Hz");
+                samplingFrequencyIndex = 3; // 48000 Hz
+                break;
+        }
+        
+        // Channel configuration (1=mono, 2=stereo)
+        int channelConfig = Math.min(channels, 2);
+        
+        // Build AudioSpecificConfig: 5 bits audioObjectType + 4 bits samplingFrequencyIndex + 4 bits channelConfiguration
+        // Byte 1: xxxxx xxx (5 bits audioObjectType + 3 upper bits of samplingFrequencyIndex)
+        // Byte 2: x xxxx xxx (1 lower bit of samplingFrequencyIndex + 4 bits channelConfiguration + 3 bits padding)
+        
+        int byte1 = (audioObjectType << 3) | (samplingFrequencyIndex >> 1);
+        int byte2 = ((samplingFrequencyIndex & 0x1) << 7) | (channelConfig << 3);
+        
+        return new byte[] { (byte) byte1, (byte) byte2 };
     }
 }

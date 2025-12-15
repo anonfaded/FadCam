@@ -79,6 +79,8 @@
 
 ## ⚡ Performance Optimization
 - We've significantly optimized FadCam to use less CPU and battery during recording. Debug logging is now smart - it automatically pauses when you're recording, and error logs stay active for troubleshooting. Storage updates, clock rendering, and memory allocations have all been fine-tuned for better overall performance.
+- Updated audio recording setup to use `VOICE_COMMUNICATION` source for better background compatibility.
+- Refactored wake lock management to be handled within the RecordingService instead of HomeFragment.
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|

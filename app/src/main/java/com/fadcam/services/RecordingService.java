@@ -201,6 +201,11 @@ public class RecordingService extends Service {
 
         Log.d(TAG, "Service created successfully.");
 
+        // Initialize PowerManager and WakeLock
+        android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
+        Log.d(TAG, "WakeLock initialized in Service.");
+
         // Broadcast initial camera resource availability
         broadcastCameraResourceAvailability(true);
         Log.d(TAG, "Broadcasting initial camera resource availability: true");
@@ -1039,6 +1044,9 @@ public class RecordingService extends Service {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
+
+                // REMUX: Removed as per user request (writing directly to .mp4 now)
+                // com.fadcam.media.VideoFileProcessor.CRASH_SAFE_EXTENSION cleanup check removed.
 
                 // Close the camera device last
                 if (cameraDevice != null) {
@@ -2384,7 +2392,12 @@ public class RecordingService extends Service {
                 .setContentTitle(getString(R.string.notification_video_recording))
                 .setContentText("Initializing...");
 
-        startForeground(NOTIFICATION_ID, immediateBuilder.build());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, immediateBuilder.build(),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+        } else {
+            startForeground(NOTIFICATION_ID, immediateBuilder.build());
+        }
         Log.d(TAG, "Foreground service started immediately with a placeholder notification.");
 
         // STEP 2: Now, prepare the full notification with the custom icon in the
@@ -3715,9 +3728,9 @@ public class RecordingService extends Service {
                     outputFile = new File(getCacheDir(), "stream_temp_" + System.currentTimeMillis() + ".mp4");
                     Log.i(TAG, "📺 STREAM_ONLY mode: Using temporary file: " + outputFile.getName());
                 } else {
-                    // STREAM_AND_SAVE: Use normal output file
+                    // STREAM_AND_SAVE: Write directly to final MP4 file (removed .tmp/remux logic)
                     outputFile = getFinalOutputFile();
-                    Log.d(TAG, "💾 STREAM_AND_SAVE mode: Creating file: " + outputFile.getAbsolutePath());
+                    Log.d(TAG, "💾 STREAM_AND_SAVE mode: Writing directly to file: " + outputFile.getAbsolutePath());
                 }
                 
                 // Track initial segment file for streaming

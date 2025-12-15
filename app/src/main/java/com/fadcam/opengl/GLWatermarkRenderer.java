@@ -140,6 +140,7 @@ public class GLWatermarkRenderer {
     }
 
     private OnFrameAvailableListener externalFrameListener;
+    private android.os.Handler glThreadHandler; // Handler for GL thread callbacks
 
     // Add this field to track the FullFrameRect instance
     private com.fadcam.opengl.grafika.FullFrameRect mFullFrameBlit = null;
@@ -632,6 +633,10 @@ public class GLWatermarkRenderer {
                 new com.fadcam.opengl.grafika.Texture2dProgram(
                         com.fadcam.opengl.grafika.Texture2dProgram.ProgramType.TEXTURE_EXT));
 
+        // CRITICAL: Store the current thread's Handler for SurfaceTexture callbacks
+        // This ensures frame callbacks run on the GL thread instead of arbitrary threads
+        glThreadHandler = new android.os.Handler(android.os.Looper.myLooper());
+
         createCameraSurfaceTexture();
         setupWatermarkTexture();
         updateMatrices();
@@ -653,6 +658,9 @@ public class GLWatermarkRenderer {
         cameraSurfaceTexture = new SurfaceTexture(oesTextureId);
         cameraSurfaceTexture.setDefaultBufferSize(videoWidth, videoHeight);
         cameraInputSurface = new Surface(cameraSurfaceTexture);
+        // CRITICAL FIX: Pass GL thread's handler to ensure callbacks run on GL thread
+        // Without this, callbacks run on arbitrary threads causing "no current context" errors
+        // and black video frames because texture updates happen on wrong thread
         cameraSurfaceTexture.setOnFrameAvailableListener(surfaceTexture -> {
             synchronized (frameSyncObject) {
                 frameAvailable = true;
@@ -661,7 +669,7 @@ public class GLWatermarkRenderer {
             if (externalFrameListener != null) {
                 externalFrameListener.onFrameAvailable();
             }
-        });
+        }, glThreadHandler);
     }
 
     private void setupWatermarkTexture() {

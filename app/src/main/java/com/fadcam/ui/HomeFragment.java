@@ -238,7 +238,7 @@ public class HomeFragment extends BaseFragment {
     private static final int RECENT_MESSAGE_LIMIT = 3; // Adjust as needed
 
     private static final int REQUEST_PERMISSIONS = 1;
-    private android.os.PowerManager.WakeLock wakeLock;
+    // deleted WakeLock field
     // private static final String PREF_FIRST_LAUNCH = "first_launch";
 
     private RecordingState recordingState = RecordingState.NONE;
@@ -360,30 +360,7 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    // Call this method when the recording starts to acquire wake lock
-    private void acquireWakeLock() {
-        android.os.PowerManager powerManager =
-            (android.os.PowerManager) requireActivity().getSystemService(
-                Context.POWER_SERVICE
-            ); // Full path and context adjusted
-        wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            "MyApp::RecordingLock"
-        );
-
-        if (!wakeLock.isHeld()) {
-            wakeLock.acquire();
-            Log.d(TAG, "WakeLock acquired.");
-        }
-    }
-
-    // Call this when the recording ends to release wake lock
-    private void releaseWakeLock() {
-        if (wakeLock != null && wakeLock.isHeld()) {
-            wakeLock.release();
-            Log.d(TAG, "WakeLock released.");
-        }
-    }
+    // deleted acquireWakeLock and releaseWakeLock methods
 
     private void initializeMessages() {
         messageQueue = new ArrayList<>(
@@ -1076,7 +1053,7 @@ public class HomeFragment extends BaseFragment {
             requireContext(),
             R.string.video_recording_started
         );
-        acquireWakeLock(); // Acquire wake lock
+        // WakeLock moved to service
         
         // OPTIMIZATION: Disable debug logging during recording to save CPU/battery
         com.fadcam.Log.setRecordingActive(true);
@@ -1211,7 +1188,7 @@ public class HomeFragment extends BaseFragment {
         Log.d(TAG, "onRecordingStopped: Reset recordingStartTime to 0");
 
         // Release wake lock if it was acquired
-        releaseWakeLock();
+        // WakeLock moved to service
 
         // Reset all buttons to idle state
         try {
@@ -1719,7 +1696,7 @@ public class HomeFragment extends BaseFragment {
                     );
 
                     // Perform non-UI actions previously in onRecordingStarted(true)
-                    acquireWakeLock();
+                    // WakeLock moved to service
                     setVideoBitrate();
 
                     // Call the main UI state updater
