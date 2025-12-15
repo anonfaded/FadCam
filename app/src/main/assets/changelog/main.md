@@ -30,16 +30,15 @@
 
 # Note
 `Many users are unaware of a hidden feature in FadCam. Yes, there is a trash directory, but it is normally inaccessible for the user’s privacy. To access it, simply long-press the FadCam icon you see in the header of the Home tab, and you will enter it. From there, you can recover deleted files or permanently delete them. Hopefully, this will reduce emails about “Where is my deleted video?” :)`
-
 ---
 
 # ✨ New Features  
 
 ## FadCam Pro - Limited Time Free Offer!
-- **FadCam Pro** is now available for free for a limited time. Get customized builds with custom notification icons that actually display in your notification bar. [Learn more on Patreon](https://www.patreon.com/posts/fadcam-pro-free-145013262)
+- **FadCam Pro** is now available for free until December 23, 2025 only. Get customized builds with custom notification icons that actually display in your notification bar. [Learn more on Patreon](https://www.patreon.com/posts/fadcam-pro-free-145013262)
 
 ## This What's New Page
-- New in-app **What's New** page to showcase new features after updates.
+- As a user, I dislike external links for every little thing in the app, so here is the new in-app **What's New** page to showcase new features after updates.
 
 ## 📸 FadRec - Screen Recorder & Annotation
 - Record your screen using the **FadRec** tab. Videos are saved in the `Records` tab with the `FadRec_` prefix.

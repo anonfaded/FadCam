@@ -28,7 +28,7 @@ android {
         applicationId = "com.fadcam"
         minSdk = 28
         targetSdk = 36
-        versionCode = 29
+        versionCode = 30
         versionName = "3.0.0"
         vectorDrawables.useSupportLibrary = true
         
