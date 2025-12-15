@@ -87,3 +87,7 @@
 | **Battery Life** | ~12 hours | ~15-16 hours | **↑ 28-33%** |
 | **Memory Usage** | 400-500 MB | 280-320 MB | **↓ 30%** |
 | **Debug I/O** | High | Minimal | **↓ 90%** |
+
+---
+
+Thank you for using FadCam :)

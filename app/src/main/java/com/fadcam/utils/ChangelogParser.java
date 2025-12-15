@@ -244,13 +244,6 @@ public class ChangelogParser {
             html.append("</div>");
         }
         
-        // Add thank you section
-        html.append("<div class='thank-you-section'>")
-            .append("<div class='thank-you-text'>")
-            .append("Thank you for using FadCam :)")
-            .append("</div>")
-            .append("</div>");
-        
         return html.toString();
     }
 
