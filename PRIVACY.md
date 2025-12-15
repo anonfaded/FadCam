@@ -1,6 +1,6 @@
 # Privacy Policy for FadCam
 
-**Effective Date:** August 25, 2025
+**Last Edited:** December 16, 2025
 
 ## Data Collection
 
@@ -17,6 +17,10 @@ Internet access is used only for checking app updates. No personal data is trans
 ## Third-Party Services
 
 We do not use analytics, advertising, or any tracking services.
+
+## Legal Notice
+
+**Pro & Pro+ Builds:** Unauthorized assembly, distribution, or redistribution of Pro or Pro+ builds constitutes copyright infringement and is illegal. These builds represent proprietary paid software and intellectual property. Users must not attempt to create, distribute, or use unauthorized Pro or Pro+ versions. Obtain valid Pro or Pro+ builds exclusively through official channels at https://www.patreon.com/cw/Fadedx/shop
 
 ## Summary
 
