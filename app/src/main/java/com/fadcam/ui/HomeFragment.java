@@ -192,6 +192,7 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvRemainingSubtitle;
     
     private ImageView btnHamburgerMenu;
+    private View hamburgerBadgeDot;
     private TextView tvPreviewPlaceholder;
     private TextView tvPreviewHint; // Hint text for long press to enable preview
     
@@ -7427,6 +7428,10 @@ public class HomeFragment extends BaseFragment {
         tvRemainingTitle = view.findViewById(R.id.tvRemainingTitle);
         tvRemainingSubtitle = view.findViewById(R.id.tvRemainingSubtitle);
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
+        hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
+
+        // Update hamburger badge visibility
+        updateHamburgerBadgeVisibility();
 
         // Set up hamburger menu click handler
         if (btnHamburgerMenu != null) {
@@ -8744,5 +8749,20 @@ public class HomeFragment extends BaseFragment {
          * @param total   Total number of files to process
          */
         void onProgress(int current, int total);
+    }
+
+    /**
+     * Updates hamburger menu badge visibility based on "What's New" feature status.
+     * Shows green badge dot if the user hasn't seen the What's New feature yet.
+     */
+    private void updateHamburgerBadgeVisibility() {
+        if (hamburgerBadgeDot != null) {
+            try {
+                boolean showBadge = com.fadcam.ui.utils.NewFeatureManager.shouldShowBadge(requireContext(), "whats_new");
+                hamburgerBadgeDot.setVisibility(showBadge ? View.VISIBLE : View.GONE);
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating hamburger badge visibility", e);
+            }
+        }
     }
 }

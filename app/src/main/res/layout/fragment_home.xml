@@ -5,8 +5,40 @@
     <!-- Fixed Header -->
     <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/header_bar" android:layout_width="0dp" android:layout_height="wrap_content" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:background="?attr/colorTopBar" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Hamburger menu button -->
-        <ImageView android:id="@+id/btnHamburgerMenu" android:layout_width="24dp" android:layout_height="24dp" android:padding="2dp" android:src="@drawable/ic_home_hamburger" android:tint="@android:color/white" android:contentDescription="@string/home_menu" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:layout_marginEnd="12dp" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" />
+        <!-- Hamburger menu button with badge -->
+        <FrameLayout
+            android:id="@+id/hamburgerBtnContainer"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <ImageView
+                android:id="@+id/btnHamburgerMenu"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_home_hamburger"
+                android:tint="@android:color/white"
+                android:contentDescription="@string/home_menu"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Hamburger Badge Dot -->
+            <View
+                android:id="@+id/hamburgerBadgeDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="0dp"
+                android:background="@drawable/badge_dot_green"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
         <!-- App Title (centered) -->
         <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:src="@drawable/menu_icon_unknown" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />

@@ -194,15 +194,39 @@
                     android:layout_weight="1"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/whats_new_title"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textAlignment="viewStart"
-                        android:layout_marginBottom="2dp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/whats_new_title"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textAlignment="viewStart"
+                            android:layout_marginBottom="2dp" />
+
+                        <!-- What's New Badge -->
+                        <TextView
+                            android:id="@+id/badge_whats_new"
+                            android:layout_width="wrap_content"
+                            android:layout_height="16dp"
+                            android:paddingHorizontal="6dp"
+                            android:text="NEW"
+                            android:textColor="@android:color/white"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:background="@drawable/new_badge_background"
+                            android:layout_marginStart="8dp"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
