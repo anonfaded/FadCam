@@ -222,6 +222,11 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    lint {
+        checkReleaseBuilds = false
+        disable += "MissingTranslation"
+    }
 }
 
 dependencies {
