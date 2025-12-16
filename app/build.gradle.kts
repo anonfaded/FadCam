@@ -13,11 +13,14 @@ android {
 
     splits {
         abi {
-            // For pro builds: only ARM64 (no splits, no universal)
-            // For other builds: arm64-v8a + armeabi-v7a with universal APK
-            isEnable = !isBundle && !isProBuild
+            // For pro builds: enable splits but only arm64-v8a (no universal)
+            // For main builds: arm64-v8a + armeabi-v7a with universal APK
+            isEnable = !isBundle
             reset()
-            if (!isProBuild) {
+            if (isProBuild) {
+                include("arm64-v8a")
+                isUniversalApk = false
+            } else {
                 include("armeabi-v7a", "arm64-v8a")
                 isUniversalApk = true
             }

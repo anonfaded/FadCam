@@ -53,18 +53,18 @@ jobs:
       - name: Verify APKs were built
         run: |
           echo "✓ Checking built APKs..."
-          ls -lh app/build/outputs/apk/notesPro/release/app-notesPro-release.apk
-          ls -lh app/build/outputs/apk/calcPro/release/app-calcPro-release.apk
-          ls -lh app/build/outputs/apk/weatherPro/release/app-weatherPro-release.apk
+          ls -lh app/build/outputs/apk/notesPro/release/notesPro-arm64-v8a-release.apk
+          ls -lh app/build/outputs/apk/calcPro/release/calcPro-arm64-v8a-release.apk
+          ls -lh app/build/outputs/apk/weatherPro/release/weatherPro-arm64-v8a-release.apk
           
       - name: Upload Pro variant artifacts
         uses: actions/upload-artifact@v4
         with:
           name: fadcam-pro-variants
           path: |
-            app/build/outputs/apk/notesPro/release/app-notesPro-release.apk
-            app/build/outputs/apk/calcPro/release/app-calcPro-release.apk
-            app/build/outputs/apk/weatherPro/release/app-weatherPro-release.apk
+            app/build/outputs/apk/notesPro/release/notesPro-arm64-v8a-release.apk
+            app/build/outputs/apk/calcPro/release/calcPro-arm64-v8a-release.apk
+            app/build/outputs/apk/weatherPro/release/weatherPro-arm64-v8a-release.apk
           retention-days: 1
           
       - name: Build summary
@@ -76,17 +76,17 @@ jobs:
           echo "### 1. Notes Pro" >> $GITHUB_STEP_SUMMARY
           echo "- Package ID: com.fadcam.pro.notes" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: Notes" >> $GITHUB_STEP_SUMMARY
-          echo "- File: app-notesPro-pro.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- File: notesPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 2. Calculator Pro" >> $GITHUB_STEP_SUMMARY
           echo "- Package ID: com.fadcam.pro.calc" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: Calculator" >> $GITHUB_STEP_SUMMARY
-          echo "- File: app-calcPro-pro.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- File: calcPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 3. Weather Pro" >> $GITHUB_STEP_SUMMARY
           echo "- Package ID: com.fadcam.pro.weather" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: Weather" >> $GITHUB_STEP_SUMMARY
-          echo "- File: app-weatherPro-pro.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- File: weatherPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
           echo "- Build Type: Pro (Release, Minified, ARM64 only)" >> $GITHUB_STEP_SUMMARY
