@@ -198,8 +198,6 @@
     <string name="array_watermark_time_fadcam">Ώρα με Fadcam</string>
     <string name="array_watermark_timeonly">Σφραγίδα Ώρας</string>
     <string name="array_watermark_nomark">Χωρίς Υδατογράφημα</string>
-    <string name="recent_features" translatable="false">• Audio toggle, bitrate &amp; input source options\n• Video bitrate, orientation, FPS (60/90), and splitting\n• Wide-angle detection &amp; swipe-to-refresh\n• Thumbnails show index, duration, and size\n• Sorting by date/size + bottom sheet redesign\n• "Video Info" option in 3-dot menu\n• Time-ago labels, "New"/"Temp" badges, empty state UI\n• Trash bin with playback, restore &amp; auto-delete\n• "Select All" in Trash\n• Onboarding slides for new users\n• Video geotagging (location in metadata)\n• Improved animations\n• Fixed back button crash/blank screen\n• AMOLED black &amp; 7+ more themes &amp; 15+ new icons</string>
-    <string name="upcoming_features" translatable="false">• Auto-scheduled recordings\n• Auto-uploading to Google Drive\n• Custom app icons\n• In-app video editor (FaditorX - coming soon)\n• Remote tab with cross-device controls\n• Livestreaming of Video Recording\n• And many more exciting features!</string>
     <string name="toast_video_not_found">Σφάλμα: Το βίντεο δεν βρέθηκε</string>
     <string name="toast_video_saved">Το βίντεο αποθηκεύτηκε στον φάκελο FadCam στις Λήψεις</string>
     <string name="toast_video_save_fail">Αποτυχία αποθήκευσης βίντεο</string>
@@ -619,4 +617,5 @@
     <string name="fix_video_saf_success">Το βίντεο επιδιορθώθηκε! Αποθηκεύτηκε ως: %1$s.</string>
     <string name="fix_video_saf_export">Εξάγετε ή μοιραστείτε το επιδιορθωμένο αρχείο από την αποθήκευση της εφαρμογής αν χρειάζεται.</string>
 
+    <string name="full_changelog_info">Για το πλήρες αρχείο αλλαγών, μεταβείτε στην καρτέλα Αρχική, ανοίξτε το μενού και επιλέξτε «Τι νέο υπάρχει».</string>
 </resources>

@@ -126,7 +126,7 @@
         <item>FadCam kullanıcı verisi topluyor mu?</item>
         <item>FadCam\'de reklam var mı?</item>
         <item>FadCam neden konum erişimi istiyor?</item>
-        <item>FadCam internete bağlanıyor mu?</item>
+        <item>İnternet izni neden gerekiyor?</item>
         <item>Herhangi bir veri harici sunucularda saklanıyor mu?</item>
         <item>Kayıttan sonra videolarıma ne oluyor?</item>
         <item>FadCam verilerimi üçüncü taraflarla paylaşıyor mu?</item>
@@ -149,10 +149,10 @@
         <item>Hayır, FadCam herhangi bir kullanıcı verisi toplamaz.</item>
         <item>Hayır, FadCam tamamen reklamsızdır.</item>
         <item>Filigranlarınıza konum bilgisi eklemek için.</item>
-        <item>Hayır, FadCam internete bağlanmaz.</item>
+        <item>Otomatik güncelleme kontrolü için.</item>
         <item>Hayır, tüm veriler cihazınızda saklanır.</item>
         <item>Videolarınız cihazınızda yerel olarak saklanır.</item>
-        <item>Hayır, FadCam herhangi bir veri toplamaz veya paylaşmaz.</item>
+        <item>Hayır, FadCam hiç veri paylaşmaz veya toplamaz, çökme günlükleri bile dahil.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -575,4 +575,5 @@
     <string name="fix_video_saf_success">Video düzeltildi! Şu adla kaydedildi: %1$s.</string>
     <string name="fix_video_saf_export">Gerekirse, düzeltilen dosyayı uygulama depolamasından dışa aktarabilir veya paylaşabilirsiniz.</string>
 
+    <string name="full_changelog_info">Tam değişiklik günlüğü için Ana Sayfa sekmesine gidin, hamburger menüsünü açın ve «Yenilikler»i seçin.</string>
 </resources>

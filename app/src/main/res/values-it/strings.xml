@@ -102,7 +102,7 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
         <item>FadCam raccoglie dati degli utenti? ?</item>
         <item>Ci sono pubblicità su FadCam ?</item>
         <item>Perché FadCam chiede l\'accesso alla posizione ?</item>
-        <item>FadCam si connette a Internet ?</item>
+        <item>Perché è richiesta l'autorizzazione a Internet?</item>
         <item>I dati vengono archiviati su server esterni ?</item>
         <item>Cosa succede ai miei video dopo la registrazione ?</item>
         <item>FadCam condivide i miei dati con terze parti ?</item>
@@ -125,10 +125,10 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
         <item>No, FadCam non raccoglie alcun dato utente.</item>
         <item>No, FadCam è completamente privo di pubblicità.</item>
         <item>Per aggiungere informazioni sulla posizione alle filigrane.</item>
-        <item>No, FadCam non si connette a Internet.</item>
+        <item>Per il controllo automatico degli aggiornamenti.</item>
         <item>No, tutti i dati sono memorizzati sul tuo dispositivo.</item>
         <item>I tuoi video vengono salvati localmente sul tuo dispositivo.</item>
-        <item>No, FadCam non condivide né raccoglie alcun dato.</item>
+        <item>No, FadCam non condivide né raccoglie alcun dato, nemmeno i log di crash.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -155,8 +155,6 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="array_watermark_time_fadcam">Marca temporale con FadCam</string>
     <string name="array_watermark_timeonly">Marca temporale</string>
     <string name="array_watermark_nomark">Nessuna</string>
-    <string name="recent_features"> • Nuovo design dell\'interfaccia\n• I video vengono ora salvati internamente all\'app\n• Opzione per salvare i video nella galleria\n• Filigrana personalizzabile\n• Integrazione con ExoPlayer per una migliore riproduzione\n• Dati sulla posizione nella filigrana\n• Opzioni di filigrana dinamica\n• Ritorno della pressione prolungata con animazioni\n• Personalizzazione del widget data e ora</string>
-    <string name="upcoming_features"> • Registrazioni programmate automaticamente • Caricamento automatico su Google Drive • Icone app personalizzate • Blocco app per migliorare la privacy • Editor video in-app per attività semplici come il ritaglio • E molte altre interessanti funzionalità !</string>
     <string name="toast_video_not_found">Errore: video non trovato</string>
     <string name="toast_video_saved">Video salvato nella cartella FadCam in Download</string>
     <string name="toast_video_save_fail">Impossibile salvare il video</string>
@@ -450,4 +448,5 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="fix_video_saf_success">Video riparato! Salvato come: %1$s.</string>
     <string name="fix_video_saf_export">Esporta o condividi il file riparato dalla memoria dell\'app se necessario.</string>
 
+    <string name="full_changelog_info">Per il changelog completo, vai alla scheda Home, apri il menu a scomparsa e seleziona «Novità».</string>
 </resources>

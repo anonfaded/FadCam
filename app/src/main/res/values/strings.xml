@@ -255,7 +255,7 @@
         <item>Does FadCam collect any user data?</item>
         <item>Are there any ads in FadCam?</item>
         <item>Why does FadCam request location access?</item>
-        <item>Does FadCam connect to the internet?</item>
+        <item>Why the internet permission is required?</item>
         <item>Is any data stored on external servers?</item>
         <item>What happens to my videos after recording?</item>
         <item>Does FadCam share my data with third parties?</item>
@@ -273,15 +273,15 @@
         <item></item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+        <item>FadCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The author is not responsible for any misuse of the application.
         </item>
         <item>No, FadCam does not collect any user data.</item>
         <item>No, FadCam is completely ad-free.</item>
         <item>For adding location info to your watermarks.</item>
-        <item>No, FadCam does not connect to the internet.</item>
+        <item>For auto update checking.</item>
         <item>No, all data is stored on your device.</item>
         <item>Your videos are saved locally on your device.</item>
-        <item>No, FadCam does not share or collect any data.</item>
+        <item>No, FadCam does not share or collect any data, not even crash logs.</item>
         <item></item>
         <item></item>
         <item></item>
@@ -299,8 +299,7 @@
     <string name="note_from_developer_title">Note from Developer</string>
     <string name="note_from_developer_subtitle">README, links &amp; updates</string>
     <string name="note_under_dev">Important: This app is currently under development. New features are being added regularly.</string>
-    <string name="rencent_updates_title">Recent Updates:</string>
-    <string name="upcoming_features_title">Upcoming Features:</string>
+    <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select \"What\'s New\".</string>
     <string name="stay_updated_title">Stay Updated:</string>
     <string name="button_readme_github">GitHub Repository</string>
     <string name="community_title">Join our Community:</string>
@@ -311,8 +310,6 @@
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
     <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
-    <string name="recent_features" translatable="false">• Audio toggle, bitrate &amp; input source options\n• Video bitrate, orientation, FPS (60/90), and splitting\n• Wide-angle detection &amp; swipe-to-refresh\n• Thumbnails show index, duration, and size\n• Sorting by date/size + bottom sheet redesign\n• "Video Info" option in 3-dot menu\n• Time-ago labels, "New"/"Temp" badges, empty state UI\n• Trash bin with playback, restore &amp; auto-delete\n• "Select All" in Trash\n• Onboarding slides for new users\n• Video geotagging (location in metadata)\n• Improved animations\n• Fixed back button crash/blank screen\n• AMOLED black &amp; 7+ more themes &amp; 15+ new icons</string>
-    <string name="upcoming_features" translatable="false">• Auto-scheduled recordings\n• Auto-uploading to Google Drive\n• Custom app icons\n• In-app video editor (FaditorX - coming soon)\n• Remote tab with cross-device controls\n• Livestreaming of Video Recording\n• And many more exciting features!</string>
     <string name="toast_video_not_found">Error: Video not found</string>
     <string name="quick_speed_title">Quick Speed</string>
     <string name="quick_speed_option_default">2x (Default)</string>

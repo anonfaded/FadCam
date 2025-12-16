@@ -1,3 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+	<string name="full_changelog_info">Para ver el registro de cambios completo, ve a la pestaña Inicio, abre el menú hamburguesa y selecciona «Novedades».</string>
 </resources>

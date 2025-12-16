@@ -89,7 +89,7 @@
         <item>FadCam会收集用户数据吗?</item>
         <item>FadCam是否有广告?</item>
         <item>为什么FadCam会请求访问位置信息?</item>
-        <item>FadCam会联网吗?</item>
+        <item>为什么需要互联网权限？</item>
         <item>是否会有数据存储在外部服务器?</item>
         <item>视频录制完后会发生什么?</item>
         <item>FadCam有没有将我的数据分享给第三方?</item>
@@ -112,10 +112,10 @@
         <item>不, FadCam不收集任何用户数据.</item>
         <item>不, FadCam无广告.</item>
         <item>用于添加位置信息水印的功能.</item>
-        <item>不, FadCam不会连接网络.</item>
+        <item>用于自动检查更新。</item>
         <item>不, 所有数据都会存储在你的设备上.</item>
         <item>你录制的视频都只会存储在手机里.</item>
-        <item>不, FadCam不存储和共享任何信息.</item>
+        <item>不，FadCam 不会共享或收集任何数据，甚至不会收集崩溃日志。</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -933,4 +933,5 @@
     <string name="theme_snowveil">雪色薄纱</string>
     <string name="coming_soon_toast">即将到来！因沙安拉。</string>
     <string name="faditor_mini_title">Faditor Mini</string>
+    <string name="full_changelog_info">完整的更新日志请前往首页：打开汉堡菜单，然后选择「更新内容」。</string>
 </resources>

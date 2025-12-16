@@ -109,7 +109,7 @@
         <item>Apakah Fadcam mengambil data pengguna?</item>
         <item>Apakah ada iklan di FadCam?</item>
         <item>Kenapa Fadkam meminta akses lokasi?</item>
-        <item>Apakah FadCam terhubung ke internet?</item>
+        <item>Mengapa izin internet diperlukan?</item>
         <item>Apakah ada data yang disimpan di server eksternal?</item>
         <item>Apa yang terjadi pada video saya setelah merekam?</item>
         <item>Apakah FadCam membagikan data saya dengan pihak ketiga?</item>
@@ -132,7 +132,7 @@
         <item>Tidak, FadCam tidak mengumpulkan data pengguna apa pun.</item>
         <item>Tidak, FadCam sepenuhnya bebas iklan.</item>
         <item>Untuk menambahkan info lokasi ke tanda air Anda.</item>
-        <item>Tidak, FadCam tidak terhubung ke internet.</item>
+        <item>Untuk pemeriksaan pembaruan otomatis.</item>
         <item>Tidak, semua data disimpan di perangkat Anda.</item>
         <item>Video Anda disimpan secara lokal di perangkat Anda.</item>
         <item>Tidak, FadCam tidak membagikan atau mengumpulkan data apa pun.</item>
@@ -162,8 +162,6 @@
     <string name="array_watermark_time_fadcam">Waktu dengan Fadcam</string>
     <string name="array_watermark_timeonly">Cap waktu</string>
     <string name="array_watermark_nomark">Tidak ada Watermark</string>
-    <string name="recent_features">• Desain UI baru\n• Video sekarang disimpan secara internal di dalam aplikasi\n• Opsi untuk menyimpan video ke galeri\n• Penandaan air yang dapat disesuaikan\n• Integrasi ExoPlayer untuk pemutaran yang lebih baik\n• Data lokasi dalam tanda air\n• Opsi tanda air dinamis\n• Umpan balik tekan lama dengan animasi\n• Kustomisasi widget Tanggal dan Waktu</string>
-    <string name="upcoming_features">• Rekaman terjadwal otomatis \n• Pengunggahan otomatis ke Google Drive \n• Ikon aplikasi khusus \n• Kunci aplikasi untuk meningkatkan privasi \n• Editor video dalam aplikasi untuk tugas-tugas sederhana seperti pemangkasan \n• Dan masih banyak lagi fitur menarik lainnya!</string>
     <string name="toast_video_not_found">Error: Video tidak ditemukan</string>
     <string name="toast_video_saved">Video disimpan ke folder FadCam di Unduhan</string>
     <string name="toast_video_save_fail">Gagal menyimpan video</string>
@@ -524,4 +522,5 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="fix_video_saf_success">Video berhasil diperbaiki! Disimpan sebagai: %1$s.</string>
     <string name="fix_video_saf_export">Ekspor atau bagikan file hasil perbaikan dari penyimpanan aplikasi jika diperlukan.</string>
 
+    <string name="full_changelog_info">Untuk melihat changelog lengkap, buka tab Beranda, buka menu hamburger, lalu pilih «Apa yang Baru».</string>
 </resources>

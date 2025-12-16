@@ -147,7 +147,7 @@
         <item>Sammelt FadCam irgendwelche Nutzerdaten?</item>
         <item>Gibt es Werbung in FadCam?</item>
         <item>Warum benötigt FadCam Zugriff auf den Standort?</item>
-        <item>Verbindet sich FadCam mit dem Internet?</item>
+        <item>Warum ist die Internet-Berechtigung erforderlich?</item>
         <item>Werden Daten auf externen Servern gespeichert?</item>
         <item>Was passiert nach der Aufnahme mit meinen Videos?</item>
         <item>Teilt FadCam meine Daten mit Dritten?</item>
@@ -170,10 +170,10 @@
         <item>Nein, FadCam sammelt keinerlei Nutzerdaten.</item>
         <item>Nein, FadCam ist komplett werbefrei.</item>
         <item>Um Standortinformationen zu deinen Wasserzeichen hinzuzufügen.</item>
-        <item>Nein, FadCam verbindet sich nicht mit dem Internet.</item>
+        <item>Für die automatische Update-Prüfung.</item>
         <item>Nein, alle Daten werden auf deinem Gerät gespeichert.</item>
         <item>Deine Videos werden lokal auf deinem Gerät gespeichert.</item>
-        <item>Nein, FadCam teilt oder sammelt keine Daten.</item>
+        <item>Nein, FadCam teilt oder sammelt keine Daten, nicht einmal Absturzprotokolle.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -200,8 +200,7 @@
     <string name="array_watermark_time_fadcam">Zeit mit Fadcam</string>
     <string name="array_watermark_timeonly">Zeitstempel</string>
     <string name="array_watermark_nomark">Kein Wasserzeichen</string>
-    <string name="recent_features" translatable="false">• Audio-Umschaltung, Bitraten- &amp; Eingangsquellenoptionen\n• Video-Bitrate, Ausrichtung, FPS (60/90) und Aufteilung\n• Weitwinkelerkennung &amp; zum Aktualisieren wischen\n• Miniaturansichten zeigen Index, Dauer und Größe\n• Sortierung nach Datum/Größe + Neugestaltung des Bottom-Sheets\n• Option „Video-Info“ im 3-Punkte-Menü\n• Zeit-Labels, „Neu“/„Temp“-Badges, leere Zustands-UI\n• Papierkorb mit Wiedergabe, Wiederherstellung &amp; automatischer Löschung\n• „Alle auswählen“ im Papierkorb\n• Onboarding-Folien für neue Benutzer\n• Video-Geotagging (Standort in Metadaten)\n• Verbesserte Animationen\n• Absturz/leerer Bildschirm bei Zurück-Taste behoben\n• AMOLED-Schwarz &amp; 7+ weitere Themen &amp; 15+ neue Icons</string>
-    <string name="upcoming_features" translatable="false">• Automatisch geplante Aufnahmen\n• Automatisches Hochladen auf Google Drive\n• Benutzerdefinierte App-Icons\n• In-App-Videoeditor (FaditorX – bald verfügbar)\n• Remote-Tab mit geräteübergreifender Steuerung\n• Livestreaming von Videoaufnahmen\n• Und viele weitere spannende Funktionen!</string>
+    <!-- recent_features and upcoming_features removed (not used in bottom sheet) -->
     <string name="toast_video_not_found">Fehler: Video nicht gefunden</string>
     <string name="toast_video_saved">Video im FadCam-Ordner unter Downloads gespeichert</string>
     <string name="toast_video_save_fail">Video konnte nicht gespeichert werden</string>
@@ -693,4 +692,5 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="fix_video_saf_write_fail">Reparierte Datei kann nicht in den SAF-Ordner geschrieben werden. Im App-Speicher gespeichert.</string>
     <string name="fix_video_saf_success">Video repariert! Gespeichert als: %1$s.</string>
     <string name="fix_video_saf_export">Exportiere oder teile die reparierte Datei bei Bedarf aus dem App-Speicher.</string>
+    <string name="full_changelog_info">Für das vollständige Changelog gehe zum Home-Tab, öffne das Hamburger-Menü und wähle «Neuigkeiten».</string>
 </resources>

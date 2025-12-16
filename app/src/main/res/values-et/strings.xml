@@ -3,4 +3,5 @@
     <string name="readme_discord_subtitle">Liitu kogukonnaga</string>
     <string name="website_title">Veebisait</string>
     <string name="readme_website_subtitle">Ametlik sait</string>
+    <string name="full_changelog_info">Täieliku muudatuste logi jaoks minge Avalehele, avage hamburger-menüü ja valige „Mis uut“.</string>
 </resources>

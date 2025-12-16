@@ -13,6 +13,9 @@
 > [!Tip]
 > This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
 
+> [!Note]
+> Unlock FadCam Pro with lifetime access: [Purchase here](https://www.patreon.com/cw/Fadedx/shop)
+
 
                 
 
@@ -25,7 +28,7 @@
 
 # `>_` FadCam
 
-**Seamless background video recorder for Android – ad-free and open-source, with customizable options.**
+**Privacy-focused Android multimedia suite: background video recording, dashcam, screen recorder, live streaming & remote control - ad-free & open-source.**
 
 [![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
 [![SourceForge Downloads](https://img.shields.io/sourceforge/dt/fadcam.svg?label=SourceForge%20Downloads&color=red)](https://sourceforge.net/projects/fadcam/files/latest/download)
@@ -109,12 +112,13 @@
 
 ## `>_` Purpose
 
-FadCam is developed with the goal of providing a powerful, privacy-focused tool for recording videos in the background on Android devices. This app is intended for **ethical use** only, such as personal security, monitoring, or recording important events privately and discreetly.
+FadCam is developed with the goal of providing a powerful, privacy-focused multimedia suite for Android devices. This comprehensive app includes dashcam functionality, screen recording with annotations, live streaming over local networks, and remote camera control — all designed for **ethical use** only.
 
 **Ethical Use Cases Include:**
-- **Personal Security:** Record footage for personal safety or to capture important moments.
-- **Research and Documentation:** Use for documenting events, research, or activities where recording is necessary.
-- **Privacy Protection:** Safeguard your privacy by using the app in accordance with legal and ethical standards.
+- **Personal Security:** Use as a dashcam while driving, CCTV at home with remote monitoring, or recording proof in situations where needed for yourself
+- **Content Creation:** Screen recording with professional annotation tools
+- **Remote Monitoring:** Live streaming and remote control for security purposes
+- **Research and Documentation:** Multi-purpose recording tools for various needs
 
 > [!Caution]
 > **Misuse Disclaimer:** <br>
@@ -153,6 +157,9 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
     </details> -->
 
 ## `>_` Featured On
+
+<details>
+<summary><strong>Expand Featured Content</strong></summary>
 
 ### `>_` Featured Audio Podcast
 - [closednetwork.io](https://closednetwork.io/podcast/episode-42-deepseek-ai-oh-my/) at `1:15:22` timestamp
@@ -263,6 +270,8 @@ FadCam is developed with the goal of providing a powerful, privacy-focused tool 
 - [meta.appinn.net](https://meta.appinn.net/t/topic/72853/2)
 <!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
 
+</details>
+
 
 
 ## `>_` ⬇️ Download
@@ -305,36 +314,91 @@ Or:
 
 ## `>_` Features:
 
-- **Background Video Recording:** Record discreetly even with the screen off.
-- **Modern UI:** Clean, Material-inspired design with bottom sheet actions.
-- **Audio Controls:** Toggle audio, choose bitrate, and select mic input (wired/Bluetooth).
-- **Video Settings:** Configure orientation, bitrate, and fixed framerate (60/90fps supported).
-- **Auto Video Splitting:** Automatically split large recordings based on size.
-- **Geotagging:** Embed location data into video metadata.
-- **Wide-Angle Detection:** Auto-detect wide-angle camera support.
-- **Sorting & Filters:** Sort videos by date, size, and more.
-- **Enhanced Thumbnails:** Show index, duration, and file size.
-- **Trash Bin:** Restore deleted videos or auto-delete after a set time.
-- **Select All in Trash:** Bulk actions made easier.
-- **Inbuilt Video Player:** Smooth playback using ExoPlayer.
-- **Dynamic Watermarks:** Add timestamp, logo, and GPS watermark options.
-- **Video Info View:** View details like resolution, size, and duration.
-- **Video Renaming:** Rename recordings directly in-app.
-- **Storage Indicator:** Real-time storage info with estimated record time.
-- **Clock Widget:** Customizable date/time widget with color options.
-- **Custom Notification:** Use presets or create a custom title and description for recordings.
-- **7+ App Themes & 15+ Icons:** AMOLED, Light, System, and more.
-- **Localization:** Italian language support.
-- **No Ads:** 100% free and ad-free.
+<details>
+<summary><strong>🎬 FadRec Screen Recorder</strong></summary>
+
+- Full-featured screen recording with annotation tools (pen, eraser, text, shapes)
+- Multi-layer editing with version control and unlimited undo/redo
+- Automatic project saving with full recovery options
+- Sidebar overlay menu for quick-access recording controls
+</details>
+
+<details>
+<summary><strong>🏠 FadCam Remote</strong></summary>
+
+- Live stream camera feed over local network with beautiful web interface
+- Remote control features: start/stop recording, adjust settings, toggle torch
+- Real-time monitoring: battery level, storage status, recording status
+- Perfect for security monitoring and remote access
+</details>
+
+<details>
+<summary><strong>📸 Dashcam & Background Recording</strong></summary>
+
+- Background video recording with screen off capability
+- Fragmented MP4 format for zero corruption risk
+- Auto-splitting large files with customizable size limits
+- Wide-angle camera detection and support
+</details>
+
+<details>
+<summary><strong>🎥 Video & Audio Controls</strong></summary>
+
+- Multiple resolutions and 60/90fps support
+- Orientation control and quality options
+- Audio recording with customizable bitrate and sample rate
+- Custom watermark text overlays
+- Geotagging with location data embedding
+</details>
+
+<details>
+<summary><strong>🎨 User Interface & Experience</strong></summary>
+
+- Clean Material Design with bottom sheet actions
+- 7+ app themes including AMOLED, Light, and System themes
+- 15+ customizable app icons
+- In-app "What's New" page for feature discovery
+- Standalone beta installation without conflicts
+</details>
+
+<details>
+<summary><strong>📁 File Management & Playback</strong></summary>
+
+- Enhanced thumbnails with index, duration, and file size
+- Sorting & filtering by date, size, and more
+- Trash bin with restore and auto-delete options
+- Inbuilt video player using ExoPlayer
+- Video info view with resolution, size, and duration details
+- Direct video renaming in-app
+</details>
+
+<details>
+<summary><strong>🔧 Advanced Features</strong></summary>
+
+- Storage indicator with real-time space and estimated record time
+- Clock widget with customizable date/time and colors
+- Custom notification presets and descriptions
+- Audio input source selection (phone mic, wired/Bluetooth)
+- Dynamic watermarks with timestamp, logo, and GPS options
+</details>
+
+<details>
+<summary><strong>🌐 Localization & Privacy</strong></summary>
+
+- Multiple language support (Italian, and more coming)
+- 100% ad-free and open-source
+- No data collection or tracking
+- Hide from recent apps for privacy
+- Ethical use guidelines and disclaimer
+</details>
 
 ## `>_` Upcoming Features:
 
 - **Scheduled Recording:** Automatically start/stop recordings at set times.
 - **Google Drive Auto-Upload:** Seamless cloud backup for videos.
-- **Custom Icons & Themes:** Expand personalization even further.
-- **In-App Video Editor:** Quick trim/edit with FaditorX (coming soon).
-- **Remote Tab:** Connect and control recordings across devices.
-- **Custom Save Paths:** Set your preferred video storage location.
+- **In-App Video Editor:** Quick trim/edit with Faditor Mini (coming soon).
+- **Enhanced Remote Features:** Additional remote control capabilities.
+
 
 
 
@@ -352,7 +416,7 @@ Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek he
 We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
 
 ### `>_` How to Contribute
-1. **Check Issues**: Browse the [issues](https://github.com/anonfaded/FadCam/issues) to see where you can help.
+1. **Open an Issue First**: Before starting any work, please open an [issue](https://github.com/anonfaded/FadCam/issues) to discuss your proposed changes and get approval.
 2. **Fork the Repo**: Fork the repository to make your changes.
 3. **Submit a PR**: Create a pull request with a clear description of your changes.
 

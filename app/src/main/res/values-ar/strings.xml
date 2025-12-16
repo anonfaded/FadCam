@@ -519,4 +519,5 @@
     <string name="fix_video_saf_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s.</string>
     <string name="fix_video_saf_export">يمكنك تصدير أو مشاركة الملف المُصلح من تخزين التطبيق إذا لزم الأمر.</string>
 
+    <string name="full_changelog_info">لعرض سجل التغييرات الكامل، انتقل إلى تبويب الرئيسية، افتح قائمة الهامبورغر، ثم اختر «ما الجديد».</string>
 </resources>

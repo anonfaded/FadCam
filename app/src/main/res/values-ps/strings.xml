@@ -105,7 +105,7 @@
         <item>FadCam da user data jama kai zan sara?</item>
         <item>Di app ki ishtehar am shta?</item>
         <item>FadCam da location access wali gwari?</item>
-        <item>FadCam internet sara am connect kegi?</item>
+        <item>Da internet permission walae zarurat de?</item>
         <item>Hes runga data pa external servers bande store kegi?</item>
         <item>Zama videos sara sa kegi record kolo na pas?</item>
         <item>FadCam zama data third party services ta legi?</item>
@@ -129,10 +129,10 @@
         <item>Na, FadCam hes kisam user data na jama kai.</item>
         <item>Na, FadCam bilkul ad-free dai.</item>
         <item>Da location info watermark ke shaamil kawalo dapara.</item>
-        <item>Na, FadCam internet sara connect na dai.</item>
+        <item>Da automatic update checking da para.</item>
         <item>Na, tola data sta pa device bandi store kigi.</item>
         <item>Sta videos sta pa device ki internal app storage ke save kigi.</item>
-        <item>Na, FadCam da data share ya jamakol na kai.</item>
+        <item>Na, FadCam hes data na share kai ao na jama kai, hatta crash logs hum na.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -159,8 +159,6 @@
     <string name="array_watermark_time_fadcam">Wakh, sara da Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
-    <string name="recent_features">• New UI design\n• Videos now save internally in the app\n• Option to save videos to gallery\n• Customizable watermarking\n• ExoPlayer integration for better playback\n• Location data in watermarks\n• Dynamic watermark options\n• Long press feedback with animations\n• Date and Time widget customization</string>
-    <string name="upcoming_features">• Auto-scheduled recordings \n• Auto-uploading to Google Drive \n• Custom app icons \n• App lock for enhanced privacy \n• In-app video editor for simple tasks like trimming \n• And many more exciting features!</string>
     <string name="toast_video_not_found">Error: Video milao na shwa</string>
     <string name="toast_video_saved">Video ~/Downloads/FadCam folder ki save shwa</string>
     <string name="toast_video_save_fail">Video save kolo ke fail shwa</string>
@@ -529,4 +527,5 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="fix_video_saf_success">Video repair sho! Save sho da num sara: %1$s.</string>
     <string name="fix_video_saf_export">Repaired file da app storage na export ya share kawalai shay.</string>
 
+    <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select \"What's New\"</string>
 </resources>
