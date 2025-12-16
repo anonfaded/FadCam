@@ -4,12 +4,11 @@
     <string name="fadsec_info">FadCam fa parte della suite FadSec Lab. Per maggiori informazioni, clicca su \'Visualizza codice sorgente\' qui sotto.</string>
 
 
-    <string name="app_description">"
-    <![CDATA[
-    FadCam è un\'app di registrazione video open source e senza pubblicità che dà priorità alla privacy non tracciando né raccogliendo alcun dato. È disponibile esclusivamente su GitHub e tramite i link ufficiali menzionati nel README.    <br/><br/>
-    FadCam è stato presentato in canali YouTube popolari come <font color="#cfbafd">HowToMen</font> e <font color="#cfbafd">Xtream Droid</font>, anche discusso in <font color="#cfbafd">GrapheneOS</font> e altri 55+ luoghi degni di nota.
-    ]]>
-</string>
+    <string name="app_description"><![CDATA[
+FadCam è un\'app di registrazione video open source e senza pubblicità che dà priorità alla privacy non tracciando né raccogliendo alcun dato. È disponibile esclusivamente su GitHub e tramite i link ufficiali menzionati nel README.
+<br/><br/>
+FadCam è stato presentato in canali YouTube popolari come <font color=\"#cfbafd\">HowToMen</font> e <font color=\"#cfbafd\">Xtream Droid</font>, anche discusso in <font color=\"#cfbafd\">GrapheneOS</font> e altri 55+ luoghi degni di nota.
+]]></string>
 
 
     <string name="view_source_code">Vedi codice sorgente</string>
@@ -19,7 +18,7 @@
     <string name="join_community">Unisciti alla community per ricevere aiuto, condividere idee e futuri aggiornamenti dell\'app</string>
     <string name="privacy_information">Informativa sulla privacy</string>
     <string name="copyright_info">© 2024 https://fadcam.faded.dev\nSotto licenza GPL-3.0</string>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Disponibile :</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Durata della registrazione (est.) :</b></font><br>
@@ -42,7 +41,7 @@
         <item>10/11 | Le tue preferenze vengono salvate e applicate in modo trasparente.</item>
         <item>11/11 | Hai bisogno di aiuto? Unisciti al nostro Discord tramite la sezione Informazioni.</item>
     </string-array>
-    <string name="mainpage_video_info">\n    <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Video : </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Usato</b></font>
@@ -81,7 +80,7 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="note_watermark">Seleziona l\'opzione filigrana (predefinita: timestamp con Fadcam)</string>
     <string name="note_watermark_extra">Per un backup rapido, seleziona \'Nessuno\'. Aggiungere una filigrana? Vale la pena aspettare, solo un po\' più a lungo per l\'elaborazione !</string>
     <string name="setting_location_title">Dati sulla posizione</string>
-    <string name="note_location">Includi i dati sulla posizione nella filigrana. \richiede GPS abilitato\n(Predefinito: Disabilitato)</string>
+    <string name="note_location">Includi i dati sulla posizione nella filigrana. \nRichiede GPS abilitato\n(Predefinito: Disabilitato)</string>
     <string name="note_location_extra">Abilita il GPS del telefono per aggiungere i dati di latitudine e longitudine alla filigrana.</string>
     <string name="button_setting_review">Scrivi una recensione 🌟</string>
     <string name="dialog_clock_title">Scegli la visualizzazione dell\'orologio</string>
@@ -102,7 +101,7 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
         <item>FadCam raccoglie dati degli utenti? ?</item>
         <item>Ci sono pubblicità su FadCam ?</item>
         <item>Perché FadCam chiede l\'accesso alla posizione ?</item>
-        <item>Perché è richiesta l'autorizzazione a Internet?</item>
+        <item>Perché è richiesta l\'autorizzazione a Internet?</item>
         <item>I dati vengono archiviati su server esterni ?</item>
         <item>Cosa succede ai miei video dopo la registrazione ?</item>
         <item>FadCam condivide i miei dati con terze parti ?</item>
@@ -110,7 +109,6 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
         <item> </item>
         <item>Generale</item>
         <item>Perché la filigrana impiega così tanto tempo ?</item>
-        <item>Perché c\'è un video \'temporaneo\' ?</item>
         <item>Come modificare la qualità video ?</item>
         <item>Posso disattivare l\'anteprima ?</item>
         <item>Come posso includere la mia posizione nella filigrana ?</item>
@@ -133,7 +131,6 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
         <item> </item>
         <item> </item>
         <item>La filigrana è incorporata in ogni fotogramma del video. Più lungo è il video, più tempo ci vorrà.</item>
-        <item>Il video \'temporaneo\' è la tua registrazione originale. Viene cancellato automaticamente dopo la filigrana. Se la filigrana non funziona, il file \'temp\' rimane come backup.</item>
         <item>Cambia la qualità video nelle impostazioni : HD, SD, o FHD.</item>
         <item>Tocca l\'area di anteprima per disattivarla.</item>
         <item>Abilita la posizione nelle impostazioni per i dati sulla posizione nella filigrana. Incorporerà longitudine e latitudine precise.</item>
@@ -144,8 +141,6 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     </string-array>
     <string name="dialog_welcome_title">Benvenuto su FadCam !</string>
     <string name="note_under_dev">Importante: questa applicazione è in fase di sviluppo. Nuove funzionalità vengono aggiunte regolarmente.</string>
-    <string name="rencent_updates_title">Aggiornamenti recenti :</string>
-    <string name="upcoming_features_title">Funzionalità in arrivo :</string>
     <string name="stay_updated_title">Rimani aggiornato :</string>
     <string name="button_readme_github">Repository GitHub</string>
     <string name="community_title">Unisciti alla nostra comunità :</string>

@@ -29,7 +29,7 @@
         <item name="60">60</item>
         <item name="90">90</item>
     </integer-array>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Record time (est.):</b></font><br>
@@ -52,7 +52,7 @@
         <item>10/11 | Preferensi Anda disimpan dan diterapkan dengan mulus.</item>
         <item>11/11 | Butuh bantuan? Bergabunglah ke Discord kami melalui bagian Tentang.</item>
     </string-array>
-    <string name="mainpage_video_info">\n    <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used:</font>
@@ -117,7 +117,6 @@
         <item> </item>
         <item>Umum</item>
         <item>Mengapa penandaan air membutuhkan waktu lama?</item>
-        <item>Mengapa ada video \'temp\'?</item>
         <item>Bagaimana cara mengubah kualitas video?</item>
         <item>Dapatkah saya menonaktifkan pratinjau?</item>
         <item>Bagaimana cara menyematkan lokasi saya di watermark?</item>
@@ -140,7 +139,6 @@
         <item> </item>
         <item> </item>
         <item>Tanda air disematkan dalam setiap bingkai video. Semakin panjang video, semakin banyak waktu yang dibutuhkan.</item>
-        <item>Video \'temp\' adalah rekaman asli Anda. File ini akan dihapus secara otomatis setelah pemberian tanda air. Jika penandaan air gagal, file \'temp\' akan tetap ada sebagai cadangan.</item>
         <item>Mengubah kualitas video dalam pengaturan: HD, SD, or FHD.</item>
         <item>Tekan lama area pratinjau untuk menonaktifkannya.</item>
         <item>Aktifkan lokasi dalam pengaturan untuk data lokasi di tanda air. Ini akan menyematkan garis bujur dan garis lintang yang tepat.</item>
@@ -151,8 +149,6 @@
     </string-array>
     <string name="dialog_welcome_title">Selamat datang FadCam!</string>
     <string name="note_under_dev">Penting: Aplikasi ini sedang dalam tahap pengembangan. Fitur-fitur baru akan ditambahkan secara berkala.</string>
-    <string name="rencent_updates_title">Pembaruan Terbaru:</string>
-    <string name="upcoming_features_title">Fitur yang Akan Datang:</string>
     <string name="stay_updated_title">Tetap Terupdate:</string>
     <string name="button_readme_github">Repositori GitHub</string>
     <string name="community_title">Bergabunglah dengan Komunitas kami:</string>

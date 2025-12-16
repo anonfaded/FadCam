@@ -45,7 +45,7 @@
         <item name="60">60</item>
         <item name="90">90</item>
     </integer-array>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Kullanılabilir:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Tahmini Kayıt Süresi:</b></font><br>
@@ -68,7 +68,7 @@
         <item>10/11 | Tercihleriniz kaydedilir ve sorunsuzca uygulanır.</item>
         <item>11/11 | Yardıma mı ihtiyacınız var? Hakkında bölümünden Discord\'umuza katılın.</item>
     </string-array>
-    <string name="mainpage_video_info">\n    <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videolar: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'>Kullanılan</font>
@@ -134,7 +134,6 @@
         <item> </item>
         <item>Genel</item>
         <item>Filigran ekleme neden uzun sürüyor?</item>
-        <item>\'temp\' videosu neden var?</item>
         <item>Video kalitesini nasıl değiştirebilirim?</item>
         <item>Önizlemeyi devre dışı bırakabilir miyim?</item>
         <item>Konumumu filigrana nasıl eklerim?</item>
@@ -157,7 +156,6 @@
         <item> </item>
         <item> </item>
         <item>Filigran, videonun her karesine gömülür. Video ne kadar uzunsa, işlem o kadar uzun sürer.</item>
-        <item>\'temp\' videosu orijinal kaydınızdır. Filigran eklendikten sonra otomatik olarak silinir. Filigran ekleme başarısız olursa, yedek olarak \'temp\' dosyası kalır.</item>
         <item>Ayarlardan video kalitesini değiştirin: HD, SD veya FHD.</item>
         <item>Önizleme alanına uzun basarak devre dışı bırakabilirsiniz.</item>
         <item>Filigrana konum verisi eklemek için ayarlardan konumu etkinleştirin. Bu, hassas enlem ve boylam bilgisini ekler.</item>
@@ -168,8 +166,6 @@
     </string-array>
     <string name="dialog_welcome_title">FadCam\'e Hoş Geldiniz!</string>
     <string name="note_under_dev">Önemli: Bu uygulama şu anda geliştirme aşamasında. Yeni özellikler düzenli olarak ekleniyor.</string>
-    <string name="rencent_updates_title">Son Güncellemeler:</string>
-    <string name="upcoming_features_title">Yaklaşan Özellikler:</string>
     <string name="stay_updated_title">Güncel Kalın:</string>
     <string name="button_readme_github">GitHub Deposu</string>
     <string name="community_title">Topluluğumuza Katılın:</string>

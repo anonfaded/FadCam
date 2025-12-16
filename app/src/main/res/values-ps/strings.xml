@@ -26,7 +26,7 @@
         <item name="60">60</item>
         <item name="90">90</item>
     </integer-array>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Dumra Zay shta:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Da Record wakh (andaza):</b></font><br>
@@ -49,7 +49,7 @@
         <item>10/11 | Da app preferences save kigi aw agha pakhpala apply kigi.</item>
         <item>11/11 | Madad pakar de? About ki Discord link shte alta na join kae.</item>
     </string-array>
-    <string name="mainpage_video_info">\n    <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Zay:</font>
@@ -113,7 +113,6 @@
         <item> </item>
         <item>General</item>
         <item>Da watermarking dumra der wakh wali akhli?</item>
-        <item>Da \'temp\' num wala video sa shae de?</item>
         <item>Za video quality sanga badlole sham?</item>
         <item>Za da preview video band kole sham?</item>
         <item>Za location sanga pa watermark ki achole sham?</item>
@@ -137,7 +136,6 @@
         <item> </item>
         <item> </item>
         <item>Watermark har frame ke shaamil kigi. Ogad video we nu, zyat wakh ba akhli.</item>
-        <item>\'Temp\' video sta asli recording dai. Da watermarking process na pas pakhpala delete kigi. Oke watermarking fail she, no \'temp\' file backup pa tor bandi prot we.</item>
         <item>Video quality settings ke badal kideshi: HD, SD, or FHD.</item>
         <item>Preview wala zay bandi, disable kawalo dapara, long press okai.</item>
         <item>Location settings ke enable kae, che watermark ke da location data shaamil she. Da precise longitude aw latitude data shaamil kai.</item>
@@ -148,8 +146,6 @@
     </string-array>
     <string name="dialog_welcome_title">Pa Khair raghle!</string>
     <string name="note_under_dev">Zaruri khabara: Da app la development ki de. Nawi features wakh sara add kegi.</string>
-    <string name="rencent_updates_title">Taaza Updates:</string>
-    <string name="upcoming_features_title">Rarawan Features:</string>
     <string name="stay_updated_title">Updated osay:</string>
     <string name="button_readme_github">GitHub Repository</string>
     <string name="community_title">Zamung Community ki shamil shae:</string>
@@ -527,5 +523,5 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="fix_video_saf_success">Video repair sho! Save sho da num sara: %1$s.</string>
     <string name="fix_video_saf_export">Repaired file da app storage na export ya share kawalai shay.</string>
 
-    <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select \"What's New\"</string>
+    <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select &quot;What's New&quot;.</string>
 </resources>

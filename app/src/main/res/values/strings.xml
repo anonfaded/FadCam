@@ -52,7 +52,7 @@
         <item name="60">60</item>
         <item name="90">90</item>
     </integer-array>
-    <string name="mainpage_storage_indicator">\n                                            <![CDATA[
+    <string name="mainpage_storage_indicator" formatted="false">\n                                            <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Available:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Record time (est.):</b></font><br>
@@ -75,7 +75,7 @@
         <item>10/11 | Your preferences are saved and applied seamlessly.</item>
         <item>11/11 | Need help? Join our Discord via the About section.</item>
     </string-array>
-    <string name="mainpage_video_info">\n                                            <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n                                            <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used:</font>
@@ -262,9 +262,6 @@
         <item></item>
         <item></item>
         <item>General</item>
-        <item>Why does watermarking take so long?</item>
-        <item>Why is there a \'temp\' video?</item>
-        <item>How can I change the video quality?</item>
         <item>Can I disable the preview?</item>
         <item>How do I embed my location in the watermark?</item>
         <item>Are my preferences saved?</item>
@@ -285,9 +282,7 @@
         <item></item>
         <item></item>
         <item></item>
-        <item>The watermark is embedded in each frame of the video. The longer the video, the more time it will take.</item>
-        <item>The \'temp\' video is your original recording. It\'s auto-deleted after watermarking. If watermarking fails, the \'temp\' file stays as a backup.</item>
-        <item>Change video quality in settings: HD, SD, or FHD.</item>
+
         <item>Long-press the preview area to disable it.</item>
         <item>Enable location in settings for location data in the watermark. It will embed the precise longitude and latitude.</item>
         <item>Yes, preferences and all settings are saved and applied seamlessly.</item>
@@ -985,7 +980,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
     <string name="storage_location_choose_folder">Choose Folder</string>
     <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam.</string>
-    <!-- Added: Storage picker sheet options & helpers -->
     <string name="storage_sheet_title">Storage Location</string>
     <string name="storage_option_use_internal">Use Internal Storage</string>
     <string name="storage_option_switch_internal">Switch to Internal Storage</string>

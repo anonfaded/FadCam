@@ -7,8 +7,9 @@
 
 
     <string name="app_description"><![CDATA[
-    FadCam est une application d\'enregistrement vidéo open-source sans publicité qui priorise la confidentialité en ne suivant ni ne collectant aucune donnée. Il est disponible exclusivement sur GitHub et via les liens officiels mentionnés dans le README.    <br/><br/>
-    FadCam a été présenté dans les chaînes YouTube populaires comme <font color="#cfbafd">HowToMen</font> et <font color="#cfbafd">Xtream Droid</font>, ainsi que discuté dans <font color="#cfbafd">GrapheneOS</font> et 55+ autres endroits notables.
+FadCam est une application d\'enregistrement vidéo open-source sans publicité qui priorise la confidentialité en ne suivant ni ne collectant aucune donnée. Il est disponible exclusivement sur GitHub et via les liens officiels mentionnés dans le README.
+<br/><br/>
+FadCam a été présenté dans les chaînes YouTube populaires comme <font color="#cfbafd">HowToMen</font> et <font color="#cfbafd">Xtream Droid</font>, ainsi que discuté dans <font color="#cfbafd">GrapheneOS</font> et 55+ autres endroits notables.
     ]]>
 </string>
 
@@ -20,7 +21,7 @@
     <string name="join_community">Rejoignez la communauté pour obtenir de l\'aide, partager des idées et les mises à jour futur de l\'application</string>
     <string name="privacy_information">Information Confidentialité</string>
     <string name="copyright_info">© 2024 https://fadcam.faded.dev\nSous licence GPL-3.0</string>
-    <string name="mainpage_storage_indicator">\n    <![CDATA[
+    <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Disponible :</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Durée d\'enregistrement (est.) :</b></font><br>
@@ -43,7 +44,7 @@
         <item>10/11 | Vos préférences sont sauvegardées et appliquées de manière transparente.</item>
         <item>11/11 | Besoin d\'aide ? Rejoignez notre Discorde via la section À propos.</item>
     </string-array>
-    <string name="mainpage_video_info">\n    <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Vidéos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Utilisé:</b></font>
@@ -104,7 +105,7 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
         <item>FadCam collecte-t-elle des données utilisateur ?</item>
         <item>Y a-t-il de la publicité dans FadCam ?</item>
         <item>Pourquoi FadCam demande-t-elle l\'accès à l\'emplacement ?</item>
-        <item>Pourquoi l'autorisation Internet est requise ?</item>
+        <item>Pourquoi l\'autorisation Internet est requise ?</item>
         <item>Des données sont-elles stockées sur des serveurs externes ?</item>
         <item>Qu\'arrive t-il à mes vidéos après l\'enregistrement ?</item>
         <item>FadCam partage-t-elle mes données avec des tiers ?</item>
@@ -112,7 +113,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
         <item> </item>
         <item>Générale</item>
         <item>Pourquoi le filigrane prend-il si longtemps?</item>
-        <item>Pourquoi il y a une vidéo \'temp\'?</item>
         <item>Comment changer la qualité de la vidéo ?</item>
         <item>Puis-je désactiver la prévisulisation ?</item>
         <item>Comment puis-je intégrer mon emplacement au filigrane ?</item>
@@ -135,7 +135,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
         <item> </item>
         <item> </item>
         <item>Le filigrane est intégré dans chaque frame de la vidéo. Plus la vidéo est longue, plus il faudra de temps.</item>
-        <item>La vidéo \'temp\' est votre enregistrement original. Il est effacé automatiquement après le filigrane. Si le filigrane échoue, le fichier \'temp\' reste comme sauvegarde.</item>
         <item>Changer la qualité de la vidéo dans les paramètres : HD, SD, ou FHD.</item>
         <item>Pressez la zone de prévisualisation pour la désactiver.</item>
         <item>Activer la localisation dans les paramètres pour les données de localisation dans le filigrane. Il intégrera la longitude et la latitude précises.</item>
@@ -146,8 +145,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     </string-array>
     <string name="dialog_welcome_title">Bienvenue sur FadCam !</string>
     <string name="note_under_dev">Important: Cette application est en cours de développement. De nouvelles fonctionnalités sont ajoutées régulièrement.</string>
-    <string name="rencent_updates_title">Mises à jour Récentes :</string>
-    <string name="upcoming_features_title">Fonctionnalitées à venir :</string>
     <string name="stay_updated_title">Restez à jour :</string>
     <string name="button_readme_github">Dépôt GitHub</string>
     <string name="community_title">Rejoignez notre communauté :</string>
@@ -536,5 +533,5 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="next">Suivant</string>
     <string name="done">Terminé</string>
 
-    <string name="full_changelog_info">Pour le changelog complet, allez dans l'onglet Accueil, ouvrez le menu hamburger, puis sélectionnez «Quoi de neuf».</string>
+    <string name="full_changelog_info">Pour le changelog complet, allez dans l\'onglet Accueil, ouvrez le menu hamburger, puis sélectionnez «Quoi de neuf».</string>
 </resources>

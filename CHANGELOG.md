@@ -5,6 +5,9 @@ FORMAT GUIDELINES:
 - Comments like this won't be displayed in the app
 -->
 
+# Patch Note
+- This version is a patch update to v3.0.0, addressing critical bug regarding MIC and F-Droid compatibility.
+
 # ⚠️ Breaking Change ⚠️
 - FadCam now uses fragmented MP4 format for video files. It is better to backup your existing videos before updating, just in case.
 
@@ -23,7 +26,6 @@ FORMAT GUIDELINES:
 - Standalone Beta Installation with isolated storage.
 - 45-50% CPU reduction, 28-33% better battery life during recording.
 - Smart debug logging—pauses during recording, active for troubleshooting.
-- Enhanced audio recording with VOICE_COMMUNICATION source for background compatibility.
 - Improved UI and reordered settings for faster access.  
 
 
