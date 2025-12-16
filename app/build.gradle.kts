@@ -137,10 +137,10 @@ android {
         }
     }
 
-// ./gradlew assembleNotesPro - Notes Pro variant
-// ./gradlew assembleCalcPro - Calculator Pro variant
-// ./gradlew assembleWeatherPro - Weather Pro variant
-// ./gradlew assembleProPlus -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
+// ./gradlew assembleNotesProRelease - Notes Pro variant
+// ./gradlew assembleCalcProRelease - Calculator Pro variant
+// ./gradlew assembleWeatherProRelease - Weather Pro variant
+// ./gradlew assembleDefaultProPlusRelease -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
 
     // Variant filter: only build specific variants
     variantFilter {
@@ -148,8 +148,8 @@ android {
         val isDefaultFlavor = name.contains("default")
         
         if (isPreBuiltFlavor) {
-            // Pre-built flavors: only 'pro' build type
-            if (!name.endsWith("Pro")) {
+            // Pre-built flavors: only 'release' build type
+            if (!name.endsWith("Release")) {
                 ignore = true
             }
         } else if (isDefaultFlavor) {
@@ -208,7 +208,8 @@ android {
                 "META-INF/LGPL2.1",
                 "**/*.kotlin_metadata",
                 "**/*.kotlin_builtins",
-                "**/*.proto"
+                "**/*.proto",
+                "assets/PSDs/**"  // Exclude PSD source files from release APK
             )
         }
     }

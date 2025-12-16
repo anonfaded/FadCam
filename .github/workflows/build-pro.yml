@@ -42,29 +42,29 @@ jobs:
       - name: Build Notes Pro variant
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleNotesPro
+          ./gradlew assembleNotesProRelease
           
       - name: Build Calculator Pro variant
-        run: ./gradlew assembleCalcPro
+        run: ./gradlew assembleCalcProRelease
           
       - name: Build Weather Pro variant
-        run: ./gradlew assembleWeatherPro
+        run: ./gradlew assembleWeatherProRelease
           
       - name: Verify APKs were built
         run: |
           echo "✓ Checking built APKs..."
-          ls -lh app/build/outputs/apk/notesPro/pro/app-notesPro-pro.apk
-          ls -lh app/build/outputs/apk/calcPro/pro/app-calcPro-pro.apk
-          ls -lh app/build/outputs/apk/weatherPro/pro/app-weatherPro-pro.apk
+          ls -lh app/build/outputs/apk/notesPro/release/app-notesPro-release.apk
+          ls -lh app/build/outputs/apk/calcPro/release/app-calcPro-release.apk
+          ls -lh app/build/outputs/apk/weatherPro/release/app-weatherPro-release.apk
           
       - name: Upload Pro variant artifacts
         uses: actions/upload-artifact@v4
         with:
           name: fadcam-pro-variants
           path: |
-            app/build/outputs/apk/notesPro/pro/app-notesPro-pro.apk
-            app/build/outputs/apk/calcPro/pro/app-calcPro-pro.apk
-            app/build/outputs/apk/weatherPro/pro/app-weatherPro-pro.apk
+            app/build/outputs/apk/notesPro/release/app-notesPro-release.apk
+            app/build/outputs/apk/calcPro/release/app-calcPro-release.apk
+            app/build/outputs/apk/weatherPro/release/app-weatherPro-release.apk
           retention-days: 1
           
       - name: Build summary
