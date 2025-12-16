@@ -160,6 +160,7 @@ public class GLRecordingPipeline {
     private android.media.AudioManager audioManager;
     private android.media.AudioManager.OnAudioFocusChangeListener audioFocusListener;
     private int originalAudioMode = -1; // Store original mode to restore on stop
+    private boolean originalSpeakerphoneOn = false; // Store original speakerphone state to restore on stop
     private int consecutive512Count = 0; // Track consecutive 512-byte AAC frames (silence detection)
     
     // Debug counters for tracking sample writing
@@ -1695,11 +1696,13 @@ public class GLRecordingPipeline {
         // Release audio focus to allow other apps to use audio
         if (audioManager != null) {
             try {
-                // Restore original audio mode
+                // Restore original audio mode and speakerphone state
                 if (originalAudioMode != -1) {
                     audioManager.setMode(originalAudioMode);
                     Log.i(TAG, "AudioManager mode restored to: " + originalAudioMode);
                 }
+                audioManager.setSpeakerphoneOn(originalSpeakerphoneOn);
+                Log.i(TAG, "Speakerphone restored to: " + originalSpeakerphoneOn);
                 
                 // Release audio focus
                 if (audioFocusListener != null) {
@@ -1711,6 +1714,7 @@ public class GLRecordingPipeline {
             audioManager = null;
             audioFocusListener = null;
             originalAudioMode = -1;
+            originalSpeakerphoneOn = false;
         }
         
         // Join audio thread if still running (should have exited after EOS)
@@ -2017,10 +2021,10 @@ public class GLRecordingPipeline {
         this.audioChannelCount = 2;
         // Audio source selection logic (default to MIC)
         String audioInputSource = null;
-        // Use VOICE_COMMUNICATION for background recording compatibility
-        // This source has higher priority and matches our AudioAttributes (USAGE_VOICE_COMMUNICATION)
-        // Combined with MODE_IN_COMMUNICATION, prevents Android from silencing audio when backgrounded
-        this.audioSource = android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION;
+        // Use CAMCORDER for high-quality audio recording
+        // This provides better audio quality than VOICE_COMMUNICATION
+        // Background recording is enabled via foreground service with MICROPHONE type
+        this.audioSource = android.media.MediaRecorder.AudioSource.CAMCORDER;
     }
 
     /**
@@ -2124,18 +2128,21 @@ public class GLRecordingPipeline {
                 Log.w(TAG, "NoiseSuppressor requested but not available on this device");
             }
 
-            // CRITICAL: Set AudioManager mode to MODE_IN_COMMUNICATION
-            // This tells Android this is an active VoIP/call session that should NOT be silenced
+            // CRITICAL: Set AudioManager mode to MODE_NORMAL for camcorder recording
+            // This allows normal audio routing and prevents earpiece-only behavior
             audioManager = (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (audioManager != null) {
-                // Save original mode to restore later
+                // Save original mode and speakerphone state to restore later
                 originalAudioMode = audioManager.getMode();
+                originalSpeakerphoneOn = audioManager.isSpeakerphoneOn();
                 
-                // Set MODE_IN_COMMUNICATION - this is THE key to preventing background silencing
-                audioManager.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
-                Log.i(TAG, "AudioManager mode set to MODE_IN_COMMUNICATION (was: " + originalAudioMode + ")");
+                // Set MODE_NORMAL for camcorder recording - allows normal speaker output
+                audioManager.setMode(android.media.AudioManager.MODE_NORMAL);
+                // Explicitly enable speakerphone for normal audio routing
+                audioManager.setSpeakerphoneOn(true);
+                Log.i(TAG, "AudioManager mode set to MODE_NORMAL for camcorder recording (was: " + originalAudioMode + "), speakerphone enabled (was: " + originalSpeakerphoneOn + ")");
                 
-                // Request audio focus with USAGE_VOICE_COMMUNICATION
+                // Request audio focus with USAGE_MEDIA for camcorder recording
                 audioFocusListener = focusChange -> {
                     if (focusChange == android.media.AudioManager.AUDIOFOCUS_LOSS || focusChange == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
                         Log.w(TAG, "⚠️ AUDIO FOCUS LOST: " + focusChange);
@@ -2144,11 +2151,11 @@ public class GLRecordingPipeline {
                     }
                 };
 
-                // Use modern AudioFocusRequest for Android O+ to properly maintain audio during background
+                // Use modern AudioFocusRequest for Android O+ with MEDIA usage for camcorder
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                     android.media.AudioAttributes audioAttrs = new android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MOVIE)
                             .build();
 
                     android.media.AudioFocusRequest focusRequest = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
@@ -2163,7 +2170,7 @@ public class GLRecordingPipeline {
                 } else {
                     int result = audioManager.requestAudioFocus(
                             audioFocusListener,
-                            android.media.AudioManager.STREAM_VOICE_CALL,
+                            android.media.AudioManager.STREAM_MUSIC,
                             android.media.AudioManager.AUDIOFOCUS_GAIN);
                     Log.w(TAG, "🎤 AudioFocus (legacy) result: " + (result == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "DENIED"));
                 }
