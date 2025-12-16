@@ -35,6 +35,7 @@
 [<img src="https://shields.rbtlog.dev/simple/com.fadcam" alt="badge">](https://shields.rbtlog.dev/com.fadcam)
 
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
+[![Patreon](https://img.shields.io/badge/Patreon-orange?logo=patreon&label=Patreon)](https://www.patreon.com/cw/Fadedx/shop)
 
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
@@ -408,9 +409,12 @@ Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek he
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
 
-## `>_` Support
+## `>_` Support & Shop
 
-<a href='https://ko-fi.com/D1D510FNSV' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+Buy FadCam Pro (lifetime access) from my Patreon shop. Your purchases help fund development and maintenance. 
+
+<a href='https://www.patreon.com/cw/Fadedx/shop' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://c5.patreon.com/external/logo/downloads_logomark_color.png' border='0' alt='Patreon Shop' /></a>
+
 ## `>_` Contributions
 
 We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
