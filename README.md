@@ -14,7 +14,7 @@
 > This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
 
 > [!Note]
-> Unlock FadCam Pro with lifetime access: [Purchase here](https://www.patreon.com/cw/Fadedx/shop)
+> Unlock FadCam Pro with lifetime access: Visit the [Shop](https://www.patreon.com/cw/Fadedx/shop)
 
 
                 
@@ -413,7 +413,11 @@ Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek he
 
 Buy FadCam Pro (lifetime access) from my Patreon shop. Your purchases help fund development and maintenance. 
 
-<a href='https://www.patreon.com/cw/Fadedx/shop' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://c5.patreon.com/external/logo/downloads_logomark_color.png' border='0' alt='Patreon Shop' /></a>
+<p align="center">
+    <a href="https://www.patreon.com/cw/Fadedx/shop" target="_blank">
+        <img src="https://c5.patreon.com/external/logo/downloads_logomark_color.png" alt="Patreon Shop" height="120" style="border:0;" />
+    </a>
+</p>
 
 ## `>_` Contributions
 
