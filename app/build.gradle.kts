@@ -79,7 +79,6 @@ android {
             )
             isDebuggable = false
             signingConfig = signingConfigs.getByName("release")
-            resValue("string", "app_name", "FadCam")
         }
         
         create("pro") {
