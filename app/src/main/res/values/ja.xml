@@ -1126,7 +1126,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fadcam_pro_proplus_label">Pro+</string>
     <string name="fadcam_pro_lab_label">Lab</string>
     <string name="fadcam_pro_plus_label">Pro</string>
-    <string name="fadcam_pro_early_bird">Early bird offer! FadCam Pro is currently free. Soon transitioning to paid access.</string>
+    <string name="fadcam_pro_early_bird">🎉 Free until December 23, 2025! After that, get lifetime access for just $15.</string>
+    <string name="fadcam_pro_paid_offer">After December 23, 2025, get Lifetime Access for $15 — one-time payment, forever updates.</string>
+    <string name="fadcam_pro_benefit_early_access">Early access: Get the latest version before public release</string>
+    <string name="fadcam_pro_benefit_lifetime_updates">Lifetime updates: Always receive new features, improvements, and bug fixes</string>
+    <string name="fadcam_pro_benefit_support">Instant support: Direct help through tickets via Discord</string>
     <string name="fadcam_pro_coming_soon">Pro+ and Lab features coming soon with custom icon uploads, custom app names, and FadDrive cloud sync.</string>
     <string name="fadcam_pro_support_message">FadCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
     <string name="fadcam_pro_separate_apk">Standalone app • Works alongside FadCam</string>
