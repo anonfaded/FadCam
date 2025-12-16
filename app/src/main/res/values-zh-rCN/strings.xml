@@ -558,7 +558,7 @@
     <string name="row_input_source_title">输入源</string>
     <string name="row_noise_suppression_title">降噪</string>
     <string name="settings_location_watermark_title">位置水印</string>
-    <string name="delete_single_video_subtitle">删除此录音</string>
+    <string name="delete_single_video_subtitle">删除此文件</string>
     <string name="torch_select_source">选择手电筒来源:</string>
     <string name="torch_back">后置手电筒</string>
     <string name="torch_front">前置手电筒</string>
