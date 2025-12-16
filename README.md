@@ -380,6 +380,7 @@ Or:
 - Custom notification presets and descriptions
 - Audio input source selection (phone mic, wired/Bluetooth)
 - Dynamic watermarks with timestamp, logo, and GPS options
+ - App Shortcuts: Three quick actions are available (Start Recording, Stop Recording, Toggle Torch). These shortcuts can be triggered without opening the app and can be mapped with key-mapping apps (e.g. MacroDroid) to hardware buttons (like volume buttons) for convenient control.
 </details>
 
 <details>
@@ -395,7 +396,6 @@ Or:
 ## `>_` Upcoming Features:
 
 - **Scheduled Recording:** Automatically start/stop recordings at set times.
-- **Google Drive Auto-Upload:** Seamless cloud backup for videos.
 - **In-App Video Editor:** Quick trim/edit with Faditor Mini (coming soon).
 - **Enhanced Remote Features:** Additional remote control capabilities.
 
