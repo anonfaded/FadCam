@@ -14,10 +14,7 @@
 > This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
 
 > [!Note]
-> Unlock FadCam Pro with lifetime access: Visit the [Shop](https://www.patreon.com/cw/Fadedx/shop)
-
-
-                
+> Unlock FadCam Pro with lifetime access: Visit the [Shop](https://www.patreon.com/cw/Fadedx/shop) 
 
 
 ---
@@ -35,8 +32,8 @@
 [<img src="https://shields.rbtlog.dev/simple/com.fadcam" alt="badge">](https://shields.rbtlog.dev/com.fadcam)
 
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
-[![Patreon](https://img.shields.io/badge/Patreon-orange?logo=patreon&label=Patreon)](https://www.patreon.com/cw/Fadedx/shop)
-
+[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DFadedx%26type%3Dpatrons%26suffix%3Dpatrons%2520%257C%2520Shop&style=social)](https://www.patreon.com/cw/Fadedx/shop)
+<!-- [![Patreon](https://img.shields.io/badge/Patreon-orange?logo=patreon&label=Patreon)](https://www.patreon.com/cw/Fadedx/shop) -->
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
 <!-- <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red"> -->
@@ -413,11 +410,8 @@ Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek he
 
 Buy FadCam Pro (lifetime access) from my Patreon shop. Your purchases help fund development and maintenance. 
 
-<p align="center">
-    <a href="https://www.patreon.com/cw/Fadedx/shop" target="_blank">
-        <img src="https://c5.patreon.com/external/logo/downloads_logomark_color.png" alt="Patreon Shop" height="120" style="border:0;" />
-    </a>
-</p>
+[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DFadedx%26type%3Dpatrons%26suffix%3Dpatrons%2520%257C%2520Shop&style=for-the-badge)](https://www.patreon.com/cw/Fadedx/shop)
+
 
 ## `>_` Contributions
 
