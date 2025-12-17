@@ -1,9 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Anında</string>
     <string name="trash_auto_delete_info_immediate">Öğeler anında silinir.</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
     <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıda \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
-
     <string name="app_description">
     <![CDATA[
     FadCam, herhangi bir veri izleme veya toplama yapmadan gizliliğe öncelik veren, reklamsız ve açık kaynaklı bir video kayıt uygulamasıdır. Yalnızca GitHub ve README\'de belirtilen resmi bağlantılar üzerinden erişilebilir.
@@ -11,7 +11,6 @@
     FadCam, <font color="#cfbafd">HowToMen</font> ve <font color="#cfbafd">Xtream Droid</font> gibi popüler YouTube kanallarında yer almış, ayrıca <font color="#cfbafd">GrapheneOS</font> ve 55+ diğer önemli platformda tartışılmıştır.
     ]]>
 </string>
-
     <string name="view_source_code">Kaynak Kodu Görüntüle</string>
     <string name="buy_me_a_coffee">Bana bir kahve ısmarla ☕</string>
     <string name="contact">İletişim</string>
@@ -20,24 +19,40 @@
     <string name="privacy_information">Gizlilik Bilgileri</string>
     <string name="copyright_info"> 2024 https://fadcam.faded.dev\nGPL-3.0 lisansı altında</string>
     <string-array name="video_resolutions_keys">
-        <item>7680x4320</item> <!-- 8K -->
-        <item>3840x2160</item> <!-- 4K -->
-        <item>2560x1440</item> <!-- 2K -->
-        <item>1920x1080</item> <!-- FHD -->
-        <item>1280x720</item> <!-- HD -->
-        <item>640x480</item> <!-- SD -->
-        <item>720x480</item> <!-- SD -->
-        <item>480x360</item> <!-- SD -->
+        <item>7680x4320</item>
+        <!-- 8K -->
+        <item>3840x2160</item>
+        <!-- 4K -->
+        <item>2560x1440</item>
+        <!-- 2K -->
+        <item>1920x1080</item>
+        <!-- FHD -->
+        <item>1280x720</item>
+        <!-- HD -->
+        <item>640x480</item>
+        <!-- SD -->
+        <item>720x480</item>
+        <!-- SD -->
+        <item>480x360</item>
+        <!-- SD -->
     </string-array>
     <string-array name="video_resolutions_values">
-        <item>8K</item>  <!-- 8K -->
-        <item>4K</item>  <!-- 4K -->
-        <item>2K</item>  <!-- 2K -->
-        <item>FHD</item> <!-- Full HD -->
-        <item>HD</item>  <!-- High Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
+        <item>8K</item>
+        <!-- 8K -->
+        <item>4K</item>
+        <!-- 4K -->
+        <item>2K</item>
+        <!-- 2K -->
+        <item>FHD</item>
+        <!-- Full HD -->
+        <item>HD</item>
+        <!-- High Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
     </string-array>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
@@ -251,12 +266,10 @@
         ]]>
     </string>
     <string name="recording_already_active">Kayıt zaten devam ediyor veya duraklatılmış.</string>
-
     <string-array name="theme_options">
         <item>Koyu Mod</item>
         <item>AMOLED Siyah</item>
     </string-array>
-
     <string name="button_audio_settings">Ses Ayarları</string>
     <string name="dialog_audio_settings_title">Ses Ayarları</string>
     <string name="dialog_audio_bitrate_label">Ses Bit Hızı (bps)</string>
@@ -303,7 +316,6 @@
     <string name="app_icon_changed">Uygulama simgesi değiştirildi</string>
     <string name="app_icon_preview">Uygulama simgesi önizlemesi</string>
     <string name="app_icon_description">Uygulamanız için bir simge ve isim seçin. Bu, ana ekranınızda nasıl görüneceğini değiştirecektir.</string>
-    
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Sekme Kilidi</string>
     <string name="setting_applock_desc">Kayıtlar sekmesini PIN kilidi ile koruyun. \nGüvenliğiniz için, uygulama arka plana geçtiğinde veya kapatıldığında Kayıtlar sekmesi otomatik olarak kilitlenecektir. Geri döndüğünüzde tekrar kilit açmanız gerekecek</string>
@@ -316,20 +328,17 @@
     <string name="applock_remove_pin">PIN Kaldır</string>
     <string name="applock_pin_created">PIN başarıyla oluşturuldu</string>
     <string name="applock_pin_removed">PIN başarıyla kaldırıldı</string>
-    
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Sekme Kilidini Etkinleştirmek için PIN\'i Doğrulayın</string>
     <string name="applock_verify_to_disable">Sekme Kilidini Devre Dışı Bırakmak için PIN\'i Doğrulayın</string>
     <string name="applock_verify_to_change">Mevcut PIN\'i Doğrulayın</string>
     <string name="applock_verify_to_remove">Kaldırmak için PIN\'i Doğrulayın</string>
     <string name="applock_verification_canceled">Doğrulama iptal edildi</string>
-    
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Arka Kamera Lensi</string>
     <string name="setting_back_lens_note">Mevcutsa belirli bir lens seçin, örn. Geniş Açı Lensi\n(Varsayılan: Ana Lens(0))</string>
     <string name="setting_back_lens_info_single">Yalnızca ana lens</string>
     <string name="setting_back_lens_info_single_v2">Yalnızca ana arka kamera algılandı</string>
-    
     <!-- Video Settings -->
     <string name="setting_framerate_title">Video Kare Hızı</string>
     <string name="note_framerate">Kare hızı seçin\n(Varsayılan: %1$d)</string>
@@ -337,15 +346,11 @@
     <string name="note_codec">Kodek seçin
 (Varsayılan: %1$s)
 İpucu: H.265 (HEVC) ile, aynı kalite için H.264\'ün yaklaşık yarısı kadar bitrate kullanabilirsiniz. Örnek: FHD için 16 Mbps yerine 8 Mbps kullanın.</string>
-
-
-
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Mevcut: %1$d MB</string>
     <string name="video_split_size_summary_gb">Mevcut: %1$s GB</string>
     <string name="video_splitting_title">Video Bölme Özelliğini Etkinleştir</string>
     <string name="video_splitting_description">Kayıtları otomatik olarak daha küçük dosyalara böler (Varsayılan olarak devre dışı). Önerilen: Denge için 2 GB. 4 GB\'a kadar hazır ayarlar ve özel boyutlar mevcuttur. Bu, büyük kayıtları yönetmeye ve cihaz dosya boyutu sınırlamalarından kaçınmaya yardımcı olur.</string>
-    
     <!-- Location Settings -->
     <string name="setting_location_embed_title">Videolara Konum Ekle</string>
     <string name="note_location_embed">GPS koordinatlarını video meta verilerine ekleyin (coğrafi etiketler). \nGPS\'in etkin olması gerekir \n(Varsayılan: Devre Dışı)</string>
@@ -354,7 +359,6 @@
     <string name="location_permission_granted_manual_toggle">İzin verildi! Artık ayarlarda konum özelliklerini etkinleştirebilirsiniz.</string>
     <string name="allow_location_access">İzin Ver</string>
     <string name="location_permission_message">Videolarınıza GPS koordinatları eklemek için konum izni gereklidir. Bu özelliği kullanmak için lütfen izin verin.</string>
-    
     <!-- Audio Settings -->
     <string name="setting_audio_title">Ses Kaydı</string>
     <string name="note_audio">Videolar için ses kaydını etkinleştirin veya devre dışı bırakın.\n(Varsayılan: Etkin)</string>
@@ -369,20 +373,16 @@
     <string name="audio_input_source_wired_not_connected">Kablolu mikrofon algılanmadı. Telefon mikrofonu kullanılıyor.</string>
     <string name="audio_input_source_headphones_no_mic">Kulaklık algılandı (mikrofon yok)</string>
     <string name="choose">Seç</string>
-    
     <!-- Debug Settings -->
     <string name="setting_debug_title">Hata Ayıklama Günlüğü</string>
     <string name="note_debug">Hata ayıklama günlüğü dosyası oluşturmayı etkinleştir \n(Varsayılan: Devre Dışı)</string>
     <string name="note_debug_extra">Etkinleştirildiğinde, İndirilenler/FadCam klasöründe bir hata ayıklama günlüğü dosyası oluşturulur. Bu, uygulama sorunlarını teşhis etmeye yardımcı olabilir.</string>
-    
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Sonraki Başlatmada Karşılama Ekranını Göster</string>
     <string name="note_onboarding">FadCam\'i bir sonraki açışınızda uygulama tanıtımını ve izin kılavuzunu görmek için etkinleştirin.</string>
-    
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Başlangıçta Otomatik Güncelleme Kontrolü</string>
     <string name="note_auto_update_check">Etkinleştirilirse, FadCam uygulamayı her açtığınızda güncellemeleri kontrol eder. Başlangıçta otomatik güncelleme kontrollerini devre dışı bırakmak için kapatın.\n(Varsayılan: Açık)</string>
-    
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Depolama Konumu</string>
     <string name="storage_location_description">Kayıtların nereye kaydedileceğini seçin.</string>
@@ -393,10 +393,8 @@
     <string name="storage_icon_description">Depolama İkonu</string>
     <string name="location_icon_description">Konum İkonu</string>
     <string name="location_embedding_icon_description">Konum Gömme İkonu</string>
-    
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Yeni bir kayıt başlatmadan önce lütfen bir süre bekleyin</string>
-    
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Devam etmek için sağa kaydırın</string>
     <string name="onboarding_select_language">Tercih ettiğiniz uygulama dilini seçin.</string>
@@ -410,23 +408,18 @@
     <string name="onboarding_intro_line2">reklamsız,</string>
     <string name="onboarding_intro_line3">ve reklamcılar için değil, sizin için oluşturuldu.</string>
     <string name="language_change_later_note">Bunu daha sonra Ayarlar\'dan değiştirebilirsiniz.</string>
-    
     <string name="permissions_required">İzinler Gerekli</string>
     <string name="permissions_description">FadCam, video kaydetmek ve kaydetmek için kameranıza, mikrofonunuza ve depolamanıza erişim gerektirir.</string>
     <string name="grant_permissions">İzinleri Ver</string>
     <string name="permissions_note">Devam etmek için tüm izinleri vermeniz gerekir.</string>
     <string name="permissions_granted">Tüm izinler verildi!</string>
-
     <string name="open_settings">Ayarları Aç</string>
-
     <string name="disable_battery_optimization">Pil Optimizasyonunu Devre Dışı Bırak</string>
-
     <string name="onboarding_human_title">İnsan olduğunuzu doğrulayın</string>
     <string name="onboarding_human_desc">Hmmmm... tamam. Bu kurallar pazarlık edilemez. Kabul edemiyorsanız, lütfen FadCam\'i hemen kaldırın.</string>
     <string name="onboarding_human_checkbox1">FadCam\'i herhangi bir yasayı çiğnemek, birinin mahremiyetine saldırmak veya ürkütücü olmak için kullanmayacağım. Eğer hata yaparsam, geliştirici sorumlu değildir. (Bu benim sorumluluğum.)</string>
     <string name="onboarding_human_checkbox2">FadCam\'i kullanmadan önce bile seviyorum. (İsteğe bağlı değil)</string>
     <string name="onboarding_human_button">İçeri girmeme izin ver!</string>
-
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sıralama Kriteri</string>
     <string name="sort_latest_first">En Yeniler Önce</string>
@@ -435,13 +428,11 @@
     <string name="sort_largest_first">En Büyük Dosyalar Önce</string>
     <string name="no_videos_found">Video bulunamadı</string>
     <string name="no_recordings_yet">Henüz Kayıt Yok</string>
-    
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Uzaktan Erişim/Kontrol</string>
     <string name="remote_toast_coming_soon">Yakında! İnşallah</string>
     <string name="remote_coming_soon">FadCam için uzaktan kontrol yakında geliyor.</string>
     <string name="remote_feature_description">FadCam cihazlarını QR kodu kullanarak güvenli, yerel ağ uzaktan kontrolü için eşleştirin: kaydetmeyi başlat/durdur, önizleme, yakınlaştırma, kamera değiştirme ve daha fazlası—hepsi uçtan uca şifreleme ile.</string>
-
     <!-- Fix Start: Add camera cooldown message -->
     <!-- Fix End: Add camera cooldown message -->
 
@@ -453,15 +444,12 @@
     <string name="trash_error_deleting_items_toast">Öğeleri silerken hata oluştu.</string>
     <string name="trash_dialog_empty_all_title">Tüm Öğeleri Sil?</string>
     <string name="trash_button_empty_all_action">Tümünü Sil</string>
-
     <!-- For TrashFragment Dialogs -->
     <string name="dialog_permanently_delete_title">Kalıcı Olarak Sil?</string>
     <string name="dialog_permanently_delete_message">Seçilen %1$d öğeyi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</string>
     <string name="dialog_empty_all_trash_message">Tüm öğeleri kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</string>
-
     <!-- Universal button texts -->
     <string name="universal_delete">Sil</string>
-
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Seçili öğe yok.</string>
     <string name="trash_dialog_restore_title">Seçilenleri Geri Yükle?</string>
@@ -474,7 +462,6 @@
     <string name="deleted_item_thumbnail_description">Silinen öğe küçük resmi</string>
     <string name="trash_empty_icon_description">Çöp kutusu boş simgesi</string>
     <string name="trash_empty_text">Çöp kutusu boş.</string>
-
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
         <item quantity="one">Öğeler %1$d gün sonra otomatik olarak silinir.</item>
@@ -506,10 +493,7 @@
     <string name="auto_delete_90_days">90 Gün Sonra</string>
     <string name="auto_delete_never">Asla (Manuel Silme)</string>
     <string name="auto_delete_save_setting">Kaydet</string>
-    
-
     <string name="trash_select_all">Tümünü Seç</string>
-
     <!-- Notification Customization Strings -->
     <string name="setting_notification_customization_title">Bildirim Özelleştirme</string>
     <string name="setting_notification_customization_description">Kayıt bildiriminin görünümünü özelleştirin</string>
@@ -530,7 +514,6 @@
     <string name="notification_setup_description">Kayıt bildiriminin nasıl görüneceğini özelleştirin</string>
     <string name="notification_setup_save">Kaydet</string>
     <string name="notification_setup_cancel">İptal</string>
-    
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Kaydı</string>
     <string name="notification_channel_system_updates">Sistem Güncellemeleri</string>
@@ -538,7 +521,6 @@
     <string name="notification_channel_data_sync">Veri Senkronizasyonu</string>
     <string name="notification_channel_generic">Bildirim Servisi</string>
     <string name="notification_channel_description">Servis bildirimleri</string>
-    
     <string name="notification_text_system_update_progress">Güncelleme devam ediyor</string>
     <string name="notification_text_system_update_paused">Güncelleme duraklatıldı</string>
     <string name="notification_text_downloading_progress">İndirme devam ediyor</string>
@@ -551,12 +533,10 @@
     <string name="notification_title_syncing">Veri Senkronizasyonu</string>
     <string name="notification_title_custom_default">Bildirim</string>
     <string name="notification_settings_saved">Bildirim ayarları kaydedildi</string>
-    
     <string name="video_menu_upload_youtube">YouTube\'a yükle</string>
     <string name="video_menu_upload_drive">Google Drive\'a yükle</string>
     <string name="toast_no_youtube_app">YouTube uygulaması bulunamadı</string>
     <string name="toast_no_drive_app">Google Drive uygulaması bulunamadı</string>
-
     <string name="dialog_audio_noise_suppression_label">Gürültü Bastırma</string>
     <string name="fix_video_menu_title">Videoyu Düzelt (Oynatmayı Onar)</string>
     <string name="fix_video_repairing">Düzeltiliyor… Birkaç saniye sürebilir.</string>
@@ -570,6 +550,5 @@
     <string name="fix_video_saf_write_fail">Düzeltilen dosya SAF klasörüne yazılamadı. Uygulama depolamasına kaydedildi.</string>
     <string name="fix_video_saf_success">Video düzeltildi! Şu adla kaydedildi: %1$s.</string>
     <string name="fix_video_saf_export">Gerekirse, düzeltilen dosyayı uygulama depolamasından dışa aktarabilir veya paylaşabilirsiniz.</string>
-
     <string name="full_changelog_info">Tam değişiklik günlüğü için Ana Sayfa sekmesine gidin, hamburger menüsünü açın ve «Yenilikler»i seçin.</string>
 </resources>
