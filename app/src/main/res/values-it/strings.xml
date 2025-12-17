@@ -2,15 +2,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="check_for_updates">Controlla gli aggiornamenti</string>
     <string name="fadsec_info">FadCam fa parte della suite FadSec Lab. Per maggiori informazioni, clicca su \'Visualizza codice sorgente\' qui sotto.</string>
-
-
     <string name="app_description"><![CDATA[
 FadCam è un\'app di registrazione video open source e senza pubblicità che dà priorità alla privacy non tracciando né raccogliendo alcun dato. È disponibile esclusivamente su GitHub e tramite i link ufficiali menzionati nel README.
 <br/><br/>
 FadCam è stato presentato in canali YouTube popolari come <font color=\"#cfbafd\">HowToMen</font> e <font color=\"#cfbafd\">Xtream Droid</font>, anche discusso in <font color=\"#cfbafd\">GrapheneOS</font> e altri 55+ luoghi degni di nota.
 ]]></string>
-
-
     <string name="view_source_code">Vedi codice sorgente</string>
     <string name="buy_me_a_coffee">Offrimi un caffè ☕</string>
     <string name="contact">Contatto</string>
@@ -193,21 +189,18 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="torch_recording_note">Impossibile modificare le opzioni della torcia durante la registrazione</string>
     <string name="torch_both">Le due torce elettriche</string>
     <string name="back">Indietro</string>
-    
     <string name="more_options">Altre Opzioni</string>
     <string name="records_options_title">Opzioni Registrazioni</string>
     <string name="setting_theme_title">Tema dell\'App</string>
     <string name="settings_option_theme">Scegli Tema</string>
     <string name="settings_theme_changed">Tema modificato. Applicazione delle modifiche...</string>
     <string name="note_theme">Scegli il tuo tema preferito</string>
-    
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">Icona dell\'App</string>
     <string name="setting_app_icon_desc">Cambia l\'icona e il nome dell\'app nel launcher</string>
     <string name="app_icon_dialog_title">Scegli Icona App</string>
     <string name="app_icon_changed">Icona app modificata</string>
     <string name="app_icon_preview">Anteprima icona app</string>
-    
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Blocco Scheda</string>
     <string name="setting_applock_desc">Proteggi i tuoi video con un blocco PIN per la scheda Registrazioni. \nPer la tua sicurezza, la scheda Registrazioni si bloccherà automaticamente quando l\'app va in background o viene chiusa. Dovrai sbloccarla nuovamente quando ritorni</string>
@@ -220,20 +213,17 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="applock_remove_pin">Rimuovi PIN</string>
     <string name="applock_pin_created">PIN creato con successo</string>
     <string name="applock_pin_removed">PIN rimosso con successo</string>
-    
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verifica PIN per Attivare il Blocco Scheda</string>
     <string name="applock_verify_to_disable">Verifica PIN per Disattivare il Blocco Scheda</string>
     <string name="applock_verify_to_change">Verifica PIN Attuale</string>
     <string name="applock_verify_to_remove">Verifica PIN per Rimuovere</string>
     <string name="applock_verification_canceled">Verifica annullata</string>
-    
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Lente Fotocamera Posteriore</string>
     <string name="setting_back_lens_note">Seleziona una lente specifica se disponibile, ad es. Lente Grandangolare\n(Predefinito: Principale (0))</string>
     <string name="setting_back_lens_info_single">Solo lente principale</string>
     <string name="setting_back_lens_info_single_v2">Rilevata solo fotocamera posteriore principale</string>
-    
     <!-- Video Settings -->
     <string name="setting_framerate_title">Framerate Video</string>
     <string name="note_framerate">Scegli framerate\n(Predefinito: %1$d)</string>
@@ -257,19 +247,16 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="bitrate_unit">Mbps</string>
     <string name="bitrate_explanation">Cos\'è il bitrate?</string>
     <string name="bitrate_explanation_text">Il bitrate è la quantità di dati utilizzati al secondo per il video. Un bitrate più alto significa qualità migliore ma file più grandi. Troppo alto o troppo basso può causare problemi. I valori predefiniti si basano su standard professionali.</string>
-    
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">Orientamento Video</string>
     <string name="setting_video_orientation_summary">Scegli l\'orientamento per i tuoi video. Verticale è ideale per social media; Orizzontale è ideale per YouTube, presentazioni, ecc.</string>
     <string name="video_orientation_portrait">Verticale (predefinito)</string>
     <string name="video_orientation_landscape">Orizzontale</string>
-    
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Attuale: %1$d MB</string>
     <string name="video_split_size_summary_gb">Attuale: %1$s GB</string>
     <string name="video_splitting_title">Attiva Divisione Video</string>
     <string name="video_splitting_description">Divide automaticamente le registrazioni in file più piccoli (Disattivato per impostazione predefinita). Consigliato: 2 GB per un buon equilibrio. Sono disponibili preset fino a 4 GB e dimensioni personalizzate. Questo aiuta a gestire registrazioni ampie ed evita limiti di dimensione dei file del dispositivo.</string>
-    
     <!-- Location Settings -->
     <string name="setting_location_embed_title">Incorpora Posizione nei Video</string>
     <string name="note_location_embed">Aggiungi coordinate GPS ai metadati video (geotag). \nRichiede GPS attivo \n(Predefinito: Disattivato)</string>
@@ -278,7 +265,6 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="location_permission_granted_manual_toggle">Permesso concesso! Ora puoi attivare le funzionalità di posizione nelle impostazioni.</string>
     <string name="allow_location_access">Concedi Permesso</string>
     <string name="location_permission_message">È necessario il permesso di localizzazione per aggiungere coordinate GPS ai tuoi video. Concedi il permesso per utilizzare questa funzione.</string>
-    
     <!-- Audio Settings -->
     <string name="setting_audio_title">Registrazione Audio</string>
     <string name="note_audio">Attiva o disattiva la registrazione audio per i video.\n(Predefinito: Attivato)</string>
@@ -307,20 +293,16 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="audio_input_source_wired_not_connected">Nessun microfono cablato rilevato. Utilizzo del microfono del telefono.</string>
     <string name="audio_input_source_headphones_no_mic">Cuffie rilevate (senza microfono)</string>
     <string name="choose">Scegli</string>
-    
     <!-- Debug Settings -->
     <string name="setting_debug_title">Logging di Debug</string>
     <string name="note_debug">Attiva la generazione di file di log di debug \n(Predefinito: Disattivato)</string>
     <string name="note_debug_extra">Quando attivato, verrà creato un file di log di debug nella cartella Downloads/FadCam. Questo può aiutare a diagnosticare problemi dell\'app.</string>
-    
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Mostra Introduzione al Prossimo Avvio</string>
     <string name="note_onboarding">Attiva per vedere l\'introduzione dell\'app e la guida ai permessi la prossima volta che apri FadCam.</string>
-    
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Controllo Automatico Aggiornamenti all\'Avvio</string>
     <string name="note_auto_update_check">Se attivato, FadCam controllerà gli aggiornamenti ogni volta che apri l\'app. Disattiva per disabilitare i controlli automatici degli aggiornamenti all\'avvio.\n(Predefinito: Attivato)</string>
-    
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Posizione di Archiviazione</string>
     <string name="storage_location_description">Scegli dove salvare le registrazioni.</string>
@@ -331,10 +313,8 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="storage_icon_description">Icona Archiviazione</string>
     <string name="location_icon_description">Icona Posizione</string>
     <string name="location_embedding_icon_description">Icona Incorporamento Posizione</string>
-    
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Attendi un momento prima di iniziare una nuova registrazione</string>
-
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Scorri verso destra per continuare</string>
     <string name="onboarding_select_language">Seleziona la lingua preferita per l\'app.</string>
@@ -347,25 +327,19 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="onboarding_intro_line1">Open source,</string>
     <string name="onboarding_intro_line2">senza pubblicità,</string>
     <string name="onboarding_intro_line3">e creata per te—non per gli inserzionisti.</string>
-
     <string name="language_change_later_note">Puoi modificare questa impostazione in seguito nelle Impostazioni.</string>
-    
     <string name="permissions_required">Permessi Richiesti</string>
     <string name="permissions_description">FadCam necessita dell\'accesso alla fotocamera, al microfono e allo spazio di archiviazione per registrare e salvare i video.</string>
     <string name="grant_permissions">Concedi Permessi</string>
     <string name="permissions_note">Devi concedere tutti i permessi per continuare.</string>
     <string name="permissions_granted">Tutti i permessi concessi!</string>
-
     <string name="open_settings">Apri Impostazioni</string>
-
     <string name="disable_battery_optimization">Disattiva Ottimizzazione Batteria</string>
-
     <string name="onboarding_human_title">Verifica se sei un umano</string>
     <string name="onboarding_human_desc">Hmmmm... va bene. Queste regole sono non negoziabili. Se non puoi accettare, disinstalla FadCam adesso.</string>
     <string name="onboarding_human_checkbox1">Non userò FadCam per violare leggi, invadere la privacy di nessuno o comportarmi in modo inquietante. Lo sviluppatore non è responsabile se commetto errori. (È responsabilità mia.)</string>
     <string name="onboarding_human_checkbox2">Amo già FadCam ancor prima di usarla. (Non opzionale)</string>
     <string name="onboarding_human_button">Fammi entrare!</string>
-
     <!-- Adding notification customization strings -->
     <string name="setting_notification_appearance">Aspetto della notifica</string>
     <string name="note_notification_appearance">Personalizza l\'aspetto della notifica di registrazione\n(Predefinito: FadCam)</string>
@@ -374,7 +348,6 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="notification_preview">Anteprima notifica</string>
     <string name="notification_preview_title">Anteprima</string>
     <string name="notification_stop">FERMA</string>
-    
     <string-array name="notification_appearance_options">
         <item>FadCam (predefinito)</item>
         <item>Aggiornamento di sistema</item>
@@ -383,7 +356,6 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
         <item>Backup</item>
         <item>Personalizzato</item>
     </string-array>
-
     <string name="setting_notification_customization_title">Personalizzazione notifiche</string>
     <string name="setting_notification_customization_description">Personalizza l\'aspetto della notifica di registrazione</string>
     <string name="notification_preset_title">Preset notifica</string>
@@ -403,7 +375,6 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="notification_setup_cancel">Annulla</string>
     <string name="notification_video_recording">Registrazione video</string>
     <string name="notification_settings_saved">Impostazioni notifica salvate</string>
-    
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Registrazione</string>
     <string name="notification_channel_system_updates">Aggiornamenti di sistema</string>
@@ -411,7 +382,6 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="notification_channel_data_sync">Sincronizzazione dati</string>
     <string name="notification_channel_generic">Servizio di notifica</string>
     <string name="notification_channel_description">Notifiche di servizio</string>
-    
     <string name="notification_text_system_update_progress">Aggiornamento in corso</string>
     <string name="notification_text_system_update_paused">Aggiornamento in pausa</string>
     <string name="notification_text_downloading_progress">Download in corso</string>
@@ -423,12 +393,10 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="notification_title_downloading">Download</string>
     <string name="notification_title_syncing">Sincronizzazione dati</string>
     <string name="notification_title_custom_default">Notifica</string>
-
     <string name="video_menu_upload_youtube">Carica su YouTube</string>
     <string name="video_menu_upload_drive">Carica su Google Drive</string>
     <string name="toast_no_youtube_app">App YouTube non trovata</string>
     <string name="toast_no_drive_app">App Google Drive non trovata</string>
-
     <string name="dialog_audio_noise_suppression_label">Soppressione del rumore</string>
     <string name="fix_video_menu_title">Ripara Video (Ripristina Riproduzione)</string>
     <string name="fix_video_repairing">Riparazione in corso… Potrebbe richiedere alcuni secondi.</string>
@@ -442,6 +410,5 @@ Consigliato: 192000 bps, 48000 Hz per la maggior parte degli utenti.</string>
     <string name="fix_video_saf_write_fail">Impossibile scrivere il file riparato nella cartella SAF. Salvato nella memoria dell\'app.</string>
     <string name="fix_video_saf_success">Video riparato! Salvato come: %1$s.</string>
     <string name="fix_video_saf_export">Esporta o condividi il file riparato dalla memoria dell\'app se necessario.</string>
-
     <string name="full_changelog_info">Per il changelog completo, vai alla scheda Home, apri il menu a scomparsa e seleziona «Novità».</string>
 </resources>
