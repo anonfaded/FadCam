@@ -11,6 +11,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Validate Fastlane Supply Metadata
+        uses: ashutoshgngwr/validate-fastlane-supply-metadata@v2.1.0
+        
       - name: Clone patched Media3 for live streaming
         run: |
           git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
