@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Sofort</string>
     <string name="trash_auto_delete_info_immediate">Elemente werden sofort gelöscht.</string>
@@ -5,8 +6,6 @@
     <string name="app_icon_description">Wähle ein Symbol und einen Namen für die App. Dadurch wird die Anzeige der App auf dem Startbildschirm geändert.</string>
     <string name="check_for_updates">Auf Updates überprüfen</string>
     <string name="fadsec_info">FadCam ist Teil der FadSec Lab Suite. Für weitere Informationen klicke unten auf \'Quellcode anzeigen\'.</string>
-
-
     <string name="app_description">
     <![CDATA[
     FadCam ist eine werbefreie Open-Source-Videoaufzeichnungs-App, die den Datenschutz priorisiert, indem sie keine Daten verfolgt oder erfasst. Es ist exklusiv auf GitHub und über die im README genannten offiziellen Links erhältlich.
@@ -14,8 +13,6 @@
     FadCam wurde auf bekannten YouTube-Kanälen wie <font color="#cfbafd">HowToMen</font> und <font color="#cfbafd">Xtream Droid</font> vorgestellt, als auch bei <font color="#cfbafd">GrapheneOS</font> und 55+ weiteren nennenswerten Stellen erwähnt.
     ]]>
 </string>
-
-
     <string name="view_source_code">Quellcode anzeigen</string>
     <string name="buy_me_a_coffee">Gib mir einen Kaffee aus ☕</string>
     <string name="contact">Kontakt</string>
@@ -24,24 +21,40 @@
     <string name="privacy_information">Datenschutzinformationen</string>
     <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLizenziert unter GPL-3.0</string>
     <string-array name="video_resolutions_keys">
-        <item>7680x4320</item> <!-- 8K -->
-        <item>3840x2160</item> <!-- 4K -->
-        <item>2560x1440</item> <!-- 2K -->
-        <item>1920x1080</item> <!-- FHD -->
-        <item>1280x720</item> <!-- HD -->
-        <item>640x480</item> <!-- SD -->
-        <item>720x480</item> <!-- SD -->
-        <item>480x360</item> <!-- SD -->
+        <item>7680x4320</item>
+        <!-- 8K -->
+        <item>3840x2160</item>
+        <!-- 4K -->
+        <item>2560x1440</item>
+        <!-- 2K -->
+        <item>1920x1080</item>
+        <!-- FHD -->
+        <item>1280x720</item>
+        <!-- HD -->
+        <item>640x480</item>
+        <!-- SD -->
+        <item>720x480</item>
+        <!-- SD -->
+        <item>480x360</item>
+        <!-- SD -->
     </string-array>
     <string-array name="video_resolutions_values">
-        <item>8K</item>  <!-- 8K -->
-        <item>4K</item>  <!-- 4K -->
-        <item>2K</item>  <!-- 2K -->
-        <item>FHD</item> <!-- Full HD -->
-        <item>HD</item>  <!-- High Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
+        <item>8K</item>
+        <!-- 8K -->
+        <item>4K</item>
+        <!-- 4K -->
+        <item>2K</item>
+        <!-- 2K -->
+        <item>FHD</item>
+        <!-- Full HD -->
+        <item>HD</item>
+        <!-- High Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
     </string-array>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
@@ -265,7 +278,7 @@
     <string name="settings_option_theme">Theme auswählen</string>
     <string name="settings_theme_changed">Theme geändert. Änderungen werden angewendet...</string>
     <string name="note_theme">Wähle dein bevorzugtes App-Theme</string>
-<!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
+    <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
     <string name="start_recording">Start</string>
     <string name="stop_recording">Stopp</string>
     <string name="warning_temp_file_detail">
@@ -284,7 +297,6 @@
     <string name="setting_back_lens_note">Wähle ein bestimmtes Objektiv, falls verfügbar, z.B. Weitwinkelobjektiv\n(Standard: Haupt (0))</string>
     <string name="setting_back_lens_info_single">Nur Hauptobjektiv</string>
     <string name="setting_back_lens_info_single_v2">Nur Haupt-Rückkamera erkannt</string>
-
     <string-array name="theme_options">
         <item>Mitternachtsdämmerung</item>
         <item>Verblasste Nacht</item>
@@ -324,7 +336,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="setting_video_orientation_summary">Wähle die Ausrichtung für deine Videos. Hochformat ist am besten für soziale Medien; Querformat ist am besten für YouTube, Präsentationen usw.</string>
     <string name="video_orientation_portrait">Hochformat (Standard)</string>
     <string name="video_orientation_landscape">Querformat</string>
-<!-- Video Bitrate Settings -->
+    <!-- Video Bitrate Settings -->
     <string name="setting_video_bitrate_title">Video-Bitrate</string>
     <string name="button_video_bitrate_settings">Bitrate einstellen</string>
     <string name="bitrate_mode_default">Standard</string>
@@ -345,7 +357,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="bitrate_unit">Mbit/s</string>
     <string name="bitrate_explanation">Was ist Bitrate?</string>
     <string name="bitrate_explanation_text">Die Bitrate ist die Datenmenge, die pro Sekunde Video verwendet wird. Eine höhere Bitrate bedeutet bessere Qualität, aber größere Dateien. Eine zu hohe oder zu niedrige Bitrate kann Probleme verursachen. Die Standardwerte basieren auf professionellen Kamerastandards.</string>
-
     <!-- Strings for RecordsFragment - Delete Action -->
     <string name="delete_video_dialog_title">Video löschen?</string>
     <string name="delete_video_dialog_message">Bist du sicher, dass du %1$s löschen möchtest?</string>
@@ -354,12 +365,10 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="delete_video_fail_toast">Löschen von \'%1$s\' fehlgeschlagen.</string>
     <string name="delete_video_cancelled_toast">Löschvorgang abgebrochen.</string>
     <string name="delete_video_error_null_toast">Fehler: Null-Element kann nicht gelöscht werden.</string>
-
     <!-- Strings for RecordsFragment - Batch Delete Action -->
     <string name="delete_videos_success_toast">Alle %1$d Videos gelöscht.</string>
     <string name="delete_videos_partial_success_toast">%1$d Video(s) gelöscht. %2$d konnten nicht gelöscht werden.</string>
     <string name="delete_videos_log">Lösche %1$d ausgewählte Videos …</string>
-
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">%1$d alte(s) Element(e) automatisch gelöscht.</string>
     <string name="trash_empty_toast_message">Keine Elemente zum Löschen.</string>
@@ -368,7 +377,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="trash_error_deleting_items_toast">Fehler beim Löschen der Elemente.</string>
     <string name="trash_dialog_empty_all_title">Alle Elemente löschen?</string>
     <string name="trash_button_empty_all_action">Alle löschen</string>
-
     <!-- General -->
     <string name="universal_deleted">Gelöscht</string>
     <string name="universal_delete_failed">Löschen fehlgeschlagen</string>
@@ -377,7 +385,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="dialog_permanently_delete_title">Endgültig löschen?</string>
     <string name="dialog_permanently_delete_message">Möchtest du %1$d ausgewählte(s) Element(e) wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="dialog_empty_all_trash_message">Möchtest du alle Elemente wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
-
     <!-- Universal button texts -->
     <string name="universal_cancel">Abbrechen</string>
     <string name="universal_delete">Löschen</string>
@@ -401,7 +408,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="saf_permission_missing_dialog_title">SAF-Berechtigung erforderlich</string>
     <string name="saf_permission_missing_dialog_message_for_start_recording">Um Aufnahmen an einem benutzerdefinierten Ort zu speichern, benötigt FadCam die Berechtigung, auf den ausgewählten Ordner zuzugreifen. Bitte erteile den Zugriff, wenn du dazu aufgefordert wirst.</string>
     <string name="grant_permission_button">Berechtigung erteilen</string>
-
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
         <item quantity="one">Elemente werden nach %1$d Tag automatisch gelöscht.</item>
@@ -443,7 +449,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="kofi_description">Beschreibung wird im Code festgelegt.</string>
     <string name="kofi_button_text">Kauf mir ein Ko-fi</string>
     <string name="kofi_footer_text">Gemacht mit im FadSec Lab in</string>
-
     <string name="setting_audio_input_source_title">Audio-Eingangsquelle</string>
     <string name="setting_audio_input_source_status_default">Aktuell verwendet: Telefonmikrofon</string>
     <string name="setting_audio_input_source_status_wired">Aktuell verwendet: Kabelmikrofon</string>
@@ -455,7 +460,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="audio_input_source_wired_not_connected">Kein Kabelmikrofon erkannt. Telefonmikrofon wird verwendet.</string>
     <string name="choose">Auswählen</string>
     <string name="audio_input_source_headphones_no_mic">Kopfhörer erkannt (kein Mikrofon)</string>
-
     <!-- Fix Start: Add onboarding toggle strings -->
     <string name="setting_onboarding_title">Onboarding beim nächsten Start anzeigen</string>
     <string name="note_onboarding">Aktiviere dies, um die App-Einführung und die Berechtigungsanleitung beim nächsten Öffnen von FadCam zu sehen.</string>
@@ -463,27 +467,19 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
 
     <string name="choose_language">Sprache auswählen</string>
     <string name="language_change_later_note">Du kannst dies später in den Einstellungen ändern.</string>
-
     <string name="permissions_required">Berechtigungen erforderlich</string>
     <string name="permissions_description">FadCam benötigt Zugriff auf deine Kamera, dein Mikrofon und deinen Speicher, um Videos aufzunehmen und zu speichern.</string>
     <string name="grant_permissions">Berechtigungen erteilen</string>
     <string name="permissions_note">Du musst alle Berechtigungen erteilen, um fortzufahren.</string>
     <string name="permissions_granted">Alle Berechtigungen erteilt!</string>
-
     <string name="open_settings">Einstellungen öffnen</string>
-
     <string name="disable_battery_optimization">Akku-Optimierung deaktivieren</string>
-
     <string name="onboarding_human_title">Bestätige, dass du ein Mensch bist</string>
     <string name="onboarding_human_desc">Hmmmm... also gut. Diese Regeln sind nicht verhandelbar. Wenn du nicht zustimmen kannst, deinstalliere FadCam bitte sofort.</string>
     <string name="onboarding_human_checkbox1">Ich werde FadCam nicht benutzen, um Gesetze zu brechen, die Privatsphäre von irgendjemandem zu verletzen oder ein Spinner zu sein. Der Entwickler ist raus, wenn ich Mist baue. (Das geht auf meine Kappe.)</string>
     <string name="onboarding_human_checkbox2">Ich liebe FadCam schon, bevor ich es überhaupt benutzt habe. (Nicht optional)</string>
     <string name="onboarding_human_button">Lass mich rein!</string>
-
-
-
     <string name="trash_select_all">Alle auswählen</string>
-
     <!-- Fix Start: Update location permission message -->
     <string name="location_permission_granted_manual_toggle">Berechtigung erteilt! Du kannst jetzt Standortfunktionen in den Einstellungen aktivieren.</string>
     <!-- Fix End: Update location permission message -->
@@ -512,29 +508,23 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="applock_remove_pin">PIN entfernen</string>
     <string name="applock_pin_created">PIN erfolgreich erstellt</string>
     <string name="applock_pin_removed">PIN erfolgreich entfernt</string>
-
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">PIN zur Aktivierung der Tab-Sperre bestätigen</string>
     <string name="applock_verify_to_disable">PIN zur Deaktivierung der Tab-Sperre bestätigen</string>
     <string name="applock_verify_to_change">Aktuelle PIN bestätigen</string>
     <string name="applock_verify_to_remove">PIN zum Entfernen bestätigen</string>
     <string name="applock_verification_canceled">Bestätigung abgebrochen</string>
-
     <string name="version_format">v%s</string>
-
     <string name="edit_with_faditorx">Mit FaditorX bearbeiten</string>
-
     <!-- Update Bottom Sheet Strings -->
     <string name="update_sarcastic_heading">📦 Oh schau, noch ein Update...</string>
     <string name="update_visit_github">GitHub besuchen</string>
     <string name="update_version_arrow"> → </string>
     <!-- Update variations -->
-    <string name="update_variation_1">Immer noch auf &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>? Das ist... nostalgisch.&lt;br>In der Zwischenzeit schlägt &lt;font color=\'#77DD77\'>v%2$s&lt;/font> Wellen. Zeit, aufzuholen!</string>
-    <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> ist so was von letzter Saison.&lt;br>In der Zwischenzeit ist &lt;font color=\'#77DD77\'>v%2$s&lt;/font> bereit, mit neuen Funktionen und Fehlerbehebungen zu beeindrucken. Aktualisiere für eine bessere Fahrt!</string>
-    <string name="update_variation_3">Deine App lebt mit &lt;font color=\'#E43C3C\'>v%1$s&lt;/font> in der Vergangenheit.&lt;br>In der Zwischenzeit ist &lt;font color=\'#77DD77\'>v%2$s&lt;/font> die Zukunft – schneller, intelligenter und glänzender. Warum nicht mitmachen?</string>
-    <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> hat dir gute Dienste geleistet, aber &lt;font color=\'#77DD77\'>v%2$s&lt;/font> ruft!&lt;br>Genieße die neuesten Verbesserungen und ein reibungsloseres Erlebnis – nur einen Fingertipp entfernt.</string>
-
-
+    <string name="update_variation_1">Immer noch auf &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;? Das ist... nostalgisch.&lt;br&gt;In der Zwischenzeit schlägt &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; Wellen. Zeit, aufzuholen!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; ist so was von letzter Saison.&lt;br&gt;In der Zwischenzeit ist &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; bereit, mit neuen Funktionen und Fehlerbehebungen zu beeindrucken. Aktualisiere für eine bessere Fahrt!</string>
+    <string name="update_variation_3">Deine App lebt mit &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; in der Vergangenheit.&lt;br&gt;In der Zwischenzeit ist &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; die Zukunft – schneller, intelligenter und glänzender. Warum nicht mitmachen?</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; hat dir gute Dienste geleistet, aber &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; ruft!&lt;br&gt;Genieße die neuesten Verbesserungen und ein reibungsloseres Erlebnis – nur einen Fingertipp entfernt.</string>
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">App-Symbol</string>
     <string name="setting_app_icon_desc">Ändere das Start-Symbol und den Namen der App</string>
@@ -557,10 +547,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
     <string name="app_icon_changed">App-Symbol geändert</string>
     <string name="app_icon_preview">Vorschau des App-Symbols</string>
-
     <!-- Misc -->
     <string name="changelog_label">Was ist neu</string>
-
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Automatische Update-Prüfung beim Start</string>
     <string name="note_auto_update_check">Wenn aktiviert, prüft FadCam bei jedem Öffnen der App auf Updates. Deaktiviere dies, um automatische Update-Prüfungen beim Start zu deaktivieren.\n(Standard: An)</string>
@@ -576,9 +564,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="storage_icon_description">Speicher-Symbol</string>
     <string name="location_icon_description">Standort-Symbol</string>
     <string name="location_embedding_icon_description">Symbol für Standorteinbettung</string>
-
     <string name="app_icon_minimal" translatable="false">Minimalistisch</string>
-
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Wische nach rechts, um fortzufahren</string>
     <string name="onboarding_select_language">Wähle deine bevorzugte App-Sprache.</string>
@@ -591,7 +577,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="onboarding_intro_line1">Open Source,</string>
     <string name="onboarding_intro_line2">werbefrei,</string>
     <string name="onboarding_intro_line3">und für dich gemacht – nicht für Werbetreibende.</string>
-
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sortieren nach</string>
     <string name="sort_latest_first">Neueste zuerst</string>
@@ -600,7 +585,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="sort_largest_first">Größte Dateien zuerst</string>
     <string name="no_videos_found">Keine Videos gefunden</string>
     <string name="no_recordings_yet">Noch keine Aufnahmen</string>
-
     <!-- Notification Customization Strings -->
     <string name="setting_notification_customization_title">Benachrichtigungen</string>
     <string name="setting_notification_customization_description">Passe das Erscheinungsbild der Aufnahmebenachrichtigung an</string>
@@ -620,7 +604,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="notification_setup_description">Passe an, wie die Aufnahmebenachrichtigung angezeigt wird</string>
     <string name="notification_setup_save">Speichern</string>
     <string name="notification_setup_cancel">Abbrechen</string>
-
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Aufnahme</string>
     <string name="notification_channel_system_updates">Systemaktualisierungen</string>
@@ -628,7 +611,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="notification_channel_data_sync">Datensynchronisation</string>
     <string name="notification_channel_generic">Benachrichtigungsdienst</string>
     <string name="notification_channel_description">Dienstbenachrichtigungen</string>
-
     <string name="notification_text_system_update_progress">Update wird ausgeführt</string>
     <string name="notification_text_system_update_paused">Update pausiert</string>
     <string name="notification_text_downloading_progress">Download wird ausgeführt</string>
@@ -641,7 +623,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="notification_title_syncing">Daten synchronisieren</string>
     <string name="notification_title_custom_default">Benachrichtigung</string>
     <string name="notification_settings_saved">Benachrichtigungseinstellungen gespeichert</string>
-
     <!-- Additional Notification Customization Strings -->
     <!-- Adding notification appearance strings -->
     <string name="setting_notification_appearance">Erscheinungsbild der Benachrichtigung</string>
@@ -650,7 +631,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="note_hide_stop_button">Blende die Stopp-Taste in der Benachrichtigung aus\n(Standard: Deaktiviert)</string>
     <string name="notification_preview">Benachrichtigungsvorschau</string>
     <string name="notification_stop">STOPP</string>
-
     <string-array name="notification_appearance_options">
         <item>FadCam (Standard)</item>
         <item>Systemaktualisierung</item>
@@ -659,7 +639,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
         <item>Sicherung</item>
         <item>Benutzerdefiniert</item>
     </string-array>
-
     <string name="camera_resource_cooldown">Kamera-Ressourcen werden freigegeben</string>
     <string name="camera_interrupted_title">Aufnahme pausiert (Kamera wird verwendet)</string>
     <string name="camera_interrupted_description">Eine andere App verwendet die Kamera. Die Aufnahme wird automatisch fortgesetzt, wenn die Kamera verfügbar ist.</string>
@@ -668,7 +647,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="camera_reconnection_attempts">Versuche, die Verbindung zur Kamera wiederherzustellen...</string>
     <string name="camera_reconnection_success">Kamera wieder verbunden, Aufnahme wird fortgesetzt</string>
     <string name="camera_reconnection_failed">Verbindung zur Kamera konnte nicht wiederhergestellt werden, fahre mit schwarzen Bildern fort</string>
-
     <!-- Camera error messages -->
     <string name="camera_error_in_use">Kamera wird von einer anderen App verwendet</string>
     <string name="camera_error_max_cameras">Maximale Anzahl von Kameras in Gebrauch</string>
@@ -678,7 +656,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="camera_error_unknown">Unbekannter Kamerafehler</string>
     <string name="camera_resources_cooldown">Bitte warte einen Moment, bevor du eine neue Aufnahme startest</string>
     <string name="dialog_audio_noise_suppression_label">Rauschunterdrückung</string>
-
     <string name="fix_video_menu_title">Video reparieren (Wiedergabe wiederherstellen)</string>
     <string name="fix_video_repairing">Repariere... Dies kann einige Sekunden dauern.</string>
     <string name="fix_video_success">Video repariert! Gespeichert als: %1$s</string>
