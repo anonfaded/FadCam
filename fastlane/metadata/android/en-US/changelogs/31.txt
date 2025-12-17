@@ -1,29 +1,5 @@
-# Major Update: Comprehensive Multimedia Recording Suite
-
-## ✨ New Features
-- **FadRec Screen Recorder**: Full-featured screen recording with annotation tools (pen, eraser, text, shapes), multi-layer editing, version control, and automatic project saving
-- **FadCam Remote**: Live streaming over local network with web interface, remote control features (start/stop recording, adjust settings, toggle torch), and real-time monitoring
-- **FadCam Pro**: Premium features including custom notification icons and lifetime access
-- **Fragmented MP4 Format**: Zero risk of file corruption - videos remain playable even if app crashes
-- **Custom Watermark Text**: Add personalized text overlays to videos
-- **In-App "What's New" Page**: Explore new features directly in the app
-- **Standalone Beta Installation**: Install beta version alongside main app without conflicts
-
-## ⚡ Performance Improvements
-- CPU usage reduced by 45-50%
-- Battery life improved by 28-33%
-- Memory usage reduced by 30%
-- Optimized storage updates and debug logging
-
-## 🎨 User Experience
-- Cleaner, more intuitive home screen
-- Reorganized settings for faster access
-- Enhanced audio recording with improved background compatibility
-
-## 🔧 Bug Fixes
-- Fixed video corruption issues
-- Patched memory leaks
-- Enhanced app stability and reliability
-
-## 📦 Note
-This update transforms FadCam from a simple background recorder into a comprehensive multimedia suite including dashcam, screen recording, live streaming, and remote control capabilities - all while maintaining our commitment to privacy and no data collection.
+• Major update: Added screen recording with annotations, live streaming with remote control, Pro features, fragmented MP4 (no corruption), custom watermarks, What's New page, and standalone beta.
+• Performance: 45-50% less CPU, 28-33% better battery, 30% less memory.
+• UX: Cleaner interface, better settings, improved audio.
+• Fixes: Video corruption, memory leaks, stability.
+• Transforms FadCam into a full multimedia suite with privacy focus.

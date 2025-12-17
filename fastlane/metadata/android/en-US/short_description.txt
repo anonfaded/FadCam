@@ -1,1 +1,1 @@
-Open-source, ad-free multimedia recorder with background video recording, screen recording, live streaming, and remote camera control.
+Background video recorder, screen recorder and remote camera control.
