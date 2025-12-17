@@ -4,16 +4,12 @@
     <string name="trash_auto_delete_info_immediate">Les éléments sont supprimés immédiatement.</string>
     <string name="check_for_updates">Vérifier les mises à jour</string>
     <string name="fadsec_info">FadCam fait partie de la suite FadSec Lab. Pour plus d\'informations, cliquez sur \'Voir code source\' ci-dessous.</string>
-
-
     <string name="app_description"><![CDATA[
 FadCam est une application d\'enregistrement vidéo open-source sans publicité qui priorise la confidentialité en ne suivant ni ne collectant aucune donnée. Il est disponible exclusivement sur GitHub et via les liens officiels mentionnés dans le README.
 <br/><br/>
 FadCam a été présenté dans les chaînes YouTube populaires comme <font color="#cfbafd">HowToMen</font> et <font color="#cfbafd">Xtream Droid</font>, ainsi que discuté dans <font color="#cfbafd">GrapheneOS</font> et 55+ autres endroits notables.
     ]]>
 </string>
-
-
     <string name="view_source_code">Voir Code Source</string>
     <string name="buy_me_a_coffee">Achète moi un café ☕</string>
     <string name="contact">Contact</string>
@@ -159,7 +155,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="toast_video_save_fail">Échec de sauvegarde de la vidéo</string>
     <string name="rename_video_title">Renommer la vidéo</string>
     <string name="rename_video_hint">Entrez un nouveau nom</string>
-
     <string name="toast_rename_name_empty">Nom ne peut pas être vide</string>
     <string name="toast_rename_failed">Échec du renommage de la vidéo</string>
     <string name="toast_rename_success">Vidéo renommée avec succès</string>
@@ -199,14 +194,12 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="torch_both">Les deux lampes torches</string>
     <string name="back">Arrière</string>
     <string name="setting_codec_title">Codec Vidéo</string>
-    
     <string name="more_options">Plus d\'Options</string>
     <string name="records_options_title">Options d\'Enregistrements</string>
     <string name="setting_theme_title">Thème de l\'Application</string>
     <string name="settings_option_theme">Choisir le Thème</string>
     <string name="settings_theme_changed">Thème modifié. Application des changements…</string>
     <string name="note_theme">Choisissez votre thème d\'application préféré</string>
-    
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">Icône de l\'Application</string>
     <string name="setting_app_icon_desc">Modifier l\'icône et le nom de l\'application dans le lanceur</string>
@@ -214,7 +207,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="app_icon_changed">Icône de l\'application modifiée</string>
     <string name="app_icon_preview">Aperçu de l\'icône de l\'application</string>
     <string name="app_icon_description">Choisissez une icône et un nom pour votre application. Cela changera son apparence sur votre écran d\'accueil.</string>
-    
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Verrouillage d\'Onglet</string>
     <string name="setting_applock_desc">Sécurisez vos vidéos avec un code PIN pour l\'onglet Enregistrements. \nPour votre sécurité, l\'onglet Enregistrements se verrouillera automatiquement lorsque l\'application passe en arrière-plan ou est fermée. Vous devrez déverrouiller à nouveau lors de votre retour</string>
@@ -227,20 +219,17 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="applock_remove_pin">Supprimer le PIN</string>
     <string name="applock_pin_created">PIN créé avec succès</string>
     <string name="applock_pin_removed">PIN supprimé avec succès</string>
-    
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Vérifier le PIN pour Activer le Verrouillage d\'Onglet</string>
     <string name="applock_verify_to_disable">Vérifier le PIN pour Désactiver le Verrouillage d\'Onglet</string>
     <string name="applock_verify_to_change">Vérifier le PIN Actuel</string>
     <string name="applock_verify_to_remove">Vérifier le PIN pour Supprimer</string>
     <string name="applock_verification_canceled">Vérification annulée</string>
-    
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Objectif Caméra Arrière</string>
     <string name="setting_back_lens_note">Sélectionnez un objectif spécifique si disponible, par ex. Objectif Grand Angle\n(Par défaut: Principal (0))</string>
     <string name="setting_back_lens_info_single">Uniquement objectif principal</string>
     <string name="setting_back_lens_info_single_v2">Seule la caméra arrière principale est détectée</string>
-    
     <!-- Video Settings -->
     <string name="setting_video_bitrate_title">Débit Vidéo</string>
     <string name="button_video_bitrate_settings">Définir le Débit</string>
@@ -262,19 +251,16 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="bitrate_unit">Mbps</string>
     <string name="bitrate_explanation">Qu\'est-ce que le débit?</string>
     <string name="bitrate_explanation_text">Le débit est la quantité de données utilisées par seconde de vidéo. Un débit plus élevé signifie une meilleure qualité mais des fichiers plus volumineux. Trop élevé ou trop bas peut causer des problèmes. Les valeurs par défaut sont basées sur les normes de caméras professionnelles.</string>
-    
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">Orientation Vidéo</string>
     <string name="setting_video_orientation_summary">Choisissez l\'orientation de vos vidéos. Portrait est idéal pour les réseaux sociaux; Paysage est idéal pour YouTube, présentations, etc.</string>
     <string name="video_orientation_portrait">Portrait (par défaut)</string>
     <string name="video_orientation_landscape">Paysage</string>
-    
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Actuel: %1$d MB</string>
     <string name="video_split_size_summary_gb">Actuel: %1$s GB</string>
     <string name="video_splitting_title">Activer le Fractionnement Vidéo</string>
     <string name="video_splitting_description">Divise automatiquement les enregistrements en fichiers plus petits (Désactivé par défaut). Recommandé: 2 Go pour un bon équilibre. Des préréglages jusqu\'à 4 Go et des tailles personnalisées sont disponibles. Cela aide à gérer les grands enregistrements et évite les limites de taille de fichier de l\'appareil.</string>
-    
     <!-- Location Settings -->
     <string name="setting_location_embed_title">Intégrer la Localisation dans les Vidéos</string>
     <string name="note_location_embed">Ajouter les coordonnées GPS aux métadonnées vidéo (géotags). \nNécessite le GPS activé \n(Par défaut: Désactivé)</string>
@@ -283,7 +269,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="location_permission_granted_manual_toggle">Permission accordée! Vous pouvez maintenant activer les fonctionnalités de localisation dans les paramètres.</string>
     <string name="allow_location_access">Accorder la Permission</string>
     <string name="location_permission_message">La permission de localisation est nécessaire pour ajouter des coordonnées GPS à vos vidéos. Veuillez accorder la permission pour utiliser cette fonctionnalité.</string>
-    
     <!-- Audio Settings -->
     <string name="setting_audio_title">Enregistrement Audio</string>
     <string name="note_audio">Activer ou désactiver l\'enregistrement audio pour les vidéos.\n(Par défaut: Activé)</string>
@@ -312,20 +297,16 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="audio_input_source_wired_not_connected">Aucun micro filaire détecté. Utilisation du micro du téléphone.</string>
     <string name="audio_input_source_headphones_no_mic">Écouteurs détectés (sans micro)</string>
     <string name="choose">Choisir</string>
-    
     <!-- Debug Settings -->
     <string name="setting_debug_title">Journalisation de Débogage</string>
     <string name="note_debug">Activer la génération de fichiers journaux de débogage \n(Par défaut: Désactivé)</string>
     <string name="note_debug_extra">Lorsqu\'activé, un fichier journal de débogage sera créé dans le dossier Téléchargements/FadCam. Cela peut aider à diagnostiquer les problèmes de l\'application.</string>
-    
     <!-- Onboarding Strings -->
     <string name="setting_onboarding_title">Afficher l\'Introduction</string>
     <string name="note_onboarding">Activez pour voir la présentation de l\'application et le guide des permissions la prochaine fois que vous ouvrirez FadCam.</string>
-    
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Mise à jour auto</string>
     <string name="note_auto_update_check">Si activé, FadCam vérifiera les mises à jour à chaque ouverture de l\'application. Désactivez pour désactiver les vérifications automatiques des mises à jour au lancement.\n(Par défaut: Activé)</string>
-    
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Emplacement de Stockage</string>
     <string name="storage_location_description">Choisissez où enregistrer les vidéos.</string>
@@ -336,10 +317,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="storage_icon_description">Icône de stockage</string>
     <string name="location_icon_description">Icône de localisation</string>
     <string name="location_embedding_icon_description">Icône d\'intégration de localisation</string>
-    
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Veuillez patienter un moment avant de démarrer un nouvel enregistrement</string>
-    
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Glissez à droite pour continuer</string>
     <string name="onboarding_select_language">Sélectionnez la langue de votre choix.</string>
@@ -353,23 +332,18 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="onboarding_intro_line2">sans publicités,</string>
     <string name="onboarding_intro_line3">et créé pour vous — pas pour les annonceurs.</string>
     <string name="language_change_later_note">Vous pourrez changer cela plus tard dans les Paramètres.</string>
-    
     <string name="permissions_required">Permissions Requises</string>
     <string name="permissions_description">FadCam a besoin d\'accéder à votre caméra, microphone, et stockage pour enregistrer et sauvegarder des vidéos.</string>
     <string name="grant_permissions">Accorder les Permissions</string>
     <string name="permissions_note">Vous devez accorder toutes les permissions pour continuer.</string>
     <string name="permissions_granted">Toutes les permissions accordées !</string>
-
     <string name="open_settings">Ouvrir les Paramètres</string>
-
     <string name="disable_battery_optimization">Désactiver l\'Optimisation de la Batterie</string>
-
     <string name="onboarding_human_title">Vérifier si vous êtes humain</string>
     <string name="onboarding_human_desc">Hmmmm… d\'accord. Ces règles sont non-négociables. Si vous ne pouvez pas accepter, veuillez désinstaller FadCam maintenant.</string>
     <string name="onboarding_human_checkbox1">Je n\'utiliserai pas FadCam pour enfreindre des lois, envahir la vie privée de quiconque, ou avoir un comportement déplacé. Le développeur n\'est pas responsable si je fais une erreur. (C\'est ma responsabilité.)</string>
     <string name="onboarding_human_checkbox2">J\'aime déjà FadCam avant même de l\'utiliser. (Non optionnel)</string>
     <string name="onboarding_human_button">Laissez-moi entrer !</string>
-
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Trier par</string>
     <string name="sort_latest_first">Plus récents d\'abord</string>
@@ -378,13 +352,11 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="sort_largest_first">Plus grands fichiers d\'abord</string>
     <string name="no_videos_found">Aucune vidéo trouvée</string>
     <string name="no_recordings_yet">Pas encore d\'enregistrements</string>
-    
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Accès/Contrôle à distance</string>
     <string name="remote_toast_coming_soon">Bientôt disponible ! In Sha Allah</string>
     <string name="remote_coming_soon">Le contrôle à distance pour FadCam arrive bientôt.</string>
     <string name="remote_feature_description">Associez les clients FadCam à l\'aide d\'un code QR pour un contrôle à distance sécurisé sur réseau local : démarrer/arrêter l\'enregistrement, prévisualiser, zoomer, changer de caméra, et plus encore—le tout avec un chiffrement de bout en bout.</string>
-    
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">%1$d élément(s) ancien(s) supprimé(s) automatiquement.</string>
     <string name="trash_empty_toast_message">Aucun élément à supprimer.</string>
@@ -393,16 +365,13 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="trash_error_deleting_items_toast">Erreur lors de la suppression des éléments.</string>
     <string name="trash_dialog_empty_all_title">Supprimer tous les éléments ?</string>
     <string name="trash_button_empty_all_action">Tout supprimer</string>
-
     <!-- For TrashFragment Dialogs -->
     <string name="dialog_permanently_delete_title">Supprimer définitivement ?</string>
     <string name="dialog_permanently_delete_message">Êtes-vous sûr de vouloir supprimer définitivement %1$d élément(s) sélectionné(s) ? Cette action ne peut pas être annulée.</string>
     <string name="dialog_empty_all_trash_message">Êtes-vous sûr de vouloir supprimer définitivement tous les éléments ? Cette action ne peut pas être annulée.</string>
-
     <!-- Universal button texts -->
     <string name="universal_cancel">Annuler</string>
     <string name="universal_delete">Supprimer</string>
-
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Aucun élément sélectionné.</string>
     <string name="trash_dialog_restore_title">Restaurer la sélection ?</string>
@@ -415,7 +384,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="deleted_item_thumbnail_description">Miniature d\'élément supprimé</string>
     <string name="trash_empty_icon_description">Icône de corbeille vide</string>
     <string name="trash_empty_text">La corbeille est vide.</string>
-
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
         <item quantity="one">Les éléments sont automatiquement supprimés après %1$d jour.</item>
@@ -447,9 +415,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="auto_delete_90_days">Après 90 jours</string>
     <string name="auto_delete_never">Jamais (Suppression manuelle)</string>
     <string name="auto_delete_save_setting">Enregistrer</string>
-    
     <string name="trash_select_all">Tout sélectionner</string>
-
     <!-- Adding notification customization strings -->
     <string name="setting_notification_appearance">Apparence de la notification</string>
     <string name="note_notification_appearance">Personnaliser l\'apparence de la notification d\'enregistrement\n(Par défaut: FadCam)</string>
@@ -458,7 +424,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="notification_preview">Aperçu de la notification</string>
     <string name="notification_preview_title">Aperçu</string>
     <string name="notification_stop">ARRÊTER</string>
-    
     <string-array name="notification_appearance_options">
         <item>FadCam (par défaut)</item>
         <item>Mise à jour système</item>
@@ -467,7 +432,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
         <item>Sauvegarde</item>
         <item>Personnalisé</item>
     </string-array>
-
     <string name="setting_notification_customization_title">Personnalisation des notifications</string>
     <string name="setting_notification_customization_description">Personnaliser l\'apparence de la notification d\'enregistrement</string>
     <string name="notification_preset_title">Préréglage de notification</string>
@@ -486,7 +450,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="notification_setup_save">Enregistrer</string>
     <string name="notification_setup_cancel">Annuler</string>
     <string name="notification_settings_saved">Paramètres de notification enregistrés</string>
-    
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Enregistrement</string>
     <string name="notification_channel_system_updates">Mises à jour système</string>
@@ -494,7 +457,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="notification_channel_data_sync">Synchronisation de données</string>
     <string name="notification_channel_generic">Service de notification</string>
     <string name="notification_channel_description">Notifications de service</string>
-    
     <string name="notification_text_system_update_progress">Mise à jour en cours</string>
     <string name="notification_text_system_update_paused">Mise à jour en pause</string>
     <string name="notification_text_downloading_progress">Téléchargement en cours</string>
@@ -506,14 +468,11 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="notification_title_downloading">Téléchargement</string>
     <string name="notification_title_syncing">Synchronisation des données</string>
     <string name="notification_title_custom_default">Notification</string>
-
     <string name="video_menu_upload_youtube">Importer sur YouTube</string>
     <string name="video_menu_upload_drive">Importer sur Google Drive</string>
     <string name="toast_no_youtube_app">Application YouTube introuvable</string>
     <string name="toast_no_drive_app">Application Google Drive introuvable</string>
-
     <string name="dialog_audio_noise_suppression_label">Suppression du bruit</string>
-
     <string name="fix_video_menu_title">Réparer la vidéo (Lecture)</string>
     <string name="fix_video_repairing">Réparation… Cela peut prendre quelques secondes.</string>
     <string name="fix_video_success">Vidéo réparée ! Enregistrée sous : %1$s</string>
@@ -526,12 +485,10 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="fix_video_saf_write_fail">Impossible d\'écrire le fichier réparé dans le dossier SAF. Enregistré dans le stockage de l\'application.</string>
     <string name="fix_video_saf_success">Vidéo réparée ! Enregistrée sous : %1$s.</string>
     <string name="fix_video_saf_export">Exportez ou partagez le fichier réparé depuis le stockage de l\'application si besoin.</string>
-    
     <!-- Tips Navigation Strings -->
     <string name="close">Fermer</string>
     <string name="previous">Précédent</string>
     <string name="next">Suivant</string>
     <string name="done">Terminé</string>
-
     <string name="full_changelog_info">Pour le changelog complet, allez dans l\'onglet Accueil, ouvrez le menu hamburger, puis sélectionnez «Quoi de neuf».</string>
 </resources>
