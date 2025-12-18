@@ -1,101 +1,28 @@
-name: Build FadCam Pro Variants (Pre-built)
-
-on:
-  workflow_dispatch:
+name: Build APK
+on: [push, workflow_dispatch]
 
 jobs:
-  build-pro-variants:
+  build:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
-        
-      - name: Validate Fastlane Supply Metadata
-        uses: ashutoshgngwr/validate-fastlane-supply-metadata@v2.1.0
-        
-      - name: Clone patched Media3 for live streaming
-        run: |
-          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
-          echo "✓ Patched Media3 cloned to /tmp/media3-patched"
-        
-      - name: Set up Java 17
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
-          
-      - name: Setup local.properties with release keystore
-        run: |
-          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> local.properties
-          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> local.properties
-          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> local.properties
-          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> local.properties
-          
-      - name: Decode and write keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/release.keystore
-          if [ ! -f "$RUNNER_TEMP/release.keystore" ]; then
-            echo "❌ Keystore file not created"
-            exit 1
-          fi
-          echo "✓ Keystore file created"
-          
-      - name: Build Notes Pro variant
-        run: |
-          chmod +x ./gradlew
-          ./gradlew assembleNotesProRelease
-          
-      - name: Build Calculator Pro variant
-        run: ./gradlew assembleCalcProRelease
-          
-      - name: Build Weather Pro variant
-        run: ./gradlew assembleWeatherProRelease
-          
-      - name: Verify APKs were built
-        run: |
-          echo "✓ Checking built APKs..."
-          ls -lh app/build/outputs/apk/notesPro/release/app-notesPro-arm64-v8a-release.apk
-          ls -lh app/build/outputs/apk/calcPro/release/app-calcPro-arm64-v8a-release.apk
-          ls -lh app/build/outputs/apk/weatherPro/release/app-weatherPro-arm64-v8a-release.apk
-          
-      - name: Upload Pro variant artifacts
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: fadcam-pro-variants
-          path: |
-            app/build/outputs/apk/notesPro/release/app-notesPro-arm64-v8a-release.apk
-            app/build/outputs/apk/calcPro/release/app-calcPro-arm64-v8a-release.apk
-            app/build/outputs/apk/weatherPro/release/app-weatherPro-arm64-v8a-release.apk
-          retention-days: 1
-          
-      - name: Build summary
-        run: |
-          echo "## ✅ FadCam Pro Variants Built Successfully" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Built Variants:**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 1. Notes Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro.notes" >> $GITHUB_STEP_SUMMARY
-          echo "- App Name: Notes" >> $GITHUB_STEP_SUMMARY
-          echo "- File: app-notesPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 2. Calculator Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro.calc" >> $GITHUB_STEP_SUMMARY
-          echo "- App Name: Calculator" >> $GITHUB_STEP_SUMMARY
-          echo "- File: app-calcPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 3. Weather Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro.weather" >> $GITHUB_STEP_SUMMARY
-          echo "- App Name: Weather" >> $GITHUB_STEP_SUMMARY
-          echo "- File: app-weatherPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Build Type: Pro (Release, Minified, ARM64 only)" >> $GITHUB_STEP_SUMMARY
-          echo "- Version Suffix: -Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Download:**" >> $GITHUB_STEP_SUMMARY
-          echo "All APKs are available in the workflow artifacts (7-day retention)" >> $GITHUB_STEP_SUMMARY
+          name: FadCam-Panorama-App
+          path: app/build/outputs/apk/debug/app-debug.apk
