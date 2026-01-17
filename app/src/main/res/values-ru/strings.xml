@@ -4,7 +4,7 @@
     <string name="check_for_updates">Проверить наличие обновлений</string>
     <string name="fadsec_info">FadCam является частью пакета FadSec Lab. Для получения дополнительной информации нажмите «Просмотреть исходный код» ниже.</string>
     <string name="view_source_code">Просмотреть исходный код</string>
-    <string name="buy_me_a_coffee">Угостить меня кофе ☕</string>
+    <string name="buy_me_a_coffee">Угостить разработчика кофе ☕</string>
     <string name="contact">Связаться</string>
     <string name="send_email">Отправить email</string>
     <string name="join_community">Присоединяйтесь к сообществу: получите помощь, поделитесь идеями и следите за обновлениями</string>
@@ -66,4 +66,43 @@
     <string name="zoom_slider_helper">Настройте уровень зума для записи. Для записи с использованием сверхширокоугольного объектива выберите вариант 0.5x, чтобы снимать с сверхшироким углом обзора.</string>
     <string name="note_quailty">Выберите качество\n(По умолчанию: HD)</string>
     <string name="note_framerate">Выберите частоту кадров\n(По умолчанию: %1$d)</string>
+    <string name="app_description"><![CDATA[
+    FadCam — это бесплатное приложение с открытым исходным кодом для записи видео, которое уделяет особое внимание конфиденциальности, не отслеживая и не собирая никаких данных. Оно доступно исключительно на GitHub и по официальным ссылкам, указанным в README.
+    <br/><br/>
+    FadCam был представлен на популярных YouTube-каналах, таких как <font color="#cfbafd">HowToMen</font> и <font color="#cfbafd">Xtream Droid</font>, а также обсуждался в <font color="#cfbafd">GrapheneOS</font> и более чем в 55 других известных местах.
+    ]]></string>
+    <string name="annotation_notification_hide_menu">Скрыть меню</string>
+    <string name="annotation_notification_show_menu">Показать меню</string>
+    <string name="enable_annotations">Включить рисование</string>
+    <string name="annotation_tools">Инструменты рисования</string>
+    <string name="annotations">Рисование на экране</string>
+    <string name="snap_guides"></string>
+    <string name="video_recording_paused">Запись приостановлена</string>
+    <string name="video_recording_resumed">Запись возобновлена</string>
+    <string name="mainpage_camera_front">Передняя камера</string>
+    <string name="mainpage_camera_back">Задняя камера</string>
+    <string name="video_menu_save">Сохранить в галерею</string>
+    <string name="video_menu_save_helper_downloads_fadcam">Видео будет сохранено в папке Downloads/FadCam</string>
+    <string name="video_menu_save_copy">Копировать в галерею</string>
+    <string name="video_menu_save_copy_desc">Создать копию в папке «Downloads/FadCam» (оригинальный файл сохраняется)</string>
+    <string name="video_menu_save_move_desc">Переместить файл в папку Downloads/FadCam (экономит место на диске)</string>
+    <string name="file_operation_copied_to_gallery">%1$s скопировано в галерею</string>
+    <string name="file_operation_moved_to_gallery">%1$s перемещено в галерею</string>
+    <string name="file_operation_deleted">%1$s удалено</string>
+    <string name="background_delete_progress">Удаление %1$s в фоновом режиме…</string>
+    <string name="background_restore_progress">Восстановление %1$s в фоновом режиме…</string>
+    <string name="video_menu_rename">Переименовать</string>
+    <string name="video_menu_info">Информация</string>
+    <string name="video_info_file_name">Имя файла</string>
+    <string name="video_info_file_size">Размер файла</string>
+    <string name="video_info_file_path">Путь к файлу</string>
+    <string name="video_info_last_modified">Последнее изменение</string>
+    <string name="video_info_duration">Продолжительность</string>
+    <string name="video_info_resolution">Разрешение</string>
+    <string name="privacy_information">Политика конфиденциальности</string>
+    <string name="floating_menu_annotations">Рисование на экране</string>
+    <string name="whats_new_title">Что нового</string>
+    <string name="video_menu_del">Удалить</string>
+    <string name="video_menu_save_copy_or_move_title">Сохранить в галерею</string>
+    <string name="video_menu_save_move">Переместить в галерею</string>
 </resources>
