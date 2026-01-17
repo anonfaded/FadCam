@@ -76,7 +76,6 @@
     <string name="enable_annotations">Включить рисование</string>
     <string name="annotation_tools">Инструменты рисования</string>
     <string name="annotations">Рисование на экране</string>
-    <string name="snap_guides"></string>
     <string name="video_recording_paused">Запись приостановлена</string>
     <string name="video_recording_resumed">Запись возобновлена</string>
     <string name="mainpage_camera_front">Передняя камера</string>
