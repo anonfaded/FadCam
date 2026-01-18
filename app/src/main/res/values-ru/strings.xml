@@ -104,4 +104,5 @@
     <string name="video_menu_del">Удалить</string>
     <string name="video_menu_save_copy_or_move_title">Сохранить в галерею</string>
     <string name="video_menu_save_move">Переместить в галерею</string>
+    <string name="fadcam_pro_get_button">Получить FadCam Pro</string>
 </resources>
