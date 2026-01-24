@@ -4987,6 +4987,11 @@ public class HomeFragment extends BaseFragment {
     private void updateStorageUiWithCachedInfo(
         StorageInfoCache.StorageInfo storageInfo
     ) {
+        // Check if fragment is still attached to context
+        if (!isAdded()) {
+            return;
+        }
+
         // Calculate elapsed time and estimates
         long elapsedTime = 0;
         long estimatedBytesUsed = 0;
