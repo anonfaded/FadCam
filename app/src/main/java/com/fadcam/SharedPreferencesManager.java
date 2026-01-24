@@ -1634,7 +1634,7 @@ public class SharedPreferencesManager {
      * @return true if auto update check is enabled, false otherwise
      */
     public static boolean isAutoUpdateCheckEnabled(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
         return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
     }
 
