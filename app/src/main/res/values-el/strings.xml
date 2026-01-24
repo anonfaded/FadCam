@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Άμεση</string>
     <string name="trash_auto_delete_info_immediate">Τα στοιχεία διαγράφονται άμεσα.</string>
@@ -20,24 +21,40 @@
     <string name="privacy_information">Πληροφορίες Ιδιωτικότητας</string>
     <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
-        <item>7680x4320</item> <!-- 8K -->
-        <item>3840x2160</item> <!-- 4K -->
-        <item>2560x1440</item> <!-- 2K -->
-        <item>1920x1080</item> <!-- FHD -->
-        <item>1280x720</item> <!-- HD -->
-        <item>640x480</item> <!-- SD -->
-        <item>720x480</item> <!-- SD -->
-        <item>480x360</item> <!-- SD -->
+        <item>7680x4320</item>
+        <!-- 8K -->
+        <item>3840x2160</item>
+        <!-- 4K -->
+        <item>2560x1440</item>
+        <!-- 2K -->
+        <item>1920x1080</item>
+        <!-- FHD -->
+        <item>1280x720</item>
+        <!-- HD -->
+        <item>640x480</item>
+        <!-- SD -->
+        <item>720x480</item>
+        <!-- SD -->
+        <item>480x360</item>
+        <!-- SD -->
     </string-array>
     <string-array name="video_resolutions_values">
-        <item>8K</item>  <!-- 8K -->
-        <item>4K</item>  <!-- 4K -->
-        <item>2K</item>  <!-- 2K -->
-        <item>FHD</item> <!-- Full HD -->
-        <item>HD</item>  <!-- High Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
-        <item>SD</item>  <!-- Standard Definition -->
+        <item>8K</item>
+        <!-- 8K -->
+        <item>4K</item>
+        <!-- 4K -->
+        <item>2K</item>
+        <!-- 2K -->
+        <item>FHD</item>
+        <!-- Full HD -->
+        <item>HD</item>
+        <!-- High Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
+        <item>SD</item>
+        <!-- Standard Definition -->
     </string-array>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
@@ -594,13 +611,11 @@
         <item>Αντίγραφο ασφαλείας</item>
         <item>Προσαρμοσμένο</item>
     </string-array>
-
     <string name="video_menu_upload_youtube">Μεταφόρτωση στο YouTube</string>
     <string name="video_menu_upload_drive">Μεταφόρτωση στο Google Drive</string>
     <string name="toast_no_youtube_app">Η εφαρμογή YouTube δεν βρέθηκε</string>
     <string name="toast_no_drive_app">Η εφαρμογή Google Drive δεν βρέθηκε</string>
     <string name="dialog_audio_noise_suppression_label">Καταστολή Θορύβου</string>
-
     <string name="fix_video_menu_title">Επιδιόρθωση βίντεο (Επιδιόρθωση αναπαραγωγής)</string>
     <string name="fix_video_repairing">Επιδιόρθωση… Αυτό μπορεί να διαρκέσει μερικά δευτερόλεπτα.</string>
     <string name="fix_video_success">Το βίντεο επιδιορθώθηκε! Αποθηκεύτηκε ως: %1$s</string>
@@ -613,6 +628,5 @@
     <string name="fix_video_saf_write_fail">Δεν είναι δυνατή η αποθήκευση του επιδιορθωμένου αρχείου στο φάκελο SAF. Αποθηκεύτηκε στην αποθήκευση της εφαρμογής.</string>
     <string name="fix_video_saf_success">Το βίντεο επιδιορθώθηκε! Αποθηκεύτηκε ως: %1$s.</string>
     <string name="fix_video_saf_export">Εξάγετε ή μοιραστείτε το επιδιορθωμένο αρχείο από την αποθήκευση της εφαρμογής αν χρειάζεται.</string>
-
     <string name="full_changelog_info">Για το πλήρες αρχείο αλλαγών, μεταβείτε στην καρτέλα Αρχική, ανοίξτε το μενού και επιλέξτε «Τι νέο υπάρχει».</string>
 </resources>

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Segera</string>
     <string name="trash_auto_delete_info_immediate">Item dihapus segera.</string>
@@ -5,8 +6,6 @@
     <string name="app_icon_description">Pilih ikon dan nama untuk aplikasi Anda. Ini akan mengubah tampilannya di layar utama Anda.</string>
     <string name="check_for_updates">Periksa pembaruan</string>
     <string name="fadsec_info">FadCam adalah bagian dari rangkaian FadSec Lab. Untuk informasi lebih lanjut, klik \'lihat kode sumber\' di bawah ini.</string>
-
-
     <string name="app_description">
     <![CDATA[
     FadCam adalah aplikasi perekaman video sumber terbuka bebas iklan yang mengutamakan privasi dengan tidak melacak atau mengumpulkan data apa pun. Aplikasi ini tersedia secara eksklusif di GitHub dan melalui tautan resmi yang disebutkan dalam BACA SAYA.
@@ -14,8 +13,6 @@
     FadCam telah ditampilkan di saluran YouTube populer seperti <font color="#cfbafd">HowToMen</font> dan <font color="#cfbafd">Xtream Droid</font>, serta dibahas dalam <font color="#cfbafd">GrapheneOS</font> dan 55+ tempat penting lainnya.
     ]]>
 </string>
-
-
     <string name="view_source_code">Lihat Kode Sumber</string>
     <string name="buy_me_a_coffee">Belikan saya kopi ☕</string>
     <string name="contact">Kontak</string>
@@ -190,21 +187,18 @@
     <string name="delete_all_videos_description">Apakah kamu yakin mau menghapus semua video?</string>
     <string name="switched_front_camera">Beralih ke kamera depan</string>
     <string name="switched_rear_camera">Beralih ke kamera belakang</string>
-    
     <string name="more_options">Opsi Lainnya</string>
     <string name="records_options_title">Opsi Rekaman</string>
     <string name="setting_theme_title">Tema Aplikasi</string>
     <string name="settings_option_theme">Pilih Tema</string>
     <string name="settings_theme_changed">Tema diubah. Menerapkan perubahan...</string>
     <string name="note_theme">Pilih tema aplikasi yang Anda sukai</string>
-    
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">Ikon Aplikasi</string>
     <string name="setting_app_icon_desc">Ubah ikon dan nama aplikasi di peluncur</string>
     <string name="app_icon_dialog_title">Pilih Ikon Aplikasi</string>
     <string name="app_icon_changed">Ikon aplikasi diubah</string>
     <string name="app_icon_preview">Pratinjau ikon aplikasi</string>
-    
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Kunci Tab</string>
     <string name="setting_applock_desc">Amankan video Anda dengan kunci PIN untuk tab Rekaman. \nUntuk keamanan Anda, tab Rekaman akan terkunci secara otomatis saat aplikasi masuk ke latar belakang atau ditutup. Anda harus membuka kunci lagi saat kembali</string>
@@ -217,20 +211,17 @@
     <string name="applock_remove_pin">Hapus PIN</string>
     <string name="applock_pin_created">PIN berhasil dibuat</string>
     <string name="applock_pin_removed">PIN berhasil dihapus</string>
-    
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verifikasi PIN untuk Mengaktifkan Kunci Tab</string>
     <string name="applock_verify_to_disable">Verifikasi PIN untuk Menonaktifkan Kunci Tab</string>
     <string name="applock_verify_to_change">Verifikasi PIN Saat Ini</string>
     <string name="applock_verify_to_remove">Verifikasi PIN untuk Menghapus</string>
     <string name="applock_verification_canceled">Verifikasi dibatalkan</string>
-    
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Lensa Kamera Belakang</string>
     <string name="setting_back_lens_note">Pilih lensa tertentu jika tersedia mis. Lensa Sudut Lebar\n(Default: Utama (0))</string>
     <string name="setting_back_lens_info_single">Hanya lensa utama</string>
     <string name="setting_back_lens_info_single_v2">Hanya kamera belakang utama yang terdeteksi</string>
-    
     <!-- Video Settings -->
     <string name="setting_codec_title">Codec Video</string>
     <string name="note_codec">Pilih codec
@@ -256,19 +247,16 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="bitrate_unit">Mbps</string>
     <string name="bitrate_explanation">Apa itu bitrate?</string>
     <string name="bitrate_explanation_text">Bitrate adalah jumlah data yang digunakan per detik video. Bitrate lebih tinggi berarti kualitas lebih baik tapi file lebih besar. Terlalu tinggi atau terlalu rendah dapat menyebabkan masalah. Nilai default didasarkan pada standar kamera profesional.</string>
-    
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">Orientasi Video</string>
     <string name="setting_video_orientation_summary">Pilih orientasi untuk video Anda. Potret terbaik untuk media sosial; Lanskap terbaik untuk YouTube, presentasi, dll.</string>
     <string name="video_orientation_portrait">Potret (default)</string>
     <string name="video_orientation_landscape">Lanskap</string>
-    
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Saat ini: %1$d MB</string>
     <string name="video_split_size_summary_gb">Saat ini: %1$s GB</string>
     <string name="video_splitting_title">Aktifkan Pemisahan Video</string>
     <string name="video_splitting_description">Secara otomatis memisahkan rekaman menjadi file yang lebih kecil (Dinonaktifkan secara default). Direkomendasikan: 2 GB untuk keseimbangan. Tersedia preset hingga 4 GB dan ukuran kustom. Ini membantu mengelola rekaman besar dan menghindari batasan ukuran file perangkat.</string>
-    
     <!-- Location Settings -->
     <string name="setting_location_embed_title">Sematkan Lokasi dalam Video</string>
     <string name="note_location_embed">Tambahkan koordinat GPS ke metadata video (geotag). \nMemerlukan GPS diaktifkan \n(Default: Dinonaktifkan)</string>
@@ -277,7 +265,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="location_permission_granted_manual_toggle">Izin diberikan! Anda sekarang dapat mengaktifkan fitur lokasi di pengaturan.</string>
     <string name="allow_location_access">Berikan Izin</string>
     <string name="location_permission_message">Izin lokasi diperlukan untuk menambahkan koordinat GPS ke video Anda. Berikan izin untuk menggunakan fitur ini.</string>
-    
     <!-- Audio Settings -->
     <string name="setting_audio_title">Perekaman Audio</string>
     <string name="note_audio">Aktifkan atau nonaktifkan perekaman audio untuk video.\n(Default: Diaktifkan)</string>
@@ -306,20 +293,16 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="audio_input_source_wired_not_connected">Tidak ada mikrofon berkabel terdeteksi. Menggunakan mikrofon ponsel.</string>
     <string name="audio_input_source_headphones_no_mic">Headphone terdeteksi (tanpa mikrofon)</string>
     <string name="choose">Pilih</string>
-    
     <!-- Debug Settings -->
     <string name="setting_debug_title">Pencatatan Debug</string>
     <string name="note_debug">Aktifkan pembuatan file log debug \n(Default: Dinonaktifkan)</string>
     <string name="note_debug_extra">Saat diaktifkan, file log debug akan dibuat di folder Downloads/FadCam. Ini dapat membantu mendiagnosis masalah aplikasi.</string>
-    
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Tampilkan Pengenalan pada Peluncuran Berikutnya</string>
     <string name="note_onboarding">Aktifkan untuk melihat pengenalan aplikasi dan panduan izin saat berikutnya Anda membuka FadCam.</string>
-    
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Periksa Pembaruan Otomatis saat Startup</string>
     <string name="note_auto_update_check">Jika diaktifkan, FadCam akan memeriksa pembaruan setiap kali Anda membuka aplikasi. Matikan untuk menonaktifkan pemeriksaan pembaruan otomatis saat peluncuran.\n(Default: Aktif)</string>
-    
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Lokasi Penyimpanan</string>
     <string name="storage_location_description">Pilih tempat rekaman disimpan.</string>
@@ -330,10 +313,8 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="storage_icon_description">Ikon Penyimpanan</string>
     <string name="location_icon_description">Ikon Lokasi</string>
     <string name="location_embedding_icon_description">Ikon Penyematan Lokasi</string>
-    
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Harap tunggu sebentar sebelum memulai perekaman baru</string>
-
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Geser ke kanan untuk melanjutkan</string>
     <string name="onboarding_select_language">Pilih bahasa aplikasi yang Anda inginkan.</string>
@@ -346,25 +327,19 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="onboarding_intro_line1">Open source,</string>
     <string name="onboarding_intro_line2">tanpa iklan,</string>
     <string name="onboarding_intro_line3">dan dibuat untuk Anda—bukan untuk pengiklan.</string>
-
     <string name="language_change_later_note">Anda dapat mengubahnya nanti di Pengaturan.</string>
-    
     <string name="permissions_required">Izin Diperlukan</string>
     <string name="permissions_description">FadCam memerlukan akses ke kamera, mikrofon, dan penyimpanan Anda untuk merekam dan menyimpan video.</string>
     <string name="grant_permissions">Berikan Izin</string>
     <string name="permissions_note">Anda harus memberikan semua izin untuk melanjutkan.</string>
     <string name="permissions_granted">Semua izin diberikan!</string>
-
     <string name="open_settings">Buka Pengaturan</string>
-
     <string name="disable_battery_optimization">Nonaktifkan Optimisasi Baterai</string>
-
     <string name="onboarding_human_title">Verifikasi jika Anda manusia</string>
     <string name="onboarding_human_desc">Hmmmm... baiklah. Aturan ini tidak bisa ditawar. Jika Anda tidak bisa menyetujui, silakan copot FadCam sekarang.</string>
     <string name="onboarding_human_checkbox1">Saya tidak akan menggunakan FadCam untuk melanggar hukum, menginvasi privasi siapapun, atau menjadi orang mencurigakan. Pengembang tidak bertanggung jawab jika saya melakukan kesalahan. (Itu tanggung jawab saya.)</string>
     <string name="onboarding_human_checkbox2">Saya sudah mencintai FadCam bahkan sebelum menggunakannya. (Tidak opsional)</string>
     <string name="onboarding_human_button">Biarkan saya masuk!</string>
-
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Urutkan Berdasarkan</string>
     <string name="sort_latest_first">Terbaru Dahulu</string>
@@ -373,15 +348,12 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="sort_largest_first">File Terbesar Dahulu</string>
     <string name="no_videos_found">Tidak ada video ditemukan</string>
     <string name="no_recordings_yet">Belum Ada Rekaman</string>
-    
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Akses/Kontrol Jarak Jauh</string>
     <string name="remote_toast_coming_soon">Segera hadir! In Sha Allah</string>
     <string name="remote_coming_soon">Kontrol jarak jauh untuk FadCam akan segera hadir.</string>
     <string name="remote_feature_description">Pasangkan klien FadCam menggunakan kode QR untuk kontrol jarak jauh yang aman melalui jaringan lokal: mulai/hentikan perekaman, pratinjau, zoom, beralih kamera, dan lainnya—semua dengan enkripsi end-to-end.</string>
-
     <string name="app_icon_minimal" translatable="false">Minimal</string>
-
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">%1$d item lama dihapus secara otomatis.</string>
     <string name="trash_empty_toast_message">Tidak ada item untuk dihapus.</string>
@@ -390,12 +362,10 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="trash_error_deleting_items_toast">Kesalahan menghapus item.</string>
     <string name="trash_dialog_empty_all_title">Hapus Semua Item?</string>
     <string name="trash_button_empty_all_action">Hapus Semua</string>
-
     <!-- For TrashFragment Dialogs -->
     <string name="dialog_permanently_delete_title">Hapus Secara Permanen?</string>
     <string name="dialog_permanently_delete_message">Anda yakin ingin menghapus %1$d item yang dipilih secara permanen? Tindakan ini tidak dapat dibatalkan.</string>
     <string name="dialog_empty_all_trash_message">Anda yakin ingin menghapus semua item secara permanen? Tindakan ini tidak dapat dibatalkan.</string>
-
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Tidak ada item yang dipilih.</string>
     <string name="trash_dialog_restore_title">Kembalikan yang Dipilih?</string>
@@ -408,7 +378,6 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="deleted_item_thumbnail_description">Thumbnail item yang dihapus</string>
     <string name="trash_empty_icon_description">Ikon tempat sampah kosong</string>
     <string name="trash_empty_text">Tempat sampah kosong.</string>
-
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
         <item quantity="other">Item akan dihapus secara otomatis setelah %1$d hari.</item>
@@ -436,9 +405,7 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="auto_delete_90_days">Setelah 90 Hari</string>
     <string name="auto_delete_never">Tidak Pernah (Hapus Manual)</string>
     <string name="auto_delete_save_setting">Simpan</string>
-    
     <string name="trash_select_all">Pilih Semua</string>
-
     <!-- Adding notification customization strings -->
     <string name="setting_notification_appearance">Tampilan Notifikasi</string>
     <string name="note_notification_appearance">Sesuaikan tampilan notifikasi perekaman\n(Default: FadCam)</string>
@@ -450,7 +417,6 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="notification_video_recording_paused_description">Perekaman dijeda</string>
     <string name="notification_video_recording_progress_description">Perekaman sedang berlangsung</string>
     <string name="notification_stop">HENTIKAN</string>
-    
     <string-array name="notification_appearance_options">
         <item>FadCam (default)</item>
         <item>Pembaruan Sistem</item>
@@ -459,7 +425,6 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
         <item>Cadangan</item>
         <item>Kustom</item>
     </string-array>
-
     <string name="setting_notification_customization_title">Kustomisasi Notifikasi</string>
     <string name="setting_notification_customization_description">Sesuaikan tampilan notifikasi perekaman</string>
     <string name="notification_preset_title">Preset Notifikasi</string>
@@ -478,7 +443,6 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="notification_setup_save">Simpan</string>
     <string name="notification_setup_cancel">Batal</string>
     <string name="notification_settings_saved">Pengaturan notifikasi disimpan</string>
-    
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Perekaman</string>
     <string name="notification_channel_system_updates">Pembaruan Sistem</string>
@@ -486,7 +450,6 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="notification_channel_data_sync">Sinkronisasi Data</string>
     <string name="notification_channel_generic">Layanan Notifikasi</string>
     <string name="notification_channel_description">Notifikasi layanan</string>
-    
     <string name="notification_text_system_update_progress">Pembaruan sedang berlangsung</string>
     <string name="notification_text_system_update_paused">Pembaruan dijeda</string>
     <string name="notification_text_downloading_progress">Pengunduhan sedang berlangsung</string>
@@ -498,12 +461,10 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="notification_title_downloading">Mengunduh</string>
     <string name="notification_title_syncing">Sinkronisasi Data</string>
     <string name="notification_title_custom_default">Notifikasi</string>
-
     <string name="video_menu_upload_youtube">Upload ke YouTube</string>
     <string name="video_menu_upload_drive">Upload ke Google Drive</string>
     <string name="toast_no_youtube_app">Aplikasi YouTube tidak ditemukan</string>
     <string name="toast_no_drive_app">Aplikasi Google Drive tidak ditemukan</string>
-
     <string name="dialog_audio_noise_suppression_label">Penekanan Kebisingan</string>
     <string name="fix_video_menu_title">Perbaiki Video (Perbaiki Pemutaran)</string>
     <string name="fix_video_repairing">Memperbaiki… Ini mungkin memakan waktu beberapa detik.</string>
@@ -517,6 +478,5 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="fix_video_saf_write_fail">Tidak dapat menulis file hasil perbaikan ke folder SAF. Disimpan di penyimpanan aplikasi.</string>
     <string name="fix_video_saf_success">Video berhasil diperbaiki! Disimpan sebagai: %1$s.</string>
     <string name="fix_video_saf_export">Ekspor atau bagikan file hasil perbaikan dari penyimpanan aplikasi jika diperlukan.</string>
-
     <string name="full_changelog_info">Untuk melihat changelog lengkap, buka tab Beranda, buka menu hamburger, lalu pilih «Apa yang Baru».</string>
 </resources>

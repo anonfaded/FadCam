@@ -141,7 +141,6 @@
     <string name="toast_video_saved">تم حفظ الفيديو في مجلد FadCam داخل دليل التنزيلات</string>
     <string name="toast_video_save_fail">فشل حفظ الفيديو</string>
     <string name="rename_video_title">إعادة تسمية الفيديو</string>
-
     <string name="toast_rename_name_empty">لا يمكن أن يكون الاسم فارغًا</string>
     <string name="toast_rename_failed">فشل في إعادة التسمية</string>
     <string name="toast_rename_success">تمت إعادة التسمية بنجاح</string>
@@ -166,14 +165,12 @@
     <string name="visit_github">زيارة GitHub</string>
     <string name="delete_all_videos_title">حذف جميع مقاطع الفيديو</string>
     <string name="delete_all_videos_description">هل أنت متأكد من رغبتك في حذف جميع مقاطع الفيديو؟</string>
-
     <string name="more_options">خيارات إضافية</string>
     <string name="records_options_title">خيارات التسجيلات</string>
     <string name="setting_theme_title">سمة التطبيق</string>
     <string name="settings_option_theme">اختر السمة</string>
     <string name="settings_theme_changed">تم تغيير السمة. جاري تطبيق التغييرات...</string>
     <string name="note_theme">اختر سمة التطبيق المفضلة لديك</string>
-    
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">أيقونة التطبيق</string>
     <string name="setting_app_icon_desc">تغيير أيقونة واسم التطبيق في شاشة الرئيسية</string>
@@ -181,7 +178,6 @@
     <string name="app_icon_changed">تم تغيير أيقونة التطبيق</string>
     <string name="app_icon_preview">معاينة أيقونة التطبيق</string>
     <string name="app_icon_description">اختر أيقونة واسم لتطبيقك. هذا سيغير كيف يظهر في الشاشة الرئيسية.</string>
-    
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">قفل التبويب</string>
     <string name="setting_applock_desc">قم بتأمين مقاطع الفيديو الخاصة بك بقفل رمز PIN لتبويب التسجيلات. \nلحماية خصوصيتك، سيتم قفل تبويب التسجيلات تلقائيًا عندما يتم تشغيل التطبيق في الخلفية أو إغلاقه. ستحتاج إلى فتح القفل مرة أخرى عند العودة</string>
@@ -194,20 +190,17 @@
     <string name="applock_remove_pin">إزالة رمز PIN</string>
     <string name="applock_pin_created">تم إنشاء رمز PIN بنجاح</string>
     <string name="applock_pin_removed">تمت إزالة رمز PIN بنجاح</string>
-    
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">تحقق من رمز PIN لتفعيل قفل التبويب</string>
     <string name="applock_verify_to_disable">تحقق من رمز PIN لتعطيل قفل التبويب</string>
     <string name="applock_verify_to_change">تحقق من رمز PIN الحالي</string>
     <string name="applock_verify_to_remove">تحقق من رمز PIN للإزالة</string>
     <string name="applock_verification_canceled">تم إلغاء التحقق</string>
-    
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">عدسة الكاميرا الخلفية</string>
     <string name="setting_back_lens_note">اختر عدسة محددة إذا كانت متوفرة مثل عدسة الزاوية الواسعة\n(الافتراضي: الرئيسية (0))</string>
     <string name="setting_back_lens_info_single">العدسة الرئيسية فقط</string>
     <string name="setting_back_lens_info_single_v2">تم اكتشاف الكاميرا الخلفية الرئيسية فقط</string>
-    
     <!-- Video Settings -->
     <string name="setting_framerate_title">معدل إطارات الفيديو</string>
     <string name="note_framerate">اختر معدل الإطارات\n(الافتراضي: %1$d)</string>
@@ -235,19 +228,16 @@
     <string name="bitrate_unit">ميجابت/ثانية</string>
     <string name="bitrate_explanation">ما هو معدل البت؟</string>
     <string name="bitrate_explanation_text">معدل البت هو كمية البيانات المستخدمة لكل ثانية من الفيديو. يعني معدل البت الأعلى جودة أفضل ولكن ملفات أكبر. قد يتسبب معدل البت المرتفع جدًا أو المنخفض جدًا في مشاكل. تستند القيم الافتراضية إلى معايير الكاميرات الاحترافية.</string>
-    
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">اتجاه الفيديو</string>
     <string name="setting_video_orientation_summary">اختر اتجاه الفيديو. الوضع العمودي أفضل لوسائل التواصل الاجتماعي؛ الوضع الأفقي أفضل لليوتيوب والعروض التقديمية وما إلى ذلك.</string>
     <string name="video_orientation_portrait">عمودي (افتراضي)</string>
     <string name="video_orientation_landscape">أفقي</string>
-    
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">الحالي: %1$d ميجابايت</string>
     <string name="video_split_size_summary_gb">الحالي: %1$s جيجابايت</string>
     <string name="video_splitting_title">تفعيل تقسيم الفيديو</string>
     <string name="video_splitting_description">تقسيم التسجيلات تلقائيًا إلى ملفات أصغر (معطل افتراضيًا). الموصى به: 2 جيجابايت للتوازن. تتوفر إعدادات مسبقة تصل إلى 4 جيجابايت وأحجام مخصصة. يساعد هذا في إدارة التسجيلات الكبيرة وتجنب قيود حجم الملفات على الجهاز.</string>
-    
     <!-- Location Settings -->
     <string name="setting_location_embed_title">تضمين الموقع في مقاطع الفيديو</string>
     <string name="note_location_embed">إضافة إحداثيات GPS إلى بيانات الفيديو (العلامات الجغرافية). \nيتطلب تفعيل GPS \n(الافتراضي: معطل)</string>
@@ -256,7 +246,6 @@
     <string name="location_permission_granted_manual_toggle">تم منح الإذن! يمكنك الآن تفعيل ميزات الموقع في الإعدادات.</string>
     <string name="allow_location_access">منح الإذن</string>
     <string name="location_permission_message">يحتاج التطبيق إلى إذن الموقع لإضافة إحداثيات GPS إلى مقاطع الفيديو الخاصة بك. يرجى منح الإذن لاستخدام هذه الميزة.</string>
-    
     <!-- Audio Settings -->
     <string name="setting_audio_title">تسجيل الصوت</string>
     <string name="note_audio">تفعيل أو تعطيل تسجيل الصوت للفيديو.\n(الافتراضي: مفعل)</string>
@@ -285,20 +274,16 @@
     <string name="audio_input_source_wired_not_connected">لم يتم اكتشاف ميكروفون سلكي. استخدام ميكروفون الهاتف.</string>
     <string name="audio_input_source_headphones_no_mic">تم اكتشاف سماعات رأس (بدون ميكروفون)</string>
     <string name="choose">اختيار</string>
-    
     <!-- Debug Settings -->
     <string name="setting_debug_title">تسجيل التصحيح</string>
     <string name="note_debug">تفعيل إنشاء ملف سجل التصحيح \n(الافتراضي: معطل)</string>
     <string name="note_debug_extra">عند التفعيل، سيتم إنشاء ملف سجل تصحيح في مجلد التنزيلات/FadCam. يمكن أن يساعد ذلك في تشخيص مشاكل التطبيق.</string>
-    
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">عرض التوجيه عند التشغيل التالي</string>
     <string name="note_onboarding">قم بالتفعيل لرؤية مقدمة التطبيق ودليل الأذونات في المرة القادمة التي تفتح فيها FadCam.</string>
-    
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">فحص التحديثات التلقائي عند بدء التشغيل</string>
     <string name="note_auto_update_check">إذا كان مفعلاً، سيقوم FadCam بالتحقق من التحديثات في كل مرة تفتح فيها التطبيق. قم بإيقاف التشغيل لتعطيل فحص التحديثات التلقائي عند بدء التشغيل.\n(الافتراضي: مفعل)</string>
-    
     <!-- Storage Location Settings -->
     <string name="storage_location_title">موقع التخزين</string>
     <string name="storage_location_description">اختر مكان حفظ التسجيلات.</string>
@@ -309,20 +294,17 @@
     <string name="storage_icon_description">أيقونة التخزين</string>
     <string name="location_icon_description">أيقونة الموقع</string>
     <string name="location_embedding_icon_description">أيقونة تضمين الموقع</string>
-    
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">يرجى الانتظار لحظة قبل بدء تسجيل جديد</string>
-    
     <!-- Update Bottom Sheet Strings -->
     <string name="update_sarcastic_heading">📦 أوه انظر، تحديث جديد...</string>
     <string name="update_visit_github">زيارة GitHub</string>
     <string name="update_version_arrow">  ←  </string>
     <!-- Update variations -->
-    <string name="update_variation_1">ما زلت تستخدم &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>؟ هذا... يبعث على الحنين.&lt;br>بينما &lt;font color=\'#77DD77\'>v%2$s&lt;/font> يثير ضجة. حان وقت اللحاق!</string>
-    <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> أصبح قديمًا.&lt;br>بينما &lt;font color=\'#77DD77\'>v%2$s&lt;/font> جاهز للإعجاب بميزات جديدة وإصلاحات للأخطاء. قم بالترقية للحصول على تجربة أفضل!</string>
-    <string name="update_variation_3">تطبيقك يعيش في الماضي مع &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>.&lt;br>بينما &lt;font color=\'#77DD77\'>v%2$s&lt;/font> هو المستقبل - أسرع، أذكى، وأكثر لمعانًا. لماذا لا تنضم؟</string>
-    <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> قدم لك خدمة جيدة، لكن &lt;font color=\'#77DD77\'>v%2$s&lt;/font> يناديك!&lt;br>استمتع بأحدث التحسينات وتجربة أكثر سلاسة - بنقرة واحدة.</string>
-
+    <string name="update_variation_1">ما زلت تستخدم &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;؟ هذا... يبعث على الحنين.&lt;br&gt;بينما &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; يثير ضجة. حان وقت اللحاق!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; أصبح قديمًا.&lt;br&gt;بينما &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; جاهز للإعجاب بميزات جديدة وإصلاحات للأخطاء. قم بالترقية للحصول على تجربة أفضل!</string>
+    <string name="update_variation_3">تطبيقك يعيش في الماضي مع &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;.&lt;br&gt;بينما &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; هو المستقبل - أسرع، أذكى، وأكثر لمعانًا. لماذا لا تنضم؟</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; قدم لك خدمة جيدة، لكن &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; يناديك!&lt;br&gt;استمتع بأحدث التحسينات وتجربة أكثر سلاسة - بنقرة واحدة.</string>
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">اسحب لليمين للمتابعة</string>
     <string name="onboarding_select_language">اختر لغة التطبيق المفضلة لديك.</string>
@@ -335,25 +317,19 @@
     <string name="onboarding_intro_line1">مفتوح المصدر،</string>
     <string name="onboarding_intro_line2">بدون إعلانات،</string>
     <string name="onboarding_intro_line3">مصمم من أجلك — وليس للمعلنين.</string>
-
     <string name="language_change_later_note">يمكنك تغيير هذا لاحقًا في الإعدادات.</string>
-    
     <string name="permissions_required">الأذونات المطلوبة</string>
     <string name="permissions_description">تحتاج FadCam إلى الوصول إلى الكاميرا والميكروفون والتخزين لتسجيل وحفظ مقاطع الفيديو.</string>
     <string name="grant_permissions">منح الأذونات</string>
     <string name="permissions_note">يجب عليك منح جميع الأذونات للمتابعة.</string>
     <string name="permissions_granted">تم منح جميع الأذونات!</string>
-
     <string name="open_settings">فتح الإعدادات</string>
-
     <string name="disable_battery_optimization">تعطيل تحسين البطارية</string>
-
     <string name="onboarding_human_title">تحقق إذا كنت إنسانًا</string>
     <string name="onboarding_human_desc">هممم... حسنًا. هذه القواعد غير قابلة للتفاوض. إذا لم تتمكن من الموافقة، يرجى إلغاء تثبيت FadCam الآن.</string>
     <string name="onboarding_human_checkbox1">لن أستخدم FadCam لخرق أي قوانين، أو انتهاك خصوصية أي شخص، أو أكون مزعجًا. المطور غير مسؤول إذا أخطأت. (هذا على عاتقي.)</string>
     <string name="onboarding_human_checkbox2">أنا بالفعل أحب FadCam قبل حتى استخدامه. (غير اختياري)</string>
     <string name="onboarding_human_button">دعني أدخل!</string>
-
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">ترتيب حسب</string>
     <string name="sort_latest_first">الأحدث أولاً</string>
@@ -362,13 +338,11 @@
     <string name="sort_largest_first">الملفات الأكبر أولاً</string>
     <string name="no_videos_found">لم يتم العثور على فيديوهات</string>
     <string name="no_recordings_yet">لا توجد تسجيلات حتى الآن</string>
-    
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">التحكم عن بعد</string>
     <string name="remote_toast_coming_soon">قريباً! إن شاء الله</string>
     <string name="remote_coming_soon">التحكم عن بعد لتطبيق FadCam قادم قريباً.</string>
     <string name="remote_feature_description">قم بإقران أجهزة FadCam باستخدام رمز QR للتحكم عن بعد الآمن عبر الشبكة المحلية: بدء/إيقاف التسجيل، المعاينة، التكبير، تبديل الكاميرا، والمزيد - كل ذلك مع تشفير من طرف إلى طرف.</string>
-
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">تم حذف %1$d عنصر قديم تلقائيًا.</string>
     <string name="trash_empty_toast_message">لا توجد عناصر للحذف.</string>
@@ -377,16 +351,13 @@
     <string name="trash_error_deleting_items_toast">خطأ في حذف العناصر.</string>
     <string name="trash_dialog_empty_all_title">حذف كل العناصر؟</string>
     <string name="trash_button_empty_all_action">حذف الكل</string>
-
     <!-- For TrashFragment Dialogs -->
     <string name="dialog_permanently_delete_title">حذف نهائي؟</string>
     <string name="dialog_permanently_delete_message">هل أنت متأكد من رغبتك في حذف العناصر المحددة (%1$d) بشكل دائم؟ هذا الإجراء لا يمكن التراجع عنه.</string>
     <string name="dialog_empty_all_trash_message">هل أنت متأكد من رغبتك في حذف جميع العناصر بشكل دائم؟ هذا الإجراء لا يمكن التراجع عنه.</string>
-
     <!-- Universal button texts -->
     <string name="universal_cancel">إلغاء</string>
     <string name="universal_delete">حذف</string>
-
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">لم يتم تحديد أي عناصر.</string>
     <string name="trash_dialog_restore_title">استعادة المحدد؟</string>
@@ -399,7 +370,6 @@
     <string name="deleted_item_thumbnail_description">صورة مصغرة للعنصر المحذوف</string>
     <string name="trash_empty_icon_description">رمز سلة المهملات فارغة</string>
     <string name="trash_empty_text">سلة المهملات فارغة.</string>
-
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
         <item quantity="zero">يتم حذف العناصر تلقائيًا بعد %1$d يوم.</item>
@@ -447,11 +417,8 @@
     <string name="auto_delete_90_days">بعد 90 يومًا</string>
     <string name="auto_delete_never">أبدًا (حذف يدوي)</string>
     <string name="auto_delete_save_setting">حفظ</string>
-    
     <string name="trash_select_all">تحديد الكل</string>
-
     <string name="torch_options_title">خيارات الفلاش</string>
-    
     <!-- Notification Customization Strings -->
     <string name="setting_notification_customization_title">تخصيص الإشعارات</string>
     <string name="setting_notification_customization_description">تخصيص مظهر إشعار التسجيل</string>
@@ -476,7 +443,6 @@
     <string name="notification_setup_description">تخصيص كيفية ظهور إشعار التسجيل</string>
     <string name="notification_setup_save">حفظ</string>
     <string name="notification_setup_cancel">إلغاء</string>
-    
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s تسجيل</string>
     <string name="notification_channel_system_updates">تحديثات النظام</string>
@@ -484,7 +450,6 @@
     <string name="notification_channel_data_sync">مزامنة البيانات</string>
     <string name="notification_channel_generic">خدمة الإشعارات</string>
     <string name="notification_channel_description">إشعارات الخدمة</string>
-    
     <string name="notification_text_system_update_progress">التحديث قيد التقدم</string>
     <string name="notification_text_system_update_paused">تم إيقاف التحديث مؤقتًا</string>
     <string name="notification_text_downloading_progress">التنزيل قيد التقدم</string>
@@ -497,14 +462,11 @@
     <string name="notification_title_syncing">مزامنة البيانات</string>
     <string name="notification_title_custom_default">إشعار</string>
     <string name="notification_settings_saved">تم حفظ إعدادات الإشعار</string>
-
     <string name="video_menu_upload_youtube">تحميل على YouTube</string>
     <string name="video_menu_upload_drive">تحميل على Google Drive</string>
     <string name="toast_no_youtube_app">لم يتم العثور على تطبيق YouTube</string>
     <string name="toast_no_drive_app">لم يتم العثور على تطبيق Google Drive</string>
-
     <string name="dialog_audio_noise_suppression_label">تثبيط الضوضاء</string>
-
     <string name="fix_video_menu_title">إصلاح الفيديو (إصلاح التشغيل)</string>
     <string name="fix_video_repairing">جاري الإصلاح… قد يستغرق ذلك بضع ثوانٍ.</string>
     <string name="fix_video_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s</string>
@@ -517,6 +479,5 @@
     <string name="fix_video_saf_write_fail">لا يمكن حفظ الملف المُصلح في مجلد SAF. تم الحفظ في تخزين التطبيق.</string>
     <string name="fix_video_saf_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s.</string>
     <string name="fix_video_saf_export">يمكنك تصدير أو مشاركة الملف المُصلح من تخزين التطبيق إذا لزم الأمر.</string>
-
     <string name="full_changelog_info">لعرض سجل التغييرات الكامل، انتقل إلى تبويب الرئيسية، افتح قائمة الهامبورغر، ثم اختر «ما الجديد».</string>
 </resources>

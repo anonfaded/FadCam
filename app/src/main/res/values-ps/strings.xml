@@ -1,9 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Da khpal app lapara yao icon aw num entekhab ka. Da ba staso pa home screen bandi da shakaridalo tarika badla ki.</string>
     <string name="check_for_updates">Updates kho nesta?</string>
     <string name="fadsec_info">FadCam app da FadSec Lab suite yo hissa da. Nur maloomat da paara, laandi \'Source Code ogorai\' bandi click kai.</string>
-
     <string name="app_description">
     <![CDATA[
     FadCam yao ad-free, open-source video recording app da che privacy ta tarjeeh warkawi aw sta data na track kai aw na ye jama kai. Da sirf pa GitHub aw pa README ke che kam official links di, sirf alta dastiyab de.
@@ -11,8 +11,6 @@
     FadCam pa mashhoor YouTube channels bandi feature shawe de, agha ke <font color="#cfbafd">HowToMen</font> aw <font color="#cfbafd">Xtream Droid</font> shamil di, aw da <font color="#cfbafd">GrapheneOS</font> aw 55+ nor articles ki ham feature shwe de.
     ]]>
     </string>
-
-
     <string name="view_source_code">Source Code ogorai</string>
     <string name="buy_me_a_coffee">Yao coffee ra wakhla ☕</string>
     <string name="contact">Rabta</string>
@@ -78,7 +76,6 @@
     <string name="button_settings_cam_back">Shata</string>
     <string name="button_settings_cam_front">Makhki</string>
     <string name="setting_quailty_title">Da Video Quality</string>
-
     <string name="note_quailty">Quality intikhab kai\n(Default: HD)</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Watermark option intikhab kai\n(Default: Timestamp sara da FadCam)</string>
@@ -122,9 +119,8 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-<item>FadCam hes am ghair akhlaqi ya illegal istemal la nade. Misuse, da cha surveillance ya privacy ki da dakhal, zamung da guidelines khilaf di. Da de app authors hes qisam am misuse jawabgar na di.
+        <item>FadCam hes am ghair akhlaqi ya illegal istemal la nade. Misuse, da cha surveillance ya privacy ki da dakhal, zamung da guidelines khilaf di. Da de app authors hes qisam am misuse jawabgar na di.
 </item>
-
         <item>Na, FadCam hes kisam user data na jama kai.</item>
         <item>Na, FadCam bilkul ad-free dai.</item>
         <item>Da location info watermark ke shaamil kawalo dapara.</item>
@@ -160,7 +156,6 @@
     <string name="toast_video_save_fail">Video save kolo ke fail shwa</string>
     <string name="rename_video_title">Video la num badal kae</string>
     <string name="rename_video_hint">Nawe num olekai</string>
-
     <string name="toast_rename_name_empty">Num khali nashi kedali</string>
     <string name="toast_rename_failed">Video rename kolo ke fail</string>
     <string name="toast_rename_success">Video renamed shwa</string>
@@ -193,14 +188,12 @@
     <string name="settings_option_theme">Theme Entekhab Ka</string>
     <string name="settings_theme_changed">Theme badal sho. Tabdili tatbiq kegi...</string>
     <string name="note_theme">Khpal khosha theme entekhab ka</string>
-    
     <!-- App Icon Strings -->
     <string name="setting_app_icon_title">Da App Icon</string>
     <string name="setting_app_icon_desc">Da app launcher icon aw num badal ka</string>
     <string name="app_icon_dialog_title">App Icon Entekhab Ka</string>
     <string name="app_icon_changed">App icon badal sho</string>
     <string name="app_icon_preview">App icon namoona</string>
-    
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Tab Lock</string>
     <string name="setting_applock_desc">Khpal videos pa PIN lock sara da Records tab ke masoon ka. \nSta amniyat da para, kala che app background ta zy ya band shi, Records tab ba automatic lock kegi. Kala che bewapas razy, no ta ba byaa unlock kaway</string>
@@ -213,20 +206,17 @@
     <string name="applock_remove_pin">PIN Lere Ka</string>
     <string name="applock_pin_created">PIN pa bryalitob sara jor sho</string>
     <string name="applock_pin_removed">PIN pa bryalitob sara lere sho</string>
-    
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Da Tab Lock faalolo lapara PIN tasdiq ka</string>
     <string name="applock_verify_to_disable">Da Tab Lock ghair faalolo lapara PIN tasdiq ka</string>
     <string name="applock_verify_to_change">Osany PIN tasdiq ka</string>
     <string name="applock_verify_to_remove">Da lereko lapara PIN tasdiq ka</string>
     <string name="applock_verification_canceled">Tasdiq laghwa sho</string>
-    
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Da Shaa Camera Lens</string>
     <string name="setting_back_lens_note">Ke mujud wi, khas lens entekhab ka masalan Wide Angle Lens\n(Default: Asli (0))</string>
     <string name="setting_back_lens_info_single">Faqat asli lens</string>
     <string name="setting_back_lens_info_single_v2">Yawa asli shaa camera paidaa shwa</string>
-    
     <!-- Video Settings -->
     <string name="setting_framerate_title">Da Video Framerate</string>
     <string name="note_framerate">Framerate entekhab ka\n(Default: %1$d)</string>
@@ -254,19 +244,16 @@ Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitra
     <string name="bitrate_unit">Mbps</string>
     <string name="bitrate_explanation">Bitrate tsa shay de?</string>
     <string name="bitrate_explanation_text">Bitrate da video pa har second ke karowono da malumato miqdar de. Zyat bitrate matlab de kha kaifiyat khaw loy files. Der zyat ya der kam kole mishkil jor kegi. Default qimatuna pa maslaqi camera standarduno bandi bina di.</string>
-    
     <!-- Video Orientation -->
     <string name="setting_video_orientation_title">Da Video Samt</string>
     <string name="setting_video_orientation_summary">Da khpalo videogano lapara samt entekhab ka. Portrait (walaro) da social media lapara kha de; Landscape (paltano) da YouTube, presentations aw gharo lapara kha de.</string>
     <string name="video_orientation_portrait">Portrait (default)</string>
     <string name="video_orientation_landscape">Landscape</string>
-    
     <!-- Video Splitting -->
     <string name="video_split_size_summary_mb">Osany: %1$d MB</string>
     <string name="video_split_size_summary_gb">Osany: %1$s GB</string>
     <string name="video_splitting_title">Da Video Taqsimolo Faal Kel</string>
     <string name="video_splitting_description">Pa automatic dol recordings pa waro waro files ke taqsimawi (Default: Ghair faal). Tawsia shwy: 2 GB da twazun lapara. Da 4 GB pore options aw custom sizes shta. Da da loya recordings management ke aw da device file size limit na tadbiqi ke madad kawai.</string>
-    
     <!-- Location Settings -->
     <string name="setting_location_embed_title">Pa Videogano ke Mawqeiyat Shamil Ka</string>
     <string name="note_location_embed">Pa video metadata ke GPS coordinates shamilol (geotags). \nGPS faal pakar de \n(Default: Ghair Faal)</string>
@@ -275,7 +262,6 @@ Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitra
     <string name="location_permission_granted_manual_toggle">Ejazat werkawal sho! Os ta kole shi da mawqeiyat khasiyatuna pa tanzimato ke faal ka.</string>
     <string name="allow_location_access">Ejazat Werka</string>
     <string name="location_permission_message">Sta videogano ta da GPS coordinates shamilolo lapara da mawqeiyat ejazat pakar de. Da dé khasiyat karawalo lapara meharbaani wka ejazat werka.</string>
-    
     <!-- Audio Settings -->
     <string name="setting_audio_title">Audio Sabtol</string>
     <string name="note_audio">Da videogano lapara da audio sabtol faal ya ghair faal ka.\n(Default: Faal)</string>
@@ -290,7 +276,6 @@ Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitra
     <string name="audio_input_source_wired_not_connected">Wired mic paidaa na sho. Da telefon mic karol kegi.</string>
     <string name="audio_input_source_headphones_no_mic">Headphones paidaa shwa (mic nalarai)</string>
     <string name="choose">Entekhab</string>
-    
     <!-- Audio Dialog Settings -->
     <string name="button_audio_settings">Da Ghag Tanzimaat</string>
     <string name="dialog_audio_settings_title">Da Ghag Tanzimaat</string>
@@ -307,20 +292,16 @@ Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitra
 
 Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="dialog_audio_noise_suppression_label">Shor kamawalo</string>
-    
     <!-- Debug Settings -->
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Da debug log file jorolo faal ka \n(Default: Ghair Faal)</string>
     <string name="note_debug_extra">Kala che faal shi, yaw debug log file ba pa Downloads/FadCam folder ke jorol kegi. Da dé pa app problems ke madad kole shi.</string>
-    
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Pa Raatluky Sho Ke Onboarding Warshayi</string>
     <string name="note_onboarding">Faal ka che pa raatluky karazan ke da FadCam da app pezhandana aw ejazat larshowuna wuwiny.</string>
-    
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Pa Sho Ke Automatic Update Check</string>
     <string name="note_auto_update_check">Ke faal wi, FadCam ba har kala che ta app kholé update check kawi. Da automatic update check band kolo lapara dé ghair faal ka.\n(Default: On)</string>
-    
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Da Zakhira Zai</string>
     <string name="storage_location_description">Ka zakhira kawal chi videos cherta sakli.</string>
@@ -331,10 +312,8 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="storage_icon_description">Da Zakhira Icon</string>
     <string name="location_icon_description">Da Mawqeiyat Icon</string>
     <string name="location_embedding_icon_description">Da Mawqeiyat Shamil Kawlo Icon</string>
-    
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Meharbaani wka da naway recording shoroo kolo na wrandy yaw lahza sabr wka</string>
-
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">د دوام لپاره ښي خواته وښويئ</string>
     <string name="onboarding_select_language">خپله خوښه د ایپ ژبه غوره کړئ.</string>
@@ -347,25 +326,19 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="onboarding_intro_line1">خلاص کوډ،</string>
     <string name="onboarding_intro_line2">له اعلاناتو پرته،</string>
     <string name="onboarding_intro_line3">او ستاسو لپاره جوړ شوی - نه د اعلان ورکوونکو لپاره.</string>
-
     <string name="language_change_later_note">تاسو کولای شئ دا وروسته په تنظیماتو کې بدل کړئ.</string>
-    
     <string name="permissions_required">اجازې ته اړتیا ده</string>
     <string name="permissions_description">FadCam د ویډیو ثبتولو او ساتلو لپاره ستاسو کامرې، مایکروفون، او زېرمتون ته لاسرسي ته اړتیا لري.</string>
     <string name="grant_permissions">اجازې ورکړئ</string>
     <string name="permissions_note">د دوام لپاره تاسو باید ټولې اجازې ورکړئ.</string>
     <string name="permissions_granted">ټولې اجازې ورکړل شوې!</string>
-
     <string name="open_settings">تنظیمات خلاص کړئ</string>
-
     <string name="disable_battery_optimization">د بیټرۍ آپټیمایزيشن غیر فعاله کړئ</string>
-
     <string name="onboarding_human_title">تصدیق کړئ که تاسو انسان یاست</string>
     <string name="onboarding_human_desc">هممم... سمه ده. دا قواعد غیر قابل مذاکره دي. که تاسو نشئ منلی، مهرباني وکړئ FadCam همدا اوس له منځه یوسئ.</string>
     <string name="onboarding_human_checkbox1">زه به FadCam د کوم قانون ماتولو، د چا محرمیت ته تېری کولو، یا د عجیبه کارونو لپاره نه کاروم. که چېرې زه غلطي وکړم، د پروګرام جوړوونکی مسؤل نه دی. (دا زما مسؤلیت دی).</string>
     <string name="onboarding_human_checkbox2">زه لا له کارولو مخکې له FadCam سره مینه لرم. (اختیاري نه دی)</string>
     <string name="onboarding_human_button">اجازه راکړئ ننوځم!</string>
-
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Tartib ka</string>
     <string name="sort_latest_first">Tar tolo taza awalan</string>
@@ -374,13 +347,11 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="sort_largest_first">Tar tolo ghat files awalan</string>
     <string name="no_videos_found">Kho video wo na munda</string>
     <string name="no_recordings_yet">Ta darto video record kai nedi</string>
-    
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Da liray control</string>
     <string name="remote_toast_coming_soon">Zur razee! In Sha Allah</string>
     <string name="remote_coming_soon">Da FadCam lapara da liray control zur razee.</string>
     <string name="remote_feature_description">Da QR code pa mreshta sara FadCam clients jora ka da secure, mahali network control lapara: record shoro/band kawalo, preview, zoom, camera switch kawalo, aw nor dher - tol da end-to-end encryption sara.</string>
-    
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">%1$d zorani items pa khpala delete shwal.</string>
     <string name="trash_empty_toast_message">Da delete kawalo lapara kho item neshta.</string>
@@ -389,16 +360,13 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="trash_error_deleting_items_toast">Da items pa delete kawalo ki ghalati.</string>
     <string name="trash_dialog_empty_all_title">Tol Items Delete Sho?</string>
     <string name="trash_button_empty_all_action">Tol Delete Ka</string>
-
     <!-- For TrashFragment Dialogs -->
     <string name="dialog_permanently_delete_title">Pa Daimi Tawga Delete Sho?</string>
     <string name="dialog_permanently_delete_message">Aya yaqin lari che %1$d khwakharai items pa daimi tawga delete kai? Da kar na badlolai kedai shi.</string>
     <string name="dialog_empty_all_trash_message">Aya yaqin lari che tol items pa daimi tawga delete kai? Da kar na badlolai kedai shi.</string>
-
     <!-- Universal button texts -->
     <string name="universal_cancel">Laghawa Ka</string>
     <string name="universal_delete">Delete Ka</string>
-
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Kho item na day khwakharai shwai.</string>
     <string name="trash_dialog_restore_title">Khwakharai Items Berta Restore Sho?</string>
@@ -411,7 +379,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="deleted_item_thumbnail_description">Da delete shwi item thumbnail</string>
     <string name="trash_empty_icon_description">Da khali trash icon</string>
     <string name="trash_empty_text">Trash khali day.</string>
-
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
         <item quantity="one">Items pa khpala pas la %1$d wredzo delete kegi.</item>
@@ -443,9 +410,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="auto_delete_90_days">Pas la 90 Wredzo</string>
     <string name="auto_delete_never">Heekla Na (Pa Las Delete Kawalo)</string>
     <string name="auto_delete_save_setting">Sabt Ka</string>
-    
     <string name="trash_select_all">Tol Khwakhara Ka</string>
-
     <!-- Adding notification customization strings -->
     <string name="setting_notification_appearance">Da Notification Zaher</string>
     <string name="note_notification_appearance">Da recording notification zaher badal kai\n(Default: FadCam)</string>
@@ -457,7 +422,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_video_recording_paused_description">Recording lag odrawa sho</string>
     <string name="notification_video_recording_progress_description">Recording rawan de</string>
     <string name="notification_stop">BAND</string>
-    
     <string-array name="notification_appearance_options">
         <item>FadCam (default)</item>
         <item>Da system update</item>
@@ -466,7 +430,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
         <item>Backup</item>
         <item>Custom</item>
     </string-array>
-
     <string name="setting_notification_customization_title">Da Notification Tanzimaat</string>
     <string name="setting_notification_customization_description">Da recording notification zaher badal ka</string>
     <string name="notification_preset_title">Da Notification Preset</string>
@@ -485,7 +448,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_setup_save">Sabt Ka</string>
     <string name="notification_setup_cancel">Laghwa Ka</string>
     <string name="notification_settings_saved">Da notification tanzimaat sabt shwal</string>
-    
     <!-- Additional Notification Customization Strings -->
     <string name="notification_channel_recording">%s Recording</string>
     <string name="notification_channel_system_updates">Da System Updates</string>
@@ -493,7 +455,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_channel_data_sync">Data Sync</string>
     <string name="notification_channel_generic">Da Notification Service</string>
     <string name="notification_channel_description">Da service notification</string>
-    
     <string name="notification_text_system_update_progress">Update rawan de</string>
     <string name="notification_text_system_update_paused">Update lag odrawa sho</string>
     <string name="notification_text_downloading_progress">Download rawan de</string>
@@ -505,7 +466,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_title_downloading">Download Kawol</string>
     <string name="notification_title_syncing">Data Sync Kawol</string>
     <string name="notification_title_custom_default">Notification</string>
-
     <string name="video_menu_upload_youtube">YouTube ta porta krray</string>
     <string name="video_menu_upload_drive">Google Drive ta porta krray</string>
     <string name="toast_no_youtube_app">Da YouTube application o na mundal sho</string>
@@ -522,6 +482,5 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="fix_video_saf_write_fail">Repaired file SAF folder ta likh nashu. Da app storage ki save sho.</string>
     <string name="fix_video_saf_success">Video repair sho! Save sho da num sara: %1$s.</string>
     <string name="fix_video_saf_export">Repaired file da app storage na export ya share kawalai shay.</string>
-
-    <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select &quot;What's New&quot;.</string>
+    <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select "What's New".</string>
 </resources>
