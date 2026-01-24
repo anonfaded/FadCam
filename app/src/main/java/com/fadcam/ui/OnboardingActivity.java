@@ -474,6 +474,8 @@ public class OnboardingActivity extends AppIntro {
                 return 10; // Added for Spanish
             case "et":
                 return 11; // Added for Estonian
+            case "ru":
+                return 12; // Added for Russian
             default:
                 return 0;
         }
@@ -508,6 +510,8 @@ public class OnboardingActivity extends AppIntro {
                 return "es"; // Added for Spanish
             case 11:
                 return "et"; // Added for Estonian
+            case 12:
+                return "ru"; // Added for Russian
             default:
                 return "en";
         }

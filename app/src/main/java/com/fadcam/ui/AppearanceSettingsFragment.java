@@ -324,6 +324,7 @@ public class AppearanceSettingsFragment extends Fragment {
             "de",
             "es",
             "et",
+            "ru",
         };
         for (int i = 0; i < codes.length; i++) {
             // Explicit (String) null to select string-based constructor (avoid ambiguity with iconResId)
@@ -373,6 +374,8 @@ public class AppearanceSettingsFragment extends Fragment {
                 return 10; // Added for Spanish
             case "et":
                 return 11; // Added for Estonian
+            case "ru":
+                return 12; // Added for Russian
             default:
                 return 0;
         }
@@ -404,6 +407,8 @@ public class AppearanceSettingsFragment extends Fragment {
                 return "es"; // Added for Spanish
             case 11:
                 return "et"; // Added for Estonian
+            case 12:
+                return "ru"; // Added for Russian
             default:
                 return "en";
         }

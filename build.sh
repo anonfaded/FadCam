@@ -337,6 +337,7 @@ execute_build() {
     echo ""
     print_header "✨ Build Complete!"
     echo ""
+    return 0
 }
 
 # Main logic

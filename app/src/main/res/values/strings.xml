@@ -623,7 +623,7 @@
     <string name="setting_back_lens_info_single">Main lens only</string>
     <string name="setting_back_lens_info_single_v2">Only main back camera detected</string>
 
-    <string-array name="theme_options">
+    <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>
         <item>Faded Night</item>
         <item>Crimson Bloom</item>
@@ -632,12 +632,12 @@
         <item>Pookie Pink</item>
         <item>Snow Veil</item>
     </string-array>
-    <string name="theme_red">Crimson Bloom</string>
-    <string name="theme_gold">Premium Gold</string>
-    <string name="theme_silentforest">Silent Forest</string>
-    <string name="theme_shadowalloy">Shadow Alloy</string>
-    <string name="theme_pookiepink">Pookie Pink</string>
-    <string name="theme_snowveil">Snow Veil</string>
+    <string name="theme_red" translatable="false">Crimson Bloom</string>
+    <string name="theme_gold" translatable="false">Premium Gold</string>
+    <string name="theme_silentforest" translatable="false">Silent Forest</string>
+    <string name="theme_shadowalloy" translatable="false">Shadow Alloy</string>
+    <string name="theme_pookiepink" translatable="false">Pookie Pink</string>
+    <string name="theme_snowveil" translatable="false">Snow Veil</string>
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="coming_soon_toast">Coming soon! In Sha Allah</string>
