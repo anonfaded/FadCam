@@ -6,12 +6,12 @@
         {
             "label": "FadCam: build and install debug",
             "type": "shell",
-            "command": "./build.sh"
+            "command": "./build.sh debug true"
         },
         {
             "label": "FadCam: build and install release",
             "type": "shell",
-            "command": "./build.sh release"
+            "command": "./build.sh release true"
         },
         {
             "label": "FadCam: build only debug",

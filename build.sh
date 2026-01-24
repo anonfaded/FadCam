@@ -258,33 +258,64 @@ execute_build() {
     print_status "💾" "Size:     ${BRIGHT_RED}${APK_SIZE}${RESET}"
     echo ""
     
-    # Install if requested
+    # Install if requested using Gradle (handles all connected devices automatically)
     if [ "$INSTALL" = "true" ]; then
-        print_status "⏳" "Checking devices..."
-        
-        DEVICE=$(adb devices 2>/dev/null | grep "device$" | head -1 | awk '{print $1}')
-        
-        if [ -z "$DEVICE" ]; then
-            print_status "⚠️" "No connected devices"
-            print_status "💡" "APK ready: ${BRIGHT_RED}${APK_PATH}${RESET}"
+
+        # Get list of connected devices and show all with model/version
+        local DEVICES=()
+        while read -r line; do
+            # Parse device ID and status from adb devices output
+            local device_id=$(echo "$line" | awk '{print $1}')
+            local device_status=$(echo "$line" | awk '{print $2}')
+            if [ "$device_status" = "device" ] && [ -n "$device_id" ]; then
+                DEVICES+=("$device_id")
+            fi
+        done < <(adb devices | tail -n +2)
+
+        local DEVICE_COUNT=${#DEVICES[@]}
+        if [ $DEVICE_COUNT -eq 0 ]; then
+            print_status "⚠️" "No connected devices found"
             echo ""
             return 0
         fi
-        
-        print_status "📱" "Device:   ${BRIGHT_RED}${DEVICE}${RESET}"
+
+        print_status "📱" "Connected Devices:    ${BRIGHT_RED}${DEVICE_COUNT}${RESET}"
+        for ((i=0; i<DEVICE_COUNT; i++)); do
+            local device="${DEVICES[$i]}"
+            local DEVICE_MODEL=$(adb -s "$device" shell getprop ro.product.model 2>/dev/null | tr -d '\r' | xargs || echo "Unknown")
+            local DEVICE_VERSION=$(adb -s "$device" shell getprop ro.build.version.release 2>/dev/null | tr -d '\r' | xargs || echo "?")
+            printf "  ${BRIGHT_RED}[%d/%d]${RESET} ${GRAY}%s${RESET} - ${WHITE}%s (Android %s)${RESET}\n" $((i+1)) $DEVICE_COUNT "$device" "$DEVICE_MODEL" "$DEVICE_VERSION"
+        done
         echo ""
         
-        print_status "📥" "Installing..."
+        print_status "📥" "Installing to all connected devices..."
+        echo ""
+        
+        # Capitalize first letter of BUILD_TYPE for Gradle task (e.g., debug -> Debug)
+        local BUILD_TYPE_UPPER=$(echo "$BUILD_TYPE" | tr '[:lower:]' '[:upper:]' | cut -c1)$(echo "$BUILD_TYPE" | cut -c2-)
+        local INSTALL_TASK="app:installDefault${BUILD_TYPE_UPPER}"
         local INSTALL_LOG=$(mktemp)
-        if adb install -r "$APK_PATH" > "$INSTALL_LOG" 2>&1; then
-            print_status "✅" "Installation successful"
+        
+        if ./gradlew "$INSTALL_TASK" --no-daemon --quiet > "$INSTALL_LOG" 2>&1; then
+            print_status "✅" "Installation successful on ${BRIGHT_RED}${DEVICE_COUNT}${RESET} device(s)"
             
-            print_status "🚀" "Launching app..."
-            if adb shell am start -n com.fadcam.beta/com.fadcam.SplashActivity 2>/dev/null; then
-                sleep 1
-                print_status "✅" "App launched"
+            print_status "🚀" "Launching app on all devices..."
+            local LAUNCH_SUCCESS=0
+            for ((i=0; i<DEVICE_COUNT; i++)); do
+                local device="${DEVICES[$i]}"
+                local DEVICE_MODEL=$(adb -s "$device" shell getprop ro.product.model 2>/dev/null | tr -d '\r' | xargs || echo "Unknown")
+                if adb -s "$device" shell am start -n com.fadcam.beta/com.fadcam.SplashActivity >/dev/null 2>&1; then
+                    echo -e "  ${BRIGHT_RED}[${device}]${RESET} ${WHITE}${DEVICE_MODEL}${RESET} - ✅ Launched"
+                    ((LAUNCH_SUCCESS++))
+                else
+                    echo -e "  ${BRIGHT_RED}[${device}]${RESET} ${WHITE}${DEVICE_MODEL}${RESET} - ❌ Failed to launch"
+                fi
+            done
+            
+            if [ $LAUNCH_SUCCESS -gt 0 ]; then
+                print_status "✅" "App launched on ${BRIGHT_RED}${LAUNCH_SUCCESS}/${DEVICE_COUNT}${RESET} device(s)"
             else
-                print_status "⚠️" "Could not launch app"
+                print_status "⚠️" "Could not launch app on any device"
             fi
         else
             print_status "❌" "Installation failed"
