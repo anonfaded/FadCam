@@ -44,3 +44,4 @@ app/**/build/
 repomix-output.md
 
 # app/libs/AppLockLibrary/*
+/fadcam-promo/
