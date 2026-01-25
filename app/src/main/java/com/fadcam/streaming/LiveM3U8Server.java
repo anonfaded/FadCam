@@ -41,10 +41,11 @@ public class LiveM3U8Server extends NanoHTTPD {
     private static final int TARGET_DURATION = 2; // Segment duration in seconds (1s actual + safety margin)
     
     public LiveM3U8Server(android.content.Context context, int port) throws IOException {
-        super(port);
+        super("0.0.0.0", port);  // CRITICAL FIX: Bind to ALL interfaces (0.0.0.0), not just localhost
         this.context = context.getApplicationContext();
         this.streamManager = RemoteStreamManager.getInstance();
-        Log.i(TAG, "LiveM3U8Server created on port " + port);
+        Log.i(TAG, "✅ [HTTP Server] Listening on ALL interfaces (0.0.0.0:" + port + ")");
+        Log.i(TAG, "✅ [HTTP Server] Now ACCESSIBLE from other devices on hotspot!");
     }
     
     @Override
