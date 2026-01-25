@@ -1008,7 +1008,15 @@
                     android:layout_height="wrap_content"
                     android:text="@string/stream_notes_resolution"
                     android:textSize="12sp"
-                    android:textColor="?attr/colorHeading" />
+                    android:textColor="?attr/colorHeading"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stream_notes_cellular"
+                    android:textSize="12sp"
+                    android:textColor="#FF6B6B" />
             </LinearLayout>
 
         </LinearLayout>

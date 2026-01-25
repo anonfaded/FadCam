@@ -1342,5 +1342,6 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
     <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) controls FPS cap and bitrate to prevent network issues</string>
     <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
+    <string name="stream_notes_cellular">⚠️ On cellular networks: ISPs mostly block incoming connections. Streaming will very likely NOT work. Use WiFi for reliable streaming</string>
     
 </resources>
