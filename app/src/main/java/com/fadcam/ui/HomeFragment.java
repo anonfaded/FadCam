@@ -251,6 +251,14 @@ public class HomeFragment extends BaseFragment {
     private BroadcastReceiver broadcastOnRecordingStateCallback;
     private BroadcastReceiver segmentCompleteStatsReceiver; // For segment completion to update stats
 
+    // Camera switch broadcast receivers
+    private BroadcastReceiver broadcastOnCameraSwitchStarted;
+    private BroadcastReceiver broadcastOnCameraSwitchComplete;
+    private BroadcastReceiver broadcastOnCameraSwitchFailed;
+    private volatile boolean isCameraSwitchInProgress = false;
+    private volatile long lastCameraSwitchCompleteTime = 0; // Debounce duplicate toasts
+    private volatile long lastCameraSwitchTime = 0; // Track when switch completed to prevent button disable
+
     private BroadcastReceiver cameraResourceAvailabilityReceiver;
     private boolean isCameraResourceAvailabilityReceiverRegistered = false;
     private boolean areCameraResourcesAvailable = true; // Default to true
@@ -1142,7 +1150,8 @@ public class HomeFragment extends BaseFragment {
         );
         buttonStartStop.setEnabled(true);
 
-        buttonCamSwitch.setEnabled(false);
+        // Keep camera switch button ENABLED for live switching during recording
+        // Don't disable it here
 
         startUpdatingInfo();
     }
@@ -1155,7 +1164,8 @@ public class HomeFragment extends BaseFragment {
         );
         buttonPauseResume.setEnabled(true);
 
-        buttonCamSwitch.setEnabled(false);
+        // Keep camera switch button ENABLED for live switching even when paused
+        // Don't disable it here
 
         buttonStartStop.setBackgroundTintList(
             ColorStateList.valueOf(
@@ -1541,6 +1551,9 @@ public class HomeFragment extends BaseFragment {
         registerSegmentCompleteStatsReceiver(context); // Register the new one
         // Register recording failed receiver
         registerRecordingFailedReceiver(context);
+        
+        // Register camera switch receivers
+        registerCameraSwitchReceivers(context);
 
         // -----
         registerCameraResourceAvailabilityReceiver();
@@ -1864,7 +1877,11 @@ public class HomeFragment extends BaseFragment {
                 )
             );
 
-            buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
+            // Keep button enabled ALWAYS during recording (for live camera switching)
+            // Even if state updates happen right after a switch, keep it enabled
+            if (buttonCamSwitch != null) {
+                buttonCamSwitch.setEnabled(true);
+            }
             if (buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(
                 getCameraWithFlashQuietly() != null
             ); // Enable TORCH if available
@@ -1917,7 +1934,11 @@ public class HomeFragment extends BaseFragment {
                 )
             );
 
-            buttonCamSwitch.setEnabled(false); // Disable CAM SWITCH
+            // Keep button enabled ALWAYS during recording (for live camera switching)
+            // Even during pause, allow camera switch to resume recording
+            if (buttonCamSwitch != null) {
+                buttonCamSwitch.setEnabled(true);
+            }
             if (buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(
                 getCameraWithFlashQuietly() != null
             ); // Enable TORCH if available, even
@@ -2243,6 +2264,141 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Initializes camera switch broadcast receivers for live camera switching feedback.
+     */
+    private void initializeCameraSwitchReceivers() {
+        // Receiver for camera switch start
+        broadcastOnCameraSwitchStarted = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String fromType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM);
+                String toType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO);
+                Log.d(TAG, "📹 BROADCAST_ON_CAMERA_SWITCH_STARTED: " + fromType + " → " + toType);
+                
+                isCameraSwitchInProgress = true;
+                // Keep button ENABLED during switch for responsive UI
+                // The flag prevents multiple simultaneous switches
+            }
+        };
+
+        // Receiver for camera switch complete
+        broadcastOnCameraSwitchComplete = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String fromType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM);
+                String toType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO);
+                Log.d(TAG, "✅ BROADCAST_ON_CAMERA_SWITCH_COMPLETE: " + fromType + " → " + toType);
+                
+                isCameraSwitchInProgress = false;
+                lastCameraSwitchTime = System.currentTimeMillis(); // Track when switch completed
+                if (buttonCamSwitch != null) {
+                    buttonCamSwitch.setEnabled(true);
+                }
+                
+                // Show success toast - debounce duplicates (ignore if within 500ms of last)
+                long now = System.currentTimeMillis();
+                if (now - lastCameraSwitchCompleteTime > 500) {
+                    lastCameraSwitchCompleteTime = now;
+                    String message = "Camera switched to " + (toType.equals("FRONT") ? "front" : "rear");
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+
+        // Receiver for camera switch failure
+        broadcastOnCameraSwitchFailed = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String errorReason = intent.getStringExtra(Constants.BROADCAST_EXTRA_SWITCH_ERROR_REASON);
+                String attemptedType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_ATTEMPTED);
+                Log.e(TAG, "❌ BROADCAST_ON_CAMERA_SWITCH_FAILED: " + errorReason + " (attempted: " + attemptedType + ")");
+                
+                isCameraSwitchInProgress = false;
+                if (buttonCamSwitch != null) {
+                    buttonCamSwitch.setEnabled(true);
+                }
+                
+                // Show error toast - debounce duplicates (ignore if within 500ms of last)
+                long now = System.currentTimeMillis();
+                if (now - lastCameraSwitchCompleteTime > 500) {
+                    lastCameraSwitchCompleteTime = now;
+                    String message = "Camera switch failed: " + errorReason;
+                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                }
+            }
+        };
+    }
+
+    /**
+     * Registers camera switch broadcast receivers for live camera switching feedback.
+     */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerCameraSwitchReceivers(Context context) {
+        if (broadcastOnCameraSwitchStarted == null 
+                || broadcastOnCameraSwitchComplete == null 
+                || broadcastOnCameraSwitchFailed == null) {
+            initializeCameraSwitchReceivers();
+        }
+
+        try {
+            IntentFilter startFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_STARTED);
+            IntentFilter completeFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_COMPLETE);
+            IntentFilter failedFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_FAILED);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
+                    broadcastOnCameraSwitchStarted,
+                    startFilter
+                );
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
+                    broadcastOnCameraSwitchComplete,
+                    completeFilter
+                );
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
+                    broadcastOnCameraSwitchFailed,
+                    failedFilter
+                );
+            } else {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
+                    broadcastOnCameraSwitchStarted,
+                    startFilter
+                );
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
+                    broadcastOnCameraSwitchComplete,
+                    completeFilter
+                );
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
+                    broadcastOnCameraSwitchFailed,
+                    failedFilter
+                );
+            }
+            Log.d(TAG, "Camera switch receivers registered successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error registering camera switch receivers", e);
+        }
+    }
+
+    /**
+     * Unregisters camera switch broadcast receivers.
+     */
+    private void unregisterCameraSwitchReceivers(Context context) {
+        try {
+            if (broadcastOnCameraSwitchStarted != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnCameraSwitchStarted);
+            }
+            if (broadcastOnCameraSwitchComplete != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnCameraSwitchComplete);
+            }
+            if (broadcastOnCameraSwitchFailed != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnCameraSwitchFailed);
+            }
+            Log.d(TAG, "Camera switch receivers unregistered");
+        } catch (Exception e) {
+            Log.w(TAG, "Error unregistering camera switch receivers: " + e.getMessage());
+        }
+    }
+
     // --- Ensure Unregistration Logic ---
     // Place this method in HomeFragment.java and call it from onStop()
     private void unregisterBroadcastReceivers() {
@@ -2323,6 +2479,9 @@ public class HomeFragment extends BaseFragment {
             }
             isTorchReceiverRegistered = false;
         }
+
+        // Unregister camera switch receivers
+        unregisterCameraSwitchReceivers(context);
 
         if (isSegmentCompleteStatsReceiverRegistered) {
             try {
@@ -4491,8 +4650,9 @@ public class HomeFragment extends BaseFragment {
             );
 
             if (buttonCamSwitch != null) {
-                buttonCamSwitch.setEnabled(false);
-                Log.v(TAG, "Disabled: Camera Switch Button");
+                // Keep camera switch button ENABLED during recording for live switching
+                buttonCamSwitch.setEnabled(true);
+                Log.v(TAG, "Camera Switch Button: ENABLED (for live switching)");
             } else Log.w(
                 TAG,
                 "buttonCamSwitch is null in disableInteractionButtons"
@@ -6077,7 +6237,8 @@ public class HomeFragment extends BaseFragment {
         );
         buttonPauseResume.setEnabled(false);
 
-        buttonCamSwitch.setEnabled(false);
+        // Keep camera switch button ENABLED for live switching during pause
+        // Don't disable it here
 
         Intent stopIntent = new Intent(getActivity(), RecordingService.class);
         stopIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
@@ -6095,7 +6256,8 @@ public class HomeFragment extends BaseFragment {
         );
         buttonPauseResume.setEnabled(false);
 
-        buttonCamSwitch.setEnabled(false);
+        // Keep camera switch button ENABLED for live switching during resume
+        // Don't disable it here
 
         SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
 
@@ -6657,38 +6819,62 @@ public class HomeFragment extends BaseFragment {
     }
 
     public void switchCamera() {
-        if (
-            sharedPreferencesManager
-                .getCameraSelection()
-                .equals(CameraType.BACK)
-        ) {
-            sharedPreferencesManager.sharedPreferences
-                .edit()
-                .putString(
-                    Constants.PREF_CAMERA_SELECTION,
-                    CameraType.FRONT.toString()
-                )
-                .apply();
-            Log.d(TAG, "Camera set to front");
+        // Prevent multiple simultaneous camera switches
+        if (isCameraSwitchInProgress) {
+            Log.w(TAG, "Camera switch already in progress, ignoring duplicate request");
+            return;
+        }
+
+        // Determine target camera type (opposite of current)
+        CameraType currentType = sharedPreferencesManager.getCameraSelection();
+        CameraType targetType = (currentType == CameraType.BACK) ? CameraType.FRONT : CameraType.BACK;
+
+        // Check if recording is active
+        if (isRecording()) {
+            // Live switch during recording: send Intent to RecordingService
+            Log.d(TAG, "Recording active, initiating live camera switch: " + currentType + " → " + targetType);
+            
+            isCameraSwitchInProgress = true; // Set flag to prevent duplicate requests
+            Intent switchIntent = new Intent(getActivity(), RecordingService.class);
+            switchIntent.setAction(Constants.INTENT_ACTION_SWITCH_CAMERA);
+            switchIntent.putExtra(Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH, targetType.toString());
+            
+            if (getActivity() != null) {
+                getActivity().startService(switchIntent);
+            } else {
+                Log.e(TAG, "Activity context is null, cannot send camera switch intent");
+                Toast.makeText(getContext(), "Error: Cannot access activity context", Toast.LENGTH_SHORT).show();
+                isCameraSwitchInProgress = false;
+                return;
+            }
+
+            // Show feedback - keep button ENABLED so user can see it's responsive
+            vibrateTouch();
             Toast.makeText(
                 getContext(),
-                R.string.switched_front_camera,
+                "Switching to " + (targetType == CameraType.FRONT ? "front" : "rear") + " camera...",
                 Toast.LENGTH_SHORT
             ).show();
+            Log.d(TAG, "Camera switch intent sent, button stays enabled for responsiveness");
         } else {
+            // Not recording: update preference only (old behavior)
+            Log.d(TAG, "Not recording, updating camera preference: " + currentType + " → " + targetType);
+            
             sharedPreferencesManager.sharedPreferences
                 .edit()
                 .putString(
                     Constants.PREF_CAMERA_SELECTION,
-                    CameraType.BACK.toString()
+                    targetType.toString()
                 )
                 .apply();
-            Log.d(TAG, "Camera set to rear");
-            Toast.makeText(
-                getContext(),
-                R.string.switched_rear_camera,
-                Toast.LENGTH_SHORT
-            ).show();
+
+            String message = (targetType == CameraType.FRONT) 
+                ? getString(R.string.switched_front_camera)
+                : getString(R.string.switched_rear_camera);
+            
+            Log.d(TAG, "Camera preference updated to " + targetType);
+            vibrateTouch();
+            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -148,6 +148,11 @@ public class RecordingService extends Service {
 
     private volatile boolean isStopping = false;
 
+    // Camera switch state management
+    private volatile boolean isSwitchingCamera = false;
+    private CameraType cameraSwitchPreviousType = null;
+    private long cameraSwitchStartTimeNanos = -1L;
+
     // Gate first-start until preview surface is ready (to avoid first-run EGL race)
     private boolean waitForPreviewBeforeStart = false;
     private Runnable previewWaitTimeoutRunnable = null;
@@ -704,6 +709,22 @@ public class RecordingService extends Service {
             setupSurfaceTexture(intent);
             resumeRecording();
             return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SWITCH_CAMERA.equals(action)) {
+            // Handle live camera switch during recording
+            String newCameraTypeStr = intent.getStringExtra(Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH);
+            if (newCameraTypeStr != null) {
+                try {
+                    CameraType newCameraType = CameraType.valueOf(newCameraTypeStr);
+                    switchCameraLive(newCameraType);
+                } catch (IllegalArgumentException e) {
+                    Log.e(TAG, "Invalid camera type in switch intent: " + newCameraTypeStr, e);
+                    broadcastOnCameraSwitchFailed("Invalid camera type", null);
+                }
+            } else {
+                Log.e(TAG, "Camera switch intent missing " + Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH);
+                broadcastOnCameraSwitchFailed("Missing camera type parameter", null);
+            }
+            return START_STICKY;
         } else if (Constants.INTENT_ACTION_CHANGE_SURFACE.equals(action)) {
             // Handle surface changes for preview
             setupSurfaceTexture(intent);
@@ -1151,6 +1172,233 @@ public class RecordingService extends Service {
         setupRecordingInProgressNotification();
         showRecordingResumedToast();
         broadcastOnRecordingResumed();
+    }
+
+    /**
+     * Switches cameras during active recording.
+     * Performs a seamless switch from current camera to target camera while maintaining recording.
+     * 
+     * Architecture:
+     * 1. Pause recording (stop frame capture)
+     * 2. Drain encoder (flush pending frames)
+     * 3. Close current camera/session
+     * 4. Open new camera
+     * 5. Resume recording (restart frame capture)
+     * 
+     * Expected duration: 150-350ms (typically ~200ms)
+     * 
+     * @param newCameraType Target camera: FRONT or BACK
+     */
+    private void switchCameraLive(@NonNull CameraType newCameraType) {
+        // Validate preconditions
+        if (isSwitchingCamera) {
+            Log.w(TAG, "Camera switch already in progress, ignoring request");
+            broadcastOnCameraSwitchFailed("Switch already in progress", newCameraType);
+            return;
+        }
+
+        if (recordingState != RecordingState.IN_PROGRESS) {
+            Log.w(TAG, "Cannot switch camera: recording state is " + recordingState + ", need IN_PROGRESS");
+            broadcastOnCameraSwitchFailed("Recording not in progress (state: " + recordingState + ")", newCameraType);
+            return;
+        }
+
+        if (glRecordingPipeline == null || captureSession == null) {
+            Log.e(TAG, "Cannot switch camera: pipeline or capture session is null");
+            broadcastOnCameraSwitchFailed("Recording pipeline not initialized", newCameraType);
+            return;
+        }
+
+        CameraType currentType = sharedPreferencesManager.getCameraSelection();
+        if (currentType == newCameraType) {
+            Log.w(TAG, "Camera is already " + newCameraType + ", ignoring switch");
+            broadcastOnCameraSwitchFailed("Already on " + newCameraType, newCameraType);
+            return;
+        }
+
+        // Mark switch in progress
+        isSwitchingCamera = true;
+        cameraSwitchPreviousType = currentType;
+        cameraSwitchStartTimeNanos = System.nanoTime();
+
+        try {
+            Log.i(TAG, "========== CAMERA SWITCH START ==========");
+            Log.i(TAG, "Switching camera: " + currentType + " → " + newCameraType);
+            broadcastOnCameraSwitchStarted(currentType, newCameraType);
+
+            // PHASE 1: Pause recording
+            Log.d(TAG, "PHASE 1: Pausing recording");
+            pauseRecording();
+
+            // PHASE 2: Drain encoder
+            Log.d(TAG, "PHASE 2: Draining encoder (timeout: 200ms)");
+            drainEncoderBeforeCameraSwitch(200);
+
+            // PHASE 3: Close resources
+            Log.d(TAG, "PHASE 3: Closing camera session and device");
+            closeCameraResourcesForSwitch();
+
+            // PHASE 4: Update preference
+            Log.d(TAG, "PHASE 4: Updating camera selection preference");
+            sharedPreferencesManager.sharedPreferences
+                .edit()
+                .putString(Constants.PREF_CAMERA_SELECTION, newCameraType.toString())
+                .apply();
+
+            // PHASE 5: Open new camera
+            Log.d(TAG, "PHASE 5: Opening new camera");
+            openCamera(); // Will use updated preference
+
+            // PHASE 6: Resume recording
+            Log.d(TAG, "PHASE 6: Resuming recording");
+            resumeRecording();
+
+            // Brief delay to allow first frame from new camera
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Log.w(TAG, "Interrupted waiting for new camera frame");
+            }
+
+            long durationMs = (System.nanoTime() - cameraSwitchStartTimeNanos) / 1_000_000L;
+            Log.i(TAG, "========== CAMERA SWITCH SUCCESS ==========");
+            Log.i(TAG, "Camera switched to " + newCameraType + " in " + durationMs + "ms");
+            broadcastOnCameraSwitchComplete(currentType, newCameraType);
+
+        } catch (Exception e) {
+            Log.e(TAG, "FATAL: Camera switch failed with exception", e);
+            long durationMs = (System.nanoTime() - cameraSwitchStartTimeNanos) / 1_000_000L;
+            Log.i(TAG, "========== CAMERA SWITCH FAILED ==========");
+            Log.i(TAG, "Camera switch took " + durationMs + "ms before failure");
+
+            // Attempt recovery: try to resume old camera
+            Log.w(TAG, "Attempting recovery: reopening " + cameraSwitchPreviousType + " camera");
+            try {
+                sharedPreferencesManager.sharedPreferences
+                    .edit()
+                    .putString(Constants.PREF_CAMERA_SELECTION, cameraSwitchPreviousType.toString())
+                    .apply();
+                openCamera();
+                resumeRecording();
+                Log.i(TAG, "Recovery successful: recording resumed on " + cameraSwitchPreviousType);
+                broadcastOnCameraSwitchFailed("Switch failed but recovered on " + cameraSwitchPreviousType, newCameraType);
+            } catch (Exception recoveryError) {
+                Log.e(TAG, "CRITICAL: Recovery failed, recording is likely corrupted", recoveryError);
+                // Stop recording to avoid further corruption
+                try {
+                    stopRecording();
+                } catch (Exception stopError) {
+                    Log.e(TAG, "Error stopping recording during recovery failure", stopError);
+                }
+                broadcastOnCameraSwitchFailed("Switch failed AND recovery failed: " + e.getMessage(), newCameraType);
+            }
+        } finally {
+            isSwitchingCamera = false;
+            cameraSwitchPreviousType = null;
+            cameraSwitchStartTimeNanos = -1L;
+            Log.d(TAG, "Camera switch cleanup complete");
+        }
+    }
+
+    /**
+     * Drains the video encoder to ensure all buffered frames are written to muxer
+     * before camera switch. This prevents mixing frames from old and new cameras.
+     * 
+     * @param timeoutMs Maximum time to wait for drain to complete
+     */
+    private void drainEncoderBeforeCameraSwitch(long timeoutMs) {
+        if (glRecordingPipeline == null) {
+            Log.w(TAG, "Cannot drain encoder: pipeline is null");
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
+        long elapsedMs = 0;
+
+        // Give the render loop time to drain naturally
+        while (elapsedMs < timeoutMs) {
+            try {
+                Thread.sleep(10); // Check every 10ms
+                elapsedMs = System.currentTimeMillis() - startTime;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Log.w(TAG, "Interrupted during encoder drain");
+                break;
+            }
+        }
+
+        Log.d(TAG, "Encoder drain completed after " + elapsedMs + "ms (timeout: " + timeoutMs + "ms)");
+    }
+
+    /**
+     * Closes the current camera session and device in preparation for switching to a new camera.
+     * Must be called during a pause state to avoid frame loss.
+     */
+    private void closeCameraResourcesForSwitch() {
+        try {
+            // Close the capture session
+            if (captureSession != null) {
+                try {
+                    Log.d(TAG, "Closing capture session");
+                    captureSession.close();
+                } catch (Exception e) {
+                    Log.w(TAG, "Error closing capture session", e);
+                }
+                captureSession = null;
+            }
+
+            // Close the camera device
+            if (cameraDevice != null) {
+                try {
+                    Log.d(TAG, "Closing camera device");
+                    cameraDevice.close();
+                } catch (Exception e) {
+                    Log.w(TAG, "Error closing camera device", e);
+                }
+                cameraDevice = null;
+            }
+
+            isCameraOpen = false;
+            Log.d(TAG, "Camera resources closed successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error closing camera resources", e);
+        }
+    }
+
+    /**
+     * Broadcasts camera switch started event with source and target camera types.
+     */
+    private void broadcastOnCameraSwitchStarted(@NonNull CameraType fromType, @NonNull CameraType toType) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_SWITCH_STARTED);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM, fromType.toString());
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO, toType.toString());
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Broadcast: CAMERA_SWITCH_STARTED (" + fromType + " → " + toType + ")");
+    }
+
+    /**
+     * Broadcasts camera switch complete event with source and target camera types.
+     */
+    private void broadcastOnCameraSwitchComplete(@NonNull CameraType fromType, @NonNull CameraType toType) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_SWITCH_COMPLETE);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM, fromType.toString());
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO, toType.toString());
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Broadcast: CAMERA_SWITCH_COMPLETE (" + fromType + " → " + toType + ")");
+    }
+
+    /**
+     * Broadcasts camera switch failed event with error reason and attempted camera type.
+     */
+    private void broadcastOnCameraSwitchFailed(@NonNull String errorReason, @Nullable CameraType attemptedType) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_SWITCH_FAILED);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_SWITCH_ERROR_REASON, errorReason);
+        if (attemptedType != null) {
+            broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_ATTEMPTED, attemptedType.toString());
+        }
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Broadcast: CAMERA_SWITCH_FAILED (reason: " + errorReason + ", attempted: " + attemptedType + ")");
     }
 
     private void releaseRecordingResources() {

@@ -99,6 +99,24 @@ public abstract class Constants {
         "ON_RECORDING_STATE_REQUEST";
     public static final String BROADCAST_ON_RECORDING_STATE_CALLBACK =
         "ON_RECORDING_STATE_CALLBACK";
+    /**
+     * Broadcast action sent when camera switch starts during recording.
+     * Includes extras: BROADCAST_EXTRA_CAMERA_TYPE_FROM, BROADCAST_EXTRA_CAMERA_TYPE_TO
+     */
+    public static final String BROADCAST_ON_CAMERA_SWITCH_STARTED =
+        "ON_CAMERA_SWITCH_STARTED";
+    /**
+     * Broadcast action sent when camera switch completes successfully during recording.
+     * Includes extras: BROADCAST_EXTRA_CAMERA_TYPE_FROM, BROADCAST_EXTRA_CAMERA_TYPE_TO
+     */
+    public static final String BROADCAST_ON_CAMERA_SWITCH_COMPLETE =
+        "ON_CAMERA_SWITCH_COMPLETE";
+    /**
+     * Broadcast action sent when camera switch fails during recording.
+     * Includes extras: BROADCAST_EXTRA_SWITCH_ERROR_REASON, BROADCAST_EXTRA_CAMERA_TYPE_ATTEMPTED
+     */
+    public static final String BROADCAST_ON_CAMERA_SWITCH_FAILED =
+        "ON_CAMERA_SWITCH_FAILED";
     public static final String BROADCAST_ON_TORCH_STATE_CHANGED =
         "com.fadcam.ON_TORCH_STATE_CHANGED";
     public static final String BROADCAST_ON_TORCH_STATE_REQUEST =
@@ -129,6 +147,20 @@ public abstract class Constants {
     public static final String EXTRA_AE_LOCK = "com.fadcam.EXTRA_AE_LOCK"; // boolean
     public static final String EXTRA_AF_MODE = "com.fadcam.EXTRA_AF_MODE"; // int (CaptureRequest.CONTROL_AF_MODE
     // values)
+
+    // Camera switch broadcast extras
+    /** Extra for camera switch broadcasts: source camera type (CameraType enum as string) */
+    public static final String BROADCAST_EXTRA_CAMERA_TYPE_FROM =
+        "com.fadcam.EXTRA_CAMERA_TYPE_FROM";
+    /** Extra for camera switch broadcasts: target camera type (CameraType enum as string) */
+    public static final String BROADCAST_EXTRA_CAMERA_TYPE_TO =
+        "com.fadcam.EXTRA_CAMERA_TYPE_TO";
+    /** Extra for camera switch failed broadcast: reason for failure */
+    public static final String BROADCAST_EXTRA_SWITCH_ERROR_REASON =
+        "com.fadcam.EXTRA_SWITCH_ERROR_REASON";
+    /** Extra for camera switch failed broadcast: which camera was being attempted */
+    public static final String BROADCAST_EXTRA_CAMERA_TYPE_ATTEMPTED =
+        "com.fadcam.EXTRA_CAMERA_TYPE_ATTEMPTED";
 
     // -------------- FadRec (Screen Recording) Constants Start --------------
     // Directory and file naming
@@ -206,6 +238,12 @@ public abstract class Constants {
         "ACTION_START_RECORDING";
     public static final String INTENT_ACTION_TOGGLE_TORCH =
         "ACTION_TOGGLE_TORCH";
+    /**
+     * Intent action to switch cameras during active recording.
+     * Expected extra: INTENT_EXTRA_CAMERA_TYPE_SWITCH (CameraType enum value)
+     */
+    public static final String INTENT_ACTION_SWITCH_CAMERA =
+        "ACTION_SWITCH_CAMERA";
 
     public static final String INTENT_EXTRA_RECORDING_STATE = "RECORDING_STATE";
     public static final String INTENT_EXTRA_RECORDING_START_TIME =
@@ -215,6 +253,12 @@ public abstract class Constants {
         "TORCH_STATE_CHANGED";
     public static final String INTENT_EXTRA_INITIAL_TORCH_STATE =
         "com.fadcam.EXTRA_INITIAL_TORCH_STATE";
+    /**
+     * Extra for INTENT_ACTION_SWITCH_CAMERA: the target CameraType enum value as string.
+     * Example: CameraType.FRONT.toString() or CameraType.BACK.toString()
+     */
+    public static final String INTENT_EXTRA_CAMERA_TYPE_SWITCH =
+        "com.fadcam.EXTRA_CAMERA_TYPE_SWITCH";
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
