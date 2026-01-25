@@ -133,6 +133,10 @@
     <string name="recording_controls_title">AF · Exposure · Zoom</string>
     <string name="mainpage_camera_front">Front Camera</string>
     <string name="mainpage_camera_back">Back Camera</string>
+    <string name="storage_available_space">Available space</string>
+    <string name="recording_estimated_time">Estimated time</string>
+    <string name="recording_elapsed_time">Elapsed time</string>
+    <string name="recording_remaining_time">Remaining time</string>
     <string name="mainpage_recording_to_sd">Recording to SD card</string>
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Helpful usage tips</string>
@@ -638,6 +642,20 @@
     <string name="theme_shadowalloy" translatable="false">Shadow Alloy</string>
     <string name="theme_pookiepink" translatable="false">Pookie Pink</string>
     <string name="theme_snowveil" translatable="false">Snow Veil</string>
+    <string name="stream_view_all_endpoints_desc">View all API endpoints (GET/POST)</string>
+    <string name="stream_uptime_label">Uptime</string>
+    <string name="stream_clients_label">Clients</string>
+    <string name="stream_battery_label">Battery</string>
+    <string name="stream_segments_label">Segments</string>
+    <string name="stream_network_label">Network</string>
+    <string name="stream_storage_label">Storage</string>
+    <string name="stream_memory_label">Memory</string>
+    <string name="stream_data_sent_label">Data Sent</string>
+    <string name="stream_server_url_label">Server URL</string>
+    <string name="stream_server_room_label">Server Room</string>
+    <string name="stream_stream_quality_label">Stream Quality</string>
+    <string name="stream_notes_title">Notes</string>
+
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="coming_soon_toast">Coming soon! In Sha Allah</string>
@@ -1259,6 +1277,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_select_mode">Select Mode</string>
     <string name="stream_and_save">Stream &amp; Save</string>
     <string name="stream_only">Stream Only</string>
+    <string name="stream_only_desc">Stream without saving to storage</string>
+    <string name="stream_and_save_desc">Stream and save recording to storage</string>
     <string name="stream_save_videos">Saved to device storage with Stream_ prefix</string>
     <string name="stream_no_save">Segments auto-deleted after streaming</string>
     
@@ -1316,8 +1336,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="remote_security_no_active_sessions">No active sessions</string>
     <string name="remote_security_enable_first">Enable authentication first</string>
     
-    <!-- Stream Notes -->
-    <string name="stream_notes_title">Notes</string>
+    <!-- Auto-Lock -->
+    <string name="remote_security_auto_lock_never">Never</string>
+    
     <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
     <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) controls FPS cap and bitrate to prevent network issues</string>
     <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>

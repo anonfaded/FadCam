@@ -5235,7 +5235,7 @@ public class HomeFragment extends BaseFragment {
                         finalSelectedEstimate
                     );
                     if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(
-                        "Estimated time"
+                        getString(R.string.recording_estimated_time)
                     );
 
                     // Space row with styled text
@@ -5282,7 +5282,7 @@ public class HomeFragment extends BaseFragment {
                         }
                     }
                     if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText(
-                        "Available space"
+                        getString(R.string.storage_available_space)
                     );
 
                     // Elapsed row
@@ -5290,7 +5290,7 @@ public class HomeFragment extends BaseFragment {
                         elapsedTimeText
                     );
                     if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText(
-                        "Elapsed time"
+                        getString(R.string.recording_elapsed_time)
                     );
 
                     // Remaining row
@@ -5299,7 +5299,7 @@ public class HomeFragment extends BaseFragment {
                     );
                     if (
                         tvRemainingSubtitle != null
-                    ) tvRemainingSubtitle.setText("Remaining time");
+                    ) tvRemainingSubtitle.setText(getString(R.string.recording_remaining_time));
                 });
         }
     }

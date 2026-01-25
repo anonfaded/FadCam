@@ -119,7 +119,7 @@
 
                         <TextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30min" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
 
-                        <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Estimated time" android:textColor="#B0B0B0" android:textSize="11sp" />
+                        <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_estimated_time" android:textColor="#B0B0B0" android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -134,7 +134,7 @@
 
                         <TextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
 
-                        <TextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Available space" android:textColor="#B0B0B0" android:textSize="11sp" />
+                        <TextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="#B0B0B0" android:textSize="11sp" />
 
                         <!-- Dimmer smaller total storage value -->
                         <!-- total shown inline with available space (rendered programmatically) -->

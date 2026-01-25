@@ -361,8 +361,10 @@ public class RemoteFragment extends BaseFragment {
     private void updateModeDisplay() {
         RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
         String modeText = mode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
-            "Stream Only" : "Stream & Save";
-        recordingModeValue.setText(modeText);
+            getString(R.string.stream_only) : getString(R.string.stream_and_save);
+        String descText = mode == RemoteStreamManager.StreamingMode.STREAM_ONLY ?
+            getString(R.string.stream_only_desc) : getString(R.string.stream_and_save_desc);
+        recordingModeValue.setText(descText);
     }
     
     private void updateUI() {

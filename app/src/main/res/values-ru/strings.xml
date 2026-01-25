@@ -133,6 +133,10 @@
     <string name="recording_controls_title">AF · Экспозиция · Зум</string>
     <string name="mainpage_camera_front">Фронтальная камера</string>
     <string name="mainpage_camera_back">Задняя камера</string>
+    <string name="storage_available_space">Доступное место</string>
+    <string name="recording_estimated_time">Примерное время</string>
+    <string name="recording_elapsed_time">Прошедшее время</string>
+    <string name="recording_remaining_time">Оставшееся время</string>
     <string name="mainpage_recording_to_sd">Запись на SD-карту</string>
     <string name="tips_title">Советы</string>
     <string name="tips_subtitle">Полезные советы по использованию</string>
@@ -638,6 +642,20 @@
     <string name="theme_shadowalloy">Shadow Alloy</string>
     <string name="theme_pookiepink">Pookie Pink</string>
     <string name="theme_snowveil">Snow Veil</string>
+    <string name="stream_view_all_endpoints_desc">Просмотреть все конечные точки API (GET/POST)</string>
+    <string name="stream_uptime_label">Время работы</string>
+    <string name="stream_clients_label">Клиенты</string>
+    <string name="stream_battery_label">Батарея</string>
+    <string name="stream_segments_label">Сегменты</string>
+    <string name="stream_network_label">Сеть</string>
+    <string name="stream_storage_label">Хранилище</string>
+    <string name="stream_memory_label">Память</string>
+    <string name="stream_data_sent_label">Отправлено данных</string>
+    <string name="stream_server_url_label">URL сервера</string>
+    <string name="stream_server_room_label">Серверная комната</string>
+    <string name="stream_stream_quality_label">Качество потока</string>
+    <string name="stream_notes_title">Примечания</string>
+
     <string name="remote_access_title">Удалённый доступ/управление</string>
     <string name="remote_toast_coming_soon">Скоро! Инша Аллах</string>
     <string name="coming_soon_toast">Скоро! Инша Аллах</string>
@@ -1259,6 +1277,8 @@ FadCam использует фрагментированный формат MP4 
     <string name="stream_select_mode">Выбрать режим</string>
     <string name="stream_and_save">Стриминг и сохранение</string>
     <string name="stream_only">Только стрим</string>
+    <string name="stream_only_desc">Трансляция без сохранения в хранилище</string>
+    <string name="stream_and_save_desc">Трансляция и сохранение записи в хранилище</string>
     <string name="stream_save_videos">Сохранено в хранилище устройства с префиксом Stream_</string>
     <string name="stream_no_save">Сегменты автоматически удаляются после стриминга</string>
     
@@ -1316,8 +1336,9 @@ FadCam использует фрагментированный формат MP4 
     <string name="remote_security_no_active_sessions">Нет активных сессий</string>
     <string name="remote_security_enable_first">Сначала включите аутентификацию</string>
     
-    <!-- Stream Notes -->
-    <string name="stream_notes_title">Заметки</string>
+    <!-- Auto-Lock -->
+    <string name="remote_security_auto_lock_never">Никогда</string>
+    
     <string name="stream_notes_wifi">• Клиенты должны быть в той же WiFi-сети для доступа к стриму</string>
     <string name="stream_notes_quality">• Качество стрима (LOW/MEDIUM/HIGH/ULTRA) контролирует ограничение FPS и битрейта для предотвращения сетевых проблем</string>
     <string name="stream_notes_resolution">• Ориентация и разрешение стрима берутся из ваших обычных настроек записи (Настройки видео → Разрешение и ориентация). Измените их, если хотите изменить размеры стрима</string>

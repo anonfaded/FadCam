@@ -111,7 +111,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Server Room"
+                android:text="@string/stream_server_room_label"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading"
@@ -182,7 +182,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Uptime"
+                                android:text="@string/stream_uptime_label"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:textColor="?attr/colorHeading" />
@@ -225,7 +225,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Battery"
+                                android:text="@string/stream_battery_label"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:textColor="?attr/colorHeading" />
@@ -282,7 +282,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Clients"
+                                    android:text="@string/stream_clients_label"
                                     android:textSize="11sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorHeading" />
@@ -325,7 +325,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Segments"
+                                android:text="@string/stream_segments_label"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:textColor="?attr/colorHeading" />
@@ -387,7 +387,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Network"
+                                android:text="@string/stream_network_label"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:textColor="?attr/colorHeading" />
@@ -421,7 +421,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Storage"
+                            android:text="@string/stream_storage_label"
                             android:textSize="11sp"
                             android:textStyle="bold"
                             android:textColor="?attr/colorHeading" />
@@ -457,7 +457,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Memory"
+                            android:text="@string/stream_memory_label"
                             android:textSize="11sp"
                             android:textStyle="bold"
                             android:textColor="?attr/colorHeading" />
@@ -492,7 +492,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Data Sent"
+                                android:text="@string/stream_data_sent_label"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:textColor="?attr/colorHeading" />
@@ -541,7 +541,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Recording Mode"
+                        android:text="@string/stream_recording_mode"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -587,7 +587,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Server URL"
+                        android:text="@string/stream_server_url"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -644,7 +644,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="View all API endpoints (GET/POST)"
+                        android:text="@string/stream_view_all_endpoints_desc"
                         android:textSize="12sp"
                         android:layout_marginTop="2dp"
                         android:textColor="@android:color/darker_gray" />
@@ -662,7 +662,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stream Specifications"
+                android:text="@string/stream_specs"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading"
@@ -691,7 +691,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Stream Quality"
+                        android:text="@string/stream_quality_preset"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -858,7 +858,7 @@
                             android:id="@+id/remote_auth_auto_lock_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Never"
+                            android:text="@string/remote_security_auto_lock_never"
                             android:textSize="12sp"
                             android:layout_marginTop="2dp"
                             android:textColor="@android:color/darker_gray" />
@@ -924,7 +924,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="How to Use"
+                android:text="@string/stream_instructions"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading"
@@ -940,7 +940,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1. Start the server using the toggle above"
+                    android:text="@string/stream_instr_1"
                     android:textSize="13sp"
                     android:textColor="?attr/colorHeading"
                     android:layout_marginBottom="6dp" />
@@ -948,7 +948,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2. Begin recording on FadCam"
+                    android:text="@string/stream_instr_2"
                     android:textSize="13sp"
                     android:textColor="?attr/colorHeading"
                     android:layout_marginBottom="6dp" />
@@ -956,7 +956,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="3. Open the Server URL in a browser to watch"
+                    android:text="@string/stream_instr_3"
                     android:textSize="13sp"
                     android:textColor="?attr/colorHeading"
                     android:layout_marginBottom="6dp" />
@@ -964,7 +964,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="4. Use /live.m3u8 endpoint in media players (VLC, etc.)"
+                    android:text="@string/stream_instr_4"
                     android:textSize="13sp"
                     android:textColor="?attr/colorHeading" />
             </LinearLayout>

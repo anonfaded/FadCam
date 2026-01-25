@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
+import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ScreenRecordingState;
@@ -1447,7 +1448,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     tvElapsedTitle.setText(elapsedTimeText);
                 }
                 if (tvElapsedSubtitle != null) {
-                    tvElapsedSubtitle.setText("Elapsed time");
+                    tvElapsedSubtitle.setText(getString(R.string.recording_elapsed_time));
                 }
                 
                 // Update remaining time
@@ -1455,7 +1456,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     tvRemainingTitle.setText(remainingTimeText);
                 }
                 if (tvRemainingSubtitle != null) {
-                    tvRemainingSubtitle.setText("Remaining time");
+                    tvRemainingSubtitle.setText(getString(R.string.recording_remaining_time));
                 }
             });
             
