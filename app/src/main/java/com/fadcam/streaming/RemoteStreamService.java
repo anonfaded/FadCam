@@ -7,8 +7,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -145,7 +143,7 @@ public class RemoteStreamService extends Service {
         // Find free port
         int port = findFreePort(DEFAULT_PORT);
         if (port == -1) {
-            Log.e(TAG, "No free port available in range " + DEFAULT_PORT + "-" + (DEFAULT_PORT + PORT_SCAN_RANGE));
+            Log.e(TAG, "❌ No free port available in range " + DEFAULT_PORT + "-" + (DEFAULT_PORT + PORT_SCAN_RANGE));
             return false;
         }
         
@@ -153,10 +151,28 @@ public class RemoteStreamService extends Service {
             httpServer = new LiveM3U8Server(this, port);  // Pass context for assets loading
             httpServer.start();
             activePort = port;
-            Log.i(TAG, "HTTP server started on port " + port);
+            
+            // Log comprehensive server startup info
+            String ipAddress = getLocalIpAddress();
+            String serverUrl = "http://" + ipAddress + ":" + port;
+            
+            Log.i(TAG, "════════════════════════════════════════════════════════");
+            Log.i(TAG, "🚀 HTTP SERVER STARTED");
+            Log.i(TAG, "════════════════════════════════════════════════════════");
+            Log.i(TAG, "   📍 Address: " + serverUrl);
+            Log.i(TAG, "   🔌 Port: " + port);
+            Log.i(TAG, "   🌐 IP: " + ipAddress);
+            Log.i(TAG, "   📡 Endpoints:");
+            Log.i(TAG, "      • Dashboard: " + serverUrl + "/");
+            Log.i(TAG, "      • Status API: " + serverUrl + "/status");
+            Log.i(TAG, "      • HLS Stream: " + serverUrl + "/live.m3u8");
+            Log.i(TAG, "════════════════════════════════════════════════════════");
+            Log.i(TAG, "   ⚠️  Open the URL above on a device on the SAME network");
+            Log.i(TAG, "════════════════════════════════════════════════════════");
+            
             return true;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to start HTTP server", e);
+            Log.e(TAG, "❌ Failed to start HTTP server", e);
             return false;
         }
     }
@@ -223,25 +239,120 @@ public class RemoteStreamService extends Service {
     }
     
     /**
-     * Get local IP address (WiFi).
+     * Get local IP address with intelligent prioritization based on IP ranges ONLY.
+     * Removed interface name detection to avoid conflicts on different Android devices.
+     * Uses pure IP address range detection for maximum compatibility.
+     * Logs every call (not just first) to debug IP flipping issues.
      */
     private String getLocalIpAddress() {
         try {
-            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            if (wifiManager != null) {
-                WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-                int ipInt = wifiInfo.getIpAddress();
+            java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
+            String vpnIp = null;           // VPN IP (fallback)
+            String hotspotIp = null;       // 192.168.x.x range (PREFERRED)
+            String wifiLanIp = null;       // 10.x.x.x or 172.x.x.x (WiFi/LAN)
+            String cellularIp = null;      // 100.x.x.x range (CGNAT cellular)
+            String otherIp = null;         // Any other IP
+            
+            StringBuilder networkLog = new StringBuilder();
+            networkLog.append("📡 [Network Detection]\n");
+            
+            while (interfaces.hasMoreElements()) {
+                java.net.NetworkInterface networkInterface = interfaces.nextElement();
                 
-                if (ipInt != 0) {
-                    return String.format("%d.%d.%d.%d",
-                        (ipInt & 0xff),
-                        (ipInt >> 8 & 0xff),
-                        (ipInt >> 16 & 0xff),
-                        (ipInt >> 24 & 0xff));
+                // Skip loopback and inactive interfaces
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                
+                String interfaceName = networkInterface.getDisplayName().toLowerCase();
+                
+                // FIRST: Determine interface type by NAME (most reliable)
+                String interfaceType = "OTHER";
+                if (interfaceName.contains("seth") || interfaceName.contains("rmnet") || 
+                    interfaceName.contains("ccmni") || interfaceName.contains("ndc")) {
+                    // Cellular interfaces: seth_lte*, seth_5g*, rmnet*, ccmni*, ndc*
+                    interfaceType = "CELLULAR";
+                } else if (interfaceName.contains("tun") || interfaceName.contains("tap") || 
+                           interfaceName.contains("wg") || interfaceName.contains("tailscale") ||
+                           interfaceName.contains("vpn") || interfaceName.contains("ppp")) {
+                    // VPN interfaces
+                    interfaceType = "VPN";
+                } else if (interfaceName.contains("wlan") || interfaceName.contains("ap0") ||
+                           interfaceName.contains("softap") || interfaceName.contains("eth")) {
+                    // WiFi/LAN/Hotspot interfaces: wlan*, ap0, softap*, eth*
+                    interfaceType = "WIFI_LAN_HOTSPOT";
+                }
+                
+                java.util.Enumeration<java.net.InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    java.net.InetAddress address = addresses.nextElement();
+                    
+                    // Only consider IPv4 non-loopback addresses
+                    if (!address.isLoopbackAddress() && address instanceof java.net.Inet4Address) {
+                        String ip = address.getHostAddress();
+                        String category = "OTHER";
+                        
+                        // SECOND: Refine by IP range based on interface type
+                        if (interfaceType.equals("CELLULAR")) {
+                            // Any IP on cellular interface is cellular (can be 10.x, 100.x, etc.)
+                            category = "CELLULAR";
+                            if (cellularIp == null) cellularIp = ip;
+                        } else if (interfaceType.equals("VPN")) {
+                            category = "VPN";
+                            if (vpnIp == null) vpnIp = ip;
+                        } else if (interfaceType.equals("WIFI_LAN_HOTSPOT")) {
+                            // WiFi/LAN can be hotspot (192.168.x.x) or regular WiFi (10.x, 172.x)
+                            if (ip.startsWith("192.168.")) {
+                                category = "HOTSPOT [PREFERRED]";
+                                if (hotspotIp == null) hotspotIp = ip;
+                            } else if (ip.startsWith("10.") || ip.startsWith("172.")) {
+                                category = "WiFi/LAN";
+                                if (wifiLanIp == null) wifiLanIp = ip;
+                            } else {
+                                if (otherIp == null) otherIp = ip;
+                            }
+                        } else {
+                            // Unknown interface with IP
+                            if (ip.startsWith("192.168.")) {
+                                category = "HOTSPOT [PREFERRED]";
+                                if (hotspotIp == null) hotspotIp = ip;
+                            } else if (ip.startsWith("10.") || ip.startsWith("172.")) {
+                                category = "WiFi/LAN";
+                                if (wifiLanIp == null) wifiLanIp = ip;
+                            } else if (ip.startsWith("100.")) {
+                                category = "CELLULAR";
+                                if (cellularIp == null) cellularIp = ip;
+                            } else {
+                                if (otherIp == null) otherIp = ip;
+                            }
+                        }
+                        
+                        networkLog.append("   • ").append(networkInterface.getDisplayName()).append(": ").append(ip).append(" [").append(category).append("]\n");
+                    }
                 }
             }
+            
+            // Prioritization by IP range ONLY
+            String selectedIp = hotspotIp != null ? hotspotIp :
+                               wifiLanIp != null ? wifiLanIp :
+                               cellularIp != null ? cellularIp :
+                               vpnIp != null ? vpnIp : otherIp;
+            
+            networkLog.append("   ✅ Selected: ").append(selectedIp != null ? selectedIp : "N/A");
+            if (hotspotIp != null) {
+                networkLog.append(" [HOTSPOT - Recommended]");
+            } else if (wifiLanIp != null) {
+                networkLog.append(" [WiFi/LAN]");
+            } else if (cellularIp != null) {
+                networkLog.append(" [CELLULAR - No incoming connections]");
+            }
+            
+            Log.i(TAG, networkLog.toString());
+            
+            return selectedIp != null ? selectedIp : "N/A";
+            
         } catch (Exception e) {
-            Log.e(TAG, "Failed to get IP address", e);
+            Log.e(TAG, "❌ [Network] Error detecting IP address", e);
         }
         return "N/A";
     }

@@ -506,25 +506,36 @@ public class RemoteStreamManager {
         // OPTIMIZATION: Check cache first (1 second TTL)
         long currentTime = System.currentTimeMillis();
         if (cachedStatusJson != null && (currentTime - lastStatusJsonTime) < STATUS_CACHE_MS) {
+            Log.d(TAG, "📊 [getStatusJson] Serving from cache (age: " + (currentTime - lastStatusJsonTime) + "ms)");
             return cachedStatusJson;
         }
         
+        long startTime = System.currentTimeMillis();
         bufferLock.readLock().lock();
         try {
+            Log.d(TAG, "📊 [getStatusJson] Cache miss, generating fresh JSON...");
+            
+            // CRITICAL: Check if context is null (happens when app is backgrounded/destroyed)
+            if (context == null) {
+                Log.w(TAG, "⚠️ [getStatusJson] Context is null (app backgrounded). Returning safe state...");
+                String safeState = "{\"streaming\": " + streamingEnabled + ", \"state\": \"backgrounded\", \"message\": \"App is backgrounded\", \"is_recording\": false}";
+                cachedStatusJson = safeState;
+                lastStatusJsonTime = currentTime;
+                return safeState;
+            }
+            
             // Sync current volume from AudioManager (catches hardware button changes)
-            if (context != null) {
-                android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
-                if (audioManager != null) {
-                    int currentVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
-                    int maxVol = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
-                    
-                    // Only log if volume changed (avoid spam)
-                    if (currentVolume != mediaVolume) {
-                        android.util.Log.d(TAG, "🔄 Volume synced from AudioManager: " + mediaVolume + " → " + currentVolume + "/" + maxVol);
-                        mediaVolume = currentVolume;
-                    }
-                    maxMediaVolume = maxVol;
+            android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
+            if (audioManager != null) {
+                int currentVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                int maxVol = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                
+                // Only log if volume changed (avoid spam)
+                if (currentVolume != mediaVolume) {
+                    android.util.Log.d(TAG, "🔄 Volume synced from AudioManager: " + mediaVolume + " → " + currentVolume + "/" + maxVol);
+                    mediaVolume = currentVolume;
                 }
+                maxMediaVolume = maxVol;
             }
             
             int bufferedCount = getBufferedCount();
@@ -624,37 +635,39 @@ public class RemoteStreamManager {
             float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
             
             // Get auth status from RemoteAuthManager
-            RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
-            boolean authEnabled = authManager.isAuthEnabled();
-            int autoLockTimeoutMinutes = authManager.getAutoLockTimeout();
+            // CRITICAL: Check context before accessing RemoteAuthManager
+            RemoteAuthManager authManager = context != null ? RemoteAuthManager.getInstance(context) : null;
+            boolean authEnabled = authManager != null ? authManager.isAuthEnabled() : false;
+            int autoLockTimeoutMinutes = authManager != null ? authManager.getAutoLockTimeout() : 0;
             long autoLockTimeoutMs = autoLockTimeoutMinutes == 0 ? 0 : (long) autoLockTimeoutMinutes * 60 * 1000;
-            int activeSessionsCount = authManager.getActiveSessions().size();
-            boolean authSessionsCleared = authManager.checkAndResetSessionsClearedFlag();
+            int activeSessionsCount = authManager != null ? authManager.getActiveSessions().size() : 0;
+            boolean authSessionsCleared = authManager != null ? authManager.checkAndResetSessionsClearedFlag() : false;
             
             // OPTIMIZATION: Build JSON once, cache for 1 second to reduce CPU load
+            // Import JsonEscaper for safe JSON string embedding
             String result = String.format(
-                "{\"streaming\": %s, \"mode\": \"%s\", \"state\": \"%s\", \"message\": \"%s\", " +
+                "{\"streaming\": %s, \"mode\": %s, \"state\": %s, \"message\": %s, " +
                 "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
                 "\"latest_sequence\": %d, \"oldest_sequence\": %d, \"active_connections\": %d, " +
                 "\"has_init_segment\": %s, \"uptime_seconds\": %d, " +
                 "\"battery_details\": %s, " +
                 "\"uptime_details\": %s, " +
-                "\"network_type\": \"%s\", \"network_connected\": %s, " +
+                "\"network_type\": %s, \"network_connected\": %s, " +
                 "\"network_health\": %s, " +
                 "\"stream_quality\": %s, " +
-                "\"video_codec\": \"%s\", " +
+                "\"video_codec\": %s, " +
                 "\"torch_state\": %s, " +
                 "\"volume\": %d, \"max_volume\": %d, \"volume_percentage\": %.1f, " +
-                "\"alarm\": {\"is_ringing\": %s, \"sound\": \"%s\", \"duration_ms\": %d, \"remaining_ms\": %d}, " +
+                "\"alarm\": {\"is_ringing\": %s, \"sound\": %s, \"duration_ms\": %d, \"remaining_ms\": %d}, " +
                 "\"auth_enabled\": %s, \"auth_timeout_ms\": %d, \"auth_sessions_count\": %d, \"auth_sessions_cleared\": %s, " +
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
-                "\"memory_usage\": \"%s\", \"storage\": \"%s\", " +
+                "\"memory_usage\": %s, \"storage\": %s, " +
                 "\"total_data_transferred_mb\": %d}",
                 streamingEnabled,
-                streamingMode.toString().toLowerCase(),
-                state,
-                message,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(streamingMode.toString().toLowerCase()),
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(state),
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(message),
                 isRecording,
                 bufferedCount,
                 totalBytes / (1024.0 * 1024.0),
@@ -665,17 +678,17 @@ public class RemoteStreamManager {
                 uptimeSeconds,
                 batteryDetailsJson,
                 uptimeDetailsJson,
-                networkType,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(networkType),
                 isNetworkConnected,
                 networkHealthJson,
                 qualityJson,
-                codecName,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(codecName),
                 isTorchOn(),  // Read from SharedPreferences to get current actual state
                 mediaVolume,
                 maxMediaVolume,
                 volumePercentage,
                 alarmRinging,
-                selectedAlarmSound,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(selectedAlarmSound),
                 alarmDurationMs,
                 alarmRinging ? getRemainingAlarmDurationMs() : 0,
                 authEnabled,
@@ -684,8 +697,8 @@ public class RemoteStreamManager {
                 authSessionsCleared,
                 eventsJson.toString(),
                 clientsJson.toString(),
-                memoryUsage,
-                storageInfo,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(memoryUsage),
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(storageInfo),
                 totalDataMB
             );
             
@@ -695,7 +708,20 @@ public class RemoteStreamManager {
             cachedStatusJson = result;
             lastStatusJsonTime = currentTime;
             
+            long generationTime = System.currentTimeMillis() - startTime;
+            Log.d(TAG, "📊 [getStatusJson] JSON generated successfully in " + generationTime + "ms, size: " + result.length() + " bytes");
+            
+            // DEBUG: Log first 350 chars to help identify JSON errors
+            String preview = result.substring(0, Math.min(350, result.length()));
+            if (result.length() > 350) preview += "...[truncated]";
+            Log.d(TAG, "📋 [getStatusJson] JSON preview:\n" + preview);
+            
             return result;
+        } catch (Exception e) {
+            Log.e(TAG, "❌ [getStatusJson] Exception during JSON generation: " + e.getMessage(), e);
+            // Return fallback JSON instead of crashing
+            return "{\"streaming\": " + streamingEnabled + ", \"state\": \"error\", \"message\": \"JSON generation failed\", \"error\": \"" + 
+                   com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(e.getMessage()) + "\"}";
         } finally {
             bufferLock.readLock().unlock();
         }
@@ -1043,7 +1069,8 @@ public class RemoteStreamManager {
             warning = "⚠️ Low Battery - Plug charger ASAP";
         }
         
-        String warningJson = warning.isEmpty() ? "\"\"" : "\"" + warning + "\"";
+        // Properly escape warning text for JSON embedding (handles emoji and special chars)
+        String warningJson = warning.isEmpty() ? "\"\"" : com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(warning);
         String chargingStatus = isCharging ? "Charging" : "Discharging";
         
         String result = String.format(

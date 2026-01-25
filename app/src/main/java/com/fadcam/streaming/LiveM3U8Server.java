@@ -67,6 +67,11 @@ public class LiveM3U8Server extends NanoHTTPD {
                            !uri.startsWith("/stream.m3u8") && !uri.startsWith("/init.mp4") &&
                            !uri.startsWith("/css/") && !uri.startsWith("/js/") && !uri.startsWith("/assets/");
         
+        // Log API requests (important ones that indicate client activity)
+        if (isApiCall && (uri.equals("/") || uri.equals("/status") || uri.startsWith("/auth") || uri.startsWith("/api/"))) {
+            Log.i(TAG, "📥 [API] " + method + " " + uri + " from " + clientIP);
+        }
+        
         if (isApiCall) {
             if (Method.GET.equals(method)) {
                 streamManager.incrementClientGetRequests(clientIP);
@@ -97,6 +102,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             } else if (uri.startsWith("/seg-") && uri.endsWith(".m4s")) {
                 response = serveFragment(uri, clientIP);
             } else if ("/status".equals(uri)) {
+                Log.d(TAG, "🌐 [/status] Dashboard request from " + clientIP + " User-Agent: " + userAgent);
                 response = serveStatus();
             } else if ("/auth/check".equals(uri)) {
                 response = handleAuthCheck(session);
@@ -886,10 +892,28 @@ public class LiveM3U8Server extends NanoHTTPD {
 
     @NonNull
     private Response serveStatus() {
-        String statusJson = streamManager.getStatusJson();
-        Response response = newFixedLengthResponse(Response.Status.OK, "application/json", statusJson);
-        response.addHeader("Cache-Control", "no-cache");
-        return response;
+        try {
+            long startTime = System.currentTimeMillis();
+            Log.d(TAG, "📊 [/status] Request received");
+            
+            String statusJson = streamManager.getStatusJson();
+            long jsonTime = System.currentTimeMillis();
+            Log.d(TAG, "📊 [/status] JSON generated in " + (jsonTime - startTime) + "ms, size: " + statusJson.length() + " bytes");
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", statusJson);
+            response.addHeader("Cache-Control", "no-cache");
+            
+            // CRITICAL FIX: Disable GZIP compression on status endpoint to prevent broken pipe on slow networks
+            // On cellular networks with no data, GZIP compression causes client timeout before response completes
+            response.addHeader("Content-Encoding", "identity");  // Tell client NO compression
+            
+            Log.d(TAG, "📊 [/status] Response prepared, sending to client");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "❌ [/status] Error in serveStatus: " + e.getMessage(), e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                "{\"error\": \"Failed to generate status\"}");
+        }
     }
     
     // START: Authentication Endpoints
@@ -1167,6 +1191,7 @@ public class LiveM3U8Server extends NanoHTTPD {
     }
     
     private Response serveLandingPage() {
+        Log.i(TAG, "🏠 [/] Dashboard page requested");
         try {
             // Load from assets/web/index.html at runtime
             InputStream htmlStream = context.getAssets().open("web/index.html");
@@ -1174,10 +1199,10 @@ public class LiveM3U8Server extends NanoHTTPD {
             response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             response.addHeader("Pragma", "no-cache");
             response.addHeader("Expires", "0");
-            Log.i(TAG, "✅ Loaded index.html from assets/web");
+            Log.i(TAG, "🏠 [/] Dashboard served successfully");
             return response;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to load index.html from assets/web", e);
+            Log.e(TAG, "❌ [/] Failed to load index.html from assets/web", e);
             // Fallback to simple error message
             String html = "<!DOCTYPE html>\n" +
                     "<html><head><title>Error</title></head><body>\n" +

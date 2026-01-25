@@ -301,10 +301,15 @@ execute_build() {
             
             print_status "🚀" "Launching app on all devices..."
             local LAUNCH_SUCCESS=0
+            # Determine package name based on build type
+            local PACKAGE_NAME="com.fadcam.beta"
+            if [ "$BUILD_TYPE" = "release" ]; then
+                PACKAGE_NAME="com.fadcam"
+            fi
             for ((i=0; i<DEVICE_COUNT; i++)); do
                 local device="${DEVICES[$i]}"
                 local DEVICE_MODEL=$(adb -s "$device" shell getprop ro.product.model 2>/dev/null | tr -d '\r' | xargs || echo "Unknown")
-                if adb -s "$device" shell am start -n com.fadcam.beta/com.fadcam.SplashActivity >/dev/null 2>&1; then
+                if adb -s "$device" shell am start -n "${PACKAGE_NAME}/com.fadcam.SplashActivity" >/dev/null 2>&1; then
                     echo -e "  ${BRIGHT_RED}[${device}]${RESET} ${WHITE}${DEVICE_MODEL}${RESET} - ✅ Launched"
                     ((LAUNCH_SUCCESS++))
                 else

@@ -31,20 +31,31 @@ class ApiService {
      */
     async getStatus() {
         try {
+            const startTime = performance.now();
+            console.log(`🌐 [/status] Dashboard sending request to ${this.baseUrl}/status`);
+            
             const response = await fetch(`${this.baseUrl}/status`, {
                 method: 'GET',
                 headers: this.getHeaders()
             });
             
+            const fetchTime = performance.now() - startTime;
+            console.log(`📡 [/status] Response received in ${fetchTime.toFixed(2)}ms, status: ${response.status}, size: ${response.headers.get('content-length') || 'unknown'} bytes`);
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
+            const parseStart = performance.now();
             this.statusCache = await response.json();
+            const parseTime = performance.now() - parseStart;
+            
             this.lastFetchTime = Date.now();
+            console.log(`✅ [/status] JSON parsed in ${parseTime.toFixed(2)}ms, state: ${this.statusCache.streaming ? 'streaming' : 'idle'}, clients: ${this.statusCache.totalConnectedClients}`);
+            
             return this.statusCache;
         } catch (error) {
-            console.error('Failed to fetch status:', error);
+            console.error('❌ [/status] Failed to fetch status:', error);
             throw error;
         }
     }

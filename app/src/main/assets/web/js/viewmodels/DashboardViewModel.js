@@ -32,9 +32,9 @@ class DashboardViewModel {
             // Emit event for views to update
             eventBus.emit('status-updated', this.statusModel);
             
-            console.log('[DashboardViewModel] Status updated:', this.statusModel.state);
+            console.log(`✅ [DashboardViewModel] Status updated: ${data.state}, streaming: ${data.streaming}, clients: ${data.totalConnectedClients}, uptime: ${data.uptime}`);
         } catch (error) {
-            console.error('[DashboardViewModel] Failed to update status:', error);
+            console.error('❌ [DashboardViewModel] Failed to update status:', error.message);
             
             // Emit offline status
             this.statusModel.update({ state: 'offline' });
