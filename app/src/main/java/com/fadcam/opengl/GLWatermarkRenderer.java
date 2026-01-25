@@ -417,7 +417,14 @@ public class GLWatermarkRenderer {
                 // Get synchronized timestamp from recording pipeline if available
                 if (recordingPipeline != null) {
                     // Convert synchronized timestamp (microseconds) to nanoseconds
-                    presentationTimeNanos = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp) * 1000L;
+                    long ptsUs = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp);
+                    
+                    // If -1, skip this frame (frame rate limiting)
+                    if (ptsUs < 0) {
+                        return; // Skip this frame
+                    }
+                    
+                    presentationTimeNanos = ptsUs * 1000L;
                 } else {
                     // Fallback to camera timestamp (already in nanoseconds)
                     presentationTimeNanos = cameraTimestamp;

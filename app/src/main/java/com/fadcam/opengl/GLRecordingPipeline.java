@@ -59,6 +59,7 @@ public class GLRecordingPipeline {
     private Surface pendingPreviewToApply = null;
     private Runnable pendingPreviewApplyRunnable = null;
     private final Object previewApplyLock = new Object();
+    private final Object timestampLock = new Object();  // Synchronization lock for timestamp fields
     private final String orientation;
     private final int sensorOrientation;
 
@@ -83,50 +84,51 @@ public class GLRecordingPipeline {
     /**
      * Gets a synchronized timestamp for audio frames based on the video timeline.
      * This ensures audio and video timestamps are properly aligned.
+     * Accounts for pause durations to maintain sync during camera switch.
      */
     private long getSynchronizedAudioTimestamp() {
-        synchronized (timestampLock) {
-            if (recordingStartTimeNanos == -1) {
-                // First call - initialize the recording start time
-                recordingStartTimeNanos = System.nanoTime();
-                return 0; // First audio frame starts at 0
-            }
-
-            // Calculate elapsed time since recording started
-            long elapsedNanos = System.nanoTime() - recordingStartTimeNanos;
-            return elapsedNanos / 1000L; // Convert to microseconds
-        }
+        // Audio timestamp is calculated based on sample count, which naturally
+        // excludes pause periods (no samples recorded during pause)
+        // So we don't need to do anything special here
+        return -1; // Indicates: use the PTS calculated in audio thread
     }
 
     private void initializeVideoTimestamp(long cameraTimestampNanos) {
-        synchronized (timestampLock) {
-            if (firstVideoTimestampNanos == -1) {
-                firstVideoTimestampNanos = cameraTimestampNanos;
-                if (recordingStartTimeNanos == -1) {
-                    recordingStartTimeNanos = System.nanoTime();
-                }
-                // Log.d(TAG, "Video timestamp initialized: camera=" + cameraTimestampNanos +
-                //     ", recording_start=" + recordingStartTimeNanos);
-            }
-        }
+        // Not needed anymore - PTS is calculated from frame counter
+        // Keeping this method for compatibility with existing code
     }
 
     /**
      * Gets a synchronized timestamp for video frames that aligns with audio.
-     * This converts camera timestamps to recording timeline.
+     * Returns -1 during pause to skip frames, preserving the existing timestamp logic.
+     * 
+     * CRITICAL FIX: Use SYSTEM CLOCK elapsed time (same as audio thread),
+     * not camera timestamps. This ensures audio and video use the SAME timing base.
      */
     public long getSynchronizedVideoTimestamp(long cameraTimestampNanos) {
-        synchronized (timestampLock) {
-            if (firstVideoTimestampNanos == -1 || recordingStartTimeNanos == -1) {
-                // Initialize if not done yet
-                initializeVideoTimestamp(cameraTimestampNanos);
-                return 0; // First video frame starts at 0
-            }
-
-            // Calculate offset from first video frame
-            long videoOffsetNanos = cameraTimestampNanos - firstVideoTimestampNanos;
-            return videoOffsetNanos / 1000L; // Convert to microseconds
+        // If paused, return -1 to signal frame skip in renderToEncoder
+        if (isPaused) {
+            return -1;  // Skip this frame
         }
+        
+        // Use System.nanoTime() reference (same as audio thread for sync)
+        // Initialize recording start time on first frame
+        if (recordingStartSystemTimeNanos == -1) {
+            synchronized (timestampLock) {
+                if (recordingStartSystemTimeNanos == -1) {
+                    recordingStartSystemTimeNanos = System.nanoTime();
+                    Log.d(TAG, "[VIDEO_TIMESTAMP] Recording system time reference initialized: " + 
+                          recordingStartSystemTimeNanos + " nanos");
+                }
+            }
+        }
+        
+        // Calculate relative timestamp from system time reference (same as audio!)
+        // This ensures both audio and video use the exact same timing base
+        long elapsedNanos = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
+        long ptsUs = Math.max(0, elapsedNanos / 1000L);  // Convert to microseconds, ensure non-negative
+        
+        return ptsUs;
     }
 
     private long maxFileSizeBytes = Long.MAX_VALUE;
@@ -188,9 +190,16 @@ public class GLRecordingPipeline {
     private Float locationLongitude = null;
 
     // Timestamp synchronization fields
-    private long recordingStartTimeNanos = -1;
-    private long firstVideoTimestampNanos = -1;
-    private final Object timestampLock = new Object();
+    private long recordingStartTimeNanos = -1;       // System.nanoTime() when recording starts (VIDEO reference)
+    private long recordingStartSystemTimeNanos = -1; // System.nanoTime() for audio thread reference (same as video!)
+    private volatile boolean isPaused = false;       // Track pause state for audio thread
+    
+    // Pause/resume tracking fields
+    private long pauseStartTimeNanos = -1;           // System.nanoTime() when pause starts
+    private long totalPauseDurationNanos = 0;        // Accumulated pause duration
+    private long lastVideoPtsBeforePauseUs = 0;      // Last video PTS before pause
+    private long lastAudioPtsBeforePauseUs = 0;      // Last audio PTS before pause
+    private boolean isCameraSwitchPause = false;     // Flag to indicate if pause is due to camera switch
 
     // scheduler-----------
     // Update watermark on a low-frequency handler to avoid per-frame overhead and
@@ -454,6 +463,11 @@ public class GLRecordingPipeline {
                     com.fadcam.Log.d(TAG, "Starting recording pipeline");
                 } catch (Throwable ignore) {
                 }
+                
+                // Reset timestamp tracking at recording start
+                recordingStartTimeNanos = -1;  // Will be initialized on first VIDEO frame
+                recordingStartSystemTimeNanos = System.nanoTime(); // Initialize for AUDIO thread reference NOW
+                Log.i(TAG, "[RECORDING_START] Audio/Video timing reference initialized: " + recordingStartSystemTimeNanos);
 
                 // Make sure we have a valid renderer and surfaces
                 if (glRenderer == null || encoderInputSurface == null) {
@@ -1107,7 +1121,7 @@ public class GLRecordingPipeline {
         if (segmentNumber == 1) {
             synchronized (timestampLock) {
                 recordingStartTimeNanos = -1;
-                firstVideoTimestampNanos = -1;
+                recordingStartSystemTimeNanos = -1;
             }
         }
 
@@ -1331,9 +1345,11 @@ public class GLRecordingPipeline {
                                 
                                 videoSamplesWritten++;
                                 lastVideoPts = bufferInfo.presentationTimeUs;
-                                if (videoSamplesWritten % 60 == 0) {
-                                    Log.d(TAG, String.format("VIDEO: #%d, %.1fs, %db",
-                                        videoSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0, bufferInfo.size));
+                                // Log every frame for debugging (can reduce frequency later)
+                                if (videoSamplesWritten % 30 == 0) {
+                                    Log.i(TAG, String.format("[VIDEO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db, keyframe=%s",
+                                        videoSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0, 
+                                        bufferInfo.presentationTimeUs, bufferInfo.size, isKeyframe));
                                 }
                                 
                                 segmentBytesWritten += bufferInfo.size;
@@ -1740,7 +1756,7 @@ public class GLRecordingPipeline {
         isRecording = false;
         // Clear retry/time bases
         recordingStartTimeNanos = -1;
-        firstVideoTimestampNanos = -1;
+        recordingStartSystemTimeNanos = -1;
     }
 
     /**
@@ -1771,7 +1787,9 @@ public class GLRecordingPipeline {
     }
 
     /**
-     * Pauses the recording pipeline (no-op, for API compatibility).
+     * Pauses the recording pipeline with proper timestamp tracking.
+     * During pause, we record the last known PTS values to maintain
+     * timeline continuity when resuming (especially important for camera switch).
      */
     public void pauseRecording() {
         if (!isRecording || isStopped) {
@@ -1779,9 +1797,26 @@ public class GLRecordingPipeline {
             return;
         }
 
-        Log.d(TAG, "Pausing recording");
+        Log.i(TAG, "========== PAUSE RECORDING ===========");
 
-        // Simply set the recording flag to false to stop encoding new frames
+        synchronized (timestampLock) {
+            // Record pause start time for duration tracking
+            pauseStartTimeNanos = System.nanoTime();
+            isPaused = true;
+            
+            // Save last known PTS values before pause
+            lastVideoPtsBeforePauseUs = lastVideoPts;
+            lastAudioPtsBeforePauseUs = lastAudioPts;
+            
+            Log.i(TAG, "[PAUSE] Pause started at " + (pauseStartTimeNanos / 1_000_000L) + "ms");
+            Log.i(TAG, "[PAUSE] Last video PTS: " + lastVideoPtsBeforePauseUs + "us (" + (lastVideoPtsBeforePauseUs / 1000.0) + "ms)");
+            Log.i(TAG, "[PAUSE] Last audio PTS: " + lastAudioPtsBeforePauseUs + "us (" + (lastAudioPtsBeforePauseUs / 1000.0) + "ms)");
+            Log.i(TAG, "[PAUSE] Total pause duration so far: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
+            Log.i(TAG, "[PAUSE] Video samples written: " + videoSamplesWritten);
+            Log.i(TAG, "[PAUSE] Audio samples written: " + audioSamplesWritten);
+        }
+
+        // Set recording flag to false to stop encoding new frames
         isRecording = false;
 
         // Pause audio recording if enabled
@@ -1798,6 +1833,20 @@ public class GLRecordingPipeline {
 
         Log.d(TAG, "Recording paused successfully");
     }
+    
+    /**
+     * Prepares for a camera switch by setting the appropriate flags.
+     * Call this before pauseRecording() when switching cameras.
+     */
+    public void prepareCameraSwitch() {
+        synchronized (timestampLock) {
+            isCameraSwitchPause = true;
+            Log.i(TAG, "========== PREPARE CAMERA SWITCH ===========");
+            Log.i(TAG, "[CAMERA_SWITCH] Prepared - timestamps will be adjusted on resume");
+            Log.i(TAG, "[CAMERA_SWITCH] Current video PTS: " + lastVideoPts + "us");
+            Log.i(TAG, "[CAMERA_SWITCH] Current audio PTS: " + lastAudioPts + "us");
+        }
+    }
 
     /**
      * Resumes the recording pipeline (no-op, for API compatibility).
@@ -1809,6 +1858,21 @@ public class GLRecordingPipeline {
         }
 
         Log.d(TAG, "Resuming recording");
+
+        Log.i(TAG, "========== RESUME RECORDING ===========");
+        
+        synchronized (timestampLock) {
+            // Calculate pause duration for logging
+            if (pauseStartTimeNanos > 0) {
+                long pauseDuration = System.nanoTime() - pauseStartTimeNanos;
+                totalPauseDurationNanos += pauseDuration;
+                Log.i(TAG, "[RESUME] This pause duration: " + (pauseDuration / 1_000_000L) + "ms");
+                Log.i(TAG, "[RESUME] Total pause duration: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
+            }
+            
+            isPaused = false;
+            pauseStartTimeNanos = -1;
+        }
 
         // Resume audio recording if enabled
         if (audioRecordingEnabled && audioRecord != null) {
@@ -2183,6 +2247,7 @@ public class GLRecordingPipeline {
 
     /**
      * Starts the audio thread to read PCM and feed the encoder.
+     * Handles pause/resume for camera switch scenarios.
      */
     private void startAudioThread() {
         if (!audioRecordingEnabled || audioThreadRunning)
@@ -2196,13 +2261,35 @@ public class GLRecordingPipeline {
                 final int aacFrameSize = 1024 * bytesPerFrame; // 1024 PCM frames per AAC frame
                 final int readBufferSize = Math.max(aacFrameSize * 4, 131072); // >= 128 KiB
                 byte[] readBuffer = new byte[readBufferSize];
-                long audioFramesWritten = 0L; // PCM frames (not bytes)
-                long lastPtsUs =  0L;
+                long lastPtsUs = 0L;
+                
                 while (audioThreadRunning) {
+                    // Check if we're paused - wait for resume
+                    if (isPaused) {
+                        // During pause, don't read audio - just wait
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        continue;
+                    }
+                    
+                    // Check if audioRecord is actually recording
+                    if (audioRecord.getRecordingState() != android.media.AudioRecord.RECORDSTATE_RECORDING) {
+                        // AudioRecord is stopped (during pause), wait a bit
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        continue;
+                    }
+                    
                     int read = audioRecord.read(readBuffer, 0, readBuffer.length);
                     if (read > 0) {
                         int offset = 0;
-                        while (offset < read && audioThreadRunning) {
+                        while (offset < read && audioThreadRunning && !isPaused) {
                             int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);
                             if (inputBufferIndex < 0) {
                                 // Encoder busy; break and try next loop iteration
@@ -2215,13 +2302,33 @@ public class GLRecordingPipeline {
                             codecInput.clear();
                             int toCopy = Math.min(codecInput.remaining(), read - offset);
                             codecInput.put(readBuffer, offset, toCopy);
-                            // PTS based on frames written so far (stable, drift-free)
-                            long ptsUs = (audioFramesWritten * 1_000_000L) / audioSampleRate;
-                            audioEncoder.queueInputBuffer(inputBufferIndex, 0, toCopy, ptsUs, 0);
-                            lastPtsUs = ptsUs;
+                            
+                            // CRITICAL FIX: Audio PTS must sync with video PTS!
+                            // Both use elapsed time from recordingStartSystemTimeNanos reference point
+                            // This ensures they use the SAME timing base (system clock, not frame count)
+                            synchronized (timestampLock) {
+                                long elapsedNanos = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
+                                long ptsUs = Math.max(0, elapsedNanos / 1000L); // Convert to microseconds
+                                
+                                // Ensure monotonically increasing PTS
+                                if (ptsUs <= lastPtsUs && lastPtsUs > 0) {
+                                    ptsUs = lastPtsUs + 1; // Ensure at least 1us increment
+                                }
+                                
+                                audioEncoder.queueInputBuffer(inputBufferIndex, 0, toCopy, ptsUs, 0);
+                                lastPtsUs = ptsUs;
+                            }
+                            
                             // Advance counters
                             offset += toCopy;
-                            audioFramesWritten += (toCopy / bytesPerFrame);
+                        }
+                    } else if (read < 0) {
+                        // Error or AudioRecord stopped
+                        Log.w(TAG, "AudioRecord.read returned " + read + " - likely paused or error");
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }
@@ -2233,14 +2340,16 @@ public class GLRecordingPipeline {
                 while (eosRetries > 0 && !eosQueued) {
                     int inputBufferIndex = audioEncoder.dequeueInputBuffer(50000); // 50ms timeout per retry
                     if (inputBufferIndex >= 0) {
-                        // Use lastPtsUs from our audio timeline to avoid duration jumps
-                        long eosPtsUs = (audioFramesWritten * 1_000_000L) / audioSampleRate;
-                        if (eosPtsUs < lastPtsUs)
-                            eosPtsUs = lastPtsUs; // monotonic safeguard
-                        audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, eosPtsUs,
-                                MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        Log.d(TAG, "Audio EOS queued at PTS=" + eosPtsUs + "us (" + (eosPtsUs / 1000000.0) + "s)");
-                        eosQueued = true;
+                        // Use system time for EOS PTS too, to match monotonic timeline
+                        synchronized (timestampLock) {
+                            long eosPtsUs = Math.max(0, (System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos) / 1000L);
+                            if (eosPtsUs < lastPtsUs)
+                                eosPtsUs = lastPtsUs; // monotonic safeguard
+                            audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, eosPtsUs,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            Log.d(TAG, "Audio EOS queued at PTS=" + eosPtsUs + "us (" + (eosPtsUs / 1000000.0) + "s)");
+                            eosQueued = true;
+                        }
                     } else {
                         eosRetries--;
                         Log.w(TAG, "Failed to get input buffer for audio EOS, retries left: " + eosRetries);
@@ -2360,9 +2469,11 @@ public class GLRecordingPipeline {
                                 
                                 audioSamplesWritten++;
                                 lastAudioPts = bufferInfo.presentationTimeUs;
-                                if (audioSamplesWritten % 100 == 0) {
-                                    Log.d(TAG, String.format("AUDIO: #%d, %.1fs, %db",
-                                        audioSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0, bufferInfo.size));
+                                // Log every 50 samples for debugging
+                                if (audioSamplesWritten % 50 == 0) {
+                                    Log.i(TAG, String.format("[AUDIO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db",
+                                        audioSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0,
+                                        bufferInfo.presentationTimeUs, bufferInfo.size));
                                 }
                                 // Detect silence pattern (constant 512-byte AAC frames)
                                 if (bufferInfo.size == 512) {

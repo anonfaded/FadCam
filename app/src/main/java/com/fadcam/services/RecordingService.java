@@ -1226,6 +1226,12 @@ public class RecordingService extends Service {
             Log.i(TAG, "Switching camera: " + currentType + " → " + newCameraType);
             broadcastOnCameraSwitchStarted(currentType, newCameraType);
 
+            // PHASE 0: Prepare pipeline for camera switch (timestamp handling)
+            Log.d(TAG, "PHASE 0: Preparing pipeline for camera switch");
+            if (glRecordingPipeline != null) {
+                glRecordingPipeline.prepareCameraSwitch();
+            }
+
             // PHASE 1: Pause recording
             Log.d(TAG, "PHASE 1: Pausing recording");
             pauseRecording();
@@ -1780,6 +1786,25 @@ public class RecordingService extends Service {
                         startBlackFrameRendering();
                     }
                 });
+                return;
+            }
+
+            // CRITICAL FIX: Handle camera switch scenario
+            // When camera opens during PAUSED state, we need to create a capture session
+            // so frames will be available when resumeRecording() is called
+            if (recordingState == RecordingState.PAUSED && isSwitchingCamera) {
+                Log.d(TAG, "Camera opened during camera switch (PAUSED state) - creating capture session");
+                try {
+                    createCameraPreviewSession();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error creating capture session during camera switch", e);
+                    // Attempt recovery
+                    try {
+                        stopRecording();
+                    } catch (Exception stopError) {
+                        Log.e(TAG, "Error stopping recording during camera switch error recovery", stopError);
+                    }
+                }
                 return;
             }
 
