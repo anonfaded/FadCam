@@ -29,7 +29,7 @@
             android:padding="8dp"
             android:background="@drawable/cloud_button_bg"
             android:src="@drawable/ic_cloud_account"
-            android:tint="#00d4ff"
+            android:tint="#FF4444"
             android:contentDescription="@string/cloud_account_button_desc"
             android:clickable="true"
             android:focusable="true" />

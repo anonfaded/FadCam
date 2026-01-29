@@ -38,7 +38,7 @@
             android:layout_height="24dp"
             android:layout_marginStart="12dp"
             android:src="@drawable/ic_cloud_account"
-            android:tint="#00d4ff"
+            android:tint="#FF4444"
             android:contentDescription="@string/cloud_account_title" />
         
         <TextView
@@ -68,7 +68,7 @@
         android:layout_height="3dp"
         android:indeterminate="false"
         android:max="100"
-        android:progressTint="#00d4ff"
+        android:progressTint="#FF4444"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/cloud_header_bar"
         app:layout_constraintStart_toStartOf="parent"

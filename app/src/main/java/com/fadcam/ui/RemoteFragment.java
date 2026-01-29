@@ -1091,8 +1091,8 @@ public class RemoteFragment extends BaseFragment {
             // Linked - show green tint
             cloudAccountButton.setColorFilter(0xFF4CAF50); // Green
         } else {
-            // Not linked - show cyan tint
-            cloudAccountButton.setColorFilter(0xFF00D4FF); // Cyan
+            // Not linked - show red tint (FadCam brand color)
+            cloudAccountButton.setColorFilter(0xFFFF4444); // Red
         }
     }
 }
