@@ -18,21 +18,79 @@
             android:scaleType="centerCrop"
             android:contentDescription="@string/stream_server_room" />
 
-        <!-- Cloud Account Button (top-right) -->
-        <ImageView
+        <!-- Cloud Account Button - Two-line text + Icon grid layout -->
+        <LinearLayout
             android:id="@+id/cloud_account_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="top|end"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:padding="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:background="@drawable/cloud_button_bg"
-            android:src="@drawable/ic_cloud_account"
-            android:tint="#FF4444"
-            android:contentDescription="@string/cloud_account_button_desc"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true">
+            
+            <!-- Two-line text on left -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="10dp">
+                
+                <TextView
+                    android:id="@+id/cloud_label_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cloud_button_title"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.02" />
+                
+                <TextView
+                    android:id="@+id/cloud_label_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cloud_account_not_linked"
+                    android:textColor="#888888"
+                    android:textSize="9sp"
+                    android:fontFamily="sans-serif" />
+                    
+            </LinearLayout>
+            
+            <!-- Icon on right with status indicator -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                
+                <ImageView
+                    android:id="@+id/cloud_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_cloud_account"
+                    android:tint="#FF4444"
+                    android:contentDescription="@null" />
+                
+                <!-- Unlinked indicator dot (top-right of icon) -->
+                <View
+                    android:id="@+id/cloud_unlinked_dot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-2dp"
+                    android:layout_marginEnd="-2dp"
+                    android:background="@drawable/unlinked_dot"
+                    android:visibility="gone" />
+                    
+            </FrameLayout>
+                
+        </LinearLayout>
 
         <!-- Status Card Overlay -->
         <LinearLayout

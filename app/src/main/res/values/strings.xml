@@ -1346,6 +1346,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     
     <!-- FadSec Cloud / Remote Streaming -->
     <string name="cloud_account_button_desc">FadSec Cloud</string>
+    <string name="cloud_button_label">FadSec Cloud</string>
+    <string name="cloud_button_title">FadSec Cloud</string>
     <string name="cloud_account_title">FadSec Cloud</string>
     <string name="cloud_account_link">Link Device</string>
     <string name="cloud_account_unlink">Unlink Device</string>

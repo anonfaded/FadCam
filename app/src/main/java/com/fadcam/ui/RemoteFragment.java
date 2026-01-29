@@ -90,7 +90,10 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout remoteAuthLogoutAllRow;
     
     // Cloud Account UI
-    private ImageView cloudAccountButton;
+    private View cloudAccountButton;
+    private ImageView cloudIcon;
+    private TextView cloudStatusText;
+    private View cloudUnlinkedDot;
     private CloudAuthManager cloudAuthManager;
     private ActivityResultLauncher<Intent> cloudAccountLauncher;
     
@@ -199,6 +202,9 @@ public class RemoteFragment extends BaseFragment {
         
         // Initialize Cloud Account button
         cloudAccountButton = view.findViewById(R.id.cloud_account_button);
+        cloudIcon = view.findViewById(R.id.cloud_icon);
+        cloudStatusText = view.findViewById(R.id.cloud_label_status);
+        cloudUnlinkedDot = view.findViewById(R.id.cloud_unlinked_dot);
         if (cloudAccountButton != null) {
             cloudAccountButton.setOnClickListener(v -> onCloudAccountClick());
             updateCloudButtonState();
@@ -1085,14 +1091,34 @@ public class RemoteFragment extends BaseFragment {
      * Update cloud button visual state based on link status
      */
     private void updateCloudButtonState() {
-        if (cloudAccountButton == null) return;
+        if (cloudIcon == null) return;
         
         if (cloudAuthManager.isLinked()) {
-            // Linked - show green tint
-            cloudAccountButton.setColorFilter(0xFF4CAF50); // Green
+            // Linked - show green tint, hide unlinked dot, update status text
+            cloudIcon.setColorFilter(0xFF4CAF50); // Green
+            if (cloudUnlinkedDot != null) {
+                cloudUnlinkedDot.setVisibility(View.GONE);
+            }
+            if (cloudStatusText != null) {
+                String deviceName = cloudAuthManager.getDeviceName();
+                if (deviceName != null && !deviceName.isEmpty()) {
+                    cloudStatusText.setText(deviceName);
+                    cloudStatusText.setTextColor(0xFF4CAF50); // Green
+                } else {
+                    cloudStatusText.setText(R.string.cloud_account_linked);
+                    cloudStatusText.setTextColor(0xFF4CAF50); // Green
+                }
+            }
         } else {
-            // Not linked - show red tint (FadCam brand color)
-            cloudAccountButton.setColorFilter(0xFFFF4444); // Red
+            // Not linked - show red tint (FadCam brand color), show unlinked dot
+            cloudIcon.setColorFilter(0xFFFF4444); // Red
+            if (cloudUnlinkedDot != null) {
+                cloudUnlinkedDot.setVisibility(View.VISIBLE);
+            }
+            if (cloudStatusText != null) {
+                cloudStatusText.setText(R.string.cloud_account_not_linked);
+                cloudStatusText.setTextColor(0xFF888888); // Gray
+            }
         }
     }
 }
