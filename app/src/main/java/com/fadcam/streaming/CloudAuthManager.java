@@ -195,7 +195,9 @@ public class CloudAuthManager {
     }
     
     /**
-     * Build the device link URL with parameters
+     * Build the login URL for device linking.
+     * Opens the login page directly with return URL containing device-link parameters.
+     * After successful login, user is redirected to device-link page for registration.
      * 
      * @param deviceName User-provided device name
      * @return Complete URL for WebView to load
@@ -203,6 +205,7 @@ public class CloudAuthManager {
     @NonNull
     public String buildDeviceLinkUrl(@NonNull String deviceName) {
         String deviceId = getDeviceId();
+        
         // URL encode the device name
         String encodedName;
         try {
@@ -210,7 +213,20 @@ public class CloudAuthManager {
         } catch (java.io.UnsupportedEncodingException e) {
             encodedName = deviceName.replace(" ", "%20");
         }
-        return DEVICE_LINK_URL + "?device_id=" + deviceId + "&device_name=" + encodedName;
+        
+        // Build the device-link return URL (where user goes after login)
+        String deviceLinkUrl = "/device-link?device_id=" + deviceId + "&device_name=" + encodedName;
+        
+        // URL encode the return URL for the login page parameter
+        String encodedReturnUrl;
+        try {
+            encodedReturnUrl = java.net.URLEncoder.encode(deviceLinkUrl, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            encodedReturnUrl = deviceLinkUrl.replace("?", "%3F").replace("&", "%26").replace("=", "%3D");
+        }
+        
+        // Return the login URL with the device-link return path
+        return AUTH_BASE_URL + "/login?return=" + encodedReturnUrl;
     }
     
     /**
