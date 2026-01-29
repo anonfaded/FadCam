@@ -2,20 +2,21 @@
  * FadCam Remote Cloud Integration
  * 
  * Adds cloud features to the dashboard when accessed via web.
- * Shows on: fadseclab.com, fadcam.faded.dev, localhost
+ * Shows on: fadseclab.com, localhost
  * Hidden on: IP addresses (phone/LAN access like 192.168.x.x)
+ * 
+ * Note: This dashboard is demo mode only. Real device management
+ * happens at id.fadseclab.com/lab (Phase 6).
  */
 (function() {
   'use strict';
   
   // Configuration
   const CONFIG = {
-    SUPABASE_PROJECT_REF: 'vfhehknmxxedvesdvpew',
-    LOGIN_URL: 'https://id.fadseclab.com/login',
     LAB_URL: 'https://id.fadseclab.com/lab',
     // Domains where cloud features should show
     WEB_DOMAINS: [
-      'fadcam.fadseclab.com',
+      'fadseclab.com',
       'localhost'
     ]
   };
@@ -26,29 +27,6 @@
     return CONFIG.WEB_DOMAINS.some(domain => hostname.includes(domain));
   }
   
-  // Check for Supabase session in localStorage
-  function getSession() {
-    const storageKey = `sb-${CONFIG.SUPABASE_PROJECT_REF}-auth-token`;
-    try {
-      const sessionData = localStorage.getItem(storageKey);
-      if (!sessionData) return null;
-      
-      const session = JSON.parse(sessionData);
-      if (!session.access_token) return null;
-      
-      // Check expiry
-      if (session.expires_at) {
-        const expiresAt = session.expires_at * 1000;
-        if (Date.now() > expiresAt) return null;
-      }
-      
-      return session;
-    } catch (e) {
-      console.error('[FadCamRemote] Error parsing session:', e);
-      return null;
-    }
-  }
-  
   // Add FadCam Remote menu item to profile dropdown
   function addCloudMenuItem() {
     const dropdown = document.getElementById('profileDropdown');
@@ -57,27 +35,16 @@
       return;
     }
     
-    const session = getSession();
-    const isLoggedIn = !!session;
-    
-    // Create the menu item
+    // Create the menu item - always shows "My Account" link to Lab
     const menuItem = document.createElement('div');
     menuItem.className = 'profile-item fadcam-remote-item';
     menuItem.style.cssText = 'border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4px; padding-top: 12px;';
     
-    if (isLoggedIn) {
-      menuItem.innerHTML = `
-        <i class="fas fa-cloud" style="color: #00d4ff;"></i> 
-        <span>My Account</span>
-      `;
-      menuItem.onclick = () => window.open(CONFIG.LAB_URL, '_blank');
-    } else {
-      menuItem.innerHTML = `
-        <i class="fas fa-cloud" style="color: #ff6b6b;"></i> 
-        <span>Get FadCam Remote</span>
-      `;
-      menuItem.onclick = () => window.open(CONFIG.LOGIN_URL, '_blank');
-    }
+    menuItem.innerHTML = `
+      <i class="fas fa-cloud" style="color: #00d4ff;"></i> 
+      <span>FadCam Remote</span>
+    `;
+    menuItem.onclick = () => window.open(CONFIG.LAB_URL, '_blank');
     
     // Insert before the last item (Logout)
     const logoutItem = dropdown.querySelector('.profile-item:last-child');
@@ -87,7 +54,7 @@
       dropdown.appendChild(menuItem);
     }
     
-    console.log('[FadCamRemote] Menu item added, logged in:', isLoggedIn);
+    console.log('[FadCamRemote] Menu item added');
   }
   
   // Initialize
