@@ -235,6 +235,9 @@
 
         <activity android:name=".ui.VideoPlayerActivity" android:theme="@style/Base.Theme.FadCam" />
         <activity android:name=".ui.WebViewActivity" />
+        <activity android:name=".ui.CloudAccountActivity" 
+            android:theme="@style/Base.Theme.FadCam" 
+            android:exported="false" />
         
         <!-- Transparent activity for requesting screen recording permission without bringing app to foreground -->
         <activity 
