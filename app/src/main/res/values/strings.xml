@@ -1344,9 +1344,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
     <string name="stream_notes_cellular">⚠️ On cellular networks: ISPs mostly block incoming connections. Streaming will very likely NOT work. Use WiFi for reliable streaming</string>
     
-    <!-- Cloud Account / Remote Streaming -->
-    <string name="cloud_account_button_desc">Link Cloud Account</string>
-    <string name="cloud_account_title">Cloud Account</string>
+    <!-- FadSec Cloud / Remote Streaming -->
+    <string name="cloud_account_button_desc">FadSec Cloud</string>
+    <string name="cloud_account_title">FadSec Cloud</string>
     <string name="cloud_account_link">Link Device</string>
     <string name="cloud_account_unlink">Unlink Device</string>
     <string name="cloud_account_connecting">Connecting…</string>
@@ -1354,13 +1354,14 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="cloud_account_not_linked">Not Linked</string>
     <string name="cloud_account_device_name_hint">Enter device name (e.g., My Phone)</string>
     <string name="cloud_account_device_name_title">Name Your Device</string>
-    <string name="cloud_account_device_name_desc">This name will appear in your FadCam Remote dashboard</string>
+    <string name="cloud_account_device_name_desc">This name will appear in your FadSec Cloud dashboard</string>
     <string name="cloud_account_device_id">Device ID</string>
     <string name="cloud_account_link_success">Device linked successfully!</string>
     <string name="cloud_account_link_failed">Failed to link device. Please try again.</string>
     <string name="cloud_account_unlink_confirm">Are you sure you want to unlink this device?</string>
     <string name="cloud_account_unlink_success">Device unlinked</string>
-    <string name="cloud_account_webview_title">FadCam Remote</string>
+    <string name="cloud_account_webview_title">FadSec Cloud</string>
     <string name="cloud_account_login_required">Please log in to link your device</string>
+    <string name="cloud_account_helper_text">Unlink to disconnect from your account. You can link again with a different name.</string>
     
 </resources>

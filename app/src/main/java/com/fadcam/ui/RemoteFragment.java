@@ -1027,10 +1027,10 @@ public class RemoteFragment extends BaseFragment {
         }
         
         // Device ID (copyable)
-        options.add(new OptionItem("copy_id", deviceId, getString(R.string.cloud_account_device_id)));
+        options.add(new OptionItem("copy_id", deviceId, getString(R.string.cloud_account_device_id) + " (tap to copy)"));
         
-        // Unlink option
-        options.add(new OptionItem("unlink", getString(R.string.cloud_account_unlink), ""));
+        // Unlink option with helper text as subtitle
+        options.add(new OptionItem("unlink", getString(R.string.cloud_account_unlink), getString(R.string.cloud_account_helper_text)));
         
         PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
             getString(R.string.cloud_account_title),
