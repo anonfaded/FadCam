@@ -223,194 +223,52 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- Streaming Mode Selector Card -->
+            <!-- Streaming Mode Row (opens bottom sheet picker) -->
             <LinearLayout
-                android:id="@+id/streaming_mode_section"
+                android:id="@+id/streaming_mode_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/settings_group_card_bg"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/settings_home_row_bg"
+                android:paddingStart="14dp"
+                android:paddingEnd="12dp"
                 android:paddingTop="12dp"
                 android:paddingBottom="12dp"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="8dp"
+                android:clickable="true"
+                android:focusable="true">
 
-                <!-- Section Title -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/streaming_mode_title"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/darker_gray"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:layout_marginBottom="8dp"
-                    android:letterSpacing="0.05" />
-
-                <!-- Local Network Option -->
                 <LinearLayout
-                    android:id="@+id/streaming_mode_local"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/settings_home_row_bg"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
-                    android:clickable="true"
-                    android:focusable="true">
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                    <RadioButton
-                        android:id="@+id/radio_local"
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:layout_marginEnd="12dp" />
+                        android:text="@string/streaming_mode_title"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:id="@+id/streaming_mode_value"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/streaming_mode_local"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorHeading" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/streaming_mode_local_desc"
-                            android:textSize="12sp"
-                            android:textColor="@android:color/darker_gray"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
+                        android:text="@string/streaming_mode_local"
+                        android:textSize="13sp"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@android:color/darker_gray" />
                 </LinearLayout>
 
-                <!-- Cloud Option (Featured) -->
-                <LinearLayout
-                    android:id="@+id/streaming_mode_cloud"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/settings_home_row_bg"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <RadioButton
-                            android:id="@+id/radio_cloud"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:clickable="false"
-                            android:focusable="false"
-                            android:layout_marginEnd="12dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/streaming_mode_cloud"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold"
-                                    android:textColor="?attr/colorHeading" />
-
-                                <!-- Featured Badge -->
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/streaming_mode_cloud_featured"
-                                    android:textSize="9sp"
-                                    android:textStyle="bold"
-                                    android:textColor="#FFFFFF"
-                                    android:background="@drawable/featured_badge_bg"
-                                    android:paddingStart="6dp"
-                                    android:paddingEnd="6dp"
-                                    android:paddingTop="2dp"
-                                    android:paddingBottom="2dp"
-                                    android:layout_marginStart="8dp" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:id="@+id/streaming_mode_cloud_subtitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/streaming_mode_cloud_desc"
-                                android:textSize="12sp"
-                                android:textColor="@android:color/darker_gray"
-                                android:layout_marginTop="2dp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Cloud Stream URL (shown when cloud selected and linked) -->
-                    <LinearLayout
-                        android:id="@+id/cloud_stream_url_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:background="@drawable/url_container_bg"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:paddingTop="8dp"
-                        android:paddingBottom="8dp"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginStart="24dp"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/cloud_stream_url"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="https://live.fadseclab.com:8443/..."
-                            android:textSize="11sp"
-                            android:textColor="#4CAF50"
-                            android:fontFamily="monospace"
-                            android:singleLine="true"
-                            android:ellipsize="middle" />
-
-                        <ImageView
-                            android:id="@+id/copy_cloud_url_btn"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_copy"
-                            android:tint="@android:color/darker_gray"
-                            android:layout_marginStart="8dp"
-                            android:padding="4dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:contentDescription="@string/stream_copy_url" />
-                    </LinearLayout>
-                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
 
             <!-- Legacy Cloud Streaming Toggle Row - hidden, kept for compatibility -->

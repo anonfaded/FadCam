@@ -1381,5 +1381,6 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="streaming_mode_cloud_featured">FEATURED</string>
     <string name="streaming_mode_link_required">Link device to enable</string>
     <string name="streaming_mode_stream_url">Stream URL</string>
+    <string name="streaming_mode_helper">Choose how you want to stream your camera</string>
     
 </resources>
