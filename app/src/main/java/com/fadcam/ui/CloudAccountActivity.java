@@ -124,16 +124,18 @@ public class CloudAccountActivity extends AppCompatActivity {
     public class FadCamBridge {
         /**
          * Called when device linking is successful
-         * @param token JWT token for API authentication
+         * @param token JWT access token for API authentication
          * @param expiryMs Token expiry timestamp in milliseconds
          * @param email User's email address
+         * @param refreshToken Refresh token for seamless renewal (may be null for legacy)
+         * @param userId User's UUID (may be null, will be extracted from token)
          */
         @JavascriptInterface
-        public void onLinkSuccess(String token, long expiryMs, String email) {
-            Log.i(TAG, "Device linked successfully to: " + email);
+        public void onLinkSuccess(String token, long expiryMs, String email, String refreshToken, String userId) {
+            Log.i(TAG, "Device linked successfully to: " + email + ", has refresh: " + (refreshToken != null && !refreshToken.isEmpty()));
             
-            // Store the token and device info
-            cloudAuthManager.setJwtToken(token, expiryMs);
+            // Store the token with refresh token for seamless renewal
+            cloudAuthManager.setJwtToken(token, expiryMs, refreshToken, userId);
             cloudAuthManager.setDeviceName(deviceName);
             cloudAuthManager.setUserEmail(email);
             

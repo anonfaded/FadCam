@@ -304,6 +304,14 @@ public class RemoteStreamManager {
             
             if (initData != null) {
                 // Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
+                
+                // Upload to cloud relay if enabled
+                if (context != null) {
+                    CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
+                    if (uploader.isEnabled() && uploader.isReady()) {
+                        uploader.uploadInitSegment(initData, null);
+                    }
+                }
             } else {
                 Log.w(TAG, "⚠️ Initialization segment is NULL");
             }
@@ -360,6 +368,14 @@ public class RemoteStreamManager {
             
             // Log.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
             //     (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
+            
+            // Upload to cloud relay if enabled
+            if (context != null) {
+                CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
+                if (uploader.isEnabled() && uploader.isReady()) {
+                    uploader.uploadSegment(sequenceNumber, fragmentData, null);
+                }
+            }
             
         } finally {
             bufferLock.writeLock().unlock();

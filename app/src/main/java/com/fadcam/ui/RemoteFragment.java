@@ -19,6 +19,7 @@ import android.view.animation.AlphaAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +36,7 @@ import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.streaming.CloudAuthManager;
+import com.fadcam.streaming.CloudStreamUploader;
 import com.fadcam.streaming.RemoteAuthManager;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
@@ -96,6 +98,22 @@ public class RemoteFragment extends BaseFragment {
     private View cloudUnlinkedDot;
     private CloudAuthManager cloudAuthManager;
     private ActivityResultLauncher<Intent> cloudAccountLauncher;
+    
+    // Cloud Streaming UI
+    private LinearLayout cloudStreamingRow;
+    private Switch cloudStreamingToggle;
+    private TextView cloudStreamingStatus;
+    
+    // Streaming Mode Selector UI
+    private LinearLayout streamingModeSection;
+    private LinearLayout streamingModeLocal;
+    private LinearLayout streamingModeCloud;
+    private RadioButton radioLocal;
+    private RadioButton radioCloud;
+    private TextView streamingModeCloudSubtitle;
+    private LinearLayout cloudStreamUrlContainer;
+    private TextView cloudStreamUrl;
+    private ImageView copyCloudUrlBtn;
     
     private RemoteStreamService streamService;
     private boolean serviceBound = false;
@@ -209,6 +227,25 @@ public class RemoteFragment extends BaseFragment {
             cloudAccountButton.setOnClickListener(v -> onCloudAccountClick());
             updateCloudButtonState();
         }
+        
+        // Initialize Cloud Streaming toggle (legacy, kept for compatibility)
+        cloudStreamingRow = view.findViewById(R.id.cloud_streaming_row);
+        cloudStreamingToggle = view.findViewById(R.id.cloud_streaming_toggle);
+        cloudStreamingStatus = view.findViewById(R.id.cloud_streaming_status);
+        
+        // Initialize Streaming Mode Selector
+        streamingModeSection = view.findViewById(R.id.streaming_mode_section);
+        streamingModeLocal = view.findViewById(R.id.streaming_mode_local);
+        streamingModeCloud = view.findViewById(R.id.streaming_mode_cloud);
+        radioLocal = view.findViewById(R.id.radio_local);
+        radioCloud = view.findViewById(R.id.radio_cloud);
+        streamingModeCloudSubtitle = view.findViewById(R.id.streaming_mode_cloud_subtitle);
+        cloudStreamUrlContainer = view.findViewById(R.id.cloud_stream_url_container);
+        cloudStreamUrl = view.findViewById(R.id.cloud_stream_url);
+        copyCloudUrlBtn = view.findViewById(R.id.copy_cloud_url_btn);
+        
+        setupStreamingModeSelector();
+        setupCloudStreaming();
         
         // Set context for status reporting
         RemoteStreamManager.getInstance().setContext(requireContext());
@@ -1118,7 +1155,12 @@ public class RemoteFragment extends BaseFragment {
     private void updateCloudButtonState() {
         if (cloudIcon == null) return;
         
-        if (cloudAuthManager.isLinked()) {
+        boolean isLinked = cloudAuthManager.isLinked();
+        boolean hasValidToken = cloudAuthManager.hasValidToken();
+        boolean hasRefreshToken = cloudAuthManager.getRefreshToken() != null;
+        boolean canUseCloud = isLinked && (hasValidToken || hasRefreshToken);
+        
+        if (isLinked) {
             // Linked - show green tint, hide unlinked dot, update status text
             cloudIcon.setColorFilter(0xFF4CAF50); // Green
             if (cloudUnlinkedDot != null) {
@@ -1144,7 +1186,225 @@ public class RemoteFragment extends BaseFragment {
                 cloudStatusText.setText(R.string.cloud_account_not_linked);
                 cloudStatusText.setTextColor(0xFF888888); // Gray
             }
+            // Disable cloud streaming and reset to local mode
+            CloudStreamUploader uploader = CloudStreamUploader.getInstance(requireContext());
+            if (uploader.isEnabled()) {
+                uploader.setEnabled(false);
+            }
+            // Reset to local mode
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
+            prefs.edit().putInt(KEY_STREAMING_MODE, MODE_LOCAL).putBoolean("cloud_streaming_enabled", false).apply();
+        }
+        
+        // Hide legacy cloud streaming row
+        if (cloudStreamingRow != null) {
+            cloudStreamingRow.setVisibility(View.GONE);
+        }
+        
+        // Update streaming mode selector
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
+        int savedMode = prefs.getInt(KEY_STREAMING_MODE, MODE_LOCAL);
+        updateStreamingModeUI(savedMode, canUseCloud);
+    }
+    
+    // Streaming mode constants
+    private static final String KEY_STREAMING_MODE = "streaming_mode";
+    private static final int MODE_LOCAL = 0;
+    private static final int MODE_CLOUD = 1;
+    
+    /**
+     * Setup the streaming mode selector (Local Network vs FadSec Cloud)
+     */
+    private void setupStreamingModeSelector() {
+        if (streamingModeLocal == null || streamingModeCloud == null) return;
+        
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
+        int savedMode = prefs.getInt(KEY_STREAMING_MODE, MODE_LOCAL);
+        
+        // Check if cloud is available
+        boolean hasValidToken = cloudAuthManager.hasValidToken();
+        boolean hasRefreshToken = cloudAuthManager.getRefreshToken() != null;
+        boolean canUseCloud = cloudAuthManager.isLinked() && (hasValidToken || hasRefreshToken);
+        
+        // Set initial state
+        updateStreamingModeUI(savedMode, canUseCloud);
+        
+        // Local option click handler
+        streamingModeLocal.setOnClickListener(v -> {
+            setStreamingMode(MODE_LOCAL);
+        });
+        
+        // Cloud option click handler
+        streamingModeCloud.setOnClickListener(v -> {
+            boolean cloudAvailable = cloudAuthManager.isLinked() && 
+                (cloudAuthManager.hasValidToken() || cloudAuthManager.getRefreshToken() != null);
+            
+            if (!cloudAvailable) {
+                // Not linked - show message and open cloud account
+                Toast.makeText(requireContext(), R.string.streaming_mode_link_required, Toast.LENGTH_SHORT).show();
+                onCloudAccountClick();
+                return;
+            }
+            
+            setStreamingMode(MODE_CLOUD);
+        });
+        
+        // Copy URL button
+        if (copyCloudUrlBtn != null) {
+            copyCloudUrlBtn.setOnClickListener(v -> copyCloudStreamUrl());
+        }
+    }
+    
+    /**
+     * Set the streaming mode and update UI/preferences
+     */
+    private void setStreamingMode(int mode) {
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
+        prefs.edit().putInt(KEY_STREAMING_MODE, mode).apply();
+        
+        // Also sync the legacy cloud_streaming_enabled flag
+        boolean cloudEnabled = (mode == MODE_CLOUD);
+        prefs.edit().putBoolean("cloud_streaming_enabled", cloudEnabled).apply();
+        
+        // Update uploader
+        CloudStreamUploader uploader = CloudStreamUploader.getInstance(requireContext());
+        uploader.setEnabled(cloudEnabled);
+        
+        // Update UI
+        boolean canUseCloud = cloudAuthManager.isLinked() && 
+            (cloudAuthManager.hasValidToken() || cloudAuthManager.getRefreshToken() != null);
+        updateStreamingModeUI(mode, canUseCloud);
+        
+        Log.i(TAG, "Streaming mode set to: " + (mode == MODE_CLOUD ? "Cloud" : "Local"));
+    }
+    
+    /**
+     * Update the streaming mode selector UI
+     */
+    private void updateStreamingModeUI(int selectedMode, boolean cloudAvailable) {
+        // Guard: views may not be initialized yet
+        if (radioLocal == null || radioCloud == null) {
+            return;
+        }
+        
+        // Update radio buttons
+        radioLocal.setChecked(selectedMode == MODE_LOCAL);
+        radioCloud.setChecked(selectedMode == MODE_CLOUD);
+        
+        // Update cloud subtitle based on availability
+        if (streamingModeCloudSubtitle != null) {
+            if (!cloudAvailable) {
+                streamingModeCloudSubtitle.setText(R.string.streaming_mode_link_required);
+                streamingModeCloudSubtitle.setTextColor(0xFFFF4444); // Red
+            } else {
+                streamingModeCloudSubtitle.setText(R.string.streaming_mode_cloud_desc);
+                streamingModeCloudSubtitle.setTextColor(0xFF888888); // Gray
+            }
+        }
+        
+        // Show/hide cloud stream URL container
+        if (cloudStreamUrlContainer != null) {
+            if (selectedMode == MODE_CLOUD && cloudAvailable) {
+                cloudStreamUrlContainer.setVisibility(View.VISIBLE);
+                updateCloudStreamUrl();
+            } else {
+                cloudStreamUrlContainer.setVisibility(View.GONE);
+            }
+        }
+    }
+    
+    /**
+     * Update the cloud stream URL display
+     */
+    private void updateCloudStreamUrl() {
+        if (cloudStreamUrl == null) return;
+        
+        CloudStreamUploader uploader = CloudStreamUploader.getInstance(requireContext());
+        String userUuid = uploader.getUserUuid();
+        String deviceId = cloudAuthManager.getShortDeviceId();
+        
+        if (userUuid != null && deviceId != null) {
+            String url = "https://live.fadseclab.com:8443/stream/" + 
+                userUuid.substring(0, Math.min(8, userUuid.length())) + ".../" + 
+                deviceId + "/playlist.m3u8";
+            cloudStreamUrl.setText(url);
+        } else {
+            cloudStreamUrl.setText("Generating URL...");
+        }
+    }
+    
+    /**
+     * Copy the full cloud stream URL to clipboard
+     */
+    private void copyCloudStreamUrl() {
+        CloudStreamUploader uploader = CloudStreamUploader.getInstance(requireContext());
+        String userUuid = uploader.getUserUuid();
+        String deviceId = cloudAuthManager.getDeviceId();
+        
+        if (userUuid != null && deviceId != null) {
+            String fullUrl = "https://live.fadseclab.com:8443/stream/" + userUuid + "/" + deviceId + "/playlist.m3u8";
+            
+            android.content.ClipboardManager clipboard = 
+                (android.content.ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("Stream URL", fullUrl);
+            clipboard.setPrimaryClip(clip);
+            
+            Toast.makeText(requireContext(), R.string.stream_url_copied, Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Setup cloud streaming toggle and its state
+     * Note: Legacy method - functionality moved to streaming mode selector
+     */
+    private void setupCloudStreaming() {
+        // Legacy toggle is now hidden - functionality moved to streaming mode selector
+        if (cloudStreamingRow != null) {
+            cloudStreamingRow.setVisibility(View.GONE);
+        }
+        
+        // Trigger token refresh if needed
+        boolean hasValidToken = cloudAuthManager.hasValidToken();
+        boolean hasRefreshToken = cloudAuthManager.getRefreshToken() != null;
+        
+        if (!hasValidToken && hasRefreshToken) {
+            Log.i(TAG, "Token expired, triggering background refresh...");
+            cloudAuthManager.refreshTokenAsync(new CloudAuthManager.TokenRefreshListener() {
+                @Override
+                public void onRefreshSuccess(String newToken, long newExpiry) {
+                    Log.i(TAG, "Token refreshed successfully");
+                    // Update streaming mode UI after refresh
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            boolean canUseCloud = cloudAuthManager.isLinked() && 
+                                (cloudAuthManager.hasValidToken() || cloudAuthManager.getRefreshToken() != null);
+                            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
+                            int savedMode = prefs.getInt(KEY_STREAMING_MODE, MODE_LOCAL);
+                            updateStreamingModeUI(savedMode, canUseCloud);
+                        });
+                    }
+                }
+                
+                @Override
+                public void onRefreshFailed(String error) {
+                    Log.e(TAG, "Token refresh failed: " + error);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Update cloud streaming status text (legacy, kept for compatibility)
+     */
+    private void updateCloudStreamingStatus(boolean enabled) {
+        if (cloudStreamingStatus == null) return;
+        
+        if (enabled) {
+            cloudStreamingStatus.setText(R.string.cloud_streaming_status_on);
+            cloudStreamingStatus.setTextColor(0xFF4CAF50); // Green
+        } else {
+            cloudStreamingStatus.setText(R.string.cloud_streaming_status_off);
+            cloudStreamingStatus.setTextColor(0xFF888888); // Gray
         }
     }
 }
-
