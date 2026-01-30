@@ -210,13 +210,28 @@
       hideStreamOverlay();
       showDeviceBanner();
       
-      // TODO: Connect to actual stream when relay is set up
+      // Initialize CloudApiService for cloud mode
+      if (typeof initCloudApiService === 'function') {
+        initCloudApiService(streamContext);
+        console.log('[FadCamRemote] CloudApiService initialized');
+      }
+      
       console.log('[FadCamRemote] Stream context ready:', streamContext);
+      
+      // Emit event for DashboardViewModel to pick up cloud mode
+      if (typeof eventBus !== 'undefined') {
+        eventBus.emit('cloud-mode-ready', streamContext);
+      }
       
     } catch (error) {
       console.error('[FadCamRemote] Stream init failed:', error);
       showStreamOverlay('Connection Failed', 'Unable to connect to device. Please try again.');
     }
+  }
+  
+  // Check if we're in cloud mode (web access + authenticated stream context)
+  function isCloudMode() {
+    return isWebAccess() && streamContext !== null;
   }
   
   // Show overlay on stream page
@@ -356,10 +371,16 @@
     init();
   }
   
-  // Export for testing
+  // Export for testing and integration
   window.FadCamRemote = {
     getStreamDeviceId,
     isStreamingMode,
-    streamContext: () => streamContext
+    isCloudMode,
+    isWebAccess,
+    streamContext: () => streamContext,
+    getRelayHlsUrl: () => {
+      if (!streamContext?.userId || !streamContext?.deviceId) return null;
+      return `https://live.fadseclab.com:8443/stream/${streamContext.userId}/${streamContext.deviceId}/live.m3u8`;
+    }
   };
 })();

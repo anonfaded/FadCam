@@ -1,11 +1,27 @@
 /**
  * DashboardViewModel - Business logic for dashboard page
+ * 
+ * Supports two modes:
+ * - Local mode: Phone's HTTP server (apiService)
+ * - Cloud mode: Relay server (cloudApiService via getApiService())
  */
 class DashboardViewModel {
     constructor() {
         this.statusModel = new ServerStatus();
         this.pollInterval = null;
         this.isPolling = false;
+        this.cloudModeInitialized = false;
+    }
+    
+    /**
+     * Get the appropriate API service (local or cloud)
+     */
+    getApi() {
+        // Use getApiService if available (from CloudApiService.js)
+        if (typeof getApiService === 'function') {
+            return getApiService();
+        }
+        return apiService;
     }
     
     /**
@@ -13,6 +29,15 @@ class DashboardViewModel {
      */
     async initialize() {
         console.log('[DashboardViewModel] Initializing...');
+        
+        // Listen for cloud mode ready event
+        if (typeof eventBus !== 'undefined') {
+            eventBus.on('cloud-mode-ready', (ctx) => {
+                console.log('[DashboardViewModel] Cloud mode ready, reinitializing...', ctx);
+                this.cloudModeInitialized = true;
+                this.updateStatus(); // Force refresh with cloud API
+            });
+        }
         
         // Initial fetch
         await this.updateStatus();
@@ -26,13 +51,15 @@ class DashboardViewModel {
      */
     async updateStatus() {
         try {
-            const data = await apiService.getStatus();
+            const api = this.getApi();
+            const data = await api.getStatus();
             this.statusModel.update(data);
             
             // Emit event for views to update
             eventBus.emit('status-updated', this.statusModel);
             
-            console.log(`✅ [DashboardViewModel] Status updated: ${data.state}, streaming: ${data.streaming}, clients: ${data.totalConnectedClients}, uptime: ${data.uptime}`);
+            const modeLabel = data.cloudMode ? '☁️' : '📱';
+            console.log(`✅ [DashboardViewModel] ${modeLabel} Status updated: ${data.state}, streaming: ${data.streaming}, clients: ${data.totalConnectedClients}, uptime: ${data.uptime}`);
         } catch (error) {
             console.error('❌ [DashboardViewModel] Failed to update status:', error.message);
             
@@ -102,7 +129,7 @@ class DashboardViewModel {
      */
     async toggleTorch() {
         try {
-            const result = await apiService.toggleTorch();
+            const result = await this.getApi().toggleTorch();
             console.log('[DashboardViewModel] Torch toggled:', result);
             
             // Emit event
@@ -132,7 +159,7 @@ class DashboardViewModel {
                         try {
                             // User confirmed - switch codec to AVC first
                             console.log('[DashboardViewModel] Switching codec to AVC...');
-                            await apiService.post('/config/videoCodec', { codec: 'AVC' });
+                            await this.getApi().post('/config/videoCodec', { codec: 'AVC' });
                             console.log('[DashboardViewModel] Codec switched successfully');
                             
                             // Now proceed with recording
@@ -166,7 +193,7 @@ class DashboardViewModel {
      */
     async _proceedWithRecordingToggle() {
         try {
-            const result = await apiService.post('/recording/toggle', {});
+            const result = await this.getApi().post('/recording/toggle', {});
             console.log('[DashboardViewModel] Recording toggled:', result);
             
             // Emit event
@@ -187,7 +214,7 @@ class DashboardViewModel {
      */
     async toggleServer() {
         try {
-            const result = await apiService.post('/server/toggle', {});
+            const result = await this.getApi().post('/server/toggle', {});
             console.log('[DashboardViewModel] Server toggled:', result);
             await this.updateStatus();
             return result;
@@ -202,7 +229,7 @@ class DashboardViewModel {
      */
     async setRecordingMode(mode) {
         try {
-            const result = await apiService.post('/config/recordingMode', { mode });
+            const result = await this.getApi().post('/config/recordingMode', { mode });
             console.log('[DashboardViewModel] Recording mode set to:', mode);
             await this.updateStatus();
             return result;
@@ -217,7 +244,7 @@ class DashboardViewModel {
      */
     async setStreamQuality(quality) {
         try {
-            const result = await apiService.post('/config/streamQuality', { quality });
+            const result = await this.getApi().post('/config/streamQuality', { quality });
             console.log('[DashboardViewModel] Stream quality set to:', quality);
             await this.updateStatus();
             return result;
@@ -232,7 +259,7 @@ class DashboardViewModel {
      */
     async setBatteryWarning(threshold) {
         try {
-            const result = await apiService.post('/config/batteryWarning', { threshold: parseInt(threshold) });
+            const result = await this.getApi().post('/config/batteryWarning', { threshold: parseInt(threshold) });
             console.log('[DashboardViewModel] Battery warning threshold set to:', threshold);
             await this.updateStatus();
             return result;
