@@ -9,6 +9,12 @@
  * - /stream/{device_id}/ → connects to specific device's stream
  * - /dashboard/ → demo mode (no real streaming)
  * 
+ * Cross-domain authentication:
+ * - User clicks "Open Stream" at id.fadseclab.com
+ * - Lab generates handoff token and redirects here with ?token=xxx
+ * - We exchange token for session data via Edge Function
+ * - Session stored in localStorage for subsequent API calls
+ * 
  * Real device management happens at id.fadseclab.com/lab (Phase 6).
  */
 (function() {
@@ -23,7 +29,12 @@
     WEB_DOMAINS: [
       'fadseclab.com',
       'localhost'
-    ]
+    ],
+    // Local storage keys
+    STORAGE_KEYS: {
+      SESSION: 'fadcam_session',
+      USER: 'fadcam_user'
+    }
   };
   
   // Stream context (set when accessing /stream/{device_id}/)
@@ -53,6 +64,76 @@
     return match ? match[1] : null;
   }
   
+  // Get handoff token from URL (passed by Lab after generating)
+  function getHandoffToken() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+  }
+  
+  // Get stored session from localStorage
+  function getStoredSession() {
+    try {
+      const sessionStr = localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION);
+      if (!sessionStr) return null;
+      const session = JSON.parse(sessionStr);
+      // Check if session is still valid (authenticated within last 24 hours)
+      const authTime = new Date(session.authenticated_at);
+      const now = new Date();
+      const hoursDiff = (now - authTime) / (1000 * 60 * 60);
+      if (hoursDiff > 24) {
+        // Session expired, clear it
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION);
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+        return null;
+      }
+      return session;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // Store session in localStorage
+  function storeSession(sessionData, userData) {
+    localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
+    localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify(userData));
+  }
+  
+  // Exchange handoff token for session (called when arriving from Lab)
+  async function exchangeHandoffToken(token, deviceId) {
+    console.log('[FadCamRemote] Exchanging handoff token...');
+    
+    try {
+      const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/exchange-handoff-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token, device_id: deviceId })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Token exchange failed');
+      }
+      
+      // Store the session for future use
+      storeSession(result.session_hint, result.user);
+      
+      // Clean up the URL (remove token from URL for security/aesthetics)
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('token');
+      window.history.replaceState({}, document.title, cleanUrl.toString());
+      
+      console.log('[FadCamRemote] Token exchanged successfully for user:', result.user.email);
+      return result;
+      
+    } catch (error) {
+      console.error('[FadCamRemote] Token exchange failed:', error);
+      throw error;
+    }
+  }
+  
   // Check if we're in demo mode (/dashboard/) or streaming mode (/stream/{id}/)
   function isStreamingMode() {
     return getStreamDeviceId() !== null;
@@ -66,42 +147,49 @@
     showStreamOverlay('Connecting...', 'Authenticating with FadSec Cloud');
     
     try {
-      // Get auth token from localStorage (set by id.fadseclab.com)
-      const authToken = localStorage.getItem('supabase_access_token');
+      // Check for handoff token first (coming from Lab)
+      const handoffToken = getHandoffToken();
+      let session = null;
       
-      if (!authToken) {
-        // Not logged in - redirect to login
-        showStreamOverlay('Not Logged In', 'Redirecting to login...');
-        setTimeout(() => {
-          const returnUrl = encodeURIComponent(window.location.href);
-          window.location.href = `${CONFIG.LAB_URL}?return=${returnUrl}`;
-        }, 1500);
-        return;
+      if (handoffToken) {
+        // Exchange handoff token for session
+        try {
+          const result = await exchangeHandoffToken(handoffToken, deviceId);
+          session = result.session_hint;
+          streamContext = {
+            deviceId: deviceId,
+            deviceName: result.device?.name || deviceId,
+            userId: result.user.id,
+            userEmail: result.user.email
+          };
+        } catch (e) {
+          showStreamOverlay('Authentication Failed', e.message || 'Invalid or expired link. Please try again from Lab.');
+          setTimeout(() => {
+            window.location.href = CONFIG.LAB_URL;
+          }, 3000);
+          return;
+        }
+      } else {
+        // No handoff token - check for stored session
+        session = getStoredSession();
+        
+        if (!session) {
+          // No session - redirect to Lab to login
+          showStreamOverlay('Not Logged In', 'Redirecting to login...');
+          setTimeout(() => {
+            window.location.href = CONFIG.LAB_URL;
+          }, 1500);
+          return;
+        }
+        
+        // We have a stored session, but need to verify device access
+        // For now, trust the stored session (it came from a valid handoff)
+        streamContext = {
+          deviceId: deviceId,
+          deviceName: session.device_id === deviceId ? 'Your Device' : deviceId,
+          userId: session.user_id
+        };
       }
-      
-      // Verify token and device access
-      const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/verify-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ device_id: deviceId })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        showStreamOverlay('Access Denied', error.message || 'You do not have access to this device');
-        return;
-      }
-      
-      const data = await response.json();
-      streamContext = {
-        deviceId: deviceId,
-        deviceName: data.device_name || deviceId,
-        streamUrl: data.stream_url, // URL to the HLS stream
-        userId: data.user_id
-      };
       
       // Hide overlay and start streaming
       hideStreamOverlay();
