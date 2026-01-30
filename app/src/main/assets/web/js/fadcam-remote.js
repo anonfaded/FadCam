@@ -33,7 +33,8 @@
     // Local storage keys
     STORAGE_KEYS: {
       SESSION: 'fadcam_session',
-      USER: 'fadcam_user'
+      USER: 'fadcam_user',
+      STREAM_TOKEN: 'fadcam_stream_token' // JWT for relay API calls
     }
   };
   
@@ -99,9 +100,17 @@
   }
   
   // Store session in localStorage
-  function storeSession(sessionData, userData) {
+  function storeSession(sessionData, userData, streamToken) {
     localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
     localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify(userData));
+    if (streamToken) {
+      localStorage.setItem(CONFIG.STORAGE_KEYS.STREAM_TOKEN, streamToken);
+    }
+  }
+  
+  // Get stored stream access token
+  function getStreamToken() {
+    return localStorage.getItem(CONFIG.STORAGE_KEYS.STREAM_TOKEN);
   }
   
   // Exchange handoff token for session (called when arriving from Lab)
@@ -123,8 +132,8 @@
         throw new Error(result.error || 'Token exchange failed');
       }
       
-      // Store the session for future use
-      storeSession(result.session_hint, result.user);
+      // Store the session and stream access token for future use
+      storeSession(result.session_hint, result.user, result.stream_access_token);
       
       // Clean up the URL (remove token from URL for security/aesthetics)
       const cleanUrl = new URL(window.location.href);
@@ -171,7 +180,8 @@
             deviceId: deviceId,
             deviceName: result.device?.name || deviceId,
             userId: result.user.id,
-            userEmail: result.user.email
+            userEmail: result.user.email,
+            streamToken: result.stream_access_token // JWT for relay API calls
           };
         } catch (e) {
           showStreamOverlay('Authentication Failed', e.message || 'Invalid or expired link. Please try again from Lab.');
@@ -184,10 +194,11 @@
         console.log('[FadCamRemote] NO handoff token, checking stored session...');
         // No handoff token - check for stored session
         session = getStoredSession();
-        console.log('[FadCamRemote] Stored session:', session ? 'exists' : 'none');
+        const storedStreamToken = getStreamToken();
+        console.log('[FadCamRemote] Stored session:', session ? 'exists' : 'none', 'Stream token:', storedStreamToken ? 'exists' : 'none');
         
-        if (!session) {
-          console.log('[FadCamRemote] No session, will redirect to Lab in 1.5s');
+        if (!session || !storedStreamToken) {
+          console.log('[FadCamRemote] No session or token, will redirect to Lab in 1.5s');
           // No session - redirect to Lab to login
           showStreamOverlay('Not Logged In', 'Redirecting to login...');
           setTimeout(() => {
@@ -197,12 +208,12 @@
           return;
         }
         
-        // We have a stored session, but need to verify device access
-        // For now, trust the stored session (it came from a valid handoff)
+        // We have a stored session, use it
         streamContext = {
           deviceId: deviceId,
           deviceName: session.device_id === deviceId ? 'Your Device' : deviceId,
-          userId: session.user_id
+          userId: session.user_id,
+          streamToken: storedStreamToken // JWT for relay API calls
         };
       }
       
@@ -378,9 +389,18 @@
     isCloudMode,
     isWebAccess,
     streamContext: () => streamContext,
+    getStreamToken: () => streamContext?.streamToken || getStreamToken(),
     getRelayHlsUrl: () => {
       if (!streamContext?.userId || !streamContext?.deviceId) return null;
       return `https://live.fadseclab.com:8443/stream/${streamContext.userId}/${streamContext.deviceId}/live.m3u8`;
+    },
+    getRelayStatusUrl: () => {
+      if (!streamContext?.userId || !streamContext?.deviceId) return null;
+      return `https://live.fadseclab.com:8443/api/status/${streamContext.userId}/${streamContext.deviceId}`;
+    },
+    getRelayCommandUrl: () => {
+      if (!streamContext?.userId || !streamContext?.deviceId) return null;
+      return `https://live.fadseclab.com:8443/api/command/${streamContext.userId}/${streamContext.deviceId}`;
     }
   };
 })();

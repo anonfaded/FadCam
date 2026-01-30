@@ -1,15 +1,20 @@
 package com.fadcam.streaming;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -46,6 +51,7 @@ public class CloudStreamUploader {
     private static final MediaType MEDIA_TYPE_MP4 = MediaType.parse("video/mp4");
     private static final MediaType MEDIA_TYPE_M4S = MediaType.parse("video/iso.segment");
     private static final MediaType MEDIA_TYPE_M3U8 = MediaType.parse("application/vnd.apple.mpegurl");
+    private static final MediaType MEDIA_TYPE_JSON = MediaType.parse("application/json");
     
     private static CloudStreamUploader instance;
     
@@ -399,6 +405,257 @@ public class CloudStreamUploader {
      */
     public interface UploadCallback {
         void onSuccess();
+        void onError(String error);
+    }
+    
+    // =========================================================================
+    // Status API - Push status to relay for dashboard to read
+    // =========================================================================
+    
+    /**
+     * Upload status JSON to relay.
+     * Dashboard reads this to display device state.
+     * URL: PUT /api/status/{user_uuid}/{device_id}
+     * 
+     * @param statusJson Status JSON string (from RemoteStreamManager.getStatusJson())
+     * @param callback Optional callback for upload result
+     */
+    public void uploadStatus(String statusJson, @Nullable UploadCallback callback) {
+        if (!isEnabled) {
+            return;
+        }
+        
+        String url = buildStatusUrl();
+        if (url == null) {
+            if (callback != null) callback.onError("Failed to build status URL");
+            return;
+        }
+        
+        uploadBytes(url, statusJson.getBytes(), MEDIA_TYPE_JSON, callback);
+    }
+    
+    /**
+     * Build the status API URL.
+     * Format: https://live.fadseclab.com:8443/api/status/{user_uuid}/{device_id}
+     */
+    @Nullable
+    private String buildStatusUrl() {
+        String userUuid = getUserUuid();
+        if (userUuid == null) {
+            Log.e(TAG, "Cannot build status URL: no user UUID");
+            return null;
+        }
+        
+        String deviceId = authManager.getDeviceId();
+        return RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
+    }
+    
+    // =========================================================================
+    // Command API - Poll commands from relay, execute, then delete
+    // =========================================================================
+    
+    /**
+     * Poll for pending commands from relay.
+     * Dashboard sends commands here for phone to execute.
+     * URL: GET /api/command/{user_uuid}/{device_id}
+     * 
+     * Returns list of command file names (e.g., ["1234567890.json", "1234567891.json"])
+     * Use fetchCommand() to get the actual command content.
+     * 
+     * @param callback Callback with list of command IDs or error
+     */
+    public void pollCommands(@NonNull CommandListCallback callback) {
+        String url = buildCommandUrl();
+        if (url == null) {
+            callback.onError("Failed to build command URL");
+            return;
+        }
+        
+        String token = authManager.getJwtToken();
+        if (token == null) {
+            callback.onError("No valid JWT token");
+            return;
+        }
+        
+        Request request = new Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Authorization", "Bearer " + token)
+            .build();
+        
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                callback.onError("Network error: " + e.getMessage());
+            }
+            
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                try {
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "[]";
+                        List<String> commandIds = parseCommandList(body);
+                        callback.onSuccess(commandIds);
+                    } else if (response.code() == 404) {
+                        // No commands directory yet - normal case
+                        callback.onSuccess(new ArrayList<>());
+                    } else {
+                        callback.onError("HTTP " + response.code());
+                    }
+                } catch (Exception e) {
+                    callback.onError("Parse error: " + e.getMessage());
+                } finally {
+                    response.close();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Parse nginx autoindex JSON response to extract command file names.
+     * Format: [{"name":"1234567890.json","type":"file",...}, ...]
+     */
+    private List<String> parseCommandList(String json) {
+        List<String> commands = new ArrayList<>();
+        try {
+            JSONArray array = new JSONArray(json);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject item = array.getJSONObject(i);
+                String name = item.optString("name", "");
+                String type = item.optString("type", "");
+                if ("file".equals(type) && name.endsWith(".json")) {
+                    // Extract command ID (remove .json extension)
+                    String cmdId = name.replace(".json", "");
+                    commands.add(cmdId);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse command list: " + e.getMessage());
+        }
+        return commands;
+    }
+    
+    /**
+     * Fetch a specific command's content.
+     * URL: GET /api/command/{user_uuid}/{device_id}/{cmd_id}.json
+     * 
+     * @param commandId The command ID (millisecond timestamp)
+     * @param callback Callback with command JSON or error
+     */
+    public void fetchCommand(String commandId, @NonNull CommandCallback callback) {
+        String url = buildCommandUrl() + "/" + commandId + ".json";
+        
+        String token = authManager.getJwtToken();
+        if (token == null) {
+            callback.onError("No valid JWT token");
+            return;
+        }
+        
+        Request request = new Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Authorization", "Bearer " + token)
+            .build();
+        
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                callback.onError("Network error: " + e.getMessage());
+            }
+            
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                try {
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "{}";
+                        JSONObject command = new JSONObject(body);
+                        callback.onSuccess(commandId, command);
+                    } else {
+                        callback.onError("HTTP " + response.code());
+                    }
+                } catch (Exception e) {
+                    callback.onError("Parse error: " + e.getMessage());
+                } finally {
+                    response.close();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Delete a command after execution.
+     * URL: DELETE /api/command/{user_uuid}/{device_id}/{cmd_id}
+     * 
+     * @param commandId The command ID to delete
+     * @param callback Optional callback for result
+     */
+    public void deleteCommand(String commandId, @Nullable UploadCallback callback) {
+        // Build URL without .json extension (as per nginx config)
+        String url = buildCommandUrl() + "/" + commandId;
+        
+        String token = authManager.getJwtToken();
+        if (token == null) {
+            if (callback != null) callback.onError("No valid JWT token");
+            return;
+        }
+        
+        Request request = new Request.Builder()
+            .url(url)
+            .delete()
+            .addHeader("Authorization", "Bearer " + token)
+            .build();
+        
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (callback != null) callback.onError("Network error: " + e.getMessage());
+            }
+            
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                try {
+                    if (response.isSuccessful() || response.code() == 404) {
+                        // 404 is OK - command might already be deleted
+                        if (callback != null) callback.onSuccess();
+                    } else {
+                        if (callback != null) callback.onError("HTTP " + response.code());
+                    }
+                } finally {
+                    response.close();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Build the command API URL.
+     * Format: https://live.fadseclab.com:8443/api/command/{user_uuid}/{device_id}
+     */
+    @Nullable
+    private String buildCommandUrl() {
+        String userUuid = getUserUuid();
+        if (userUuid == null) {
+            Log.e(TAG, "Cannot build command URL: no user UUID");
+            return null;
+        }
+        
+        String deviceId = authManager.getDeviceId();
+        return RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId;
+    }
+    
+    /**
+     * Callback interface for command list polling
+     */
+    public interface CommandListCallback {
+        void onSuccess(List<String> commandIds);
+        void onError(String error);
+    }
+    
+    /**
+     * Callback interface for single command fetch
+     */
+    public interface CommandCallback {
+        void onSuccess(String commandId, JSONObject command);
         void onError(String error);
     }
 }

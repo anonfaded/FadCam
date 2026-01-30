@@ -84,12 +84,29 @@ class ApiService {
         }
         
         // Add cloud headers if in cloud mode
-        if (this.isCloudMode() && this.streamContext) {
-            headers['X-Device-Id'] = this.streamContext.deviceId;
-            headers['X-User-Id'] = this.streamContext.userId;
+        if (this.isCloudMode()) {
+            if (this.streamContext) {
+                headers['X-Device-Id'] = this.streamContext.deviceId;
+                headers['X-User-Id'] = this.streamContext.userId;
+            }
+            // Add stream access token for relay API calls
+            const streamToken = this._getStreamToken();
+            if (streamToken) {
+                headers['Authorization'] = `Bearer ${streamToken}`;
+            }
         }
         
         return headers;
+    }
+    
+    /**
+     * Get stream access token from FadCamRemote
+     */
+    _getStreamToken() {
+        if (typeof FadCamRemote !== 'undefined' && typeof FadCamRemote.getStreamToken === 'function') {
+            return FadCamRemote.getStreamToken();
+        }
+        return null;
     }
     
     // =========================================================================
@@ -143,8 +160,7 @@ class ApiService {
     
     /**
      * Cloud mode: Fetch status from relay server
-     * TODO: Implement actual relay /api/status/{device_id} endpoint
-     * For now, returns mock status based on stream availability
+     * Calls GET /api/status/{user_uuid}/{device_id}
      */
     async _getCloudStatus() {
         try {
@@ -154,10 +170,40 @@ class ApiService {
                 return this._getOfflineStatus('Not authenticated');
             }
             
-            // TODO: Replace with actual relay status endpoint when available
-            // const response = await fetch(`${this.relayBaseUrl}/api/status/${this.streamContext.deviceId}`, ...);
+            const { userId, deviceId } = this.streamContext;
+            if (!userId || !deviceId) {
+                return this._getOfflineStatus('Missing user or device ID');
+            }
             
-            // For now, check if HLS playlist exists (indicates phone is uploading)
+            // Try to fetch status from relay
+            const statusUrl = `${this.relayBaseUrl}/api/status/${userId}/${deviceId}`;
+            console.log(`☁️ [/status] Fetching from relay: ${statusUrl}`);
+            
+            try {
+                const response = await fetch(statusUrl, {
+                    method: 'GET',
+                    headers: this.getHeaders()
+                });
+                
+                if (response.ok) {
+                    // Phone has pushed status to relay
+                    this.statusCache = await response.json();
+                    this.statusCache.cloudMode = true;
+                    this.lastFetchTime = Date.now();
+                    console.log(`✅ [/status] ☁️ Cloud: state=${this.statusCache.state}, streaming=${this.statusCache.streaming}`);
+                    return this.statusCache;
+                } else if (response.status === 404) {
+                    // Status file doesn't exist yet - phone hasn't pushed
+                    console.log(`☁️ [/status] No status from phone yet, checking playlist...`);
+                } else if (response.status === 401 || response.status === 403) {
+                    console.error(`☁️ [/status] Auth failed: ${response.status}`);
+                    return this._getOfflineStatus('Authentication failed');
+                }
+            } catch (fetchError) {
+                console.warn(`☁️ [/status] Relay fetch failed:`, fetchError.message);
+            }
+            
+            // Fallback: Check if HLS playlist exists (indicates phone is uploading)
             const playlistAvailable = await this._checkPlaylistAvailable();
             
             if (playlistAvailable) {
@@ -167,7 +213,7 @@ class ApiService {
             }
             
             this.lastFetchTime = Date.now();
-            console.log(`✅ [/status] ☁️ Cloud: state=${this.statusCache.state}, message=${this.statusCache.message}`);
+            console.log(`✅ [/status] ☁️ Cloud (fallback): state=${this.statusCache.state}, message=${this.statusCache.message}`);
             
             return this.statusCache;
             
@@ -261,19 +307,60 @@ class ApiService {
     
     /**
      * Cloud mode: Send command through relay to phone
-     * TODO: Implement actual relay command queue
+     * Uses PUT /api/command/{user_uuid}/{device_id}/{cmd_id}
+     * Phone will poll this endpoint and execute commands
      */
     async _sendCloudCommand(endpoint, data) {
-        console.warn(`☁️ [COMMAND] ${endpoint} - Cloud commands not yet implemented`);
+        console.log(`☁️ [COMMAND] ${endpoint} - Sending via relay`);
         
-        // TODO: When relay command endpoint is ready:
-        // const response = await fetch(`${this.relayBaseUrl}/api/command/${this.streamContext.deviceId}`, {
-        //     method: 'POST',
-        //     headers: this.getHeaders(),
-        //     body: JSON.stringify({ endpoint, data })
-        // });
+        if (!this.streamContext) {
+            throw new Error('Not authenticated for cloud commands');
+        }
         
-        throw new Error('Cloud commands coming soon! This feature is not yet available.');
+        const { userId, deviceId } = this.streamContext;
+        if (!userId || !deviceId) {
+            throw new Error('Missing user or device ID');
+        }
+        
+        // Generate unique command ID (millisecond timestamp)
+        const cmdId = Date.now();
+        
+        // Build command payload
+        const command = {
+            action: endpoint.replace(/\//g, '_'), // e.g., "torch/toggle" -> "torch_toggle"
+            params: data,
+            timestamp: cmdId,
+            source: 'dashboard'
+        };
+        
+        // Send command to relay
+        const commandUrl = `${this.relayBaseUrl}/api/command/${userId}/${deviceId}/${cmdId}`;
+        console.log(`☁️ [COMMAND] PUT ${commandUrl}`, command);
+        
+        try {
+            const response = await fetch(commandUrl, {
+                method: 'PUT',
+                headers: this.getHeaders(),
+                body: JSON.stringify(command)
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            console.log(`✅ [COMMAND] ${endpoint} queued successfully (id: ${cmdId})`);
+            
+            return {
+                success: true,
+                command_id: cmdId,
+                message: 'Command queued. Phone will execute on next poll.'
+            };
+            
+        } catch (error) {
+            console.error(`❌ [COMMAND] ${endpoint} failed:`, error);
+            throw error;
+        }
     }
     
     // =========================================================================

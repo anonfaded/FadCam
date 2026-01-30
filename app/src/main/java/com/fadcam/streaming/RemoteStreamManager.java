@@ -1,5 +1,7 @@
 package com.fadcam.streaming;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -11,6 +13,8 @@ import com.fadcam.streaming.model.ClientMetrics;
 import com.fadcam.streaming.model.NetworkHealth;
 import com.fadcam.streaming.model.StreamQuality;
 import com.fadcam.streaming.util.NetworkMonitor;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -78,6 +82,13 @@ public class RemoteStreamManager {
     private long alarmDurationMs = -1; // Duration in milliseconds (-1 = infinite)
     private long alarmStartTime = 0; // When alarm started ringing
     
+    // Cloud status push (pushes status to relay every 2 seconds when cloud streaming is enabled)
+    private Handler cloudStatusHandler;
+    private Runnable cloudStatusRunnable;
+    private static final long CLOUD_STATUS_INTERVAL_MS = 2000; // Push status every 2 seconds
+    private static final long CLOUD_COMMAND_POLL_INTERVAL_MS = 1500; // Poll commands every 1.5 seconds
+    private boolean cloudStatusPushEnabled = false;
+    
     /**
      * Streaming mode options.
      */
@@ -140,12 +151,18 @@ public class RemoteStreamManager {
                 }
                 NetworkMonitor.getInstance().startMonitoring();
                 Log.i(TAG, "Server uptime started");
+                
+                // Start cloud status push if enabled
+                startCloudStatusPush();
             } else {
                 serverStartTime = 0;
                 synchronized (clientMetricsMap) {
                     clientMetricsMap.clear();
                 }
                 NetworkMonitor.getInstance().stopMonitoring();
+                
+                // Stop cloud status push
+                stopCloudStatusPush();
             }
             
             if (!enabled) {
@@ -1506,6 +1523,268 @@ public class RemoteStreamManager {
         Log.d(TAG, "Battery warning threshold set to " + percentage + "%");
     }
     
+    // =========================================================================
+    // Cloud Status Push & Command Polling
+    // =========================================================================
+    
+    /**
+     * Start periodic cloud status push and command polling.
+     * Called when streaming is enabled.
+     */
+    private void startCloudStatusPush() {
+        if (context == null) {
+            Log.w(TAG, "Cannot start cloud status push: no context");
+            return;
+        }
+        
+        CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
+        if (!uploader.isEnabled() || !uploader.isReady()) {
+            Log.d(TAG, "Cloud streaming not enabled or not ready, skipping status push");
+            return;
+        }
+        
+        if (cloudStatusPushEnabled) {
+            Log.d(TAG, "Cloud status push already running");
+            return;
+        }
+        
+        cloudStatusPushEnabled = true;
+        cloudStatusHandler = new Handler(Looper.getMainLooper());
+        
+        cloudStatusRunnable = new Runnable() {
+            private int iteration = 0;
+            
+            @Override
+            public void run() {
+                if (!cloudStatusPushEnabled || !streamingEnabled) {
+                    Log.d(TAG, "Cloud status push stopped (disabled or streaming stopped)");
+                    return;
+                }
+                
+                CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
+                if (!uploader.isEnabled() || !uploader.isReady()) {
+                    Log.d(TAG, "Cloud uploader not ready, skipping this iteration");
+                    cloudStatusHandler.postDelayed(this, CLOUD_STATUS_INTERVAL_MS);
+                    return;
+                }
+                
+                // Push status to relay
+                String statusJson = getStatusJson();
+                uploader.uploadStatus(statusJson, new CloudStreamUploader.UploadCallback() {
+                    @Override
+                    public void onSuccess() {
+                        // Status pushed successfully (silent success)
+                    }
+                    
+                    @Override
+                    public void onError(String error) {
+                        Log.w(TAG, "Cloud status push failed: " + error);
+                    }
+                });
+                
+                // Poll for commands every other iteration (every 3 seconds)
+                // This reduces API calls while still being responsive
+                if (iteration % 2 == 0) {
+                    pollCloudCommands(uploader);
+                }
+                iteration++;
+                
+                // Schedule next push
+                cloudStatusHandler.postDelayed(this, CLOUD_STATUS_INTERVAL_MS);
+            }
+        };
+        
+        // Start immediately
+        cloudStatusHandler.post(cloudStatusRunnable);
+        Log.i(TAG, "☁️ Cloud status push started (interval: " + CLOUD_STATUS_INTERVAL_MS + "ms)");
+    }
+    
+    /**
+     * Stop cloud status push and command polling.
+     * Called when streaming is disabled.
+     */
+    private void stopCloudStatusPush() {
+        cloudStatusPushEnabled = false;
+        if (cloudStatusHandler != null && cloudStatusRunnable != null) {
+            cloudStatusHandler.removeCallbacks(cloudStatusRunnable);
+            Log.i(TAG, "☁️ Cloud status push stopped");
+        }
+        cloudStatusHandler = null;
+        cloudStatusRunnable = null;
+    }
+    
+    /**
+     * Poll for pending commands from relay and execute them.
+     */
+    private void pollCloudCommands(CloudStreamUploader uploader) {
+        uploader.pollCommands(new CloudStreamUploader.CommandListCallback() {
+            @Override
+            public void onSuccess(java.util.List<String> commandIds) {
+                if (commandIds.isEmpty()) {
+                    return;
+                }
+                
+                Log.i(TAG, "☁️ Found " + commandIds.size() + " pending cloud commands");
+                
+                // Process each command
+                for (String cmdId : commandIds) {
+                    uploader.fetchCommand(cmdId, new CloudStreamUploader.CommandCallback() {
+                        @Override
+                        public void onSuccess(String commandId, JSONObject command) {
+                            executeCloudCommand(commandId, command, uploader);
+                        }
+                        
+                        @Override
+                        public void onError(String error) {
+                            Log.e(TAG, "Failed to fetch command " + cmdId + ": " + error);
+                        }
+                    });
+                }
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.w(TAG, "Command poll failed: " + error);
+            }
+        });
+    }
+    
+    /**
+     * Execute a cloud command and delete it from relay.
+     */
+    private void executeCloudCommand(String commandId, JSONObject command, CloudStreamUploader uploader) {
+        try {
+            String action = command.optString("action", "");
+            JSONObject params = command.optJSONObject("params");
+            
+            Log.i(TAG, "☁️ Executing cloud command: " + action + " (id: " + commandId + ")");
+            
+            boolean success = false;
+            
+            // Execute based on action type
+            switch (action) {
+                case "torch_toggle":
+                    // Toggle torch via LiveM3U8Server's handler
+                    success = executeCommandViaServer("/torch/toggle", null);
+                    break;
+                    
+                case "recording_toggle":
+                    success = executeCommandViaServer("/recording/toggle", null);
+                    break;
+                    
+                case "config_recordingMode":
+                    if (params != null) {
+                        String mode = params.optString("mode", "");
+                        success = executeCommandViaServer("/config/recordingMode", "{\"mode\":\"" + mode + "\"}");
+                    }
+                    break;
+                    
+                case "config_streamQuality":
+                    if (params != null) {
+                        String quality = params.optString("quality", "");
+                        success = executeCommandViaServer("/config/streamQuality", "{\"quality\":\"" + quality + "\"}");
+                    }
+                    break;
+                    
+                case "config_videoCodec":
+                    if (params != null) {
+                        String codec = params.optString("codec", "");
+                        success = executeCommandViaServer("/config/videoCodec", "{\"codec\":\"" + codec + "\"}");
+                    }
+                    break;
+                    
+                case "alarm_trigger":
+                    if (params != null) {
+                        int durationMs = params.optInt("duration_ms", 5000);
+                        success = executeCommandViaServer("/alarm/trigger", "{\"duration_ms\":" + durationMs + "}");
+                    }
+                    break;
+                    
+                case "alarm_stop":
+                    success = executeCommandViaServer("/alarm/stop", null);
+                    break;
+                    
+                case "audio_volume":
+                    if (params != null) {
+                        int level = params.optInt("level", 50);
+                        success = executeCommandViaServer("/audio/volume", "{\"level\":" + level + "}");
+                    }
+                    break;
+                    
+                default:
+                    Log.w(TAG, "Unknown cloud command action: " + action);
+                    success = true; // Still delete unknown commands
+            }
+            
+            // Delete command from relay after execution (or if unknown)
+            uploader.deleteCommand(commandId, new CloudStreamUploader.UploadCallback() {
+                @Override
+                public void onSuccess() {
+                    Log.d(TAG, "☁️ Command " + commandId + " deleted from relay");
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.w(TAG, "Failed to delete command " + commandId + ": " + error);
+                }
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error executing cloud command: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Execute a command by calling the local LiveM3U8Server endpoint.
+     * This reuses the existing command handlers in the HTTP server.
+     * 
+     * @param endpoint The endpoint path (e.g., "/torch/toggle")
+     * @param body Optional JSON body for POST requests
+     * @return true if command was sent successfully
+     */
+    private boolean executeCommandViaServer(String endpoint, @Nullable String body) {
+        try {
+            // Get the local server port (default 8080)
+            int port = 8080;
+            String url = "http://127.0.0.1:" + port + endpoint;
+            
+            // Use a simple HTTP client (OkHttp is already available)
+            okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
+                .connectTimeout(2, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(2, java.util.concurrent.TimeUnit.SECONDS)
+                .build();
+            
+            okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder().url(url);
+            
+            if (body != null) {
+                okhttp3.RequestBody requestBody = okhttp3.RequestBody.create(
+                    body, okhttp3.MediaType.parse("application/json"));
+                requestBuilder.post(requestBody);
+            } else {
+                requestBuilder.post(okhttp3.RequestBody.create("", null));
+            }
+            
+            okhttp3.Request request = requestBuilder.build();
+            
+            // Execute async to avoid blocking
+            client.newCall(request).enqueue(new okhttp3.Callback() {
+                @Override
+                public void onFailure(@NonNull okhttp3.Call call, @NonNull java.io.IOException e) {
+                    Log.e(TAG, "Cloud command execution failed: " + e.getMessage());
+                }
+                
+                @Override
+                public void onResponse(@NonNull okhttp3.Call call, @NonNull okhttp3.Response response) {
+                    response.close();
+                    Log.d(TAG, "☁️ Cloud command " + endpoint + " executed: " + response.code());
+                }
+            });
+            
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to execute command via server: " + e.getMessage(), e);
+            return false;
+        }
+    }
+    
 }
-
-
