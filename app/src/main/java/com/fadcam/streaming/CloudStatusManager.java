@@ -12,7 +12,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -190,22 +189,26 @@ public class CloudStatusManager {
         String statusJson = RemoteStreamManager.getInstance().getStatusJson();
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
+        
+        // Check token expiry BEFORE getting token
+        boolean tokenExpired = authManager.isTokenExpired();
         String jwt = authManager.getJwtToken();
         
-        // Debug logging for missing credentials
-        if (userUuid == null || deviceId == null || jwt == null) {
-            Log.w(TAG, "Missing credentials for status push: " +
+        // Debug logging for missing or expired credentials
+        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
+            Log.w(TAG, "Missing/expired credentials for status push: " +
                     "userUuid=" + (userUuid != null ? "OK" : "NULL") +
                     ", deviceId=" + (deviceId != null ? "OK" : "NULL") +
-                    ", jwt=" + (jwt != null ? "OK" : "NULL (expired?)"));
+                    ", jwt=" + (jwt != null ? "OK" : "NULL") +
+                    ", expired=" + tokenExpired);
             
             // Try to refresh token if we have a refresh token
-            if (jwt == null && authManager.getRefreshToken() != null) {
-                Log.i(TAG, "Attempting token refresh...");
+            if ((jwt == null || tokenExpired) && authManager.getRefreshToken() != null) {
+                Log.i(TAG, "Attempting token refresh (expired=" + tokenExpired + ")...");
                 authManager.refreshTokenAsync(new CloudAuthManager.TokenRefreshListener() {
                     @Override
                     public void onRefreshSuccess(String newToken, long newExpiry) {
-                        Log.i(TAG, "Token refreshed, will retry on next push");
+                        Log.i(TAG, "Token refreshed successfully, will retry on next push");
                     }
                     
                     @Override
@@ -217,12 +220,12 @@ public class CloudStatusManager {
             return;
         }
         
-        String url = CloudStreamUploader.RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
+        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
-                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("PUT");
                 conn.setRequestProperty("Authorization", "Bearer " + jwt);
                 conn.setRequestProperty("Content-Type", "application/json");
@@ -260,18 +263,20 @@ public class CloudStatusManager {
     private void pollCommands() {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
+        boolean tokenExpired = authManager.isTokenExpired();
         String jwt = authManager.getJwtToken();
         
-        if (userUuid == null || deviceId == null || jwt == null) {
+        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
+            // Token expired - let pushStatus() handle the refresh
             return;
         }
         
-        String url = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/";
+        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/";
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
-                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Authorization", "Bearer " + jwt);
                 conn.setConnectTimeout(5000);
@@ -316,18 +321,19 @@ public class CloudStatusManager {
     private void fetchAndExecuteCommand(String cmdId) {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
+        boolean tokenExpired = authManager.isTokenExpired();
         String jwt = authManager.getJwtToken();
         
-        if (userUuid == null || deviceId == null || jwt == null) {
+        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
             return;
         }
         
-        String url = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId + ".json";
+        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId + ".json";
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
-                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Authorization", "Bearer " + jwt);
                 conn.setConnectTimeout(5000);
@@ -440,10 +446,10 @@ public class CloudStatusManager {
             return;
         }
         
-        String url = "http://localhost:" + port + endpoint;
+        String urlStr = "http://localhost:" + port + endpoint;
         
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
             conn.setRequestMethod(method);
             conn.setConnectTimeout(2000);
             conn.setReadTimeout(2000);
@@ -475,18 +481,19 @@ public class CloudStatusManager {
     private void deleteCommand(String cmdId) {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
+        boolean tokenExpired = authManager.isTokenExpired();
         String jwt = authManager.getJwtToken();
         
-        if (userUuid == null || deviceId == null || jwt == null) {
+        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
             return;
         }
         
-        String url = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId;
+        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId;
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
-                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("DELETE");
                 conn.setRequestProperty("Authorization", "Bearer " + jwt);
                 conn.setConnectTimeout(5000);
