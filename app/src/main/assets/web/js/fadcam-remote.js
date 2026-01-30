@@ -36,7 +36,18 @@
   }
   
   // Extract device_id from URL if in streaming mode
+  // Supports both:
+  // - /stream/{device_id}/ (direct path, works in dev mode)
+  // - /stream/?device={device_id} (GitHub Pages SPA fallback)
   function getStreamDeviceId() {
+    // First check query parameter (GitHub Pages SPA fallback)
+    const params = new URLSearchParams(window.location.search);
+    const deviceFromQuery = params.get('device');
+    if (deviceFromQuery) {
+      return deviceFromQuery;
+    }
+    
+    // Then check path (direct path, works in dev mode)
     const path = window.location.pathname;
     const match = path.match(/^\/stream\/([a-zA-Z0-9_-]+)/);
     return match ? match[1] : null;
