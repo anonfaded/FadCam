@@ -239,9 +239,9 @@ public class CloudStatusManager {
                     requestBody = "back";
                     break;
                     
-                // Alarm commands
-                case "alarm_start":
-                    endpoint = "/alarm/start";
+                // Alarm commands (dashboard sends alarm_ring, alarm_stop)
+                case "alarm_ring":
+                    endpoint = "/alarm/ring";
                     if (params != null && params.length() > 0) {
                         requestBody = params.toString();
                     }
@@ -250,11 +250,11 @@ public class CloudStatusManager {
                     endpoint = "/alarm/stop";
                     break;
                     
-                // Volume command
-                case "volume_set":
-                    endpoint = "/volume/set";
+                // Volume command (dashboard sends audio_volume)
+                case "audio_volume":
+                    endpoint = "/audio/volume";
                     if (params != null) {
-                        requestBody = String.valueOf(params.optInt("level", 50));
+                        requestBody = params.toString();
                     }
                     break;
                     

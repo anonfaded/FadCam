@@ -3053,9 +3053,28 @@
         
         /**
          * Preview alarm sound (2 seconds).
+         * In cloud mode: Rings alarm for 2 seconds on phone.
+         * In local mode: Plays audio in browser (faster feedback).
          */
-        function previewAlarmSound() {
+        async function previewAlarmSound() {
             const soundFile = document.getElementById('alarmSoundSelect').value;
+            
+            // In cloud mode, ring alarm on phone for 2 seconds
+            if (typeof apiService !== 'undefined' && apiService.isCloudMode()) {
+                try {
+                    showToast('▶️ Playing preview on phone...', 2500);
+                    await apiService.post('/alarm/ring', {
+                        sound: soundFile,
+                        duration_ms: 2000  // 2 seconds preview
+                    });
+                } catch (e) {
+                    console.error('Error playing preview on phone:', e);
+                    showToast('Error: Could not play preview', 2000);
+                }
+                return;
+            }
+            
+            // Local mode: Play in browser (faster)
             const audioPath = '/assets/alarms/' + soundFile;
             
             // Stop previous preview if any
@@ -3087,8 +3106,9 @@
         
         /**
          * Ring alarm with selected sound and duration.
+         * Works in both local and cloud mode via ApiService.
          */
-        function ringAlarm() {
+        async function ringAlarm() {
             const soundFile = document.getElementById('alarmSoundSelect').value;
             const value = parseInt(document.getElementById('durationSelect').value);
             
@@ -3107,60 +3127,52 @@
             updateAlarmCardState(true, durationMs);
             startAlarmCountdown(durationMs);
             
-            // Send request to server
-            fetch('/alarm/ring', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            try {
+                // Use ApiService for cloud-compatible requests
+                const data = await apiService.post('/alarm/ring', {
                     sound: soundFile,
                     duration_ms: durationMs
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
+                });
+                
+                if (data.status === 'success' || data.success) {
                     showToast('🚨 Alarm activated', 3000);
                 } else {
-                    showToast('Error: ' + data.message, 3000);
+                    showToast('Error: ' + (data.message || 'Unknown error'), 3000);
                     alarmIsActive = false;
                     updateAlarmUIState();
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error ringing alarm:', error);
                 showToast('Failed to activate alarm', 3000);
                 alarmIsActive = false;
                 updateAlarmUIState();
-            });
+            }
         }
         
         /**
          * Stop alarm.
+         * Works in both local and cloud mode via ApiService.
          */
-        function stopAlarm() {
+        async function stopAlarm() {
             // Update UI immediately (optimistic update)
             alarmIsActive = false;
             stopAlarmCountdown();
             updateAlarmCardState(false, 0);
             updateAlarmUIState();
             
-            // Send request to server
-            fetch('/alarm/stop', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
+            try {
+                // Use ApiService for cloud-compatible requests
+                const data = await apiService.post('/alarm/stop', {});
+                
+                if (data.status === 'success' || data.success) {
                     showToast('⏹️ Alarm stopped', 2000);
                 } else {
-                    showToast('Error: ' + data.message, 3000);
+                    showToast('Error: ' + (data.message || 'Unknown error'), 3000);
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error stopping alarm:', error);
                 showToast('Failed to stop alarm', 3000);
-            });
+            }
         }
         
         let alarmCountdownInterval = null;
@@ -3380,19 +3392,14 @@
         });
 
         /**
-         * Set device volume via API
+         * Set device volume via API (works in local and cloud mode)
          */
         async function setVolume(percentage) {
             try {
                 console.log('[Volume] setVolume called with percentage:', percentage);
-                const response = await fetch('/audio/volume', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ percentage: percentage })
-                });
                 
-                console.log('[Volume] Response status:', response.status);
-                const result = await response.json();
+                // Use ApiService for cloud-compatible requests
+                const result = await apiService.post('/audio/volume', { percentage: percentage });
                 console.log('[Volume] Response:', result);
                 
                 if (result.status === 'success') {
