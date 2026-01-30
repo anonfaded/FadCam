@@ -237,4 +237,91 @@ public class CloudAuthManager {
         void onLinkFailed(String error);
         void onUnlinked();
     }
+    
+    /**
+     * Listener for device info sync
+     */
+    public interface DeviceInfoListener {
+        void onSuccess(String name, String deviceType, boolean isActive);
+        void onError(String error);
+    }
+    
+    /**
+     * Sync device info from the cloud server.
+     * Fetches the latest device name/type from the server and updates local storage.
+     * Call this when opening cloud account info to get the latest name if renamed on web.
+     * 
+     * @param listener Callback for success/error
+     */
+    public void syncDeviceInfo(DeviceInfoListener listener) {
+        if (!isLinked()) {
+            if (listener != null) {
+                listener.onError("Device not linked");
+            }
+            return;
+        }
+        
+        String deviceId = getDeviceId();
+        String url = "https://vfhehknmxxedvesdvpew.supabase.co/functions/v1/get-device-info?device_id=" + deviceId;
+        
+        // Use a background thread for network call
+        new Thread(() -> {
+            try {
+                java.net.URL apiUrl = new java.net.URL(url);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) apiUrl.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                
+                int responseCode = conn.getResponseCode();
+                
+                if (responseCode == 200) {
+                    // Read response
+                    java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+                    
+                    // Parse JSON response
+                    org.json.JSONObject json = new org.json.JSONObject(response.toString());
+                    String name = json.optString("name", null);
+                    String deviceType = json.optString("device_type", null);
+                    boolean isActive = json.optBoolean("is_active", true);
+                    
+                    // Update local storage if name changed
+                    String currentName = getDeviceName();
+                    if (name != null && !name.equals(currentName)) {
+                        setDeviceName(name);
+                        Log.i(TAG, "Device name synced from server: " + name);
+                    }
+                    
+                    if (listener != null) {
+                        // Callback on main thread
+                        android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                        mainHandler.post(() -> listener.onSuccess(name, deviceType, isActive));
+                    }
+                } else {
+                    // Error response
+                    String errorMsg = "HTTP " + responseCode;
+                    Log.w(TAG, "Failed to sync device info: " + errorMsg);
+                    if (listener != null) {
+                        android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                        mainHandler.post(() -> listener.onError(errorMsg));
+                    }
+                }
+                
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Error syncing device info", e);
+                if (listener != null) {
+                    android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                    mainHandler.post(() -> listener.onError(e.getMessage()));
+                }
+            }
+        }).start();
+    }
 }

@@ -1012,12 +1012,37 @@ public class RemoteFragment extends BaseFragment {
     }
     
     /**
-     * Show cloud account info when already linked
+     * Show cloud account info when already linked.
+     * First syncs device info from server to get latest name if renamed on web.
      */
     private void showCloudAccountInfo() {
+        // Sync device info from server first (handles renamed device on web)
+        cloudAuthManager.syncDeviceInfo(new CloudAuthManager.DeviceInfoListener() {
+            @Override
+            public void onSuccess(String name, String deviceType, boolean isActive) {
+                // Device info synced, now show picker with updated name
+                showCloudAccountPicker();
+            }
+            
+            @Override
+            public void onError(String error) {
+                // Sync failed, show picker with cached data anyway
+                Log.w(TAG, "Failed to sync device info: " + error);
+                showCloudAccountPicker();
+            }
+        });
+    }
+    
+    /**
+     * Show the cloud account info picker (after sync)
+     */
+    private void showCloudAccountPicker() {
         String email = cloudAuthManager.getUserEmail();
         String deviceName = cloudAuthManager.getDeviceName();
         String deviceId = cloudAuthManager.getShortDeviceId();
+        
+        // Update cloud button state in case name changed
+        updateCloudButtonState();
         
         // Build options list using correct OptionItem constructors
         ArrayList<OptionItem> options = new ArrayList<>();
