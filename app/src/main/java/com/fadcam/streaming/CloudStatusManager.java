@@ -215,6 +215,7 @@ public class CloudStatusManager {
             String requestBody = null;
             
             switch (action) {
+                // Torch commands
                 case "torch_toggle":
                     endpoint = "/torch/toggle";
                     break;
@@ -224,6 +225,8 @@ public class CloudStatusManager {
                 case "torch_off":
                     endpoint = "/torch/off";
                     break;
+                    
+                // Camera commands
                 case "camera_switch":
                     endpoint = "/camera/switch";
                     break;
@@ -235,6 +238,8 @@ public class CloudStatusManager {
                     endpoint = "/camera/set";
                     requestBody = "back";
                     break;
+                    
+                // Alarm commands
                 case "alarm_start":
                     endpoint = "/alarm/start";
                     if (params != null && params.length() > 0) {
@@ -244,11 +249,18 @@ public class CloudStatusManager {
                 case "alarm_stop":
                     endpoint = "/alarm/stop";
                     break;
+                    
+                // Volume command
                 case "volume_set":
                     endpoint = "/volume/set";
                     if (params != null) {
                         requestBody = String.valueOf(params.optInt("level", 50));
                     }
+                    break;
+                    
+                // Recording commands
+                case "recording_toggle":
+                    endpoint = "/recording/toggle";
                     break;
                 case "recording_start":
                     endpoint = "/recording/start";
@@ -256,6 +268,26 @@ public class CloudStatusManager {
                 case "recording_stop":
                     endpoint = "/recording/stop";
                     break;
+                    
+                // Config commands
+                case "config_recordingMode":
+                    endpoint = "/config/recordingMode";
+                    if (params != null) {
+                        requestBody = params.toString();
+                    }
+                    break;
+                case "config_streamQuality":
+                    endpoint = "/config/streamQuality";
+                    if (params != null) {
+                        requestBody = params.toString();
+                    }
+                    break;
+                    
+                // Server commands
+                case "server_toggle":
+                    endpoint = "/server/toggle";
+                    break;
+                    
                 default:
                     Log.w(TAG, "☁️ Unknown realtime command action: " + action);
                     return;
