@@ -18,7 +18,7 @@ class RealtimeCommandService {
     constructor() {
         // Supabase configuration
         this.SUPABASE_URL = 'https://vfhehknmxxedvesdvpew.supabase.co';
-        this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxMzE4NzgsImV4cCI6MjA1NzcwNzg3OH0.OVDqFMSqg1HYhqYLsWRyhZDkWb0l48AcSs45xzQw4sk';
+        this.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3NzgxMjYsImV4cCI6MjA4MjM1NDEyNn0.IRTO3qW5SpseCxrirsQRnFJ38IFj47dOfJxlHG2n9aI';
         
         this.supabase = null;
         this.channel = null;

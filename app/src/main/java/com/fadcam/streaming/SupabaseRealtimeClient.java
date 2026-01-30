@@ -38,10 +38,10 @@ public class SupabaseRealtimeClient {
     
     // Supabase project configuration
     private static final String SUPABASE_PROJECT_ID = "vfhehknmxxedvesdvpew";
-    private static final String SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxMzE4NzgsImV4cCI6MjA1NzcwNzg3OH0.OVDqFMSqg1HYhqYLsWRyhZDkWb0l48AcSs45xzQw4sk";
+    private static final String SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3NzgxMjYsImV4cCI6MjA4MjM1NDEyNn0.IRTO3qW5SpseCxrirsQRnFJ38IFj47dOfJxlHG2n9aI";
     
-    // WebSocket URL format
-    private static final String REALTIME_URL = "wss://%s.supabase.co/realtime/v1/websocket?apikey=%s&vsn=1.0.0";
+    // WebSocket URL format (log_level=info for verbose logging)
+    private static final String REALTIME_URL = "wss://%s.supabase.co/realtime/v1/websocket?apikey=%s&log_level=info&vsn=1.0.0";
     
     // Heartbeat interval (30 seconds as per Phoenix protocol)
     private static final long HEARTBEAT_INTERVAL_MS = 30000;
