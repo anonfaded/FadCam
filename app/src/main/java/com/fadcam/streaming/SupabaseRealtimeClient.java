@@ -215,20 +215,38 @@ public class SupabaseRealtimeClient {
     
     /**
      * Handle incoming Phoenix protocol message.
-     * Version 1.0.0 format: {"topic": "...", "event": "...", "payload": {...}, "ref": "...", "join_ref": "..."}
+     * 
+     * Supabase Realtime sends messages in mixed formats:
+     * - Replies (phx_reply) come as JSON objects (v1.0.0 format)
+     * - Broadcasts come as JSON arrays (v2.0.0 format): [join_ref, ref, topic, event, payload]
+     * 
+     * We need to detect which format and parse accordingly.
      */
     private void handleMessage(String text) throws Exception {
         Log.d(TAG, "📡 Raw message: " + text);
         
-        // Version 1.0.0 uses JSON objects
-        JSONObject message = new JSONObject(text);
+        String topic;
+        String event;
+        JSONObject payload;
         
-        String topic = message.optString("topic");
-        String event = message.optString("event");
-        Object payloadObj = message.opt("payload");
-        JSONObject payload = (payloadObj instanceof JSONObject) ? (JSONObject) payloadObj : new JSONObject();
-        
-        Log.d(TAG, "📡 Received: event=" + event + ", topic=" + topic);
+        // Detect format: starts with '[' = array (v2.0.0), starts with '{' = object (v1.0.0)
+        if (text.trim().startsWith("[")) {
+            // V2.0.0 Array format: [join_ref, ref, topic, event, payload]
+            JSONArray message = new JSONArray(text);
+            topic = message.getString(2);
+            event = message.getString(3);
+            Object payloadObj = message.get(4);
+            payload = (payloadObj instanceof JSONObject) ? (JSONObject) payloadObj : new JSONObject();
+            Log.d(TAG, "📡 Received (v2 array): event=" + event + ", topic=" + topic);
+        } else {
+            // V1.0.0 Object format: {"topic": "...", "event": "...", "payload": {...}}
+            JSONObject message = new JSONObject(text);
+            topic = message.optString("topic");
+            event = message.optString("event");
+            Object payloadObj = message.opt("payload");
+            payload = (payloadObj instanceof JSONObject) ? (JSONObject) payloadObj : new JSONObject();
+            Log.d(TAG, "📡 Received (v1 object): event=" + event + ", topic=" + topic);
+        }
         
         switch (event) {
             case "phx_reply":
@@ -246,6 +264,10 @@ public class SupabaseRealtimeClient {
             case "phx_close":
                 Log.i(TAG, "📡 Channel closed");
                 channelJoined = false;
+                break;
+                
+            default:
+                Log.d(TAG, "📡 Unhandled event: " + event);
                 break;
         }
     }
