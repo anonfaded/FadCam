@@ -290,12 +290,22 @@ public class CloudStatusManager {
                     String body = s.hasNext() ? s.next() : "";
                     is.close();
                     
-                    // Parse as JSON array of command filenames
+                    // Parse nginx autoindex JSON: [{"name":"file.json","type":"file",...}, ...]
                     JSONArray files = new JSONArray(body);
-                    if (files.length() > 0) {
-                        Log.i(TAG, "☁️ Found " + files.length() + " pending cloud commands");
+                    int commandCount = 0;
+                    for (int i = 0; i < files.length(); i++) {
+                        JSONObject fileEntry = files.getJSONObject(i);
+                        String cmdFile = fileEntry.getString("name");
+                        if (cmdFile.endsWith(".json")) {
+                            commandCount++;
+                        }
+                    }
+                    
+                    if (commandCount > 0) {
+                        Log.i(TAG, "☁️ Found " + commandCount + " pending cloud commands");
                         for (int i = 0; i < files.length(); i++) {
-                            String cmdFile = files.getString(i);
+                            JSONObject fileEntry = files.getJSONObject(i);
+                            String cmdFile = fileEntry.getString("name");
                             if (cmdFile.endsWith(".json")) {
                                 String cmdId = cmdFile.replace(".json", "");
                                 fetchAndExecuteCommand(cmdId);
@@ -325,10 +335,12 @@ public class CloudStatusManager {
         String jwt = authManager.getJwtToken();
         
         if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
+            Log.w(TAG, "☁️ Cannot fetch command " + cmdId + " - auth not ready");
             return;
         }
         
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId + ".json";
+        Log.d(TAG, "☁️ Fetching command: " + cmdId);
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
@@ -340,6 +352,7 @@ public class CloudStatusManager {
                 conn.setReadTimeout(5000);
                 
                 int responseCode = conn.getResponseCode();
+                Log.d(TAG, "☁️ Command fetch response: " + responseCode);
                 if (responseCode == 200) {
                     java.io.InputStream is = conn.getInputStream();
                     java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
