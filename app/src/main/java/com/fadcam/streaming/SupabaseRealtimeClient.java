@@ -215,26 +215,28 @@ public class SupabaseRealtimeClient {
     
     /**
      * Handle incoming Phoenix protocol message.
-     * Message format: [join_ref, ref, topic, event, payload]
+     * Version 1.0.0 format: {"topic": "...", "event": "...", "payload": {...}, "ref": "...", "join_ref": "..."}
      */
     private void handleMessage(String text) throws Exception {
-        JSONArray message = new JSONArray(text);
+        Log.d(TAG, "📡 Raw message: " + text);
         
-        String joinRef = message.isNull(0) ? null : message.getString(0);
-        String ref = message.isNull(1) ? null : message.getString(1);
-        String topic = message.getString(2);
-        String event = message.getString(3);
-        Object payload = message.get(4);
+        // Version 1.0.0 uses JSON objects
+        JSONObject message = new JSONObject(text);
+        
+        String topic = message.optString("topic");
+        String event = message.optString("event");
+        Object payloadObj = message.opt("payload");
+        JSONObject payload = (payloadObj instanceof JSONObject) ? (JSONObject) payloadObj : new JSONObject();
         
         Log.d(TAG, "📡 Received: event=" + event + ", topic=" + topic);
         
         switch (event) {
             case "phx_reply":
-                handlePhxReply(topic, (JSONObject) payload);
+                handlePhxReply(topic, payload);
                 break;
                 
             case "broadcast":
-                handleBroadcast(topic, (JSONObject) payload);
+                handleBroadcast(topic, payload);
                 break;
                 
             case "phx_error":
@@ -253,29 +255,53 @@ public class SupabaseRealtimeClient {
      */
     private void handlePhxReply(String topic, JSONObject payload) {
         String status = payload.optString("status");
+        JSONObject response = payload.optJSONObject("response");
         
         if ("ok".equals(status)) {
             if (topic.equals(channelTopic)) {
                 channelJoined = true;
                 Log.i(TAG, "📡 ✅ Joined channel: " + channelTopic);
             }
+        } else if ("error".equals(status)) {
+            String reason = response != null ? response.optString("reason", "unknown") : "unknown";
+            Log.e(TAG, "📡 ❌ Reply error: status=" + status + ", reason=" + reason + ", payload=" + payload);
+            // Don't retry join on error - server explicitly rejected
         } else {
-            Log.e(TAG, "📡 Reply error: " + payload);
+            Log.e(TAG, "📡 Reply status: " + status + " - " + payload);
         }
     }
     
     /**
      * Handle broadcast message (command from dashboard).
+     * 
+     * Supabase broadcast payload format:
+     * {
+     *   "event": "command",          // User-defined event type
+     *   "type": "broadcast",
+     *   "payload": {                 // User-defined payload
+     *     "action": "torch_toggle",
+     *     "params": {...},
+     *     "timestamp": 123456789
+     *   }
+     * }
      */
     private void handleBroadcast(String topic, JSONObject payload) {
         Log.i(TAG, "📡 Broadcast received: " + payload);
         
         // Extract command from broadcast payload
+        // The "event" field is the user-defined event name (we use "command")
         String eventType = payload.optString("event");
+        
+        // The "payload" field contains the actual command data
         JSONObject commandPayload = payload.optJSONObject("payload");
         
-        if (!"command".equals(eventType) || commandPayload == null) {
-            Log.d(TAG, "📡 Ignoring non-command broadcast: " + eventType);
+        if (!"command".equals(eventType)) {
+            Log.d(TAG, "📡 Ignoring non-command broadcast event: " + eventType);
+            return;
+        }
+        
+        if (commandPayload == null) {
+            Log.w(TAG, "📡 Command broadcast missing payload");
             return;
         }
         
@@ -283,7 +309,7 @@ public class SupabaseRealtimeClient {
         JSONObject params = commandPayload.optJSONObject("params");
         
         if (action == null || action.isEmpty()) {
-            Log.w(TAG, "📡 Command missing action");
+            Log.w(TAG, "📡 Command missing action field");
             return;
         }
         
@@ -305,19 +331,19 @@ public class SupabaseRealtimeClient {
     
     /**
      * Join the device channel for receiving commands.
+     * Uses Protocol Version 1.0.0 (JSON object format).
      */
     private void joinChannel() {
         try {
             int ref = messageRef.getAndIncrement();
             
-            // Phoenix phx_join message
-            // Format: [join_ref, ref, topic, "phx_join", config]
+            // Build channel config
             JSONObject config = new JSONObject();
             
-            // Broadcast config
+            // Broadcast config - we want to receive broadcasts
             JSONObject broadcastConfig = new JSONObject();
-            broadcastConfig.put("ack", false);
-            broadcastConfig.put("self", false);
+            broadcastConfig.put("ack", false);  // No acknowledgment needed
+            broadcastConfig.put("self", false); // Don't receive our own broadcasts
             config.put("broadcast", broadcastConfig);
             
             // Presence config (disabled)
@@ -328,21 +354,24 @@ public class SupabaseRealtimeClient {
             // No postgres_changes needed
             config.put("postgres_changes", new JSONArray());
             
-            // Not a private channel (uses anon key)
+            // Public channel (uses anon key from URL)
             config.put("private", false);
             
+            // Build payload with config
             JSONObject payload = new JSONObject();
             payload.put("config", config);
             
-            JSONArray message = new JSONArray();
-            message.put(String.valueOf(ref)); // join_ref
-            message.put(String.valueOf(ref)); // ref
-            message.put(channelTopic);        // topic
-            message.put("phx_join");          // event
-            message.put(payload);             // payload
+            // Version 1.0.0 format: JSON object with topic, event, payload, ref, join_ref
+            JSONObject message = new JSONObject();
+            message.put("topic", channelTopic);
+            message.put("event", "phx_join");
+            message.put("payload", payload);
+            message.put("ref", String.valueOf(ref));
+            message.put("join_ref", String.valueOf(ref));
             
             String messageStr = message.toString();
             Log.i(TAG, "📡 Joining channel: " + channelTopic);
+            Log.d(TAG, "📡 Join message: " + messageStr);
             
             webSocket.send(messageStr);
             
@@ -353,17 +382,18 @@ public class SupabaseRealtimeClient {
     
     /**
      * Leave the channel gracefully.
+     * Uses Protocol Version 1.0.0 (JSON object format).
      */
     private void sendPhxLeave() {
         try {
             int ref = messageRef.getAndIncrement();
             
-            JSONArray message = new JSONArray();
-            message.put(JSONObject.NULL);
-            message.put(String.valueOf(ref));
-            message.put(channelTopic);
-            message.put("phx_leave");
-            message.put(new JSONObject());
+            JSONObject message = new JSONObject();
+            message.put("topic", channelTopic);
+            message.put("event", "phx_leave");
+            message.put("payload", new JSONObject());
+            message.put("ref", String.valueOf(ref));
+            message.put("join_ref", JSONObject.NULL);
             
             webSocket.send(message.toString());
         } catch (Exception e) {
@@ -373,6 +403,7 @@ public class SupabaseRealtimeClient {
     
     /**
      * Send heartbeat to keep connection alive.
+     * Uses Protocol Version 1.0.0 (JSON object format).
      */
     private void sendHeartbeat() {
         if (!isConnected.get() || webSocket == null) {
@@ -382,12 +413,12 @@ public class SupabaseRealtimeClient {
         try {
             int ref = messageRef.getAndIncrement();
             
-            JSONArray message = new JSONArray();
-            message.put(JSONObject.NULL);
-            message.put(String.valueOf(ref));
-            message.put("phoenix");
-            message.put("heartbeat");
-            message.put(new JSONObject());
+            JSONObject message = new JSONObject();
+            message.put("topic", "phoenix");
+            message.put("event", "heartbeat");
+            message.put("payload", new JSONObject());
+            message.put("ref", String.valueOf(ref));
+            message.put("join_ref", JSONObject.NULL);
             
             webSocket.send(message.toString());
             Log.d(TAG, "📡 Heartbeat sent");

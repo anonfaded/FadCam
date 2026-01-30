@@ -52,10 +52,28 @@ class ApiService {
     
     /**
      * Set stream context (called from FadCamRemote after auth)
+     * Also initializes Supabase Realtime for instant command delivery in cloud mode.
      */
     setStreamContext(ctx) {
         this.streamContext = ctx;
         console.log('[ApiService] Stream context set:', ctx);
+        
+        // Proactively initialize Realtime for cloud mode
+        // This ensures the first command is instant (no fallback to HTTP)
+        if (ctx && ctx.userId && ctx.deviceId) {
+            if (typeof realtimeCommandService !== 'undefined') {
+                console.log('[ApiService] ⚡ Initializing Supabase Realtime for instant commands...');
+                realtimeCommandService.initialize(ctx.deviceId, ctx.userId).then(success => {
+                    if (success) {
+                        console.log('[ApiService] ✅ Realtime ready for instant command delivery');
+                    } else {
+                        console.warn('[ApiService] ⚠️ Realtime init failed, will use HTTP polling for commands');
+                    }
+                }).catch(err => {
+                    console.warn('[ApiService] ⚠️ Realtime init error:', err.message);
+                });
+            }
+        }
     }
     
     /**
