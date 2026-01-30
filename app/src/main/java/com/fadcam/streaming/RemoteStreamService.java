@@ -102,8 +102,18 @@ public class RemoteStreamService extends Service {
             return START_NOT_STICKY;
         }
         
+        // Save port to preferences for CloudStatusManager
+        getSharedPreferences("FadCamPrefs", MODE_PRIVATE)
+            .edit()
+            .putInt("stream_server_port", activePort)
+            .apply();
+        
         // Enable streaming in RemoteStreamManager
         RemoteStreamManager.getInstance().setStreamingEnabled(true);
+        
+        // Start cloud status manager (handles status push and command poll)
+        // This works independently of video streaming - just needs server to be on
+        CloudStatusManager.getInstance(this).start();
         
         // Update notification with stream URL
         updateNotification();
@@ -117,6 +127,9 @@ public class RemoteStreamService extends Service {
     @Override
     public void onDestroy() {
         Log.i(TAG, "Service stopping");
+        
+        // Stop cloud status manager
+        CloudStatusManager.getInstance(this).stop();
         
         // Stop periodic updates
         stopNotificationUpdates();

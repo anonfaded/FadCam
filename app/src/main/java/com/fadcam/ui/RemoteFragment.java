@@ -35,6 +35,7 @@ import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.streaming.CloudAuthManager;
+import com.fadcam.streaming.CloudStatusManager;
 import com.fadcam.streaming.CloudStreamUploader;
 import com.fadcam.streaming.RemoteAuthManager;
 import com.fadcam.streaming.RemoteStreamManager;
@@ -1327,6 +1328,16 @@ public class RemoteFragment extends BaseFragment {
         // Update uploader
         CloudStreamUploader uploader = CloudStreamUploader.getInstance(requireContext());
         uploader.setEnabled(cloudEnabled);
+        
+        // Start/stop cloud status manager if server is already running
+        CloudStatusManager statusManager = CloudStatusManager.getInstance(requireContext());
+        if (cloudEnabled) {
+            // Try to start - will only actually start if server is running and cloud is ready
+            statusManager.start();
+        } else {
+            // Stop if running
+            statusManager.stop();
+        }
         
         // Update display
         updateStreamingModeDisplay();

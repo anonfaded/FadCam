@@ -136,6 +136,8 @@ public class RemoteStreamManager {
     
     /**
      * Enable or disable streaming.
+     * Note: Cloud status push is now handled by CloudStatusManager, which is started
+     * by RemoteStreamService when server starts. This method only manages video streaming state.
      */
     public void setStreamingEnabled(boolean enabled) {
         bufferLock.writeLock().lock();
@@ -151,18 +153,12 @@ public class RemoteStreamManager {
                 }
                 NetworkMonitor.getInstance().startMonitoring();
                 Log.i(TAG, "Server uptime started");
-                
-                // Start cloud status push if enabled
-                startCloudStatusPush();
             } else {
                 serverStartTime = 0;
                 synchronized (clientMetricsMap) {
                     clientMetricsMap.clear();
                 }
                 NetworkMonitor.getInstance().stopMonitoring();
-                
-                // Stop cloud status push
-                stopCloudStatusPush();
             }
             
             if (!enabled) {

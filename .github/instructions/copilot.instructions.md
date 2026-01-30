@@ -110,6 +110,9 @@ applyTo: '**'
 - Input UI → always use `InputActionBottomSheetFragment`.  
 - Wrap fixes with start/end markers.  
 - Confirm builds after changes.  
+- When writing code, always include error handling, logging, and input validation as appropriate.
+- When writing documentation, ensure clarity, conciseness, and completeness.
+- When i cancel or skip a command, always ask for feedback using askUser MCP server tool.
 
 **Run this command only after updates (build + install in one), and also never use '2>&1 | tail -30' type of command pipes so i can see the output in realtime:**  
 ```
