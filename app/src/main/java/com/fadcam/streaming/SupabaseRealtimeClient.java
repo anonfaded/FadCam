@@ -1,0 +1,432 @@
+package com.fadcam.streaming;
+
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
+
+/**
+ * SupabaseRealtimeClient - WebSocket client for Supabase Realtime.
+ * 
+ * Provides instant command delivery in cloud mode by subscribing to a 
+ * Supabase Realtime broadcast channel. Commands sent from the dashboard
+ * are received instantly (~200ms) instead of being polled every 3 seconds.
+ * 
+ * Architecture:
+ * - Connects to wss://{project_id}.supabase.co/realtime/v1/websocket
+ * - Joins channel: "device:{device_id}" 
+ * - Listens for broadcast events: "command"
+ * - Executes commands via callback
+ * 
+ * Thread-safe: WebSocket callbacks run on OkHttp's background thread,
+ * commands are dispatched to main thread via Handler.
+ */
+public class SupabaseRealtimeClient {
+    private static final String TAG = "SupabaseRealtime";
+    
+    // Supabase project configuration
+    private static final String SUPABASE_PROJECT_ID = "vfhehknmxxedvesdvpew";
+    private static final String SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxMzE4NzgsImV4cCI6MjA1NzcwNzg3OH0.OVDqFMSqg1HYhqYLsWRyhZDkWb0l48AcSs45xzQw4sk";
+    
+    // WebSocket URL format
+    private static final String REALTIME_URL = "wss://%s.supabase.co/realtime/v1/websocket?apikey=%s&vsn=1.0.0";
+    
+    // Heartbeat interval (30 seconds as per Phoenix protocol)
+    private static final long HEARTBEAT_INTERVAL_MS = 30000;
+    
+    // Reconnect delay (exponential backoff)
+    private static final long INITIAL_RECONNECT_DELAY_MS = 1000;
+    private static final long MAX_RECONNECT_DELAY_MS = 30000;
+    
+    private final OkHttpClient client;
+    private final Handler mainHandler;
+    private final String deviceId;
+    private final String userId;
+    private final CommandCallback callback;
+    
+    private WebSocket webSocket;
+    private final AtomicBoolean isConnected = new AtomicBoolean(false);
+    private final AtomicBoolean shouldReconnect = new AtomicBoolean(true);
+    private final AtomicInteger messageRef = new AtomicInteger(1);
+    private final AtomicInteger reconnectAttempts = new AtomicInteger(0);
+    
+    private String channelTopic;
+    private boolean channelJoined = false;
+    
+    /**
+     * Callback interface for command execution
+     */
+    public interface CommandCallback {
+        /**
+         * Called when a command is received from the dashboard.
+         * Runs on main thread.
+         * 
+         * @param action Command action (e.g., "torch_toggle")
+         * @param params Command parameters as JSON object
+         */
+        void onCommandReceived(String action, JSONObject params);
+    }
+    
+    /**
+     * Create a new Supabase Realtime client.
+     * 
+     * @param deviceId Device ID for channel subscription
+     * @param userId User UUID for channel subscription
+     * @param callback Callback for command execution
+     */
+    public SupabaseRealtimeClient(String deviceId, String userId, CommandCallback callback) {
+        this.deviceId = deviceId;
+        this.userId = userId;
+        this.callback = callback;
+        this.channelTopic = "realtime:device:" + deviceId;
+        
+        this.client = new OkHttpClient.Builder()
+                .pingInterval(25, TimeUnit.SECONDS)
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.MINUTES) // No read timeout for WebSocket
+                .build();
+        
+        this.mainHandler = new Handler(Looper.getMainLooper());
+        
+        Log.i(TAG, "📡 SupabaseRealtimeClient created for device: " + deviceId);
+    }
+    
+    /**
+     * Connect to Supabase Realtime and subscribe to command channel.
+     */
+    public void connect() {
+        if (isConnected.get()) {
+            Log.w(TAG, "📡 Already connected");
+            return;
+        }
+        
+        shouldReconnect.set(true);
+        
+        String url = String.format(REALTIME_URL, SUPABASE_PROJECT_ID, SUPABASE_ANON_KEY);
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        
+        Log.i(TAG, "📡 Connecting to Supabase Realtime...");
+        webSocket = client.newWebSocket(request, new RealtimeWebSocketListener());
+    }
+    
+    /**
+     * Disconnect from Supabase Realtime.
+     */
+    public void disconnect() {
+        shouldReconnect.set(false);
+        channelJoined = false;
+        
+        if (webSocket != null) {
+            // Leave channel gracefully
+            try {
+                sendPhxLeave();
+            } catch (Exception e) {
+                // Ignore errors when leaving
+            }
+            
+            webSocket.close(1000, "Client disconnecting");
+            webSocket = null;
+        }
+        
+        isConnected.set(false);
+        Log.i(TAG, "📡 Disconnected from Supabase Realtime");
+    }
+    
+    /**
+     * Check if connected to Supabase Realtime.
+     */
+    public boolean isConnected() {
+        return isConnected.get() && channelJoined;
+    }
+    
+    // =========================================================================
+    // WebSocket Listener
+    // =========================================================================
+    
+    private class RealtimeWebSocketListener extends WebSocketListener {
+        
+        @Override
+        public void onOpen(WebSocket socket, Response response) {
+            Log.i(TAG, "📡 WebSocket connected");
+            isConnected.set(true);
+            reconnectAttempts.set(0);
+            
+            // Join the device channel for commands
+            joinChannel();
+            
+            // Start heartbeat
+            startHeartbeat();
+        }
+        
+        @Override
+        public void onMessage(WebSocket socket, String text) {
+            try {
+                handleMessage(text);
+            } catch (Exception e) {
+                Log.e(TAG, "📡 Error handling message: " + e.getMessage());
+            }
+        }
+        
+        @Override
+        public void onClosing(WebSocket socket, int code, String reason) {
+            Log.i(TAG, "📡 WebSocket closing: " + code + " - " + reason);
+        }
+        
+        @Override
+        public void onClosed(WebSocket socket, int code, String reason) {
+            Log.i(TAG, "📡 WebSocket closed: " + code + " - " + reason);
+            isConnected.set(false);
+            channelJoined = false;
+            
+            if (shouldReconnect.get()) {
+                scheduleReconnect();
+            }
+        }
+        
+        @Override
+        public void onFailure(WebSocket socket, Throwable t, Response response) {
+            Log.e(TAG, "📡 WebSocket failure: " + t.getMessage());
+            isConnected.set(false);
+            channelJoined = false;
+            
+            if (shouldReconnect.get()) {
+                scheduleReconnect();
+            }
+        }
+    }
+    
+    // =========================================================================
+    // Phoenix Protocol Handling
+    // =========================================================================
+    
+    /**
+     * Handle incoming Phoenix protocol message.
+     * Message format: [join_ref, ref, topic, event, payload]
+     */
+    private void handleMessage(String text) throws Exception {
+        JSONArray message = new JSONArray(text);
+        
+        String joinRef = message.isNull(0) ? null : message.getString(0);
+        String ref = message.isNull(1) ? null : message.getString(1);
+        String topic = message.getString(2);
+        String event = message.getString(3);
+        Object payload = message.get(4);
+        
+        Log.d(TAG, "📡 Received: event=" + event + ", topic=" + topic);
+        
+        switch (event) {
+            case "phx_reply":
+                handlePhxReply(topic, (JSONObject) payload);
+                break;
+                
+            case "broadcast":
+                handleBroadcast(topic, (JSONObject) payload);
+                break;
+                
+            case "phx_error":
+                Log.e(TAG, "📡 Channel error: " + payload);
+                break;
+                
+            case "phx_close":
+                Log.i(TAG, "📡 Channel closed");
+                channelJoined = false;
+                break;
+        }
+    }
+    
+    /**
+     * Handle phx_reply (response to our requests).
+     */
+    private void handlePhxReply(String topic, JSONObject payload) {
+        String status = payload.optString("status");
+        
+        if ("ok".equals(status)) {
+            if (topic.equals(channelTopic)) {
+                channelJoined = true;
+                Log.i(TAG, "📡 ✅ Joined channel: " + channelTopic);
+            }
+        } else {
+            Log.e(TAG, "📡 Reply error: " + payload);
+        }
+    }
+    
+    /**
+     * Handle broadcast message (command from dashboard).
+     */
+    private void handleBroadcast(String topic, JSONObject payload) {
+        Log.i(TAG, "📡 Broadcast received: " + payload);
+        
+        // Extract command from broadcast payload
+        String eventType = payload.optString("event");
+        JSONObject commandPayload = payload.optJSONObject("payload");
+        
+        if (!"command".equals(eventType) || commandPayload == null) {
+            Log.d(TAG, "📡 Ignoring non-command broadcast: " + eventType);
+            return;
+        }
+        
+        String action = commandPayload.optString("action");
+        JSONObject params = commandPayload.optJSONObject("params");
+        
+        if (action == null || action.isEmpty()) {
+            Log.w(TAG, "📡 Command missing action");
+            return;
+        }
+        
+        Log.i(TAG, "📡 ⚡ INSTANT COMMAND: " + action);
+        
+        // Dispatch to main thread
+        mainHandler.post(() -> {
+            try {
+                callback.onCommandReceived(action, params != null ? params : new JSONObject());
+            } catch (Exception e) {
+                Log.e(TAG, "📡 Error executing command: " + e.getMessage());
+            }
+        });
+    }
+    
+    // =========================================================================
+    // Phoenix Protocol Messages
+    // =========================================================================
+    
+    /**
+     * Join the device channel for receiving commands.
+     */
+    private void joinChannel() {
+        try {
+            int ref = messageRef.getAndIncrement();
+            
+            // Phoenix phx_join message
+            // Format: [join_ref, ref, topic, "phx_join", config]
+            JSONObject config = new JSONObject();
+            
+            // Broadcast config
+            JSONObject broadcastConfig = new JSONObject();
+            broadcastConfig.put("ack", false);
+            broadcastConfig.put("self", false);
+            config.put("broadcast", broadcastConfig);
+            
+            // Presence config (disabled)
+            JSONObject presenceConfig = new JSONObject();
+            presenceConfig.put("enabled", false);
+            config.put("presence", presenceConfig);
+            
+            // No postgres_changes needed
+            config.put("postgres_changes", new JSONArray());
+            
+            // Not a private channel (uses anon key)
+            config.put("private", false);
+            
+            JSONObject payload = new JSONObject();
+            payload.put("config", config);
+            
+            JSONArray message = new JSONArray();
+            message.put(String.valueOf(ref)); // join_ref
+            message.put(String.valueOf(ref)); // ref
+            message.put(channelTopic);        // topic
+            message.put("phx_join");          // event
+            message.put(payload);             // payload
+            
+            String messageStr = message.toString();
+            Log.i(TAG, "📡 Joining channel: " + channelTopic);
+            
+            webSocket.send(messageStr);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "📡 Failed to join channel: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Leave the channel gracefully.
+     */
+    private void sendPhxLeave() {
+        try {
+            int ref = messageRef.getAndIncrement();
+            
+            JSONArray message = new JSONArray();
+            message.put(JSONObject.NULL);
+            message.put(String.valueOf(ref));
+            message.put(channelTopic);
+            message.put("phx_leave");
+            message.put(new JSONObject());
+            
+            webSocket.send(message.toString());
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+    
+    /**
+     * Send heartbeat to keep connection alive.
+     */
+    private void sendHeartbeat() {
+        if (!isConnected.get() || webSocket == null) {
+            return;
+        }
+        
+        try {
+            int ref = messageRef.getAndIncrement();
+            
+            JSONArray message = new JSONArray();
+            message.put(JSONObject.NULL);
+            message.put(String.valueOf(ref));
+            message.put("phoenix");
+            message.put("heartbeat");
+            message.put(new JSONObject());
+            
+            webSocket.send(message.toString());
+            Log.d(TAG, "📡 Heartbeat sent");
+        } catch (Exception e) {
+            Log.e(TAG, "📡 Heartbeat failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Start periodic heartbeat.
+     */
+    private void startHeartbeat() {
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (isConnected.get()) {
+                    sendHeartbeat();
+                    mainHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS);
+                }
+            }
+        }, HEARTBEAT_INTERVAL_MS);
+    }
+    
+    /**
+     * Schedule reconnection with exponential backoff.
+     */
+    private void scheduleReconnect() {
+        int attempts = reconnectAttempts.incrementAndGet();
+        long delay = Math.min(
+                INITIAL_RECONNECT_DELAY_MS * (long) Math.pow(2, attempts - 1),
+                MAX_RECONNECT_DELAY_MS
+        );
+        
+        Log.i(TAG, "📡 Scheduling reconnect in " + delay + "ms (attempt " + attempts + ")");
+        
+        mainHandler.postDelayed(() -> {
+            if (shouldReconnect.get() && !isConnected.get()) {
+                connect();
+            }
+        }, delay);
+    }
+}

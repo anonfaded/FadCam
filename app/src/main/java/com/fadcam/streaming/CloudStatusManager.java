@@ -49,11 +49,15 @@ public class CloudStatusManager {
     private final Handler handler;
     private final ExecutorService executor;
     
+    // Supabase Realtime for instant commands
+    private SupabaseRealtimeClient realtimeClient;
+    
     // State
     private boolean isRunning = false;
     private Runnable statusRunnable;
     private Runnable commandRunnable;
     private int statusPushCount = 0;
+    private int realtimeCommandCount = 0;
     
     private CloudStatusManager(Context context) {
         this.context = context.getApplicationContext();
@@ -119,11 +123,19 @@ public class CloudStatusManager {
         statusRunnable = new Runnable() {
             @Override
             public void run() {
-                if (!isRunning) return;
+                if (!isRunning) {
+                    Log.w(TAG, "☁️ Status push loop stopped (isRunning=false)");
+                    return;
+                }
                 
-                pushStatus();
-                statusPushCount++;
+                try {
+                    pushStatus();
+                    statusPushCount++;
+                } catch (Exception e) {
+                    Log.e(TAG, "☁️ Exception in pushStatus (will retry): " + e.getMessage());
+                }
                 
+                // Always reschedule regardless of errors
                 handler.postDelayed(this, STATUS_PUSH_INTERVAL_MS);
             }
         };
@@ -133,19 +145,134 @@ public class CloudStatusManager {
         commandRunnable = new Runnable() {
             @Override
             public void run() {
-                if (!isRunning) return;
+                if (!isRunning) {
+                    Log.w(TAG, "☁️ Command poll loop stopped (isRunning=false)");
+                    return;
+                }
                 
-                pollCommands();
+                try {
+                    pollCommands();
+                } catch (Exception e) {
+                    Log.e(TAG, "☁️ Exception in pollCommands (will retry): " + e.getMessage());
+                }
                 
+                // Always reschedule regardless of errors
                 handler.postDelayed(this, COMMAND_POLL_INTERVAL_MS);
             }
         };
         handler.postDelayed(commandRunnable, 500); // Start 500ms after status push
         
+        // Start Supabase Realtime for instant command delivery
+        startSupabaseRealtime();
+        
         Log.i(TAG, "☁️ Cloud status manager started (status: " + STATUS_PUSH_INTERVAL_MS + 
-              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms)");
+              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, realtime: enabled)");
     }
     
+    /**
+     * Start Supabase Realtime connection for instant command delivery.
+     * This provides <200ms command latency vs 3s polling.
+     */
+    private void startSupabaseRealtime() {
+        String deviceId = getDeviceId();
+        String userId = authManager.getUserId();
+        
+        if (deviceId == null || userId == null) {
+            Log.w(TAG, "☁️ Cannot start Realtime: missing deviceId or userId");
+            return;
+        }
+        
+        try {
+            realtimeClient = new SupabaseRealtimeClient(deviceId, userId, (action, params) -> {
+                // Command received instantly via WebSocket
+                realtimeCommandCount++;
+                Log.i(TAG, "☁️ ⚡ INSTANT COMMAND #" + realtimeCommandCount + ": " + action);
+                
+                // Execute command via local server (same as polling)
+                executeCommandFromRealtime(action, params);
+            });
+            
+            realtimeClient.connect();
+            Log.i(TAG, "☁️ Supabase Realtime connecting for device: " + deviceId);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "☁️ Failed to start Supabase Realtime: " + e.getMessage());
+            // Fallback to polling (already running)
+        }
+    }
+    
+    /**
+     * Execute command received via Supabase Realtime.
+     * Maps action to local endpoint and calls LiveM3U8Server.
+     */
+    private void executeCommandFromRealtime(String action, org.json.JSONObject params) {
+        try {
+            Log.i(TAG, "☁️ Executing realtime command: " + action);
+            
+            // Map action to local endpoint (same mapping as executeCommand)
+            String endpoint = null;
+            String method = "POST";
+            String requestBody = null;
+            
+            switch (action) {
+                case "torch_toggle":
+                    endpoint = "/torch/toggle";
+                    break;
+                case "torch_on":
+                    endpoint = "/torch/on";
+                    break;
+                case "torch_off":
+                    endpoint = "/torch/off";
+                    break;
+                case "camera_switch":
+                    endpoint = "/camera/switch";
+                    break;
+                case "camera_front":
+                    endpoint = "/camera/set";
+                    requestBody = "front";
+                    break;
+                case "camera_back":
+                    endpoint = "/camera/set";
+                    requestBody = "back";
+                    break;
+                case "alarm_start":
+                    endpoint = "/alarm/start";
+                    if (params != null && params.length() > 0) {
+                        requestBody = params.toString();
+                    }
+                    break;
+                case "alarm_stop":
+                    endpoint = "/alarm/stop";
+                    break;
+                case "volume_set":
+                    endpoint = "/volume/set";
+                    if (params != null) {
+                        requestBody = String.valueOf(params.optInt("level", 50));
+                    }
+                    break;
+                case "recording_start":
+                    endpoint = "/recording/start";
+                    break;
+                case "recording_stop":
+                    endpoint = "/recording/stop";
+                    break;
+                default:
+                    Log.w(TAG, "☁️ Unknown realtime command action: " + action);
+                    return;
+            }
+            
+            // Execute command via localhost (run on background thread)
+            final String finalEndpoint = endpoint;
+            final String finalBody = requestBody;
+            executor.execute(() -> {
+                executeLocalCommand(finalEndpoint, method, finalBody);
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "☁️ Failed to execute realtime command: " + e.getMessage());
+        }
+    }
+
     /**
      * Stop status push and command polling.
      * Called by RemoteStreamService when server stops.
@@ -156,6 +283,13 @@ public class CloudStatusManager {
         }
         
         isRunning = false;
+        
+        // Stop Supabase Realtime
+        if (realtimeClient != null) {
+            realtimeClient.disconnect();
+            realtimeClient = null;
+            Log.i(TAG, "☁️ Supabase Realtime disconnected (received " + realtimeCommandCount + " instant commands)");
+        }
         
         if (statusRunnable != null) {
             handler.removeCallbacks(statusRunnable);

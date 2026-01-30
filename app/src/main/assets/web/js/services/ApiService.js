@@ -306,12 +306,14 @@ class ApiService {
     }
     
     /**
-     * Cloud mode: Send command through relay to phone
-     * Uses PUT /api/command/{user_uuid}/{device_id}/{cmd_id}
-     * Phone will poll this endpoint and execute commands
+     * Cloud mode: Send command through Supabase Realtime for instant delivery.
+     * Falls back to HTTP relay if Realtime is not available.
+     * 
+     * NEW: Uses Supabase Realtime broadcast for <200ms latency.
+     * OLD: Used HTTP polling with 3 second delay.
      */
     async _sendCloudCommand(endpoint, data) {
-        console.log(`☁️ [COMMAND] ${endpoint} - Sending via relay`);
+        console.log(`☁️ [COMMAND] ${endpoint} - Sending via cloud`);
         
         if (!this.streamContext) {
             throw new Error('Not authenticated for cloud commands');
@@ -322,12 +324,56 @@ class ApiService {
             throw new Error('Missing user or device ID');
         }
         
+        // Convert endpoint to action (e.g., "torch/toggle" -> "torch_toggle")
+        const action = endpoint.replace(/\//g, '_').replace(/^_/, '');
+        
+        // Try Supabase Realtime first (instant delivery)
+        if (typeof realtimeCommandService !== 'undefined' && realtimeCommandService.isReady()) {
+            try {
+                const result = await realtimeCommandService.sendCommand(action, data);
+                if (result.success) {
+                    console.log(`☁️ [COMMAND] ⚡ INSTANT: ${action} (${result.latency}ms)`);
+                    return {
+                        success: true,
+                        command_id: Date.now(),
+                        instant: true,
+                        latency: result.latency,
+                        message: `Instant command delivered (${result.latency}ms)`
+                    };
+                }
+                console.warn(`☁️ [COMMAND] Realtime failed, falling back to HTTP:`, result.error);
+            } catch (e) {
+                console.warn(`☁️ [COMMAND] Realtime error, falling back to HTTP:`, e.message);
+            }
+        } else {
+            console.log(`☁️ [COMMAND] Realtime not ready, using HTTP relay`);
+            
+            // Initialize Realtime if not done yet
+            if (typeof realtimeCommandService !== 'undefined' && !realtimeCommandService.isReady()) {
+                realtimeCommandService.initialize(deviceId, userId).then(success => {
+                    if (success) {
+                        console.log(`☁️ [COMMAND] Realtime initialized for future commands`);
+                    }
+                });
+            }
+        }
+        
+        // Fallback: Send via HTTP relay (polling-based, 3 second delay)
+        return this._sendCloudCommandViaRelay(endpoint, data, userId, deviceId);
+    }
+    
+    /**
+     * Fallback: Send command through HTTP relay.
+     * Uses PUT /api/command/{user_uuid}/{device_id}/{cmd_id}
+     * Phone polls this endpoint every 3 seconds.
+     */
+    async _sendCloudCommandViaRelay(endpoint, data, userId, deviceId) {
         // Generate unique command ID (millisecond timestamp)
         const cmdId = Date.now();
         
         // Build command payload
         const command = {
-            action: endpoint.replace(/\//g, '_'), // e.g., "torch/toggle" -> "torch_toggle"
+            action: endpoint.replace(/\//g, '_').replace(/^_/, ''),
             params: data,
             timestamp: cmdId,
             source: 'dashboard'
@@ -354,7 +400,8 @@ class ApiService {
             return {
                 success: true,
                 command_id: cmdId,
-                message: 'Command queued. Phone will execute on next poll.'
+                instant: false,
+                message: 'Command queued. Phone will execute on next poll (~3s).'
             };
             
         } catch (error) {
