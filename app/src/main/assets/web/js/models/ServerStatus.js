@@ -213,11 +213,30 @@ class ServerStatus {
     }
     
     /**
-     * Get formatted uptime
+     * Get formatted uptime - calculates real-time uptime from startTimestamp
+     * This eliminates the delay between phone status push and dashboard display
      * @returns {string}
      */
     getFormattedUptime() {
+        // Use startTimestamp for real-time uptime calculation
+        // This fixes the 30-60 second delay between phone and dashboard
+        if (this.uptimeStartTimestamp && this.uptimeStartTimestamp > 0) {
+            const realtimeSeconds = Math.floor((Date.now() - this.uptimeStartTimestamp) / 1000);
+            return Formatter.formatUptime(realtimeSeconds);
+        }
+        // Fallback to server-provided uptime if no timestamp available
         return Formatter.formatUptime(this.uptimeSeconds);
+    }
+    
+    /**
+     * Get real-time uptime in seconds (calculated from startTimestamp)
+     * @returns {number}
+     */
+    getRealtimeUptimeSeconds() {
+        if (this.uptimeStartTimestamp && this.uptimeStartTimestamp > 0) {
+            return Math.floor((Date.now() - this.uptimeStartTimestamp) / 1000);
+        }
+        return this.uptimeSeconds;
     }
     
     /**
@@ -302,7 +321,8 @@ class ServerStatus {
             activeConnections: this.activeConnections,
             clientIps: this.clientIps,
             dataTransferredMb: this.dataTransferredMb,
-            uptimeSeconds: this.uptimeSeconds,
+            uptimeSeconds: this.getRealtimeUptimeSeconds(), // Use real-time uptime
+            uptimeStartTimestamp: this.uptimeStartTimestamp, // Include for debugging
             memoryUsageMb: this.memoryUsageMb,
             storageAvailableGb: this.storageAvailableGb,
             lastUpdate: this.lastUpdate
