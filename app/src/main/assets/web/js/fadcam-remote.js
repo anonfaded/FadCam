@@ -67,7 +67,13 @@
   // Get handoff token from URL (passed by Lab after generating)
   function getHandoffToken() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('token');
+    const token = params.get('token');
+    console.log('[FadCamRemote] getHandoffToken:', { 
+      search: window.location.search, 
+      hasToken: !!token,
+      tokenLength: token?.length 
+    });
+    return token;
   }
   
   // Get stored session from localStorage
@@ -149,9 +155,14 @@
     try {
       // Check for handoff token first (coming from Lab)
       const handoffToken = getHandoffToken();
+      console.log('[FadCamRemote] Token check result:', { 
+        handoffToken: handoffToken ? handoffToken.substring(0, 8) + '...' : null,
+        willExchange: !!handoffToken 
+      });
       let session = null;
       
       if (handoffToken) {
+        console.log('[FadCamRemote] HAS handoff token, will exchange...');
         // Exchange handoff token for session
         try {
           const result = await exchangeHandoffToken(handoffToken, deviceId);
@@ -170,13 +181,17 @@
           return;
         }
       } else {
+        console.log('[FadCamRemote] NO handoff token, checking stored session...');
         // No handoff token - check for stored session
         session = getStoredSession();
+        console.log('[FadCamRemote] Stored session:', session ? 'exists' : 'none');
         
         if (!session) {
+          console.log('[FadCamRemote] No session, will redirect to Lab in 1.5s');
           // No session - redirect to Lab to login
           showStreamOverlay('Not Logged In', 'Redirecting to login...');
           setTimeout(() => {
+            console.log('[FadCamRemote] Redirecting NOW to:', CONFIG.LAB_URL);
             window.location.href = CONFIG.LAB_URL;
           }, 1500);
           return;
