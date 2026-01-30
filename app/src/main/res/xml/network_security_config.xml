@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for FadCam
+    
+    This config allows cleartext HTTP traffic only to localhost,
+    which is required for CloudStatusManager to call the local
+    LiveM3U8Server for command execution (e.g., /torch/toggle).
+    
+    All other domains require HTTPS (default secure behavior).
+-->
+<network-security-config>
+    <!-- Base config: cleartext disabled by default (secure) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Allow localhost for local server communication -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

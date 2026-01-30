@@ -454,12 +454,14 @@ public class CloudStatusManager {
     private void executeLocalCommand(String endpoint, String method, String body) {
         // Get server port from RemoteStreamService
         int port = getServerPort();
+        Log.d(TAG, "☁️ executeLocalCommand - port=" + port + ", endpoint=" + endpoint);
         if (port <= 0) {
-            Log.w(TAG, "Server port not available");
+            Log.w(TAG, "☁️ Server port not available (port=" + port + ")");
             return;
         }
         
         String urlStr = "http://localhost:" + port + endpoint;
+        Log.i(TAG, "☁️ Calling local endpoint: " + urlStr);
         
         try {
             HttpURLConnection conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
@@ -477,14 +479,14 @@ public class CloudStatusManager {
             
             int responseCode = conn.getResponseCode();
             if (responseCode >= 200 && responseCode < 300) {
-                Log.i(TAG, "☁️ Command executed successfully: " + endpoint);
+                Log.i(TAG, "☁️ Command executed successfully: " + endpoint + " -> HTTP " + responseCode);
             } else {
-                Log.w(TAG, "Command execution failed: HTTP " + responseCode);
+                Log.w(TAG, "☁️ Command execution failed: " + endpoint + " -> HTTP " + responseCode);
             }
             conn.disconnect();
             
         } catch (Exception e) {
-            Log.e(TAG, "Local command failed: " + e.getMessage());
+            Log.e(TAG, "☁️ Local command failed: " + endpoint + " - " + e.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
     
