@@ -392,7 +392,13 @@
     getStreamToken: () => streamContext?.streamToken || getStreamToken(),
     getRelayHlsUrl: () => {
       if (!streamContext?.userId || !streamContext?.deviceId) return null;
-      return `https://live.fadseclab.com:8443/stream/${streamContext.userId}/${streamContext.deviceId}/live.m3u8`;
+      let url = `https://live.fadseclab.com:8443/stream/${streamContext.userId}/${streamContext.deviceId}/live.m3u8`;
+      // Append token as query parameter for auth (avoids CORS issues with headers)
+      const token = streamContext?.streamToken || getStreamToken();
+      if (token) {
+        url += `?token=${encodeURIComponent(token)}`;
+      }
+      return url;
     },
     getRelayStatusUrl: () => {
       if (!streamContext?.userId || !streamContext?.deviceId) return null;

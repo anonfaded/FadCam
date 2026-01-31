@@ -483,13 +483,23 @@ class ApiService {
     
     /**
      * Get HLS stream URL for video player
+     * In cloud mode, appends auth token as query parameter to avoid CORS issues
      */
     getHlsUrl() {
         if (this.isCloudMode()) {
             if (!this.streamContext?.userId || !this.streamContext?.deviceId) {
                 return null;
             }
-            return `${this.relayBaseUrl}/stream/${this.streamContext.userId}/${this.streamContext.deviceId}/live.m3u8`;
+            let url = `${this.relayBaseUrl}/stream/${this.streamContext.userId}/${this.streamContext.deviceId}/live.m3u8`;
+            
+            // Append token as query parameter for cloud mode auth
+            // This is required because HLS.js fragment requests can't easily add headers
+            if (this.streamAccessToken) {
+                url += `?token=${encodeURIComponent(this.streamAccessToken)}`;
+                console.log('[ApiService] 🔑 Token appended to HLS URL');
+            }
+            
+            return url;
         }
         return `${this.localBaseUrl}${CONFIG.ENDPOINTS.HLS}`;
     }

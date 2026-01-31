@@ -2,7 +2,8 @@
  * HlsService - HLS.js wrapper for video streaming
  * 
  * Supports both local mode (no auth) and cloud mode (auth token required).
- * In cloud mode, the Authorization header is injected via xhrSetup.
+ * In cloud mode, the token is appended to URLs via xhrSetup callback.
+ * This is the standard approach to avoid CORS issues with custom headers.
  */
 class HlsService {
     constructor() {
@@ -16,7 +17,8 @@ class HlsService {
     }
     
     /**
-     * Get HLS config with auth headers for cloud mode
+     * Get HLS config with xhrSetup for cloud mode auth
+     * Uses URL token approach (standard for HLS authentication)
      * @returns {Object} HLS.js configuration object
      */
     _getHlsConfig() {
@@ -30,17 +32,24 @@ class HlsService {
         if (isCloudMode) {
             const streamToken = FadCamRemote.getStreamToken();
             if (streamToken) {
-                console.log('[HlsService] ☁️ Cloud mode detected, injecting auth header');
-                // Add xhrSetup to inject Authorization header on every XHR request
+                console.log('[HlsService] ☁️ Cloud mode detected, using URL token auth');
+                
+                // Standard xhrSetup approach - modify URL before request is sent
+                // This is the recommended way per hls.js documentation
                 baseConfig.xhrSetup = function(xhr, url) {
-                    xhr.setRequestHeader('Authorization', `Bearer ${streamToken}`);
-                    console.log('[HlsService] 🔑 Auth header added for:', url.substring(0, 80) + '...');
+                    // Only modify cloud stream URLs
+                    if (url.includes('/stream/') || url.includes('live.fadseclab.com')) {
+                        const separator = url.includes('?') ? '&' : '?';
+                        const authUrl = `${url}${separator}token=${encodeURIComponent(streamToken)}`;
+                        // Re-open with the new URL (must call open before setRequestHeader)
+                        xhr.open('GET', authUrl, true);
+                    }
                 };
             } else {
                 console.warn('[HlsService] ☁️ Cloud mode but no stream token available!');
             }
         } else {
-            console.log('[HlsService] 📱 Local mode, no auth headers needed');
+            console.log('[HlsService] 📱 Local mode, no auth needed');
         }
         
         return baseConfig;
