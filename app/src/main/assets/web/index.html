@@ -1032,41 +1032,101 @@
         let hlsService = null;
         
         /**
-         * Pending State Manager - Prevents status polling from overwriting
-         * values that are in the process of being changed via commands.
-         * Uses expected value matching to detect when command has taken effect.
+         * Executing State Manager - Shows "Executing..." overlay while waiting for command confirmation.
+         * Commands wait for actual status confirmation before updating UI.
          */
-        const pendingState = {
-            // Pending entries: { field: { expectedValue, timestamp, timeout } }
+        const executingState = {
+            // Active executions: { field: { expectedValue, timestamp, timeout, overlayElement } }
             entries: {},
             
-            // Set a field as pending with expected value (blocks polling for 5s)
-            set(field, expectedValue) {
+            // Start execution - show overlay and wait for confirmation
+            start(field, expectedValue, cardSelector) {
+                // Remove any existing overlay for this field
+                this.stop(field);
+                
                 const entry = {
                     expectedValue: expectedValue,
                     timestamp: Date.now(),
-                    timeout: 5000 // 5 second max wait
+                    timeout: 8000, // 8 second max wait
+                    cardSelector: cardSelector
                 };
                 this.entries[field] = entry;
-                console.log(`[Pending] ${field} set to pending, expecting: ${expectedValue}`);
-            },
-            
-            // Check if a field is pending (should not be overwritten by polling)
-            isPending(field) {
-                const entry = this.entries[field];
-                if (!entry) return false;
                 
-                // Expired?
-                if (Date.now() - entry.timestamp > entry.timeout) {
-                    delete this.entries[field];
-                    console.log(`[Pending] ${field} expired (timeout)`);
-                    return false;
+                // Show visual "Executing..." overlay on the card
+                const card = document.querySelector(cardSelector);
+                if (card) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'executing-overlay';
+                    overlay.innerHTML = `
+                        <div class="executing-content">
+                            <div class="executing-spinner"></div>
+                            <span>Executing...</span>
+                        </div>
+                    `;
+                    overlay.style.cssText = `
+                        position: absolute;
+                        top: 0; left: 0; right: 0; bottom: 0;
+                        background: rgba(0, 0, 0, 0.7);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: inherit;
+                        z-index: 100;
+                    `;
+                    overlay.querySelector('.executing-content').style.cssText = `
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 8px;
+                        color: #fff;
+                        font-size: 12px;
+                        font-weight: 500;
+                    `;
+                    overlay.querySelector('.executing-spinner').style.cssText = `
+                        width: 24px;
+                        height: 24px;
+                        border: 2px solid rgba(255,255,255,0.3);
+                        border-top-color: #fff;
+                        border-radius: 50%;
+                        animation: spin 0.8s linear infinite;
+                    `;
+                    
+                    // Add spin animation if not exists
+                    if (!document.getElementById('executingSpinStyle')) {
+                        const style = document.createElement('style');
+                        style.id = 'executingSpinStyle';
+                        style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+                        document.head.appendChild(style);
+                    }
+                    
+                    // Ensure card has position relative for overlay
+                    if (getComputedStyle(card).position === 'static') {
+                        card.style.position = 'relative';
+                    }
+                    
+                    card.appendChild(overlay);
+                    entry.overlayElement = overlay;
                 }
-                return true;
+                
+                console.log(`[Executing] ${field} started, waiting for: ${expectedValue}`);
+                
+                // Set timeout to auto-clear if no response
+                entry.timeoutId = setTimeout(() => {
+                    if (this.entries[field]) {
+                        console.log(`[Executing] ${field} timed out after 8s`);
+                        this.stop(field);
+                        showToast('Command timed out - please try again', 3000);
+                    }
+                }, entry.timeout);
             },
             
-            // Check if incoming value matches expected (command succeeded)
-            checkAndClear(field, incomingValue) {
+            // Check if a field is executing
+            isExecuting(field) {
+                return !!this.entries[field];
+            },
+            
+            // Check if incoming value confirms execution success
+            checkConfirmation(field, incomingValue) {
                 const entry = this.entries[field];
                 if (!entry) return false;
                 
@@ -1077,19 +1137,33 @@
                     : incomingValue === entry.expectedValue;
                 
                 if (matches) {
-                    console.log(`[Pending] ${field} confirmed! Expected: ${entry.expectedValue}, Got: ${incomingValue}`);
-                    delete this.entries[field];
+                    console.log(`[Executing] ${field} CONFIRMED! Expected: ${entry.expectedValue}, Got: ${incomingValue}`);
+                    this.stop(field);
                     return true;
                 }
                 return false;
             },
             
-            // Clear a pending entry manually
-            clear(field) {
-                if (this.entries[field]) {
+            // Stop execution and remove overlay
+            stop(field) {
+                const entry = this.entries[field];
+                if (entry) {
+                    // Clear timeout
+                    if (entry.timeoutId) {
+                        clearTimeout(entry.timeoutId);
+                    }
+                    // Remove overlay
+                    if (entry.overlayElement && entry.overlayElement.parentNode) {
+                        entry.overlayElement.remove();
+                    }
                     delete this.entries[field];
-                    console.log(`[Pending] ${field} cleared manually`);
+                    console.log(`[Executing] ${field} stopped`);
                 }
+            },
+            
+            // Stop all executions (e.g., on error)
+            stopAll() {
+                Object.keys(this.entries).forEach(field => this.stop(field));
             }
         };
 
@@ -1950,39 +2024,26 @@
             const oldState = currentStatus?.torchOn;
             const newState = !oldState;
             
-            // Mark as pending - blocks status polling from overwriting
-            pendingState.set('torchOn', newState);
-            
-            // Update UI immediately with expected new state
-            if (currentStatus) {
-                currentStatus.torchOn = newState;
-                console.log('[Torch] ⚡ Set to:', newState, '(pending confirmation)');
-                updateUI(currentStatus);
-            }
+            // Show "Executing..." overlay on torch card
+            executingState.start('torchOn', newState, '.torch-card');
             
             try {
                 // Send the API call (returns quickly in cloud mode)
                 const result = await dashboardViewModel.toggleTorch();
                 
-                // If server returned actual state, use it
+                // If server returned actual state, use it (local mode)
                 if (currentStatus && result && result.torch_state !== undefined) {
                     const actualState = result.torch_state;
-                    pendingState.clear('torchOn');
+                    executingState.stop('torchOn');
                     currentStatus.torchOn = actualState;
                     console.log('[Torch] Server confirmed:', actualState);
                     updateUI(currentStatus);
                 }
                 // In cloud mode, result is { success: true, instant: true } - no state data
-                // Pending state will wait for status poll confirmation
+                // executingState will check and update when status poll returns matching value
             } catch (error) {
                 console.error('[Torch] Failed to toggle:', error);
-                pendingState.clear('torchOn');
-                // REVERT: Undo update on failure
-                if (currentStatus) {
-                    currentStatus.torchOn = oldState;
-                    console.log('[Torch] ⚠️ Reverting to:', oldState);
-                    updateUI(currentStatus);
-                }
+                executingState.stop('torchOn');
                 showToast('Failed to toggle torch');
             }
         }
@@ -2078,30 +2139,17 @@
             const oldState = currentStatus?.isRecording;
             const newState = !oldState;
             
-            // Mark as pending - blocks status polling from overwriting
-            pendingState.set('isRecording', newState);
-            
-            // Update UI immediately with expected new state
-            if (currentStatus) {
-                currentStatus.isRecording = newState;
-                console.log('[Recording] ⚡ Set to:', newState, '(pending confirmation)');
-                updateUI(currentStatus);
-            }
+            // Show "Executing..." overlay on recording card
+            executingState.start('isRecording', newState, '.recording-card');
             
             try {
                 // Call the API
                 await dashboardViewModel.toggleRecording();
                 // In cloud mode, command is sent
-                // Pending state will wait for status poll confirmation
+                // executingState will check and update when status poll returns matching value
             } catch (error) {
                 console.error('[Recording] Failed to toggle:', error);
-                pendingState.clear('isRecording');
-                // REVERT: Undo update on failure
-                if (currentStatus) {
-                    currentStatus.isRecording = oldState;
-                    console.log('[Recording] ⚠️ Reverting to:', oldState);
-                    updateUI(currentStatus);
-                }
+                executingState.stop('isRecording');
                 showToast('Failed to toggle recording');
             }
         }
@@ -2207,32 +2255,23 @@
                 mode: status.mode
             };
             
-            // ===== PENDING STATE CHECK =====
-            // Prevent status polling from overwriting values that are pending confirmation
-            if (pendingState.isPending('volume_percentage')) {
-                // Check if incoming value matches our expected value (command confirmed)
-                if (pendingState.checkAndClear('volume_percentage', status.volume_percentage)) {
-                    console.log('[Status] Volume confirmed by server poll');
-                } else {
-                    // Keep our pending value, don't let server overwrite
-                    status.volume_percentage = currentStatus?.volume_percentage ?? status.volume_percentage;
-                    console.log('[Status] Volume pending, ignoring server value');
+            // ===== EXECUTING STATE CHECK =====
+            // Check if any executing commands have been confirmed by this status update
+            // This removes the "Executing..." overlay when the phone confirms the new value
+            if (executingState.isExecuting('volume_percentage')) {
+                if (executingState.checkConfirmation('volume_percentage', status.volume_percentage)) {
+                    console.log('[Status] Volume CONFIRMED by server poll - updating UI');
+                }
+                // Either confirmed (overlay removed) or still waiting - don't block UI update
+            }
+            if (executingState.isExecuting('torchOn')) {
+                if (executingState.checkConfirmation('torchOn', status.torchOn)) {
+                    console.log('[Status] Torch CONFIRMED by server poll - updating UI');
                 }
             }
-            if (pendingState.isPending('torchOn')) {
-                if (pendingState.checkAndClear('torchOn', status.torchOn)) {
-                    console.log('[Status] Torch confirmed by server poll');
-                } else {
-                    status.torchOn = currentStatus?.torchOn ?? status.torchOn;
-                    console.log('[Status] Torch pending, ignoring server value');
-                }
-            }
-            if (pendingState.isPending('isRecording')) {
-                if (pendingState.checkAndClear('isRecording', status.isRecording)) {
-                    console.log('[Status] Recording confirmed by server poll');
-                } else {
-                    status.isRecording = currentStatus?.isRecording ?? status.isRecording;
-                    console.log('[Status] Recording pending, ignoring server value');
+            if (executingState.isExecuting('isRecording')) {
+                if (executingState.checkConfirmation('isRecording', status.isRecording)) {
+                    console.log('[Status] Recording CONFIRMED by server poll - updating UI');
                 }
             }
             
@@ -3510,32 +3549,23 @@
 
         /**
          * Set device volume via API (works in local and cloud mode)
-         * Uses pending state to prevent status polling from causing oscillation.
+         * Shows "Executing..." overlay and waits for actual confirmation.
          */
         async function setVolume(percentage) {
             console.log('[Volume] setVolume called with percentage:', percentage);
-            const oldPercentage = currentStatus?.volume_percentage || 0;
             
-            // Mark volume as pending - blocks status polling from overwriting
-            pendingState.set('volume_percentage', percentage);
-            
-            // Update UI immediately with target value
-            if (currentStatus) {
-                currentStatus.volume_percentage = percentage;
-                console.log('[Volume] ⚡ Set to:', percentage, '% (pending confirmation)');
-                updateUI(currentStatus);
-            }
+            // Show "Executing..." overlay on volume card
+            executingState.start('volume_percentage', percentage, '.volume-card');
             
             try {
                 // Use ApiService for cloud-compatible requests
                 const result = await apiService.post('/audio/volume', { percentage: percentage });
                 console.log('[Volume] Response:', result);
                 
-                // In cloud mode, result is { success: true, instant: true } - no volume data
-                // In local mode, result has actual volume values
+                // In local mode, result has actual volume values - update immediately
                 if (result.status === 'success' && result.percentage !== undefined) {
                     console.log('✅ Volume confirmed:', result.percentage + '%');
-                    pendingState.clear('volume_percentage');
+                    executingState.stop('volume_percentage');
                     if (currentStatus) {
                         currentStatus.volume = result.volume;
                         currentStatus.max_volume = result.max_volume;
@@ -3543,23 +3573,18 @@
                         updateUI(currentStatus);
                     }
                 } else if (result.success) {
-                    // Cloud mode: command sent, pending state will wait for status poll confirmation
-                    console.log('✅ Volume command sent (awaiting confirmation from phone)');
+                    // Cloud mode: command sent, wait for status poll to confirm
+                    // (executingState will check and update when status poll returns matching value)
+                    console.log('✅ Volume command sent (waiting for phone confirmation)');
                 } else {
                     console.error('❌ Failed to set volume:', result.message);
-                    pendingState.clear('volume_percentage');
-                    if (currentStatus) {
-                        currentStatus.volume_percentage = oldPercentage;
-                        updateUI(currentStatus);
-                    }
+                    executingState.stop('volume_percentage');
+                    showToast('Failed to set volume', 3000);
                 }
             } catch (error) {
                 console.error('❌ Error setting volume:', error);
-                pendingState.clear('volume_percentage');
-                if (currentStatus) {
-                    currentStatus.volume_percentage = oldPercentage;
-                    updateUI(currentStatus);
-                }
+                executingState.stop('volume_percentage');
+                showToast('Failed to set volume', 3000);
             }
         }
 
