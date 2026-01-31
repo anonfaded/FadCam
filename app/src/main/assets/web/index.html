@@ -1047,7 +1047,7 @@
                 const entry = {
                     expectedValue: expectedValue,
                     timestamp: Date.now(),
-                    timeout: 8000, // 8 second max wait
+                    timeout: 12000, // 12 second max wait (cloud mode can be slow)
                     cardSelector: cardSelector
                 };
                 this.entries[field] = entry;
@@ -2279,7 +2279,8 @@
 
             // ===== RESTORE ALARM STATE FROM SERVER =====
             // Sync alarm state from server to restore UI after page reload
-            if (status.alarm) {
+            // Skip sync during preview to avoid UI flicker
+            if (status.alarm && !isAlarmPreview) {
                 console.log('[Alarm] Server state:', status.alarm);
                 if (status.alarm.is_ringing && !alarmIsActive) {
                     console.log('[Alarm] Restoring active alarm from server state');
@@ -2302,6 +2303,8 @@
                     updateAlarmUIState();
                     updateAlarmCardState(false, 0);
                 }
+            } else if (isAlarmPreview) {
+                console.log('[Alarm] Skipping UI sync during preview');
             } else {
                 console.log('[Alarm] No alarm state from server');
             }
@@ -3219,13 +3222,18 @@
             if (typeof apiService !== 'undefined' && apiService.isCloudMode()) {
                 try {
                     showToast('▶️ Playing preview on phone...', 2500);
+                    // Set preview flag to suppress alarm UI sync during preview
+                    isAlarmPreview = true;
                     await apiService.post('/alarm/ring', {
                         sound: soundFile,
                         duration_ms: 2000  // 2 seconds preview
                     });
+                    // Clear preview flag after preview duration + buffer
+                    setTimeout(() => { isAlarmPreview = false; }, 3000);
                 } catch (e) {
                     console.error('Error playing preview on phone:', e);
                     showToast('Error: Could not play preview', 2000);
+                    isAlarmPreview = false;
                 }
                 return;
             }
@@ -3276,12 +3284,8 @@
                 durationMs = value * 1000;
             }
             
-            // Update UI immediately (optimistic update)
-            alarmIsActive = true;
-            alarmActiveDurationMs = durationMs;
-            updateAlarmUIState();
-            updateAlarmCardState(true, durationMs);
-            startAlarmCountdown(durationMs);
+            // Show executing state - wait for server confirmation
+            executingState.start('alarmActive', true, '#alarmCard');
             
             try {
                 // Use ApiService for cloud-compatible requests
@@ -3291,17 +3295,21 @@
                 });
                 
                 if (data.status === 'success' || data.success) {
+                    executingState.stop('alarmActive');
+                    alarmIsActive = true;
+                    alarmActiveDurationMs = durationMs;
+                    updateAlarmUIState();
+                    updateAlarmCardState(true, durationMs);
+                    startAlarmCountdown(durationMs);
                     showToast('🚨 Alarm activated', 3000);
                 } else {
+                    executingState.stop('alarmActive');
                     showToast('Error: ' + (data.message || 'Unknown error'), 3000);
-                    alarmIsActive = false;
-                    updateAlarmUIState();
                 }
             } catch (error) {
                 console.error('Error ringing alarm:', error);
+                executingState.stop('alarmActive');
                 showToast('Failed to activate alarm', 3000);
-                alarmIsActive = false;
-                updateAlarmUIState();
             }
         }
         
@@ -3310,23 +3318,27 @@
          * Works in both local and cloud mode via ApiService.
          */
         async function stopAlarm() {
-            // Update UI immediately (optimistic update)
-            alarmIsActive = false;
-            stopAlarmCountdown();
-            updateAlarmCardState(false, 0);
-            updateAlarmUIState();
+            // Show executing state - wait for server confirmation
+            executingState.start('alarmActive', false, '#alarmCard');
             
             try {
                 // Use ApiService for cloud-compatible requests
                 const data = await apiService.post('/alarm/stop', {});
                 
                 if (data.status === 'success' || data.success) {
+                    executingState.stop('alarmActive');
+                    alarmIsActive = false;
+                    stopAlarmCountdown();
+                    updateAlarmCardState(false, 0);
+                    updateAlarmUIState();
                     showToast('⏹️ Alarm stopped', 2000);
                 } else {
+                    executingState.stop('alarmActive');
                     showToast('Error: ' + (data.message || 'Unknown error'), 3000);
                 }
             } catch (error) {
                 console.error('Error stopping alarm:', error);
+                executingState.stop('alarmActive');
                 showToast('Failed to stop alarm', 3000);
             }
         }
@@ -3339,6 +3351,7 @@
         let alarmScheduleWhen = 'today';
         let alarmIsActive = false; // Track local active state
         let alarmActiveDurationMs = 0; // Track local active duration
+        let isAlarmPreview = false; // Suppress alarm UI sync during preview
         
         // Load scheduled alarm from localStorage on startup
         try {
