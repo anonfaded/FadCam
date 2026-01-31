@@ -1699,6 +1699,14 @@
                 showToast('Please enter a value between 5 and 100');
                 return;
             }
+            
+            // Show executing state on the Set button
+            const setButton = document.querySelector('#batteryContent button[onclick="setBatteryWarning()"]');
+            if (setButton) {
+                setButton.disabled = true;
+                setButton.textContent = '...';
+                setButton.style.opacity = '0.7';
+            }
             try {
                 console.log('[Battery] Sending POST request to set threshold:', threshold);
                 await dashboardViewModel.setBatteryWarning(threshold);
@@ -1711,6 +1719,13 @@
             } catch (error) {
                 console.error('Failed to set battery warning:', error);
                 showToast('Failed to set battery warning threshold');
+            } finally {
+                // Restore Set button state
+                if (setButton) {
+                    setButton.disabled = false;
+                    setButton.textContent = 'Set';
+                    setButton.style.opacity = '';
+                }
             }
         }
 
@@ -1959,6 +1974,20 @@
         }
 
         async function setRecordingMode(mode) {
+            // Find the clicked option element for overlay
+            const modeOptions = document.querySelectorAll('#recordingModeContent .modal-option');
+            let targetOption = null;
+            modeOptions.forEach(opt => {
+                if (opt.getAttribute('onclick')?.includes(mode)) targetOption = opt;
+            });
+            
+            // Show executing overlay on the selected option
+            if (targetOption) {
+                targetOption.style.position = 'relative';
+                targetOption.style.pointerEvents = 'none';
+                targetOption.style.opacity = '0.7';
+            }
+            
             try {
                 await dashboardViewModel.setRecordingMode(mode);
                 showToast(`Recording mode changed to: ${mode.replace(/_/g, ' ')}`);
@@ -1971,6 +2000,11 @@
             } catch (error) {
                 console.error('Failed to set recording mode:', error);
                 showToast('Failed to change recording mode');
+            } finally {
+                if (targetOption) {
+                    targetOption.style.pointerEvents = '';
+                    targetOption.style.opacity = '';
+                }
             }
         }
 
@@ -2009,6 +2043,20 @@
         }
 
         async function setStreamQuality(quality) {
+            // Find the clicked option element for overlay
+            const qualityOptions = document.querySelectorAll('#streamQualityContent .modal-option');
+            let targetOption = null;
+            qualityOptions.forEach(opt => {
+                if (opt.getAttribute('onclick')?.includes(quality)) targetOption = opt;
+            });
+            
+            // Show executing state on the selected option
+            if (targetOption) {
+                targetOption.style.position = 'relative';
+                targetOption.style.pointerEvents = 'none';
+                targetOption.style.opacity = '0.7';
+            }
+            
             try {
                 await dashboardViewModel.setStreamQuality(quality);
                 showToast(`Stream quality set to: ${quality}`);
@@ -2016,6 +2064,11 @@
             } catch (error) {
                 console.error('Failed to set stream quality:', error);
                 showToast('Failed to set stream quality');
+            } finally {
+                if (targetOption) {
+                    targetOption.style.pointerEvents = '';
+                    targetOption.style.opacity = '';
+                }
             }
         }
 
