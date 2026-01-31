@@ -387,6 +387,13 @@ public class RemoteStreamManager {
                 CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                 if (uploader.isEnabled() && uploader.isReady()) {
                     uploader.uploadSegment(sequenceNumber, fragmentData, null);
+                    
+                    // Generate and upload HLS playlist for cloud streaming
+                    // This allows the cloud dashboard to play the stream
+                    String playlist = generateCloudPlaylist();
+                    if (playlist != null) {
+                        uploader.uploadPlaylist(playlist, null);
+                    }
                 }
             }
             
@@ -522,6 +529,65 @@ public class RemoteStreamManager {
                 }
             }
             return totalBytes;
+        } finally {
+            bufferLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * Generate HLS playlist for cloud streaming.
+     * Similar to LiveM3U8Server but with relative URLs for cloud relay.
+     * 
+     * @return M3U8 playlist string, or null if not enough fragments buffered
+     */
+    @Nullable
+    private String generateCloudPlaylist() {
+        bufferLock.readLock().lock();
+        try {
+            // Get buffered fragments
+            List<FragmentData> fragments = new ArrayList<>();
+            int validRangeStart = Math.max(1, fragmentSequence - BUFFER_SIZE + 1);
+            
+            for (FragmentData fragment : fragmentBuffer) {
+                if (fragment != null && fragment.sequenceNumber >= validRangeStart && fragment.sequenceNumber <= fragmentSequence) {
+                    fragments.add(fragment);
+                }
+            }
+            
+            // Need at least 2 fragments for HLS
+            if (fragments.size() < 2 || initializationSegment == null) {
+                return null;
+            }
+            
+            // Sort by sequence number
+            fragments.sort((a, b) -> Integer.compare(a.sequenceNumber, b.sequenceNumber));
+            
+            // Get live edge (last 5 fragments for sliding window)
+            int LIVE_WINDOW_SIZE = 5;
+            List<FragmentData> liveEdge = new ArrayList<>();
+            int startIdx = Math.max(0, fragments.size() - LIVE_WINDOW_SIZE);
+            for (int i = startIdx; i < fragments.size(); i++) {
+                liveEdge.add(fragments.get(i));
+            }
+            
+            // Build M3U8 playlist
+            StringBuilder m3u8 = new StringBuilder();
+            m3u8.append("#EXTM3U\n");
+            m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
+            m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n");
+            m3u8.append("#EXT-X-TARGETDURATION:2\n"); // 2-second max fragment duration
+            m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
+            
+            // Init segment - relative path for cloud (same directory)
+            m3u8.append("#EXT-X-MAP:URI=\"init.mp4\"\n");
+            
+            // Add fragments - use relative paths (seg-N.m4s, not /seg-N.m4s)
+            for (FragmentData fragment : liveEdge) {
+                m3u8.append("#EXTINF:").append(String.format(java.util.Locale.US, "%.3f", fragment.getDurationSeconds())).append(",\n");
+                m3u8.append("seg-").append(fragment.sequenceNumber).append(".m4s\n");
+            }
+            
+            return m3u8.toString();
         } finally {
             bufferLock.readLock().unlock();
         }

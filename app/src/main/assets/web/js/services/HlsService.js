@@ -1,5 +1,8 @@
 /**
  * HlsService - HLS.js wrapper for video streaming
+ * 
+ * Supports both local mode (no auth) and cloud mode (auth token required).
+ * In cloud mode, the Authorization header is injected via xhrSetup.
  */
 class HlsService {
     constructor() {
@@ -13,6 +16,37 @@ class HlsService {
     }
     
     /**
+     * Get HLS config with auth headers for cloud mode
+     * @returns {Object} HLS.js configuration object
+     */
+    _getHlsConfig() {
+        const baseConfig = { ...CONFIG.HLS_CONFIG };
+        
+        // Check if we're in cloud mode and have a stream token
+        const isCloudMode = typeof FadCamRemote !== 'undefined' && 
+                           typeof FadCamRemote.isCloudMode === 'function' && 
+                           FadCamRemote.isCloudMode();
+        
+        if (isCloudMode) {
+            const streamToken = FadCamRemote.getStreamToken();
+            if (streamToken) {
+                console.log('[HlsService] ☁️ Cloud mode detected, injecting auth header');
+                // Add xhrSetup to inject Authorization header on every XHR request
+                baseConfig.xhrSetup = function(xhr, url) {
+                    xhr.setRequestHeader('Authorization', `Bearer ${streamToken}`);
+                    console.log('[HlsService] 🔑 Auth header added for:', url.substring(0, 80) + '...');
+                };
+            } else {
+                console.warn('[HlsService] ☁️ Cloud mode but no stream token available!');
+            }
+        } else {
+            console.log('[HlsService] 📱 Local mode, no auth headers needed');
+        }
+        
+        return baseConfig;
+    }
+    
+    /**
      * Load HLS stream
      * @param {string} url - M3U8 playlist URL
      * @param {HTMLVideoElement} videoElement - Video DOM element
@@ -23,7 +57,10 @@ class HlsService {
         
         if (Hls.isSupported()) {
             console.log('[HlsService] HLS.js supported, loading stream');
-            this.hls = new Hls(CONFIG.HLS_CONFIG);
+            
+            // Get config with auth headers if in cloud mode
+            const hlsConfig = this._getHlsConfig();
+            this.hls = new Hls(hlsConfig);
             
             this.setupHlsListeners();
             this.hls.loadSource(url);

@@ -40,6 +40,11 @@ public class CloudAuthManager {
     public static final String AUTH_BASE_URL = "https://id.fadseclab.com";
     public static final String DEVICE_LINK_URL = AUTH_BASE_URL + "/device-link";
     
+    // Token refresh deduplication - prevents multiple simultaneous refresh calls
+    private volatile boolean isRefreshing = false;
+    private final java.util.List<TokenRefreshListener> pendingRefreshListeners = new java.util.ArrayList<>();
+    private final Object refreshLock = new Object();
+    
     private static CloudAuthManager instance;
     private final Context context;
     private final SharedPreferences prefs;
@@ -246,6 +251,11 @@ public class CloudAuthManager {
      * Refresh the access token using the stored refresh token.
      * This calls Supabase auth.refreshSession() endpoint.
      * 
+     * Uses deduplication: if a refresh is already in progress, the listener
+     * will be queued and notified when the in-progress refresh completes.
+     * This prevents 500+ auth requests per hour from multiple components
+     * each triggering their own refresh.
+     * 
      * @param listener Callback for success/error (called on main thread)
      */
     public void refreshTokenAsync(@Nullable TokenRefreshListener listener) {
@@ -257,6 +267,23 @@ public class CloudAuthManager {
             }
             return;
         }
+        
+        // Deduplication: if refresh already in progress, queue this listener
+        synchronized (refreshLock) {
+            if (isRefreshing) {
+                Log.d(TAG, "Token refresh already in progress, queuing listener");
+                if (listener != null) {
+                    pendingRefreshListeners.add(listener);
+                }
+                return;
+            }
+            isRefreshing = true;
+            if (listener != null) {
+                pendingRefreshListeners.add(listener);
+            }
+        }
+        
+        Log.i(TAG, "Starting token refresh...");
         
         new Thread(() -> {
             try {
@@ -314,17 +341,12 @@ public class CloudAuthManager {
                         
                         Log.i(TAG, "Token refreshed successfully, expires in " + expiresIn + "s");
                         
-                        if (listener != null) {
-                            android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                            mainHandler.post(() -> listener.onRefreshSuccess(newAccessToken, newExpiry));
-                        }
+                        // Notify all pending listeners
+                        notifyRefreshListeners(true, newAccessToken, newExpiry, null);
                     } else {
                         String error = "Missing required token data in response";
                         Log.e(TAG, error + " (token=" + (newAccessToken != null) + ", refresh=" + (finalRefreshToken != null) + ", userId=" + (finalUserId != null) + ")");
-                        if (listener != null) {
-                            android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                            mainHandler.post(() -> listener.onRefreshFailed(error));
-                        }
+                        notifyRefreshListeners(false, null, 0, error);
                     }
                 } else {
                     // Error response
@@ -340,21 +362,45 @@ public class CloudAuthManager {
                     String errorMsg = "HTTP " + responseCode + ": " + errorResponse;
                     Log.e(TAG, "Token refresh failed: " + errorMsg);
                     
-                    if (listener != null) {
-                        android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                        mainHandler.post(() -> listener.onRefreshFailed(errorMsg));
-                    }
+                    notifyRefreshListeners(false, null, 0, errorMsg);
                 }
                 
                 conn.disconnect();
             } catch (Exception e) {
                 Log.e(TAG, "Error refreshing token", e);
-                if (listener != null) {
-                    android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                    mainHandler.post(() -> listener.onRefreshFailed(e.getMessage()));
-                }
+                notifyRefreshListeners(false, null, 0, e.getMessage());
             }
         }).start();
+    }
+    
+    /**
+     * Notify all pending refresh listeners and reset refresh state.
+     * Called on background thread, posts to main thread.
+     */
+    private void notifyRefreshListeners(boolean success, String token, long expiry, String error) {
+        java.util.List<TokenRefreshListener> listeners;
+        synchronized (refreshLock) {
+            listeners = new java.util.ArrayList<>(pendingRefreshListeners);
+            pendingRefreshListeners.clear();
+            isRefreshing = false;
+        }
+        
+        if (listeners.isEmpty()) {
+            return;
+        }
+        
+        Log.d(TAG, "Notifying " + listeners.size() + " pending refresh listeners (success=" + success + ")");
+        
+        android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+        mainHandler.post(() -> {
+            for (TokenRefreshListener l : listeners) {
+                if (success) {
+                    l.onRefreshSuccess(token, expiry);
+                } else {
+                    l.onRefreshFailed(error);
+                }
+            }
+        });
     }
     
     /**
