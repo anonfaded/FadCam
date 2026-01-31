@@ -1030,6 +1030,68 @@
         let sidebarOpen = true; // Open by default
         let justToggledSidebar = false; // Prevent immediate close on mobile
         let hlsService = null;
+        
+        /**
+         * Pending State Manager - Prevents status polling from overwriting
+         * values that are in the process of being changed via commands.
+         * Uses expected value matching to detect when command has taken effect.
+         */
+        const pendingState = {
+            // Pending entries: { field: { expectedValue, timestamp, timeout } }
+            entries: {},
+            
+            // Set a field as pending with expected value (blocks polling for 5s)
+            set(field, expectedValue) {
+                const entry = {
+                    expectedValue: expectedValue,
+                    timestamp: Date.now(),
+                    timeout: 5000 // 5 second max wait
+                };
+                this.entries[field] = entry;
+                console.log(`[Pending] ${field} set to pending, expecting: ${expectedValue}`);
+            },
+            
+            // Check if a field is pending (should not be overwritten by polling)
+            isPending(field) {
+                const entry = this.entries[field];
+                if (!entry) return false;
+                
+                // Expired?
+                if (Date.now() - entry.timestamp > entry.timeout) {
+                    delete this.entries[field];
+                    console.log(`[Pending] ${field} expired (timeout)`);
+                    return false;
+                }
+                return true;
+            },
+            
+            // Check if incoming value matches expected (command succeeded)
+            checkAndClear(field, incomingValue) {
+                const entry = this.entries[field];
+                if (!entry) return false;
+                
+                // For percentages, allow small tolerance (±5%)
+                const tolerance = typeof entry.expectedValue === 'number' ? 5 : 0;
+                const matches = typeof entry.expectedValue === 'number' 
+                    ? Math.abs(incomingValue - entry.expectedValue) <= tolerance
+                    : incomingValue === entry.expectedValue;
+                
+                if (matches) {
+                    console.log(`[Pending] ${field} confirmed! Expected: ${entry.expectedValue}, Got: ${incomingValue}`);
+                    delete this.entries[field];
+                    return true;
+                }
+                return false;
+            },
+            
+            // Clear a pending entry manually
+            clear(field) {
+                if (this.entries[field]) {
+                    delete this.entries[field];
+                    console.log(`[Pending] ${field} cleared manually`);
+                }
+            }
+        };
 
         /**
          * Detect WebP support and load appropriate hero background image
@@ -1886,13 +1948,15 @@
         async function toggleTorch() {
             console.log('[Torch] Toggle requested');
             const oldState = currentStatus?.torchOn;
+            const newState = !oldState;
             
-            // OPTIMISTIC UI: Update button immediately BEFORE sending command
-            // This gives instant visual feedback while command travels to phone
+            // Mark as pending - blocks status polling from overwriting
+            pendingState.set('torchOn', newState);
+            
+            // Update UI immediately with expected new state
             if (currentStatus) {
-                const optimisticState = !oldState;
-                currentStatus.torchOn = optimisticState;
-                console.log('[Torch] ⚡ Optimistic update:', oldState, '→', optimisticState);
+                currentStatus.torchOn = newState;
+                console.log('[Torch] ⚡ Set to:', newState, '(pending confirmation)');
                 updateUI(currentStatus);
             }
             
@@ -1900,20 +1964,20 @@
                 // Send the API call (returns quickly in cloud mode)
                 const result = await dashboardViewModel.toggleTorch();
                 
-                // If server returned actual state, use it (more accurate than optimistic)
+                // If server returned actual state, use it
                 if (currentStatus && result && result.torch_state !== undefined) {
                     const actualState = result.torch_state;
-                    if (actualState !== currentStatus.torchOn) {
-                        currentStatus.torchOn = actualState;
-                        console.log('[Torch] Server correction:', currentStatus.torchOn, '→', actualState);
-                        updateUI(currentStatus);
-                    }
+                    pendingState.clear('torchOn');
+                    currentStatus.torchOn = actualState;
+                    console.log('[Torch] Server confirmed:', actualState);
+                    updateUI(currentStatus);
                 }
                 // In cloud mode, result is { success: true, instant: true } - no state data
-                // So we keep the optimistic state until next status poll confirms it
+                // Pending state will wait for status poll confirmation
             } catch (error) {
                 console.error('[Torch] Failed to toggle:', error);
-                // REVERT: Undo optimistic update on failure
+                pendingState.clear('torchOn');
+                // REVERT: Undo update on failure
                 if (currentStatus) {
                     currentStatus.torchOn = oldState;
                     console.log('[Torch] ⚠️ Reverting to:', oldState);
@@ -2012,23 +2076,27 @@
         async function toggleRecording() {
             console.log('[Recording] Toggle requested');
             const oldState = currentStatus?.isRecording;
+            const newState = !oldState;
             
-            // OPTIMISTIC UI: Update immediately BEFORE sending command
+            // Mark as pending - blocks status polling from overwriting
+            pendingState.set('isRecording', newState);
+            
+            // Update UI immediately with expected new state
             if (currentStatus) {
-                const optimisticState = !oldState;
-                currentStatus.isRecording = optimisticState;
-                console.log('[Recording] ⚡ Optimistic update:', oldState, '→', optimisticState);
+                currentStatus.isRecording = newState;
+                console.log('[Recording] ⚡ Set to:', newState, '(pending confirmation)');
                 updateUI(currentStatus);
             }
             
             try {
                 // Call the API
                 await dashboardViewModel.toggleRecording();
-                // In cloud mode, command is sent - keep optimistic state
-                // Next status poll will confirm actual state
+                // In cloud mode, command is sent
+                // Pending state will wait for status poll confirmation
             } catch (error) {
                 console.error('[Recording] Failed to toggle:', error);
-                // REVERT: Undo optimistic update on failure
+                pendingState.clear('isRecording');
+                // REVERT: Undo update on failure
                 if (currentStatus) {
                     currentStatus.isRecording = oldState;
                     console.log('[Recording] ⚠️ Reverting to:', oldState);
@@ -2138,6 +2206,36 @@
                 qualityPreset: status.qualityPreset,
                 mode: status.mode
             };
+            
+            // ===== PENDING STATE CHECK =====
+            // Prevent status polling from overwriting values that are pending confirmation
+            if (pendingState.isPending('volume_percentage')) {
+                // Check if incoming value matches our expected value (command confirmed)
+                if (pendingState.checkAndClear('volume_percentage', status.volume_percentage)) {
+                    console.log('[Status] Volume confirmed by server poll');
+                } else {
+                    // Keep our pending value, don't let server overwrite
+                    status.volume_percentage = currentStatus?.volume_percentage ?? status.volume_percentage;
+                    console.log('[Status] Volume pending, ignoring server value');
+                }
+            }
+            if (pendingState.isPending('torchOn')) {
+                if (pendingState.checkAndClear('torchOn', status.torchOn)) {
+                    console.log('[Status] Torch confirmed by server poll');
+                } else {
+                    status.torchOn = currentStatus?.torchOn ?? status.torchOn;
+                    console.log('[Status] Torch pending, ignoring server value');
+                }
+            }
+            if (pendingState.isPending('isRecording')) {
+                if (pendingState.checkAndClear('isRecording', status.isRecording)) {
+                    console.log('[Status] Recording confirmed by server poll');
+                } else {
+                    status.isRecording = currentStatus?.isRecording ?? status.isRecording;
+                    console.log('[Status] Recording pending, ignoring server value');
+                }
+            }
+            
             currentStatus = status;
 
             // ===== RESTORE ALARM STATE FROM SERVER =====
@@ -3412,15 +3510,19 @@
 
         /**
          * Set device volume via API (works in local and cloud mode)
+         * Uses pending state to prevent status polling from causing oscillation.
          */
         async function setVolume(percentage) {
             console.log('[Volume] setVolume called with percentage:', percentage);
             const oldPercentage = currentStatus?.volume_percentage || 0;
             
-            // OPTIMISTIC UI: Update immediately BEFORE sending command
+            // Mark volume as pending - blocks status polling from overwriting
+            pendingState.set('volume_percentage', percentage);
+            
+            // Update UI immediately with target value
             if (currentStatus) {
                 currentStatus.volume_percentage = percentage;
-                console.log('[Volume] ⚡ Optimistic update:', oldPercentage, '%', '→', percentage, '%');
+                console.log('[Volume] ⚡ Set to:', percentage, '% (pending confirmation)');
                 updateUI(currentStatus);
             }
             
@@ -3433,19 +3535,19 @@
                 // In local mode, result has actual volume values
                 if (result.status === 'success' && result.percentage !== undefined) {
                     console.log('✅ Volume confirmed:', result.percentage + '%');
-                    // Update with actual server values if different
-                    if (currentStatus && result.percentage !== currentStatus.volume_percentage) {
+                    pendingState.clear('volume_percentage');
+                    if (currentStatus) {
                         currentStatus.volume = result.volume;
                         currentStatus.max_volume = result.max_volume;
                         currentStatus.volume_percentage = result.percentage;
                         updateUI(currentStatus);
                     }
                 } else if (result.success) {
-                    // Cloud mode: command sent, keep optimistic value
-                    console.log('✅ Volume command sent (cloud mode)');
+                    // Cloud mode: command sent, pending state will wait for status poll confirmation
+                    console.log('✅ Volume command sent (awaiting confirmation from phone)');
                 } else {
                     console.error('❌ Failed to set volume:', result.message);
-                    // Revert optimistic update on failure
+                    pendingState.clear('volume_percentage');
                     if (currentStatus) {
                         currentStatus.volume_percentage = oldPercentage;
                         updateUI(currentStatus);
@@ -3453,7 +3555,7 @@
                 }
             } catch (error) {
                 console.error('❌ Error setting volume:', error);
-                // Revert optimistic update on error
+                pendingState.clear('volume_percentage');
                 if (currentStatus) {
                     currentStatus.volume_percentage = oldPercentage;
                     updateUI(currentStatus);
