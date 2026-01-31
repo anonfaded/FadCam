@@ -1884,30 +1884,41 @@
         }
 
         async function toggleTorch() {
+            console.log('[Torch] Toggle requested');
+            const oldState = currentStatus?.torchOn;
+            
+            // OPTIMISTIC UI: Update button immediately BEFORE sending command
+            // This gives instant visual feedback while command travels to phone
+            if (currentStatus) {
+                const optimisticState = !oldState;
+                currentStatus.torchOn = optimisticState;
+                console.log('[Torch] ⚡ Optimistic update:', oldState, '→', optimisticState);
+                updateUI(currentStatus);
+            }
+            
             try {
-                console.log('[Torch] Toggle requested');
-                const oldState = currentStatus?.torchOn;
-                
-                // Call the API and get the response
+                // Send the API call (returns quickly in cloud mode)
                 const result = await dashboardViewModel.toggleTorch();
                 
-                // Update UI with the actual state from server response
+                // If server returned actual state, use it (more accurate than optimistic)
                 if (currentStatus && result && result.torch_state !== undefined) {
-                    const newState = result.torch_state;
-                    currentStatus.torchOn = newState;
-                    console.log('[Torch] Updated from server response:', oldState, '→', newState);
-                    updateUI(currentStatus);
-                } else if (currentStatus) {
-                    // Fallback: show optimistic update if no response data
-                    const newState = !oldState;
-                    currentStatus.torchOn = newState;
-                    console.log('[Torch] Updated optimistically (no server response):', oldState, '→', newState);
-                    updateUI(currentStatus);
+                    const actualState = result.torch_state;
+                    if (actualState !== currentStatus.torchOn) {
+                        currentStatus.torchOn = actualState;
+                        console.log('[Torch] Server correction:', currentStatus.torchOn, '→', actualState);
+                        updateUI(currentStatus);
+                    }
                 }
+                // In cloud mode, result is { success: true, instant: true } - no state data
+                // So we keep the optimistic state until next status poll confirms it
             } catch (error) {
                 console.error('[Torch] Failed to toggle:', error);
-                // Force status refresh to sync actual state from server
-                await dashboardViewModel.updateStatus();
+                // REVERT: Undo optimistic update on failure
+                if (currentStatus) {
+                    currentStatus.torchOn = oldState;
+                    console.log('[Torch] ⚠️ Reverting to:', oldState);
+                    updateUI(currentStatus);
+                }
                 showToast('Failed to toggle torch');
             }
         }
@@ -1999,22 +2010,30 @@
         }
 
         async function toggleRecording() {
+            console.log('[Recording] Toggle requested');
+            const oldState = currentStatus?.isRecording;
+            
+            // OPTIMISTIC UI: Update immediately BEFORE sending command
+            if (currentStatus) {
+                const optimisticState = !oldState;
+                currentStatus.isRecording = optimisticState;
+                console.log('[Recording] ⚡ Optimistic update:', oldState, '→', optimisticState);
+                updateUI(currentStatus);
+            }
+            
             try {
-                console.log('[Recording] Toggle requested');
-                const oldState = currentStatus?.isRecording;
-                
                 // Call the API
                 await dashboardViewModel.toggleRecording();
-                
-                // Update UI immediately with the expected new state
-                if (currentStatus) {
-                    const newState = !oldState;
-                    currentStatus.isRecording = newState;
-                    console.log('[Recording] Updated immediately:', oldState, '→', newState);
-                    updateUI(currentStatus);
-                }
+                // In cloud mode, command is sent - keep optimistic state
+                // Next status poll will confirm actual state
             } catch (error) {
                 console.error('[Recording] Failed to toggle:', error);
+                // REVERT: Undo optimistic update on failure
+                if (currentStatus) {
+                    currentStatus.isRecording = oldState;
+                    console.log('[Recording] ⚠️ Reverting to:', oldState);
+                    updateUI(currentStatus);
+                }
                 showToast('Failed to toggle recording');
             }
         }
@@ -3395,29 +3414,50 @@
          * Set device volume via API (works in local and cloud mode)
          */
         async function setVolume(percentage) {
+            console.log('[Volume] setVolume called with percentage:', percentage);
+            const oldPercentage = currentStatus?.volume_percentage || 0;
+            
+            // OPTIMISTIC UI: Update immediately BEFORE sending command
+            if (currentStatus) {
+                currentStatus.volume_percentage = percentage;
+                console.log('[Volume] ⚡ Optimistic update:', oldPercentage, '%', '→', percentage, '%');
+                updateUI(currentStatus);
+            }
+            
             try {
-                console.log('[Volume] setVolume called with percentage:', percentage);
-                
                 // Use ApiService for cloud-compatible requests
                 const result = await apiService.post('/audio/volume', { percentage: percentage });
                 console.log('[Volume] Response:', result);
                 
-                if (result.status === 'success') {
-                    console.log('✅ Volume set to:', result.percentage + '%', '(' + result.volume + '/' + result.max_volume + ')');
-                    
-                    // Update currentStatus immediately with the actual values from server
-                    if (currentStatus) {
+                // In cloud mode, result is { success: true, instant: true } - no volume data
+                // In local mode, result has actual volume values
+                if (result.status === 'success' && result.percentage !== undefined) {
+                    console.log('✅ Volume confirmed:', result.percentage + '%');
+                    // Update with actual server values if different
+                    if (currentStatus && result.percentage !== currentStatus.volume_percentage) {
                         currentStatus.volume = result.volume;
                         currentStatus.max_volume = result.max_volume;
                         currentStatus.volume_percentage = result.percentage;
-                        console.log('[Volume] Updated currentStatus immediately to:', currentStatus.volume_percentage + '%');
                         updateUI(currentStatus);
                     }
+                } else if (result.success) {
+                    // Cloud mode: command sent, keep optimistic value
+                    console.log('✅ Volume command sent (cloud mode)');
                 } else {
                     console.error('❌ Failed to set volume:', result.message);
+                    // Revert optimistic update on failure
+                    if (currentStatus) {
+                        currentStatus.volume_percentage = oldPercentage;
+                        updateUI(currentStatus);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error setting volume:', error);
+                // Revert optimistic update on error
+                if (currentStatus) {
+                    currentStatus.volume_percentage = oldPercentage;
+                    updateUI(currentStatus);
+                }
             }
         }
 
