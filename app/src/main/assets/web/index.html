@@ -2231,8 +2231,22 @@
             }
             
             hlsLoaded = true;
-            const streamUrl = CONFIG.BASE_URL + CONFIG.ENDPOINTS.HLS;
-            console.log('[HlsService] Loading stream from:', streamUrl);
+            
+            // Determine stream URL based on mode
+            // Cloud mode: Use relay server URL
+            // Local mode: Use phone's direct URL
+            let streamUrl;
+            if (typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode()) {
+                streamUrl = FadCamRemote.getRelayHlsUrl();
+                if (!streamUrl) {
+                    console.error('[HlsService] Cloud mode but no relay HLS URL available');
+                    return;
+                }
+                console.log('[HlsService] ☁️ Cloud mode: Loading stream from relay:', streamUrl);
+            } else {
+                streamUrl = CONFIG.BASE_URL + CONFIG.ENDPOINTS.HLS;
+                console.log('[HlsService] 📱 Local mode: Loading stream from:', streamUrl);
+            }
             
             // Debug: Fetch manifest to see what's being served
             fetch(streamUrl)
