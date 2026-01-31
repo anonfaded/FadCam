@@ -127,6 +127,22 @@ class ApiService {
         return null;
     }
     
+    /**
+     * Build cloud URL with token in query string
+     * This avoids CORS issues with Authorization headers
+     * @param {string} path - API path (e.g., /api/status/...)
+     * @returns {string} Full URL with token
+     */
+    _buildCloudUrl(path) {
+        let url = `${this.relayBaseUrl}${path}`;
+        const token = this._getStreamToken();
+        if (token) {
+            const separator = url.includes('?') ? '&' : '?';
+            url += `${separator}token=${encodeURIComponent(token)}`;
+        }
+        return url;
+    }
+
     // =========================================================================
     // Status API
     // =========================================================================
@@ -193,14 +209,13 @@ class ApiService {
                 return this._getOfflineStatus('Missing user or device ID');
             }
             
-            // Try to fetch status from relay
-            const statusUrl = `${this.relayBaseUrl}/api/status/${userId}/${deviceId}`;
-            console.log(`☁️ [/status] Fetching from relay: ${statusUrl}`);
+            // Build status URL with token in query string (avoids CORS issues)
+            const statusUrl = this._buildCloudUrl(`/api/status/${userId}/${deviceId}`);
+            console.log(`☁️ [/status] Fetching from relay...`);
             
             try {
                 const response = await fetch(statusUrl, {
-                    method: 'GET',
-                    headers: this.getHeaders()
+                    method: 'GET'
                 });
                 
                 if (response.ok) {
@@ -250,10 +265,11 @@ class ApiService {
         }
         
         try {
-            const playlistUrl = `${this.relayBaseUrl}/stream/${this.streamContext.userId}/${this.streamContext.deviceId}/live.m3u8`;
+            // Use URL token auth to avoid CORS issues
+            const playlistPath = `/stream/${this.streamContext.userId}/${this.streamContext.deviceId}/live.m3u8`;
+            const playlistUrl = this._buildCloudUrl(playlistPath);
             const response = await fetch(playlistUrl, {
-                method: 'HEAD',
-                headers: this.getHeaders()
+                method: 'HEAD'
             });
             return response.ok;
         } catch (e) {
@@ -397,14 +413,14 @@ class ApiService {
             source: 'dashboard'
         };
         
-        // Send command to relay
-        const commandUrl = `${this.relayBaseUrl}/api/command/${userId}/${deviceId}/${cmdId}`;
-        console.log(`☁️ [COMMAND] PUT ${commandUrl}`, command);
+        // Build URL with token auth (avoids CORS header issues)
+        const commandUrl = this._buildCloudUrl(`/api/command/${userId}/${deviceId}/${cmdId}`);
+        console.log(`☁️ [COMMAND] PUT to relay`, command);
         
         try {
             const response = await fetch(commandUrl, {
                 method: 'PUT',
-                headers: this.getHeaders(),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(command)
             });
             
