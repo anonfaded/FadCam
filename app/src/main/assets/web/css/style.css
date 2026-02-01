@@ -1195,7 +1195,7 @@ video {
         width: 85vw;
         margin: 0;
     }
-    }
+
     .player-area {
         width: 100%;
         height: calc(100vh - 76px);

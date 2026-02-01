@@ -219,7 +219,7 @@
       
       // Hide overlay and start streaming
       hideStreamOverlay();
-      showDeviceBanner();
+      // Logo already links to Lab (set in HTML), no need to update
       
       // Initialize CloudApiService for cloud mode
       if (typeof initCloudApiService === 'function') {
@@ -292,38 +292,7 @@
   }
   
   // Show device banner at top
-  function showDeviceBanner() {
-    if (!streamContext) return;
-    
-    const banner = document.createElement('div');
-    banner.id = 'stream-device-banner';
-    banner.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-      border-bottom: 1px solid #333;
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 1000;
-      font-size: 12px;
-    `;
-    banner.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="color: #4CAF50;">●</span>
-        <span style="color: white; font-weight: 500;">Streaming: ${streamContext.deviceName}</span>
-        <span style="color: #666; font-family: monospace; font-size: 10px;">${streamContext.deviceId.substring(0, 8).toUpperCase()}</span>
-      </div>
-      <a href="${CONFIG.LAB_URL}" style="color: #888; text-decoration: none; font-size: 11px;">← Back to Lab</a>
-    `;
-    document.body.prepend(banner);
-    
-    // Adjust body padding to account for banner
-    document.body.style.paddingTop = '44px';
-  }
+  // NOTE: Device banner removed - logo in header always links to Lab (set in HTML)
   
   // Add FadCam Remote menu item to profile dropdown
   function addCloudMenuItem() {
