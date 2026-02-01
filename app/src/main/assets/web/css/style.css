@@ -3418,22 +3418,15 @@ video {
     -webkit-user-select: none !important;
 }
 
-/* Disabled state for cards */
+/* Disabled state for cards - actual HTML class names */
 .controls-disabled.torch-card,
 .controls-disabled.recording-card,
-.controls-disabled.ios-card,
-.controls-disabled.uptime-card,
-.controls-disabled.clients-card,
-.controls-disabled.battery-card,
-.controls-disabled.segments-card,
-.controls-disabled.data-card,
-.controls-disabled.network-card,
-.controls-disabled.storage-card,
-.controls-disabled.memory-card,
-.controls-disabled.mode-card,
-.controls-disabled.quality-card,
 .controls-disabled.volume-card,
-.controls-disabled.alarm-card {
+.controls-disabled.card-sm,
+.controls-disabled.card-storage-ios,
+.controls-disabled.card-memory-ios,
+.controls-disabled.card-battery-ios,
+.controls-disabled.card-network-ios {
     opacity: 0.4 !important;
     filter: grayscale(60%) !important;
     box-shadow: none !important;
@@ -3471,12 +3464,16 @@ video {
 /* Disabled state text styling */
 .controls-disabled .status-value,
 .controls-disabled .torch-state,
-.controls-disabled .recording-state {
+.controls-disabled .torch-value,
+.controls-disabled .recording-state,
+.controls-disabled .card-value-sm,
+.controls-disabled .card-label-sm {
     color: rgba(150, 150, 150, 0.7) !important;
 }
 
 /* Disabled state icons */
 .controls-disabled i,
-.controls-disabled .material-icons {
+.controls-disabled .material-icons,
+.controls-disabled .card-icon-sm {
     color: rgba(150, 150, 150, 0.6) !important;
 }

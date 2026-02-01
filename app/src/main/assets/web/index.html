@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="assets/images/favicon.webp">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=2.6.0">
+    <link rel="stylesheet" href="css/style.css?v=2.7.0">
     <!-- Avatar Component -->
     <link rel="stylesheet" href="assets/avatar/avatar.css">
     <style>
@@ -2280,29 +2280,21 @@
         function updateControlsDisabledState(disabled) {
             // All interactive elements to disable when offline
             // NOTE: Do NOT include footer elements - they should always work
+            // VERIFIED: These selectors match the actual HTML class names
             const controlSelectors = [
-                '.torch-button',
-                '.camera-switch-btn',
-                '.control-btn',
-                '.recording-card',
-                '.icon-button',
-                '.volume-btn',  // Volume +/- buttons
-                '.torch-card',  // Torch card
-                // Options section cards - disable all clickable cards
-                '.ios-card[onclick]:not(.footer-card)',
-                '.uptime-card',
-                '.clients-card',
-                '.battery-card',
-                '.segments-card',
-                '.data-card',
-                '.network-card',
-                '.storage-card',
-                '.memory-card',
-                '.mode-card',
-                '.quality-card',
-                '.volume-card',
-                '.alarm-card'  // Alarm card
-                // NOTE: Removed '[onclick]' catch-all - too broad, disables footer links
+                // Remote Control cards
+                '.torch-card',              // Torch card (has onclick)
+                '.recording-card',          // Recording card (has onclick) - NOTE: also has torch-card class
+                '.volume-card',             // Volume card (card-sm.volume-card)
+                '.volume-btn',              // Volume +/- buttons
+                
+                // Server Room cards - use .card-sm[onclick] since they all have onclick handlers
+                // This catches: Uptime, Clients, Battery, Segments, Data Received, Network, Mode, Quality, Alarm
+                '.card-sm[onclick]',
+                
+                // Storage and Memory cards (no onclick but should still be grayed)
+                '.card-storage-ios',
+                '.card-memory-ios'
             ];
             
             controlSelectors.forEach(selector => {
