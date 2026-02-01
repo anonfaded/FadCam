@@ -132,8 +132,8 @@ public class NetworkHealth {
      */
     public String toJson() {
         return String.format(
-            "{\"status\": \"%s\", \"download_mbps\": %.2f, \"upload_mbps\": %.2f, " +
-            "\"latency_ms\": %d, \"last_measurement_ms\": %d, \"is_stale\": %s}",
+            "{\"status\": \"%s\", \"downloadMbps\": %.2f, \"uploadMbps\": %.2f, " +
+            "\"latencyMs\": %d, \"lastMeasurementMs\": %d, \"isStale\": %s}",
             getStatusString(),
             downloadSpeedMbps,
             uploadSpeedMbps,

@@ -220,6 +220,7 @@ class ApiService {
                 
                 if (response.ok) {
                     // Phone has pushed status to relay
+                    // ServerStatus model handles snake_case → camelCase transformation
                     this.statusCache = await response.json();
                     this.statusCache.cloudMode = true;
                     this.lastFetchTime = Date.now();

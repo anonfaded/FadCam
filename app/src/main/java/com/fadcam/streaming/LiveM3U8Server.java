@@ -654,7 +654,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             }
             
             String action = isRecording ? "stop" : "start";
-            String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"is_recording\": %s}", 
+            String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s}", 
                 action, !isRecording);
             
             Log.i(TAG, "✅ Recording " + action + " intent sent");

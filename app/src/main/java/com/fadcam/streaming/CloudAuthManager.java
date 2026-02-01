@@ -32,6 +32,10 @@ public class CloudAuthManager {
     private static final String KEY_IS_LINKED = "cloud_is_linked";
     private static final String KEY_LINKED_AT = "cloud_linked_at";
     
+    // Stream token keys (for relay server uploads)
+    private static final String KEY_STREAM_TOKEN = "cloud_stream_token";
+    private static final String KEY_STREAM_TOKEN_EXPIRY = "cloud_stream_token_expiry";
+    
     // Supabase API for token refresh (using new publishable key)
     private static final String SUPABASE_URL = "https://vfhehknmxxedvesdvpew.supabase.co";
     private static final String SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PwOotJZQHwS9xnCFwUjHsQ_uXLNqkk9";
@@ -563,5 +567,198 @@ public class CloudAuthManager {
                 }
             }
         }).start();
+    }
+    
+    // ========================================================================
+    // STREAM TOKEN METHODS (for relay server uploads)
+    // ========================================================================
+    
+    /**
+     * Listener for stream token fetch events
+     */
+    public interface StreamTokenListener {
+        void onSuccess(String streamToken);
+        void onError(String error);
+    }
+    
+    /**
+     * Get the stored stream token (for relay server uploads).
+     * Returns null if not available or expired.
+     */
+    @Nullable
+    public String getStreamToken() {
+        if (!isLinked()) {
+            return null;
+        }
+        long expiry = prefs.getLong(KEY_STREAM_TOKEN_EXPIRY, 0);
+        if (System.currentTimeMillis() > expiry) {
+            Log.d(TAG, "Stream token expired");
+            return null;
+        }
+        return prefs.getString(KEY_STREAM_TOKEN, null);
+    }
+    
+    /**
+     * Check if stream token is about to expire (within 1 hour)
+     */
+    public boolean isStreamTokenNearExpiry() {
+        long expiry = prefs.getLong(KEY_STREAM_TOKEN_EXPIRY, 0);
+        long oneHour = 60 * 60 * 1000L;
+        return System.currentTimeMillis() > (expiry - oneHour);
+    }
+    
+    /**
+     * Fetch a new stream_access_token from the get-stream-token Edge Function.
+     * This token is used for authenticating uploads to the relay server.
+     * 
+     * Supports two auth methods:
+     * 1. Bearer token (if valid Supabase access token available)
+     * 2. Device-based auth (device_id + user_id) - works even with expired Supabase session
+     * 
+     * @param listener Callback for success/error (called on main thread)
+     */
+    public void fetchStreamTokenAsync(@Nullable StreamTokenListener listener) {
+        String deviceId = getDeviceId();
+        String userId = getUserId();
+        String accessToken = getJwtToken();
+        
+        if (userId == null) {
+            Log.w(TAG, "No user ID available for stream token fetch");
+            if (listener != null) {
+                listener.onError("Not linked to cloud account");
+            }
+            return;
+        }
+        
+        String url = SUPABASE_URL + "/functions/v1/get-stream-token";
+        
+        Log.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (using " + (accessToken != null ? "Bearer token" : "device auth") + ")");
+        
+        new Thread(() -> {
+            try {
+                java.net.URI uri = java.net.URI.create(url);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) uri.toURL().openConnection();
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json");
+                
+                // Add Bearer token if available (might still be valid)
+                if (accessToken != null && !accessToken.isEmpty()) {
+                    conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+                }
+                
+                // Request body includes both device_id and user_id for fallback auth
+                String body = "{\"device_id\":\"" + deviceId + "\",\"user_id\":\"" + userId + "\"}";
+                try (java.io.OutputStream os = conn.getOutputStream()) {
+                    os.write(body.getBytes("UTF-8"));
+                }
+                
+                int responseCode = conn.getResponseCode();
+                Log.i(TAG, "Stream token response: HTTP " + responseCode);
+                
+                if (responseCode == 200) {
+                    // Read response
+                    java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(conn.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+                    
+                    // Parse JSON response
+                    org.json.JSONObject json = new org.json.JSONObject(response.toString());
+                    String streamToken = json.optString("stream_token", null);
+                    long expiresAt = json.optLong("expires_at", 0);
+                    
+                    if (streamToken != null && !streamToken.isEmpty()) {
+                        // Store stream token
+                        prefs.edit()
+                            .putString(KEY_STREAM_TOKEN, streamToken)
+                            .putLong(KEY_STREAM_TOKEN_EXPIRY, expiresAt)
+                            .apply();
+                        
+                        Log.i(TAG, "✅ Stream token fetched and stored, expires at: " + expiresAt);
+                        
+                        if (listener != null) {
+                            android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                            mainHandler.post(() -> listener.onSuccess(streamToken));
+                        }
+                    } else {
+                        String error = "Invalid stream token response";
+                        Log.e(TAG, error);
+                        if (listener != null) {
+                            android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                            mainHandler.post(() -> listener.onError(error));
+                        }
+                    }
+                } else {
+                    // Error response
+                    java.io.InputStream errorStream = conn.getErrorStream();
+                    String errorMsg = "HTTP " + responseCode;
+                    if (errorStream != null) {
+                        java.io.BufferedReader errorReader = new java.io.BufferedReader(
+                            new java.io.InputStreamReader(errorStream));
+                        StringBuilder errorResponse = new StringBuilder();
+                        String line;
+                        while ((line = errorReader.readLine()) != null) {
+                            errorResponse.append(line);
+                        }
+                        errorReader.close();
+                        errorMsg = "HTTP " + responseCode + ": " + errorResponse;
+                    }
+                    
+                    Log.e(TAG, "Stream token fetch failed: " + errorMsg);
+                    
+                    final String finalErrorMsg = errorMsg;
+                    if (listener != null) {
+                        android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                        mainHandler.post(() -> listener.onError(finalErrorMsg));
+                    }
+                }
+                
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Error fetching stream token", e);
+                if (listener != null) {
+                    android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                    mainHandler.post(() -> listener.onError(e.getMessage()));
+                }
+            }
+        }).start();
+    }
+    
+    /**
+     * Get a valid stream token, fetching if needed.
+     * This is the main method for CloudStreamUploader to call.
+     * 
+     * @param listener Callback with valid stream token or error (called on main thread)
+     */
+    public void getValidStreamTokenAsync(@NonNull StreamTokenListener listener) {
+        String currentToken = getStreamToken();
+        
+        if (currentToken != null && !isStreamTokenNearExpiry()) {
+            // Token is still valid
+            listener.onSuccess(currentToken);
+            return;
+        }
+        
+        // Need to fetch new stream token
+        Log.i(TAG, "Stream token expired or near expiry, fetching new one...");
+        fetchStreamTokenAsync(listener);
+    }
+    
+    /**
+     * Clear stream token (called on unlink or token issues)
+     */
+    public void clearStreamToken() {
+        prefs.edit()
+            .remove(KEY_STREAM_TOKEN)
+            .remove(KEY_STREAM_TOKEN_EXPIRY)
+            .apply();
+        Log.i(TAG, "Stream token cleared");
     }
 }

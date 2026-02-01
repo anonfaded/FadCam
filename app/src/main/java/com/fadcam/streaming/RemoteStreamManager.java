@@ -613,7 +613,7 @@ public class RemoteStreamManager {
             // CRITICAL: Check if context is null (happens when app is backgrounded/destroyed)
             if (context == null) {
                 Log.w(TAG, "⚠️ [getStatusJson] Context is null (app backgrounded). Returning safe state...");
-                String safeState = "{\"streaming\": " + streamingEnabled + ", \"state\": \"backgrounded\", \"message\": \"App is backgrounded\", \"is_recording\": false}";
+                String safeState = "{\"streaming\": " + streamingEnabled + ", \"state\": \"backgrounded\", \"message\": \"App is backgrounded\", \"isRecording\": false}";
                 cachedStatusJson = safeState;
                 lastStatusJsonTime = currentTime;
                 return safeState;
@@ -700,7 +700,7 @@ public class RemoteStreamManager {
             // Get uptime details
             java.util.Map<String, Object> uptimeDetailsMap = getUptimeDetails();
             String uptimeDetailsJson = String.format(
-                "{\"seconds\": %d, \"formatted\": \"%s\", \"start_time\": \"%s\", \"start_timestamp\": %d}",
+                "{\"seconds\": %d, \"formatted\": \"%s\", \"startTime\": \"%s\", \"startTimestamp\": %d}",
                 uptimeDetailsMap.get("seconds"),
                 uptimeDetailsMap.get("formatted"),
                 uptimeDetailsMap.get("startTime"),
@@ -742,23 +742,23 @@ public class RemoteStreamManager {
             // Import JsonEscaper for safe JSON string embedding
             String result = String.format(
                 "{\"streaming\": %s, \"mode\": %s, \"state\": %s, \"message\": %s, " +
-                "\"is_recording\": %s, \"fragments_buffered\": %d, \"buffer_size_mb\": %.2f, " +
-                "\"latest_sequence\": %d, \"oldest_sequence\": %d, \"active_connections\": %d, " +
-                "\"has_init_segment\": %s, \"uptime_seconds\": %d, " +
-                "\"battery_details\": %s, " +
-                "\"uptime_details\": %s, " +
-                "\"network_type\": %s, \"network_connected\": %s, " +
-                "\"network_health\": %s, " +
-                "\"stream_quality\": %s, " +
-                "\"video_codec\": %s, " +
-                "\"torch_state\": %s, " +
-                "\"volume\": %d, \"max_volume\": %d, \"volume_percentage\": %.1f, " +
-                "\"alarm\": {\"is_ringing\": %s, \"sound\": %s, \"duration_ms\": %d, \"remaining_ms\": %d}, " +
-                "\"auth_enabled\": %s, \"auth_timeout_ms\": %d, \"auth_sessions_count\": %d, \"auth_sessions_cleared\": %s, " +
+                "\"isRecording\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
+                "\"latestSequence\": %d, \"oldestSequence\": %d, \"activeConnections\": %d, " +
+                "\"hasInitSegment\": %s, \"uptimeSeconds\": %d, " +
+                "\"batteryDetails\": %s, " +
+                "\"uptimeDetails\": %s, " +
+                "\"networkType\": %s, \"networkConnected\": %s, " +
+                "\"networkHealth\": %s, " +
+                "\"streamQuality\": %s, " +
+                "\"videoCodec\": %s, " +
+                "\"torchState\": %s, " +
+                "\"volume\": %d, \"maxVolume\": %d, \"volumePercentage\": %.1f, " +
+                "\"alarm\": {\"isRinging\": %s, \"sound\": %s, \"durationMs\": %d, \"remainingMs\": %d}, " +
+                "\"authEnabled\": %s, \"authTimeoutMs\": %d, \"authSessionsCount\": %d, \"authSessionsCleared\": %s, " +
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
-                "\"memory_usage\": %s, \"storage\": %s, " +
-                "\"total_data_transferred_mb\": %d}",
+                "\"memoryUsage\": %s, \"storage\": %s, " +
+                "\"totalDataTransferredMb\": %d}",
                 streamingEnabled,
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(streamingMode.toString().toLowerCase()),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(state),
@@ -1169,7 +1169,7 @@ public class RemoteStreamManager {
         String chargingStatus = isCharging ? "Charging" : "Discharging";
         
         String result = String.format(
-            "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remaining_hours\": %.1f, \"warning\": %s, \"warning_threshold\": %d}",
+            "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remainingHours\": %.1f, \"warning\": %s, \"warningThreshold\": %d}",
             currentLevel, chargingStatus, consumed, remainingHours, warningJson, warningThreshold
         );
         // Log.d(TAG, "[Battery] Returning JSON: " + result);

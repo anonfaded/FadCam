@@ -1202,7 +1202,7 @@
         function updateBatteryCard(status) {
             const percent = status.battery?.percent ?? -1;
             const isCharging = status.battery?.status?.toLowerCase() === 'charging';
-            const isLow = percent > 0 && percent <= (status.battery?.warning_threshold ?? 20);
+            const isLow = percent > 0 && percent <= (status.battery?.warningThreshold ?? 20);
             
             const batteryCard = document.querySelector('.card-battery-ios');
             const batteryFill = document.getElementById('batteryFill');
@@ -1361,7 +1361,7 @@
                 return;
             }
             
-            const percent = status.volume_percentage ?? 0;
+            const percent = status.volumePercentage ?? 0;
             
             // Update fill bar
             volumeFill.style.width = percent + '%';
@@ -1602,7 +1602,7 @@
             
             // Debug logging
             console.log('[Battery Modal] currentStatus.battery:', currentStatus.battery);
-            console.log('[Battery Modal] warning_threshold:', currentStatus.battery.warning_threshold);
+            console.log('[Battery Modal] warningThreshold:', currentStatus.battery.warningThreshold);
             
             // Build warning section if battery is low
             let warningSection = '';
@@ -1616,7 +1616,7 @@
                 `;
             }
             
-            const thresholdValue = currentStatus.battery.warning_threshold || 20;
+            const thresholdValue = currentStatus.battery.warningThreshold || 20;
             console.log('[Battery Modal] Using threshold:', thresholdValue);
             
             const content = `
@@ -1650,7 +1650,7 @@
                     <div class="modal-section-title">Low Battery Warning</div>
                     <div class="modal-rows-group">
                         <div class="modal-row-container" style="border-bottom: none;">
-                            <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warning_threshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
+                            <input type="number" id="batteryWarningInput" min="5" max="100" value="${currentStatus.battery.warningThreshold || 20}" placeholder="Percentage" style="flex:1; padding:8px; border-radius:6px; border:1px solid #2d3439; background:#1e2329; color:#e6edf3;">
                             <button onclick="setBatteryWarning()" style="padding:8px 16px; background:#f85149; border:none; border-radius:6px; color:white; cursor:pointer; margin-left:8px;">Set</button>
                         </div>
                     </div>
@@ -1715,7 +1715,7 @@
                 
                 // Force immediate status update to see the change
                 await dashboardViewModel.updateStatus();
-                console.log('[Battery] Status updated, new threshold should be:', currentStatus?.battery?.warning_threshold);
+                console.log('[Battery] Status updated, new threshold should be:', currentStatus?.battery?.warningThreshold);
             } catch (error) {
                 console.error('Failed to set battery warning:', error);
                 showToast('Failed to set battery warning threshold');
@@ -2274,7 +2274,7 @@
             if (previousStatus) {
                 // Only show notifications if status actually changed
                 const torchChanged = previousStatus.torchOn !== status.torchOn;
-                const volumeChanged = status.volume_percentage !== undefined && previousStatus.volume_percentage !== undefined && Math.abs(previousStatus.volume_percentage - status.volume_percentage) > 5;
+                const volumeChanged = status.volumePercentage !== undefined && previousStatus.volumePercentage !== undefined && Math.abs(previousStatus.volumePercentage - status.volumePercentage) > 5;
                 const recordingChanged = previousStatus.isRecording !== status.isRecording;
                 const qualityChanged = previousStatus.qualityPreset !== status.qualityPreset;
                 const modeChanged = previousStatus.mode !== status.mode;
@@ -2287,8 +2287,8 @@
                 
                 // Volume change (only notify if significant change > 5%)
                 if (volumeChanged) {
-                    console.log('[Toast] Volume changed:', previousStatus.volume_percentage, '→', status.volume_percentage);
-                    showToast(`🔊 Volume: ${Math.round(status.volume_percentage)}%`, 1500);
+                    console.log('[Toast] Volume changed:', previousStatus.volumePercentage, '→', status.volumePercentage);
+                    showToast(`🔊 Volume: ${Math.round(status.volumePercentage)}%`, 1500);
                 }
                 
                 // Recording state change - only notify if changed, not on initialization
@@ -2316,7 +2316,7 @@
             // Store current status as previous for next comparison (shallow copy sufficient)
             previousStatus = {
                 torchOn: status.torchOn,
-                volume_percentage: status.volume_percentage,
+                volumePercentage: status.volumePercentage,
                 isRecording: status.isRecording,
                 qualityPreset: status.qualityPreset,
                 mode: status.mode
@@ -2325,8 +2325,8 @@
             // ===== EXECUTING STATE CHECK =====
             // Check if any executing commands have been confirmed by this status update
             // This removes the "Executing..." overlay when the phone confirms the new value
-            if (executingState.isExecuting('volume_percentage')) {
-                if (executingState.checkConfirmation('volume_percentage', status.volume_percentage)) {
+            if (executingState.isExecuting('volumePercentage')) {
+                if (executingState.checkConfirmation('volumePercentage', status.volumePercentage)) {
                     console.log('[Status] Volume CONFIRMED by server poll - updating UI');
                 }
                 // Either confirmed (overlay removed) or still waiting - don't block UI update
@@ -2349,20 +2349,20 @@
             // Skip sync during preview to avoid UI flicker
             if (status.alarm && !isAlarmPreview) {
                 console.log('[Alarm] Server state:', status.alarm);
-                if (status.alarm.is_ringing && !alarmIsActive) {
+                if (status.alarm.isRinging && !alarmIsActive) {
                     console.log('[Alarm] Restoring active alarm from server state');
                     alarmIsActive = true;
-                    alarmActiveDurationMs = status.alarm.duration_ms;
+                    alarmActiveDurationMs = status.alarm.durationMs;
                     updateAlarmUIState();
-                    updateAlarmCardState(true, status.alarm.duration_ms);
-                    startAlarmCountdown(status.alarm.duration_ms);
+                    updateAlarmCardState(true, status.alarm.durationMs);
+                    startAlarmCountdown(status.alarm.durationMs);
                     
                     // Restore selected sound in UI
                     const soundSelect = document.getElementById('alarmSoundSelect');
                     if (soundSelect && status.alarm.sound) {
                         soundSelect.value = status.alarm.sound;
                     }
-                } else if (!status.alarm.is_ringing && alarmIsActive) {
+                } else if (!status.alarm.isRinging && alarmIsActive) {
                     // Alarm was stopped on server, reset local state
                     console.log('[Alarm] Alarm stopped on server, resetting local state');
                     alarmIsActive = false;
@@ -2542,7 +2542,7 @@
             
             // Update alarm display state
             if (status.alarm) {
-                updateAlarmCardState(status.alarm.is_ringing, status.alarm.duration_ms);
+                updateAlarmCardState(status.alarm.isRinging, status.alarm.durationMs);
                 updateAlarmUIState();
             }
             
@@ -3550,7 +3550,7 @@
             // Use local state first, fallback to server state
             let isRinging = alarmIsActive;
             if (currentStatus && currentStatus.alarm) {
-                isRinging = alarmIsActive || currentStatus.alarm.is_ringing;
+                isRinging = alarmIsActive || currentStatus.alarm.isRinging;
             }
             
             if (isRinging) {
@@ -3563,7 +3563,7 @@
                 // Update remaining duration display
                 let remaining = alarmActiveDurationMs;
                 if (currentStatus && currentStatus.alarm) {
-                    remaining = currentStatus.alarm.remaining_ms || alarmActiveDurationMs;
+                    remaining = currentStatus.alarm.remainingMs || alarmActiveDurationMs;
                 }
                 
                 if (remaining > 0 || remaining === -1) {
@@ -3609,7 +3609,7 @@
                 
                 volumeMinus.addEventListener('click', () => {
                     console.log('[Volume] ➖ Minus button pressed');
-                    const currentPercent = currentStatus?.volume_percentage || 0;
+                    const currentPercent = currentStatus?.volumePercentage || 0;
                     const newPercent = Math.max(0, currentPercent - 10);
                     console.log('[Volume] Current:', currentPercent, '% → New:', newPercent, '%');
                     setVolume(newPercent);
@@ -3617,7 +3617,7 @@
                 
                 volumePlus.addEventListener('click', () => {
                     console.log('[Volume] ➕ Plus button pressed');
-                    const currentPercent = currentStatus?.volume_percentage || 0;
+                    const currentPercent = currentStatus?.volumePercentage || 0;
                     const newPercent = Math.min(100, currentPercent + 10);
                     console.log('[Volume] Current:', currentPercent, '% → New:', newPercent, '%');
                     setVolume(newPercent);
@@ -3635,7 +3635,7 @@
             console.log('[Volume] setVolume called with percentage:', percentage);
             
             // Show "Executing..." overlay on volume card
-            executingState.start('volume_percentage', percentage, '.volume-card');
+            executingState.start('volumePercentage', percentage, '.volume-card');
             
             try {
                 // Use ApiService for cloud-compatible requests
@@ -3645,11 +3645,11 @@
                 // In local mode, result has actual volume values - update immediately
                 if (result.status === 'success' && result.percentage !== undefined) {
                     console.log('✅ Volume confirmed:', result.percentage + '%');
-                    executingState.stop('volume_percentage');
+                    executingState.stop('volumePercentage');
                     if (currentStatus) {
                         currentStatus.volume = result.volume;
-                        currentStatus.max_volume = result.max_volume;
-                        currentStatus.volume_percentage = result.percentage;
+                        currentStatus.maxVolume = result.maxVolume;
+                        currentStatus.volumePercentage = result.percentage;
                         updateUI(currentStatus);
                     }
                 } else if (result.success) {
@@ -3658,12 +3658,12 @@
                     console.log('✅ Volume command sent (waiting for phone confirmation)');
                 } else {
                     console.error('❌ Failed to set volume:', result.message);
-                    executingState.stop('volume_percentage');
+                    executingState.stop('volumePercentage');
                     showToast('Failed to set volume', 3000);
                 }
             } catch (error) {
                 console.error('❌ Error setting volume:', error);
-                executingState.stop('volume_percentage');
+                executingState.stop('volumePercentage');
                 showToast('Failed to set volume', 3000);
             }
         }

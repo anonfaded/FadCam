@@ -15,30 +15,30 @@ class ServerStatus {
         this.state = data.state || 'offline';
         this.mode = data.mode || 'disabled';
         this.message = data.message || '';
-        this.isRecording = data.is_recording || false;
+        this.isRecording = data.isRecording || false;
         this.streaming = data.streaming || false;
         
         // Uptime details (nested object)
-        this.uptimeDetails = data.uptime_details || {};
-        this.uptimeSeconds = this.uptimeDetails.seconds || data.uptime_seconds || 0;
+        this.uptimeDetails = data.uptimeDetails || {};
+        this.uptimeSeconds = this.uptimeDetails.seconds || data.uptimeSeconds || 0;
         
         // Format uptime from the details if available
-        if (!this.uptimeDetails.formatted_uptime && this.uptimeDetails.formatted) {
-            this.uptimeDetails.formatted_uptime = this.uptimeDetails.formatted;
+        if (!this.uptimeDetails.formattedUptime && this.uptimeDetails.formatted) {
+            this.uptimeDetails.formattedUptime = this.uptimeDetails.formatted;
         }
-        if (!this.uptimeDetails.session_started_time && this.uptimeDetails.start_time) {
-            this.uptimeDetails.session_started_time = this.uptimeDetails.start_time;
+        if (!this.uptimeDetails.sessionStartedTime && this.uptimeDetails.startTime) {
+            this.uptimeDetails.sessionStartedTime = this.uptimeDetails.startTime;
         }
-        if (!this.uptimeDetails.session_started_date && this.uptimeDetails.start_timestamp) {
-            const date = new Date(this.uptimeDetails.start_timestamp);
-            this.uptimeDetails.session_started_date = date.toLocaleDateString();
+        if (!this.uptimeDetails.sessionStartedDate && this.uptimeDetails.startTimestamp) {
+            const date = new Date(this.uptimeDetails.startTimestamp);
+            this.uptimeDetails.sessionStartedDate = date.toLocaleDateString();
         }
         
         // Stream quality (nested object)
-        if (data.stream_quality && typeof data.stream_quality === 'object') {
-            this.qualityPreset = (data.stream_quality.preset || 'high').toUpperCase();
-            this.bitrate = data.stream_quality.bitrate || '0 Mbps';
-            this.fps = data.stream_quality.fps_cap || 0;
+        if (data.streamQuality && typeof data.streamQuality === 'object') {
+            this.qualityPreset = (data.streamQuality.preset || 'high').toUpperCase();
+            this.bitrate = data.streamQuality.bitrate || '0 Mbps';
+            this.fps = data.streamQuality.fpsCap || 0;
         } else {
             this.qualityPreset = 'HIGH';
             this.bitrate = '0 Mbps';
@@ -47,22 +47,22 @@ class ServerStatus {
         
         // Resolution from message or construct from width/height
         this.resolution = data.resolution || '0x0';
-        this.videoCodec = data.video_codec || 'unknown';
+        this.videoCodec = data.videoCodec || 'unknown';
         this.isHevcCodec = this.videoCodec && this.videoCodec.toUpperCase().includes('HEVC');
         
         // Buffer info
-        this.fragmentsBuffered = data.fragments_buffered || 0;
-        this.bufferSizeMb = data.buffer_size_mb || 0;
+        this.fragmentsBuffered = data.fragmentsBuffered || 0;
+        this.bufferSizeMb = data.bufferSizeMb || 0;
         
         // Network (handle both object and string)
-        if (data.network_health && typeof data.network_health === 'object') {
-            this.networkHealth = data.network_health.status || 'unknown';
-            this.networkDownloadMbps = data.network_health.download_mbps ?? null;
-            this.networkUploadMbps = data.network_health.upload_mbps ?? null;
-            this.networkLatencyMs = data.network_health.latency_ms ?? null;
-            this.networkLastMeasurementMs = data.network_health.last_measurement_ms ?? 0;
+        if (data.networkHealth && typeof data.networkHealth === 'object') {
+            this.networkHealth = data.networkHealth.status || 'unknown';
+            this.networkDownloadMbps = data.networkHealth.downloadMbps ?? null;
+            this.networkUploadMbps = data.networkHealth.uploadMbps ?? null;
+            this.networkLatencyMs = data.networkHealth.latencyMs ?? null;
+            this.networkLastMeasurementMs = data.networkHealth.lastMeasurementMs ?? 0;
         } else {
-            this.networkHealth = data.network_health || 'unknown';
+            this.networkHealth = data.networkHealth || 'unknown';
             this.networkDownloadMbps = null;
             this.networkUploadMbps = null;
             this.networkLatencyMs = null;
@@ -70,14 +70,14 @@ class ServerStatus {
         }
         
         // Battery (nested object)
-        if (data.battery_details && typeof data.battery_details === 'object') {
+        if (data.batteryDetails && typeof data.batteryDetails === 'object') {
             this.battery = {
-                percent: data.battery_details.percent ?? -1,
-                status: data.battery_details.status || 'unknown',
-                consumed: data.battery_details.consumed !== undefined && data.battery_details.consumed !== null ? data.battery_details.consumed + '' : 'N/A',
-                remainingHours: data.battery_details.remaining_hours ?? -1,
-                warning: data.battery_details.warning || false,
-                warning_threshold: data.battery_details.warning_threshold || 20
+                percent: data.batteryDetails.percent ?? -1,
+                status: data.batteryDetails.status || 'unknown',
+                consumed: data.batteryDetails.consumed !== undefined && data.batteryDetails.consumed !== null ? data.batteryDetails.consumed + '' : 'N/A',
+                remainingHours: data.batteryDetails.remainingHours ?? -1,
+                warning: data.batteryDetails.warning || false,
+                warningThreshold: data.batteryDetails.warningThreshold || 20
             };
         } else {
             this.battery = {
@@ -86,12 +86,12 @@ class ServerStatus {
                 consumed: 'N/A',
                 remainingHours: -1,
                 warning: false,
-                warning_threshold: 20
+                warningThreshold: 20
             };
         }
         
         // Connections
-        this.activeConnections = data.active_connections || 0;
+        this.activeConnections = data.activeConnections || 0;
         this.clientIps = data.clients ? data.clients.map(c => c.ip) : [];
         
         // Store full clients array for modal display
@@ -101,43 +101,43 @@ class ServerStatus {
         this.events = data.events || [];
         
         // Segments/buffer info
-        this.hasInitSegment = data.has_init_segment || false;
+        this.hasInitSegment = data.hasInitSegment || false;
         
         // Torch state
-        this.torchOn = data.torch_state || false;
+        this.torchOn = data.torchState || false;
         
         // Volume state
         this.volume = data.volume ?? 0;
-        this.max_volume = data.max_volume ?? 15;
-        this.volume_percentage = data.volume_percentage ?? 0;
+        this.maxVolume = data.maxVolume ?? 15;
+        this.volumePercentage = data.volumePercentage ?? 0;
         
         // Alarm state (nested object)
         if (data.alarm && typeof data.alarm === 'object') {
             this.alarm = {
-                is_ringing: data.alarm.is_ringing || false,
+                isRinging: data.alarm.isRinging || false,
                 sound: data.alarm.sound || 'office_phone.mp3',
-                duration_ms: data.alarm.duration_ms ?? -1,
-                remaining_ms: data.alarm.remaining_ms ?? 0
+                durationMs: data.alarm.durationMs ?? -1,
+                remainingMs: data.alarm.remainingMs ?? 0
             };
         } else {
             this.alarm = {
-                is_ringing: false,
+                isRinging: false,
                 sound: 'office_phone.mp3',
-                duration_ms: -1,
-                remaining_ms: 0
+                durationMs: -1,
+                remainingMs: 0
             };
         }
         
         // Stats
-        this.dataTransferredMb = data.total_data_transferred_mb || 0;
-        this.uptimeSeconds = data.uptime_seconds || 0;
+        this.dataTransferredMb = data.totalDataTransferredMb || 0;
+        this.uptimeSeconds = data.uptimeSeconds || 0;
         
         // Parse uptime details (nested object)
-        if (data.uptime_details && typeof data.uptime_details === 'object') {
-            this.uptimeFormatted = data.uptime_details.formatted || '0s';
-            this.uptimeStartTime = data.uptime_details.start_time || 'Not started';
-            this.uptimeStartDate = data.uptime_details.start_date || 'Not started';
-            this.uptimeStartTimestamp = data.uptime_details.start_timestamp || 0;
+        if (data.uptimeDetails && typeof data.uptimeDetails === 'object') {
+            this.uptimeFormatted = data.uptimeDetails.formatted || '0s';
+            this.uptimeStartTime = data.uptimeDetails.startTime || 'Not started';
+            this.uptimeStartDate = data.uptimeDetails.startDate || 'Not started';
+            this.uptimeStartTimestamp = data.uptimeDetails.startTimestamp || 0;
         } else {
             this.uptimeFormatted = '0s';
             this.uptimeStartTime = 'Not started';
@@ -146,20 +146,20 @@ class ServerStatus {
         }
         
         // Authentication state
-        this.authEnabled = data.auth_enabled || false;
-        this.authTimeoutMs = data.auth_timeout_ms || 0;  // 0 means never auto-lock
-        this.authSessionsCount = data.auth_sessions_count || 0;
-        this.authSessionsCleared = data.auth_sessions_cleared || false;  // Flag for logout all
+        this.authEnabled = data.authEnabled || false;
+        this.authTimeoutMs = data.authTimeoutMs || 0;  // 0 means never auto-lock
+        this.authSessionsCount = data.authSessionsCount || 0;
+        this.authSessionsCleared = data.authSessionsCleared || false;  // Flag for logout all
         
         // Parse memory and storage from strings
         // Memory format from backend: "75% (1024/1366 MB)"
-        if (data.memory_usage) {
+        if (data.memoryUsage) {
             // Extract percentage: "75% (1024/1366 MB)" → 75
-            const percentMatch = data.memory_usage.match(/(\d+)%/);
+            const percentMatch = data.memoryUsage.match(/(\d+)%/);
             this.memoryPercent = percentMatch ? parseInt(percentMatch[1]) : 0;
             
             // Extract used/total: "75% (1024/1366 MB)" → [1024, 1366]
-            const memMatch = data.memory_usage.match(/\((\d+)\/(\d+)\s*MB\)/);
+            const memMatch = data.memoryUsage.match(/\((\d+)\/(\d+)\s*MB\)/);
             if (memMatch) {
                 this.memoryUsedMb = parseInt(memMatch[1]);
                 this.memoryTotalMb = parseInt(memMatch[2]);
@@ -189,7 +189,7 @@ class ServerStatus {
         }
         
         // Store raw memory string for display
-        this.memory = data.memory_usage || '—';
+        this.memory = data.memoryUsage || '—';
         
         // Timestamp
         this.lastUpdate = Date.now();

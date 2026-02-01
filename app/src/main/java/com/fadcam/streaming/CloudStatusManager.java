@@ -92,7 +92,8 @@ public class CloudStatusManager {
         boolean hasToken = authManager.getJwtToken() != null;
         boolean hasRefresh = authManager.getRefreshToken() != null;
         boolean hasUuid = authManager.getUserId() != null;
-        return (hasToken || hasRefresh) && hasUuid;
+        boolean hasStreamToken = authManager.getStreamToken() != null;
+        return ((hasToken || hasRefresh) || hasStreamToken) && hasUuid;
     }
     
     /**
@@ -350,50 +351,58 @@ public class CloudStatusManager {
     /**
      * Push current device status to relay server.
      * Uses RemoteStreamManager to get status JSON.
+     * Uses stream_access_token for authentication.
      */
     private void pushStatus() {
         String statusJson = RemoteStreamManager.getInstance().getStatusJson();
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
         
-        // Check token expiry BEFORE getting token
-        boolean tokenExpired = authManager.isTokenExpired();
-        String jwt = authManager.getJwtToken();
+        // Try to get stream token first
+        String streamToken = authManager.getStreamToken();
         
-        // Debug logging for missing or expired credentials
-        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
-            Log.w(TAG, "Missing/expired credentials for status push: " +
+        if (userUuid == null || deviceId == null) {
+            Log.w(TAG, "Missing credentials for status push: " +
                     "userUuid=" + (userUuid != null ? "OK" : "NULL") +
-                    ", deviceId=" + (deviceId != null ? "OK" : "NULL") +
-                    ", jwt=" + (jwt != null ? "OK" : "NULL") +
-                    ", expired=" + tokenExpired);
-            
-            // Try to refresh token if we have a refresh token
-            if ((jwt == null || tokenExpired) && authManager.getRefreshToken() != null) {
-                Log.i(TAG, "Attempting token refresh (expired=" + tokenExpired + ")...");
-                authManager.refreshTokenAsync(new CloudAuthManager.TokenRefreshListener() {
-                    @Override
-                    public void onRefreshSuccess(String newToken, long newExpiry) {
-                        Log.i(TAG, "Token refreshed successfully, will retry on next push");
-                    }
-                    
-                    @Override
-                    public void onRefreshFailed(String error) {
-                        Log.e(TAG, "Token refresh failed: " + error);
-                    }
-                });
-            }
+                    ", deviceId=" + (deviceId != null ? "OK" : "NULL"));
             return;
         }
         
+        // If no stream token, try to fetch one
+        if (streamToken == null || authManager.isStreamTokenNearExpiry()) {
+            Log.i(TAG, "Stream token missing/expired, fetching new one...");
+            authManager.getValidStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
+                @Override
+                public void onSuccess(String newStreamToken) {
+                    Log.i(TAG, "Stream token fetched, will use on next push");
+                    // Actually push now with the new token
+                    doPushStatus(statusJson, userUuid, deviceId, newStreamToken);
+                }
+                
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "Stream token fetch failed: " + error);
+                }
+            });
+            return;
+        }
+        
+        // Have a valid stream token, push directly
+        doPushStatus(statusJson, userUuid, deviceId, streamToken);
+    }
+    
+    /**
+     * Actually perform the status push with the provided token.
+     */
+    private void doPushStatus(String statusJson, String userUuid, String deviceId, String token) {
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
-                conn.setRequestMethod("PUT");
-                conn.setRequestProperty("Authorization", "Bearer " + jwt);
+                conn.setRequestMethod("PUT");  // Use PUT for WebDAV file write
+                conn.setRequestProperty("Authorization", "Bearer " + token);
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
                 conn.setConnectTimeout(5000);
@@ -425,15 +434,15 @@ public class CloudStatusManager {
     
     /**
      * Poll for pending commands from relay server.
+     * Uses stream_access_token for authentication.
      */
     private void pollCommands() {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
-        boolean tokenExpired = authManager.isTokenExpired();
-        String jwt = authManager.getJwtToken();
+        String streamToken = authManager.getStreamToken();
         
-        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
-            // Token expired - let pushStatus() handle the refresh
+        if (userUuid == null || deviceId == null || streamToken == null) {
+            // No stream token - let pushStatus() handle the fetch
             return;
         }
         
@@ -444,7 +453,7 @@ public class CloudStatusManager {
             try {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "Bearer " + jwt);
+                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 
@@ -493,14 +502,14 @@ public class CloudStatusManager {
     
     /**
      * Fetch a specific command and execute it
+     * Uses stream_access_token for authentication.
      */
     private void fetchAndExecuteCommand(String cmdId) {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
-        boolean tokenExpired = authManager.isTokenExpired();
-        String jwt = authManager.getJwtToken();
+        String streamToken = authManager.getStreamToken();
         
-        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
+        if (userUuid == null || deviceId == null || streamToken == null) {
             Log.w(TAG, "☁️ Cannot fetch command " + cmdId + " - auth not ready");
             return;
         }
@@ -513,7 +522,7 @@ public class CloudStatusManager {
             try {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "Bearer " + jwt);
+                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 
@@ -658,14 +667,14 @@ public class CloudStatusManager {
     
     /**
      * Delete a command from the relay after execution
+     * Uses stream_access_token for authentication.
      */
     private void deleteCommand(String cmdId) {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
-        boolean tokenExpired = authManager.isTokenExpired();
-        String jwt = authManager.getJwtToken();
+        String streamToken = authManager.getStreamToken();
         
-        if (userUuid == null || deviceId == null || jwt == null || tokenExpired) {
+        if (userUuid == null || deviceId == null || streamToken == null) {
             return;
         }
         
@@ -676,7 +685,7 @@ public class CloudStatusManager {
             try {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("DELETE");
-                conn.setRequestProperty("Authorization", "Bearer " + jwt);
+                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 
