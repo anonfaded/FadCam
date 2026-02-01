@@ -69,24 +69,53 @@
     font-size: 16px;
 }
 
-/* Controls disabled state when offline (Step 6.11.3.2) */
+/* Controls disabled state when offline (Step 6.11.3.2)
+   NOTE: Do NOT use pointer-events: none - it blocks cursor changes
+   The click blocking is done via JavaScript global click handler */
 .controls-disabled {
     opacity: 0.4 !important;
-    pointer-events: none !important;
-    filter: grayscale(50%);
+    filter: grayscale(50%) !important;
+    cursor: not-allowed !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+/* Also apply not-allowed cursor to ALL children inside disabled controls */
+.controls-disabled *,
+.controls-disabled .card-clickable,
+.controls-disabled .torch-card-inner,
+.controls-disabled .torch-content,
+.controls-disabled .card-ios-content,
+.controls-disabled .volume-button-group,
+.controls-disabled .battery-card-display,
+.controls-disabled .card-sm-content {
     cursor: not-allowed !important;
 }
 
-.controls-disabled::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: inherit;
-    pointer-events: none;
+/* Hover state for disabled controls - override ALL hover effects */
+.controls-disabled:hover,
+.controls-disabled.torch-card:hover,
+.controls-disabled.recording-card:hover,
+.controls-disabled.volume-card:hover,
+.controls-disabled.volume-btn:hover,
+.controls-disabled.card-sm:hover,
+.controls-disabled.card-storage-ios:hover,
+.controls-disabled.card-memory-ios:hover,
+.controls-disabled.card-network-ios:hover,
+.controls-disabled.card-battery-ios:hover,
+.card-sm.controls-disabled:hover,
+.torch-card.controls-disabled:hover {
+    cursor: not-allowed !important;
+    opacity: 0.4 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: inherit !important;  /* No hover border change */
+}
+
+/* Also apply to all children on hover */
+.controls-disabled:hover *,
+.controls-disabled:hover .card-clickable {
+    cursor: not-allowed !important;
 }
 
 /* Utility Classes */
@@ -3401,79 +3430,4 @@ video {
     .fadex-intro p {
         font-size: 12px;
     }
-}
-
-/* ========================================
-   OFFLINE STATE - DISABLED CONTROLS
-   Step 6.11.3.2: Gray out all controls when server offline
-   ======================================== */
-
-/* Base disabled state for all interactive elements */
-.controls-disabled {
-    opacity: 0.5 !important;
-    filter: grayscale(50%) !important;
-    cursor: not-allowed !important;
-    pointer-events: none !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-}
-
-/* Disabled state for cards - actual HTML class names */
-.controls-disabled.torch-card,
-.controls-disabled.recording-card,
-.controls-disabled.volume-card,
-.controls-disabled.card-sm,
-.controls-disabled.card-storage-ios,
-.controls-disabled.card-memory-ios,
-.controls-disabled.card-battery-ios,
-.controls-disabled.card-network-ios {
-    opacity: 0.4 !important;
-    filter: grayscale(60%) !important;
-    box-shadow: none !important;
-    transform: none !important;
-    transition: opacity 0.3s ease, filter 0.3s ease !important;
-}
-
-/* Remove hover effects on disabled cards */
-.controls-disabled:hover {
-    opacity: 0.4 !important;
-    filter: grayscale(60%) !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-/* Disabled buttons (volume +/-) */
-.controls-disabled.volume-btn,
-.controls-disabled.control-btn,
-.controls-disabled.icon-button {
-    opacity: 0.4 !important;
-    filter: grayscale(80%) !important;
-    background-color: rgba(100, 100, 100, 0.3) !important;
-    border-color: rgba(100, 100, 100, 0.3) !important;
-}
-
-/* Disabled torch/recording cards - remove active state colors */
-.controls-disabled.torch-card.on,
-.controls-disabled.torch-card.off,
-.controls-disabled.recording-card.on,
-.controls-disabled.recording-card.off {
-    background: rgba(50, 50, 50, 0.5) !important;
-    border-color: rgba(100, 100, 100, 0.3) !important;
-}
-
-/* Disabled state text styling */
-.controls-disabled .status-value,
-.controls-disabled .torch-state,
-.controls-disabled .torch-value,
-.controls-disabled .recording-state,
-.controls-disabled .card-value-sm,
-.controls-disabled .card-label-sm {
-    color: rgba(150, 150, 150, 0.7) !important;
-}
-
-/* Disabled state icons */
-.controls-disabled i,
-.controls-disabled .material-icons,
-.controls-disabled .card-icon-sm {
-    color: rgba(150, 150, 150, 0.6) !important;
 }
