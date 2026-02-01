@@ -37,9 +37,10 @@ import java.util.concurrent.Executors;
 public class CloudStatusManager {
     private static final String TAG = "CloudStatusManager";
     
-    // Push interval: 2 seconds for status, 3 seconds for commands
+    // Push interval: 2 seconds for status, 3 seconds for commands, 30 seconds for viewers
     private static final long STATUS_PUSH_INTERVAL_MS = 2000;
     private static final long COMMAND_POLL_INTERVAL_MS = 3000;
+    private static final long VIEWERS_POLL_INTERVAL_MS = 30000; // Poll cloud viewers every 30s
     
     // Failure tracking for robust recovery (Step 6.11)
     private static final int MAX_CONSECUTIVE_FAILURES = 10;
@@ -63,6 +64,7 @@ public class CloudStatusManager {
     private boolean isRunning = false;
     private Runnable statusRunnable;
     private Runnable commandRunnable;
+    private Runnable viewersRunnable;
     private int statusPushCount = 0;
     private int realtimeCommandCount = 0;
     
@@ -189,11 +191,32 @@ public class CloudStatusManager {
         };
         handler.postDelayed(commandRunnable, 500); // Start 500ms after status push
         
+        // Start cloud viewers poll loop (every 30 seconds)
+        viewersRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isRunning) {
+                    Log.w(TAG, "☁️ Viewers poll loop stopped (isRunning=false)");
+                    return;
+                }
+                
+                try {
+                    pollCloudViewers();
+                } catch (Exception e) {
+                    Log.e(TAG, "☁️ Exception in pollCloudViewers (will retry): " + e.getMessage());
+                }
+                
+                // Reschedule regardless of errors
+                handler.postDelayed(this, VIEWERS_POLL_INTERVAL_MS);
+            }
+        };
+        handler.postDelayed(viewersRunnable, 2000); // Start 2s after server starts
+        
         // Start Supabase Realtime for instant command delivery
         startSupabaseRealtime();
         
         Log.i(TAG, "☁️ Cloud status manager started (status: " + STATUS_PUSH_INTERVAL_MS + 
-              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, realtime: enabled)");
+              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, viewers: " + VIEWERS_POLL_INTERVAL_MS + "ms, realtime: enabled)");
     }
     
     /**
@@ -359,6 +382,14 @@ public class CloudStatusManager {
             handler.removeCallbacks(commandRunnable);
             commandRunnable = null;
         }
+        
+        if (viewersRunnable != null) {
+            handler.removeCallbacks(viewersRunnable);
+            viewersRunnable = null;
+        }
+        
+        // Reset cloud viewer count when stopping
+        RemoteStreamManager.getInstance().setCloudViewerCount(0);
         
         Log.i(TAG, "☁️ Cloud status manager stopped (pushed " + statusPushCount + " status updates)");
     }
@@ -779,6 +810,75 @@ public class CloudStatusManager {
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Failed to delete command: " + e.getMessage());
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        });
+    }
+    
+    // =========================================================================
+    // Cloud Viewers Polling
+    // =========================================================================
+    
+    /**
+     * Poll cloud viewer count from relay server.
+     * Relay server parses nginx logs and provides unique viewer count.
+     * Updates RemoteStreamManager.cloudViewerCount for inclusion in status push.
+     */
+    private void pollCloudViewers() {
+        String userUuid = authManager.getUserId();
+        String deviceId = getDeviceId();
+        String streamToken = authManager.getStreamToken();
+        
+        if (userUuid == null || deviceId == null || streamToken == null) {
+            // No auth yet - skip
+            return;
+        }
+        
+        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/viewers/" + userUuid + "/" + deviceId;
+        Log.d(TAG, "☁️ 👥 Polling cloud viewers from: " + urlStr);
+        
+        executor.execute(() -> {
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    java.io.InputStream is = conn.getInputStream();
+                    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+                    String body = s.hasNext() ? s.next() : "{}";
+                    is.close();
+                    
+                    // Parse JSON: {"count":N,"ips":[...],"updated":timestamp}
+                    JSONObject json = new JSONObject(body);
+                    int viewerCount = json.optInt("count", 0);
+                    long updated = json.optLong("updated", 0);
+                    
+                    // Update RemoteStreamManager
+                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount);
+                    
+                    if (viewerCount > 0) {
+                        Log.i(TAG, "☁️ 👥 Cloud viewers: " + viewerCount + " (updated: " + updated + ")");
+                    } else {
+                        Log.d(TAG, "☁️ 👥 No cloud viewers currently");
+                    }
+                } else if (responseCode == 404) {
+                    // No viewers file yet - means no viewers, which is valid
+                    RemoteStreamManager.getInstance().setCloudViewerCount(0);
+                    Log.d(TAG, "☁️ 👥 No viewers data available (404)");
+                } else {
+                    Log.w(TAG, "☁️ 👥 Viewers poll failed: HTTP " + responseCode);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "☁️ 👥 Viewers poll error: " + e.getMessage());
+                // Don't reset count on error - keep last known value
             } finally {
                 if (conn != null) {
                     conn.disconnect();

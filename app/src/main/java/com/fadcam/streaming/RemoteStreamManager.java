@@ -89,6 +89,11 @@ public class RemoteStreamManager {
     private static final long CLOUD_COMMAND_POLL_INTERVAL_MS = 1500; // Poll commands every 1.5 seconds
     private boolean cloudStatusPushEnabled = false;
     
+    // Cloud viewer tracking (fetched from relay by CloudStatusManager)
+    // This tracks viewers who connect via cloud relay, not directly to phone
+    private int cloudViewerCount = 0;
+    private long cloudViewerCountUpdatedAt = 0; // Timestamp of last update
+    
     /**
      * Streaming mode options.
      */
@@ -750,6 +755,7 @@ public class RemoteStreamManager {
                 "\"lastUpdated\": %d, \"serverVersion\": %s, " +
                 "\"isRecording\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
                 "\"latestSequence\": %d, \"oldestSequence\": %d, \"activeConnections\": %d, " +
+                "\"cloudViewers\": %d, " +
                 "\"hasInitSegment\": %s, \"uptimeSeconds\": %d, " +
                 "\"batteryDetails\": %s, " +
                 "\"uptimeDetails\": %s, " +
@@ -777,6 +783,7 @@ public class RemoteStreamManager {
                 fragmentSequence,
                 oldestSequence,
                 getAllClientMetrics().size(),
+                cloudViewerCount,
                 hasInit,
                 uptimeSeconds,
                 batteryDetailsJson,
@@ -1073,6 +1080,33 @@ public class RemoteStreamManager {
         synchronized (clientMetricsMap) {
             return clientMetricsMap.size();
         }
+    }
+    
+    /**
+     * Set cloud viewer count (fetched from relay server by CloudStatusManager).
+     * Cloud viewers connect to the relay, not directly to the phone.
+     * @param count Number of unique cloud viewers
+     */
+    public void setCloudViewerCount(int count) {
+        this.cloudViewerCount = count;
+        this.cloudViewerCountUpdatedAt = System.currentTimeMillis();
+        Log.d(TAG, "☁️ Cloud viewer count updated: " + count);
+    }
+    
+    /**
+     * Get cloud viewer count.
+     * @return Number of cloud viewers, or 0 if not tracked
+     */
+    public int getCloudViewerCount() {
+        return cloudViewerCount;
+    }
+    
+    /**
+     * Get timestamp of last cloud viewer count update.
+     * @return Milliseconds since epoch
+     */
+    public long getCloudViewerCountUpdatedAt() {
+        return cloudViewerCountUpdatedAt;
     }
     
     /**
