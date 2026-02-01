@@ -108,12 +108,13 @@ public class ClientMetrics {
     
     /**
      * Convert to JSON object string.
+     * Uses camelCase to match dashboard expectations (Step 6.11 standardization).
      */
     public String toJson() {
         return String.format(
-            "{\"ip\": \"%s\", \"bytes_served\": %d, \"mb_served\": %d, " +
-            "\"fragments_served\": %d, \"get_requests\": %d, \"post_requests\": %d, \"total_api_calls\": %d, " +
-            "\"session_duration_seconds\": %d, \"average_bitrate_mbps\": %.2f, \"is_active\": %s, \"last_activity_ms\": %d}",
+            "{\"ip\": \"%s\", \"bytesServed\": %d, \"mbServed\": %d, " +
+            "\"fragmentsServed\": %d, \"getRequests\": %d, \"postRequests\": %d, \"totalApiCalls\": %d, " +
+            "\"sessionDurationSeconds\": %d, \"averageBitrateMbps\": %.2f, \"isActive\": %s, \"lastActivityMs\": %d}",
             ipAddress,
             totalBytesServed,
             getTotalMBServed(),

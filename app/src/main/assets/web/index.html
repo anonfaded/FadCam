@@ -1527,8 +1527,8 @@
                 let totalGetCalls = 0;
                 let totalPostCalls = 0;
                 currentStatus.clients.forEach(client => {
-                    totalGetCalls += client.get_requests || 0;
-                    totalPostCalls += client.post_requests || 0;
+                    totalGetCalls += client.getRequests || 0;
+                    totalPostCalls += client.postRequests || 0;
                 });
                 
                 clientsHtml += `
@@ -1555,7 +1555,7 @@
             if (currentStatus.clients && currentStatus.clients.length > 0) {
                 clientsHtml += '<div class="modal-section"><div class="modal-section-title">Client Details</div>';
                 currentStatus.clients.forEach((client, idx) => {
-                    const sessionMinutes = Math.floor((client.session_duration_seconds || 0) / 60);
+                    const sessionMinutes = Math.floor((client.sessionDurationSeconds || 0) / 60);
                     clientsHtml += `
                         <div class="modal-rows-group">
                             <div class="modal-row-container">
@@ -1564,27 +1564,27 @@
                             </div>
                             <div class="modal-row-container">
                                 <div class="modal-row-label">Data Served</div>
-                                <div class="modal-row-value">${client.mb_served ? client.mb_served.toFixed(1) : '0'} MB</div>
+                                <div class="modal-row-value">${client.mbServed ? client.mbServed.toFixed(1) : '0'} MB</div>
                             </div>
                             <div class="modal-row-container">
                                 <div class="modal-row-label">Avg Bitrate</div>
-                                <div class="modal-row-value">${(client.average_bitrate_mbps || 0).toFixed(2)} Mbps</div>
+                                <div class="modal-row-value">${(client.averageBitrateMbps || 0).toFixed(2)} Mbps</div>
                             </div>
                             <div class="modal-row-container">
                                 <div class="modal-row-label">Session Duration</div>
-                                <div class="modal-row-value">${sessionMinutes}m ${(client.session_duration_seconds || 0) % 60}s</div>
+                                <div class="modal-row-value">${sessionMinutes}m ${(client.sessionDurationSeconds || 0) % 60}s</div>
                             </div>
                             <div class="modal-row-container">
                                 <div class="modal-row-label">GET Requests</div>
-                                <div class="modal-row-value">${client.get_requests || 0}</div>
+                                <div class="modal-row-value">${client.getRequests || 0}</div>
                             </div>
                             <div class="modal-row-container">
                                 <div class="modal-row-label">POST Requests</div>
-                                <div class="modal-row-value">${client.post_requests || 0}</div>
+                                <div class="modal-row-value">${client.postRequests || 0}</div>
                             </div>
                             <div class="modal-row-container">
                                 <div class="modal-row-label">Total API Calls</div>
-                                <div class="modal-row-value">${(client.total_api_calls || 0)}</div>
+                                <div class="modal-row-value">${(client.totalApiCalls || 0)}</div>
                             </div>
                         </div>
                     `;
@@ -1817,8 +1817,8 @@
                 clientsHtml = currentStatus.clients.map(client => {
                     // Calculate duration display
                     let durationDisplay = '0m';
-                    if (client.session_duration_seconds) {
-                        const seconds = client.session_duration_seconds;
+                    if (client.sessionDurationSeconds) {
+                        const seconds = client.sessionDurationSeconds;
                         if (seconds < 60) {
                             durationDisplay = seconds + 's';
                         } else if (seconds < 3600) {
@@ -1831,9 +1831,9 @@
                     }
                     
                     // Get data served
-                    const dataMb = client.mb_served || 0;
-                    const fragments = client.fragments_served || 0;
-                    const isActive = client.is_active !== false; // Default to active if not specified
+                    const dataMb = client.mbServed || 0;
+                    const fragments = client.fragmentsServed || 0;
+                    const isActive = client.isActive !== false; // Default to active if not specified
                     
                     return `
                         <div class="modal-rows-group" style="margin-bottom: 12px;">
