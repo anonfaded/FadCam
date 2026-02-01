@@ -2375,6 +2375,9 @@
             if (segmentsEl) segmentsEl.textContent = '0';
             const dataReceivedEl = document.getElementById('dataReceivedValue');
             if (dataReceivedEl) dataReceivedEl.textContent = '0.0 MB';
+            // Also clear dataTransferValue (different ID used in some places)
+            const dataTransferEl = document.getElementById('dataTransferValue');
+            if (dataTransferEl) dataTransferEl.textContent = '0.0 MB';
             
             // Battery
             const batteryPercentEl = document.getElementById('batteryPercent');
@@ -2408,6 +2411,33 @@
             if (modeValueEl) modeValueEl.textContent = '--';
             const qualityValueEl = document.getElementById('qualityValue');
             if (qualityValueEl) qualityValueEl.textContent = '--';
+            // Also clear recordingModeValue and streamQualityValue (different IDs)
+            const recordingModeEl = document.getElementById('recordingModeValue');
+            if (recordingModeEl) recordingModeEl.textContent = '--';
+            const streamQualityEl = document.getElementById('streamQualityValue');
+            if (streamQualityEl) streamQualityEl.textContent = '--';
+            
+            // Torch - reset to OFF state when offline
+            const torchState = document.getElementById('torchState');
+            const torchCard = document.querySelector('.torch-card');
+            if (torchState) torchState.textContent = 'OFF';
+            if (torchCard) {
+                torchCard.classList.remove('on');
+                torchCard.classList.add('off');
+            }
+            
+            // Recording - reset to STOPPED state when offline
+            const recordingState = document.getElementById('recordingState');
+            const recordingCard = document.querySelector('.recording-card');
+            if (recordingState) recordingState.textContent = 'STOPPED';
+            if (recordingCard) {
+                recordingCard.classList.remove('on');
+                recordingCard.classList.add('off');
+            }
+            
+            // Alarm - reset to READY state when offline
+            const alarmValueEl = document.getElementById('alarmValue');
+            if (alarmValueEl) alarmValueEl.textContent = 'READY';
         }
 
         function updateUI(status) {
@@ -2578,11 +2608,8 @@
             const stalenessAge = status.getFormattedAge ? status.getFormattedAge() : '';
             const statusAge = status.getStatusAge ? status.getStatusAge() : 0;
             
-            // Debug: Log staleness calculation details
-            if (!window._lastStaleDebugLog || Date.now() - window._lastStaleDebugLog > 10000) {
-                console.log(`[Staleness Debug] lastUpdated=${status.lastUpdated}, cloudMode=${status.cloudMode}, age=${statusAge}ms, state=${stalenessState}`);
-                window._lastStaleDebugLog = Date.now();
-            }
+            // Debug: Log staleness calculation details on EVERY update (remove throttle for debugging)
+            console.log(`[Staleness Debug] lastUpdated=${status.lastUpdated}, cloudMode=${status.cloudMode}, age=${statusAge}ms, state=${stalenessState}`);
             
             // Map staleness to LED classes and colors
             const stalenessLedMap = {
@@ -2696,79 +2723,82 @@
             }
             
             // Update iOS-style cards with visualizations
-            updateBatteryCard(status);
-            updateStorageCard(status);
-            updateMemoryCard(status);
-            updateNetworkCard(status);
-            updateVolumeCard(status);
-            
-            const segmentsEl = document.getElementById('segmentsValue');
-            if (segmentsEl) segmentsEl.textContent = status.fragmentsBuffered || '0';
-            
-            // Update data transfer card
-            const dataTransferred = status.dataTransferredMb || 0;
-            const displayDataTransfer = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
-            const dataTransferEl = document.getElementById('dataTransferValue');
-            if (dataTransferEl) dataTransferEl.textContent = displayDataTransfer;
-            
-            const recordingModeEl = document.getElementById('recordingModeValue');
-            if (recordingModeEl) recordingModeEl.textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            
-            const streamQualityEl = document.getElementById('streamQualityValue');
-            if (streamQualityEl) streamQualityEl.textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
-            
-            // Update torch display and show notification if changed
-            const torchState = document.getElementById('torchState');
-            const torchCard = document.querySelector('.torch-card');
-            const torchIcon = document.getElementById('torchIcon');
-            const torchFill = document.getElementById('torchFill');
-            
-            if (torchState && torchCard) {
-                torchCard.classList.remove('on', 'off');
+            // SKIP when offline - stale data should remain cleared
+            if (!isOffline) {
+                updateBatteryCard(status);
+                updateStorageCard(status);
+                updateMemoryCard(status);
+                updateNetworkCard(status);
+                updateVolumeCard(status);
                 
-                if (status.torchOn) {
-                    torchState.textContent = 'ON';
-                    torchCard.classList.add('on');
-                    if (torchIcon) {
-                        torchIcon.className = 'fas fa-lightbulb torch-icon-fa';
-                    }
-                } else {
-                    torchState.textContent = 'OFF';
-                    torchCard.classList.add('off');
-                    if (torchIcon) {
-                        torchIcon.className = 'far fa-lightbulb torch-icon-fa';
+                const segmentsEl = document.getElementById('segmentsValue');
+                if (segmentsEl) segmentsEl.textContent = status.fragmentsBuffered || '0';
+                
+                // Update data transfer card
+                const dataTransferred = status.dataTransferredMb || 0;
+                const displayDataTransfer = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
+                const dataTransferEl = document.getElementById('dataTransferValue');
+                if (dataTransferEl) dataTransferEl.textContent = displayDataTransfer;
+                
+                const recordingModeEl = document.getElementById('recordingModeValue');
+                if (recordingModeEl) recordingModeEl.textContent = status.mode.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                
+                const streamQualityEl = document.getElementById('streamQualityValue');
+                if (streamQualityEl) streamQualityEl.textContent = status.qualityPreset ? status.qualityPreset.charAt(0).toUpperCase() + status.qualityPreset.slice(1) : '—';
+            
+                // Update torch display (only when online)
+                const torchState = document.getElementById('torchState');
+                const torchCard = document.querySelector('.torch-card');
+                const torchIcon = document.getElementById('torchIcon');
+                const torchFill = document.getElementById('torchFill');
+                
+                if (torchState && torchCard) {
+                    torchCard.classList.remove('on', 'off');
+                    
+                    if (status.torchOn) {
+                        torchState.textContent = 'ON';
+                        torchCard.classList.add('on');
+                        if (torchIcon) {
+                            torchIcon.className = 'fas fa-lightbulb torch-icon-fa';
+                        }
+                    } else {
+                        torchState.textContent = 'OFF';
+                        torchCard.classList.add('off');
+                        if (torchIcon) {
+                            torchIcon.className = 'far fa-lightbulb torch-icon-fa';
+                        }
                     }
                 }
-            }
-            
-            // Update recording state display
-            const recordingState = document.getElementById('recordingState');
-            const recordingCard = document.querySelector('.recording-card');
-            const recordingIcon = document.getElementById('recordingIcon');
-            const recordingFill = document.getElementById('recordingFill');
-            
-            if (recordingState && recordingCard) {
-                recordingCard.classList.remove('on', 'off');
                 
-                if (status.isRecording) {
-                    recordingState.textContent = 'RECORDING';
-                    recordingCard.classList.add('on');
-                    if (recordingIcon) {
-                        recordingIcon.className = 'fas fa-circle recording-icon-fa';
-                    }
-                } else {
-                    recordingState.textContent = 'STOPPED';
-                    recordingCard.classList.add('off');
-                    if (recordingIcon) {
-                        recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                // Update recording state display (only when online)
+                const recordingState = document.getElementById('recordingState');
+                const recordingCard = document.querySelector('.recording-card');
+                const recordingIcon = document.getElementById('recordingIcon');
+                const recordingFill = document.getElementById('recordingFill');
+                
+                if (recordingState && recordingCard) {
+                    recordingCard.classList.remove('on', 'off');
+                    
+                    if (status.isRecording) {
+                        recordingState.textContent = 'RECORDING';
+                        recordingCard.classList.add('on');
+                        if (recordingIcon) {
+                            recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                        }
+                    } else {
+                        recordingState.textContent = 'STOPPED';
+                        recordingCard.classList.add('off');
+                        if (recordingIcon) {
+                            recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                        }
                     }
                 }
-            }
-            
-            // Update alarm display state
-            if (status.alarm) {
-                updateAlarmCardState(status.alarm.isRinging, status.alarm.durationMs);
-                updateAlarmUIState();
+                
+                // Update alarm display state (only when online)
+                if (status.alarm) {
+                    updateAlarmCardState(status.alarm.isRinging, status.alarm.durationMs);
+                    updateAlarmUIState();
+                }
             }
             
             const serverUrlEl = document.getElementById('serverUrl');
