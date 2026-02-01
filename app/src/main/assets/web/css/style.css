@@ -3402,3 +3402,81 @@ video {
         font-size: 12px;
     }
 }
+
+/* ========================================
+   OFFLINE STATE - DISABLED CONTROLS
+   Step 6.11.3.2: Gray out all controls when server offline
+   ======================================== */
+
+/* Base disabled state for all interactive elements */
+.controls-disabled {
+    opacity: 0.5 !important;
+    filter: grayscale(50%) !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+/* Disabled state for cards */
+.controls-disabled.torch-card,
+.controls-disabled.recording-card,
+.controls-disabled.ios-card,
+.controls-disabled.uptime-card,
+.controls-disabled.clients-card,
+.controls-disabled.battery-card,
+.controls-disabled.segments-card,
+.controls-disabled.data-card,
+.controls-disabled.network-card,
+.controls-disabled.storage-card,
+.controls-disabled.memory-card,
+.controls-disabled.mode-card,
+.controls-disabled.quality-card,
+.controls-disabled.volume-card,
+.controls-disabled.alarm-card {
+    opacity: 0.4 !important;
+    filter: grayscale(60%) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: opacity 0.3s ease, filter 0.3s ease !important;
+}
+
+/* Remove hover effects on disabled cards */
+.controls-disabled:hover {
+    opacity: 0.4 !important;
+    filter: grayscale(60%) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Disabled buttons (volume +/-) */
+.controls-disabled.volume-btn,
+.controls-disabled.control-btn,
+.controls-disabled.icon-button {
+    opacity: 0.4 !important;
+    filter: grayscale(80%) !important;
+    background-color: rgba(100, 100, 100, 0.3) !important;
+    border-color: rgba(100, 100, 100, 0.3) !important;
+}
+
+/* Disabled torch/recording cards - remove active state colors */
+.controls-disabled.torch-card.on,
+.controls-disabled.torch-card.off,
+.controls-disabled.recording-card.on,
+.controls-disabled.recording-card.off {
+    background: rgba(50, 50, 50, 0.5) !important;
+    border-color: rgba(100, 100, 100, 0.3) !important;
+}
+
+/* Disabled state text styling */
+.controls-disabled .status-value,
+.controls-disabled .torch-state,
+.controls-disabled .recording-state {
+    color: rgba(150, 150, 150, 0.7) !important;
+}
+
+/* Disabled state icons */
+.controls-disabled i,
+.controls-disabled .material-icons {
+    color: rgba(150, 150, 150, 0.6) !important;
+}
