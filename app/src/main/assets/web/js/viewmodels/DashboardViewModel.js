@@ -6,12 +6,128 @@
  * - Cloud mode: Relay server (live.fadseclab.com:8443)
  * 
  * ApiService automatically detects the mode based on FadCamRemote.isCloudMode()
+ * 
+ * Multi-tab support (Step 6.11.5.4):
+ * Uses BroadcastChannel to coordinate polling across tabs. Only the active/visible
+ * tab polls the server. Background tabs receive status updates via broadcast.
  */
 class DashboardViewModel {
     constructor() {
         this.statusModel = new ServerStatus();
         this.pollInterval = null;
         this.isPolling = false;
+        
+        // Multi-tab coordination (Step 6.11.5.4)
+        this.tabId = Math.random().toString(36).substring(2, 10);
+        this.isLeaderTab = false;
+        this.broadcastChannel = null;
+        this._initTabCoordination();
+    }
+    
+    /**
+     * Initialize tab coordination via BroadcastChannel
+     * Only one tab (the "leader") will poll the server
+     */
+    _initTabCoordination() {
+        // BroadcastChannel is not supported in all browsers (Safari < 15.4)
+        if (typeof BroadcastChannel === 'undefined') {
+            console.log('[TabSync] BroadcastChannel not supported - each tab polls independently');
+            this.isLeaderTab = true; // Fallback: every tab is a leader
+            return;
+        }
+        
+        try {
+            this.broadcastChannel = new BroadcastChannel('fadcam_dashboard_sync');
+            
+            // Listen for messages from other tabs
+            this.broadcastChannel.onmessage = (event) => {
+                const { type, tabId, status, timestamp } = event.data;
+                
+                if (type === 'status-update' && tabId !== this.tabId) {
+                    // Another tab pushed a status update - use it instead of polling
+                    console.log(`[TabSync] 📥 Received status from tab ${tabId}`);
+                    if (status) {
+                        this.statusModel.update(status);
+                        eventBus.emit('status-updated', this.statusModel);
+                    }
+                } else if (type === 'leader-claim' && tabId !== this.tabId) {
+                    // Another tab claimed leadership (e.g., became visible)
+                    console.log(`[TabSync] 🏳️ Tab ${tabId} claimed leadership`);
+                    this.isLeaderTab = false;
+                    this.stopPolling();
+                } else if (type === 'leader-release' && tabId !== this.tabId) {
+                    // Leader tab closed or backgrounded - we can claim if visible
+                    console.log(`[TabSync] 🎯 Tab ${tabId} released leadership`);
+                    if (!document.hidden) {
+                        this._claimLeadership();
+                    }
+                }
+            };
+            
+            // Claim leadership if we're the visible tab
+            if (!document.hidden) {
+                this._claimLeadership();
+            }
+            
+            // Release leadership when tab is backgrounded or closed
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this._releaseLeadership();
+                } else {
+                    this._claimLeadership();
+                }
+            });
+            
+            window.addEventListener('beforeunload', () => {
+                this._releaseLeadership();
+            });
+            
+            console.log(`[TabSync] Initialized tab ${this.tabId}, leader: ${this.isLeaderTab}`);
+            
+        } catch (e) {
+            console.warn('[TabSync] Failed to init BroadcastChannel:', e.message);
+            this.isLeaderTab = true; // Fallback
+        }
+    }
+    
+    /**
+     * Claim leadership for this tab (start polling)
+     */
+    _claimLeadership() {
+        this.isLeaderTab = true;
+        if (this.broadcastChannel) {
+            this.broadcastChannel.postMessage({ type: 'leader-claim', tabId: this.tabId });
+        }
+        console.log(`[TabSync] 👑 Tab ${this.tabId} is now leader`);
+        this.startPolling();
+    }
+    
+    /**
+     * Release leadership (stop polling, let another tab take over)
+     */
+    _releaseLeadership() {
+        if (this.isLeaderTab) {
+            this.isLeaderTab = false;
+            if (this.broadcastChannel) {
+                this.broadcastChannel.postMessage({ type: 'leader-release', tabId: this.tabId });
+            }
+            console.log(`[TabSync] 🏳️ Tab ${this.tabId} released leadership`);
+            this.stopPolling();
+        }
+    }
+    
+    /**
+     * Broadcast status to other tabs
+     */
+    _broadcastStatus(status) {
+        if (this.broadcastChannel && this.isLeaderTab) {
+            this.broadcastChannel.postMessage({ 
+                type: 'status-update', 
+                tabId: this.tabId, 
+                status: status,
+                timestamp: Date.now()
+            });
+        }
     }
     
     /**
@@ -47,6 +163,9 @@ class DashboardViewModel {
             // Emit event for views to update
             eventBus.emit('status-updated', this.statusModel);
             
+            // Broadcast to other tabs (Step 6.11.5.4)
+            this._broadcastStatus(data);
+            
             const modeLabel = data.cloudMode ? '☁️' : '📱';
             console.log(`✅ [DashboardViewModel] ${modeLabel} Status updated: ${data.state}, streaming: ${data.streaming}, clients: ${data.totalConnectedClients || 0}`);
         } catch (error) {
@@ -76,16 +195,23 @@ class DashboardViewModel {
     
     /**
      * Start polling for status updates
+     * Only the leader tab polls; other tabs receive updates via broadcast
      */
     startPolling() {
         if (this.isPolling) return;
+        
+        // Only poll if we're the leader tab (Step 6.11.5.4)
+        if (!this.isLeaderTab) {
+            console.log('[DashboardViewModel] Not leader tab - skipping polling (will receive updates via broadcast)');
+            return;
+        }
         
         this.isPolling = true;
         this.pollInterval = setInterval(() => {
             this.updateStatus();
         }, CONFIG.STATUS_POLL_INTERVAL);
         
-        console.log('[DashboardViewModel] Started polling every', CONFIG.STATUS_POLL_INTERVAL / 1000, 'seconds');
+        console.log('[DashboardViewModel] 👑 Leader tab - started polling every', CONFIG.STATUS_POLL_INTERVAL / 1000, 'seconds');
     }
     
     /**
@@ -104,7 +230,7 @@ class DashboardViewModel {
      * Pause polling (for lock screen)
      */
     pausePolling() {
-        this.stopPolling();
+        this._releaseLeadership();
         console.log('[DashboardViewModel] Paused polling for auth lock');
     }
     
@@ -112,8 +238,8 @@ class DashboardViewModel {
      * Resume polling (after unlock)
      */
     resumePolling() {
-        if (!this.isPolling) {
-            this.startPolling();
+        if (!this.isPolling && !document.hidden) {
+            this._claimLeadership();
             console.log('[DashboardViewModel] Resumed polling after unlock');
         }
     }

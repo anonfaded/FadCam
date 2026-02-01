@@ -4027,6 +4027,28 @@
                 }
             });
             
+            // Network change handling (Step 6.11.5.2)
+            // Reconnect gracefully when network switches (WiFi → mobile or vice versa)
+            window.addEventListener('online', () => {
+                console.log('[Network] 🌐 Connection restored - triggering reconnect');
+                showToast('Connection restored', 'success', 2000);
+                if (dashboardViewModel) {
+                    // Force immediate status update
+                    dashboardViewModel.updateStatus();
+                }
+                // Reload HLS stream if it was playing
+                if (hlsService && hlsService.hls && hlsLoaded) {
+                    console.log('[Network] Reloading HLS stream...');
+                    hlsService.hls.startLoad();
+                }
+            });
+            
+            window.addEventListener('offline', () => {
+                console.log('[Network] 📴 Connection lost');
+                showToast('Connection lost - waiting for network...', 'warning', 3000);
+                // HLS will auto-buffer and wait, no need to force stop
+            });
+            
             // Initialize will fetch first status and emit event
             await dashboardViewModel.initialize();
             // Don't auto-load stream - wait for recording to start
