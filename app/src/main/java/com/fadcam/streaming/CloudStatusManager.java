@@ -100,7 +100,16 @@ public class CloudStatusManager {
         boolean hasRefresh = authManager.getRefreshToken() != null;
         boolean hasUuid = authManager.getUserId() != null;
         boolean hasStreamToken = authManager.getStreamToken() != null;
-        return ((hasToken || hasRefresh) || hasStreamToken) && hasUuid;
+        boolean ready = ((hasToken || hasRefresh) || hasStreamToken) && hasUuid;
+        
+        // Debug logging to trace why cloud might not be ready
+        Log.d(TAG, "☁️ isCloudReady check: hasToken=" + hasToken 
+            + ", hasRefresh=" + hasRefresh 
+            + ", hasUuid=" + hasUuid 
+            + ", hasStreamToken=" + hasStreamToken 
+            + ", ready=" + ready);
+        
+        return ready;
     }
     
     /**
@@ -109,20 +118,24 @@ public class CloudStatusManager {
      * Will only actually start if cloud mode is enabled and user is linked.
      */
     public void start() {
+        Log.i(TAG, "☁️ start() called");
+        
         if (isRunning) {
-            Log.d(TAG, "Already running, ignoring start");
+            Log.d(TAG, "☁️ Already running, ignoring start");
             return;
         }
         
         if (!isCloudModeEnabled()) {
-            Log.d(TAG, "Cloud mode not enabled, not starting");
+            Log.d(TAG, "☁️ Cloud mode not enabled, not starting");
             return;
         }
         
         if (!isCloudReady()) {
-            Log.d(TAG, "Cloud not ready (no credentials), not starting");
+            Log.d(TAG, "☁️ Cloud not ready (no credentials), not starting");
             return;
         }
+        
+        Log.i(TAG, "☁️ Starting status push and command polling...");
         
         isRunning = true;
         statusPushCount = 0;
@@ -457,6 +470,7 @@ public class CloudStatusManager {
      */
     private void doPushStatus(String statusJson, String userUuid, String deviceId, String token) {
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
+        Log.d(TAG, "☁️ 📤 Pushing status to: " + urlStr);
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
@@ -474,6 +488,7 @@ public class CloudStatusManager {
                 }
                 
                 int responseCode = conn.getResponseCode();
+                Log.d(TAG, "☁️ 📤 Push response: HTTP " + responseCode);
                 if (responseCode >= 200 && responseCode < 300) {
                     // Success - track recovery
                     onPushSuccess();
@@ -481,10 +496,13 @@ public class CloudStatusManager {
                     onPushFailure("HTTP " + responseCode);
                 }
             } catch (java.net.SocketTimeoutException e) {
+                Log.e(TAG, "☁️ 📤 Push timeout: " + e.getMessage());
                 onPushFailure("Timeout: " + e.getMessage());
             } catch (java.io.IOException e) {
+                Log.e(TAG, "☁️ 📤 Push IO error: " + e.getMessage());
                 onPushFailure("IO: " + e.getMessage());
             } catch (Exception e) {
+                Log.e(TAG, "☁️ 📤 Push exception: " + e.getMessage());
                 onPushFailure("Error: " + e.getMessage());
             } finally {
                 if (conn != null) {
