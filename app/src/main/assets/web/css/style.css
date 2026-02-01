@@ -35,6 +35,60 @@
     box-sizing: border-box;
 }
 
+/* Stale Data Warning Banner (Step 6.11) */
+.stale-data-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, rgba(210, 153, 34, 0.95) 0%, rgba(180, 130, 30, 0.95) 100%);
+    padding: 10px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+.stale-data-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #000;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stale-data-content i {
+    font-size: 16px;
+}
+
+/* Controls disabled state when offline (Step 6.11.3.2) */
+.controls-disabled {
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    filter: grayscale(50%);
+    cursor: not-allowed !important;
+}
+
+.controls-disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;
@@ -2182,6 +2236,15 @@ video {
     color: #f85149;
 }
 
+/* Staleness text colors (Step 6.11) */
+.status-value.warning-text {
+    color: #d29922;
+}
+
+.status-value.offline-text {
+    color: #6e7681;
+}
+
 .led-dot {
     width: 10px;
     height: 10px;
@@ -2189,11 +2252,30 @@ video {
     background: #6e7681;
     transition: all 300ms ease;
     flex-shrink: 0;
+    cursor: help;
 }
 
 .led-dot.online {
     background: #3fb950;
     box-shadow: 0 0 10px rgba(63, 185, 80, 0.7);
+}
+
+/* Warning state - yellow/amber for delayed/stale (Step 6.11) */
+.led-dot.warning {
+    background: #d29922;
+    box-shadow: 0 0 10px rgba(210, 153, 34, 0.7);
+    animation: pulse-warning 1.5s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Offline state - gray (Step 6.11) */
+.led-dot.offline {
+    background: #6e7681;
+    box-shadow: none;
 }
 
 .recording-led {

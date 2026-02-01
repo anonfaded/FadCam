@@ -740,8 +740,14 @@ public class RemoteStreamManager {
             
             // OPTIMIZATION: Build JSON once, cache for 1 second to reduce CPU load
             // Import JsonEscaper for safe JSON string embedding
+            // lastUpdated: Unix timestamp for dashboard staleness detection (Step 6.11)
+            // serverVersion: For dashboard compatibility checks
+            long lastUpdatedTimestamp = System.currentTimeMillis();
+            String serverVersion = "2.0.0";  // Bump when status schema changes
+            
             String result = String.format(
                 "{\"streaming\": %s, \"mode\": %s, \"state\": %s, \"message\": %s, " +
+                "\"lastUpdated\": %d, \"serverVersion\": %s, " +
                 "\"isRecording\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
                 "\"latestSequence\": %d, \"oldestSequence\": %d, \"activeConnections\": %d, " +
                 "\"hasInitSegment\": %s, \"uptimeSeconds\": %d, " +
@@ -763,6 +769,8 @@ public class RemoteStreamManager {
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(streamingMode.toString().toLowerCase()),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(state),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(message),
+                lastUpdatedTimestamp,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(serverVersion),
                 isRecording,
                 bufferedCount,
                 totalBytes / (1024.0 * 1024.0),

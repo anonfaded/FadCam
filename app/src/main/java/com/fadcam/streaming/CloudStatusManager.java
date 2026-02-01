@@ -41,6 +41,13 @@ public class CloudStatusManager {
     private static final long STATUS_PUSH_INTERVAL_MS = 2000;
     private static final long COMMAND_POLL_INTERVAL_MS = 3000;
     
+    // Failure tracking for robust recovery (Step 6.11)
+    private static final int MAX_CONSECUTIVE_FAILURES = 10;
+    private static final long MAX_BACKOFF_MS = 8000;  // Max delay after repeated failures
+    private int consecutiveFailures = 0;
+    private long currentBackoffMs = STATUS_PUSH_INTERVAL_MS;
+    private long lastSuccessfulPushTime = 0;
+    
     // Singleton instance
     private static CloudStatusManager instance;
     
@@ -134,13 +141,19 @@ public class CloudStatusManager {
                     statusPushCount++;
                 } catch (Exception e) {
                     Log.e(TAG, "☁️ Exception in pushStatus (will retry): " + e.getMessage());
+                    onPushFailure("Exception: " + e.getMessage());
                 }
                 
-                // Always reschedule regardless of errors
-                handler.postDelayed(this, STATUS_PUSH_INTERVAL_MS);
+                // Use dynamic delay with exponential backoff during failures
+                handler.postDelayed(this, getCurrentPushDelay());
             }
         };
         handler.post(statusRunnable);
+        
+        // Reset failure counters on fresh start
+        consecutiveFailures = 0;
+        currentBackoffMs = STATUS_PUSH_INTERVAL_MS;
+        lastSuccessfulPushTime = System.currentTimeMillis();
         
         // Start command poll loop (slightly offset from status push)
         commandRunnable = new Runnable() {
@@ -382,6 +395,7 @@ public class CloudStatusManager {
                 @Override
                 public void onError(String error) {
                     Log.e(TAG, "Stream token fetch failed: " + error);
+                    onPushFailure("Token fetch failed: " + error);
                 }
             });
             return;
@@ -392,7 +406,54 @@ public class CloudStatusManager {
     }
     
     /**
+     * Handle successful status push - reset failure counters
+     */
+    private void onPushSuccess() {
+        if (consecutiveFailures > 0) {
+            Log.i(TAG, "☁️ ✅ Status push RECOVERED after " + consecutiveFailures + " failures (was offline for " + 
+                    ((System.currentTimeMillis() - lastSuccessfulPushTime) / 1000) + "s)");
+        }
+        consecutiveFailures = 0;
+        currentBackoffMs = STATUS_PUSH_INTERVAL_MS;
+        lastSuccessfulPushTime = System.currentTimeMillis();
+    }
+    
+    /**
+     * Handle failed status push - increment counters and log
+     */
+    private void onPushFailure(String reason) {
+        consecutiveFailures++;
+        
+        // Log with escalating severity
+        if (consecutiveFailures == 1) {
+            Log.w(TAG, "☁️ ⚠️ Status push failed (" + consecutiveFailures + "/" + MAX_CONSECUTIVE_FAILURES + "): " + reason);
+        } else if (consecutiveFailures <= 3) {
+            Log.w(TAG, "☁️ ⚠️ Status push still failing (" + consecutiveFailures + "/" + MAX_CONSECUTIVE_FAILURES + "): " + reason);
+        } else if (consecutiveFailures == MAX_CONSECUTIVE_FAILURES) {
+            Log.e(TAG, "☁️ ❌ Status push MAX FAILURES reached (" + consecutiveFailures + "). Dashboard will show offline.");
+        } else if (consecutiveFailures % 10 == 0) {
+            // Log every 10 failures after max to avoid log spam
+            Log.e(TAG, "☁️ ❌ Status push offline for " + consecutiveFailures + " cycles (~" + 
+                    (consecutiveFailures * currentBackoffMs / 1000) + "s)");
+        }
+        
+        // Exponential backoff: 2s → 4s → 8s max
+        if (consecutiveFailures >= 3 && currentBackoffMs < MAX_BACKOFF_MS) {
+            currentBackoffMs = Math.min(currentBackoffMs * 2, MAX_BACKOFF_MS);
+            Log.d(TAG, "☁️ Increasing push interval to " + currentBackoffMs + "ms due to failures");
+        }
+    }
+    
+    /**
+     * Get current push delay (with exponential backoff if failing)
+     */
+    private long getCurrentPushDelay() {
+        return currentBackoffMs;
+    }
+    
+    /**
      * Actually perform the status push with the provided token.
+     * Includes failure tracking and recovery logging for production robustness.
      */
     private void doPushStatus(String statusJson, String userUuid, String deviceId, String token) {
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
@@ -414,12 +475,17 @@ public class CloudStatusManager {
                 
                 int responseCode = conn.getResponseCode();
                 if (responseCode >= 200 && responseCode < 300) {
-                    // Success - silent
+                    // Success - track recovery
+                    onPushSuccess();
                 } else {
-                    Log.w(TAG, "Status push failed: HTTP " + responseCode);
+                    onPushFailure("HTTP " + responseCode);
                 }
+            } catch (java.net.SocketTimeoutException e) {
+                onPushFailure("Timeout: " + e.getMessage());
+            } catch (java.io.IOException e) {
+                onPushFailure("IO: " + e.getMessage());
             } catch (Exception e) {
-                Log.w(TAG, "Status push error: " + e.getMessage());
+                onPushFailure("Error: " + e.getMessage());
             } finally {
                 if (conn != null) {
                     conn.disconnect();

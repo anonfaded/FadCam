@@ -1,5 +1,7 @@
 /**
  * ServerStatus - Data model for /status endpoint response
+ * 
+ * Includes staleness detection (Step 6.11) via lastUpdated timestamp
  */
 class ServerStatus {
     constructor(data = {}) {
@@ -11,6 +13,11 @@ class ServerStatus {
      * @param {Object} data - Raw status data from API
      */
     update(data) {
+        // Timestamps for staleness detection (Step 6.11)
+        this.lastUpdated = data.lastUpdated || 0;  // Unix timestamp from phone
+        this.serverVersion = data.serverVersion || '1.0.0';  // For compatibility checks
+        this.receivedAt = Date.now();  // When dashboard received this status
+        
         // Core status
         this.state = data.state || 'offline';
         this.mode = data.mode || 'disabled';
@@ -301,6 +308,108 @@ class ServerStatus {
         return stateMap[this.state] || 'offline';
     }
     
+    // =========================================================================
+    // Staleness Detection (Step 6.11)
+    // =========================================================================
+    
+    /**
+     * Staleness thresholds in milliseconds
+     */
+    static get STALENESS_THRESHOLDS() {
+        return {
+            FRESH: 5000,      // < 5s = green (fresh)
+            DELAYED: 15000,   // 5-15s = yellow (delayed)
+            STALE: 30000,     // 15-30s = orange (stale)
+            OFFLINE: 30000    // > 30s = red (offline)
+        };
+    }
+    
+    /**
+     * Get age of status in milliseconds (time since phone generated it)
+     * @returns {number} Age in ms
+     */
+    getStatusAge() {
+        if (!this.lastUpdated || this.lastUpdated === 0) {
+            // Legacy status without lastUpdated - assume it's fresh from local server
+            // For cloud mode, this would be stale if we can't calculate age
+            return this.receivedAt ? (Date.now() - this.receivedAt) : 0;
+        }
+        return Date.now() - this.lastUpdated;
+    }
+    
+    /**
+     * Get staleness state for UI indicators
+     * @returns {'fresh'|'delayed'|'stale'|'offline'}
+     */
+    getStalenessState() {
+        const age = this.getStatusAge();
+        const t = ServerStatus.STALENESS_THRESHOLDS;
+        
+        if (age < t.FRESH) return 'fresh';
+        if (age < t.DELAYED) return 'delayed';
+        if (age < t.STALE) return 'stale';
+        return 'offline';
+    }
+    
+    /**
+     * Check if status is stale (> 30 seconds old)
+     * @returns {boolean}
+     */
+    isStale() {
+        return this.getStatusAge() > ServerStatus.STALENESS_THRESHOLDS.OFFLINE;
+    }
+    
+    /**
+     * Check if status is considered online (< 30 seconds old)
+     * @returns {boolean}
+     */
+    isOnline() {
+        return !this.isStale();
+    }
+    
+    /**
+     * Get formatted age string for tooltips
+     * @returns {string} e.g., "2s ago", "45s ago", "2m ago"
+     */
+    getFormattedAge() {
+        const ageMs = this.getStatusAge();
+        const ageSec = Math.floor(ageMs / 1000);
+        
+        if (ageSec < 60) return `${ageSec}s ago`;
+        if (ageSec < 3600) return `${Math.floor(ageSec / 60)}m ago`;
+        return `${Math.floor(ageSec / 3600)}h ago`;
+    }
+    
+    /**
+     * Get LED color class based on staleness
+     * @returns {string} CSS class name
+     */
+    getStalenessLedClass() {
+        const state = this.getStalenessState();
+        const classMap = {
+            'fresh': 'led-green',
+            'delayed': 'led-yellow', 
+            'stale': 'led-orange',
+            'offline': 'led-red'
+        };
+        return classMap[state] || 'led-red';
+    }
+    
+    /**
+     * Get staleness status text for UI
+     * @returns {string}
+     */
+    getStalenessText() {
+        const state = this.getStalenessState();
+        const textMap = {
+            'fresh': 'Online',
+            'delayed': 'Syncing...',
+            'stale': 'Connection unstable',
+            'offline': 'Server offline'
+        };
+        return textMap[state] || 'Offline';
+    }
+    
     /**
      * Convert to JSON
      * @returns {Object}
@@ -325,7 +434,12 @@ class ServerStatus {
             uptimeStartTimestamp: this.uptimeStartTimestamp, // Include for debugging
             memoryUsageMb: this.memoryUsageMb,
             storageAvailableGb: this.storageAvailableGb,
-            lastUpdate: this.lastUpdate
+            lastUpdate: this.lastUpdate,
+            // Staleness info (Step 6.11)
+            lastUpdated: this.lastUpdated,
+            serverVersion: this.serverVersion,
+            statusAge: this.getStatusAge(),
+            stalenessState: this.getStalenessState()
         };
     }
 }

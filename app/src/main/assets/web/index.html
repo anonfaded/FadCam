@@ -90,6 +90,14 @@
         </div>
     </div>
 
+    <!-- Stale Data Warning Banner (Step 6.11) - Hidden by default -->
+    <div class="stale-data-banner" id="staleDataBanner" style="display: none;">
+        <div class="stale-data-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Data may be outdated. Last update: <span id="staleDataAge">--</span></span>
+        </div>
+    </div>
+
     <!-- Main Layout -->
     <div class="main-layout">
         <!-- Left Sidebar -->
@@ -2269,6 +2277,40 @@
             document.getElementById('videoOverlay').classList.add('hidden');
         }
 
+        /**
+         * Update controls disabled state based on server connectivity (Step 6.11.3.2)
+         * When offline, gray out control buttons to prevent user confusion
+         * @param {boolean} disabled - Whether controls should be disabled
+         */
+        function updateControlsDisabledState(disabled) {
+            // Control buttons to disable when offline
+            const controlButtons = [
+                '.torch-button',
+                '.camera-switch-btn',
+                '.control-btn',
+                '.recording-card',
+                '.icon-button'
+            ];
+            
+            controlButtons.forEach(selector => {
+                document.querySelectorAll(selector).forEach(btn => {
+                    if (disabled) {
+                        btn.classList.add('controls-disabled');
+                        btn.setAttribute('data-offline', 'true');
+                    } else {
+                        btn.classList.remove('controls-disabled');
+                        btn.removeAttribute('data-offline');
+                    }
+                });
+            });
+            
+            // Only log when state changes
+            if (window._lastControlsDisabled !== disabled) {
+                console.log(`[Controls] ${disabled ? '🔒 Disabled' : '🔓 Enabled'} - server ${disabled ? 'offline' : 'online'}`);
+                window._lastControlsDisabled = disabled;
+            }
+        }
+
         function updateUI(status) {
             // Detect state changes and show notifications
             if (previousStatus) {
@@ -2426,15 +2468,77 @@
                 }
             }
 
-            // Server status - ALWAYS ONLINE (server is always on when website loads)
+            // Server status - DYNAMIC based on staleness (Step 6.11)
+            // Uses lastUpdated timestamp to detect if phone is still pushing status
             const serverLED = document.getElementById('serverLED');
-            serverLED.className = 'led-dot online';
-            
             const serverStatusLabel = document.getElementById('serverStatusLabel');
+            
+            // Get staleness info from status model
+            const stalenessState = status.getStalenessState ? status.getStalenessState() : 'fresh';
+            const stalenessText = status.getStalenessText ? status.getStalenessText() : 'Online';
+            const stalenessAge = status.getFormattedAge ? status.getFormattedAge() : '';
+            
+            // Map staleness to LED classes and colors
+            const stalenessLedMap = {
+                'fresh': 'led-dot online',
+                'delayed': 'led-dot warning',
+                'stale': 'led-dot warning',
+                'offline': 'led-dot offline'
+            };
+            const stalenessTextMap = {
+                'fresh': { class: 'status-value online-text', text: 'ONLINE' },
+                'delayed': { class: 'status-value warning-text', text: 'SYNCING...' },
+                'stale': { class: 'status-value warning-text', text: 'UNSTABLE' },
+                'offline': { class: 'status-value offline-text', text: 'OFFLINE' }
+            };
+            
+            serverLED.className = stalenessLedMap[stalenessState] || 'led-dot online';
+            // Add tooltip showing age
+            serverLED.title = stalenessAge ? `Last update: ${stalenessAge}` : '';
+            
             if (serverStatusLabel) {
-                serverStatusLabel.textContent = 'ONLINE';
-                serverStatusLabel.className = 'status-value online-text';
+                const textInfo = stalenessTextMap[stalenessState] || stalenessTextMap['fresh'];
+                serverStatusLabel.textContent = textInfo.text;
+                serverStatusLabel.className = textInfo.class;
+                serverStatusLabel.title = stalenessAge ? `Last update: ${stalenessAge}` : '';
             }
+            
+            // Show/hide stale data warning banner (Step 6.11)
+            const staleDataBanner = document.getElementById('staleDataBanner');
+            const staleDataAgeEl = document.getElementById('staleDataAge');
+            if (staleDataBanner) {
+                if (stalenessState === 'stale' || stalenessState === 'offline') {
+                    staleDataBanner.style.display = 'flex';
+                    if (staleDataAgeEl) staleDataAgeEl.textContent = stalenessAge;
+                } else {
+                    staleDataBanner.style.display = 'none';
+                }
+            }
+            
+            // Log staleness changes for debugging
+            if (window._lastStalenessState !== stalenessState) {
+                console.log(`[Status] Staleness changed: ${window._lastStalenessState || 'init'} → ${stalenessState} (age: ${stalenessAge})`);
+                
+                // Handle offline transition - stop HLS player to prevent replay of old segments
+                if (stalenessState === 'offline' && window._lastStalenessState !== 'offline') {
+                    console.log('[Status] 🔴 Server went OFFLINE - stopping HLS player');
+                    if (hlsService && hlsService.hls) {
+                        hlsService.destroy();
+                        hlsLoaded = false;
+                    }
+                }
+                
+                // Handle online transition - log recovery
+                if (window._lastStalenessState === 'offline' && stalenessState !== 'offline') {
+                    console.log('[Status] 🟢 Server came back ONLINE');
+                }
+                
+                window._lastStalenessState = stalenessState;
+            }
+            
+            // Gray out controls when offline (Step 6.11.3.2)
+            const isOffline = stalenessState === 'offline';
+            updateControlsDisabledState(isOffline);
 
             // Recording status LED
             const recordingLED = document.getElementById('recordingLED');
@@ -3750,6 +3854,34 @@
                         lastActivityTime = Date.now();
                     }
                 }, { passive: true });
+            });
+            
+            // Tab visibility handling (Step 6.11.5.5)
+            // Reduce poll frequency when tab is backgrounded to save battery
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    console.log('[Visibility] Tab backgrounded - pausing polling');
+                    if (dashboardViewModel) {
+                        dashboardViewModel.pausePolling();
+                    }
+                    // Pause HLS buffering when hidden
+                    if (hlsService && hlsService.hls) {
+                        hlsService.hls.stopLoad();
+                        console.log('[Visibility] HLS buffering paused');
+                    }
+                } else {
+                    console.log('[Visibility] Tab visible - resuming polling');
+                    if (dashboardViewModel) {
+                        dashboardViewModel.resumePolling();
+                        // Force immediate status update on return
+                        dashboardViewModel.updateStatus();
+                    }
+                    // Resume HLS buffering when visible
+                    if (hlsService && hlsService.hls) {
+                        hlsService.hls.startLoad();
+                        console.log('[Visibility] HLS buffering resumed');
+                    }
+                }
             });
             
             // Initialize will fetch first status and emit event
