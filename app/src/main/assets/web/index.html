@@ -2274,10 +2274,12 @@
         /**
          * Update controls disabled state based on server connectivity (Step 6.11.3.2)
          * When offline, gray out ALL interactive elements to prevent user confusion
+         * Footer buttons (API, FadCam Pro, social links) remain always enabled
          * @param {boolean} disabled - Whether controls should be disabled
          */
         function updateControlsDisabledState(disabled) {
             // All interactive elements to disable when offline
+            // NOTE: Do NOT include footer elements - they should always work
             const controlSelectors = [
                 '.torch-button',
                 '.camera-switch-btn',
@@ -2285,8 +2287,9 @@
                 '.recording-card',
                 '.icon-button',
                 '.volume-btn',  // Volume +/- buttons
+                '.torch-card',  // Torch card
                 // Options section cards - disable all clickable cards
-                '.ios-card[onclick]',
+                '.ios-card[onclick]:not(.footer-card)',
                 '.uptime-card',
                 '.clients-card',
                 '.battery-card',
@@ -2298,21 +2301,27 @@
                 '.mode-card',
                 '.quality-card',
                 '.volume-card',
-                '.alarm-card',  // Alarm card
-                '[onclick]'  // Any element with onclick attribute
+                '.alarm-card'  // Alarm card
+                // NOTE: Removed '[onclick]' catch-all - too broad, disables footer links
             ];
             
             controlSelectors.forEach(selector => {
                 document.querySelectorAll(selector).forEach(btn => {
+                    // Skip footer elements - they should always be clickable
+                    if (btn.closest('.footer') || btn.closest('.fadcam-pro-btn') || 
+                        btn.classList.contains('footer-link') || btn.classList.contains('fadcam-pro-btn')) {
+                        return;
+                    }
+                    
                     if (disabled) {
                         btn.classList.add('controls-disabled');
                         btn.setAttribute('data-offline', 'true');
-                        // Prevent click events when offline
-                        btn.style.pointerEvents = 'none';
+                        // Show not-allowed cursor instead of blocking pointer events
+                        btn.style.cursor = 'not-allowed';
                     } else {
                         btn.classList.remove('controls-disabled');
                         btn.removeAttribute('data-offline');
-                        btn.style.pointerEvents = '';
+                        btn.style.cursor = '';
                     }
                 });
             });
@@ -2323,6 +2332,23 @@
                 window._lastControlsDisabled = disabled;
             }
         }
+        
+        // Global click handler to prevent actions on disabled controls
+        // This works alongside cursor: not-allowed for visual feedback
+        document.addEventListener('click', (e) => {
+            // Check if clicked element or any parent has controls-disabled class
+            const disabledElement = e.target.closest('.controls-disabled');
+            if (disabledElement) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Controls] ⛔ Click blocked - server offline');
+                // Show quick toast feedback
+                if (typeof showToast === 'function') {
+                    showToast('⚠️ Server offline - action unavailable', 2000);
+                }
+                return false;
+            }
+        }, true); // Use capture phase to intercept before handlers
         
         /**
          * Clear all stale UI values when server is offline
@@ -2550,6 +2576,13 @@
             const stalenessState = status.getStalenessState ? status.getStalenessState() : 'fresh';
             const stalenessText = status.getStalenessText ? status.getStalenessText() : 'Online';
             const stalenessAge = status.getFormattedAge ? status.getFormattedAge() : '';
+            const statusAge = status.getStatusAge ? status.getStatusAge() : 0;
+            
+            // Debug: Log staleness calculation details
+            if (!window._lastStaleDebugLog || Date.now() - window._lastStaleDebugLog > 10000) {
+                console.log(`[Staleness Debug] lastUpdated=${status.lastUpdated}, cloudMode=${status.cloudMode}, age=${statusAge}ms, state=${stalenessState}`);
+                window._lastStaleDebugLog = Date.now();
+            }
             
             // Map staleness to LED classes and colors
             const stalenessLedMap = {
