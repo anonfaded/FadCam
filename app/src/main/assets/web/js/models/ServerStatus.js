@@ -17,6 +17,7 @@ class ServerStatus {
         this.lastUpdated = data.lastUpdated || 0;  // Unix timestamp from phone
         this.serverVersion = data.serverVersion || '1.0.0';  // For compatibility checks
         this.receivedAt = Date.now();  // When dashboard received this status
+        this.cloudMode = data.cloudMode || false;  // Whether this is from relay/cloud
         
         // Core status
         this.state = data.state || 'offline';
@@ -330,8 +331,13 @@ class ServerStatus {
      */
     getStatusAge() {
         if (!this.lastUpdated || this.lastUpdated === 0) {
-            // Legacy status without lastUpdated - assume it's fresh from local server
-            // For cloud mode, this would be stale if we can't calculate age
+            // No lastUpdated timestamp - check if this is cloud mode
+            if (this.cloudMode) {
+                // Cloud mode with no lastUpdated = legacy status from relay
+                // This is stale data - return OFFLINE threshold + 1 to mark as offline
+                return ServerStatus.STALENESS_THRESHOLDS.OFFLINE + 1;
+            }
+            // Local mode - use receivedAt for freshness (phone connection is live)
             return this.receivedAt ? (Date.now() - this.receivedAt) : 0;
         }
         return Date.now() - this.lastUpdated;

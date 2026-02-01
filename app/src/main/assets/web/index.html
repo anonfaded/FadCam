@@ -2526,6 +2526,18 @@
                         hlsService.destroy();
                         hlsLoaded = false;
                     }
+                    
+                    // Step 6.11.3.4: Clear stale UI values when offline
+                    console.log('[Status] 📋 Clearing stale UI values');
+                    const uptimeEl = document.getElementById('uptimeValue');
+                    if (uptimeEl) uptimeEl.textContent = '--';
+                    const clientsEl = document.getElementById('clientsValue');
+                    if (clientsEl) clientsEl.textContent = '0';
+                    const recordingStatusLabel = document.getElementById('recordingStatusLabel');
+                    if (recordingStatusLabel) {
+                        recordingStatusLabel.textContent = 'UNKNOWN';
+                        recordingStatusLabel.className = 'status-value';
+                    }
                 }
                 
                 // Handle online transition - log recovery
@@ -2540,14 +2552,14 @@
             const isOffline = stalenessState === 'offline';
             updateControlsDisabledState(isOffline);
 
-            // Recording status LED
+            // Recording status LED - show unknown when offline
             const recordingLED = document.getElementById('recordingLED');
-            const isRecording = status.isRecording;
+            const isRecording = isOffline ? false : status.isRecording;
             recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
             
-            // Update recording status label
+            // Update recording status label (skip if offline - already set to UNKNOWN)
             const recordingStatusLabel = document.getElementById('recordingStatusLabel');
-            if (recordingStatusLabel) {
+            if (recordingStatusLabel && !isOffline) {
                 if (isRecording) {
                     recordingStatusLabel.textContent = 'RECORDING';
                     recordingStatusLabel.className = 'status-value recording-text-active';
@@ -2566,13 +2578,15 @@
                 msgEl.style.display = 'none';
             }
 
-            // Quick values - use formatted uptime from uptimeDetails
-            const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
-            const uptimeEl = document.getElementById('uptimeValue');
-            if (uptimeEl) uptimeEl.textContent = formattedUptime;
-            
-            const clientsEl = document.getElementById('clientsValue');
-            if (clientsEl) clientsEl.textContent = status.activeConnections || '0';
+            // Quick values - skip updates when offline (values were cleared during transition)
+            if (!isOffline) {
+                const formattedUptime = status.uptimeDetails?.formatted || status.getFormattedUptime() || '0s';
+                const uptimeEl = document.getElementById('uptimeValue');
+                if (uptimeEl) uptimeEl.textContent = formattedUptime;
+                
+                const clientsEl = document.getElementById('clientsValue');
+                if (clientsEl) clientsEl.textContent = status.activeConnections || '0';
+            }
             
             // Update iOS-style cards with visualizations
             updateBatteryCard(status);
