@@ -2284,6 +2284,7 @@
                 '.control-btn',
                 '.recording-card',
                 '.icon-button',
+                '.volume-btn',  // Volume +/- buttons
                 // Options section cards - disable all clickable cards
                 '.ios-card[onclick]',
                 '.uptime-card',
@@ -2296,7 +2297,9 @@
                 '.memory-card',
                 '.mode-card',
                 '.quality-card',
-                '.volume-card'
+                '.volume-card',
+                '.alarm-card',  // Alarm card
+                '[onclick]'  // Any element with onclick attribute
             ];
             
             controlSelectors.forEach(selector => {
@@ -2319,6 +2322,66 @@
                 console.log(`[Controls] ${disabled ? '🔒 Disabled' : '🔓 Enabled'} - server ${disabled ? 'offline' : 'online'}`);
                 window._lastControlsDisabled = disabled;
             }
+        }
+        
+        /**
+         * Clear all stale UI values when server is offline
+         * Called on offline transition and also on initial load if already offline
+         */
+        function clearStaleUIValues() {
+            console.log('[Status] 📋 Clearing all stale UI values');
+            
+            // Uptime and clients
+            const uptimeEl = document.getElementById('uptimeValue');
+            if (uptimeEl) uptimeEl.textContent = '--';
+            const clientsEl = document.getElementById('clientsValue');
+            if (clientsEl) clientsEl.textContent = '0';
+            
+            // Recording status shows "NOT RECORDING" in gray when offline
+            const recordingStatusLabel = document.getElementById('recordingStatusLabel');
+            if (recordingStatusLabel) {
+                recordingStatusLabel.textContent = 'NOT RECORDING';
+                recordingStatusLabel.className = 'status-value offline-text';
+            }
+            
+            // Server Room values
+            const segmentsEl = document.getElementById('segmentsValue');
+            if (segmentsEl) segmentsEl.textContent = '0';
+            const dataReceivedEl = document.getElementById('dataReceivedValue');
+            if (dataReceivedEl) dataReceivedEl.textContent = '0.0 MB';
+            
+            // Battery
+            const batteryPercentEl = document.getElementById('batteryPercent');
+            const batteryStatusEl = document.getElementById('batteryStatus');
+            if (batteryPercentEl) batteryPercentEl.textContent = '--%';
+            if (batteryStatusEl) batteryStatusEl.textContent = '';
+            
+            // Storage
+            const storageValueEl = document.getElementById('storageValue');
+            if (storageValueEl) storageValueEl.textContent = '--/-- GB';
+            
+            // Memory
+            const memoryValueEl = document.getElementById('memoryValue');
+            if (memoryValueEl) memoryValueEl.textContent = '--%';
+            
+            // Network
+            const networkSpeedEl = document.getElementById('networkSpeed');
+            const networkStatusEl = document.getElementById('networkStatus');
+            if (networkSpeedEl) networkSpeedEl.textContent = '-- Mbps';
+            if (networkStatusEl) {
+                networkStatusEl.textContent = 'OFFLINE';
+                networkStatusEl.className = 'network-status offline';
+            }
+            
+            // Volume
+            const volumeValueEl = document.getElementById('volumeValue');
+            if (volumeValueEl) volumeValueEl.textContent = '--%';
+            
+            // Mode and Quality (show placeholders)
+            const modeValueEl = document.getElementById('modeValue');
+            if (modeValueEl) modeValueEl.textContent = '--';
+            const qualityValueEl = document.getElementById('qualityValue');
+            if (qualityValueEl) qualityValueEl.textContent = '--';
         }
 
         function updateUI(status) {
@@ -2527,7 +2590,7 @@
             if (window._lastStalenessState !== stalenessState) {
                 console.log(`[Status] Staleness changed: ${window._lastStalenessState || 'init'} → ${stalenessState} (age: ${stalenessAge})`);
                 
-                // Handle offline transition - stop HLS player to prevent replay of old segments
+                // Handle offline transition - stop HLS player and clear UI
                 if (stalenessState === 'offline' && window._lastStalenessState !== 'offline') {
                     console.log('[Status] 🔴 Server went OFFLINE - stopping HLS player');
                     if (hlsService && hlsService.hls) {
@@ -2535,48 +2598,8 @@
                         hlsLoaded = false;
                     }
                     
-                    // Step 6.11.3.4: Clear stale UI values when offline
-                    console.log('[Status] 📋 Clearing stale UI values');
-                    const uptimeEl = document.getElementById('uptimeValue');
-                    if (uptimeEl) uptimeEl.textContent = '--';
-                    const clientsEl = document.getElementById('clientsValue');
-                    if (clientsEl) clientsEl.textContent = '0';
-                    
-                    // Recording status shows "NOT RECORDING" in gray when offline (consistent styling)
-                    const recordingStatusLabel = document.getElementById('recordingStatusLabel');
-                    if (recordingStatusLabel) {
-                        recordingStatusLabel.textContent = 'NOT RECORDING';
-                        recordingStatusLabel.className = 'status-value offline-text';
-                    }
-                    
-                    // Clear Server Room values when offline
-                    const segmentsEl = document.getElementById('segmentsValue');
-                    if (segmentsEl) segmentsEl.textContent = '0';
-                    const dataReceivedEl = document.getElementById('dataReceivedValue');
-                    if (dataReceivedEl) dataReceivedEl.textContent = '0.0 MB';
-                    
-                    // Clear Options values when offline (battery, storage, memory, network show stale data)
-                    const batteryPercentEl = document.getElementById('batteryPercent');
-                    const batteryStatusEl = document.getElementById('batteryStatus');
-                    if (batteryPercentEl) batteryPercentEl.textContent = '--%';
-                    if (batteryStatusEl) batteryStatusEl.textContent = '';
-                    
-                    const storageValueEl = document.getElementById('storageValue');
-                    if (storageValueEl) storageValueEl.textContent = '--/-- GB';
-                    
-                    const memoryValueEl = document.getElementById('memoryValue');
-                    if (memoryValueEl) memoryValueEl.textContent = '--%';
-                    
-                    const networkSpeedEl = document.getElementById('networkSpeed');
-                    const networkStatusEl = document.getElementById('networkStatus');
-                    if (networkSpeedEl) networkSpeedEl.textContent = '-- Mbps';
-                    if (networkStatusEl) {
-                        networkStatusEl.textContent = 'OFFLINE';
-                        networkStatusEl.className = 'network-status offline';
-                    }
-                    
-                    const volumeValueEl = document.getElementById('volumeValue');
-                    if (volumeValueEl) volumeValueEl.textContent = '--%';
+                    // Clear stale UI values using shared function
+                    clearStaleUIValues();
                 }
                 
                 // Handle online transition - log recovery
@@ -2585,6 +2608,18 @@
                 }
                 
                 window._lastStalenessState = stalenessState;
+            }
+            
+            // Also clear UI if this is the first check and server is already offline
+            // (handles page load when server was already down)
+            if (stalenessState === 'offline' && !window._offlineUICleared) {
+                clearStaleUIValues();
+                window._offlineUICleared = true;
+            }
+            
+            // Reset flag when server comes online
+            if (stalenessState !== 'offline') {
+                window._offlineUICleared = false;
             }
             
             // Gray out controls when offline (Step 6.11.3.2)
