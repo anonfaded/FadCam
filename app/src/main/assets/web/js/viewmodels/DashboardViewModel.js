@@ -52,8 +52,13 @@ class DashboardViewModel {
         } catch (error) {
             console.error('❌ [DashboardViewModel] Failed to update status:', error.message);
             
-            // Emit offline status
-            this.statusModel.update({ state: 'offline' });
+            // Determine if we're in cloud mode (web access)
+            const isWebMode = typeof FadCamRemote !== 'undefined' && 
+                              typeof FadCamRemote.isWebAccess === 'function' && 
+                              FadCamRemote.isWebAccess();
+            
+            // Emit offline status with cloudMode flag for proper staleness detection
+            this.statusModel.update({ state: 'offline', cloudMode: isWebMode });
             eventBus.emit('status-updated', this.statusModel);
         }
     }
