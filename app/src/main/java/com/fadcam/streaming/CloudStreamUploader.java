@@ -438,6 +438,13 @@ public class CloudStreamUploader {
     }
     
     /**
+     * Get total bytes uploaded to cloud relay (for data tracking in cloud mode)
+     */
+    public long getTotalBytesUploaded() {
+        return totalBytesUploaded;
+    }
+    
+    /**
      * Reset statistics
      */
     public void resetStats() {

@@ -481,7 +481,8 @@ body {
 .card-value {
     font-size: 13px;
     font-weight: 500;
-    color: var(--text-muted);\n}
+    color: var(--text-muted);
+}
 
 .card-value-sm {
     font-size: 13px;
@@ -1092,6 +1093,7 @@ video {
     background: linear-gradient(135deg, #3a4551 0%, #1a2332 50%, #0d1117 100%);
     pointer-events: none;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
 }
@@ -1153,6 +1155,7 @@ video {
     background: linear-gradient(135deg, rgba(63, 74, 90, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%);
     pointer-events: none;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
 }
@@ -2586,7 +2589,8 @@ video {
 
 /* Muted State - Gray */
 .volume-card.muted {
-    /* Use default card background like other cards */
+    /* Inherits default card background */
+    background: inherit;
 }
 
 .volume-card.muted .card-ios-fill {

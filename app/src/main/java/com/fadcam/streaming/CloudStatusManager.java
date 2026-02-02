@@ -861,11 +861,20 @@ public class CloudStatusManager {
                     int viewerCount = json.optInt("count", 0);
                     long updated = json.optLong("updated", 0);
                     
-                    // Update RemoteStreamManager
-                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount);
+                    // Parse IP addresses
+                    java.util.List<String> ips = new java.util.ArrayList<>();
+                    JSONArray ipsArray = json.optJSONArray("ips");
+                    if (ipsArray != null) {
+                        for (int i = 0; i < ipsArray.length(); i++) {
+                            ips.add(ipsArray.optString(i, ""));
+                        }
+                    }
+                    
+                    // Update RemoteStreamManager with count AND IPs
+                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount, ips);
                     
                     if (viewerCount > 0) {
-                        Log.i(TAG, "☁️ 👥 Cloud viewers: " + viewerCount + " (updated: " + updated + ")");
+                        Log.i(TAG, "☁️ 👥 Cloud viewers: " + viewerCount + " (ips: " + ips + ", updated: " + updated + ")");
                     } else {
                         Log.d(TAG, "☁️ 👥 No cloud viewers currently");
                     }
