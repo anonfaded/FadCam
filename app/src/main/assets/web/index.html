@@ -2565,13 +2565,14 @@
                     // Clear any stale HLS state
                     if (hlsService && hlsService.hls) {
                         hlsService.destroy();
+                        hlsService = null;
                     }
                     hlsLoaded = false;
-                    // Clear video source to prevent stale content
+                    // Clear video source properly (removeAttribute prevents "Invalid URI" error)
                     if (videoElement) {
                         videoElement.pause();
-                        videoElement.src = '';
-                        videoElement.load(); // Reset video element
+                        videoElement.removeAttribute('src');
+                        videoElement.load(); // Reset video element state
                     }
                     // Ensure overlay is visible
                     const videoOverlay = document.getElementById('videoOverlay');
@@ -2603,16 +2604,17 @@
                 // AUTO-STOP VIDEO when recording stops and restore initial overlay state
                 if (videoElement) {
                     console.log('[Stream] Stopping video playback - recording ended');
-                    // Pause and clear video source to prevent stale content
+                    // Pause and clear video source (removeAttribute prevents "Invalid URI" error)
                     videoElement.pause();
-                    videoElement.src = '';
-                    videoElement.load(); // Reset video element
+                    videoElement.removeAttribute('src');
+                    videoElement.load(); // Reset video element state
                 }
                 if (hlsService) {
                     // Reset video to allow fresh load on next recording
                     hlsLoaded = false;
                     if (hlsService.hls) {
                         hlsService.destroy();
+                        hlsService = null;
                     }
                 }
                 
