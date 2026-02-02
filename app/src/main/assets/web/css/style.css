@@ -756,6 +756,10 @@ video {
     background: #000;
 }
 
+/* Hide video when not playing to prevent native browser controls showing */
+.video-container:has(.video-overlay:not(.hidden)) video {
+    visibility: hidden;
+}
 .video-overlay {
     position: absolute;
     inset: 0;
