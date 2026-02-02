@@ -830,24 +830,25 @@ public class CloudStatusManager {
     private void pollCloudViewers() {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
-        // Use Supabase JWT for auth (same as status push and uploads)
-        String jwtToken = authManager.getJwtToken();
+        // Use stream_access_token for auth (same as uploads)
+        String streamToken = authManager.getStreamToken();
         
-        if (userUuid == null || deviceId == null || jwtToken == null) {
+        if (userUuid == null || deviceId == null || streamToken == null) {
             // No auth yet - skip
-            Log.d(TAG, "☁️ 👥 Skipping viewers poll: missing auth (userUuid=" + (userUuid != null) + ", deviceId=" + (deviceId != null) + ", jwt=" + (jwtToken != null) + ")");
+            Log.d(TAG, "☁️ 👥 Skipping viewers poll: missing auth (userUuid=" + (userUuid != null) + ", deviceId=" + (deviceId != null) + ", streamToken=" + (streamToken != null) + ")");
             return;
         }
         
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/viewers/" + userUuid + "/" + deviceId;
         Log.d(TAG, "☁️ 👥 Polling cloud viewers from: " + urlStr);
+        Log.d(TAG, "☁️ 👥 Using stream token (first 20 chars): " + streamToken.substring(0, Math.min(20, streamToken.length())) + "...");
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "Bearer " + jwtToken);
+                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
                 conn.setConnectTimeout(10000);  // Increased timeout for Edge Function cold start
                 conn.setReadTimeout(10000);
                 
@@ -877,7 +878,17 @@ public class CloudStatusManager {
                     RemoteStreamManager.getInstance().setCloudViewerCount(0);
                     Log.d(TAG, "☁️ 👥 No viewers data available (404)");
                 } else {
-                    Log.w(TAG, "☁️ 👥 Viewers poll failed: HTTP " + responseCode);
+                    // Read error response body for debugging
+                    String errorBody = "";
+                    try {
+                        java.io.InputStream errorStream = conn.getErrorStream();
+                        if (errorStream != null) {
+                            java.util.Scanner s = new java.util.Scanner(errorStream).useDelimiter("\\A");
+                            errorBody = s.hasNext() ? s.next() : "";
+                            errorStream.close();
+                        }
+                    } catch (Exception ignored) {}
+                    Log.w(TAG, "☁️ 👥 Viewers poll failed: HTTP " + responseCode + " - " + errorBody);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "☁️ 👥 Viewers poll error: " + e.getMessage());
