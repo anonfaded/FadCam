@@ -14,6 +14,12 @@ class HlsService {
         this.retryCount = 0;
         this.maxRetries = 5;
         this.retryDelay = 1000; // Start with 1 second
+        
+        // Media error recovery tracking
+        this.mediaErrorRecoveryAttempted = null; // Timestamp of last recovery attempt
+        this.mediaErrorRecoveryCount = 0;
+        this.maxMediaErrorRecoveries = 3; // Max recovery attempts before giving up
+        this.currentStreamUrl = null; // Track for reload
     }
     
     /**
@@ -22,7 +28,16 @@ class HlsService {
      * @returns {Object} HLS.js configuration object
      */
     _getHlsConfig() {
-        const baseConfig = { ...CONFIG.HLS_CONFIG };
+        const baseConfig = { 
+            ...CONFIG.HLS_CONFIG,
+            // Increase retry count for buffer append errors
+            appendErrorMaxRetry: 5,
+            // Be more aggressive with buffer hole handling
+            maxBufferHole: 0.5,
+            // Nudge playhead if stuck
+            nudgeMaxRetry: 5,
+            nudgeOffset: 0.2
+        };
         
         // Check if we're in cloud mode and have a stream token
         const isCloudMode = typeof FadCamRemote !== 'undefined' && 
@@ -62,7 +77,10 @@ class HlsService {
      */
     load(url, videoElement) {
         this.videoElement = videoElement;
+        this.currentStreamUrl = url; // Store for potential reload
         this.retryCount = 0; // Reset retry counter on new load
+        this.mediaErrorRecoveryCount = 0; // Reset media error recovery count
+        this.mediaErrorRecoveryAttempted = null;
         
         if (Hls.isSupported()) {
             console.log('[HlsService] HLS.js supported, loading stream');
@@ -159,7 +177,7 @@ class HlsService {
     }
     
     /**
-     * Handle fatal HLS errors
+     * Handle fatal HLS errors with automatic recovery
      * @param {Object} data - Error data
      */
     handleFatalError(data) {
@@ -173,16 +191,102 @@ class HlsService {
                     console.log('[HlsService] Network error - HLS.js will retry automatically');
                 }
                 break;
+                
             case Hls.ErrorTypes.MEDIA_ERROR:
-                console.warn('[HlsService] Media error (codec/decode issue):', data.details);
-                console.warn('[HlsService] This usually means video codec incompatibility or corrupted segment');
-                // Don't call recoverMediaError() - it can cause more problems
-                // Let HLS.js handle it or user will need to refresh
+                console.warn('[HlsService] 🔧 Media error (codec/decode issue):', data.details);
+                this.attemptMediaErrorRecovery(data);
                 break;
+                
             default:
                 console.error('[HlsService] Unrecoverable error:', data.type, data.details);
                 break;
         }
+    }
+    
+    /**
+     * Attempt to recover from media errors using HLS.js built-in recovery.
+     * Based on HLS.js documentation: https://github.com/video-dev/hls.js/blob/master/docs/API.md
+     * @param {Object} data - Error data
+     */
+    attemptMediaErrorRecovery(data) {
+        const now = Date.now();
+        
+        // Only attempt recovery if enough time has passed since last attempt (5s cooldown)
+        const recoveryDelay = this.mediaErrorRecoveryAttempted 
+            ? (now - this.mediaErrorRecoveryAttempted) 
+            : Infinity;
+        
+        if (recoveryDelay < 5000) {
+            console.warn('[HlsService] ⏳ Skipping recovery (only ' + recoveryDelay + 'ms since last attempt)');
+            return;
+        }
+        
+        // Check if we've exceeded max recovery attempts
+        if (this.mediaErrorRecoveryCount >= this.maxMediaErrorRecoveries) {
+            console.error('[HlsService] ❌ Max media error recoveries exceeded (' + 
+                this.maxMediaErrorRecoveries + '), reloading stream...');
+            this.reloadStream();
+            return;
+        }
+        
+        // Update recovery tracking
+        this.mediaErrorRecoveryAttempted = now;
+        this.mediaErrorRecoveryCount++;
+        
+        console.log('[HlsService] 🔄 Attempting media error recovery (attempt ' + 
+            this.mediaErrorRecoveryCount + '/' + this.maxMediaErrorRecoveries + ')');
+        
+        // Use HLS.js built-in recovery method
+        // This resets the MediaSource and restarts streaming from the last known position
+        try {
+            this.hls.recoverMediaError();
+            console.log('[HlsService] ✅ recoverMediaError() called successfully');
+            this.emit('recovery', { 
+                type: 'media_error', 
+                attempt: this.mediaErrorRecoveryCount,
+                details: data.details 
+            });
+        } catch (e) {
+            console.error('[HlsService] ❌ recoverMediaError() failed:', e);
+            // If recovery fails, try reloading the stream
+            this.reloadStream();
+        }
+    }
+    
+    /**
+     * Reload the stream completely (destroy and recreate HLS instance)
+     */
+    reloadStream() {
+        if (!this.currentStreamUrl || !this.videoElement) {
+            console.error('[HlsService] Cannot reload: missing URL or video element');
+            return;
+        }
+        
+        console.log('[HlsService] 🔃 Reloading stream completely...');
+        
+        // Store references
+        const url = this.currentStreamUrl;
+        const videoElement = this.videoElement;
+        const savedListeners = { ...this.listeners }; // Preserve listeners
+        
+        // Emit reload event BEFORE destroy so UI can show message
+        this.emit('reload', { url });
+        
+        // Destroy current HLS instance (but not videoElement reference)
+        if (this.hls) {
+            this.hls.destroy();
+            this.hls = null;
+        }
+        this.isReady = false;
+        
+        // Restore listeners for the new instance
+        this.listeners = savedListeners;
+        
+        // Wait a bit then reload
+        setTimeout(() => {
+            console.log('[HlsService] 🎬 Creating new HLS instance...');
+            this.load(url, videoElement);
+        }, 1000);
     }
     
     /**
@@ -209,14 +313,22 @@ class HlsService {
     
     /**
      * Destroy HLS instance
+     * @param {boolean} full - If true, also clear video element and listeners
      */
-    destroy() {
+    destroy(full = true) {
         if (this.hls) {
             this.hls.destroy();
             this.hls = null;
         }
         this.isReady = false;
-        this.listeners = {};
+        
+        if (full) {
+            this.videoElement = null;
+            this.currentStreamUrl = null;
+            this.listeners = {};
+            this.mediaErrorRecoveryCount = 0;
+            this.mediaErrorRecoveryAttempted = null;
+        }
     }
     
     /**

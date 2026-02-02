@@ -1033,7 +1033,7 @@
     <script src="js/services/AuthService.js?v=2.5.0"></script>
     <script src="js/services/RealtimeCommandService.js?v=2.5.0"></script>
     <script src="js/services/ApiService.js?v=2.5.0"></script>
-    <script src="js/services/HlsService.js?v=2.5.0"></script>
+    <script src="js/services/HlsService.js?v=2.6.0"></script>
     <script src="js/services/FadexNotificationManager.js?v=2.5.0"></script>
     <script src="js/models/ServerStatus.js?v=2.5.0"></script>
     <script src="js/viewmodels/DashboardViewModel.js?v=2.5.0"></script>
@@ -2280,6 +2280,17 @@
                 hlsService.destroy();
             }
             hlsService = new HlsService(); // Fresh instance
+            
+            // Register for recovery/reload events to show user-friendly notifications
+            hlsService.on('recovery', (data) => {
+                console.log('[Stream] 🔧 Recovering from media error:', data);
+                showToast('🔧 Recovering stream...', 3000);
+            });
+            
+            hlsService.on('reload', (data) => {
+                console.log('[Stream] 🔃 Reloading stream:', data);
+                showToast('🔃 Reloading stream...', 3000);
+            });
             
             hlsService.load(streamUrl, videoElement);
             videoElement.play().catch(err => console.log('[Video] Play deferred, will play when ready'));
