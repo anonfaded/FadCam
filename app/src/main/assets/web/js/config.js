@@ -15,36 +15,98 @@ const CONFIG = {
     // Polling intervals (milliseconds)
     STATUS_POLL_INTERVAL: 2000,  // 2 seconds
     
-    // HLS Configuration
+    // HLS Configuration - OPTIMIZED FOR STABILITY (YouTube-like approach)
+    // Trade-off: ~8-10 second latency for smooth, stall-free playback
+    // Based on Apple HLS Authoring Specification recommendations
     HLS_URL: '/live.m3u8',
     HLS_CONFIG: {
         debug: false,
         enableWorker: true,
-        lowLatencyMode: true,  // Reduced latency for live streaming
-        maxBufferLength: 6,    // Smaller buffer = less delay (was 10)
-        maxMaxBufferLength: 8, // was 12
-        maxBufferSize: 30 * 1000 * 1000, // 30MB max (was 60)
         
-        // CRITICAL: Live edge synchronization - stay as close to live as possible
-        liveSyncDurationCount: 2,        // Start 2 segments behind live edge
-        liveMaxLatencyDurationCount: 5,  // If >5 segments behind, seek back to live (was 4)
-        maxLiveSyncPlaybackRate: 1.2,    // Speed up to 1.2x to catch up if behind
-        liveSyncOnStallIncrease: 0.5,    // Add 0.5s latency on each stall
-        liveSyncMode: 'edge',            // Jump to live edge immediately if too far behind
+        // === DISABLE LOW LATENCY MODE FOR STABILITY ===
+        // Low latency mode causes stalls on poor connections.
+        // YouTube/Twitch use 5-15 second latency for reliability.
+        lowLatencyMode: false,
+        
+        // === LARGER BUFFERS = FEWER STALLS ===
+        // Apple recommends 6-second segments, 15+ minutes in playlist
+        // We use 1-sec segments, so buffer 10-15 seconds for stability
+        maxBufferLength: 15,       // Buffer 15 seconds ahead (was 6)
+        maxMaxBufferLength: 30,    // Allow up to 30 seconds buffer (was 8)
+        maxBufferSize: 60 * 1000 * 1000, // 60MB buffer size
+        backBufferLength: 30,      // Keep 30 seconds of back buffer
+        
+        // === LIVE SYNC - PRIORITIZE STABILITY OVER SPEED ===
+        // Start 4 segments (4 seconds) behind live edge for buffer room
+        liveSyncDurationCount: 4,        // 4 segments behind live (was 2)
+        liveMaxLatencyDurationCount: 10, // Allow up to 10 segments behind (was 5)
+        
+        // === DISABLE PLAYBACK RATE CATCH-UP ===
+        // Speed changes cause visual stuttering. Better to stay behind than stutter.
+        maxLiveSyncPlaybackRate: 1.0,    // Don't speed up (was 1.2)
+        liveSyncOnStallIncrease: 2,      // Add 2s latency on each stall (was 0.5)
+        liveSyncMode: 'buffered',        // Seek only if buffered (was 'edge')
         
         startPosition: -1,  // Start at live edge
         
-        // Buffer gap handling - be aggressive about staying live
-        maxBufferHole: 0.3,      // Tolerate only small gaps (was 0.5 in HlsService)
-        nudgeMaxRetry: 3,        // Fewer retries before seeking
-        nudgeOffset: 0.1,        // Small nudge offset
-        nudgeOnVideoHole: true,  // Seek when buffer gaps detected
+        // === BUFFER GAP HANDLING - BE MORE TOLERANT ===
+        // On poor connections, gaps are normal. Tolerate them.
+        maxBufferHole: 0.5,      // Tolerate 0.5s gaps (was 0.3)
+        nudgeMaxRetry: 5,        // More retries before fatal error (was 3)
+        nudgeOffset: 0.1,
+        nudgeOnVideoHole: true,
         
-        // Manifest/Fragment request retry configuration
+        // === STALL DETECTION - LONGER TOLERANCE ===
+        // Don't trigger stall too quickly on slow connections
+        highBufferWatchdogPeriod: 3,
+        maxStarvationDelay: 6,   // Wait 6s before giving up on buffer
+        maxLoadingDelay: 10,     // Wait 10s for fragment load
+        
+        // === RETRY POLICIES - MORE AGGRESSIVE ===
+        // Poor mobile connections need more retries
+        fragLoadPolicy: {
+            default: {
+                maxTimeToFirstByteMs: 15000,  // 15s timeout
+                maxLoadTimeMs: 60000,          // 60s max load time
+                timeoutRetry: {
+                    maxNumRetry: 4,
+                    retryDelayMs: 1000,
+                    maxRetryDelayMs: 8000
+                },
+                errorRetry: {
+                    maxNumRetry: 6,
+                    retryDelayMs: 1000,
+                    maxRetryDelayMs: 16000,
+                    backoff: 'exponential'
+                }
+            }
+        },
+        
+        // === MANIFEST/PLAYLIST LOADING ===
+        manifestLoadPolicy: {
+            default: {
+                maxTimeToFirstByteMs: 10000,
+                maxLoadTimeMs: 30000,
+                timeoutRetry: {
+                    maxNumRetry: 3,
+                    retryDelayMs: 500,
+                    maxRetryDelayMs: 4000
+                },
+                errorRetry: {
+                    maxNumRetry: 4,
+                    retryDelayMs: 1000,
+                    maxRetryDelayMs: 8000,
+                    backoff: 'exponential'
+                }
+            }
+        },
+        
+        // Other settings
         testOnBitrateFallback: false,
         cmcd: null,
-        backoffMaxDelay: 64000,  // Max 64s delay between retries
-        backoffMultiplier: 2      // Exponential backoff
+        appendErrorMaxRetry: 5,    // Retry buffer append errors
+        backoffMaxDelay: 64000,
+        backoffMultiplier: 2
     },
     
     // UI Configuration

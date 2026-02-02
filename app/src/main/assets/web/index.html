@@ -2293,10 +2293,16 @@
                 showToast('🔃 Reloading stream...', 3000);
             });
             
-            // Auto-seek to live edge when too far behind
+            // Auto-seek to live edge when extremely far behind
+            // Use cooldown to prevent toast spam (30 second cooldown)
+            let lastSeekToLiveToast = 0;
             hlsService.on('seekToLive', (data) => {
                 console.log('[Stream] 🎯 Auto-seek to live:', data);
-                showToast('🎯 Syncing to live...', 2000);
+                const now = Date.now();
+                if (now - lastSeekToLiveToast > 30000) { // 30 second cooldown
+                    showToast('🎯 Syncing to live...', 2000);
+                    lastSeekToLiveToast = now;
+                }
             });
             
             hlsService.load(streamUrl, videoElement);

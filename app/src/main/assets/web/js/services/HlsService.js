@@ -28,16 +28,8 @@ class HlsService {
      * @returns {Object} HLS.js configuration object
      */
     _getHlsConfig() {
-        const baseConfig = { 
-            ...CONFIG.HLS_CONFIG,
-            // Increase retry count for buffer append errors
-            appendErrorMaxRetry: 5,
-            // Be more aggressive with buffer hole handling
-            maxBufferHole: 0.5,
-            // Nudge playhead if stuck
-            nudgeMaxRetry: 5,
-            nudgeOffset: 0.2
-        };
+        // Use config from CONFIG.HLS_CONFIG directly - it's already optimized for stability
+        const baseConfig = { ...CONFIG.HLS_CONFIG };
         
         // Check if we're in cloud mode and have a stream token
         const isCloudMode = typeof FadCamRemote !== 'undefined' && 
@@ -144,14 +136,16 @@ class HlsService {
         this.hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
             console.log('[HlsService] 📋 Level/Playlist loaded, fragments:', data.details?.fragments?.length);
             
-            // Log live latency information if available
+            // Log live latency information if available (less frequently)
             if (this.hls && data.details?.live) {
                 const latency = this.hls.latency;
                 const targetLatency = this.hls.targetLatency;
                 const maxLatency = this.hls.maxLatency;
                 const liveSyncPosition = this.hls.liveSyncPosition;
                 
-                if (latency !== undefined && targetLatency !== undefined) {
+                // Only log every 10th playlist refresh to reduce noise
+                this._playlistLoadCount = (this._playlistLoadCount || 0) + 1;
+                if (this._playlistLoadCount % 10 === 1) {
                     console.log('[HlsService] 📊 Live latency:', {
                         currentLatency: latency?.toFixed(2) + 's',
                         targetLatency: targetLatency?.toFixed(2) + 's',
@@ -159,14 +153,16 @@ class HlsService {
                         liveSyncPosition: liveSyncPosition?.toFixed(2) + 's',
                         playbackRate: this.videoElement?.playbackRate
                     });
-                    
-                    // If we're WAY behind (more than 15 seconds), force seek to live edge
-                    // This catches the "35 minute old segment" scenario
-                    if (latency > 15 && liveSyncPosition !== null) {
-                        console.warn('[HlsService] ⚠️ WAY behind live edge! (' + latency.toFixed(1) + 's) - Force seeking to live');
-                        this.videoElement.currentTime = liveSyncPosition;
-                        this.emit('seekToLive', { latency, liveSyncPosition });
-                    }
+                }
+                
+                // === CRITICAL: Detect ancient segments ===
+                // Only force seek if we're MORE than 60 seconds behind
+                // This catches the "35 minute old segment" scenario without being too aggressive
+                // For smaller latencies, let HLS.js handle it naturally
+                if (latency > 60 && liveSyncPosition !== null) {
+                    console.warn('[HlsService] ⚠️ EXTREMELY behind live edge! (' + latency.toFixed(1) + 's) - Force seeking to live');
+                    this.videoElement.currentTime = liveSyncPosition;
+                    this.emit('seekToLive', { latency, liveSyncPosition });
                 }
             }
             
