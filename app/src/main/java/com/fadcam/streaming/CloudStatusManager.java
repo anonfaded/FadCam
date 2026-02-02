@@ -830,10 +830,12 @@ public class CloudStatusManager {
     private void pollCloudViewers() {
         String userUuid = authManager.getUserId();
         String deviceId = getDeviceId();
-        String streamToken = authManager.getStreamToken();
+        // Use Supabase JWT for auth (same as status push and uploads)
+        String jwtToken = authManager.getJwtToken();
         
-        if (userUuid == null || deviceId == null || streamToken == null) {
+        if (userUuid == null || deviceId == null || jwtToken == null) {
             // No auth yet - skip
+            Log.d(TAG, "☁️ 👥 Skipping viewers poll: missing auth (userUuid=" + (userUuid != null) + ", deviceId=" + (deviceId != null) + ", jwt=" + (jwtToken != null) + ")");
             return;
         }
         
@@ -845,9 +847,9 @@ public class CloudStatusManager {
             try {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
+                conn.setRequestProperty("Authorization", "Bearer " + jwtToken);
+                conn.setConnectTimeout(10000);  // Increased timeout for Edge Function cold start
+                conn.setReadTimeout(10000);
                 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200) {
@@ -856,25 +858,17 @@ public class CloudStatusManager {
                     String body = s.hasNext() ? s.next() : "{}";
                     is.close();
                     
-                    // Parse JSON: {"count":N,"ips":[...],"updated":timestamp}
+                    // Parse JSON: {"count":N,"updated":timestamp}
+                    // PRIVACY: No IP addresses are included in the response
                     JSONObject json = new JSONObject(body);
                     int viewerCount = json.optInt("count", 0);
                     long updated = json.optLong("updated", 0);
                     
-                    // Parse IP addresses
-                    java.util.List<String> ips = new java.util.ArrayList<>();
-                    JSONArray ipsArray = json.optJSONArray("ips");
-                    if (ipsArray != null) {
-                        for (int i = 0; i < ipsArray.length(); i++) {
-                            ips.add(ipsArray.optString(i, ""));
-                        }
-                    }
-                    
-                    // Update RemoteStreamManager with count AND IPs
-                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount, ips);
+                    // Update RemoteStreamManager with count only (no IPs for privacy)
+                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount);
                     
                     if (viewerCount > 0) {
-                        Log.i(TAG, "☁️ 👥 Cloud viewers: " + viewerCount + " (ips: " + ips + ", updated: " + updated + ")");
+                        Log.i(TAG, "☁️ 👥 Cloud viewers: " + viewerCount + " (updated: " + updated + ")");
                     } else {
                         Log.d(TAG, "☁️ 👥 No cloud viewers currently");
                     }

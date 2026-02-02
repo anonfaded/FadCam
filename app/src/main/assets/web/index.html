@@ -1508,11 +1508,11 @@
                     <div class="modal-rows-group">
                         <div class="modal-row-container">
                             <div class="modal-row-label">Started Date</div>
-                            <div class="modal-row-value">${uptimeDetails.session_started_date || 'Not started'}</div>
+                            <div class="modal-row-value">${uptimeDetails.sessionStartedDate || uptimeDetails.startDate || 'Not started'}</div>
                         </div>
                         <div class="modal-row-container">
                             <div class="modal-row-label">Started Time</div>
-                            <div class="modal-row-value">${uptimeDetails.start_time || uptimeDetails.session_started_time || 'Not started'}</div>
+                            <div class="modal-row-value">${uptimeDetails.sessionStartedTime || uptimeDetails.startTime || 'Not started'}</div>
                         </div>
                     </div>
                 </div>

@@ -91,9 +91,9 @@ public class RemoteStreamManager {
     
     // Cloud viewer tracking (fetched from relay by CloudStatusManager)
     // This tracks viewers who connect via cloud relay, not directly to phone
+    // PRIVACY: We only track count, never individual IPs
     private int cloudViewerCount = 0;
     private long cloudViewerCountUpdatedAt = 0; // Timestamp of last update
-    private List<String> cloudViewerIps = new ArrayList<>(); // IPs of cloud viewers
     
     /**
      * Streaming mode options.
@@ -691,26 +691,25 @@ public class RemoteStreamManager {
             long uptimeSeconds = getServerUptimeMs() / 1000;
             
             // Get client metrics as JSON array
-            // In cloud mode, include cloud viewer IPs; in local mode, use local client metrics
+            // In cloud mode, show count only (privacy: no IPs); in local mode, use local client metrics
             StringBuilder clientsJson = new StringBuilder("[");
             boolean isCloudMode = context != null && 
                 CloudStreamUploader.getInstance(context) != null &&
                 CloudStreamUploader.getInstance(context).isEnabled();
             
-            if (isCloudMode && !cloudViewerIps.isEmpty()) {
-                // Cloud mode: Show cloud viewers (from relay nginx logs)
-                for (int i = 0; i < cloudViewerIps.size(); i++) {
-                    String ip = cloudViewerIps.get(i);
-                    // Create simplified client entry for cloud viewers
+            if (isCloudMode && cloudViewerCount > 0) {
+                // Cloud mode: Show anonymous cloud viewer entries (no IPs for privacy)
+                for (int i = 0; i < cloudViewerCount; i++) {
+                    // Create anonymized client entry for cloud viewers
                     clientsJson.append(String.format(
-                        "{\"ip\": \"%s\", \"bytesServed\": 0, \"requestCount\": 0, \"connected\": true, \"isCloud\": true}",
-                        ip
+                        "{\"ip\": \"Cloud Viewer %d\", \"bytesServed\": 0, \"requestCount\": 0, \"connected\": true, \"isCloud\": true}",
+                        i + 1
                     ));
-                    if (i < cloudViewerIps.size() - 1) {
+                    if (i < cloudViewerCount - 1) {
                         clientsJson.append(", ");
                     }
                 }
-            } else {
+            } else if (!isCloudMode) {
                 // Local mode: Show local clients
                 List<ClientMetrics> clients = getAllClientMetrics();
                 for (int i = 0; i < clients.size(); i++) {
@@ -1124,23 +1123,9 @@ public class RemoteStreamManager {
      * @param count Number of unique cloud viewers
      */
     public void setCloudViewerCount(int count) {
-        setCloudViewerCount(count, null);
-    }
-    
-    /**
-     * Set cloud viewer count and IPs (fetched from relay server by CloudStatusManager).
-     * @param count Number of unique cloud viewers
-     * @param ips List of viewer IP addresses (may be null)
-     */
-    public void setCloudViewerCount(int count, List<String> ips) {
         this.cloudViewerCount = count;
         this.cloudViewerCountUpdatedAt = System.currentTimeMillis();
-        if (ips != null) {
-            this.cloudViewerIps = new ArrayList<>(ips);
-        } else {
-            this.cloudViewerIps.clear();
-        }
-        Log.d(TAG, "☁️ Cloud viewer count updated: " + count + " ips: " + (ips != null ? ips.size() : 0));
+        Log.d(TAG, "☁️ Cloud viewer count updated: " + count);
     }
     
     /**
@@ -1149,14 +1134,6 @@ public class RemoteStreamManager {
      */
     public int getCloudViewerCount() {
         return cloudViewerCount;
-    }
-    
-    /**
-     * Get cloud viewer IPs.
-     * @return List of cloud viewer IP addresses
-     */
-    public List<String> getCloudViewerIps() {
-        return new ArrayList<>(cloudViewerIps);
     }
     
     /**
