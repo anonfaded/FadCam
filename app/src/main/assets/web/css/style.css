@@ -130,6 +130,7 @@
 html, body {
     width: 100%;
     height: 100%;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     background: #000000;
 }
 
@@ -142,6 +143,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
 }
 
 /* Top Bar */
@@ -1239,6 +1242,7 @@ video {
     .player-area {
         width: 100%;
         height: calc(100vh - 76px);
+        height: calc(100dvh - 76px);
         order: 0;
         padding: 12px;
         padding-left: 16px;
@@ -1293,6 +1297,7 @@ video {
     .player-area {
         width: 100%;
         height: calc(100vh - 76px);
+        height: calc(100dvh - 76px);
         order: 0;
         padding: 12px;
         padding-left: 16px;
@@ -1303,14 +1308,14 @@ video {
     }
 
     .modal-content {
-        max-height: 70vh;
+        max-height: 70dvh;
     }
 
     /* Tablet toast positioning */
     .toast-container {
         width: calc(100vw - 48px);
         max-width: calc(100vw - 24px);
-        max-height: calc(100vh - 100px);
+        max-height: calc(100dvh - 100px);
         right: 12px;
         left: auto;
         bottom: auto;
@@ -1321,7 +1326,7 @@ video {
         flex-direction: column;
         box-sizing: border-box;
     }
-
+}
 
 @media (max-width: 480px) {
     .main-layout {
@@ -1360,11 +1365,11 @@ video {
         width: 90vw;
         margin: 0;
     }
-        margin-right: 0;
-    }
+
     .player-area {
         width: 100%;
         height: calc(100vh - 76px);
+        height: calc(100dvh - 76px);
         padding: 12px;
         padding-left: 16px;
     }
@@ -1386,7 +1391,7 @@ video {
     }
 
     .modal-content {
-        max-height: 80vh;
+        max-height: 80dvh;
     }
 
     .top-bar h1 {
@@ -1402,7 +1407,7 @@ video {
         transform: none;
         width: calc(100vw - 24px);
         max-width: calc(100vw - 24px);
-        max-height: calc(100vh - 100px);
+        max-height: calc(100dvh - 100px);
         padding: 0;
         overflow-y: auto;
         display: flex;
