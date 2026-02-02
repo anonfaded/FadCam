@@ -55,7 +55,9 @@ class HlsService {
                     // Only modify cloud stream URLs
                     if (url.includes('/stream/') || url.includes('live.fadseclab.com')) {
                         const separator = url.includes('?') ? '&' : '?';
-                        const authUrl = `${url}${separator}token=${encodeURIComponent(streamToken)}`;
+                        // Add cache-busting timestamp for playlist files to prevent stale segments
+                        const cacheBust = url.includes('.m3u8') ? `&_t=${Date.now()}` : '';
+                        const authUrl = `${url}${separator}token=${encodeURIComponent(streamToken)}${cacheBust}`;
                         // Re-open with the new URL (must call open before setRequestHeader)
                         xhr.open('GET', authUrl, true);
                     }
@@ -141,6 +143,33 @@ class HlsService {
         // Level loaded (playlist refresh)
         this.hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
             console.log('[HlsService] 📋 Level/Playlist loaded, fragments:', data.details?.fragments?.length);
+            
+            // Log live latency information if available
+            if (this.hls && data.details?.live) {
+                const latency = this.hls.latency;
+                const targetLatency = this.hls.targetLatency;
+                const maxLatency = this.hls.maxLatency;
+                const liveSyncPosition = this.hls.liveSyncPosition;
+                
+                if (latency !== undefined && targetLatency !== undefined) {
+                    console.log('[HlsService] 📊 Live latency:', {
+                        currentLatency: latency?.toFixed(2) + 's',
+                        targetLatency: targetLatency?.toFixed(2) + 's',
+                        maxLatency: maxLatency?.toFixed(2) + 's',
+                        liveSyncPosition: liveSyncPosition?.toFixed(2) + 's',
+                        playbackRate: this.videoElement?.playbackRate
+                    });
+                    
+                    // If we're WAY behind (more than 15 seconds), force seek to live edge
+                    // This catches the "35 minute old segment" scenario
+                    if (latency > 15 && liveSyncPosition !== null) {
+                        console.warn('[HlsService] ⚠️ WAY behind live edge! (' + latency.toFixed(1) + 's) - Force seeking to live');
+                        this.videoElement.currentTime = liveSyncPosition;
+                        this.emit('seekToLive', { latency, liveSyncPosition });
+                    }
+                }
+            }
+            
             this.emit('level', data);
         });
         
@@ -287,6 +316,61 @@ class HlsService {
             console.log('[HlsService] 🎬 Creating new HLS instance...');
             this.load(url, videoElement);
         }, 1000);
+    }
+    
+    /**
+     * Seek to live edge.
+     * Call this to jump to the most recent live position.
+     * @returns {boolean} True if seek was successful
+     */
+    seekToLive() {
+        if (!this.hls || !this.videoElement) {
+            console.warn('[HlsService] Cannot seek to live: HLS not initialized');
+            return false;
+        }
+        
+        const liveSyncPosition = this.hls.liveSyncPosition;
+        if (liveSyncPosition !== null && liveSyncPosition !== undefined) {
+            const currentTime = this.videoElement.currentTime;
+            const latency = liveSyncPosition - currentTime;
+            
+            console.log('[HlsService] 🎯 Seeking to live edge:', {
+                from: currentTime.toFixed(2) + 's',
+                to: liveSyncPosition.toFixed(2) + 's',
+                latency: latency.toFixed(2) + 's'
+            });
+            
+            this.videoElement.currentTime = liveSyncPosition;
+            this.emit('seekToLive', { 
+                from: currentTime, 
+                to: liveSyncPosition, 
+                latency 
+            });
+            return true;
+        }
+        
+        console.warn('[HlsService] Cannot seek: liveSyncPosition not available');
+        return false;
+    }
+    
+    /**
+     * Get current live latency information
+     * @returns {Object|null} Latency info or null if not available
+     */
+    getLatencyInfo() {
+        if (!this.hls || !this.videoElement) {
+            return null;
+        }
+        
+        return {
+            currentLatency: this.hls.latency,
+            targetLatency: this.hls.targetLatency,
+            maxLatency: this.hls.maxLatency,
+            liveSyncPosition: this.hls.liveSyncPosition,
+            currentTime: this.videoElement.currentTime,
+            playbackRate: this.videoElement.playbackRate,
+            drift: this.hls.drift
+        };
     }
     
     /**

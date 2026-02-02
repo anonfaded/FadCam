@@ -1033,7 +1033,8 @@
     <script src="js/services/AuthService.js?v=2.5.0"></script>
     <script src="js/services/RealtimeCommandService.js?v=2.5.0"></script>
     <script src="js/services/ApiService.js?v=2.5.0"></script>
-    <script src="js/services/HlsService.js?v=2.6.0"></script>
+    <script src="js/services/HlsService.js?v=2.7.0"></script>
+    <script src="js/config.js?v=2.7.0"></script>
     <script src="js/services/FadexNotificationManager.js?v=2.5.0"></script>
     <script src="js/models/ServerStatus.js?v=2.5.0"></script>
     <script src="js/viewmodels/DashboardViewModel.js?v=2.5.0"></script>
@@ -2290,6 +2291,12 @@
             hlsService.on('reload', (data) => {
                 console.log('[Stream] 🔃 Reloading stream:', data);
                 showToast('🔃 Reloading stream...', 3000);
+            });
+            
+            // Auto-seek to live edge when too far behind
+            hlsService.on('seekToLive', (data) => {
+                console.log('[Stream] 🎯 Auto-seek to live:', data);
+                showToast('🎯 Syncing to live...', 2000);
             });
             
             hlsService.load(streamUrl, videoElement);
