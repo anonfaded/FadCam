@@ -444,8 +444,23 @@
                 <video id="videoPlayer" playsinline muted controls></video>
                 <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="overlay-content">
-                        <div class="overlay-text">Stream will auto-start when you begin recording.</div>
-                        <div class="overlay-hint">If it doesn't, hard refresh the page:<br/><strong>Android:</strong> Long-press refresh icon<br/><strong>Desktop:</strong> Ctrl+Shift+R or Ctrl+F5</div>
+                        <div class="overlay-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polygon points="10 8 16 12 10 16" fill="currentColor" stroke="none"/>
+                            </svg>
+                        </div>
+                        <div class="overlay-title">Waiting for stream</div>
+                        <div class="overlay-text">Stream will auto-start when recording begins</div>
+                        <div class="overlay-divider"></div>
+                        <div class="overlay-hint">
+                            <span class="hint-label">Refresh if needed</span>
+                            <div class="hint-items">
+                                <span><strong>Android</strong> Long-press ⟳</span>
+                                <span><strong>Desktop</strong> Ctrl+Shift+R</span>
+                                <span><strong>macOS</strong> ⌘+Shift+R</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

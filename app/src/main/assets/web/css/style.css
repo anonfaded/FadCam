@@ -759,12 +759,11 @@ video {
 .video-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.92) 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    padding-bottom: 60px;
+    justify-content: center;
     cursor: not-allowed;
     z-index: 10;
 }
@@ -779,29 +778,82 @@ video {
 }
 
 .video-overlay.disabled .overlay-content {
-    opacity: 0.7;
+    opacity: 0.85;
 }
 
 .overlay-content {
     text-align: center;
-    padding: 0 var(--spacing-lg);
+    padding: 0 var(--spacing-xl);
+    max-width: 360px;
+}
+
+.overlay-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--spacing-lg);
+    color: var(--accent-red);
+    opacity: 0.9;
+}
+
+.overlay-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.overlay-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+    letter-spacing: -0.3px;
 }
 
 .overlay-text {
-    color: var(--text-primary);
-    font-size: 15px;
-    font-weight: 500;
-    margin-bottom: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.overlay-divider {
+    width: 40px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: var(--spacing-lg) auto;
 }
 
 .overlay-hint {
     color: var(--text-secondary);
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 11px;
+    line-height: 1.6;
 }
 
-.overlay-hint strong {
+.overlay-hint .hint-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    margin-bottom: var(--spacing-sm);
+}
+
+.overlay-hint .hint-items {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-xs) var(--spacing-md);
+}
+
+.overlay-hint .hint-items span {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.overlay-hint .hint-items strong {
     color: var(--text-primary);
+    font-weight: 500;
+    margin-right: 4px;
 }
 
 /* Modals */
