@@ -388,17 +388,30 @@ public class RemoteStreamManager {
             //     (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
             
             // Upload to cloud relay if enabled
+            // CRITICAL FIX: Upload playlist ONLY AFTER segment upload succeeds
+            // This prevents race condition where viewer gets playlist before segment is available
             if (context != null) {
                 CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                 if (uploader.isEnabled() && uploader.isReady()) {
-                    uploader.uploadSegment(sequenceNumber, fragmentData, null);
+                    // Capture playlist now (while we have the lock) but upload after segment succeeds
+                    final String playlist = generateCloudPlaylist();
                     
-                    // Generate and upload HLS playlist for cloud streaming
-                    // This allows the cloud dashboard to play the stream
-                    String playlist = generateCloudPlaylist();
-                    if (playlist != null) {
-                        uploader.uploadPlaylist(playlist, null);
-                    }
+                    // Upload segment with callback - playlist uploaded only after segment succeeds
+                    uploader.uploadSegment(sequenceNumber, fragmentData, new CloudStreamUploader.UploadCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // Segment uploaded successfully - NOW upload the playlist
+                            if (playlist != null) {
+                                uploader.uploadPlaylist(playlist, null);
+                            }
+                        }
+                        
+                        @Override
+                        public void onError(String error) {
+                            // Segment failed - don't update playlist (viewers won't see missing segment)
+                            Log.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed, skipping playlist update: " + error);
+                        }
+                    });
                 }
             }
             
@@ -567,8 +580,9 @@ public class RemoteStreamManager {
             // Sort by sequence number
             fragments.sort((a, b) -> Integer.compare(a.sequenceNumber, b.sequenceNumber));
             
-            // Get live edge (last 5 fragments for sliding window)
-            int LIVE_WINDOW_SIZE = 5;
+            // Get live edge (last 8 fragments for sliding window)
+            // Apple HLS spec requires minimum 6 segments, we use 8 for more buffer room
+            int LIVE_WINDOW_SIZE = 8;
             List<FragmentData> liveEdge = new ArrayList<>();
             int startIdx = Math.max(0, fragments.size() - LIVE_WINDOW_SIZE);
             for (int i = startIdx; i < fragments.size(); i++) {
