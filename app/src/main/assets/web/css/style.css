@@ -759,7 +759,7 @@ video {
 .video-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.92) 100%);
+    background: #000;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -783,14 +783,15 @@ video {
 
 .overlay-content {
     text-align: center;
-    padding: 0 var(--spacing-xl);
-    max-width: 360px;
+    padding: 0 var(--spacing-md);
+    max-width: 320px;
+    width: 100%;
 }
 
 .overlay-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto var(--spacing-lg);
+    width: 56px;
+    height: 56px;
+    margin: 0 auto var(--spacing-md);
     color: var(--accent-red);
     opacity: 0.9;
 }
@@ -801,7 +802,7 @@ video {
 }
 
 .overlay-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: var(--spacing-xs);
@@ -810,50 +811,91 @@ video {
 
 .overlay-text {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 400;
     line-height: 1.4;
 }
 
 .overlay-divider {
-    width: 40px;
+    width: 32px;
     height: 1px;
     background: rgba(255, 255, 255, 0.12);
-    margin: var(--spacing-lg) auto;
+    margin: var(--spacing-md) auto;
 }
 
 .overlay-hint {
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.6;
 }
 
 .overlay-hint .hint-label {
     display: block;
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--text-secondary);
-    opacity: 0.7;
-    margin-bottom: var(--spacing-sm);
+    opacity: 0.6;
+    margin-bottom: var(--spacing-xs);
 }
 
 .overlay-hint .hint-items {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--spacing-xs) var(--spacing-md);
+    flex-direction: column;
+    gap: 2px;
 }
 
 .overlay-hint .hint-items span {
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 10px;
 }
 
 .overlay-hint .hint-items strong {
     color: var(--text-primary);
     font-weight: 500;
     margin-right: 4px;
+}
+
+/* Responsive: larger screens */
+@media (min-width: 480px) {
+    .overlay-content {
+        max-width: 360px;
+    }
+    
+    .overlay-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .overlay-title {
+        font-size: 20px;
+    }
+    
+    .overlay-text {
+        font-size: 14px;
+    }
+    
+    .overlay-divider {
+        width: 40px;
+        margin: var(--spacing-lg) auto;
+    }
+    
+    .overlay-hint .hint-label {
+        font-size: 10px;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .overlay-hint .hint-items {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--spacing-xs) var(--spacing-md);
+    }
+    
+    .overlay-hint .hint-items span {
+        font-size: 11px;
+    }
 }
 
 /* Modals */
