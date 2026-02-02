@@ -548,9 +548,23 @@ public class RemoteFragment extends BaseFragment {
         String uptime = formatUptime(uptimeMs);
         uptimeText.setText(uptime);
         
-        // Get active connections count
-        int connections = manager.getActiveConnections();
-        connectionsText.setText(String.valueOf(connections));
+        // Get active connections count (local + cloud viewers)
+        int localConnections = manager.getActiveConnections();
+        int cloudConnections = manager.getCloudViewerCount();
+        int totalConnections = localConnections + cloudConnections;
+        
+        // Display with breakdown if cloud viewers present
+        if (cloudConnections > 0 && localConnections > 0) {
+            // Both local and cloud: "3 (1 local, 2 cloud)"
+            connectionsText.setText(String.format("%d (%d local, %d cloud)", 
+                totalConnections, localConnections, cloudConnections));
+        } else if (cloudConnections > 0) {
+            // Cloud only: "2 (cloud)"
+            connectionsText.setText(String.format("%d (cloud)", cloudConnections));
+        } else {
+            // Local only or zero
+            connectionsText.setText(String.valueOf(localConnections));
+        }
         
         // Get battery percentage
         int battery = manager.getBatteryPercentage(requireContext());

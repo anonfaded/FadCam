@@ -2219,6 +2219,7 @@
 
         let lastRecordingState = false;
         let hlsLoaded = false;
+        let isFirstStatusUpdate = true; // Track first status update to handle page load state
 
         function playStream() {
             if (!CONFIG || !CONFIG.ENDPOINTS) {
@@ -2554,6 +2555,34 @@
                 playStream();
             }
             
+            // FIRST STATUS UPDATE: Ensure player is in correct state on page load
+            // Handles case where user loads dashboard while server is on but not recording
+            if (isFirstStatusUpdate) {
+                isFirstStatusUpdate = false;
+                if (!status.isRecording) {
+                    console.log('[Stream] First status update - not recording, ensuring player is stopped');
+                    // Clear any stale HLS state
+                    if (hlsService && hlsService.hls) {
+                        hlsService.destroy();
+                    }
+                    hlsLoaded = false;
+                    // Clear video source to prevent stale content
+                    if (videoElement) {
+                        videoElement.pause();
+                        videoElement.src = '';
+                        videoElement.load(); // Reset video element
+                    }
+                    // Ensure overlay is visible
+                    const videoOverlay = document.getElementById('videoOverlay');
+                    videoOverlay.classList.remove('hidden');
+                    videoOverlay.style.cursor = 'not-allowed';
+                    videoOverlay.style.opacity = '0.5';
+                } else {
+                    // Recording is active on page load, sync lastRecordingState
+                    lastRecordingState = true;
+                }
+            }
+            
             // Track recording state for logging
             if (status.isRecording && !lastRecordingState) {
                 console.log('🔴 Recording started');
@@ -2571,22 +2600,27 @@
                 lastRecordingState = false;
                 
                 // AUTO-STOP VIDEO when recording stops and restore initial overlay state
-                if (videoElement && hlsService) {
+                if (videoElement) {
                     console.log('[Stream] Stopping video playback - recording ended');
-                    hlsService.pause();
+                    // Pause and clear video source to prevent stale content
+                    videoElement.pause();
+                    videoElement.src = '';
+                    videoElement.load(); // Reset video element
+                }
+                if (hlsService) {
                     // Reset video to allow fresh load on next recording
                     hlsLoaded = false;
                     if (hlsService.hls) {
                         hlsService.destroy();
                     }
-                    
-                    // Restore initial overlay with play icon and message
-                    const videoOverlay = document.getElementById('videoOverlay');
-                    videoOverlay.classList.remove('hidden');
-                    videoOverlay.style.cursor = 'not-allowed';
-                    videoOverlay.style.opacity = '0.5';
-                    console.log('[Stream] Restored initial overlay state');
                 }
+                
+                // Restore initial overlay with play icon and message
+                const videoOverlay = document.getElementById('videoOverlay');
+                videoOverlay.classList.remove('hidden');
+                videoOverlay.style.cursor = 'not-allowed';
+                videoOverlay.style.opacity = '0.5';
+                console.log('[Stream] Restored initial overlay state');
             }
 
             // Server status - DYNAMIC based on staleness (Step 6.11)
