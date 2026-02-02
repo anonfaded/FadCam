@@ -2541,13 +2541,12 @@
                 console.log('[Alarm] No alarm state from server');
             }
 
-            // Update video overlay cursor based on stream readiness
+            // Update video overlay based on stream readiness (use CSS class for disabled state)
             const videoOverlay = document.getElementById('videoOverlay');
             if (status.state === 'ready' && status.isRecording) {
-                videoOverlay.style.cursor = 'pointer';
+                videoOverlay.classList.remove('disabled');
             } else {
-                videoOverlay.style.cursor = 'not-allowed';
-                videoOverlay.style.opacity = '0.5';
+                videoOverlay.classList.add('disabled');
             }
 
             // AUTO-LOAD STREAM when status becomes ready (manifest available)
@@ -2574,11 +2573,10 @@
                         videoElement.removeAttribute('src');
                         videoElement.load(); // Reset video element state
                     }
-                    // Ensure overlay is visible
+                    // Ensure overlay is visible with disabled state
                     const videoOverlay = document.getElementById('videoOverlay');
                     videoOverlay.classList.remove('hidden');
-                    videoOverlay.style.cursor = 'not-allowed';
-                    videoOverlay.style.opacity = '0.5';
+                    videoOverlay.classList.add('disabled');
                 } else {
                     // Recording is active on page load, sync lastRecordingState
                     lastRecordingState = true;
@@ -2618,11 +2616,10 @@
                     }
                 }
                 
-                // Restore initial overlay with play icon and message
+                // Restore initial overlay with disabled state
                 const videoOverlay = document.getElementById('videoOverlay');
                 videoOverlay.classList.remove('hidden');
-                videoOverlay.style.cursor = 'not-allowed';
-                videoOverlay.style.opacity = '0.5';
+                videoOverlay.classList.add('disabled');
                 console.log('[Stream] Restored initial overlay state');
             }
 

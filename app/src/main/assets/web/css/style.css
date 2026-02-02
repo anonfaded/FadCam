@@ -772,6 +772,20 @@ video {
     display: none;
 }
 
+/* Disabled state: when stream not available */
+.video-overlay.disabled {
+    cursor: not-allowed;
+}
+
+.video-overlay.disabled .play-icon {
+    opacity: 0.4;
+    animation: none;
+}
+
+.video-overlay.disabled .overlay-text {
+    opacity: 0.6;
+}
+
 .play-icon {
     width: 80px;
     height: 80px;
