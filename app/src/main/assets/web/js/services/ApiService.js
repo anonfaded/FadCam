@@ -215,7 +215,11 @@ class ApiService {
             
             try {
                 const response = await fetch(statusUrl, {
-                    method: 'GET'
+                    method: 'GET',
+                    cache: 'no-store',  // Prevent browser from caching status
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
                 });
                 
                 if (response.ok) {
@@ -224,7 +228,7 @@ class ApiService {
                     this.statusCache = await response.json();
                     this.statusCache.cloudMode = true;
                     this.lastFetchTime = Date.now();
-                    console.log(`✅ [/status] ☁️ Cloud: state=${this.statusCache.state}, streaming=${this.statusCache.streaming}`);
+                    console.log(`✅ [/status] ☁️ Cloud: state=${this.statusCache.state}, streaming=${this.statusCache.streaming}, lastUpdated=${this.statusCache.lastUpdated}`);
                     return this.statusCache;
                 } else if (response.status === 404) {
                     // Status file doesn't exist yet - phone hasn't pushed
