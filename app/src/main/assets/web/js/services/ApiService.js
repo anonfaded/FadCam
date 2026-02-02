@@ -477,7 +477,8 @@ class ApiService {
             quality: 'HD',
             cloudMode: true,
             deviceName: this.streamContext?.deviceName || 'Unknown Device',
-            message: 'Waiting for device to start streaming...'
+            message: 'Waiting for device to start streaming...',
+            lastUpdated: Date.now() // Use current time so it's not marked as stale
         };
     }
     

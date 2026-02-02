@@ -440,7 +440,8 @@
         <!-- Player Area -->
         <div class="player-area">
             <div class="video-container">
-                <video id="videoPlayer" playsinline muted autoplay controls></video>
+                <!-- No autoplay - we call play() manually when stream is ready. This prevents MIME type errors on empty video -->
+                <video id="videoPlayer" playsinline muted controls></video>
                 <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="play-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
