@@ -78,12 +78,13 @@ public class FragmentedMp4MuxerWrapper {
         };
         
         // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
-        // 1. Use 1000ms (1 second) fragments for low-latency streaming
+        // 1. Use 2000ms (2 second) fragments for stable live streaming
         // 2. Fragments will be automatically keyframe-aligned by Media3
         // 3. This ensures proper tfdt timestamps and fragment boundaries
         // 4. NEW: Callback-based architecture for real-time streaming
+        // 5. 2-second segments reduce upload frequency by 50%, improving stability on slow networks
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
-                .setFragmentDurationMs(1000) // 1 second per fragment for low-latency streaming
+                .setFragmentDurationMs(2000) // 2 seconds per fragment for stable streaming
                 .build();
         // Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
     }
@@ -103,10 +104,11 @@ public class FragmentedMp4MuxerWrapper {
         };
         
         // CRITICAL FIX for fMP4 seeking (GitHub issue #6704):
-        // Use 1000ms (1 second) fragments for low-latency streaming
+        // Use 2000ms (2 second) fragments for stable live streaming
         // NEW: Callback-based architecture for real-time streaming
+        // 2-second segments reduce upload frequency by 50%, improving stability on slow networks
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
-                .setFragmentDurationMs(1000) // 1 second per fragment for low-latency streaming
+                .setFragmentDurationMs(2000) // 2 seconds per fragment for stable streaming
                 .build();
         // Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
     }

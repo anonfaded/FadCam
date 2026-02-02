@@ -16,8 +16,9 @@ const CONFIG = {
     STATUS_POLL_INTERVAL: 2000,  // 2 seconds
     
     // HLS Configuration - OPTIMIZED FOR STABILITY (YouTube-like approach)
-    // Trade-off: ~8-10 second latency for smooth, stall-free playback
+    // Trade-off: ~10-15 second latency for smooth, stall-free playback
     // Based on Apple HLS Authoring Specification recommendations
+    // Segments are 2 seconds each, 8 segments in playlist = 16 seconds window
     HLS_URL: '/live.m3u8',
     HLS_CONFIG: {
         debug: false,
@@ -29,38 +30,41 @@ const CONFIG = {
         lowLatencyMode: false,
         
         // === LARGER BUFFERS = FEWER STALLS ===
-        // Apple recommends 6-second segments, 15+ minutes in playlist
-        // We use 1-sec segments, so buffer 10-15 seconds for stability
-        maxBufferLength: 15,       // Buffer 15 seconds ahead (was 6)
-        maxMaxBufferLength: 30,    // Allow up to 30 seconds buffer (was 8)
+        // With 2-second segments, buffer 20-30 seconds for stability
+        maxBufferLength: 20,       // Buffer 20 seconds ahead
+        maxMaxBufferLength: 60,    // Allow up to 60 seconds buffer
         maxBufferSize: 60 * 1000 * 1000, // 60MB buffer size
-        backBufferLength: 30,      // Keep 30 seconds of back buffer
+        backBufferLength: 60,      // Keep 60 seconds of back buffer
         
         // === LIVE SYNC - PRIORITIZE STABILITY OVER SPEED ===
-        // Start 4 segments (4 seconds) behind live edge for buffer room
-        liveSyncDurationCount: 4,        // 4 segments behind live (was 2)
-        liveMaxLatencyDurationCount: 10, // Allow up to 10 segments behind (was 5)
+        // With 2-second segments, liveSyncDurationCount=3 means 6 seconds behind live
+        liveSyncDurationCount: 3,        // 3 segments (6 seconds) behind live
+        liveMaxLatencyDurationCount: 8,  // Max 8 segments (16 seconds) behind
         
         // === DISABLE PLAYBACK RATE CATCH-UP ===
         // Speed changes cause visual stuttering. Better to stay behind than stutter.
-        maxLiveSyncPlaybackRate: 1.0,    // Don't speed up (was 1.2)
-        liveSyncOnStallIncrease: 2,      // Add 2s latency on each stall (was 0.5)
+        maxLiveSyncPlaybackRate: 1.0,    // Don't speed up (causes stuttering)
+        liveSyncOnStallIncrease: 2,      // Add 2s latency on each stall
         liveSyncMode: 'buffered',        // Seek only if buffered (was 'edge')
         
         startPosition: -1,  // Start at live edge
         
+        // === INITIAL BUFFERING ===
+        // Wait for enough segments before starting playback
+        initialLiveManifestSize: 3,  // Wait for 3 segments (6 seconds) before playing
+        
         // === BUFFER GAP HANDLING - BE MORE TOLERANT ===
         // On poor connections, gaps are normal. Tolerate them.
-        maxBufferHole: 0.5,      // Tolerate 0.5s gaps (was 0.3)
-        nudgeMaxRetry: 5,        // More retries before fatal error (was 3)
+        maxBufferHole: 0.5,      // Tolerate 0.5s gaps
+        nudgeMaxRetry: 5,        // More retries before fatal error
         nudgeOffset: 0.1,
         nudgeOnVideoHole: true,
         
         // === STALL DETECTION - LONGER TOLERANCE ===
         // Don't trigger stall too quickly on slow connections
         highBufferWatchdogPeriod: 3,
-        maxStarvationDelay: 6,   // Wait 6s before giving up on buffer
-        maxLoadingDelay: 10,     // Wait 10s for fragment load
+        maxStarvationDelay: 8,   // Wait 8s before giving up on buffer
+        maxLoadingDelay: 15,     // Wait 15s for fragment load (2s segments take longer)
         
         // === RETRY POLICIES - MORE AGGRESSIVE ===
         // Poor mobile connections need more retries

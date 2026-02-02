@@ -594,7 +594,7 @@ public class RemoteStreamManager {
             m3u8.append("#EXTM3U\n");
             m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
             m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n");
-            m3u8.append("#EXT-X-TARGETDURATION:2\n"); // 2-second max fragment duration
+            m3u8.append("#EXT-X-TARGETDURATION:4\n"); // 4-second max fragment duration (2s actual, with margin)
             m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
             
             // Init segment - relative path for cloud (same directory)
