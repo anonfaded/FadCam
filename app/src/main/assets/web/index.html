@@ -1571,10 +1571,12 @@
                 clientsHtml += '<div class="modal-section"><div class="modal-section-title">Client Details</div>';
                 currentStatus.clients.forEach((client, idx) => {
                     const sessionMinutes = Math.floor((client.sessionDurationSeconds || 0) / 60);
+                    const isCloudViewer = client.isCloud || (client.ip && client.ip.startsWith('Cloud Viewer'));
+                    const clientLabel = isCloudViewer ? 'Viewer' : 'IP Address';
                     clientsHtml += `
                         <div class="modal-rows-group">
                             <div class="modal-row-container">
-                                <div class="modal-row-label">IP Address</div>
+                                <div class="modal-row-label">${clientLabel}</div>
                                 <div class="modal-row-value" style="font-size: 11px;">${client.ip || 'N/A'}</div>
                             </div>
                             <div class="modal-row-container">

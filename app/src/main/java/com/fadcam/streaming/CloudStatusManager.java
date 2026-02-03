@@ -883,17 +883,18 @@ public class CloudStatusManager {
                     
                     Log.i(TAG, "☁️ 👥 Response body: " + body);
                     
-                    // Parse JSON: {"count":N,"updated":timestamp}
+                    // Parse JSON: {"count":N,"bytesServed":M,"updated":timestamp}
                     // PRIVACY: No IP addresses are included in the response
                     JSONObject json = new JSONObject(body);
                     int viewerCount = json.optInt("count", 0);
+                    long bytesServed = json.optLong("bytesServed", 0);
                     long updated = json.optLong("updated", 0);
                     
-                    // Update RemoteStreamManager with count only (no IPs for privacy)
+                    // Update RemoteStreamManager with count and bytes (no IPs for privacy)
                     int oldCount = RemoteStreamManager.getInstance().getCloudViewerCount();
-                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount);
+                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount, bytesServed);
                     
-                    Log.i(TAG, "☁️ 👥 ✅ Cloud viewers: " + viewerCount + " (was: " + oldCount + ", updated: " + updated + ")");
+                    Log.i(TAG, "☁️ 👥 ✅ Cloud viewers: " + viewerCount + " (was: " + oldCount + ", bytes: " + bytesServed + ", updated: " + updated + ")");
                 } else if (responseCode == 404) {
                     // No viewers file yet - means no viewers, which is valid
                     RemoteStreamManager.getInstance().setCloudViewerCount(0);

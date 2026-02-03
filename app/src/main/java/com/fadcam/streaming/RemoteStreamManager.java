@@ -91,9 +91,10 @@ public class RemoteStreamManager {
     
     // Cloud viewer tracking (fetched from relay by CloudStatusManager)
     // This tracks viewers who connect via cloud relay, not directly to phone
-    // PRIVACY: We only track count, never individual IPs
+    // PRIVACY: We only track count and aggregate bytes, never individual IPs
     private int cloudViewerCount = 0;
     private long cloudViewerCountUpdatedAt = 0; // Timestamp of last update
+    private long cloudBytesServed = 0; // Total bytes served by relay to all cloud viewers
     
     /**
      * Streaming mode options.
@@ -699,11 +700,17 @@ public class RemoteStreamManager {
             
             if (isCloudMode && cloudViewerCount > 0) {
                 // Cloud mode: Show anonymous cloud viewer entries (no IPs for privacy)
+                // Distribute total relay bytes evenly among viewers (approximation)
+                long bytesPerViewer = cloudBytesServed / cloudViewerCount;
+                long mbPerViewer = bytesPerViewer / (1024 * 1024);
                 for (int i = 0; i < cloudViewerCount; i++) {
-                    // Create anonymized client entry for cloud viewers
-                    clientsJson.append(String.format(
-                        "{\"ip\": \"Cloud Viewer %d\", \"bytesServed\": 0, \"requestCount\": 0, \"connected\": true, \"isCloud\": true}",
-                        i + 1
+                    // Create anonymized client entry for cloud viewers with real bytes data
+                    // Include both bytesServed and mbServed for dashboard compatibility
+                    clientsJson.append(String.format(java.util.Locale.US,
+                        "{\"ip\": \"Cloud Viewer %d\", \"bytesServed\": %d, \"mbServed\": %d, \"requestCount\": 0, \"connected\": true, \"isCloud\": true}",
+                        i + 1,
+                        bytesPerViewer,
+                        mbPerViewer
                     ));
                     if (i < cloudViewerCount - 1) {
                         clientsJson.append(", ");
@@ -1082,9 +1089,25 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Get list of connected client IPs.
+     * Get list of connected client identifiers.
+     * In local mode: returns IP addresses of directly connected clients.
+     * In cloud mode: returns "Cloud Viewer 1", "Cloud Viewer 2", etc.
      */
     public List<String> getConnectedClientIPs() {
+        boolean isCloudMode = context != null && 
+            CloudStreamUploader.getInstance(context) != null &&
+            CloudStreamUploader.getInstance(context).isEnabled();
+        
+        if (isCloudMode && cloudViewerCount > 0) {
+            // Cloud mode: Return cloud viewer identifiers instead of IPs
+            List<String> cloudViewers = new ArrayList<>();
+            for (int i = 0; i < cloudViewerCount; i++) {
+                cloudViewers.add("Cloud Viewer " + (i + 1));
+            }
+            return cloudViewers;
+        }
+        
+        // Local mode: Return actual client IPs
         synchronized (clientMetricsMap) {
             return new ArrayList<>(clientMetricsMap.keySet());
         }
@@ -1123,9 +1146,21 @@ public class RemoteStreamManager {
      * @param count Number of unique cloud viewers
      */
     public void setCloudViewerCount(int count) {
+        setCloudViewerCount(count, 0);
+    }
+    
+    /**
+     * Set cloud viewer count and bytes served (fetched from relay server by CloudStatusManager).
+     * Cloud viewers connect to the relay, not directly to the phone.
+     * PRIVACY: bytesServed is aggregate total, not per-viewer.
+     * @param count Number of unique cloud viewers
+     * @param bytesServed Total bytes served by relay to all cloud viewers
+     */
+    public void setCloudViewerCount(int count, long bytesServed) {
         this.cloudViewerCount = count;
+        this.cloudBytesServed = bytesServed;
         this.cloudViewerCountUpdatedAt = System.currentTimeMillis();
-        Log.d(TAG, "☁️ Cloud viewer count updated: " + count);
+        Log.d(TAG, "☁️ Cloud viewer count updated: " + count + " (bytes served: " + bytesServed + ")");
     }
     
     /**
@@ -1134,6 +1169,15 @@ public class RemoteStreamManager {
      */
     public int getCloudViewerCount() {
         return cloudViewerCount;
+    }
+    
+    /**
+     * Get total bytes served by relay to cloud viewers.
+     * PRIVACY: This is aggregate total, not per-viewer.
+     * @return Total bytes served, or 0 if not tracked
+     */
+    public long getCloudBytesServed() {
+        return cloudBytesServed;
     }
     
     /**
