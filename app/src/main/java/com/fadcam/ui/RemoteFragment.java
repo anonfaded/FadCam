@@ -650,6 +650,33 @@ public class RemoteFragment extends BaseFragment {
     
     private void showClientDetailsPicker() {
         RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        
+        // Check if we're in cloud mode
+        boolean isCloudMode = requireContext() != null && 
+            com.fadcam.streaming.CloudStreamUploader.getInstance(requireContext()) != null &&
+            com.fadcam.streaming.CloudStreamUploader.getInstance(requireContext()).isEnabled();
+        
+        if (isCloudMode) {
+            // Cloud mode: show simplified info (per-viewer details not available without IP tracking)
+            int cloudViewers = manager.getCloudViewerCount();
+            long totalBytes = manager.getTotalDataTransferred();
+            String dataStr = String.format(java.util.Locale.US, "%.1f MB", totalBytes / (1024.0 * 1024.0));
+            
+            if (cloudViewers == 0) {
+                Toast.makeText(requireContext(), "No cloud viewers connected", Toast.LENGTH_SHORT).show();
+            } else {
+                // Show a simple info toast for cloud mode (privacy-preserving)
+                String message = String.format(java.util.Locale.US, 
+                    "☁️ %d cloud viewer%s\n📊 Total served: %s\n\n🔒 Per-viewer metrics disabled for privacy", 
+                    cloudViewers, 
+                    cloudViewers == 1 ? "" : "s", 
+                    dataStr);
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        
+        // Local mode: show full client details
         List<String> clientIPs = manager.getConnectedClientIPs();
         
         if (clientIPs.isEmpty()) {

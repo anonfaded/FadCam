@@ -1526,87 +1526,105 @@
 
         function showClientsModal() {
             if (!currentStatus) return;
+            
+            // Check if we're in cloud mode (cloudViewers > 0 means relay is being used)
+            const isCloudMode = currentStatus.cloudViewers > 0;
+            
             let clientsHtml = `
                 <div class="modal-section">
                     <div class="modal-rows-group">
                         <div class="modal-row-container">
-                            <div class="modal-row-label">Connected Clients</div>
+                            <div class="modal-row-label">${isCloudMode ? 'Cloud Viewers' : 'Connected Clients'}</div>
                             <div class="modal-row-value">${currentStatus.activeConnections || 0}</div>
                         </div>
                     </div>
                 </div>
             `;
             
-            // Show total API calls across all clients
-            if (currentStatus.clients && currentStatus.clients.length > 0) {
-                let totalGetCalls = 0;
-                let totalPostCalls = 0;
-                currentStatus.clients.forEach(client => {
-                    totalGetCalls += client.getRequests || 0;
-                    totalPostCalls += client.postRequests || 0;
-                });
-                
+            if (isCloudMode) {
+                // CLOUD MODE: Only show aggregate stats (per-viewer details not available without IP tracking)
                 clientsHtml += `
                     <div class="modal-section">
-                        <div class="modal-section-title">API Summary</div>
+                        <div class="modal-section-title">Cloud Streaming</div>
                         <div class="modal-rows-group">
                             <div class="modal-row-container">
-                                <div class="modal-row-label">Total GET Requests</div>
-                                <div class="modal-row-value">${totalGetCalls}</div>
+                                <div class="modal-row-label">Total Data Served</div>
+                                <div class="modal-row-value">${currentStatus.dataTransferredMb?.toFixed(1) || '0'} MB</div>
                             </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">Total POST Requests</div>
-                                <div class="modal-row-value">${totalPostCalls}</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">Total API Calls</div>
-                                <div class="modal-row-value">${totalGetCalls + totalPostCalls}</div>
-                            </div>
+                        </div>
+                        <div class="modal-info-note" style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.4;">
+                            <span style="color: rgba(255,255,255,0.7);">🔒 Zero-Log Policy:</span> Per-viewer metrics are not available in cloud mode to protect viewer privacy. Only aggregate data is shown.
                         </div>
                     </div>
                 `;
-            }
-            
-            if (currentStatus.clients && currentStatus.clients.length > 0) {
-                clientsHtml += '<div class="modal-section"><div class="modal-section-title">Client Details</div>';
-                currentStatus.clients.forEach((client, idx) => {
-                    const sessionMinutes = Math.floor((client.sessionDurationSeconds || 0) / 60);
-                    const isCloudViewer = client.isCloud || (client.ip && client.ip.startsWith('Cloud Viewer'));
-                    const clientLabel = isCloudViewer ? 'Viewer' : 'IP Address';
+            } else {
+                // LOCAL MODE: Show full per-client details (client IPs are private/local)
+                if (currentStatus.clients && currentStatus.clients.length > 0) {
+                    let totalGetCalls = 0;
+                    let totalPostCalls = 0;
+                    currentStatus.clients.forEach(client => {
+                        totalGetCalls += client.getRequests || 0;
+                        totalPostCalls += client.postRequests || 0;
+                    });
+                    
                     clientsHtml += `
-                        <div class="modal-rows-group">
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">${clientLabel}</div>
-                                <div class="modal-row-value" style="font-size: 11px;">${client.ip || 'N/A'}</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">Data Served</div>
-                                <div class="modal-row-value">${client.mbServed ? client.mbServed.toFixed(1) : '0'} MB</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">Avg Bitrate</div>
-                                <div class="modal-row-value">${(client.averageBitrateMbps || 0).toFixed(2)} Mbps</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">Session Duration</div>
-                                <div class="modal-row-value">${sessionMinutes}m ${(client.sessionDurationSeconds || 0) % 60}s</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">GET Requests</div>
-                                <div class="modal-row-value">${client.getRequests || 0}</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">POST Requests</div>
-                                <div class="modal-row-value">${client.postRequests || 0}</div>
-                            </div>
-                            <div class="modal-row-container">
-                                <div class="modal-row-label">Total API Calls</div>
-                                <div class="modal-row-value">${(client.totalApiCalls || 0)}</div>
+                        <div class="modal-section">
+                            <div class="modal-section-title">API Summary</div>
+                            <div class="modal-rows-group">
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Total GET Requests</div>
+                                    <div class="modal-row-value">${totalGetCalls}</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Total POST Requests</div>
+                                    <div class="modal-row-value">${totalPostCalls}</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Total API Calls</div>
+                                    <div class="modal-row-value">${totalGetCalls + totalPostCalls}</div>
+                                </div>
                             </div>
                         </div>
                     `;
-                });
-                clientsHtml += '</div>';
+                    
+                    clientsHtml += '<div class="modal-section"><div class="modal-section-title">Client Details</div>';
+                    currentStatus.clients.forEach((client, idx) => {
+                        const sessionMinutes = Math.floor((client.sessionDurationSeconds || 0) / 60);
+                        clientsHtml += `
+                            <div class="modal-rows-group">
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">IP Address</div>
+                                    <div class="modal-row-value" style="font-size: 11px;">${client.ip || 'N/A'}</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Data Served</div>
+                                    <div class="modal-row-value">${client.mbServed ? client.mbServed.toFixed(1) : '0'} MB</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Avg Bitrate</div>
+                                    <div class="modal-row-value">${(client.averageBitrateMbps || 0).toFixed(2)} Mbps</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Session Duration</div>
+                                    <div class="modal-row-value">${sessionMinutes}m ${(client.sessionDurationSeconds || 0) % 60}s</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">GET Requests</div>
+                                    <div class="modal-row-value">${client.getRequests || 0}</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">POST Requests</div>
+                                    <div class="modal-row-value">${client.postRequests || 0}</div>
+                                </div>
+                                <div class="modal-row-container">
+                                    <div class="modal-row-label">Total API Calls</div>
+                                    <div class="modal-row-value">${(client.totalApiCalls || 0)}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    clientsHtml += '</div>';
+                }
             }
             
             document.getElementById('clientsContent').innerHTML = clientsHtml;

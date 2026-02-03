@@ -692,32 +692,15 @@ public class RemoteStreamManager {
             long uptimeSeconds = getServerUptimeMs() / 1000;
             
             // Get client metrics as JSON array
-            // In cloud mode, show count only (privacy: no IPs); in local mode, use local client metrics
+            // In cloud mode, show empty clients array (privacy: per-viewer details not available)
+            // Dashboard uses cloudViewers count and dataTransferredMb for aggregate stats
             StringBuilder clientsJson = new StringBuilder("[");
             boolean isCloudMode = context != null && 
                 CloudStreamUploader.getInstance(context) != null &&
                 CloudStreamUploader.getInstance(context).isEnabled();
             
-            if (isCloudMode && cloudViewerCount > 0) {
-                // Cloud mode: Show anonymous cloud viewer entries (no IPs for privacy)
-                // Distribute total relay bytes evenly among viewers (approximation)
-                long bytesPerViewer = cloudBytesServed / cloudViewerCount;
-                long mbPerViewer = bytesPerViewer / (1024 * 1024);
-                for (int i = 0; i < cloudViewerCount; i++) {
-                    // Create anonymized client entry for cloud viewers with real bytes data
-                    // Include both bytesServed and mbServed for dashboard compatibility
-                    clientsJson.append(String.format(java.util.Locale.US,
-                        "{\"ip\": \"Cloud Viewer %d\", \"bytesServed\": %d, \"mbServed\": %d, \"requestCount\": 0, \"connected\": true, \"isCloud\": true}",
-                        i + 1,
-                        bytesPerViewer,
-                        mbPerViewer
-                    ));
-                    if (i < cloudViewerCount - 1) {
-                        clientsJson.append(", ");
-                    }
-                }
-            } else if (!isCloudMode) {
-                // Local mode: Show local clients
+            if (!isCloudMode) {
+                // Local mode: Show local clients with full metrics
                 List<ClientMetrics> clients = getAllClientMetrics();
                 for (int i = 0; i < clients.size(); i++) {
                     clientsJson.append(clients.get(i).toJson());
@@ -726,6 +709,7 @@ public class RemoteStreamManager {
                     }
                 }
             }
+            // Cloud mode: clients array is empty - use cloudViewers and totalDataTransferredMb instead
             clientsJson.append("]");
             
             // Get all system health metrics
@@ -1091,26 +1075,35 @@ public class RemoteStreamManager {
     /**
      * Get list of connected client identifiers.
      * In local mode: returns IP addresses of directly connected clients.
-     * In cloud mode: returns "Cloud Viewer 1", "Cloud Viewer 2", etc.
+     * In cloud mode: returns empty list (use getCloudViewerCount() instead).
+     * 
+     * Note: For cloud mode, per-client details are not available due to 
+     * zero-log privacy policy. Use getCloudViewerCount() and getTotalDataTransferred()
+     * for aggregate stats only.
      */
-    public List<String> getConnectedClientIPs() {
+    public List<String> getConnectedClients() {
         boolean isCloudMode = context != null && 
             CloudStreamUploader.getInstance(context) != null &&
             CloudStreamUploader.getInstance(context).isEnabled();
         
-        if (isCloudMode && cloudViewerCount > 0) {
-            // Cloud mode: Return cloud viewer identifiers instead of IPs
-            List<String> cloudViewers = new ArrayList<>();
-            for (int i = 0; i < cloudViewerCount; i++) {
-                cloudViewers.add("Cloud Viewer " + (i + 1));
-            }
-            return cloudViewers;
+        if (isCloudMode) {
+            // Cloud mode: return empty - per-client details not available
+            // Use getCloudViewerCount() for aggregate count
+            return new ArrayList<>();
         }
         
         // Local mode: Return actual client IPs
         synchronized (clientMetricsMap) {
             return new ArrayList<>(clientMetricsMap.keySet());
         }
+    }
+    
+    /**
+     * @deprecated Use getConnectedClients() instead. Renamed for clarity.
+     */
+    @Deprecated
+    public List<String> getConnectedClientIPs() {
+        return getConnectedClients();
     }
     
     /**
