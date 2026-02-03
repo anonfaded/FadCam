@@ -1137,8 +1137,18 @@ public class RemoteStreamManager {
     
     /**
      * Get all client metrics.
+     * In cloud mode, returns empty list (per-client metrics not available).
      */
     public List<ClientMetrics> getAllClientMetrics() {
+        boolean isCloudMode = context != null && 
+            CloudStreamUploader.getInstance(context) != null &&
+            CloudStreamUploader.getInstance(context).isEnabled();
+        
+        if (isCloudMode) {
+            // Cloud mode: no per-client metrics available (privacy)
+            return new ArrayList<>();
+        }
+        
         synchronized (clientMetricsMap) {
             return new ArrayList<>(clientMetricsMap.values());
         }
@@ -1155,8 +1165,19 @@ public class RemoteStreamManager {
     
     /**
      * Get number of unique connected clients.
+     * In cloud mode, returns 0 (use getCloudViewerCount() for cloud viewers).
      */
     public int getActiveConnections() {
+        boolean isCloudMode = context != null && 
+            CloudStreamUploader.getInstance(context) != null &&
+            CloudStreamUploader.getInstance(context).isEnabled();
+        
+        if (isCloudMode) {
+            // Cloud mode: local connections don't count as "active"
+            // All real viewers connect via relay
+            return 0;
+        }
+        
         synchronized (clientMetricsMap) {
             return clientMetricsMap.size();
         }
