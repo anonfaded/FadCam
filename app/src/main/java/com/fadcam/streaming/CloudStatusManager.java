@@ -501,6 +501,20 @@ public class CloudStatusManager {
      */
     private void doPushStatus(String statusJson, String userUuid, String deviceId, String token) {
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/status/" + userUuid + "/" + deviceId;
+        
+        // Log cloud viewer count from the status being pushed (every 10th push to reduce log spam)
+        if (statusPushCount % 10 == 0) {
+            try {
+                JSONObject status = new JSONObject(statusJson);
+                int cloudViewers = status.optInt("cloudViewers", -1);
+                int activeConnections = status.optInt("activeConnections", -1);
+                Log.i(TAG, "☁️ 📤 Status push #" + statusPushCount + 
+                    " | cloudViewers=" + cloudViewers + 
+                    " | activeConnections=" + activeConnections);
+            } catch (Exception e) {
+                Log.d(TAG, "☁️ 📤 Status push #" + statusPushCount);
+            }
+        }
         Log.d(TAG, "☁️ 📤 Pushing status to: " + urlStr);
         
         executor.execute(() -> {
@@ -840,8 +854,11 @@ public class CloudStatusManager {
         }
         
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/viewers/" + userUuid + "/" + deviceId;
-        Log.d(TAG, "☁️ 👥 Polling cloud viewers from: " + urlStr);
-        Log.d(TAG, "☁️ 👥 Using stream token (first 20 chars): " + streamToken.substring(0, Math.min(20, streamToken.length())) + "...");
+        Log.i(TAG, "☁️ 👥 ====== POLLING CLOUD VIEWERS ======");
+        Log.i(TAG, "☁️ 👥 URL: " + urlStr);
+        Log.i(TAG, "☁️ 👥 Token: " + streamToken.substring(0, Math.min(20, streamToken.length())) + "...");
+        
+        long startTime = System.currentTimeMillis();
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
@@ -849,15 +866,22 @@ public class CloudStatusManager {
                 conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Authorization", "Bearer " + streamToken);
-                conn.setConnectTimeout(10000);  // Increased timeout for Edge Function cold start
-                conn.setReadTimeout(10000);
+                conn.setConnectTimeout(10000);  // 10s connect timeout
+                conn.setReadTimeout(10000);     // 10s read timeout
+                
+                Log.i(TAG, "☁️ 👥 Connecting to relay server...");
                 
                 int responseCode = conn.getResponseCode();
+                long elapsed = System.currentTimeMillis() - startTime;
+                Log.i(TAG, "☁️ 👥 Response received in " + elapsed + "ms: HTTP " + responseCode);
+                
                 if (responseCode == 200) {
                     java.io.InputStream is = conn.getInputStream();
                     java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
                     String body = s.hasNext() ? s.next() : "{}";
                     is.close();
+                    
+                    Log.i(TAG, "☁️ 👥 Response body: " + body);
                     
                     // Parse JSON: {"count":N,"updated":timestamp}
                     // PRIVACY: No IP addresses are included in the response
@@ -866,17 +890,14 @@ public class CloudStatusManager {
                     long updated = json.optLong("updated", 0);
                     
                     // Update RemoteStreamManager with count only (no IPs for privacy)
+                    int oldCount = RemoteStreamManager.getInstance().getCloudViewerCount();
                     RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount);
                     
-                    if (viewerCount > 0) {
-                        Log.i(TAG, "☁️ 👥 Cloud viewers: " + viewerCount + " (updated: " + updated + ")");
-                    } else {
-                        Log.d(TAG, "☁️ 👥 No cloud viewers currently");
-                    }
+                    Log.i(TAG, "☁️ 👥 ✅ Cloud viewers: " + viewerCount + " (was: " + oldCount + ", updated: " + updated + ")");
                 } else if (responseCode == 404) {
                     // No viewers file yet - means no viewers, which is valid
                     RemoteStreamManager.getInstance().setCloudViewerCount(0);
-                    Log.d(TAG, "☁️ 👥 No viewers data available (404)");
+                    Log.i(TAG, "☁️ 👥 No viewers data available (404 - normal if no viewers yet)");
                 } else {
                     // Read error response body for debugging
                     String errorBody = "";
@@ -888,10 +909,15 @@ public class CloudStatusManager {
                             errorStream.close();
                         }
                     } catch (Exception ignored) {}
-                    Log.w(TAG, "☁️ 👥 Viewers poll failed: HTTP " + responseCode + " - " + errorBody);
+                    Log.e(TAG, "☁️ 👥 ❌ Viewers poll failed: HTTP " + responseCode + " - " + errorBody);
                 }
+            } catch (java.net.SocketTimeoutException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                Log.e(TAG, "☁️ 👥 ❌ TIMEOUT after " + elapsed + "ms: " + e.getMessage());
+                // Don't reset count on timeout - keep last known value
             } catch (Exception e) {
-                Log.w(TAG, "☁️ 👥 Viewers poll error: " + e.getMessage());
+                long elapsed = System.currentTimeMillis() - startTime;
+                Log.e(TAG, "☁️ 👥 ❌ ERROR after " + elapsed + "ms: " + e.getClass().getSimpleName() + " - " + e.getMessage());
                 // Don't reset count on error - keep last known value
             } finally {
                 if (conn != null) {
