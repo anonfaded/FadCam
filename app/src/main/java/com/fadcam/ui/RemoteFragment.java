@@ -1370,6 +1370,12 @@ public class RemoteFragment extends BaseFragment {
         CloudStreamUploader uploader = CloudStreamUploader.getInstance(requireContext());
         uploader.setEnabled(cloudEnabled);
         
+        // Clear localhost clients when switching to cloud mode
+        // These are internal dashboard requests, not real viewers
+        if (cloudEnabled) {
+            RemoteStreamManager.getInstance().clearLocalhostClients();
+        }
+        
         // Start/stop cloud status manager if server is already running
         CloudStatusManager statusManager = CloudStatusManager.getInstance(requireContext());
         if (cloudEnabled) {

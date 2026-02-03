@@ -1005,13 +1005,42 @@ public class RemoteStreamManager {
      * Streaming mode options.
      */
     public void trackClientIP(String clientIP) {
-        if (clientIP != null && !clientIP.isEmpty()) {
-            synchronized (clientMetricsMap) {
-                boolean isNewClient = !clientMetricsMap.containsKey(clientIP);
-                if (isNewClient) {
-                    clientMetricsMap.put(clientIP, new ClientMetrics(clientIP));
-                    Log.i(TAG, "New client connected: " + clientIP + " (Total: " + clientMetricsMap.size() + ")");
-                }
+        if (clientIP == null || clientIP.isEmpty()) {
+            return;
+        }
+        
+        // In cloud mode, don't track localhost connections (internal dashboard requests)
+        // Real viewers connect via relay, not directly to phone
+        boolean isCloudMode = context != null && 
+            CloudStreamUploader.getInstance(context) != null &&
+            CloudStreamUploader.getInstance(context).isEnabled();
+        
+        if (isCloudMode && (clientIP.equals("127.0.0.1") || clientIP.equals("localhost") || clientIP.startsWith("::1"))) {
+            return; // Skip internal requests in cloud mode
+        }
+        
+        synchronized (clientMetricsMap) {
+            boolean isNewClient = !clientMetricsMap.containsKey(clientIP);
+            if (isNewClient) {
+                clientMetricsMap.put(clientIP, new ClientMetrics(clientIP));
+                Log.i(TAG, "New client connected: " + clientIP + " (Total: " + clientMetricsMap.size() + ")");
+            }
+        }
+    }
+    
+    /**
+     * Clear localhost entries from client metrics.
+     * Call this when switching to cloud mode to remove internal request tracking.
+     */
+    public void clearLocalhostClients() {
+        synchronized (clientMetricsMap) {
+            int beforeSize = clientMetricsMap.size();
+            clientMetricsMap.remove("127.0.0.1");
+            clientMetricsMap.remove("localhost");
+            clientMetricsMap.remove("::1");
+            int afterSize = clientMetricsMap.size();
+            if (beforeSize != afterSize) {
+                Log.i(TAG, "Cleared localhost clients: " + (beforeSize - afterSize) + " removed");
             }
         }
     }
