@@ -394,6 +394,38 @@ body {
     justify-content: center;
 }
 
+/* ===== Global Scrollbar Styling ===== */
+/* Firefox scrollbar styling (standard CSS) */
+:root {
+    scrollbar-color: #444d56 transparent; /* dark thumb, transparent track */
+    scrollbar-width: thin;
+}
+
+/* Chrome, Edge, Safari scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444d56;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #5a6470;
+}
+
+/* Sidebar-specific scrollbar overrides */
+.sidebar {
+    scrollbar-color: #444d56 transparent;
+    scrollbar-width: thin;
+}
+
 .sidebar::-webkit-scrollbar {
     width: 6px;
 }
@@ -403,12 +435,12 @@ body {
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+    background: #444d56;
     border-radius: 3px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
+    background: #5a6470;
 }
 
 /* Cards */
