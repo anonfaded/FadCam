@@ -20,8 +20,8 @@
 (function() {
   'use strict';
   
-  // Configuration
-  const CONFIG = {
+  // Configuration (renamed to avoid conflict with global CONFIG)
+  const CLOUD_CONFIG = {
     LAB_URL: 'https://id.fadseclab.com/lab',
     SUPABASE_URL: 'https://vfhehknmxxedvesdvpew.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NDI2ODIsImV4cCI6MjA1MzMxODY4Mn0.1F8NF0IwBE-GYmR8Yrq4FKfFGKBRIUhWs0_fzFqF0gc',
@@ -44,7 +44,7 @@
   // Check if running on web (not phone/LAN access)
   function isWebAccess() {
     const hostname = window.location.hostname;
-    return CONFIG.WEB_DOMAINS.some(domain => hostname.includes(domain));
+    return CLOUD_CONFIG.WEB_DOMAINS.some(domain => hostname.includes(domain));
   }
   
   // Extract device_id from URL if in streaming mode
@@ -80,7 +80,7 @@
   // Get stored session from localStorage
   function getStoredSession() {
     try {
-      const sessionStr = localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION);
+      const sessionStr = localStorage.getItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
       if (!sessionStr) return null;
       const session = JSON.parse(sessionStr);
       // Check if session is still valid (authenticated within last 24 hours)
@@ -89,8 +89,8 @@
       const hoursDiff = (now - authTime) / (1000 * 60 * 60);
       if (hoursDiff > 24) {
         // Session expired, clear it
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION);
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.USER);
+        localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
+        localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.USER);
         return null;
       }
       return session;
@@ -101,16 +101,16 @@
   
   // Store session in localStorage
   function storeSession(sessionData, userData, streamToken) {
-    localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
-    localStorage.setItem(CONFIG.STORAGE_KEYS.USER, JSON.stringify(userData));
+    localStorage.setItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
+    localStorage.setItem(CLOUD_CONFIG.STORAGE_KEYS.USER, JSON.stringify(userData));
     if (streamToken) {
-      localStorage.setItem(CONFIG.STORAGE_KEYS.STREAM_TOKEN, streamToken);
+      localStorage.setItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN, streamToken);
     }
   }
   
   // Get stored stream access token
   function getStreamToken() {
-    return localStorage.getItem(CONFIG.STORAGE_KEYS.STREAM_TOKEN);
+    return localStorage.getItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
   }
   
   // Exchange handoff token for session (called when arriving from Lab)
@@ -118,7 +118,7 @@
     console.log('[FadCamRemote] Exchanging handoff token...');
     
     try {
-      const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/exchange-handoff-token`, {
+      const response = await fetch(`${CLOUD_CONFIG.SUPABASE_URL}/functions/v1/exchange-handoff-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -186,7 +186,7 @@
         } catch (e) {
           showStreamOverlay('Authentication Failed', e.message || 'Invalid or expired link. Please try again from Lab.');
           setTimeout(() => {
-            window.location.href = CONFIG.LAB_URL;
+            window.location.href = CLOUD_CONFIG.LAB_URL;
           }, 3000);
           return;
         }
@@ -202,8 +202,8 @@
           // No session - redirect to Lab to login
           showStreamOverlay('Not Logged In', 'Redirecting to login...');
           setTimeout(() => {
-            console.log('[FadCamRemote] Redirecting NOW to:', CONFIG.LAB_URL);
-            window.location.href = CONFIG.LAB_URL;
+            console.log('[FadCamRemote] Redirecting NOW to:', CLOUD_CONFIG.LAB_URL);
+            window.location.href = CLOUD_CONFIG.LAB_URL;
           }, 1500);
           return;
         }
@@ -311,7 +311,7 @@
       <i class="fas fa-cloud" style="color: #00d4ff;"></i> 
       <span>FadCam Remote</span>
     `;
-    menuItem.onclick = () => window.open(CONFIG.LAB_URL, '_blank');
+    menuItem.onclick = () => window.open(CLOUD_CONFIG.LAB_URL, '_blank');
     
     // Insert before the last item (Logout)
     const logoutItem = dropdown.querySelector('.profile-item:last-child');

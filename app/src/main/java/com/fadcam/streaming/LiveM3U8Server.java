@@ -30,22 +30,52 @@ import fi.iki.elonen.NanoHTTPD;
  * - Reads segment data from RemoteStreamManager circular buffer
  * - CORS-enabled for web player compatibility
  * - Connection tracking for active client monitoring
+ * 
+ * COMPRESSION NOTE: All JSON responses explicitly disable GZIP compression by manually
+ * setting the Content-Length header. This is the official NanoHTTPD 2.3.1 approach
+ * (see NanoHTTPD GZipIntegrationTest.java line 151). Manual Content-Length prevents
+ * auto-compression when clients send Accept-Encoding: gzip headers, avoiding "Unexpected
+ * token" JSON parse errors in browsers that receive compressed bytes but expect plain text.
  */
-public class LiveM3U8Server extends NanoHTTPD {
-    private static final String TAG = "LiveM3U8Server";
+    public class LiveM3U8Server extends NanoHTTPD {
+        private static final String TAG = "LiveM3U8Server";
+        
+        private final RemoteStreamManager streamManager;
+        private final android.content.Context context;
+        
+        // HLS configuration
+        private static final int TARGET_DURATION = 2; // Segment duration in seconds (1s actual + safety margin)
+        
+        public LiveM3U8Server(android.content.Context context, int port) throws IOException {
+            super("0.0.0.0", port);  // CRITICAL FIX: Bind to ALL interfaces (0.0.0.0), not just localhost
+            this.context = context.getApplicationContext();
+            this.streamManager = RemoteStreamManager.getInstance();
+            
+            Log.i(TAG, "✅ [HTTP Server] Listening on ALL interfaces (0.0.0.0:" + port + ")");
+            Log.i(TAG, "✅ [HTTP Server] Now ACCESSIBLE from other devices on hotspot!");
+        }
     
-    private final RemoteStreamManager streamManager;
-    private final android.content.Context context;
-    
-    // HLS configuration
-    private static final int TARGET_DURATION = 2; // Segment duration in seconds (1s actual + safety margin)
-    
-    public LiveM3U8Server(android.content.Context context, int port) throws IOException {
-        super("0.0.0.0", port);  // CRITICAL FIX: Bind to ALL interfaces (0.0.0.0), not just localhost
-        this.context = context.getApplicationContext();
-        this.streamManager = RemoteStreamManager.getInstance();
-        Log.i(TAG, "✅ [HTTP Server] Listening on ALL interfaces (0.0.0.0:" + port + ")");
-        Log.i(TAG, "✅ [HTTP Server] Now ACCESSIBLE from other devices on hotspot!");
+    /**
+     * Helper method to create JSON responses with proper charset encoding.
+     * 
+     * COMPRESSION CONTROL: Manually sets Content-Length header to prevent automatic
+     * GZIP compression in NanoHTTPD 2.3.1. From GZipIntegrationTest.java line 151:
+     * "Content should not be gzipped if Content-Length is added manually".
+     * 
+     * Without this, NanoHTTPD auto-compresses JSON when client sends Accept-Encoding: gzip,
+     * which causes "Unexpected token" errors in browsers trying to parse gzipped bytes as JSON.
+     * 
+     * @param status HTTP response status
+     * @param json JSON content as String
+     * @return Response with UTF-8 charset, no compression
+     */
+    private Response jsonResponse(Response.Status status, String json) {
+        byte[] jsonBytes = json.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        Response response = newFixedLengthResponse(status, "application/json; charset=utf-8", json);
+        // Setting Content-Length manually prevents NanoHTTPD from auto-gzipping (confirmed in official tests)
+        response.addHeader("Content-Length", String.valueOf(jsonBytes.length));
+        response.addHeader("Cache-Control", "no-cache");
+        return response;
     }
     
     @Override
@@ -494,12 +524,10 @@ public class LiveM3U8Server extends NanoHTTPD {
             Log.i(TAG, "✅ Torch toggle intent sent. New state: " + newState);
             
             String responseJson = String.format("{\"status\": \"success\", \"torch_state\": %s}", newState);
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
-            response.addHeader("Cache-Control", "no-cache");
-            return response;
+            return jsonResponse(Response.Status.OK, responseJson);
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+            return jsonResponse(Response.Status.INTERNAL_ERROR, "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
 
@@ -514,7 +542,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
             if (audioManager == null) {
                 Log.e(TAG, "AudioManager not available");
-                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                return jsonResponse(Response.Status.INTERNAL_ERROR, 
                     "{\"status\": \"error\", \"message\": \"AudioManager not available\"}");
             }
             
@@ -532,12 +560,10 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             Log.i(TAG, "✅ Volume retrieved: " + currentVolume + "/" + maxVolume);
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
-            response.addHeader("Cache-Control", "no-cache");
-            return response;
+            return jsonResponse(Response.Status.OK, responseJson);
         } catch (Exception e) {
             Log.e(TAG, "Error getting volume", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -557,7 +583,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String postData = files.get("postData");
             if (postData == null || postData.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Missing request body\"}");
             }
             
@@ -567,7 +593,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
             if (audioManager == null) {
                 Log.e(TAG, "AudioManager not available");
-                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                return jsonResponse(Response.Status.INTERNAL_ERROR, 
                     "{\"status\": \"error\", \"message\": \"AudioManager not available\"}");
             }
             
@@ -584,7 +610,7 @@ public class LiveM3U8Server extends NanoHTTPD {
                 percentage = Math.max(0, Math.min(percentage, 100));
                 targetVolume = Math.round(percentage * maxVolume / 100.0f);
             } else {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Missing 'volume' or 'percentage' field\"}");
             }
             
@@ -609,16 +635,14 @@ public class LiveM3U8Server extends NanoHTTPD {
                 actualVolume, maxVolume, actualPercentage
             );
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
-            response.addHeader("Cache-Control", "no-cache");
-            return response;
+            return jsonResponse(Response.Status.OK, responseJson);
         } catch (org.json.JSONException e) {
             Log.e(TAG, "Invalid JSON in volume request", e);
-            return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+            return jsonResponse(Response.Status.BAD_REQUEST, 
                 "{\"status\": \"error\", \"message\": \"Invalid JSON: " + e.getMessage() + "\"}");
         } catch (Exception e) {
             Log.e(TAG, "Error setting volume", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -660,12 +684,12 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             Log.i(TAG, "✅ Recording " + action + " intent sent");
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", responseJson);
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", responseJson);
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
             Log.e(TAG, "Error toggling recording", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -688,7 +712,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"No body\"}");
             }
             
             // Parse JSON mode from body
@@ -698,7 +722,7 @@ public class LiveM3U8Server extends NanoHTTPD {
                 mode = json.getString("mode");
             } catch (Exception e) {
                 Log.e(TAG, "Failed to parse recording mode JSON", e);
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid JSON\"}");
             }
             
             // Convert mode string to StreamingMode enum
@@ -708,7 +732,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             } else if ("stream_and_save".equals(mode)) {
                 streamingMode = RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
             } else {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"error\": \"Invalid mode. Use 'stream_only' or 'stream_and_save'\"}");
             }
             
@@ -719,13 +743,13 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             Log.i(TAG, "✅ Recording mode set to: " + mode);
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Recording mode set to " + mode + "\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
             Log.e(TAG, "Error setting recording mode", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
 
@@ -741,7 +765,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"No body\"}");
             }
             
             // Parse JSON quality from body
@@ -751,7 +775,7 @@ public class LiveM3U8Server extends NanoHTTPD {
                 quality = json.getString("quality");
             } catch (Exception e) {
                 Log.e(TAG, "Failed to parse stream quality JSON", e);
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid JSON\"}");
             }
             
             // Convert string to preset and apply
@@ -760,18 +784,18 @@ public class LiveM3U8Server extends NanoHTTPD {
                 streamManager.setStreamQuality(preset, context);
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "Invalid stream quality preset: " + quality);
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid quality preset\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid quality preset\"}");
             }
             
             Log.i(TAG, "✅ Stream quality set to: " + quality);
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Stream quality set to " + quality + "\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
             Log.e(TAG, "Error setting stream quality", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
 
@@ -788,7 +812,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
                 Log.w(TAG, "❌ Battery warning: No body received");
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"No body\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"No body\"}");
             }
             
             Log.d(TAG, "[Battery] Received body: " + body);
@@ -801,13 +825,13 @@ public class LiveM3U8Server extends NanoHTTPD {
                 Log.d(TAG, "[Battery] Parsed threshold: " + threshold);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to parse battery warning threshold JSON", e);
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Invalid JSON\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid JSON\"}");
             }
             
             // Validate threshold
             if (threshold < 5 || threshold > 100) {
                 Log.w(TAG, "❌ Battery warning: Invalid threshold " + threshold);
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Threshold must be between 5 and 100\"}");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Threshold must be between 5 and 100\"}");
             }
             
             // Store battery warning threshold using SharedPreferencesManager
@@ -819,13 +843,13 @@ public class LiveM3U8Server extends NanoHTTPD {
             int storedValue = spManager.getBatteryWarningThreshold();
             Log.d(TAG, "[Battery] Verified stored value: " + storedValue);
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Battery warning set to " + threshold + "%\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
             Log.e(TAG, "Error setting battery warning", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
 
@@ -840,7 +864,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"status\": \"error\", \"message\": \"Missing request body\"}");
             }
             
@@ -851,19 +875,19 @@ public class LiveM3U8Server extends NanoHTTPD {
                 codec = json.getString("codec");
             } catch (Exception e) {
                 Log.e(TAG, "Failed to parse video codec JSON", e);
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"status\": \"error\", \"message\": \"Invalid JSON\"}");
             }
             
             if (codec == null || codec.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"status\": \"error\", \"message\": \"Missing or invalid codec field\"}");
             }
             
             // Validate codec is one of the supported values
             codec = codec.trim().toUpperCase();
             if (!codec.equals("AVC") && !codec.equals("HEVC")) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"status\": \"error\", \"message\": \"Invalid codec. Must be AVC or HEVC\"}");
             }
             
@@ -880,13 +904,13 @@ public class LiveM3U8Server extends NanoHTTPD {
             String storedCodec = spManager.getVideoCodec().toString();
             Log.d(TAG, "[VideoCodec] Verified stored codec: " + storedCodec);
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", 
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Video codec set to " + codec + "\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
             Log.e(TAG, "Error setting video codec", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -902,19 +926,11 @@ public class LiveM3U8Server extends NanoHTTPD {
             long jsonTime = System.currentTimeMillis();
             Log.d(TAG, "📊 [/status] JSON generated in " + (jsonTime - startTime) + "ms, size: " + statusJson.length() + " bytes");
             
-            Response response = newFixedLengthResponse(Response.Status.OK, "application/json", statusJson);
-            response.addHeader("Cache-Control", "no-cache");
-            
-            // CRITICAL FIX: Disable GZIP compression on status endpoint to prevent broken pipe on slow networks
-            // On cellular networks with no data, GZIP compression causes client timeout before response completes
-            response.addHeader("Content-Encoding", "identity");  // Tell client NO compression
-            
             Log.d(TAG, "📊 [/status] Response prepared, sending to client");
-            return response;
+            return jsonResponse(Response.Status.OK, statusJson);
         } catch (Exception e) {
             Log.e(TAG, "❌ [/status] Error in serveStatus: " + e.getMessage(), e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
-                "{\"error\": \"Failed to generate status\"}");
+            return jsonResponse(Response.Status.INTERNAL_ERROR, "{\"error\": \"Failed to generate status\"}");
         }
     }
     
@@ -931,7 +947,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             if (!authManager.isAuthEnabled()) {
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.authDisabled();
-                return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.OK, authResponse.toJson());
             }
             
             // Parse JSON body
@@ -942,7 +958,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             if (body == null || body.isEmpty()) {
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Missing request body");
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
             }
             
             // Extract password from JSON
@@ -958,7 +974,7 @@ public class LiveM3U8Server extends NanoHTTPD {
                 Log.e(TAG, "Failed to parse login JSON", e);
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Invalid JSON");
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
             }
             
             // Verify password
@@ -966,7 +982,7 @@ public class LiveM3U8Server extends NanoHTTPD {
                 Log.w(TAG, "Invalid login attempt from " + clientIP + " (password mismatch)");
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.invalidCredentials();
-                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.UNAUTHORIZED, authResponse.toJson());
             }
             
             // Create session
@@ -978,13 +994,13 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.success(token.getToken(), token.getExpiresAtMs());
-            return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+            return jsonResponse(Response.Status.OK, authResponse.toJson());
             
         } catch (Exception e) {
             Log.e(TAG, "Error handling login", e);
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.failure("Internal error");
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", authResponse.toJson());
+            return jsonResponse(Response.Status.INTERNAL_ERROR, authResponse.toJson());
         }
     }
     
@@ -1003,12 +1019,12 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 new com.fadcam.streaming.model.AuthResponse(true, "Logged out successfully");
-            return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+            return jsonResponse(Response.Status.OK, authResponse.toJson());
         } catch (Exception e) {
             Log.e(TAG, "Error handling logout", e);
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.failure("Internal error");
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", authResponse.toJson());
+            return jsonResponse(Response.Status.INTERNAL_ERROR, authResponse.toJson());
         }
     }
     
@@ -1034,10 +1050,10 @@ public class LiveM3U8Server extends NanoHTTPD {
                 authEnabled, !authEnabled || tokenValid, tokenValid
             );
             
-            return newFixedLengthResponse(Response.Status.OK, "application/json", json);
+            return jsonResponse(Response.Status.OK, json);
         } catch (Exception e) {
             Log.e(TAG, "Error checking auth", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"error\":\"Internal error\"}");
         }
     }
@@ -1052,7 +1068,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             if (!validateAuthToken(session)) {
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.unauthorized();
-                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.UNAUTHORIZED, authResponse.toJson());
             }
             
             // Parse JSON body
@@ -1063,7 +1079,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             if (body == null || body.isEmpty()) {
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Missing request body");
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
             }
             
             // Extract passwords from JSON
@@ -1076,7 +1092,7 @@ public class LiveM3U8Server extends NanoHTTPD {
                 Log.e(TAG, "Failed to parse change password JSON", e);
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Invalid JSON");
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
             }
             
             RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
@@ -1085,26 +1101,26 @@ public class LiveM3U8Server extends NanoHTTPD {
             if (!authManager.verifyPassword(oldPassword)) {
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Current password is incorrect");
-                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.UNAUTHORIZED, authResponse.toJson());
             }
             
             // Set new password
             if (!authManager.setPassword(newPassword)) {
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("New password invalid (4-32 characters required)");
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", authResponse.toJson());
+                return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
             }
             
             Log.i(TAG, "Password changed successfully");
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 new com.fadcam.streaming.model.AuthResponse(true, "Password changed successfully");
-            return newFixedLengthResponse(Response.Status.OK, "application/json", authResponse.toJson());
+            return jsonResponse(Response.Status.OK, authResponse.toJson());
             
         } catch (Exception e) {
             Log.e(TAG, "Error changing password", e);
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.failure("Internal error");
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", authResponse.toJson());
+            return jsonResponse(Response.Status.INTERNAL_ERROR, authResponse.toJson());
         }
     }
     
@@ -1181,7 +1197,7 @@ public class LiveM3U8Server extends NanoHTTPD {
     private String getMimeType(String uri) {
         if (uri.endsWith(".css")) return "text/css";
         if (uri.endsWith(".js")) return "application/javascript";
-        if (uri.endsWith(".json") || uri.endsWith(".jsonc")) return "application/json";
+        if (uri.endsWith(".json") || uri.endsWith(".jsonc")) return "application/json; charset=utf-8";
         if (uri.endsWith(".png")) return "image/png";
         if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) return "image/jpeg";
         if (uri.endsWith(".svg")) return "image/svg+xml";
@@ -1264,7 +1280,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String postData = files.get("postData");
             if (postData == null || postData.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Missing request body\"}");
             }
             
@@ -1273,7 +1289,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             // Get sound filename (required)
             String soundFile = json.optString("sound", "office_phone.mp3");
             if (soundFile.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Sound file not specified\"}");
             }
             
@@ -1301,16 +1317,16 @@ public class LiveM3U8Server extends NanoHTTPD {
                 Log.i(TAG, "AlarmService started");
             } catch (Exception e) {
                 Log.e(TAG, "Error starting AlarmService", e);
-                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                return jsonResponse(Response.Status.INTERNAL_ERROR, 
                     "{\"status\": \"error\", \"message\": \"Failed to start alarm service\"}");
             }
             
-            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+            return jsonResponse(Response.Status.OK, 
                 "{\"status\": \"success\", \"message\": \"Alarm ringing\", \"sound\": \"" + soundFile + "\", \"duration_ms\": " + durationMs + "}");
             
         } catch (Exception e) {
             Log.e(TAG, "Error ringing alarm", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -1332,12 +1348,12 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             Log.i(TAG, "Stop alarm service command sent");
             
-            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+            return jsonResponse(Response.Status.OK, 
                 "{\"status\": \"success\", \"message\": \"Alarm stopped\"}");
             
         } catch (Exception e) {
             Log.e(TAG, "Error stopping alarm", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -1355,7 +1371,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             
             String postData = files.get("postData");
             if (postData == null || postData.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Missing request body\"}");
             }
             
@@ -1364,14 +1380,14 @@ public class LiveM3U8Server extends NanoHTTPD {
             // Get scheduled time (required)
             long scheduledTime = json.optLong("scheduledTime", -1);
             if (scheduledTime <= 0) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Invalid scheduled time\"}");
             }
             
             // Get sound filename (required)
             String soundFile = json.optString("sound", "office_phone.mp3");
             if (soundFile.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Sound file not specified\"}");
             }
             
@@ -1383,7 +1399,7 @@ public class LiveM3U8Server extends NanoHTTPD {
             long delayMs = scheduledTime - currentTime;
             
             if (delayMs <= 0) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Scheduled time must be in the future\"}");
             }
             
@@ -1419,13 +1435,13 @@ public class LiveM3U8Server extends NanoHTTPD {
             Log.i(TAG, "✅ Alarm scheduled for " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(scheduledTime)) + 
                 " (in " + (delayMs / 1000) + " seconds)");
             
-            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+            return jsonResponse(Response.Status.OK, 
                 "{\"status\": \"success\", \"message\": \"Alarm scheduled\", \"sound\": \"" + soundFile + 
                 "\", \"duration_ms\": " + durationMs + ", \"scheduled_for\": " + scheduledTime + "}");
             
         } catch (Exception e) {
             Log.e(TAG, "Error scheduling alarm", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -1438,7 +1454,7 @@ public class LiveM3U8Server extends NanoHTTPD {
         try {
             int contentLength = Integer.parseInt(session.getHeaders().getOrDefault("content-length", "0"));
             if (contentLength == 0) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Empty request body\"}");
             }
 
@@ -1456,21 +1472,21 @@ public class LiveM3U8Server extends NanoHTTPD {
                 String history = request.optString("history", "[]");
                 prefs.saveNotificationHistory(history);
                 Log.d(TAG, "✅ Notification history saved from JS");
-                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                return jsonResponse(Response.Status.OK, 
                     "{\"status\": \"success\", \"message\": \"Notifications saved\"}");
             } else if ("clear".equals(action)) {
                 // Clear all notifications
                 prefs.clearNotificationHistory();
                 Log.d(TAG, "✅ Notification history cleared");
-                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                return jsonResponse(Response.Status.OK, 
                     "{\"status\": \"success\", \"message\": \"Notifications cleared\"}");
             } else {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", 
+                return jsonResponse(Response.Status.BAD_REQUEST, 
                     "{\"status\": \"error\", \"message\": \"Unknown action\"}");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error handling notifications", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -1484,11 +1500,11 @@ public class LiveM3U8Server extends NanoHTTPD {
             com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
             String history = prefs.getNotificationHistory();
             
-            return newFixedLengthResponse(Response.Status.OK, "application/json", 
+            return jsonResponse(Response.Status.OK, 
                 "{\"status\": \"success\", \"history\": " + history + "}");
         } catch (Exception e) {
             Log.e(TAG, "Error getting notifications", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -1523,10 +1539,10 @@ public class LiveM3U8Server extends NanoHTTPD {
             // Parse JSONC (strip comments) to JSON
             String json = parseJSONCToJSON(jsonc);
             
-            return newFixedLengthResponse(Response.Status.OK, "application/json", json);
+            return jsonResponse(Response.Status.OK, json);
         } catch (Exception e) {
             Log.e(TAG, "❌ Error fetching GitHub notification", e);
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+            return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }

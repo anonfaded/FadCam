@@ -161,6 +161,14 @@ class ApiService {
     
     /**
      * Local mode: Fetch status from phone HTTP server
+     * 
+     * FIX for Chromium encoding issue:
+     * Some Android HTTP servers (NanoHTTPD) don't set charset=utf-8 in Content-Type.
+     * Chromium browsers are strict about encoding and fail with "Unexpected token..."
+     * Firefox is lenient and works fine.
+     * 
+     * Solution: Get response as text first, strip BOM if present, then parse JSON manually.
+     * This ensures cross-browser compatibility.
      */
     async _getLocalStatus() {
         try {
@@ -179,7 +187,32 @@ class ApiService {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            this.statusCache = await response.json();
+            // CRITICAL: Get response as text first to handle encoding issues
+            // This prevents Chromium's strict JSON parser from failing on charset mismatches
+            let responseText = await response.text();
+            
+            // Strip UTF-8 BOM (Byte Order Mark: EF BB BF) if present
+            // Some servers inadvertently prepend BOM to JSON responses
+            if (responseText.charCodeAt(0) === 0xFEFF) {
+                console.warn('⚠️ [/status] Detected and removing UTF-8 BOM from response');
+                responseText = responseText.slice(1);
+            }
+            
+            // Log first 100 chars for debugging encoding issues
+            const preview = responseText.substring(0, 100);
+            console.log(`📋 [/status] Response preview: ${preview}${responseText.length > 100 ? '...' : ''}`);
+            
+            // Parse JSON manually with error context
+            try {
+                this.statusCache = JSON.parse(responseText);
+            } catch (parseError) {
+                // Enhanced error logging for debugging
+                console.error('❌ [/status] JSON parse error. Response length:', responseText.length);
+                console.error('❌ [/status] First 200 chars:', responseText.substring(0, 200));
+                console.error('❌ [/status] Parse error details:', parseError.message);
+                throw new Error(`JSON parse error: ${parseError.message}. Response length: ${responseText.length}`);
+            }
+            
             this.statusCache.cloudMode = false;
             this.lastFetchTime = Date.now();
             
@@ -305,7 +338,7 @@ class ApiService {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            return await response.json();
+            return await this._parseJsonResponse(response, 'torch/toggle');
         } catch (error) {
             console.error('Failed to toggle torch:', error);
             throw error;
@@ -335,12 +368,38 @@ class ApiService {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            const responseData = await response.json();
+            const responseData = await this._parseJsonResponse(response, endpoint);
             console.log(`✅ [POST] ${endpoint} response:`, responseData);
             return responseData;
         } catch (error) {
             console.error(`❌ [POST] ${endpoint} failed:`, error);
             throw error;
+        }
+    }
+    
+    /**
+     * Parse JSON response with defensive encoding handling
+     * Handles UTF-8 BOM and charset mismatches across all browsers
+     * @private
+     * @param {Response} response - Fetch response object
+     * @param {string} endpoint - Endpoint name for logging
+     * @returns {Promise<Object>} Parsed JSON
+     */
+    async _parseJsonResponse(response, endpoint) {
+        let responseText = await response.text();
+        
+        // Strip UTF-8 BOM if present
+        if (responseText.charCodeAt(0) === 0xFEFF) {
+            console.warn(`⚠️ [${endpoint}] Detected and removing UTF-8 BOM from response`);
+            responseText = responseText.slice(1);
+        }
+        
+        try {
+            return JSON.parse(responseText);
+        } catch (parseError) {
+            console.error(`❌ [${endpoint}] JSON parse error. Response length: ${responseText.length}`);
+            console.error(`❌ [${endpoint}] First 200 chars: ${responseText.substring(0, 200)}`);
+            throw new Error(`JSON parse error in ${endpoint}: ${parseError.message}`);
         }
     }
     
