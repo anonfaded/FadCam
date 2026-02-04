@@ -397,7 +397,7 @@ body {
 /* ===== Global Scrollbar Styling ===== */
 /* Firefox scrollbar styling (standard CSS) */
 :root {
-    scrollbar-color: #444d56 transparent; /* dark thumb, transparent track */
+    scrollbar-color: transparent transparent; /* hidden by default */
     scrollbar-width: thin;
 }
 
@@ -412,17 +412,18 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #444d56;
+    background: transparent;
     border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #5a6470;
+/* Show scrollbar on hover - global */
+:hover::-webkit-scrollbar-thumb {
+    background: #3a4450;
 }
 
-/* Sidebar-specific scrollbar overrides */
+/* Sidebar-specific scrollbar */
 .sidebar {
-    scrollbar-color: #444d56 transparent;
+    scrollbar-color: transparent transparent;
     scrollbar-width: thin;
 }
 
@@ -435,12 +436,17 @@ body {
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background: #444d56;
+    background: transparent;
     border-radius: 3px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: #5a6470;
+    background: #3a4450;
+}
+
+/* Firefox hover effect for all scrollable elements */
+*:hover {
+    scrollbar-color: #3a4450 transparent;
 }
 
 /* Cards */
