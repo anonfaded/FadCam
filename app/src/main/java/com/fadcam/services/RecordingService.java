@@ -2970,9 +2970,12 @@ public class RecordingService extends Service {
         // camera is busy
         // This allows new recordings to start while FFmpeg is still processing in the
         // background
+        // CRITICAL: WAITING_FOR_CAMERA must be included - service should stay alive
+        // while attempting camera reconnection after interruption (e.g., another app took camera)
         return recordingState == RecordingState.IN_PROGRESS ||
                 recordingState == RecordingState.PAUSED ||
-                recordingState == RecordingState.STARTING;
+                recordingState == RecordingState.STARTING ||
+                recordingState == RecordingState.WAITING_FOR_CAMERA;
 
     }
 

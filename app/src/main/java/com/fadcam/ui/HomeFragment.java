@@ -948,6 +948,11 @@ public class HomeFragment extends BaseFragment {
                     case PAUSED:
                         onRecordingPaused();
                         break;
+                    case WAITING_FOR_CAMERA:
+                        // Camera taken by another app - recording continues with black frames
+                        // Show appropriate UI state
+                        setUIForWaitingForCamera();
+                        break;
                 }
 
                 recordingState = recordingStateIntent;
@@ -1821,6 +1826,11 @@ public class HomeFragment extends BaseFragment {
             case PAUSED:
                 setUIForRecordingPaused(); // Call helper to set Stop/Resume buttons etc.
                 break;
+            case WAITING_FOR_CAMERA:
+                // Camera was taken by another app, recording continues with black frames
+                // Show UI similar to paused but indicate camera is being recaptured
+                setUIForWaitingForCamera();
+                break;
             case NONE:
             default:
                 // Service state is NONE. Recording is stopped.
@@ -1949,6 +1959,63 @@ public class HomeFragment extends BaseFragment {
             stopUpdatingInfo(); // Show placeholder/last frame, stop timers
         } catch (Exception e) {
             Log.e(TAG, "Error setting UI for Paused state", e);
+        }
+    }
+
+    /**
+     * Helper to set UI elements for the WAITING_FOR_CAMERA state.
+     * This state occurs when another app has taken the camera during recording.
+     * Recording continues with black frames while attempting to recapture camera.
+     */
+    private void setUIForWaitingForCamera() {
+        if (!isAdded() || getContext() == null) return;
+        Log.d(TAG, "Setting UI to: WAITING_FOR_CAMERA (camera interrupted)");
+        try {
+            // Similar to PAUSED state but indicates camera is being recaptured
+            buttonStartStop.setEnabled(true); // Enable STOP (user can still stop recording)
+            buttonStartStop.setBackgroundTintList(
+                ContextCompat.getColorStateList(
+                    requireContext(),
+                    R.color.button_stop
+                )
+            );
+            buttonStartStop.setText(getString(R.string.button_stop));
+            buttonStartStop.setIcon(
+                AppCompatResources.getDrawable(
+                    requireContext(),
+                    R.drawable.ic_stop
+                )
+            );
+
+            // Disable pause button during camera interruption (doesn't make sense)
+            buttonPauseResume.setEnabled(false);
+            buttonPauseResume.setAlpha(0.5f);
+            buttonPauseResume.setIcon(
+                AppCompatResources.getDrawable(
+                    requireContext(),
+                    R.drawable.ic_pause
+                )
+            );
+
+            // Disable camera switch (camera not available)
+            if (buttonCamSwitch != null) {
+                buttonCamSwitch.setEnabled(false);
+                buttonCamSwitch.setAlpha(0.5f);
+            }
+            // Disable torch (camera not available)
+            if (buttonTorchSwitch != null) {
+                buttonTorchSwitch.setEnabled(false);
+                buttonTorchSwitch.setAlpha(0.5f);
+            }
+
+            // Keep updating timer since recording is still ongoing (black frames)
+            updatePreviewVisibility();
+            // Keep timer running - recording is still in progress
+            if (updateInfoRunnable == null) {
+                startUpdatingInfo();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting UI for WaitingForCamera state", e);
         }
     }
 
