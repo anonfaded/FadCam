@@ -648,6 +648,7 @@ public class CloudStatusManager {
     /**
      * Delete a command from the relay after execution
      * Uses stream_access_token for authentication.
+     * NOTE: .json extension required to match nginx location pattern
      */
     private void deleteCommand(String cmdId) {
         String userUuid = authManager.getUserId();
@@ -658,7 +659,8 @@ public class CloudStatusManager {
             return;
         }
         
-        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId;
+        // NOTE: Must include .json extension to match nginx pattern
+        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId + ".json";
         
         executor.execute(() -> {
             HttpURLConnection conn = null;

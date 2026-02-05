@@ -649,14 +649,14 @@ public class CloudStreamUploader {
     
     /**
      * Delete a command after execution.
-     * URL: DELETE /api/command/{user_uuid}/{device_id}/{cmd_id}
+     * URL: DELETE /api/command/{user_uuid}/{device_id}/{cmd_id}.json
      * 
      * @param commandId The command ID to delete
      * @param callback Optional callback for result
      */
     public void deleteCommand(String commandId, @Nullable UploadCallback callback) {
-        // Build URL without .json extension (as per nginx config)
-        String url = buildCommandUrl() + "/" + commandId;
+        // NOTE: .json extension required to match nginx pattern
+        String url = buildCommandUrl() + "/" + commandId + ".json";
         
         String token = authManager.getJwtToken();
         if (token == null) {
