@@ -2000,6 +2000,9 @@ public class RecordingService extends Service {
                     // Update recording state
                     recordingState = RecordingState.IN_PROGRESS;
 
+                    // Broadcast to UI so HomeFragment can restore buttons/preview
+                    broadcastOnRecordingResumed();
+
                     // Show notification about recording resumed
                     setupRecordingInProgressNotification();
 

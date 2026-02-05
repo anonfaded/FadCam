@@ -1155,8 +1155,22 @@ public class HomeFragment extends BaseFragment {
         );
         buttonStartStop.setEnabled(true);
 
-        // Keep camera switch button ENABLED for live switching during recording
-        // Don't disable it here
+        // Re-enable camera switch button (may have been disabled during WAITING_FOR_CAMERA)
+        if (buttonCamSwitch != null) {
+            buttonCamSwitch.setEnabled(true);
+            buttonCamSwitch.setAlpha(1.0f);
+        }
+
+        // Re-enable torch button (may have been disabled during WAITING_FOR_CAMERA)
+        if (buttonTorchSwitch != null) {
+            buttonTorchSwitch.setEnabled(true);
+            buttonTorchSwitch.setAlpha(1.0f);
+        }
+
+        // Restore preview visibility (may have shown placeholder during WAITING_FOR_CAMERA)
+        isPreviewEnabled = true;
+        savePreviewState();
+        updatePreviewVisibility();
 
         startUpdatingInfo();
     }
