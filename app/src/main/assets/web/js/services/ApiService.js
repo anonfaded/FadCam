@@ -53,13 +53,18 @@ class ApiService {
     /**
      * Set stream context (called from FadCamRemote after auth)
      * Also initializes Supabase Realtime for instant command delivery in cloud mode.
+     * 
+     * NOTE: Realtime is currently DISABLED to reduce Supabase connection usage.
+     * Commands are sent via HTTP relay (1-2 second latency instead of <200ms).
      */
     setStreamContext(ctx) {
         this.streamContext = ctx;
         console.log('[ApiService] Stream context set:', ctx);
         
-        // Proactively initialize Realtime for cloud mode
-        // This ensures the first command is instant (no fallback to HTTP)
+        // DISABLED: Supabase Realtime for commands (to reduce connection usage)
+        // Commands now go through HTTP relay with ~1-2 second latency
+        // To re-enable, uncomment the block below:
+        /*
         if (ctx && ctx.userId && ctx.deviceId) {
             if (typeof realtimeCommandService !== 'undefined') {
                 console.log('[ApiService] ⚡ Initializing Supabase Realtime for instant commands...');
@@ -74,6 +79,8 @@ class ApiService {
                 });
             }
         }
+        */
+        console.log('[ApiService] ℹ️ Using HTTP relay for commands (Realtime disabled)');
     }
     
     /**
@@ -404,14 +411,14 @@ class ApiService {
     }
     
     /**
-     * Cloud mode: Send command through Supabase Realtime for instant delivery.
-     * Falls back to HTTP relay if Realtime is not available.
+     * Cloud mode: Send command through HTTP relay.
      * 
-     * NEW: Uses Supabase Realtime broadcast for <200ms latency.
-     * OLD: Used HTTP polling with 3 second delay.
+     * NOTE: Supabase Realtime is DISABLED to reduce connection usage.
+     * Commands are sent via HTTP relay only (1-2 second latency).
+     * Phone polls for commands every 1.5 seconds.
      */
     async _sendCloudCommand(endpoint, data) {
-        console.log(`☁️ [COMMAND] ${endpoint} - Sending via cloud`);
+        console.log(`☁️ [COMMAND] ${endpoint} - Sending via HTTP relay`);
         
         if (!this.streamContext) {
             throw new Error('Not authenticated for cloud commands');
@@ -422,6 +429,10 @@ class ApiService {
             throw new Error('Missing user or device ID');
         }
         
+        // DISABLED: Supabase Realtime (to reduce connection usage)
+        // Commands now go directly to HTTP relay
+        // To re-enable instant delivery, uncomment the Realtime block below:
+        /*
         // Convert endpoint to action (e.g., "torch/toggle" -> "torch_toggle")
         const action = endpoint.replace(/\//g, '_').replace(/^_/, '');
         
@@ -443,27 +454,17 @@ class ApiService {
             } catch (e) {
                 console.warn(`☁️ [COMMAND] Realtime error, falling back to HTTP:`, e.message);
             }
-        } else {
-            console.log(`☁️ [COMMAND] Realtime not ready, using HTTP relay`);
-            
-            // Initialize Realtime if not done yet
-            if (typeof realtimeCommandService !== 'undefined' && !realtimeCommandService.isReady()) {
-                realtimeCommandService.initialize(deviceId, userId).then(success => {
-                    if (success) {
-                        console.log(`☁️ [COMMAND] Realtime initialized for future commands`);
-                    }
-                });
-            }
         }
+        */
         
-        // Fallback: Send via HTTP relay (polling-based, 3 second delay)
+        // Send via HTTP relay (phone polls every 1.5 seconds)
         return this._sendCloudCommandViaRelay(endpoint, data, userId, deviceId);
     }
     
     /**
-     * Fallback: Send command through HTTP relay.
+     * Send command through HTTP relay.
      * Uses PUT /api/command/{user_uuid}/{device_id}/{cmd_id}
-     * Phone polls this endpoint every 3 seconds.
+     * Phone polls this endpoint every 1.5 seconds.
      */
     async _sendCloudCommandViaRelay(endpoint, data, userId, deviceId) {
         // Generate unique command ID (millisecond timestamp)
@@ -499,7 +500,7 @@ class ApiService {
                 success: true,
                 command_id: cmdId,
                 instant: false,
-                message: 'Command queued. Phone will execute on next poll (~3s).'
+                message: 'Command queued. Phone will execute on next poll (~1.5s).'
             };
             
         } catch (error) {
