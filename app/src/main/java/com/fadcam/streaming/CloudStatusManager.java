@@ -546,19 +546,17 @@ public class CloudStatusManager {
             String endpoint = "/" + action.replace("_", "/");
             
             // Build request body from params (if present)
+            // LiveM3U8Server expects JSON bodies for most endpoints
             String requestBody = null;
             if (command.has("params")) {
                 JSONObject params = command.getJSONObject("params");
-                // For volume, send just the level value as the LiveM3U8Server expects
-                if (params.has("level")) {
-                    requestBody = String.valueOf(params.getInt("level"));
-                } else if (params.length() > 0) {
-                    // For other params, send as JSON
+                if (params.length() > 0) {
+                    // Pass params as JSON - server will parse it
                     requestBody = params.toString();
                 }
             }
             
-            Log.d(TAG, "☁️ Mapped action '" + action + "' → endpoint '" + endpoint + "'");
+            Log.d(TAG, "☁️ Mapped action '" + action + "' → endpoint '" + endpoint + "', body=" + requestBody);
             
             // Execute command via localhost
             executeLocalCommand(endpoint, "POST", requestBody);
@@ -578,7 +576,7 @@ public class CloudStatusManager {
     private void executeLocalCommand(String endpoint, String method, String body) {
         // Get server port from RemoteStreamService
         int port = getServerPort();
-        Log.d(TAG, "☁️ executeLocalCommand - port=" + port + ", endpoint=" + endpoint);
+        Log.d(TAG, "☁️ executeLocalCommand - port=" + port + ", endpoint=" + endpoint + ", body=" + body);
         if (port <= 0) {
             Log.w(TAG, "☁️ Server port not available (port=" + port + ")");
             return;
@@ -595,7 +593,13 @@ public class CloudStatusManager {
             
             if (body != null && "POST".equals(method)) {
                 conn.setDoOutput(true);
-                conn.setRequestProperty("Content-Type", "text/plain");
+                // Use application/json for JSON payloads (alarm, etc.)
+                // Use text/plain for simple values (volume level)
+                if (body.startsWith("{") || body.startsWith("[")) {
+                    conn.setRequestProperty("Content-Type", "application/json");
+                } else {
+                    conn.setRequestProperty("Content-Type", "text/plain");
+                }
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(body.getBytes("UTF-8"));
                 }
