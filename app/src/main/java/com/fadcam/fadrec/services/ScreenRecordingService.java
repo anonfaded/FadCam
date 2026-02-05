@@ -60,6 +60,9 @@ public class ScreenRecordingService extends Service {
     // Recording pipeline (MediaCodec + FragmentedMp4)
     private ScreenRecordingPipeline recordingPipeline;
     private File outputFile;
+    // SAF storage support (for custom storage location)
+    private android.os.ParcelFileDescriptor safRecordingPfd;
+    private android.net.Uri safRecordingUri; // Track SAF URI for notification/broadcasting
     
     // State management
     private ScreenRecordingState recordingState = ScreenRecordingState.NONE;
@@ -294,9 +297,10 @@ public class ScreenRecordingService extends Service {
             throw new IOException("MediaProjection is null - permission may have been revoked or not granted");
         }
         
-        // Create output file
+        // Create output file (may set safRecordingPfd for SAF mode, or return File for internal)
         outputFile = createOutputFile();
-        if (outputFile == null) {
+        // outputFile == null is valid for SAF mode; check both
+        if (outputFile == null && safRecordingPfd == null) {
             throw new IOException("Failed to create output file - check storage permissions and available space");
         }
         
@@ -315,14 +319,23 @@ public class ScreenRecordingService extends Service {
         
         // Build recording pipeline
         try {
-            recordingPipeline = new ScreenRecordingPipeline.Builder(this)
+            ScreenRecordingPipeline.Builder pipelineBuilder = new ScreenRecordingPipeline.Builder(this)
                 .setScreenDimensions(screenWidth, screenHeight, screenDensity)
                 .setVideoConfig(Constants.DEFAULT_SCREEN_RECORDING_FPS, calculatedBitrate)
                 .setEnableAudio(enableAudio)
-                .setOutputFile(outputFile.getAbsolutePath())
                 .setMediaProjection(mediaProjection)
-                .setWatermarkInfoProvider(createWatermarkInfoProvider())
-                .build();
+                .setWatermarkInfoProvider(createWatermarkInfoProvider());
+            
+            // Use FileDescriptor for SAF mode, file path for internal storage
+            if (safRecordingPfd != null) {
+                Log.d(TAG, "Using SAF FileDescriptor for output");
+                pipelineBuilder.setOutputFileDescriptor(safRecordingPfd.getFileDescriptor());
+            } else {
+                Log.d(TAG, "Using internal storage file path for output");
+                pipelineBuilder.setOutputFile(outputFile.getAbsolutePath());
+            }
+            
+            recordingPipeline = pipelineBuilder.build();
             
             Log.d(TAG, "ScreenRecordingPipeline built successfully");
             
@@ -429,6 +442,17 @@ public class ScreenRecordingService extends Service {
             }
             mediaProjection = null;
         }
+        
+        // Close SAF ParcelFileDescriptor if open
+        if (safRecordingPfd != null) {
+            try {
+                safRecordingPfd.close();
+                Log.d(TAG, "SAF ParcelFileDescriptor closed");
+            } catch (Exception e) {
+                Log.e(TAG, "Error closing SAF ParcelFileDescriptor", e);
+            }
+            safRecordingPfd = null;
+        }
     }
 
     /**
@@ -495,14 +519,18 @@ public class ScreenRecordingService extends Service {
                     .remove("screen_recording_start_time")
                     .apply();
                 
-                // Show completion notification (no toast - to avoid spam)
-                if (outputFile != null && outputFile.exists()) {
-                    // Log.d(TAG, "Recording file saved: " + outputFile.getName());
-                    
+                // Show completion notification and broadcast (for both internal and SAF storage)
+                boolean recordingSuccessful = (outputFile != null && outputFile.exists()) || (safRecordingUri != null);
+                
+                if (recordingSuccessful) {
                     // Broadcast recording complete for RecordsFragment to refresh
                     try {
                         Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
-                        recordingCompleteIntent.putExtra("videoPath", outputFile.getAbsolutePath());
+                        if (outputFile != null) {
+                            recordingCompleteIntent.putExtra("videoPath", outputFile.getAbsolutePath());
+                        } else if (safRecordingUri != null) {
+                            recordingCompleteIntent.putExtra("videoUri", safRecordingUri.toString());
+                        }
                         sendBroadcast(recordingCompleteIntent);
                         Log.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for list refresh");
                     } catch (Exception e) {
@@ -510,8 +538,12 @@ public class ScreenRecordingService extends Service {
                     }
                     
                     // Show completion notification with action to view recording
+                    // For SAF mode, pass null (notification still opens Records tab)
                     showCompletionNotification(outputFile);
                 }
+                
+                // Clear SAF URI
+                safRecordingUri = null;
                 
                 // Stop service
                 stopForeground(true);
@@ -642,8 +674,9 @@ public class ScreenRecordingService extends Service {
 
     /**
      * Creates output file with FadRec prefix.
-     * Follows same logic as RecordingService - uses internal storage by default.
-     * Directory changed from "FadCam" to "FadRec" to keep files organized.
+     * Supports both internal storage and custom storage location (SAF).
+     * For custom storage, sets safRecordingPfd instead of returning a File.
+     * @return File object for internal storage, or null for SAF mode (check safRecordingPfd)
      */
     @Nullable
     private File createOutputFile() {
@@ -652,7 +685,52 @@ public class ScreenRecordingService extends Service {
             String baseFilename = Constants.RECORDING_FILE_PREFIX_FADREC + timestamp + "." 
                 + Constants.RECORDING_FILE_EXTENSION;
             
-            // Use internal storage (same as RecordingService), but FadRec directory
+            String storageMode = sharedPreferencesManager.getStorageMode();
+            
+            // Check if custom storage mode is selected
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+                String customUriString = sharedPreferencesManager.getCustomStorageUri();
+                if (customUriString == null) {
+                    Log.e(TAG, "Custom storage selected but URI is null, falling back to internal");
+                    // Fall through to internal storage
+                } else {
+                    android.net.Uri treeUri = android.net.Uri.parse(customUriString);
+                    androidx.documentfile.provider.DocumentFile pickedDir = 
+                        androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri);
+                    
+                    if (pickedDir == null || !pickedDir.canWrite()) {
+                        Log.e(TAG, "Cannot write to custom directory, falling back to internal");
+                        Toast.makeText(this, "Cannot write to custom directory", Toast.LENGTH_LONG).show();
+                        // Fall through to internal storage
+                    } else {
+                        // Create file in custom location using SAF
+                        androidx.documentfile.provider.DocumentFile videoFile = 
+                            pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION, baseFilename);
+                        
+                        if (videoFile == null) {
+                            Log.e(TAG, "Failed to create SAF file");
+                            Toast.makeText(this, "Failed to create file in custom location", Toast.LENGTH_LONG).show();
+                            // Fall through to internal storage
+                        } else {
+                            // Open ParcelFileDescriptor for the SAF file
+                            safRecordingPfd = getContentResolver().openFileDescriptor(videoFile.getUri(), "w");
+                            if (safRecordingPfd == null) {
+                                Log.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
+                                Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                                // Fall through to internal storage
+                            } else {
+                                // Store SAF URI for completion notification/broadcasting
+                                safRecordingUri = videoFile.getUri();
+                                Log.d(TAG, "SAF output file created: " + safRecordingUri);
+                                // Return null to indicate SAF mode (use safRecordingPfd instead)
+                                return null;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Internal storage (default or fallback)
             File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY_FADREC);
             if (!videoDir.exists() && !videoDir.mkdirs()) {
                 Log.e(TAG, "Cannot create FadRec directory: " + videoDir.getAbsolutePath());
@@ -661,7 +739,7 @@ public class ScreenRecordingService extends Service {
             }
             
             File file = new File(videoDir, baseFilename);
-            Log.d(TAG, "Output file: " + file.getAbsolutePath());
+            Log.d(TAG, "Output file (internal): " + file.getAbsolutePath());
             return file;
         } catch (Exception e) {
             Log.e(TAG, "Error creating output file", e);
