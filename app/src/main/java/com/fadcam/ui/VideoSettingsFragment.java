@@ -699,23 +699,36 @@ public class VideoSettingsFragment extends Fragment {
         }
 
         List<Size> curated = new ArrayList<>();
-        // We will only add a size if it has a matching CamcorderProfile (recordable),
-        // preventing phantom choices that cause recording failures.
-        String actualCameraId = getActualCameraIdForType(type);
+        // FIX: Remove CamcorderProfile requirement - FadCam uses MediaCodec (GLRecordingPipeline)
+        // directly, not MediaRecorder, so all hardware-supported resolutions should work.
+        // The old approach filtered out valid resolutions (e.g., front camera 4K on Xiaomi 15)
+        // because they lacked a matching CamcorderProfile even though the camera supports them.
+        // See GitHub issues #239, #204 for user reports.
         for (String dim : CANONICAL) {
             if (!supportedSet.contains(dim))
                 continue; // hardware doesn't advertise it
             try {
                 String[] parts = dim.split("x");
                 Size candidate = new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
-                CamcorderProfile profile = actualCameraId != null ? createProfileForSize(actualCameraId, candidate) : null;
-                if (profile != null) {
-                    curated.add(candidate);
-                    Log.d(TAG, "Resolution Validation: " + dim + " - SUPPORTED (has recording profile)");
-                } else {
-                    Log.d(TAG, "Resolution Validation: " + dim + " - FILTERED OUT (no recording profile)");
-                }
+                curated.add(candidate);
+                Log.d(TAG, "Resolution Validation: " + dim + " - SUPPORTED (hardware advertises it)");
             } catch (Exception ignored) {
+            }
+        }
+
+        // Also add any non-canonical high-resolution sizes (>= 1080p) that the camera 
+        // supports but aren't in our canonical list. This ensures we don't miss
+        // device-specific resolutions like 3280x2464 on Pixel 6a or other unique sizes.
+        Set<String> canonicalSet = new HashSet<>(java.util.Arrays.asList(CANONICAL));
+        for (Size s : supported) {
+            String key = s.getWidth() + "x" + s.getHeight();
+            // Only add non-canonical sizes that are >= 1080p (to avoid cluttering with sensor-native weird sizes)
+            if (!canonicalSet.contains(key) && s.getWidth() >= 1920 && s.getHeight() >= 1080) {
+                boolean alreadyAdded = curated.stream().anyMatch(c -> c.getWidth() == s.getWidth() && c.getHeight() == s.getHeight());
+                if (!alreadyAdded) {
+                    curated.add(s);
+                    Log.d(TAG, "Resolution Validation: " + key + " - SUPPORTED (non-canonical high-res)");
+                }
             }
         }
 
