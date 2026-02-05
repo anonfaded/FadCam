@@ -186,11 +186,14 @@ public class FragmentedMp4MuxerWrapper {
             }
 
             // Add timestamp metadata for creation/modification times
+            // FIX: Mp4TimestampData expects MP4 epoch (seconds since Jan 1, 1904), not Unix epoch
+            // Use the static helper method to properly convert Unix time to MP4 time
             try {
-                long currentTimeSeconds = System.currentTimeMillis() / 1000;
+                long mp4TimeSeconds = androidx.media3.container.Mp4TimestampData.unixTimeToMp4TimeSeconds(
+                    System.currentTimeMillis());
                 muxer.addMetadataEntry(new androidx.media3.container.Mp4TimestampData(
-                    currentTimeSeconds, currentTimeSeconds));
-                Log.d(TAG, "Added timestamp metadata: " + currentTimeSeconds);
+                    mp4TimeSeconds, mp4TimeSeconds));
+                Log.d(TAG, "Added timestamp metadata (MP4 epoch seconds): " + mp4TimeSeconds);
             } catch (Exception e) {
                 Log.w(TAG, "Failed to add timestamp metadata", e);
             }
