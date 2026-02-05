@@ -191,6 +191,14 @@ public class AlarmService extends Service {
             }
             
             isAlarmRinging = false;
+            
+            // CRITICAL: Update RemoteStreamManager so status JSON reflects alarm stopped
+            // Without this, dashboard shows stale "RINGING" state after alarm auto-stops
+            if (streamManager != null) {
+                streamManager.setAlarmRinging(false);
+                Log.i(TAG, "✅ RemoteStreamManager alarm state updated to false");
+            }
+            
             stopForeground(true); // Remove notification
             
         } catch (Exception e) {
