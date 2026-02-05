@@ -2908,11 +2908,9 @@
                     }
                 }
                 
-                // Update alarm display state (only when online)
-                if (status.alarm) {
-                    updateAlarmCardState(status.alarm.isRinging, status.alarm.durationMs);
-                    updateAlarmUIState();
-                }
+                // REMOVED: Alarm state is already updated earlier in the status sync section (lines 2603-2627)
+                // That section correctly uses remainingMs, not durationMs.
+                // Duplicate code here was overwriting with durationMs (always 30s), causing countdown to never update.
             }
             
             const serverUrlEl = document.getElementById('serverUrl');
