@@ -208,6 +208,7 @@ public class HomeFragment extends BaseFragment {
 
     private View cardPreview;
     private Vibrator vibrator;
+    private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon
 
     private CardView cardClock;
     private TextView tvClock, tvDateEnglish, tvDateArabic;
@@ -1503,6 +1504,9 @@ public class HomeFragment extends BaseFragment {
         Log.d(TAG, "onResume: Triggering stats update.");
         updateStats();
         updateTorchUI(isTorchOn);
+
+        // Start bubble rotation animation when visible (battery optimization)
+        startBubbleRotation();
     }
 
     // Inside HomeFragment.java
@@ -2601,6 +2605,10 @@ public class HomeFragment extends BaseFragment {
     public void onPause() {
         super.onPause();
         Log.d(TAG, "HomeFragment paused.");
+
+        // Stop bubble rotation animation to save battery
+        stopBubbleRotation();
+
         if (textureViewSurface != null) {
             Log.d(TAG, "onPause: Explicitly sending null surface to service");
             updateServiceWithCurrentSurface(null);
@@ -7742,6 +7750,9 @@ public class HomeFragment extends BaseFragment {
         // consistently)
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
 
+        // Initialize rotating bubble background (animation started in onResume for battery optimization)
+        ivBubbleBackground = view.findViewById(R.id.ivBubbleBackground);
+
         // Compact overlay handling removed: we now use PickerBottomSheetFragment for
         // controls.
 
@@ -7749,6 +7760,27 @@ public class HomeFragment extends BaseFragment {
         // textureView is handled by setupTextureView
     }
 
+    /**
+     * Starts a continuous slow rotation animation on the bubble background shape.
+     * Creates a modern, dynamic visual effect behind the camera icon.
+     */
+    private void startBubbleRotation() {
+        if (ivBubbleBackground != null) {
+            android.view.animation.Animation rotateAnimation = 
+                android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.rotate_slow_left);
+            ivBubbleBackground.startAnimation(rotateAnimation);
+            Log.d(TAG, "Started bubble background rotation animation");
+        }
+    }
+
+    /**
+     * Stops the bubble rotation animation (for cleanup on pause/destroy).
+     */
+    private void stopBubbleRotation() {
+        if (ivBubbleBackground != null) {
+            ivBubbleBackground.clearAnimation();
+        }
+    }
 
     private boolean isRecordingOrPaused() {
         return (

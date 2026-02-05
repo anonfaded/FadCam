@@ -749,6 +749,15 @@ public class FadRecHomeFragment extends HomeFragment {
             previewCard.addView(screenIconView);
             previewCard.setVisibility(View.VISIBLE);
             
+            // Start rotating bubble animation for modern visual effect
+            android.widget.ImageView bubbleBackground = screenIconView.findViewById(com.fadcam.R.id.ivBubbleBackground);
+            if (bubbleBackground != null) {
+                android.view.animation.Animation rotateAnimation = 
+                    android.view.animation.AnimationUtils.loadAnimation(requireContext(), com.fadcam.R.anim.rotate_slow_left);
+                bubbleBackground.startAnimation(rotateAnimation);
+                Log.d(TAG, "Started FadRec bubble background rotation animation");
+            }
+            
             // IMPORTANT: Disable long press listener from parent HomeFragment
             // FadRec doesn't need camera preview toggle functionality
             previewCard.setOnLongClickListener(null);
