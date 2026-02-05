@@ -2601,35 +2601,32 @@
             currentStatus = status;
 
             // ===== RESTORE ALARM STATE FROM SERVER =====
-            // Sync alarm state from server to restore UI after page reload
-            // Skip sync during preview to avoid UI flicker
+            // Server is the source of truth for alarm state.
+            // Dashboard displays server's remainingMs directly, no local countdown.
             if (status.alarm && !isAlarmPreview) {
-                console.log('[Alarm] Server state:', status.alarm);
-                if (status.alarm.isRinging && !alarmIsActive) {
-                    console.log('[Alarm] Restoring active alarm from server state');
-                    alarmIsActive = true;
-                    alarmActiveDurationMs = status.alarm.durationMs;
+                const serverRinging = status.alarm.isRinging;
+                const serverRemaining = status.alarm.remainingMs || 0;
+                
+                // Update local state to match server
+                alarmIsActive = serverRinging;
+                alarmActiveDurationMs = status.alarm.durationMs;
+                
+                // Update UI to reflect server state
+                if (serverRinging) {
+                    updateAlarmCardState(true, serverRemaining);
                     updateAlarmUIState();
-                    updateAlarmCardState(true, status.alarm.durationMs);
-                    startAlarmCountdown(status.alarm.durationMs);
                     
                     // Restore selected sound in UI
                     const soundSelect = document.getElementById('alarmSoundSelect');
                     if (soundSelect && status.alarm.sound) {
                         soundSelect.value = status.alarm.sound;
                     }
-                } else if (!status.alarm.isRinging && alarmIsActive) {
-                    // Alarm was stopped on server, reset local state
-                    console.log('[Alarm] Alarm stopped on server, resetting local state');
-                    alarmIsActive = false;
-                    stopAlarmCountdown();
-                    updateAlarmUIState();
+                } else {
                     updateAlarmCardState(false, 0);
+                    updateAlarmUIState();
                 }
             } else if (isAlarmPreview) {
                 console.log('[Alarm] Skipping UI sync during preview');
-            } else {
-                console.log('[Alarm] No alarm state from server');
             }
 
             // Update video overlay based on stream readiness (use CSS class for disabled state)
@@ -3568,8 +3565,8 @@
             alarmIsActive = true;
             alarmActiveDurationMs = durationMs;
             updateAlarmUIState();
+            // Server status poll will update with actual remainingMs
             updateAlarmCardState(true, durationMs);
-            startAlarmCountdown(durationMs);
 
             // Hide schedule status display since alarm is now ringing
             const scheduleStatusDisplay = document.getElementById('scheduleStatusDisplay');
@@ -3738,8 +3735,8 @@
                     alarmIsActive = true;
                     alarmActiveDurationMs = durationMs;
                     updateAlarmUIState();
+                    // Show initial state, server status poll will update with actual remainingMs
                     updateAlarmCardState(true, durationMs);
-                    startAlarmCountdown(durationMs);
                     showToast('🚨 Alarm activated', 3000);
                 } else {
                     executingState.stop('alarmActive');
@@ -3767,7 +3764,7 @@
                 if (data.status === 'success' || data.success) {
                     executingState.stop('alarmActive');
                     alarmIsActive = false;
-                    stopAlarmCountdown();
+                    // Server status poll will update UI to READY state
                     updateAlarmCardState(false, 0);
                     updateAlarmUIState();
                     showToast('⏹️ Alarm stopped', 2000);
@@ -3782,14 +3779,12 @@
             }
         }
         
-        let alarmCountdownInterval = null;
-        let alarmStartTime = null;
-        let alarmDurationMs = null;
+        // Alarm state variables (server-authoritative - local vars just for UI tracking)
         let scheduleCountdownInterval = null;
         let alarmScheduled = null;
         let alarmScheduleWhen = 'today';
-        let alarmIsActive = false; // Track local active state
-        let alarmActiveDurationMs = 0; // Track local active duration
+        let alarmIsActive = false; // Track if alarm is ringing (synced from server)
+        let alarmActiveDurationMs = 0; // Track active alarm's total duration
         let isAlarmPreview = false; // Suppress alarm UI sync during preview
         
         // Load scheduled alarm from localStorage on startup
@@ -3810,63 +3805,15 @@
             console.error('Error loading scheduled alarm:', e);
         }
         
-        /**
-         * Start countdown timer for alarm card.
-         * Only starts if not already running to prevent restart loops from status sync.
-         */
-        function startAlarmCountdown(durationMs) {
-            // If countdown is already running, don't restart it
-            // This prevents status sync from resetting the countdown every poll
-            if (alarmCountdownInterval) {
-                console.log('[Alarm] Countdown already running, skipping restart');
-                return;
-            }
-            
-            if (durationMs === -1) return; // Don't count infinite
-            
-            alarmDurationMs = durationMs;
-            alarmStartTime = Date.now();
-            
-            const updateCountdown = () => {
-                const elapsed = Date.now() - alarmStartTime;
-                const remaining = Math.max(0, durationMs - elapsed);
-                const seconds = Math.ceil(remaining / 1000);
-                
-                const countdownEl = document.getElementById('alarmCountdown');
-                if (countdownEl) {
-                    if (remaining > 0) {
-                        countdownEl.textContent = seconds + 's left';
-                    } else {
-                        countdownEl.textContent = '';
-                        stopAlarmCountdown();
-                        // When local countdown expires, let the server tell us when it's actually stopped
-                        // Don't set alarmIsActive = false here - wait for server sync
-                    }
-                }
-            };
-            
-            updateCountdown(); // Initial call
-            alarmCountdownInterval = setInterval(updateCountdown, 500);
-        }
-        
-        /**
-         * Stop countdown timer.
-         */
-        function stopAlarmCountdown() {
-            if (alarmCountdownInterval) {
-                clearInterval(alarmCountdownInterval);
-                alarmCountdownInterval = null;
-            }
-            const countdownEl = document.getElementById('alarmCountdown');
-            if (countdownEl) {
-                countdownEl.textContent = '';
-            }
-        }
+        // NOTE: Local countdown timer removed - we now use server's remainingMs directly
+        // This ensures dashboard always displays accurate time from the phone.
         
         /**
          * Update alarm card state based on ringing status.
+         * @param {boolean} isRinging - Is alarm currently ringing
+         * @param {number} remainingMs - Remaining time in milliseconds (from server's remainingMs)
          */
-        function updateAlarmCardState(isRinging, durationMs) {
+        function updateAlarmCardState(isRinging, remainingMs) {
             const card = document.getElementById('alarmCard');
             const stateTextEl = document.getElementById('alarmStateText');
             const countdownEl = document.getElementById('alarmCountdown');
@@ -3876,11 +3823,13 @@
                 card.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(211, 47, 47, 0.1) 100%)';
                 card.style.borderColor = '#ef4444';
                 card.style.borderWidth = '2px';
-                stateTextEl.textContent = durationMs === -1 ? '∞ RINGING' : 'RINGING';
+                stateTextEl.textContent = remainingMs === -1 ? '∞ RINGING' : 'RINGING';
                 stateTextEl.style.color = '#ef4444';
-                if (countdownEl && durationMs > 0) {
-                    const seconds = Math.ceil(durationMs / 1000);
+                if (countdownEl && remainingMs > 0) {
+                    const seconds = Math.ceil(remainingMs / 1000);
                     countdownEl.textContent = seconds + 's left';
+                } else if (countdownEl) {
+                    countdownEl.textContent = '';
                 }
                 // Intense ringing animation with bell shake
                 iconEl.style.animation = 'bellShake 0.4s infinite';
