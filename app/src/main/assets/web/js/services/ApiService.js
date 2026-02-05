@@ -412,7 +412,7 @@ class ApiService {
     
     /**
      * Send command through HTTP relay.
-     * Uses PUT /api/command/{user_uuid}/{device_id}/{cmd_id}
+     * Uses PUT /api/command/{user_uuid}/{device_id}/{cmd_id}.json
      * Phone polls this endpoint every 1.5 seconds.
      */
     async _sendCloudCommandViaRelay(endpoint, data, userId, deviceId) {
@@ -428,7 +428,8 @@ class ApiService {
         };
         
         // Build URL with token auth (avoids CORS header issues)
-        const commandUrl = this._buildCloudUrl(`/api/command/${userId}/${deviceId}/${cmdId}`);
+        // NOTE: .json extension required by nginx relay server pattern
+        const commandUrl = this._buildCloudUrl(`/api/command/${userId}/${deviceId}/${cmdId}.json`);
         console.log(`☁️ [COMMAND] PUT to relay`, command);
         
         try {
