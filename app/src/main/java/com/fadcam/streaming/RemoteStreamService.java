@@ -211,10 +211,10 @@ public class RemoteStreamService extends Service {
             @Override
             public void run() {
                 updateNotification();
-                notificationHandler.postDelayed(this, 5000); // Update every 5 seconds
+                notificationHandler.postDelayed(this, 30000); // Update every 30 seconds (was 5s, too frequent)
             }
         };
-        notificationHandler.postDelayed(notificationUpdateRunnable, 5000);
+        notificationHandler.postDelayed(notificationUpdateRunnable, 30000);
     }
     
     /**
@@ -396,6 +396,7 @@ public class RemoteStreamService extends Service {
             .setContentIntent(pendingIntent)
             .addAction(android.R.drawable.ic_menu_view, "Copy Link", copyPendingIntent)
             .setOngoing(true)
+            .setShowWhen(false) // Don't show "now" timestamp, it's a persistent notification
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build();
     }
