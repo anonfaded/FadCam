@@ -46,6 +46,11 @@ public class CameraXFrameRateUtil {
         Log.i(TAG, "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " using CameraX API ===");
         final List<Integer> defaultRateList = Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
 
+        // DUAL_PIP doesn't map to a single camera — use BACK camera for FPS queries
+        if (cameraType != null && cameraType.isDual()) {
+            cameraType = CameraType.BACK;
+        }
+
         try {
             ProcessCameraProvider cameraProvider = ProcessCameraProvider.getInstance(context).get();
             if (cameraProvider == null) {

@@ -27,6 +27,8 @@ import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.VideoCodec;
+import com.fadcam.dualcam.DualCameraCapability;
+import com.fadcam.dualcam.ui.DualCameraSettingsBottomSheet;
 import com.fadcam.ui.OverlayNavUtil;
 
 import java.util.ArrayList;
@@ -146,8 +148,12 @@ public class VideoSettingsFragment extends Fragment {
 
     private void refreshAllValues() {
         CameraType cam = prefs.getCameraSelection();
-        valueCamera.setText(cam == CameraType.FRONT ? getString(R.string.button_settings_cam_front)
-                : getString(R.string.button_settings_cam_back));
+        if (cam == CameraType.DUAL_PIP) {
+            valueCamera.setText(getString(R.string.button_settings_cam_dual));
+        } else {
+            valueCamera.setText(cam == CameraType.FRONT ? getString(R.string.button_settings_cam_front)
+                    : getString(R.string.button_settings_cam_back));
+        }
 
         // Lens
         if (cam == CameraType.BACK) {
@@ -229,7 +235,7 @@ public class VideoSettingsFragment extends Fragment {
                             : getString(R.string.video_setting_location_embed_disabled));
         }
 
-        // Lens row visibility
+        // Lens row visibility — hide for Dual PiP and Front
         View lensRow = requireView().findViewById(R.id.row_lens);
         if (lensRow != null) {
             lensRow.setVisibility(cam == CameraType.BACK && availableBackCameras.size() > 0 ? View.VISIBLE : View.GONE);
@@ -298,10 +304,23 @@ public class VideoSettingsFragment extends Fragment {
                 getString(R.string.button_settings_cam_front)));
         items.add(new com.fadcam.ui.picker.OptionItem(CameraType.BACK.toString(),
                 getString(R.string.button_settings_cam_back)));
+
+        // Add Dual Camera (PiP) option if device supports it
+        DualCameraCapability dualCap = new DualCameraCapability(requireContext());
+        if (dualCap.isSupported()) {
+            items.add(new com.fadcam.ui.picker.OptionItem(CameraType.DUAL_PIP.toString(),
+                    getString(R.string.button_settings_cam_dual)));
+        }
+
         final String resultKey = "picker_result_camera";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (sel != null && !sel.equals(current.toString())) {
+                CameraType selectedType = CameraType.valueOf(sel);
+
+                // Sync dual camera preference with selection
+                prefs.setDualCameraModeEnabled(selectedType == CameraType.DUAL_PIP);
+
                 prefs.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, sel).apply();
 
                 // Clear cached resolution lists when camera type changes to force refresh
@@ -309,9 +328,19 @@ public class VideoSettingsFragment extends Fragment {
                 cachedResolutionsBack.clear();
 
                 refreshAllValues();
+
+                // Show PiP settings bottom sheet when Dual is selected
+                if (selectedType == CameraType.DUAL_PIP) {
+                    DualCameraSettingsBottomSheet.newInstance()
+                            .show(getParentFragmentManager(), DualCameraSettingsBottomSheet.TAG);
+                }
             }
         });
         String helper = getString(R.string.note_cam_sele);
+        // Append dual camera unsupported note if device doesn't support it
+        if (!dualCap.isSupported()) {
+            helper += "\n\n" + getString(R.string.note_cam_dual_unsupported);
+        }
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_cam_title), items, current.toString(), resultKey, helper);
@@ -319,7 +348,8 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private void showLensBottomSheet() {
-        if (prefs.getCameraSelection() == CameraType.FRONT) {
+        CameraType cam = prefs.getCameraSelection();
+        if (cam == CameraType.FRONT || cam.isDual()) {
             return;
         }
         if (availableBackCameras.isEmpty())
@@ -649,6 +679,10 @@ public class VideoSettingsFragment extends Fragment {
 
     private List<Size> getCompatiblesVideoResolutions(CameraType type) {
         // method(getCompatiblesVideoResolutions)-----------
+        // DUAL_PIP inherits BACK camera resolutions
+        if (type != null && type.isDual()) {
+            type = CameraType.BACK;
+        }
         // First return cached list if available
         if (type == CameraType.FRONT && !cachedResolutionsFront.isEmpty())
             return cachedResolutionsFront;
@@ -940,7 +974,8 @@ public class VideoSettingsFragment extends Fragment {
 
     private List<CamcorderProfile> getCamcorderProfilesFallback(CameraType cameraType) {
         List<CamcorderProfile> profiles = new ArrayList<>();
-        int cameraId = cameraType.getCameraId();
+        // DUAL_PIP has cameraId=2 which is not a real hardware camera — use BACK camera profiles
+        int cameraId = cameraType.isDual() ? CameraType.BACK.getCameraId() : cameraType.getCameraId();
         // Simplified: treat 8K like 4K - just check if profile exists, no API level checks
         if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_8KUHD))
             profiles.add(CamcorderProfile.get(cameraId, CamcorderProfile.QUALITY_8KUHD));
@@ -990,6 +1025,10 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private String getActualCameraIdForType(CameraType type) {
+        // DUAL_PIP doesn't map to a single camera — fall back to BACK for capability queries
+        if (type != null && type.isDual()) {
+            type = CameraType.BACK;
+        }
         Context ctx = getContext();
         if (ctx == null)
             return null;
@@ -1469,6 +1508,11 @@ public class VideoSettingsFragment extends Fragment {
             return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
         }
 
+        // DUAL_PIP doesn't map to a single camera — use BACK camera for FPS capability queries
+        if (cameraType != null && cameraType.isDual()) {
+            cameraType = CameraType.BACK;
+        }
+
         // Use the new CameraX utility for framerate detection
         try {
             Log.i(TAG, "Using CameraX API for framerate detection");
@@ -1516,6 +1560,11 @@ public class VideoSettingsFragment extends Fragment {
         if (manager == null) {
             Log.e(TAG, "FPS Query: CameraManager is null.");
             return defaultRateList;
+        }
+
+        // DUAL_PIP doesn't map to a single camera — use BACK camera for FPS capability queries
+        if (cameraType != null && cameraType.isDual()) {
+            cameraType = CameraType.BACK;
         }
 
         String targetCameraId = null;

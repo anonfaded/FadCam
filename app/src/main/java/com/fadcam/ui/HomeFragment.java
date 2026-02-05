@@ -80,6 +80,7 @@ import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
+import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.utils.DebouncedRunnable;
@@ -259,6 +260,17 @@ public class HomeFragment extends BaseFragment {
     private volatile boolean isCameraSwitchInProgress = false;
     private volatile long lastCameraSwitchCompleteTime = 0; // Debounce duplicate toasts
     private volatile long lastCameraSwitchTime = 0; // Track when switch completed to prevent button disable
+
+    // ── Dual Camera ────────────────────────────────────────────────────
+    /** {@code true} while a dual-camera recording session is active. */
+    private volatile boolean isDualRecordingActive = false;
+    private BroadcastReceiver broadcastOnDualRecordingStarted;
+    private BroadcastReceiver broadcastOnDualRecordingStopped;
+    private BroadcastReceiver broadcastOnDualRecordingPaused;
+    private BroadcastReceiver broadcastOnDualRecordingResumed;
+    private BroadcastReceiver broadcastOnDualCameraError;
+    private BroadcastReceiver broadcastOnDualCamerasSwapped;
+    private boolean isDualBroadcastsRegistered = false;
 
     private BroadcastReceiver cameraResourceAvailabilityReceiver;
     private boolean isCameraResourceAvailabilityReceiverRegistered = false;
@@ -907,6 +919,8 @@ public class HomeFragment extends BaseFragment {
             currentCameraTypeString = getString(R.string.front);
         } else if (currentCameraType.equals(CameraType.BACK)) {
             currentCameraTypeString = getString(R.string.back);
+        } else if (currentCameraType.equals(CameraType.DUAL_PIP)) {
+            currentCameraTypeString = getString(R.string.button_settings_cam_dual);
         }
 
         // Toast.makeText(getContext(), this.getString(R.string.current_camera) + ": " +
@@ -914,6 +928,23 @@ public class HomeFragment extends BaseFragment {
     }
 
     protected void fetchRecordingState() {
+        // ── Dual Camera: if service is running, restore dual state ─────
+        if (isMyServiceRunning(DualCameraRecordingService.class)) {
+            Log.d(TAG, "fetchRecordingState: DualCameraRecordingService is running");
+            isDualRecordingActive = true;
+            if (recordingState == RecordingState.NONE) {
+                recordingState = RecordingState.IN_PROGRESS;
+                setUIForRecordingActive();
+            }
+            return;
+        } else {
+            // Service is not running — clear dual flag if it was set
+            if (isDualRecordingActive) {
+                Log.d(TAG, "fetchRecordingState: DualCameraRecordingService not running, clearing dual flag");
+                isDualRecordingActive = false;
+            }
+        }
+
         Intent startIntent = new Intent(getActivity(), RecordingService.class);
         startIntent.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
         requireActivity().startService(startIntent);
@@ -1210,6 +1241,9 @@ public class HomeFragment extends BaseFragment {
 
         // OPTIMIZATION: Re-enable debug logging now that recording has stopped
         com.fadcam.Log.setRecordingActive(false);
+
+        // Clear dual recording flag
+        isDualRecordingActive = false;
 
         // First update the recording state
         recordingState = RecordingState.NONE;
@@ -1578,6 +1612,9 @@ public class HomeFragment extends BaseFragment {
         // Register camera switch receivers
         registerCameraSwitchReceivers(context);
 
+        // Register dual camera broadcast receivers
+        registerDualCameraBroadcastReceivers();
+
         // -----
         registerCameraResourceAvailabilityReceiver();
 
@@ -1809,6 +1846,160 @@ public class HomeFragment extends BaseFragment {
                 "Initialized broadcastOnRecordingStateCallback receiver"
             );
         }
+    }
+
+    // ── Dual Camera Broadcast Receivers ────────────────────────────────
+
+    /**
+     * Initialises broadcast receivers for dual-camera recording events.
+     * These mirror the pattern used by single-camera receivers.
+     */
+    private void initializeDualCameraBroadcastReceivers() {
+        if (broadcastOnDualRecordingStarted == null) {
+            broadcastOnDualRecordingStarted = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded()) return;
+                    Log.d(TAG, "✅ DUAL_RECORDING_STARTED received");
+                    isDualRecordingActive = true;
+                    recordingState = RecordingState.IN_PROGRESS;
+                    setUIForRecordingActive();
+                    if (getContext() != null) {
+                        Utils.showQuickToast(requireContext(), R.string.dual_recording_started);
+                    }
+                    vibrateTouch();
+                }
+            };
+        }
+        if (broadcastOnDualRecordingStopped == null) {
+            broadcastOnDualRecordingStopped = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded()) return;
+                    Log.d(TAG, "⏹️ DUAL_RECORDING_STOPPED received");
+                    isDualRecordingActive = false;
+                    onRecordingStopped();
+                    if (getContext() != null) {
+                        Utils.showQuickToast(requireContext(), R.string.dual_recording_stopped);
+                    }
+                }
+            };
+        }
+        if (broadcastOnDualRecordingPaused == null) {
+            broadcastOnDualRecordingPaused = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded()) return;
+                    Log.d(TAG, "⏸️ DUAL_RECORDING_PAUSED received");
+                    onRecordingPaused();
+                }
+            };
+        }
+        if (broadcastOnDualRecordingResumed == null) {
+            broadcastOnDualRecordingResumed = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded()) return;
+                    Log.d(TAG, "▶️ DUAL_RECORDING_RESUMED received");
+                    onRecordingResumed();
+                }
+            };
+        }
+        if (broadcastOnDualCameraError == null) {
+            broadcastOnDualCameraError = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded()) return;
+                    String reason = i != null ? i.getStringExtra("error_reason") : "Unknown error";
+                    Log.e(TAG, "❌ DUAL_CAMERA_ERROR: " + reason);
+                    isDualRecordingActive = false;
+                    onRecordingStopped();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(),
+                                getString(R.string.dual_camera_error, reason),
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+            };
+        }
+        if (broadcastOnDualCamerasSwapped == null) {
+            broadcastOnDualCamerasSwapped = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent i) {
+                    if (!isAdded()) return;
+                    Log.d(TAG, "🔄 DUAL_CAMERAS_SWAPPED received");
+                    if (getContext() != null) {
+                        Utils.showQuickToast(requireContext(), R.string.dual_cameras_swapped);
+                    }
+                }
+            };
+        }
+        Log.d(TAG, "Initialized dual camera broadcast receivers");
+    }
+
+    /**
+     * Registers dual-camera broadcast receivers with the application context.
+     */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerDualCameraBroadcastReceivers() {
+        if (isDualBroadcastsRegistered) return;
+        Context ctx = getContext();
+        if (ctx == null) return;
+
+        initializeDualCameraBroadcastReceivers();
+
+        String[] actions = {
+            Constants.BROADCAST_ON_DUAL_RECORDING_STARTED,
+            Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED,
+            Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED,
+            Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED,
+            Constants.BROADCAST_ON_DUAL_CAMERA_ERROR,
+            Constants.BROADCAST_ON_DUAL_CAMERAS_SWAPPED
+        };
+        BroadcastReceiver[] receivers = {
+            broadcastOnDualRecordingStarted,
+            broadcastOnDualRecordingStopped,
+            broadcastOnDualRecordingPaused,
+            broadcastOnDualRecordingResumed,
+            broadcastOnDualCameraError,
+            broadcastOnDualCamerasSwapped
+        };
+
+        for (int idx = 0; idx < actions.length; idx++) {
+            IntentFilter filter = new IntentFilter(actions[idx]);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ctx.registerReceiver(receivers[idx], filter, Context.RECEIVER_EXPORTED);
+            } else {
+                ctx.registerReceiver(receivers[idx], filter);
+            }
+        }
+        isDualBroadcastsRegistered = true;
+        Log.d(TAG, "Dual camera broadcast receivers registered");
+    }
+
+    /**
+     * Unregisters dual-camera broadcast receivers.
+     */
+    private void unregisterDualCameraBroadcastReceivers() {
+        if (!isDualBroadcastsRegistered) return;
+        Context ctx = getContext();
+        if (ctx == null) return;
+
+        BroadcastReceiver[] receivers = {
+            broadcastOnDualRecordingStarted,
+            broadcastOnDualRecordingStopped,
+            broadcastOnDualRecordingPaused,
+            broadcastOnDualRecordingResumed,
+            broadcastOnDualCameraError,
+            broadcastOnDualCamerasSwapped
+        };
+        for (BroadcastReceiver r : receivers) {
+            if (r != null) {
+                try { ctx.unregisterReceiver(r); } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        isDualBroadcastsRegistered = false;
+        Log.d(TAG, "Dual camera broadcast receivers unregistered");
     }
 
     /**
@@ -2567,6 +2758,9 @@ public class HomeFragment extends BaseFragment {
 
         // Unregister camera switch receivers
         unregisterCameraSwitchReceivers(context);
+
+        // Unregister dual camera broadcast receivers
+        unregisterDualCameraBroadcastReceivers();
 
         if (isSegmentCompleteStatsReceiverRegistered) {
             try {
@@ -4478,12 +4672,14 @@ public class HomeFragment extends BaseFragment {
             }
 
             // If service is not running, force recordingState to NONE
-            if (!isMyServiceRunning(RecordingService.class)) {
+            if (!isMyServiceRunning(RecordingService.class)
+                    && !isMyServiceRunning(DualCameraRecordingService.class)) {
                 Log.d(
                     TAG,
                     "Service not running, forcing recordingState to NONE"
                 );
                 recordingState = RecordingState.NONE;
+                isDualRecordingActive = false;
             }
 
             // Temporarily disable button to prevent rapid clicks
@@ -4528,6 +4724,13 @@ public class HomeFragment extends BaseFragment {
         }
         performHapticFeedback();
         // Permission checks removed; handled by onboarding
+
+        // ── Dual Camera path ──────────────────────────────────────────
+        CameraType selectedCam = sharedPreferencesManager.getCameraSelection();
+        if (selectedCam == CameraType.DUAL_PIP) {
+            startDualRecording();
+            return;
+        }
 
         // Check if codec is HEVC - browsers don't support HEVC for HLS live streaming
         // Only validate if streaming is actually enabled (server running)
@@ -4600,6 +4803,101 @@ public class HomeFragment extends BaseFragment {
         // setUIForRecordingActive(); // Move UI update to onRecordingStarted broadcast
         // receiver
         Log.d(TAG, "startRecording: RecordingService start initiated.");
+    }
+
+    // ── Dual Camera Recording ─────────────────────────────────────────
+
+    /**
+     * Starts the {@link DualCameraRecordingService} for simultaneous
+     * front + back PiP recording.
+     */
+    private void startDualRecording() {
+        if (getContext() == null) {
+            Log.e(TAG, "startDualRecording: Context null");
+            return;
+        }
+
+        // Prevent starting if either recording service is already running
+        if (isMyServiceRunning(DualCameraRecordingService.class)) {
+            Log.w(TAG, "DualCameraRecordingService already running");
+            return;
+        }
+        if (isMyServiceRunning(RecordingService.class)) {
+            Log.w(TAG, "RecordingService already running, cannot start dual recording");
+            return;
+        }
+
+        Log.d(TAG, "startDualRecording: Starting DualCameraRecordingService");
+        isDualRecordingActive = true;
+
+        Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_START_DUAL_RECORDING);
+        ContextCompat.startForegroundService(getContext(), intent);
+
+        Log.d(TAG, "startDualRecording: DualCameraRecordingService start initiated.");
+    }
+
+    /**
+     * Stops the running dual-camera recording service.
+     */
+    private void stopDualRecording() {
+        if (getContext() == null) {
+            Log.w(TAG, "stopDualRecording: Context null");
+            return;
+        }
+        Log.i(TAG, ">> stopDualRecording user action");
+        disableInteractionButtons();
+
+        Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_STOP_DUAL_RECORDING);
+        try {
+            getContext().startService(intent);
+            Log.i(TAG, "Sent STOP_DUAL intent.");
+        } catch (Exception e) {
+            Log.e(TAG, "Error sending STOP_DUAL intent: ", e);
+            Toast.makeText(getContext(), "Error stopping dual recording", Toast.LENGTH_SHORT).show();
+            resetUIButtonsToIdleState();
+        }
+        vibrateTouch();
+    }
+
+    /**
+     * Pauses the running dual-camera recording.
+     */
+    private void pauseDualRecording() {
+        Log.d(TAG, "pauseDualRecording: Pausing dual video recording");
+        buttonPauseResume.setIcon(
+                AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
+        buttonPauseResume.setEnabled(false);
+
+        Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_PAUSE_DUAL_RECORDING);
+        requireActivity().startService(intent);
+    }
+
+    /**
+     * Resumes a paused dual-camera recording.
+     */
+    private void resumeDualRecording() {
+        Log.d(TAG, "resumeDualRecording: Resuming dual video recording");
+        buttonPauseResume.setIcon(
+                AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
+        buttonPauseResume.setEnabled(false);
+
+        Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_RESUME_DUAL_RECORDING);
+        requireActivity().startService(intent);
+    }
+
+    /**
+     * Swaps primary/secondary cameras in dual-camera mode (while recording).
+     */
+    private void swapDualCameras() {
+        Log.d(TAG, "swapDualCameras: Swapping cameras in dual mode");
+        Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_SWAP_DUAL_CAMERAS);
+        requireActivity().startService(intent);
+        vibrateTouch();
     }
 
     /**
@@ -5397,9 +5695,13 @@ public class HomeFragment extends BaseFragment {
         try {
             com.fadcam.CameraType camType =
                 sharedPreferencesManager.getCameraSelection();
-            cameraLabel = camType == com.fadcam.CameraType.FRONT
-                ? getString(R.string.mainpage_camera_front)
-                : getString(R.string.mainpage_camera_back);
+            if (camType == com.fadcam.CameraType.FRONT) {
+                cameraLabel = getString(R.string.mainpage_camera_front);
+            } else if (camType.isDual()) {
+                cameraLabel = getString(R.string.button_settings_cam_dual);
+            } else {
+                cameraLabel = getString(R.string.mainpage_camera_back);
+            }
         } catch (Exception ignored) {
             cameraLabel = "";
         }
@@ -5471,11 +5773,13 @@ public class HomeFragment extends BaseFragment {
                         com.fadcam.CameraType camType =
                             sharedPreferencesManager.getCameraSelection();
                         if (ivCameraIcon != null) {
-                            ivCameraIcon.setText(
-                                camType == com.fadcam.CameraType.FRONT
-                                    ? "camera_front"
-                                    : "camera_alt"
-                            );
+                            if (camType == com.fadcam.CameraType.FRONT) {
+                                ivCameraIcon.setText("camera_front");
+                            } else if (camType.isDual()) {
+                                ivCameraIcon.setText("switch_video");
+                            } else {
+                                ivCameraIcon.setText("camera_alt");
+                            }
                         }
                     } catch (Exception ignored) {}
 
@@ -6321,6 +6625,12 @@ public class HomeFragment extends BaseFragment {
     private void pauseRecording() {
         Log.d(TAG, "pauseRecording: Pausing video recording");
 
+        // ── Dual Camera path ──────────────────────────────────────────
+        if (isDualRecordingActive) {
+            pauseDualRecording();
+            return;
+        }
+
         buttonPauseResume.setIcon(
             AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)
         );
@@ -6336,6 +6646,12 @@ public class HomeFragment extends BaseFragment {
 
     private void resumeRecording() {
         Log.d(TAG, "resumeRecording: Resuming video recording");
+
+        // ── Dual Camera path ──────────────────────────────────────────
+        if (isDualRecordingActive) {
+            resumeDualRecording();
+            return;
+        }
 
         buttonPauseResume.setIcon(
             AppCompatResources.getDrawable(
@@ -6773,6 +7089,10 @@ public class HomeFragment extends BaseFragment {
      * Helper method for zoom functionality.
      */
     private String getActualCameraIdForType(CameraType cameraType) {
+        // DUAL_PIP doesn't map to a single camera — fall back to BACK for capability queries
+        if (cameraType != null && cameraType.isDual()) {
+            cameraType = CameraType.BACK;
+        }
         try {
             if (cameraManager != null) {
                 if (cameraType == CameraType.FRONT) {
@@ -6852,6 +7172,12 @@ public class HomeFragment extends BaseFragment {
             return;
         } // Prevent multi-stop
 
+        // ── Dual Camera path ──────────────────────────────────────────
+        if (isDualRecordingActive) {
+            stopDualRecording();
+            return;
+        }
+
         Log.i(TAG, ">> stopRecording user action");
         disableInteractionButtons();
         Log.d(TAG, "stopRecording: Btns disabled.");
@@ -6914,8 +7240,25 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        // ── Dual Camera path — swap PiP cameras ──────────────────────
+        if (isDualRecordingActive) {
+            swapDualCameras();
+            Toast.makeText(getContext(),
+                    getString(R.string.dual_cameras_swapped),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Determine target camera type (opposite of current)
         CameraType currentType = sharedPreferencesManager.getCameraSelection();
+
+        // DUAL_PIP toggle is handled by swapDualCameras() above — if we reach here with
+        // DUAL_PIP it means the dual check didn't match (e.g. stale state). Ignore the tap.
+        if (currentType.isDual()) {
+            Log.w(TAG, "toggleCamera: DUAL_PIP reached single-camera toggle path — ignoring");
+            return;
+        }
+
         CameraType targetType = (currentType == CameraType.BACK) ? CameraType.FRONT : CameraType.BACK;
 
         // Check if recording is active
@@ -7519,6 +7862,9 @@ public class HomeFragment extends BaseFragment {
                 RecordingService.class.getName().equals(
                     service.service.getClassName()
                 )
+                || DualCameraRecordingService.class.getName().equals(
+                    service.service.getClassName()
+                )
             ) {
                 return true;
             }
@@ -7807,6 +8153,12 @@ public class HomeFragment extends BaseFragment {
                 TAG,
                 "updateServiceWithCurrentSurface: Fragment not added or context is null, cannot send surface update."
             );
+            return;
+        }
+
+        // Dual camera recording does not use a preview surface from HomeFragment
+        if (isDualRecordingActive) {
+            Log.d(TAG, "updateServiceWithCurrentSurface: Skipped — dual recording active");
             return;
         }
 

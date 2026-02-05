@@ -793,13 +793,18 @@ public class DualCameraRecordingService extends Service {
 
     // ── Broadcasting ──────────────────────────────────────────────────
 
+    /**
+     * Sends a regular broadcast (not LocalBroadcastManager) so that receivers
+     * registered with {@code context.registerReceiver()} in HomeFragment
+     * can receive the events — matching the pattern used by RecordingService.
+     */
     private void broadcastAction(@NonNull String action) {
-        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(action));
+        sendBroadcast(new Intent(action));
     }
 
     private void broadcastError(@NonNull String reason) {
         Intent intent = new Intent(Constants.BROADCAST_ON_DUAL_CAMERA_ERROR);
         intent.putExtra("error_reason", reason);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        sendBroadcast(intent);
     }
 }

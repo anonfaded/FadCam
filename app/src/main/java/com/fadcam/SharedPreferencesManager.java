@@ -293,7 +293,12 @@ public class SharedPreferencesManager {
             Constants.PREF_CAMERA_SELECTION,
             String.valueOf(Constants.DEFAULT_CAMERA_TYPE)
         );
-        return CameraType.valueOf(cameraSelection);
+        try {
+            return CameraType.valueOf(cameraSelection);
+        } catch (IllegalArgumentException e) {
+            // Fallback if stored value is invalid (e.g. after downgrade)
+            return CameraType.BACK;
+        }
     }
 
     public Size getCameraResolution() {
@@ -330,10 +335,11 @@ public class SharedPreferencesManager {
      * If no specific preference is saved, it falls back to the old generic
      * preference OR the default FPS.
      *
-     * @param cameraType FRONT or BACK camera.
+     * @param cameraType FRONT or BACK camera. DUAL_PIP inherits BACK camera settings.
      * @return The saved frame rate (int).
      */
     public int getSpecificVideoFrameRate(CameraType cameraType) {
+        // DUAL_PIP inherits BACK camera frame rate settings
         String specificKey = (cameraType == CameraType.FRONT)
             ? Constants.PREF_VIDEO_FRAME_RATE_FRONT
             : Constants.PREF_VIDEO_FRAME_RATE_BACK;
@@ -397,10 +403,11 @@ public class SharedPreferencesManager {
      * For wide-angle cameras, uses a lower default zoom ratio to properly utilize
      * the wide field of view.
      *
-     * @param cameraType FRONT or BACK camera.
+     * @param cameraType FRONT, BACK, or DUAL_PIP camera. DUAL_PIP inherits BACK camera settings.
      * @return The saved zoom ratio (float).
      */
     public float getSpecificZoomRatio(CameraType cameraType) {
+        // DUAL_PIP inherits BACK camera zoom settings
         String specificKey = (cameraType == CameraType.FRONT)
             ? Constants.PREF_ZOOM_RATIO_FRONT
             : Constants.PREF_ZOOM_RATIO_BACK;

@@ -1494,6 +1494,13 @@ public class RecordingService extends Service {
         }
 
         CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+
+        // DUAL_PIP is handled by DualCameraRecordingService — guard against accidental use here.
+        if (selectedType != null && selectedType.isDual()) {
+            Log.w(TAG, "openCamera: DUAL_PIP reached RecordingService — falling back to BACK");
+            selectedType = CameraType.BACK;
+        }
+
         String cameraToOpenId = null;
 
         try {
@@ -3587,11 +3594,18 @@ public class RecordingService extends Service {
     }
 
     /**
-     * Helper method to get the proper camera ID based on camera type
+     * Helper method to get the proper camera ID based on camera type.
+     * Only supports FRONT and BACK — DUAL_PIP is handled by DualCameraRecordingService.
      */
     private String getCameraId(CameraManager cameraManager, CameraType cameraType) {
         if (cameraManager == null)
             return null;
+
+        // DUAL_PIP should never reach RecordingService; route through DualCameraRecordingService instead.
+        if (cameraType != null && cameraType.isDual()) {
+            Log.w(TAG, "getCameraId called with DUAL_PIP — falling back to BACK camera ID");
+            cameraType = CameraType.BACK;
+        }
 
         try {
             if (cameraType == CameraType.BACK) {

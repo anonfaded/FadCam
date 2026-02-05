@@ -210,6 +210,14 @@
     <string name="note_cam_sele">Select camera \n(Default: Back)</string>
     <string name="button_settings_cam_back">Back</string>
     <string name="button_settings_cam_front">Front</string>
+    <string name="button_settings_cam_dual">Dual (PiP)</string>
+    <string name="note_cam_dual_unsupported">Your device does not support concurrent dual camera recording.</string>
+    <string name="dual_recording_started">Dual camera recording started</string>
+    <string name="dual_recording_stopped">Dual camera recording stopped</string>
+    <string name="dual_cameras_swapped">Cameras swapped</string>
+    <string name="dual_camera_error">Dual camera error: %s</string>
+    <string name="dual_camera_not_supported_toast">Dual camera not supported on this device</string>
+    <string name="dual_camera_pip_settings">Dual Camera PiP Settings</string>
     <string name="setting_quailty_title">Video Quality</string>
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="setting_zoom_ratio_title">Zoom Ratio</string>
