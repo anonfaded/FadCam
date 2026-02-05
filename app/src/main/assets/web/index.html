@@ -3812,10 +3812,15 @@
         
         /**
          * Start countdown timer for alarm card.
+         * Only starts if not already running to prevent restart loops from status sync.
          */
         function startAlarmCountdown(durationMs) {
-            // Clear existing countdown
-            stopAlarmCountdown();
+            // If countdown is already running, don't restart it
+            // This prevents status sync from resetting the countdown every poll
+            if (alarmCountdownInterval) {
+                console.log('[Alarm] Countdown already running, skipping restart');
+                return;
+            }
             
             if (durationMs === -1) return; // Don't count infinite
             
@@ -3834,10 +3839,8 @@
                     } else {
                         countdownEl.textContent = '';
                         stopAlarmCountdown();
-                        // Auto-reset alarm state when duration expires naturally
-                        alarmIsActive = false;
-                        updateAlarmUIState();
-                        updateAlarmCardState(false, 0);
+                        // When local countdown expires, let the server tell us when it's actually stopped
+                        // Don't set alarmIsActive = false here - wait for server sync
                     }
                 }
             };
