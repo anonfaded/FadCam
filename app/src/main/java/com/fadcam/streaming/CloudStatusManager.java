@@ -528,71 +528,40 @@ public class CloudStatusManager {
     }
     
     /**
-     * Execute a command by calling the local LiveM3U8Server endpoint
+     * Execute a command by calling the local LiveM3U8Server endpoint.
+     * 
+     * Dashboard converts endpoint to action: "/audio/volume" → "audio_volume"
+     * We convert back: "audio_volume" → "/audio/volume"
+     * 
+     * This ensures dashboard and local streaming use the SAME endpoint paths.
      */
     private void executeCommand(String cmdId, JSONObject command) {
         try {
             String action = command.getString("action");
             Log.i(TAG, "☁️ Executing cloud command: " + action);
             
-            // Map action to local endpoint
-            String endpoint = null;
-            String method = "POST";
-            String requestBody = null;
+            // Convert action back to endpoint path
+            // Dashboard did: "/audio/volume" → "audio_volume"
+            // We undo it:    "audio_volume" → "/audio/volume"
+            String endpoint = "/" + action.replace("_", "/");
             
-            switch (action) {
-                case "torch_toggle":
-                    endpoint = "/torch/toggle";
-                    break;
-                case "torch_on":
-                    endpoint = "/torch/on";
-                    break;
-                case "torch_off":
-                    endpoint = "/torch/off";
-                    break;
-                case "camera_switch":
-                    endpoint = "/camera/switch";
-                    break;
-                case "camera_front":
-                    endpoint = "/camera/set";
-                    requestBody = "front";
-                    break;
-                case "camera_back":
-                    endpoint = "/camera/set";
-                    requestBody = "back";
-                    break;
-                case "alarm_start":
-                    endpoint = "/alarm/start";
-                    // Check for params
-                    if (command.has("params")) {
-                        JSONObject params = command.getJSONObject("params");
-                        requestBody = params.toString();
-                    }
-                    break;
-                case "alarm_stop":
-                    endpoint = "/alarm/stop";
-                    break;
-                case "volume_set":
-                    endpoint = "/volume/set";
-                    if (command.has("params")) {
-                        JSONObject params = command.getJSONObject("params");
-                        requestBody = String.valueOf(params.optInt("level", 50));
-                    }
-                    break;
-                case "recording_start":
-                    endpoint = "/recording/start";
-                    break;
-                case "recording_stop":
-                    endpoint = "/recording/stop";
-                    break;
-                default:
-                    Log.w(TAG, "Unknown cloud command action: " + action);
-                    deleteCommand(cmdId);
-                    return;
+            // Build request body from params (if present)
+            String requestBody = null;
+            if (command.has("params")) {
+                JSONObject params = command.getJSONObject("params");
+                // For volume, send just the level value as the LiveM3U8Server expects
+                if (params.has("level")) {
+                    requestBody = String.valueOf(params.getInt("level"));
+                } else if (params.length() > 0) {
+                    // For other params, send as JSON
+                    requestBody = params.toString();
+                }
             }
             
+            Log.d(TAG, "☁️ Mapped action '" + action + "' → endpoint '" + endpoint + "'");
+            
             // Execute command via localhost
-            executeLocalCommand(endpoint, method, requestBody);
+            executeLocalCommand(endpoint, "POST", requestBody);
             
             // Delete command after execution
             deleteCommand(cmdId);
