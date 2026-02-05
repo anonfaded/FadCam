@@ -2124,14 +2124,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return 0;
         }
         
-        // Get file path for FFprobe - use SAF protocol for content:// URIs
-        String filePath;
-        if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
-            filePath = videoUri.getPath();
-        } else {
-            // For content:// URIs, use SAF protocol
-            filePath = "saf:" + videoUri.toString();
-        }
+        // Get file path for FFprobe - try multiple approaches for content:// URIs
+        String filePath = getFFprobePathForUri(videoUri);
         
         // Use FFprobeKit to get accurate duration
         try {
@@ -2152,7 +2146,61 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             Log.e(TAG, "Error getting duration from FFprobe for URI: " + videoUri, e);
         }
         
+        // Fallback: Use MediaMetadataRetriever (proper Android API for content:// URIs)
+        android.media.MediaMetadataRetriever retriever = null;
+        try {
+            retriever = new android.media.MediaMetadataRetriever();
+            retriever.setDataSource(context, videoUri);
+            String durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (durationStr != null) {
+                long durationMs = Long.parseLong(durationStr);
+                Log.d(TAG, "Duration from MediaMetadataRetriever fallback: " + durationMs + "ms");
+                return durationMs;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "MediaMetadataRetriever fallback failed for URI: " + videoUri, e);
+        } finally {
+            if (retriever != null) {
+                try {
+                    retriever.release();
+                } catch (Exception e) {
+                    Log.w(TAG, "Error releasing MediaMetadataRetriever", e);
+                }
+            }
+        }
+        
         return 0;
+    }
+    
+    /**
+     * Gets the appropriate file path for FFprobeKit.
+     * For content:// URIs, tries reconstructed path first, then falls back to SAF protocol.
+     */
+    private String getFFprobePathForUri(Uri videoUri) {
+        if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
+            return videoUri.getPath();
+        }
+        
+        // For content:// URIs, try to get actual file path first (more reliable)
+        String path = videoUri.getPath();
+        if (path != null && path.contains(":")) {
+            // SAF URIs often have format /tree/primary:FadCam/document/primary:FadCam/file.mp4
+            // or /document/primary:Download/FadCam/file.mp4
+            int lastColonIndex = path.lastIndexOf(':');
+            if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
+                String relativePath = path.substring(lastColonIndex + 1);
+                String reconstructedPath = "/storage/emulated/0/" + relativePath;
+                java.io.File file = new java.io.File(reconstructedPath);
+                if (file.exists() && file.canRead()) {
+                    Log.d(TAG, "Using reconstructed file path for FFprobe: " + reconstructedPath);
+                    return reconstructedPath;
+                }
+            }
+        }
+        
+        // Fall back to SAF protocol
+        Log.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
+        return "saf:" + videoUri.toString();
     }
 
     // Get file name from URI (Helper) - Crucial for Save to Gallery/Rename default

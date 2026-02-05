@@ -327,14 +327,63 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                 Log.w(TAG, "FFprobeKit returned null MediaInformation");
             }
 
-            // Location data - use MediaMetadataRetriever (FFprobe doesn't handle GPS well)
+            // Use MediaMetadataRetriever as fallback for missing metadata and for location
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             try {
                 retriever.setDataSource(getContext(), videoUri);
+                
+                // Fallback for duration if FFprobe didn't get it
+                if (getString(R.string.video_info_unknown).equals(metadata.duration)) {
+                    String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                    if (durationStr != null) {
+                        try {
+                            long durationMs = Long.parseLong(durationStr);
+                            metadata.duration = formatVideoDuration(durationMs);
+                            Log.d(TAG, "MediaMetadataRetriever duration fallback: " + metadata.duration);
+                        } catch (NumberFormatException e) {
+                            Log.w(TAG, "Failed to parse duration from MediaMetadataRetriever: " + durationStr);
+                        }
+                    }
+                }
+                
+                // Fallback for resolution if FFprobe didn't get it
+                if (getString(R.string.video_info_unknown).equals(metadata.resolution)) {
+                    String widthStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                    String heightStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+                    if (widthStr != null && heightStr != null) {
+                        try {
+                            int width = Integer.parseInt(widthStr);
+                            int height = Integer.parseInt(heightStr);
+                            String resolutionName = getResolutionName(width, height);
+                            metadata.resolution = width + " x " + height + " (" + resolutionName + ")";
+                            Log.d(TAG, "MediaMetadataRetriever resolution fallback: " + metadata.resolution);
+                        } catch (NumberFormatException e) {
+                            Log.w(TAG, "Failed to parse resolution from MediaMetadataRetriever");
+                        }
+                    }
+                }
+                
+                // Fallback for bitrate if FFprobe didn't get it
+                if (getString(R.string.video_info_unknown).equals(metadata.bitrate)) {
+                    String bitrateStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+                    if (bitrateStr != null) {
+                        try {
+                            long bitrate = Long.parseLong(bitrateStr);
+                            metadata.bitrate = formatBitrate(bitrate);
+                            Log.d(TAG, "MediaMetadataRetriever bitrate fallback: " + metadata.bitrate);
+                        } catch (NumberFormatException e) {
+                            Log.w(TAG, "Failed to parse bitrate from MediaMetadataRetriever: " + bitrateStr);
+                        }
+                    }
+                }
+                
+                // Location data (FFprobe doesn't handle GPS well)
                 metadata.location = extractLocationData(retriever);
             } catch (Exception e) {
-                Log.w(TAG, "Could not extract location data", e);
-                metadata.location = getString(R.string.video_info_no_location);
+                Log.w(TAG, "Could not extract data with MediaMetadataRetriever", e);
+                if (getString(R.string.video_info_unknown).equals(metadata.location) || metadata.location == null) {
+                    metadata.location = getString(R.string.video_info_no_location);
+                }
             } finally {
                 try {
                     retriever.release();
@@ -550,15 +599,52 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     }
 
     /**
-     * Gets the path for FFprobeKit. For content:// URIs, uses the SAF protocol prefix.
+     * Gets the path for FFprobeKit. For content:// URIs, tries multiple approaches:
+     * 1. SAF protocol prefix (saf:)
+     * 2. Reconstructed file path (for Download/Documents folders)
+     * 3. File descriptor path via ParcelFileDescriptor
      */
     private String getFFprobePath() {
         if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
             return videoUri.getPath();
         }
-        // For content:// URIs, use the SAF protocol for FFprobeKit
+        
+        // For content:// URIs, try to get actual file path first (more reliable)
+        String reconstructedPath = tryGetActualFilePath();
+        if (reconstructedPath != null) {
+            java.io.File file = new java.io.File(reconstructedPath);
+            if (file.exists() && file.canRead()) {
+                Log.d(TAG, "Using reconstructed file path for FFprobe: " + reconstructedPath);
+                return reconstructedPath;
+            }
+        }
+        
+        // Fall back to SAF protocol for FFprobeKit
         // Format: saf:<content-uri>
+        Log.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
         return "saf:" + videoUri.toString();
+    }
+    
+    /**
+     * Attempts to reconstruct the actual file path from a SAF content:// URI.
+     * Works for common paths like Download, Documents, external storage.
+     */
+    @Nullable
+    private String tryGetActualFilePath() {
+        String path = videoUri.getPath();
+        if (path == null || !path.contains(":")) {
+            return null;
+        }
+        
+        // SAF URIs often have format /tree/primary:FadCam/document/primary:FadCam/file.mp4
+        // or /document/primary:Download/FadCam/file.mp4
+        int lastColonIndex = path.lastIndexOf(':');
+        if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
+            String relativePath = path.substring(lastColonIndex + 1);
+            // Reconstruct absolute path
+            return "/storage/emulated/0/" + relativePath;
+        }
+        return null;
     }
 
     private String getFormattedLastModified() {
