@@ -290,6 +290,9 @@
         <!-- Services and receivers remain unchanged -->
         <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 
+        <!-- Dual Camera Recording Service for PiP dual camera recording -->
+        <service android:name=".dualcam.service.DualCameraRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
+
         <!-- Remote Streaming Service for HTTP LAN streaming -->
         <service android:name=".streaming.RemoteStreamService" android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
 

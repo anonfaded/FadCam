@@ -1881,5 +1881,84 @@ public class SharedPreferencesManager {
     }
 
     // -------------- Generic Boolean Preferences End ------
-}
 
+    // ── Dual Camera (PiP) Preferences ──────────────────────────────────────
+
+    /**
+     * Returns {@code true} if the user has enabled dual-camera (PiP) recording mode.
+     * Default: {@code false}.
+     */
+    public boolean isDualCameraModeEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DUAL_CAMERA_ENABLED, false);
+    }
+
+    /**
+     * Enables or disables dual-camera (PiP) recording mode.
+     */
+    public void setDualCameraModeEnabled(boolean enabled) {
+        sharedPreferences.edit()
+                .putBoolean(Constants.PREF_DUAL_CAMERA_ENABLED, enabled)
+                .apply();
+    }
+
+    /**
+     * Reads all dual-camera PiP configuration preferences and returns a
+     * {@link com.fadcam.dualcam.DualCameraConfig}.
+     */
+    public com.fadcam.dualcam.DualCameraConfig getDualCameraConfig() {
+        com.fadcam.dualcam.DualCameraConfig.PipPosition pos;
+        try {
+            pos = com.fadcam.dualcam.DualCameraConfig.PipPosition.valueOf(
+                    sharedPreferences.getString(Constants.PREF_DUAL_CAMERA_PIP_POSITION, "BOTTOM_RIGHT"));
+        } catch (IllegalArgumentException e) {
+            pos = com.fadcam.dualcam.DualCameraConfig.PipPosition.BOTTOM_RIGHT;
+        }
+
+        com.fadcam.dualcam.DualCameraConfig.PipSize size;
+        try {
+            size = com.fadcam.dualcam.DualCameraConfig.PipSize.valueOf(
+                    sharedPreferences.getString(Constants.PREF_DUAL_CAMERA_PIP_SIZE, "MEDIUM"));
+        } catch (IllegalArgumentException e) {
+            size = com.fadcam.dualcam.DualCameraConfig.PipSize.MEDIUM;
+        }
+
+        com.fadcam.dualcam.DualCameraConfig.PrimaryCamera primary;
+        try {
+            primary = com.fadcam.dualcam.DualCameraConfig.PrimaryCamera.valueOf(
+                    sharedPreferences.getString(Constants.PREF_DUAL_CAMERA_PRIMARY, "BACK"));
+        } catch (IllegalArgumentException e) {
+            primary = com.fadcam.dualcam.DualCameraConfig.PrimaryCamera.BACK;
+        }
+
+        boolean border = sharedPreferences.getBoolean(Constants.PREF_DUAL_CAMERA_SHOW_BORDER, true);
+        boolean rounded = sharedPreferences.getBoolean(Constants.PREF_DUAL_CAMERA_ROUND_CORNERS, true);
+        int marginDp = sharedPreferences.getInt(Constants.PREF_DUAL_CAMERA_PIP_MARGIN_DP, 12);
+
+        return new com.fadcam.dualcam.DualCameraConfig.Builder()
+                .pipPosition(pos)
+                .pipSize(size)
+                .primaryCamera(primary)
+                .showPipBorder(border)
+                .roundPipCorners(rounded)
+                .pipMarginDp(marginDp)
+                .build();
+    }
+
+    /**
+     * Persists dual-camera PiP configuration to SharedPreferences.
+     *
+     * @param config The configuration to save. Must not be {@code null}.
+     */
+    public void saveDualCameraConfig(@androidx.annotation.NonNull com.fadcam.dualcam.DualCameraConfig config) {
+        sharedPreferences.edit()
+                .putString(Constants.PREF_DUAL_CAMERA_PIP_POSITION, config.getPipPosition().name())
+                .putString(Constants.PREF_DUAL_CAMERA_PIP_SIZE, config.getPipSize().name())
+                .putString(Constants.PREF_DUAL_CAMERA_PRIMARY, config.getPrimaryCamera().name())
+                .putBoolean(Constants.PREF_DUAL_CAMERA_SHOW_BORDER, config.isShowPipBorder())
+                .putBoolean(Constants.PREF_DUAL_CAMERA_ROUND_CORNERS, config.isRoundPipCorners())
+                .putInt(Constants.PREF_DUAL_CAMERA_PIP_MARGIN_DP, config.getPipMarginDp())
+                .apply();
+    }
+
+    // ── End Dual Camera Preferences ────────────────────────────────────────
+}

@@ -422,4 +422,42 @@ public abstract class Constants {
     public static final String PREF_PLAYER_CONTROLS_TIMEOUT_SECONDS =
         "pref_player_controls_timeout_seconds";
     public static final int DEFAULT_PLAYER_CONTROLS_TIMEOUT_SECONDS = 5; // default 5 seconds
+
+    // ── Dual Camera (PiP) Constants ────────────────────────────────────────
+    public static final String PREF_DUAL_CAMERA_ENABLED = "dual_camera_enabled";
+    public static final String PREF_DUAL_CAMERA_PIP_POSITION = "dual_camera_pip_position";
+    public static final String PREF_DUAL_CAMERA_PIP_SIZE = "dual_camera_pip_size";
+    public static final String PREF_DUAL_CAMERA_PRIMARY = "dual_camera_primary";
+    public static final String PREF_DUAL_CAMERA_SHOW_BORDER = "dual_camera_show_border";
+    public static final String PREF_DUAL_CAMERA_ROUND_CORNERS = "dual_camera_round_corners";
+    public static final String PREF_DUAL_CAMERA_PIP_MARGIN_DP = "dual_camera_pip_margin_dp";
+
+    // Dual camera intent actions
+    public static final String INTENT_ACTION_START_DUAL_RECORDING =
+        "com.fadcam.ACTION_START_DUAL_RECORDING";
+    public static final String INTENT_ACTION_STOP_DUAL_RECORDING =
+        "com.fadcam.ACTION_STOP_DUAL_RECORDING";
+    public static final String INTENT_ACTION_PAUSE_DUAL_RECORDING =
+        "com.fadcam.ACTION_PAUSE_DUAL_RECORDING";
+    public static final String INTENT_ACTION_RESUME_DUAL_RECORDING =
+        "com.fadcam.ACTION_RESUME_DUAL_RECORDING";
+    public static final String INTENT_ACTION_SWAP_DUAL_CAMERAS =
+        "com.fadcam.ACTION_SWAP_DUAL_CAMERAS";
+    public static final String INTENT_ACTION_UPDATE_PIP_CONFIG =
+        "com.fadcam.ACTION_UPDATE_PIP_CONFIG";
+
+    // Dual camera broadcast actions
+    public static final String BROADCAST_ON_DUAL_RECORDING_STARTED =
+        "com.fadcam.ON_DUAL_RECORDING_STARTED";
+    public static final String BROADCAST_ON_DUAL_RECORDING_STOPPED =
+        "com.fadcam.ON_DUAL_RECORDING_STOPPED";
+    public static final String BROADCAST_ON_DUAL_RECORDING_PAUSED =
+        "com.fadcam.ON_DUAL_RECORDING_PAUSED";
+    public static final String BROADCAST_ON_DUAL_RECORDING_RESUMED =
+        "com.fadcam.ON_DUAL_RECORDING_RESUMED";
+    public static final String BROADCAST_ON_DUAL_CAMERA_ERROR =
+        "com.fadcam.ON_DUAL_CAMERA_ERROR";
+    public static final String BROADCAST_ON_DUAL_CAMERAS_SWAPPED =
+        "com.fadcam.ON_DUAL_CAMERAS_SWAPPED";
+    // ── End Dual Camera Constants ──────────────────────────────────────────
 }
