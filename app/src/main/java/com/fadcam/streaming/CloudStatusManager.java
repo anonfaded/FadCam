@@ -37,9 +37,9 @@ import java.util.concurrent.Executors;
 public class CloudStatusManager {
     private static final String TAG = "CloudStatusManager";
     
-    // Push interval: 2 seconds for status, 3 seconds for commands, 30 seconds for viewers
+    // Push interval: 2 seconds for status, 1.5 seconds for commands (Realtime disabled), 30 seconds for viewers
     private static final long STATUS_PUSH_INTERVAL_MS = 2000;
-    private static final long COMMAND_POLL_INTERVAL_MS = 3000;
+    private static final long COMMAND_POLL_INTERVAL_MS = 1500; // Reduced from 3000 since Realtime is disabled
     private static final long VIEWERS_POLL_INTERVAL_MS = 30000; // Poll cloud viewers every 30s
     
     // Failure tracking for robust recovery (Step 6.11)
@@ -57,16 +57,12 @@ public class CloudStatusManager {
     private final Handler handler;
     private final ExecutorService executor;
     
-    // Supabase Realtime for instant commands
-    private SupabaseRealtimeClient realtimeClient;
-    
     // State
     private boolean isRunning = false;
     private Runnable statusRunnable;
     private Runnable commandRunnable;
     private Runnable viewersRunnable;
     private int statusPushCount = 0;
-    private int realtimeCommandCount = 0;
     
     private CloudStatusManager(Context context) {
         this.context = context.getApplicationContext();
@@ -212,148 +208,10 @@ public class CloudStatusManager {
         };
         handler.postDelayed(viewersRunnable, 2000); // Start 2s after server starts
         
-        // Start Supabase Realtime for instant command delivery
-        startSupabaseRealtime();
-        
         Log.i(TAG, "☁️ Cloud status manager started (status: " + STATUS_PUSH_INTERVAL_MS + 
-              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, viewers: " + VIEWERS_POLL_INTERVAL_MS + "ms, realtime: enabled)");
+              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, viewers: " + VIEWERS_POLL_INTERVAL_MS + "ms)");
     }
     
-    /**
-     * Start Supabase Realtime connection for instant command delivery.
-     * This provides <200ms command latency vs 3s polling.
-     */
-    private void startSupabaseRealtime() {
-        String deviceId = getDeviceId();
-        String userId = authManager.getUserId();
-        
-        if (deviceId == null || userId == null) {
-            Log.w(TAG, "☁️ Cannot start Realtime: missing deviceId or userId");
-            return;
-        }
-        
-        try {
-            realtimeClient = new SupabaseRealtimeClient(deviceId, userId, (action, params) -> {
-                // Command received instantly via WebSocket
-                realtimeCommandCount++;
-                Log.i(TAG, "☁️ ⚡ INSTANT COMMAND #" + realtimeCommandCount + ": " + action);
-                
-                // Execute command via local server (same as polling)
-                executeCommandFromRealtime(action, params);
-            });
-            
-            realtimeClient.connect();
-            Log.i(TAG, "☁️ Supabase Realtime connecting for device: " + deviceId);
-            
-        } catch (Exception e) {
-            Log.e(TAG, "☁️ Failed to start Supabase Realtime: " + e.getMessage());
-            // Fallback to polling (already running)
-        }
-    }
-    
-    /**
-     * Execute command received via Supabase Realtime.
-     * Maps action to local endpoint and calls LiveM3U8Server.
-     */
-    private void executeCommandFromRealtime(String action, org.json.JSONObject params) {
-        try {
-            Log.i(TAG, "☁️ Executing realtime command: " + action);
-            
-            // Map action to local endpoint (same mapping as executeCommand)
-            String endpoint = null;
-            String method = "POST";
-            String requestBody = null;
-            
-            switch (action) {
-                // Torch commands
-                case "torch_toggle":
-                    endpoint = "/torch/toggle";
-                    break;
-                case "torch_on":
-                    endpoint = "/torch/on";
-                    break;
-                case "torch_off":
-                    endpoint = "/torch/off";
-                    break;
-                    
-                // Camera commands
-                case "camera_switch":
-                    endpoint = "/camera/switch";
-                    break;
-                case "camera_front":
-                    endpoint = "/camera/set";
-                    requestBody = "front";
-                    break;
-                case "camera_back":
-                    endpoint = "/camera/set";
-                    requestBody = "back";
-                    break;
-                    
-                // Alarm commands (dashboard sends alarm_ring, alarm_stop)
-                case "alarm_ring":
-                    endpoint = "/alarm/ring";
-                    if (params != null && params.length() > 0) {
-                        requestBody = params.toString();
-                    }
-                    break;
-                case "alarm_stop":
-                    endpoint = "/alarm/stop";
-                    break;
-                    
-                // Volume command (dashboard sends audio_volume)
-                case "audio_volume":
-                    endpoint = "/audio/volume";
-                    if (params != null) {
-                        requestBody = params.toString();
-                    }
-                    break;
-                    
-                // Recording commands
-                case "recording_toggle":
-                    endpoint = "/recording/toggle";
-                    break;
-                case "recording_start":
-                    endpoint = "/recording/start";
-                    break;
-                case "recording_stop":
-                    endpoint = "/recording/stop";
-                    break;
-                    
-                // Config commands
-                case "config_recordingMode":
-                    endpoint = "/config/recordingMode";
-                    if (params != null) {
-                        requestBody = params.toString();
-                    }
-                    break;
-                case "config_streamQuality":
-                    endpoint = "/config/streamQuality";
-                    if (params != null) {
-                        requestBody = params.toString();
-                    }
-                    break;
-                    
-                // Server commands
-                case "server_toggle":
-                    endpoint = "/server/toggle";
-                    break;
-                    
-                default:
-                    Log.w(TAG, "☁️ Unknown realtime command action: " + action);
-                    return;
-            }
-            
-            // Execute command via localhost (run on background thread)
-            final String finalEndpoint = endpoint;
-            final String finalBody = requestBody;
-            executor.execute(() -> {
-                executeLocalCommand(finalEndpoint, method, finalBody);
-            });
-            
-        } catch (Exception e) {
-            Log.e(TAG, "☁️ Failed to execute realtime command: " + e.getMessage());
-        }
-    }
 
     /**
      * Stop status push and command polling.
@@ -365,13 +223,6 @@ public class CloudStatusManager {
         }
         
         isRunning = false;
-        
-        // Stop Supabase Realtime
-        if (realtimeClient != null) {
-            realtimeClient.disconnect();
-            realtimeClient = null;
-            Log.i(TAG, "☁️ Supabase Realtime disconnected (received " + realtimeCommandCount + " instant commands)");
-        }
         
         if (statusRunnable != null) {
             handler.removeCallbacks(statusRunnable);

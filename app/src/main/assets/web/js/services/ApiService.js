@@ -52,35 +52,12 @@ class ApiService {
     
     /**
      * Set stream context (called from FadCamRemote after auth)
-     * Also initializes Supabase Realtime for instant command delivery in cloud mode.
-     * 
-     * NOTE: Realtime is currently DISABLED to reduce Supabase connection usage.
-     * Commands are sent via HTTP relay (1-2 second latency instead of <200ms).
+     * Commands in cloud mode are sent via HTTP relay (phone polls every 1.5s).
      */
     setStreamContext(ctx) {
         this.streamContext = ctx;
         console.log('[ApiService] Stream context set:', ctx);
-        
-        // DISABLED: Supabase Realtime for commands (to reduce connection usage)
-        // Commands now go through HTTP relay with ~1-2 second latency
-        // To re-enable, uncomment the block below:
-        /*
-        if (ctx && ctx.userId && ctx.deviceId) {
-            if (typeof realtimeCommandService !== 'undefined') {
-                console.log('[ApiService] ⚡ Initializing Supabase Realtime for instant commands...');
-                realtimeCommandService.initialize(ctx.deviceId, ctx.userId).then(success => {
-                    if (success) {
-                        console.log('[ApiService] ✅ Realtime ready for instant command delivery');
-                    } else {
-                        console.warn('[ApiService] ⚠️ Realtime init failed, will use HTTP polling for commands');
-                    }
-                }).catch(err => {
-                    console.warn('[ApiService] ⚠️ Realtime init error:', err.message);
-                });
-            }
-        }
-        */
-        console.log('[ApiService] ℹ️ Using HTTP relay for commands (Realtime disabled)');
+        console.log('[ApiService] ℹ️ Using HTTP relay for commands');
     }
     
     /**
@@ -429,35 +406,7 @@ class ApiService {
             throw new Error('Missing user or device ID');
         }
         
-        // DISABLED: Supabase Realtime (to reduce connection usage)
-        // Commands now go directly to HTTP relay
-        // To re-enable instant delivery, uncomment the Realtime block below:
-        /*
-        // Convert endpoint to action (e.g., "torch/toggle" -> "torch_toggle")
-        const action = endpoint.replace(/\//g, '_').replace(/^_/, '');
-        
-        // Try Supabase Realtime first (instant delivery)
-        if (typeof realtimeCommandService !== 'undefined' && realtimeCommandService.isReady()) {
-            try {
-                const result = await realtimeCommandService.sendCommand(action, data);
-                if (result.success) {
-                    console.log(`☁️ [COMMAND] ⚡ INSTANT: ${action} (${result.latency}ms)`);
-                    return {
-                        success: true,
-                        command_id: Date.now(),
-                        instant: true,
-                        latency: result.latency,
-                        message: `Instant command delivered (${result.latency}ms)`
-                    };
-                }
-                console.warn(`☁️ [COMMAND] Realtime failed, falling back to HTTP:`, result.error);
-            } catch (e) {
-                console.warn(`☁️ [COMMAND] Realtime error, falling back to HTTP:`, e.message);
-            }
-        }
-        */
-        
-        // Send via HTTP relay (phone polls every 1.5 seconds)
+        // Send command to relay server (phone polls every 1.5 seconds)
         return this._sendCloudCommandViaRelay(endpoint, data, userId, deviceId);
     }
     
