@@ -53,9 +53,9 @@ public class Clip {
     }
 
     /**
-     * Internal constructor for deserialization / cloning.
+     * Constructor for deserialization / cloning.
      */
-    Clip(@NonNull String id, @NonNull Uri sourceUri,
+    public Clip(@NonNull String id, @NonNull Uri sourceUri,
          long inPointMs, long outPointMs, long sourceDurationMs,
          float speedMultiplier) {
         this.id = id;

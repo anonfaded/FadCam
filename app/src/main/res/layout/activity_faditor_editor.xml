@@ -1,39 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/editor_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF000000"
+    android:orientation="vertical"
+    android:background="#FF0D0D0D"
+    android:fitsSystemWindows="true"
     tools:context="com.fadcam.ui.faditor.FaditorEditorActivity">
 
-    <!-- Top toolbar with close + title + export -->
+    <!-- ─── Top bar ──────────────────────────────────────────────── -->
     <LinearLayout
         android:id="@+id/editor_top_bar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="4dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingEnd="12dp"
         android:background="#FF1A1A1A"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:elevation="2dp">
 
-        <!-- Close button -->
-        <ImageButton
+        <!-- Close button (Material Icon) -->
+        <TextView
             android:id="@+id/btn_close"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="close"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/faditor_close"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="#FFFFFF"
-            android:scaleType="centerInside" />
+            android:contentDescription="@string/faditor_close" />
 
         <!-- Title -->
         <TextView
@@ -43,7 +44,7 @@
             android:layout_weight="1"
             android:text="@string/faditor_editor_title"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="17sp"
             android:textStyle="bold"
             android:gravity="center"
             android:singleLine="true"
@@ -52,161 +53,154 @@
         <!-- Export button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_export"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/Widget.Material3.Button"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="36dp"
             android:text="@string/faditor_export"
             android:textSize="13sp"
-            app:cornerRadius="20dp" />
+            android:textAllCaps="false"
+            app:backgroundTint="#FF4CAF50"
+            app:cornerRadius="18dp"
+            app:iconSize="18dp"
+            app:iconPadding="4dp" />
     </LinearLayout>
 
-    <!-- Video player view -->
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/player_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#FF000000"
-        app:show_buffering="when_playing"
-        app:use_controller="false"
-        app:layout_constraintTop_toBottomOf="@id/editor_top_bar"
-        app:layout_constraintBottom_toTopOf="@id/time_display_bar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        app:layout_constraintDimensionRatio="16:9" />
-
-    <!-- Spacer to push timeline down (fills remaining space between player and timeline) -->
-    <View
-        android:id="@+id/player_spacer"
+    <!-- ─── Player section (fills available space) ───────────────── -->
+    <FrameLayout
+        android:id="@+id/player_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/player_view"
-        app:layout_constraintBottom_toTopOf="@id/time_display_bar"
-        app:layout_constraintVertical_weight="1" />
+        android:layout_weight="1"
+        android:background="#FF0D0D0D">
 
-    <!-- Time display (current / total) -->
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/player_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            app:show_buffering="when_playing"
+            app:resize_mode="fit"
+            app:use_controller="false" />
+    </FrameLayout>
+
+    <!-- ─── Controls section (bottom portion) ────────────────────── -->
     <LinearLayout
-        android:id="@+id/time_display_bar"
-        android:layout_width="0dp"
+        android:id="@+id/controls_section"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="4dp"
-        app:layout_constraintBottom_toTopOf="@id/play_controls_bar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <TextView
-            android:id="@+id/time_current"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textColor="#AAAAAA"
-            android:textSize="13sp"
-            android:fontFamily="monospace" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" / "
-            android:textColor="#666666"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/time_total"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textColor="#AAAAAA"
-            android:textSize="13sp"
-            android:fontFamily="monospace" />
-    </LinearLayout>
-
-    <!-- Play / pause controls -->
-    <LinearLayout
-        android:id="@+id/play_controls_bar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp"
-        app:layout_constraintBottom_toTopOf="@id/timeline_view"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <!-- Play / Pause toggle -->
-        <ImageButton
-            android:id="@+id/btn_play_pause"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/faditor_play_pause"
-            android:src="@android:drawable/ic_media_play"
-            android:tint="#FFFFFF"
-            android:scaleType="centerInside" />
-    </LinearLayout>
-
-    <!-- Timeline with trim handles -->
-    <com.fadcam.ui.faditor.timeline.TimelineView
-        android:id="@+id/timeline_view"
-        android:layout_width="0dp"
-        android:layout_height="80dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@id/editor_bottom_toolbar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Bottom toolbar (tools) -->
-    <LinearLayout
-        android:id="@+id/editor_bottom_toolbar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="16dp"
+        android:orientation="vertical"
         android:background="#FF1A1A1A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:elevation="4dp">
 
-        <!-- Trim tool button (active by default in MVP) -->
+        <!-- Time display + play/pause -->
         <LinearLayout
-            android:id="@+id/tool_trim"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp">
 
+            <!-- Current time -->
             <TextView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:gravity="center"
-                android:fontFamily="@font/materialicons"
-                android:text="content_cut"
-                android:textColor="#4CAF50"
-                android:textSize="22sp" />
-
-            <TextView
+                android:id="@+id/time_current"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/faditor_tool_trim"
-                android:textColor="#4CAF50"
-                android:textSize="11sp"
-                android:layout_marginTop="2dp" />
+                android:text="00:00"
+                android:textColor="#BBBBBB"
+                android:textSize="13sp"
+                android:fontFamily="monospace" />
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Play / Pause toggle (Material Icon) -->
+            <TextView
+                android:id="@+id/btn_play_pause"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="play_arrow"
+                android:textColor="#FFFFFF"
+                android:textSize="32sp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/faditor_play_pause" />
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Total time -->
+            <TextView
+                android:id="@+id/time_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#BBBBBB"
+                android:textSize="13sp"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <!-- Timeline with trim handles -->
+        <com.fadcam.ui.faditor.timeline.TimelineView
+            android:id="@+id/timeline_view"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Bottom toolbar -->
+        <LinearLayout
+            android:id="@+id/editor_bottom_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingTop="4dp"
+            android:paddingBottom="12dp"
+            android:background="#FF141414">
+
+            <!-- Trim tool (active by default) -->
+            <LinearLayout
+                android:id="@+id/tool_trim"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="content_cut"
+                    android:textColor="#4CAF50"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_trim"
+                    android:textColor="#4CAF50"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Export progress overlay (hidden by default) -->
+    <!-- ─── Export progress overlay (hidden by default) ──────────── -->
     <FrameLayout
         android:id="@+id/export_progress_overlay"
         android:layout_width="match_parent"
@@ -215,24 +209,35 @@
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:elevation="20dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="280dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="32dp"
+            android:padding="28dp"
             android:background="@drawable/settings_group_card_bg">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/materialicons"
+                android:text="movie"
+                android:textColor="#4CAF50"
+                android:textSize="36sp"
+                android:layout_marginBottom="16dp" />
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/export_progress_bar"
-                android:layout_width="240dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:indeterminate="true"
-                app:trackCornerRadius="4dp" />
+                app:indicatorColor="#4CAF50"
+                app:trackColor="#333333"
+                app:trackCornerRadius="4dp"
+                app:trackThickness="6dp" />
 
             <TextView
                 android:id="@+id/export_progress_text"
@@ -240,17 +245,21 @@
                 android:layout_height="wrap_content"
                 android:text="@string/faditor_exporting"
                 android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:layout_marginTop="16dp" />
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_cancel_export"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:text="@string/faditor_cancel"
-                android:layout_marginTop="16dp" />
+                android:textSize="13sp"
+                android:layout_marginTop="20dp"
+                app:cornerRadius="20dp"
+                app:strokeColor="#666666" />
         </LinearLayout>
     </FrameLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

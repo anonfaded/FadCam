@@ -9,7 +9,6 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,7 +16,6 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.WindowCompat;
 import androidx.media3.common.Player;
 import androidx.media3.transformer.ExportResult;
 import androidx.media3.ui.PlayerView;
@@ -27,6 +25,7 @@ import com.fadcam.ui.faditor.export.ExportManager;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.FaditorProject;
 import com.fadcam.ui.faditor.player.FaditorPlayerManager;
+import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.fadcam.ui.faditor.timeline.TimelineView;
 import com.fadcam.ui.faditor.util.TimeFormatter;
 
@@ -51,11 +50,22 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Views ────────────────────────────────────────────────────────
     private PlayerView playerView;
     private TimelineView timelineView;
-    private ImageButton btnPlayPause;
+    private TextView btnPlayPause;
     private TextView timeCurrent;
     private TextView timeTotal;
     private View exportProgressOverlay;
     private TextView exportProgressText;
+
+    // ── Persistence ──────────────────────────────────────────────────
+    private ProjectStorage projectStorage;
+    private final Handler autoSaveHandler = new Handler(Looper.getMainLooper());
+    private static final long AUTO_SAVE_DELAY_MS = 3000;
+    private final Runnable autoSaveRunnable = () -> {
+        if (project != null && projectStorage != null) {
+            projectStorage.save(project);
+            Log.d(TAG, "Project auto-saved");
+        }
+    };
 
     // ── Playhead sync ────────────────────────────────────────────────
     private final Handler playheadHandler = new Handler(Looper.getMainLooper());
@@ -75,10 +85,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Full-screen, edge-to-edge dark editor
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        getWindow().setStatusBarColor(0xFF1A1A1A);
-        getWindow().setNavigationBarColor(0xFF1A1A1A);
+        // Keep screen on while editing
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_faditor_editor);
@@ -93,6 +100,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         // Initialize components
+        projectStorage = new ProjectStorage(this);
         initViews();
         initProject(videoUri);
         initPlayer();
@@ -114,12 +122,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         playheadHandler.removeCallbacks(playheadUpdater);
+        // Save project on pause (e.g. user switches away)
+        saveProjectNow();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         playheadHandler.removeCallbacks(playheadUpdater);
+        autoSaveHandler.removeCallbacks(autoSaveRunnable);
+        saveProjectNow();
         if (exportManager != null && exportManager.isExporting()) {
             exportManager.cancel();
         }
@@ -222,6 +234,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 Clip c = project.getTimeline().getClip(0);
                 playerManager.updateTrimBounds(c);
                 project.touch();
+                scheduleAutoSave();
                 Log.d(TAG, "Trim updated: " + c.getInPointMs() + " – " + c.getOutPointMs());
             }
         });
@@ -229,8 +242,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Listen for playhead seeks on timeline
         timelineView.setPlayheadChangeListener(fraction -> {
             Clip c = project.getTimeline().getClip(0);
-            long seekPos = (long) (fraction * c.getSourceDurationMs()) - c.getInPointMs();
-            seekPos = Math.max(0, seekPos);
+            // fraction is in terms of full source duration
+            // ExoPlayer expects position relative to clipped start (0-based)
+            long absoluteMs = (long) (fraction * c.getSourceDurationMs());
+            long seekPos = absoluteMs - c.getInPointMs();
+            seekPos = Math.max(0, Math.min(seekPos, c.getOutPointMs() - c.getInPointMs()));
             playerManager.seekTo(seekPos);
         });
     }
@@ -312,24 +328,25 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Playback helpers ─────────────────────────────────────────────
 
     private void updatePlayPauseButton(boolean isPlaying) {
-        btnPlayPause.setImageResource(isPlaying
-                ? android.R.drawable.ic_media_pause
-                : android.R.drawable.ic_media_play);
+        btnPlayPause.setText(isPlaying ? "pause" : "play_arrow");
     }
 
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
 
         Clip clip = project.getTimeline().getClip(0);
-        long position = playerManager.getCurrentPosition();
-        long duration = clip.getSourceDurationMs();
+        long position = playerManager.getCurrentPosition(); // relative to clip start (0-based)
+        long sourceDuration = clip.getSourceDurationMs();
 
-        if (duration <= 0) return;
+        if (sourceDuration <= 0) return;
 
-        // Position is relative to clip start (clipping config offsets it)
-        float fraction = (float) (clip.getInPointMs() + position) / duration;
+        // ExoPlayer's getCurrentPosition() is 0-based within the clipped region,
+        // so absolute position = inPoint + currentPosition
+        float fraction = (float) (clip.getInPointMs() + position) / sourceDuration;
+        fraction = Math.max(0f, Math.min(fraction, 1f));
         timelineView.setPlayheadFraction(fraction);
 
+        // Show time relative to trimmed clip (0 = start of trim)
         timeCurrent.setText(TimeFormatter.formatAuto(position));
     }
 
@@ -370,7 +387,29 @@ public class FaditorEditorActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
             return;
         }
+        saveProjectNow();
         finish();
+    }
+
+    // ── Persistence ──────────────────────────────────────────────────
+
+    /**
+     * Schedule a debounced auto-save (resets timer on each call).
+     */
+    private void scheduleAutoSave() {
+        autoSaveHandler.removeCallbacks(autoSaveRunnable);
+        autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_DELAY_MS);
+    }
+
+    /**
+     * Save project immediately (blocking on current thread, fast for small JSON).
+     */
+    private void saveProjectNow() {
+        if (project != null && projectStorage != null) {
+            autoSaveHandler.removeCallbacks(autoSaveRunnable);
+            projectStorage.save(project);
+            Log.d(TAG, "Project saved: " + project.getId());
+        }
     }
 
     // ── Utility ──────────────────────────────────────────────────────

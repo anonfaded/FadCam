@@ -98,7 +98,7 @@
         <activity android:name="com.fadcam.fadrec.ui.overlay.TextEditorActivity" android:theme="@style/TransparentEditorTheme" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:windowSoftInputMode="adjustResize" android:exported="false" />
 
         <!-- Faditor Mini video editor -->
-        <activity android:name="com.fadcam.ui.faditor.FaditorEditorActivity" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:exported="false" />
+        <activity android:name="com.fadcam.ui.faditor.FaditorEditorActivity" android:theme="@style/Theme.FadCam.FaditorEditor" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:exported="false" />
 
         <!-- Detective App Icon (Activity Alias) -->
         <activity-alias android:name=".MainActivity.AlternativeIcon" android:enabled="false" android:label="Camera" android:icon="@mipmap/ic_launcher_2" android:roundIcon="@mipmap/ic_launcher_2_round" android:targetActivity=".MainActivity" android:exported="true">

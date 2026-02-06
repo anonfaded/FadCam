@@ -125,7 +125,7 @@ com.fadcam.ui.faditor/
 ├── export/
 │   └── ExportManager.java            ← Transformer orchestration + lossless trim
 ├── project/
-│   ├── ProjectStorage.java           ← JSON save/load (Phase 4)
+│   ├── ProjectStorage.java           ← JSON persistence (Gson, auto-save)
 │   └── ProjectBrowserAdapter.java    ← RecyclerView adapter (Phase 4)
 └── util/
     └── TimeFormatter.java            ← Time display formatting
@@ -214,6 +214,27 @@ com.fadcam.ui/
 
 - [ ] 12. **Discard confirmation dialog**
   - Show "Discard changes?" dialog on close if trim points changed from original
+
+- [x] 13. **Project persistence (ProjectStorage)**
+  - JSON serialization via Gson with custom adapters for Uri, FaditorProject, Clip
+  - Auto-save on trim finish (debounced 3s) and on pause/close
+  - Save to `files/faditor/projects/{projectId}/project.json`
+  - Load/list/delete projects API
+  - `ProjectSummary` lightweight class for listing without full deserialization
+
+- [x] 14. **FaditorMini home page redesign**
+  - Hero section with icon, tagline, and full-width "New Project" button
+  - Recent Projects section (auto-populated from ProjectStorage, up to 5)
+  - Feature capability cards grid (Trim, Export, Preview, Privacy)
+  - ScrollView for full content, consistent header bar with other tabs
+  - Version info footer
+
+- [x] 15. **Editor UI Material Design polish**
+  - Custom `Theme.FadCam.FaditorEditor` dark theme (Material3.Dark.NoActionBar)
+  - `fitsSystemWindows="true"` — status bar no longer overlaps content
+  - Material Icons font for all buttons (close, play/pause, trim, export movie icon)
+  - Dark surface colors (#0D0D0D bg, #1A1A1A surfaces, #141414 toolbar)
+  - Proper spacing and elevation hierarchy
 
 ---
 
