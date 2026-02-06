@@ -764,6 +764,8 @@
     <string name="faditor_fadrec_source">FadRec</string>
     <string name="faditor_browse_device_desc">Select any video from your device</string>
     <string name="faditor_scanning">Scanning recordings…</string>
+    <string name="faditor_source_chooser_desc">Choose a video from your gallery or pick one from your FadCam recordings</string>
+    <string name="faditor_recordings_helper">Videos recorded with FadCam from your active storage location</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>

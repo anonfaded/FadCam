@@ -1,7 +1,9 @@
 package com.fadcam.ui.faditor;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Typeface;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -10,6 +12,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -19,9 +22,13 @@ import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.io.File;
@@ -37,9 +44,12 @@ import java.util.concurrent.Executors;
 /**
  * Bottom sheet that presents video source options for Faditor Mini:
  * <ul>
- *   <li>"Browse Device" — opens system file picker</li>
- *   <li>"FadCam Recordings" — lists recordings from active storage</li>
+ *   <li>"Browse Device" — opens system file picker for any video</li>
+ *   <li>"FadCam Recordings" — lists recordings from the active storage location</li>
  * </ul>
+ *
+ * <p>Uses the same dark gradient styling as other FadCam bottom sheets
+ * ({@code CustomBottomSheetDialogTheme} + {@code gradient_background}).</p>
  */
 public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
@@ -69,115 +79,145 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         this.callback = callback;
     }
 
+    // ── Theme & dark styling ─────────────────────────────────────────
+
+    @Override
+    public int getTheme() {
+        return R.style.CustomBottomSheetDialogTheme;
+    }
+
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.setOnShowListener(d -> {
+            View bottomSheet = ((BottomSheetDialog) dialog)
+                    .findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackgroundResource(R.drawable.gradient_background);
+            }
+        });
+        return dialog;
+    }
+
+    // ── View creation ────────────────────────────────────────────────
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        float density = getResources().getDisplayMetrics().density;
+        float dp = getResources().getDisplayMetrics().density;
         Typeface materialIcons = ResourcesCompat.getFont(requireContext(), R.font.materialicons);
 
         // Root layout
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(0, (int) (12 * density), 0, (int) (24 * density));
+        root.setPadding(0, (int) (12 * dp), 0, (int) (24 * dp));
 
-        // Title
+        // ── Title ───────────────────────────────────────────────
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_new_project);
+        title.setText(R.string.faditor_start_project);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setPadding((int) (20 * density), (int) (12 * density),
-                (int) (20 * density), (int) (16 * density));
+        title.setTypeface(null, Typeface.BOLD);
+        title.setPadding((int) (20 * dp), (int) (12 * dp),
+                (int) (20 * dp), (int) (4 * dp));
         root.addView(title);
 
+        // Subtitle / helper text
+        TextView subtitle = new TextView(requireContext());
+        subtitle.setText(R.string.faditor_source_chooser_desc);
+        subtitle.setTextColor(0xFF888888);
+        subtitle.setTextSize(13);
+        subtitle.setPadding((int) (20 * dp), 0, (int) (20 * dp), (int) (16 * dp));
+        root.addView(subtitle);
+
         // ── Option 1: Browse Device ─────────────────────────────
-        root.addView(createOptionRow(
-                materialIcons, "folder_open", 0xFF42A5F5,
-                getString(R.string.faditor_browse_device),
-                getString(R.string.faditor_browse_device_desc),
-                v -> {
-                    dismiss();
-                    if (callback != null) callback.onBrowseDevice();
-                }));
+        root.addView(createBrowseRow(materialIcons, dp));
 
         // ── Divider ─────────────────────────────────────────────
         View divider = new View(requireContext());
         divider.setBackgroundColor(0xFF2A2A2A);
-        divider.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int) (1 * density)));
-        LinearLayout.LayoutParams divLp = (LinearLayout.LayoutParams) divider.getLayoutParams();
-        divLp.setMargins((int) (20 * density), (int) (4 * density),
-                (int) (20 * density), (int) (4 * density));
+        LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int) (1 * dp));
+        divLp.setMargins((int) (20 * dp), (int) (8 * dp),
+                (int) (20 * dp), (int) (8 * dp));
+        divider.setLayoutParams(divLp);
         root.addView(divider);
 
         // ── Section: FadCam Recordings ──────────────────────────
-        TextView recordingsTitle = new TextView(requireContext());
-        recordingsTitle.setText(R.string.faditor_your_recordings);
-        recordingsTitle.setTextColor(0xFFBBBBBB);
-        recordingsTitle.setTextSize(13);
-        recordingsTitle.setTypeface(null, android.graphics.Typeface.BOLD);
-        recordingsTitle.setAllCaps(true);
-        recordingsTitle.setLetterSpacing(0.08f);
-        recordingsTitle.setPadding((int) (20 * density), (int) (16 * density),
-                (int) (20 * density), (int) (8 * density));
-        root.addView(recordingsTitle);
+        TextView recordingsHeader = new TextView(requireContext());
+        recordingsHeader.setText(R.string.faditor_your_recordings);
+        recordingsHeader.setTextColor(0xFFBBBBBB);
+        recordingsHeader.setTextSize(12);
+        recordingsHeader.setTypeface(null, Typeface.BOLD);
+        recordingsHeader.setAllCaps(true);
+        recordingsHeader.setLetterSpacing(0.08f);
+        recordingsHeader.setPadding((int) (20 * dp), (int) (12 * dp),
+                (int) (20 * dp), (int) (4 * dp));
+        root.addView(recordingsHeader);
+
+        // Helper subtitle for recordings
+        TextView recordingsHelp = new TextView(requireContext());
+        recordingsHelp.setText(R.string.faditor_recordings_helper);
+        recordingsHelp.setTextColor(0xFF666666);
+        recordingsHelp.setTextSize(12);
+        recordingsHelp.setPadding((int) (20 * dp), 0, (int) (20 * dp), (int) (10 * dp));
+        root.addView(recordingsHelp);
 
         // Loading indicator
-        loadingIndicator = createLoadingView(density);
+        loadingIndicator = createLoadingView(dp);
         root.addView(loadingIndicator);
 
         // Empty state
-        emptyState = createEmptyState(materialIcons, density);
+        emptyState = createEmptyState(materialIcons, dp);
         emptyState.setVisibility(View.GONE);
         root.addView(emptyState);
 
-        // Scrollable recordings container
+        // Scrollable recordings list
         ScrollView scrollView = new ScrollView(requireContext());
         scrollView.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int) (280 * density)));
+                LinearLayout.LayoutParams.MATCH_PARENT, (int) (320 * dp)));
 
         recordingsContainer = new LinearLayout(requireContext());
         recordingsContainer.setOrientation(LinearLayout.VERTICAL);
         scrollView.addView(recordingsContainer);
         root.addView(scrollView);
 
-        // Start scanning
+        // Start background scan
         loadRecordings();
 
         return root;
     }
 
-    // ── Option row builder ───────────────────────────────────────────
+    // ── "Browse Device" row ──────────────────────────────────────────
 
     @NonNull
-    private View createOptionRow(@Nullable Typeface iconFont, @NonNull String iconText,
-                                 int iconColor, @NonNull String label,
-                                 @NonNull String description,
-                                 @NonNull View.OnClickListener clickListener) {
-        float density = getResources().getDisplayMetrics().density;
-
+    private View createBrowseRow(@Nullable Typeface iconFont, float dp) {
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding((int) (20 * density), (int) (14 * density),
-                (int) (20 * density), (int) (14 * density));
+        row.setPadding((int) (20 * dp), (int) (14 * dp),
+                (int) (20 * dp), (int) (14 * dp));
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
         row.setClickable(true);
         row.setFocusable(true);
-        row.setOnClickListener(clickListener);
+        row.setOnClickListener(v -> {
+            dismiss();
+            if (callback != null) callback.onBrowseDevice();
+        });
 
         // Icon
         TextView icon = new TextView(requireContext());
         icon.setTypeface(iconFont);
-        icon.setText(iconText);
-        icon.setTextColor(iconColor);
+        icon.setText("folder_open");
+        icon.setTextColor(0xFF42A5F5);
         icon.setTextSize(24);
         icon.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
-                (int) (40 * density), (int) (40 * density));
-        iconLp.setMarginEnd((int) (14 * density));
+                (int) (40 * dp), (int) (40 * dp));
+        iconLp.setMarginEnd((int) (14 * dp));
         icon.setLayoutParams(iconLp);
         row.addView(icon);
 
@@ -187,19 +227,18 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         textSection.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView labelView = new TextView(requireContext());
-        labelView.setText(label);
-        labelView.setTextColor(0xFFFFFFFF);
-        labelView.setTextSize(15);
-        labelView.setTypeface(null, android.graphics.Typeface.BOLD);
-        textSection.addView(labelView);
+        TextView label = new TextView(requireContext());
+        label.setText(R.string.faditor_browse_device);
+        label.setTextColor(0xFFFFFFFF);
+        label.setTextSize(15);
+        label.setTypeface(null, Typeface.BOLD);
+        textSection.addView(label);
 
-        TextView descView = new TextView(requireContext());
-        descView.setText(description);
-        descView.setTextColor(0xFF888888);
-        descView.setTextSize(12);
-        descView.setMaxLines(1);
-        textSection.addView(descView);
+        TextView desc = new TextView(requireContext());
+        desc.setText(R.string.faditor_browse_device_desc);
+        desc.setTextColor(0xFF888888);
+        desc.setTextSize(12);
+        textSection.addView(desc);
 
         row.addView(textSection);
 
@@ -225,7 +264,10 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     }
 
     /**
-     * Scan the currently active storage location (based on SharedPreferences).
+     * Scan <b>only</b> the currently active storage location.
+     *
+     * <p>If the user has "custom" storage mode selected, scans the SAF tree.
+     * Otherwise, scans the internal FadCam/FadRec directories.</p>
      */
     @NonNull
     private List<RecordingItem> scanActiveStorage() {
@@ -234,48 +276,49 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
         Context ctx = requireContext();
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(ctx);
-        String safUri = prefs.getCustomStorageUri();
+        String storageMode = prefs.getStorageMode();
 
-        // If custom SAF storage is configured, use it
-        if (safUri != null) {
+        Log.d(TAG, "Storage mode: " + storageMode);
+
+        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+            // ── Custom SAF storage ──────────────────────────────
+            String safUri = prefs.getCustomStorageUri();
+            if (safUri != null) {
+                try {
+                    Uri treeUri = Uri.parse(safUri);
+                    if (hasSafPermission(ctx, treeUri)) {
+                        items.addAll(scanSafDir(ctx, treeUri));
+                        Log.d(TAG, "Scanned custom (SAF) storage: " + items.size() + " videos");
+                    } else {
+                        Log.w(TAG, "No SAF permission for: " + safUri);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error scanning SAF storage", e);
+                }
+            } else {
+                Log.w(TAG, "Custom storage mode but no URI set");
+            }
+        } else {
+            // ── Internal storage (default) ──────────────────────
             try {
-                Uri treeUri = Uri.parse(safUri);
-                if (hasSafPermission(ctx, treeUri)) {
-                    items.addAll(scanSafDir(ctx, treeUri));
-                    Log.d(TAG, "Scanned SAF storage: " + items.size() + " videos");
+                File externalDir = ctx.getExternalFilesDir(null);
+                if (externalDir != null) {
+                    items.addAll(scanFileDir(
+                            new File(externalDir, Constants.RECORDING_DIRECTORY),
+                            getString(R.string.faditor_fadcam_source)));
+                    items.addAll(scanFileDir(
+                            new File(externalDir, Constants.RECORDING_DIRECTORY_FADREC),
+                            getString(R.string.faditor_fadrec_source)));
+                    Log.d(TAG, "Scanned internal storage: " + items.size() + " videos");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error scanning SAF storage", e);
-            }
-        }
-
-        // Also scan internal storage (default location)
-        try {
-            File externalDir = ctx.getExternalFilesDir(null);
-            if (externalDir != null) {
-                items.addAll(scanFileDir(
-                        new File(externalDir, Constants.RECORDING_DIRECTORY), "FadCam"));
-                items.addAll(scanFileDir(
-                        new File(externalDir, Constants.RECORDING_DIRECTORY_FADREC), "FadRec"));
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error scanning internal storage", e);
-        }
-
-        // Deduplicate by filename (SAF and internal might overlap)
-        List<RecordingItem> deduped = new ArrayList<>();
-        List<String> seenNames = new ArrayList<>();
-        for (RecordingItem item : items) {
-            if (!seenNames.contains(item.name)) {
-                seenNames.add(item.name);
-                deduped.add(item);
+                Log.e(TAG, "Error scanning internal storage", e);
             }
         }
 
         // Sort newest first
-        Collections.sort(deduped, (a, b) -> Long.compare(b.lastModified, a.lastModified));
-        Log.d(TAG, "Total recordings found: " + deduped.size());
-        return deduped;
+        Collections.sort(items, (a, b) -> Long.compare(b.lastModified, a.lastModified));
+        return items;
     }
 
     @NonNull
@@ -312,7 +355,8 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                         && name.endsWith(Constants.RECORDING_FILE_EXTENSION)
                         && !name.startsWith("temp_")) {
                     items.add(new RecordingItem(
-                            doc.getUri(), name, doc.length(), doc.lastModified(), "FadCam"));
+                            doc.getUri(), name, doc.length(), doc.lastModified(),
+                            getString(R.string.faditor_fadcam_source)));
                 }
             }
         } catch (Exception e) {
@@ -323,7 +367,8 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
     private boolean hasSafPermission(@NonNull Context ctx, @NonNull Uri treeUri) {
         try {
-            for (android.content.UriPermission perm : ctx.getContentResolver().getPersistedUriPermissions()) {
+            for (android.content.UriPermission perm :
+                    ctx.getContentResolver().getPersistedUriPermissions()) {
                 if (perm.getUri().equals(treeUri) && perm.isReadPermission()) return true;
             }
         } catch (Exception e) {
@@ -355,42 +400,71 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
+    /**
+     * Create a single recording row with thumbnail, name, duration, and size.
+     * Matches the visual pattern of the Records tab.
+     */
     @NonNull
     private View createRecordingRow(@NonNull RecordingItem item,
                                     @Nullable Typeface iconFont,
                                     @NonNull SimpleDateFormat dateFormat) {
-        float density = getResources().getDisplayMetrics().density;
+        float dp = getResources().getDisplayMetrics().density;
+        Context ctx = requireContext();
 
-        LinearLayout row = new LinearLayout(requireContext());
+        LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding((int) (20 * density), (int) (10 * density),
-                (int) (20 * density), (int) (10 * density));
+        row.setPadding((int) (16 * dp), (int) (8 * dp),
+                (int) (16 * dp), (int) (8 * dp));
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
         row.setClickable(true);
         row.setFocusable(true);
 
-        // Icon
-        TextView icon = new TextView(requireContext());
-        icon.setTypeface(iconFont);
-        icon.setText("videocam");
-        icon.setTextColor(0xFF4CAF50);
-        icon.setTextSize(20);
-        icon.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
-                (int) (32 * density), (int) (32 * density));
-        iconLp.setMarginEnd((int) (12 * density));
-        icon.setLayoutParams(iconLp);
-        row.addView(icon);
+        // ── Thumbnail (rounded corners via CardView-like clipping) ────
+        androidx.cardview.widget.CardView thumbCard = new androidx.cardview.widget.CardView(ctx);
+        thumbCard.setCardElevation(0);
+        thumbCard.setCardBackgroundColor(0xFF222222);
+        thumbCard.setRadius(8 * dp);
+        LinearLayout.LayoutParams thumbCardLp = new LinearLayout.LayoutParams(
+                (int) (80 * dp), (int) (50 * dp));
+        thumbCardLp.setMarginEnd((int) (12 * dp));
+        thumbCard.setLayoutParams(thumbCardLp);
 
-        // Text section
-        LinearLayout textSection = new LinearLayout(requireContext());
+        ImageView thumbView = new ImageView(ctx);
+        thumbView.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        thumbView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        thumbView.setImageResource(R.drawable.ic_video_placeholder);
+        thumbCard.addView(thumbView);
+
+        // Load thumbnail with Glide
+        try {
+            Glide.with(ctx)
+                    .asBitmap()
+                    .load(item.uri)
+                    .apply(new RequestOptions()
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .override(200, 125)
+                            .centerCrop()
+                            .placeholder(R.drawable.ic_video_placeholder)
+                            .error(R.drawable.ic_video_placeholder))
+                    .thumbnail(0.1f)
+                    .into(thumbView);
+        } catch (Exception e) {
+            Log.w(TAG, "Error loading thumbnail for: " + item.name, e);
+        }
+
+        row.addView(thumbCard);
+
+        // ── Text section ─────────────────────────────────────────
+        LinearLayout textSection = new LinearLayout(ctx);
         textSection.setOrientation(LinearLayout.VERTICAL);
         textSection.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         // Filename (without extension)
-        TextView nameView = new TextView(requireContext());
+        TextView nameView = new TextView(ctx);
         String displayName = item.name;
         if (displayName.endsWith(".mp4")) {
             displayName = displayName.substring(0, displayName.length() - 4);
@@ -398,29 +472,43 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         nameView.setText(displayName);
         nameView.setTextColor(0xFFFFFFFF);
         nameView.setTextSize(13);
-        nameView.setTypeface(null, android.graphics.Typeface.BOLD);
+        nameView.setTypeface(null, Typeface.BOLD);
         nameView.setMaxLines(1);
-        nameView.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+        nameView.setEllipsize(TextUtils.TruncateAt.END);
         textSection.addView(nameView);
 
-        // Date + size
-        TextView metaView = new TextView(requireContext());
-        metaView.setText(dateFormat.format(new Date(item.lastModified))
-                + " · " + formatSize(item.size)
-                + " · " + item.source);
+        // Meta line: size · duration · source
+        TextView metaView = new TextView(ctx);
+        String meta = formatSize(item.size) + " · " + item.source;
+        metaView.setText(meta);
         metaView.setTextColor(0xFF777777);
         metaView.setTextSize(11);
         metaView.setMaxLines(1);
         textSection.addView(metaView);
 
+        // Load duration on background thread and update
+        final TextView durationMeta = metaView;
+        scanExecutor.execute(() -> {
+            long durationMs = getVideoDuration(ctx, item.uri);
+            if (!isAdded()) return;
+            String durationStr = formatDuration(durationMs);
+            String fullMeta = formatSize(item.size) + " · " + durationStr + " · " + item.source;
+            requireActivity().runOnUiThread(() -> durationMeta.setText(fullMeta));
+        });
+
         row.addView(textSection);
 
-        // Edit icon
-        TextView editIcon = new TextView(requireContext());
+        // ── Edit icon ────────────────────────────────────────────
+        TextView editIcon = new TextView(ctx);
         editIcon.setTypeface(iconFont);
         editIcon.setText("edit");
         editIcon.setTextColor(0xFF4CAF50);
         editIcon.setTextSize(18);
+        editIcon.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams editLp = new LinearLayout.LayoutParams(
+                (int) (32 * dp), (int) (32 * dp));
+        editLp.setMarginStart((int) (8 * dp));
+        editIcon.setLayoutParams(editLp);
         row.addView(editIcon);
 
         row.setOnClickListener(v -> {
@@ -434,29 +522,29 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     // ── Helper views ─────────────────────────────────────────────────
 
     @NonNull
-    private View createLoadingView(float density) {
+    private View createLoadingView(float dp) {
         TextView tv = new TextView(requireContext());
         tv.setText(R.string.faditor_scanning);
         tv.setTextColor(0xFF777777);
         tv.setTextSize(13);
         tv.setGravity(Gravity.CENTER);
-        tv.setPadding(0, (int) (20 * density), 0, (int) (20 * density));
+        tv.setPadding(0, (int) (24 * dp), 0, (int) (24 * dp));
         return tv;
     }
 
     @NonNull
-    private View createEmptyState(@Nullable Typeface iconFont, float density) {
+    private View createEmptyState(@Nullable Typeface iconFont, float dp) {
         LinearLayout layout = new LinearLayout(requireContext());
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setGravity(Gravity.CENTER);
-        layout.setPadding((int) (24 * density), (int) (20 * density),
-                (int) (24 * density), (int) (20 * density));
+        layout.setPadding((int) (24 * dp), (int) (24 * dp),
+                (int) (24 * dp), (int) (24 * dp));
 
         TextView icon = new TextView(requireContext());
         icon.setTypeface(iconFont);
         icon.setText("videocam_off");
         icon.setTextColor(0xFF555555);
-        icon.setTextSize(28);
+        icon.setTextSize(32);
         icon.setGravity(Gravity.CENTER);
         layout.addView(icon);
 
@@ -465,17 +553,53 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         msg.setTextColor(0xFF777777);
         msg.setTextSize(13);
         msg.setGravity(Gravity.CENTER);
-        msg.setPadding(0, (int) (8 * density), 0, 0);
+        msg.setPadding(0, (int) (8 * dp), 0, 0);
         layout.addView(msg);
 
         return layout;
+    }
+
+    // ── Utility methods ──────────────────────────────────────────────
+
+    /**
+     * Retrieve video duration using {@link MediaMetadataRetriever}.
+     *
+     * @return duration in milliseconds, or 0 on error
+     */
+    private static long getVideoDuration(@NonNull Context ctx, @NonNull Uri uri) {
+        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+            retriever.setDataSource(ctx, uri);
+            String durationStr = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_DURATION);
+            return durationStr != null ? Long.parseLong(durationStr) : 0;
+        } catch (Exception e) {
+            Log.w(TAG, "Could not get duration for: " + uri, e);
+            return 0;
+        }
+    }
+
+    @NonNull
+    private static String formatDuration(long durationMs) {
+        if (durationMs <= 0) return "0s";
+        long totalSeconds = durationMs / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        if (hours > 0) {
+            return String.format(Locale.US, "%dh %02dm %02ds", hours, minutes, seconds);
+        } else if (minutes > 0) {
+            return String.format(Locale.US, "%dm %02ds", minutes, seconds);
+        } else {
+            return String.format(Locale.US, "%ds", seconds);
+        }
     }
 
     @NonNull
     private static String formatSize(long bytes) {
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1024 * 1024) return String.format(Locale.US, "%.1f KB", bytes / 1024.0);
-        if (bytes < 1024L * 1024 * 1024) return String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024));
+        if (bytes < 1024L * 1024 * 1024)
+            return String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024));
         return String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
