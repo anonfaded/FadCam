@@ -124,6 +124,16 @@ public class DualCameraRecordingService extends Service {
     private volatile boolean isStopping = false;
     private int camerasOpened = 0; // Track how many cameras have opened successfully
 
+    /**
+     * Fallback mode flag: when the device cannot open both cameras simultaneously,
+     * we record with only the primary camera streaming continuously, and periodically
+     * open the secondary camera to capture a single frame for the PiP overlay.
+     */
+    private volatile boolean fallbackMode = false;
+
+    /** The resolved secondary camera ID — stored for use in fallback periodic snapshots. */
+    private String resolvedSecondaryId;
+
     // ════════════════════════════════════════════════════════════════════
     // LIFECYCLE
     // ════════════════════════════════════════════════════════════════════
@@ -279,6 +289,8 @@ public class DualCameraRecordingService extends Service {
         Log.i(TAG, "Stopping dual camera recording");
         isStopping = true;
         state = DualCameraState.DISABLED;
+        fallbackMode = false;
+        isCapturingSnapshot = false;
 
         // Stop pipeline first (drains encoders, finalises muxer)
         if (dualPipeline != null) {
@@ -379,9 +391,9 @@ public class DualCameraRecordingService extends Service {
     // ════════════════════════════════════════════════════════════════════
 
     /**
-     * Opens both cameras sequentially — primary first, then secondary.
-     * The Camera2 API requires that both cameras in a concurrent set are
-     * opened before creating capture sessions.
+     * Opens both cameras <b>sequentially</b> — primary first, then secondary
+     * only after the primary is confirmed open. This improves compatibility
+     * on devices that do not officially support concurrent camera streams.
      */
     private void openBothCameras() {
         // Determine which physical camera is primary based on config
@@ -391,6 +403,7 @@ public class DualCameraRecordingService extends Service {
                 ? frontCameraId : backCameraId;
 
         Log.d(TAG, "Opening primary camera: " + primaryId + ", secondary: " + secondaryId);
+        resolvedSecondaryId = secondaryId;
 
         try {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -400,6 +413,7 @@ public class DualCameraRecordingService extends Service {
                 return;
             }
 
+            // Step 1: Open primary camera first
             cameraManager.openCamera(primaryId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
@@ -409,7 +423,10 @@ public class DualCameraRecordingService extends Service {
                     }
                     Log.d(TAG, "Primary camera opened: " + camera.getId());
                     primaryCameraDevice = camera;
-                    onCameraOpened();
+
+                    // Step 2: Open secondary camera AFTER primary is confirmed open
+                    // Small delay helps on devices with shared camera hardware pipelines
+                    backgroundHandler.postDelayed(() -> openSecondaryCamera(secondaryId), 300);
                 }
 
                 @Override
@@ -429,6 +446,28 @@ public class DualCameraRecordingService extends Service {
                 }
             }, backgroundHandler);
 
+        } catch (CameraAccessException | SecurityException e) {
+            Log.e(TAG, "Error opening primary camera", e);
+            transitionToError("Failed to open camera: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Opens the secondary (PiP) camera after the primary is already open.
+     */
+    private void openSecondaryCamera(@NonNull String secondaryId) {
+        if (isStopping || primaryCameraDevice == null) {
+            Log.w(TAG, "openSecondaryCamera: Aborting — stopping=" + isStopping);
+            return;
+        }
+
+        try {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED) {
+                transitionToError("Camera permission denied");
+                return;
+            }
+
             cameraManager.openCamera(secondaryId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
@@ -438,6 +477,8 @@ public class DualCameraRecordingService extends Service {
                     }
                     Log.d(TAG, "Secondary camera opened: " + camera.getId());
                     secondaryCameraDevice = camera;
+                    // Both cameras now open — proceed to pipeline setup
+                    camerasOpened = 2;
                     onCameraOpened();
                 }
 
@@ -451,39 +492,226 @@ public class DualCameraRecordingService extends Service {
 
                 @Override
                 public void onError(@NonNull CameraDevice camera, int error) {
-                    Log.e(TAG, "Secondary camera error: " + error);
+                    Log.w(TAG, "Secondary camera error: " + error
+                            + " — falling back to periodic snapshot mode");
                     camera.close();
                     secondaryCameraDevice = null;
-                    transitionToError("Secondary camera error (code " + error + ")");
+
+                    // ── FALLBACK: device cannot open both cameras simultaneously ──
+                    // Record with primary camera only; periodically snapshot the
+                    // secondary camera for the PiP overlay.
+                    fallbackMode = true;
+                    onPrimaryCameraReadyForFallback();
                 }
             }, backgroundHandler);
 
         } catch (CameraAccessException | SecurityException e) {
-            Log.e(TAG, "Failed to open cameras", e);
-            transitionToError("Cannot access cameras: " + e.getMessage());
+            Log.e(TAG, "Error opening secondary camera", e);
+            transitionToError("Failed to open secondary camera: " + e.getMessage());
         }
     }
 
     /**
-     * Called by each camera's {@code onOpened()}. When both cameras are ready,
-     * creates the pipeline and starts recording.
+     * Called when both cameras are confirmed open. Validates state and
+     * proceeds to create the recording pipeline.
      */
     private synchronized void onCameraOpened() {
-        camerasOpened++;
-        Log.d(TAG, "Camera opened — count=" + camerasOpened + "/2");
-
-        if (camerasOpened < 2) {
-            return; // Wait for both
-        }
+        Log.d(TAG, "onCameraOpened — both cameras ready, camerasOpened=" + camerasOpened);
 
         if (primaryCameraDevice == null || secondaryCameraDevice == null) {
-            Log.e(TAG, "One of the cameras is null despite count==2");
+            Log.e(TAG, "One of the cameras is null despite both reported open");
             transitionToError("Camera initialization failed");
             return;
         }
 
         // Both cameras ready — build pipeline and start recording
         startDualRecording();
+    }
+
+    /**
+     * Called when the secondary camera cannot be opened concurrently.
+     * Starts recording with only the primary camera and schedules periodic
+     * snapshots from the secondary camera to keep the PiP overlay updating.
+     */
+    private void onPrimaryCameraReadyForFallback() {
+        Log.i(TAG, "⚡ Entering fallback mode — primary-only recording with periodic PiP snapshots");
+
+        if (primaryCameraDevice == null) {
+            Log.e(TAG, "Primary camera is null in fallback mode");
+            transitionToError("Camera initialization failed");
+            return;
+        }
+
+        // Proceed to set up pipeline with primary camera only.
+        // The pipeline still creates both SurfaceTextures (primary + secondary),
+        // but only the primary receives a continuous camera stream.
+        startDualRecording();
+
+        // Schedule periodic secondary camera snapshots after pipeline is ready.
+        // Delay the first snapshot to let the pipeline stabilise.
+        backgroundHandler.postDelayed(this::captureSecondarySnapshot, 2000);
+    }
+
+    // ── Fallback: periodic secondary camera snapshot ──────────────────
+
+    /** Interval between PiP snapshot updates in fallback mode (ms). */
+    private static final long FALLBACK_SNAPSHOT_INTERVAL_MS = 3000;
+
+    /** Flag to prevent overlapping snapshot attempts. */
+    private volatile boolean isCapturingSnapshot = false;
+
+    /**
+     * Opens the secondary camera, captures a single frame to the pipeline's
+     * secondary SurfaceTexture, then closes it. Reschedules itself.
+     */
+    private void captureSecondarySnapshot() {
+        if (isStopping || state == DualCameraState.DISABLED || state == DualCameraState.ERROR) {
+            return;
+        }
+        if (isCapturingSnapshot) {
+            // Previous snapshot still in progress — skip and retry later
+            backgroundHandler.postDelayed(this::captureSecondarySnapshot, FALLBACK_SNAPSHOT_INTERVAL_MS);
+            return;
+        }
+
+        isCapturingSnapshot = true;
+        String secId = resolvedSecondaryId;
+        if (secId == null || dualPipeline == null) {
+            isCapturingSnapshot = false;
+            return;
+        }
+
+        Log.d(TAG, "Fallback: capturing PiP snapshot from camera " + secId);
+
+        try {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED) {
+                isCapturingSnapshot = false;
+                return;
+            }
+
+            cameraManager.openCamera(secId, new CameraDevice.StateCallback() {
+                @Override
+                public void onOpened(@NonNull CameraDevice camera) {
+                    if (isStopping) {
+                        camera.close();
+                        isCapturingSnapshot = false;
+                        return;
+                    }
+                    Log.d(TAG, "Fallback: secondary camera opened for snapshot");
+                    captureOneFrameAndClose(camera);
+                }
+
+                @Override
+                public void onDisconnected(@NonNull CameraDevice camera) {
+                    camera.close();
+                    isCapturingSnapshot = false;
+                    scheduleNextSnapshot();
+                }
+
+                @Override
+                public void onError(@NonNull CameraDevice camera, int error) {
+                    Log.w(TAG, "Fallback: secondary camera snapshot error: " + error);
+                    camera.close();
+                    isCapturingSnapshot = false;
+                    scheduleNextSnapshot();
+                }
+            }, backgroundHandler);
+
+        } catch (CameraAccessException | SecurityException e) {
+            Log.w(TAG, "Fallback: cannot open secondary camera for snapshot", e);
+            isCapturingSnapshot = false;
+            scheduleNextSnapshot();
+        }
+    }
+
+    /**
+     * Captures a single frame from the given camera device targeting the
+     * pipeline's secondary SurfaceTexture, then closes the camera.
+     */
+    private void captureOneFrameAndClose(@NonNull CameraDevice camera) {
+        try {
+            Surface secondarySurface = dualPipeline.getSecondaryCameraInputSurface();
+
+            CaptureRequest.Builder builder =
+                    camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            builder.addTarget(secondarySurface);
+            builder.set(CaptureRequest.CONTROL_AF_MODE,
+                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+            builder.set(CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_MODE_ON);
+
+            camera.createCaptureSession(
+                    Collections.singletonList(secondarySurface),
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(@NonNull CameraCaptureSession session) {
+                            if (isStopping) {
+                                session.close();
+                                camera.close();
+                                isCapturingSnapshot = false;
+                                return;
+                            }
+
+                            try {
+                                // Capture a few frames to let AE/AF settle, then close
+                                builder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                                        CaptureRequest.CONTROL_AF_TRIGGER_START);
+                                session.capture(builder.build(),
+                                        new CameraCaptureSession.CaptureCallback() {
+                                            private int framesReceived = 0;
+
+                                            @Override
+                                            public void onCaptureCompleted(
+                                                    @NonNull CameraCaptureSession s,
+                                                    @NonNull CaptureRequest request,
+                                                    @NonNull android.hardware.camera2.TotalCaptureResult result) {
+                                                framesReceived++;
+                                                if (framesReceived >= 1) {
+                                                    // Got our frame — close and schedule next
+                                                    Log.d(TAG, "Fallback: PiP snapshot captured");
+                                                    session.close();
+                                                    camera.close();
+                                                    isCapturingSnapshot = false;
+                                                    scheduleNextSnapshot();
+                                                }
+                                            }
+                                        }, backgroundHandler);
+
+                            } catch (CameraAccessException e) {
+                                Log.w(TAG, "Fallback: capture request failed", e);
+                                session.close();
+                                camera.close();
+                                isCapturingSnapshot = false;
+                                scheduleNextSnapshot();
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                            Log.w(TAG, "Fallback: snapshot session config failed");
+                            session.close();
+                            camera.close();
+                            isCapturingSnapshot = false;
+                            scheduleNextSnapshot();
+                        }
+                    },
+                    backgroundHandler);
+
+        } catch (CameraAccessException e) {
+            Log.w(TAG, "Fallback: error setting up snapshot session", e);
+            camera.close();
+            isCapturingSnapshot = false;
+            scheduleNextSnapshot();
+        }
+    }
+
+    /** Schedules the next PiP snapshot in fallback mode. */
+    private void scheduleNextSnapshot() {
+        if (!isStopping && fallbackMode && state != DualCameraState.DISABLED) {
+            backgroundHandler.postDelayed(this::captureSecondarySnapshot,
+                    FALLBACK_SNAPSHOT_INTERVAL_MS);
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -546,10 +774,19 @@ public class DualCameraRecordingService extends Service {
                     dualPipeline.getPrimaryCameraInputSurface(),
                     true /* isPrimary */);
 
-            createCaptureSession(
-                    secondaryCameraDevice,
-                    dualPipeline.getSecondaryCameraInputSurface(),
-                    false /* isPrimary */);
+            if (!fallbackMode && secondaryCameraDevice != null) {
+                // Normal mode: both cameras stream concurrently
+                createCaptureSession(
+                        secondaryCameraDevice,
+                        dualPipeline.getSecondaryCameraInputSurface(),
+                        false /* isPrimary */);
+            } else {
+                // Fallback mode: only primary camera streams; secondary gets
+                // periodic snapshots. Mark secondary session as "configured"
+                // immediately so the pipeline can start.
+                Log.i(TAG, "Fallback mode: skipping secondary capture session (periodic snapshots)");
+                onSessionConfigured(false);
+            }
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to start dual recording", e);
@@ -753,6 +990,10 @@ public class DualCameraRecordingService extends Service {
 
     /** Release everything in case of crash/destroy. */
     private void releaseAllResources() {
+        // Stop fallback snapshot loop
+        fallbackMode = false;
+        isCapturingSnapshot = false;
+
         if (dualPipeline != null) {
             try {
                 dualPipeline.stopRecording();

@@ -28,7 +28,7 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.VideoCodec;
 import com.fadcam.dualcam.DualCameraCapability;
-import com.fadcam.dualcam.ui.DualCameraSettingsBottomSheet;
+import com.fadcam.dualcam.ui.DualCameraSettingsFragment;
 import com.fadcam.ui.OverlayNavUtil;
 
 import java.util.ArrayList;
@@ -144,6 +144,14 @@ public class VideoSettingsFragment extends Fragment {
         View locRow = root.findViewById(R.id.row_location_embed);
         if (locRow != null)
             locRow.setOnClickListener(v -> showLocationEmbedSheet());
+        // Dual Camera Settings row — opens the full settings fragment
+        View dualRow = root.findViewById(R.id.row_dual_camera_settings);
+        if (dualRow != null) {
+            dualRow.setOnClickListener(v ->
+                    OverlayNavUtil.show(requireActivity(),
+                            new DualCameraSettingsFragment(),
+                            "DualCameraSettingsFragment"));
+        }
     }
 
     private void refreshAllValues() {
@@ -154,6 +162,13 @@ public class VideoSettingsFragment extends Fragment {
             valueCamera.setText(cam == CameraType.FRONT ? getString(R.string.button_settings_cam_front)
                     : getString(R.string.button_settings_cam_back));
         }
+
+        // Show/hide Dual Camera Settings row and its divider
+        View dualRow = getView() != null ? getView().findViewById(R.id.row_dual_camera_settings) : null;
+        View dualDivider = getView() != null ? getView().findViewById(R.id.divider_dual_camera_settings) : null;
+        boolean isDual = cam == CameraType.DUAL_PIP;
+        if (dualRow != null) dualRow.setVisibility(isDual ? View.VISIBLE : View.GONE);
+        if (dualDivider != null) dualDivider.setVisibility(isDual ? View.VISIBLE : View.GONE);
 
         // Lens
         if (cam == CameraType.BACK) {
@@ -315,24 +330,28 @@ public class VideoSettingsFragment extends Fragment {
         final String resultKey = "picker_result_camera";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if (sel != null && !sel.equals(current.toString())) {
+            if (sel != null) {
                 CameraType selectedType = CameraType.valueOf(sel);
+                boolean changed = !sel.equals(current.toString());
 
-                // Sync dual camera preference with selection
-                prefs.setDualCameraModeEnabled(selectedType == CameraType.DUAL_PIP);
+                if (changed) {
+                    // Sync dual camera preference with selection
+                    prefs.setDualCameraModeEnabled(selectedType == CameraType.DUAL_PIP);
 
-                prefs.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, sel).apply();
+                    prefs.sharedPreferences.edit().putString(Constants.PREF_CAMERA_SELECTION, sel).apply();
 
-                // Clear cached resolution lists when camera type changes to force refresh
-                cachedResolutionsFront.clear();
-                cachedResolutionsBack.clear();
+                    // Clear cached resolution lists when camera type changes to force refresh
+                    cachedResolutionsFront.clear();
+                    cachedResolutionsBack.clear();
 
-                refreshAllValues();
+                    refreshAllValues();
+                }
 
-                // Show PiP settings bottom sheet when Dual is selected
+                // Always show PiP settings screen when Dual is selected (even on re-selection)
                 if (selectedType == CameraType.DUAL_PIP) {
-                    DualCameraSettingsBottomSheet.newInstance()
-                            .show(getParentFragmentManager(), DualCameraSettingsBottomSheet.TAG);
+                    OverlayNavUtil.show(requireActivity(),
+                            new DualCameraSettingsFragment(),
+                            "DualCameraSettingsFragment");
                 }
             }
         });

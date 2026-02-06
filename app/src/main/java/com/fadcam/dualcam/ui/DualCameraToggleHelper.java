@@ -5,10 +5,13 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.dualcam.DualCameraCapability;
+import com.fadcam.ui.OverlayNavUtil;
 
 /**
  * Helper class for toggling dual camera mode on/off from any UI surface
@@ -49,11 +52,14 @@ public class DualCameraToggleHelper {
     /**
      * Toggles dual camera mode.
      *
-     * @param fragmentManager Required to show the settings bottom sheet when
+     * @param fragmentManager Required to show the settings screen when
      *                        enabling dual camera for the first time.
+     * @param activity        The host activity for overlay navigation. May be {@code null}
+     *                        if overlay nav is not available (falls back to bottom sheet).
      * @return {@code true} if dual camera mode is now <em>enabled</em>.
      */
-    public boolean toggle(@NonNull FragmentManager fragmentManager) {
+    public boolean toggle(@NonNull FragmentManager fragmentManager,
+                          @Nullable FragmentActivity activity) {
         if (!isDeviceSupported()) {
             String reason = getUnsupportedReason();
             Log.w(TAG, "Dual camera not supported: " + reason);
@@ -69,16 +75,30 @@ public class DualCameraToggleHelper {
         Log.d(TAG, "Dual camera mode toggled: " + currentlyEnabled + " → " + newState);
 
         if (newState) {
-            // Show settings bottom sheet when enabling
+            // Show full settings screen when enabling
             try {
-                DualCameraSettingsBottomSheet sheet = DualCameraSettingsBottomSheet.newInstance();
-                sheet.show(fragmentManager, DualCameraSettingsBottomSheet.TAG);
+                if (activity != null) {
+                    OverlayNavUtil.show(activity,
+                            new DualCameraSettingsFragment(),
+                            "DualCameraSettingsFragment");
+                } else {
+                    Log.w(TAG, "No activity available to show dual camera settings overlay");
+                }
             } catch (Exception e) {
                 Log.w(TAG, "Could not show dual camera settings", e);
             }
         }
 
         return newState;
+    }
+
+    /**
+     * Convenience overload that does not open the settings overlay.
+     *
+     * @see #toggle(FragmentManager, FragmentActivity)
+     */
+    public boolean toggle(@NonNull FragmentManager fragmentManager) {
+        return toggle(fragmentManager, null);
     }
 
     /**

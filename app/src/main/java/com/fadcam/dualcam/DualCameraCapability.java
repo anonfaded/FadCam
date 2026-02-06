@@ -13,18 +13,20 @@ import androidx.annotation.Nullable;
 import java.util.Set;
 
 /**
- * Checks whether the current device supports concurrent front + back camera operation
- * required for dual-camera (PiP) recording.
+ * Checks whether the current device can attempt dual-camera (PiP) recording.
+ *
+ * <p>The check is intentionally <b>permissive</b>: it only requires that both a
+ * front-facing and a back-facing camera exist. The strict {@code
+ * getConcurrentCameraIds()} API (API 30+) is used as an <em>optional</em> hint
+ * — if available and reports a valid concurrent set, we cache those IDs.
+ * Otherwise we fall back to the first front/back camera IDs.
+ *
+ * <p>If the hardware truly cannot handle concurrent streams the
+ * {@link com.fadcam.dualcam.service.DualCameraRecordingService} will fail
+ * gracefully and broadcast an error to the UI.
  *
  * <p>This class is read-only and does <b>not</b> modify any existing camera code.
  * Results are cached after the first query for performance.
- *
- * <h3>Requirements</h3>
- * <ul>
- *   <li>Android 11+ (API 30) — {@code CameraManager.getConcurrentCameraIds()} API</li>
- *   <li>Both front and back cameras available</li>
- *   <li>Hardware support for concurrent streams (OEM-dependent)</li>
- * </ul>
  */
 public class DualCameraCapability {
 
@@ -37,6 +39,8 @@ public class DualCameraCapability {
     private volatile String cachedFrontId = null;
     private volatile String cachedBackId = null;
     private volatile String cachedUnsupportedReason = null;
+    /** {@code true} when the strict concurrent-camera API confirms support. */
+    private volatile boolean concurrentApiConfirmed = false;
 
     /**
      * @param context Any context; application context is extracted internally.
@@ -48,7 +52,8 @@ public class DualCameraCapability {
     // ── Public API ─────────────────────────────────────────────────────────
 
     /**
-     * Returns {@code true} if this device supports concurrent front + back camera recording.
+     * Returns {@code true} if this device has both a front and a back camera
+     * and can <em>attempt</em> dual-camera recording.
      * The result is cached after the first call.
      */
     public boolean isSupported() {
@@ -88,6 +93,16 @@ public class DualCameraCapability {
     }
 
     /**
+     * Returns {@code true} if the strict {@code getConcurrentCameraIds()}
+     * API confirmed concurrent support. If {@code false} the feature may
+     * still work at runtime; it just wasn't confirmed in advance.
+     */
+    public boolean isConcurrentApiConfirmed() {
+        if (cachedSupport == null) evaluate();
+        return concurrentApiConfirmed;
+    }
+
+    /**
      * Forces re-evaluation (e.g. after a camera subsystem restart).
      */
     public void invalidateCache() {
@@ -95,6 +110,7 @@ public class DualCameraCapability {
         cachedFrontId = null;
         cachedBackId = null;
         cachedUnsupportedReason = null;
+        concurrentApiConfirmed = false;
     }
 
     // ── Internal ───────────────────────────────────────────────────────────
@@ -103,13 +119,6 @@ public class DualCameraCapability {
         // Double-check inside synchronized block
         if (cachedSupport != null) return;
 
-        // 1. API level check
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            fail("Dual camera requires Android 11 or newer (current: API " + Build.VERSION.SDK_INT + ")");
-            return;
-        }
-
-        // 2. Get CameraManager
         CameraManager cameraManager = (CameraManager) appContext.getSystemService(Context.CAMERA_SERVICE);
         if (cameraManager == null) {
             fail("Camera service unavailable");
@@ -117,21 +126,7 @@ public class DualCameraCapability {
         }
 
         try {
-            // 3. Check concurrent camera sets (API 30+)
-            @SuppressWarnings("unchecked")
-            Set<Set<String>> concurrentSets = cameraManager.getConcurrentCameraIds();
-            if (concurrentSets == null || concurrentSets.isEmpty()) {
-                fail("Device does not report any concurrent camera combinations");
-                Log.d(TAG, "getConcurrentCameraIds() returned empty set");
-                return;
-            }
-
-            Log.d(TAG, "Concurrent camera sets reported: " + concurrentSets.size());
-            for (Set<String> s : concurrentSets) {
-                Log.d(TAG, "  Set: " + s);
-            }
-
-            // 4. Find front + back camera IDs from the regular camera list
+            // 1. Find front + back camera IDs
             String frontId = findCameraIdByFacing(cameraManager, CameraCharacteristics.LENS_FACING_FRONT);
             String backId = findCameraIdByFacing(cameraManager, CameraCharacteristics.LENS_FACING_BACK);
 
@@ -146,20 +141,33 @@ public class DualCameraCapability {
 
             Log.d(TAG, "Front camera ID: " + frontId + ", Back camera ID: " + backId);
 
-            // 5. Check if any concurrent set contains BOTH front and back
-            for (Set<String> cameraSet : concurrentSets) {
-                if (cameraSet.contains(frontId) && cameraSet.contains(backId)) {
-                    Log.i(TAG, "✅ Dual camera supported! Concurrent set: " + cameraSet);
-                    cachedFrontId = frontId;
-                    cachedBackId = backId;
-                    cachedUnsupportedReason = null;
-                    cachedSupport = true;
-                    return;
+            // 2. Try the strict concurrent API if available (API 30+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Set<Set<String>> concurrentSets = cameraManager.getConcurrentCameraIds();
+                    if (concurrentSets != null && !concurrentSets.isEmpty()) {
+                        Log.d(TAG, "Concurrent camera sets reported: " + concurrentSets.size());
+                        for (Set<String> cameraSet : concurrentSets) {
+                            Log.d(TAG, "  Set: " + cameraSet);
+                            if (cameraSet.contains(frontId) && cameraSet.contains(backId)) {
+                                Log.i(TAG, "✅ Concurrent API confirmed dual camera support");
+                                concurrentApiConfirmed = true;
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "getConcurrentCameraIds() call failed — proceeding with best-effort", e);
                 }
             }
 
-            // 6. Front and back exist but aren't in a concurrent set
-            fail("Front and back cameras exist but device does not support concurrent operation");
+            // 3. We have front + back — allow the user to attempt dual recording
+            cachedFrontId = frontId;
+            cachedBackId = backId;
+            cachedUnsupportedReason = null;
+            cachedSupport = true;
+            Log.i(TAG, "✅ Dual camera available (concurrent API confirmed: " + concurrentApiConfirmed + ")");
 
         } catch (CameraAccessException e) {
             Log.e(TAG, "CameraAccessException during dual camera evaluation", e);
