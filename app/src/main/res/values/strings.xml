@@ -241,11 +241,11 @@
     <string name="dual_cam_section_preview">Preview</string>
     <string name="dual_cam_preview_primary">Main Camera</string>
     <string name="dual_cam_preview_pip">PiP</string>
-    <string name="dual_cam_preview_helper">Live preview of your dual camera layout. Changes update instantly.</string>
+    <string name="dual_cam_preview_helper">This is how the PiP mode will look like in landscape mode for example.</string>
 
     <!-- Dual Camera – Compatibility banner -->
     <string name="dual_cam_banner_checking">Checking device compatibility…</string>
-    <string name="dual_cam_banner_supported">Dual camera is supported on this device.</string>
+    <string name="dual_cam_banner_supported">Both cameras detected, but concurrent support is not confirmed. Tap for details.</string>
     <string name="dual_cam_banner_supported_confirmed">Dual camera is fully supported and confirmed by your device.</string>
     <string name="dual_cam_banner_unsupported">Dual camera is not supported on this device.</string>
     <string name="dual_cam_banner_tap_details">Details</string>
@@ -261,11 +261,12 @@
     <string name="dual_cam_info_concurrent_no">Not confirmed</string>
     <string name="dual_cam_info_status_label">Status</string>
     <string name="dual_cam_info_supported_status">✓ Your device supports dual camera recording.</string>
+    <string name="dual_cam_info_supported_unconfirmed">⚠ Your device has both cameras, but concurrent support is not confirmed. It may or may not work.</string>
     <string name="dual_cam_info_unsupported_status">✗ Your device does not support dual camera recording.</string>
     <string name="dual_cam_info_why_unsupported">Why is dual camera not supported?</string>
     <string name="dual_cam_info_unsupported_explanation">Dual camera recording requires your device to operate both front and back cameras simultaneously. This is a hardware capability that depends on your device\'s processor and camera hardware. Most flagship phones from 2020 onwards support this feature. Mid-range and older devices typically do not.\n\nThis is NOT a bug — it\'s a hardware limitation of your device.</string>
     <string name="dual_cam_info_which_devices">Which devices support it?</string>
-    <string name="dual_cam_info_devices_explanation">Devices with Qualcomm Snapdragon 855 or newer, Google Tensor, Samsung Exynos 990 or newer, and MediaTek Dimensity 1000 or newer typically support concurrent camera access. Apple devices use a different system and are not applicable.</string>
+    <string name="dual_cam_info_devices_explanation">Devices with Qualcomm Snapdragon 855 or newer, Google Tensor, Samsung Exynos 990 or newer, and MediaTek Dimensity 1000 or newer typically support concurrent camera access.</string>
 
     <!-- Dual Camera row in Video Settings -->
     <string name="dual_cam_settings_row_title">Dual Camera Settings</string>
