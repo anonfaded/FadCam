@@ -65,6 +65,13 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             }
             Log.d(TAG, "Playback state: " + stateStr + ", pendingSeek=" + pendingSeekMs);
 
+            // Diagnostic: check seekability when player becomes ready
+            if (playbackState == Player.STATE_READY && player != null) {
+                Log.d(TAG, "DIAG STATE_READY: isSeekable=" + player.isCurrentMediaItemSeekable()
+                        + " position=" + player.getCurrentPosition()
+                        + " duration=" + player.getDuration());
+            }
+
             if (playbackState == Player.STATE_READY && pendingSeekMs >= 0) {
                 if (player != null) {
                     Log.d(TAG, "Executing pending seek to " + pendingSeekMs + "ms (absolute)");
@@ -178,9 +185,18 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
     public void play() {
         if (player != null) {
-            // Ensure we start from trim start if at/beyond trim end
+            // Diagnostic: what does ExoPlayer actually report?
             long pos = player.getCurrentPosition();
+            boolean seekable = player.isCurrentMediaItemSeekable();
+            Log.d(TAG, "DIAG play(): currentPosition=" + pos
+                    + " isSeekable=" + seekable
+                    + " trimStart=" + trimStartMs
+                    + " trimEnd=" + trimEndMs);
+
+            // Ensure we start from trim start if at/beyond trim end
             if (pos < trimStartMs || pos >= trimEndMs) {
+                Log.d(TAG, "DIAG play(): resetting to trimStart=" + trimStartMs
+                        + " (pos " + pos + " outside trim range)");
                 player.seekTo(trimStartMs);
             }
             player.play();
@@ -210,6 +226,32 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         } else {
             pendingSeekMs = absoluteMs;
             Log.d(TAG, "Seek to " + positionMs + "ms (queued, state=" + state + ")");
+        }
+    }
+
+    /**
+     * Seek to an absolute position in the source video.
+     * Used for live scrub/trim preview where the position is already
+     * in absolute terms (not relative to trim start).
+     *
+     * @param absoluteMs absolute position in the source video (milliseconds)
+     */
+    public void seekToAbsolute(long absoluteMs) {
+        if (player == null) return;
+        absoluteMs = Math.max(0, absoluteMs);
+
+        int state = player.getPlaybackState();
+        if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
+            long beforePos = player.getCurrentPosition();
+            player.seekTo(absoluteMs);
+            long afterPos = player.getCurrentPosition();
+            pendingSeekMs = -1;
+            Log.d(TAG, "DIAG seekToAbsolute: target=" + absoluteMs
+                    + " beforePos=" + beforePos + " afterPos=" + afterPos
+                    + " seekable=" + player.isCurrentMediaItemSeekable());
+        } else {
+            pendingSeekMs = absoluteMs;
+            Log.d(TAG, "Seek absolute queued: " + absoluteMs + "ms (state=" + state + ")");
         }
     }
 
@@ -309,18 +351,25 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     /**
      * Prepare the player with a plain MediaItem (no ClippingConfiguration).
      * Seeks to trimStartMs once ready.
+     *
+     * <p>Converts content:// URIs to file:// when possible so ExoPlayer
+     * uses {@code FileDataSource} (supports random-access seeking) instead
+     * of {@code ContentDataSource} (which cannot seek in fMP4).</p>
      */
     private void preparePlayer(@NonNull Clip clip) {
         if (player == null) return;
 
-        Log.d(TAG, "Preparing clip: uri=" + clip.getSourceUri()
+        Uri sourceUri = clip.getSourceUri();
+        Uri resolvedUri = resolveFileUri(sourceUri);
+
+        Log.d(TAG, "Preparing clip: originalUri=" + sourceUri
+                + " resolvedUri=" + resolvedUri
                 + " trimIn=" + trimStartMs
                 + " trimOut=" + trimEndMs
                 + " sourceDur=" + clip.getSourceDurationMs());
 
-        // NO ClippingConfiguration — fragmented MP4 may not be seekable
         MediaItem mediaItem = new MediaItem.Builder()
-                .setUri(clip.getSourceUri())
+                .setUri(resolvedUri)
                 .build();
 
         player.setMediaItem(mediaItem);
@@ -331,6 +380,45 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         if (trimStartMs > 0) {
             pendingSeekMs = trimStartMs;
         }
+    }
+
+    /**
+     * Resolve a content:// URI to a file:// URI when possible.
+     *
+     * <p>SAF content:// URIs use {@code ContentDataSource} in ExoPlayer,
+     * which does NOT support random-access seeking. For fragmented MP4
+     * recorded by FadCam, this means seeks silently fail. Converting to
+     * file:// enables {@code FileDataSource} with proper seeking.</p>
+     *
+     * @param uri the original URI (may be content://, file://, or other)
+     * @return file:// URI if the file exists on disk, otherwise the original URI
+     */
+    @NonNull
+    private Uri resolveFileUri(@NonNull Uri uri) {
+        // Already a file URI — nothing to do
+        if ("file".equals(uri.getScheme())) {
+            return uri;
+        }
+
+        // Try to reconstruct a file path from SAF content:// URI
+        String path = uri.getPath();
+        if (path != null && path.contains(":")) {
+            int lastColon = path.lastIndexOf(':');
+            if (lastColon >= 0 && lastColon < path.length() - 1) {
+                String rel = path.substring(lastColon + 1);
+                String reconstructed = "/storage/emulated/0/" + rel;
+                java.io.File f = new java.io.File(reconstructed);
+                if (f.exists() && f.canRead()) {
+                    Uri fileUri = Uri.fromFile(f);
+                    Log.d(TAG, "Resolved content:// → file:// : " + fileUri);
+                    return fileUri;
+                }
+            }
+        }
+
+        // Fallback: use original URI (ContentDataSource, limited seeking)
+        Log.w(TAG, "Cannot resolve to file URI, using content:// (seeking may fail): " + uri);
+        return uri;
     }
 
     private void releasePlayer() {

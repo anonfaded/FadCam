@@ -200,6 +200,57 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- ─── Remux progress overlay (hidden by default) ────────────── -->
+    <FrameLayout
+        android:id="@+id/remux_progress_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        android:elevation="20dp">
+
+        <LinearLayout
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="28dp"
+            android:background="@drawable/settings_group_card_bg">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/materialicons"
+                android:text="sync"
+                android:textColor="#4CAF50"
+                android:textSize="36sp"
+                android:layout_marginBottom="16dp" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/remux_progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminate="true"
+                app:indicatorColor="#4CAF50"
+                app:trackColor="#333333"
+                app:trackCornerRadius="4dp"
+                app:trackThickness="6dp" />
+
+            <TextView
+                android:id="@+id/remux_progress_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/faditor_remuxing"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+        </LinearLayout>
+    </FrameLayout>
+
     <!-- ─── Export progress overlay (hidden by default) ──────────── -->
     <FrameLayout
         android:id="@+id/export_progress_overlay"

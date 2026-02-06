@@ -739,6 +739,8 @@
     <string name="faditor_export_error">Export failed: %1$s</string>
     <string name="faditor_export_cancelled">Export cancelled</string>
     <string name="faditor_export_in_progress">Export already in progress</string>
+    <string name="faditor_remuxing">Optimizing for preview…</string>
+    <string name="faditor_remuxing_percent">Optimizing… %1$ds processed</string>
     <string name="faditor_error_no_video">No video selected</string>
     <string name="faditor_error_picker">Could not open file picker</string>
     <string name="faditor_tool_trim">Trim</string>

@@ -78,12 +78,20 @@ public class TimelineView extends View {
     // ── Listener interfaces ──────────────────────────────────────────
 
     public interface TrimChangeListener {
-        void onTrimChanged(float startFraction, float endFraction);
+        /**
+         * Called continuously while a trim handle is being dragged.
+         * @param startFraction current start trim fraction (0-1)
+         * @param endFraction   current end trim fraction (0-1)
+         * @param isLeftHandle  true if the left (in-point) handle is being dragged
+         */
+        void onTrimChanged(float startFraction, float endFraction, boolean isLeftHandle);
         void onTrimFinished(float startFraction, float endFraction);
     }
 
     public interface PlayheadChangeListener {
         void onPlayheadSeeked(float fraction);
+        /** Called when the user lifts their finger after dragging the playhead. */
+        void onPlayheadDragFinished();
     }
 
     // ── Constructors ─────────────────────────────────────────────────
@@ -296,7 +304,7 @@ public class TimelineView extends View {
                     trimStartFraction = Math.max(0f, Math.min(newStart, maxStart));
                     invalidate();
                     if (trimListener != null) {
-                        trimListener.onTrimChanged(trimStartFraction, trimEndFraction);
+                        trimListener.onTrimChanged(trimStartFraction, trimEndFraction, true);
                     }
                 } else if (activeDrag == DragTarget.RIGHT) {
                     float newEnd = (x - baseLeft) / usableWidth;
@@ -304,7 +312,7 @@ public class TimelineView extends View {
                     trimEndFraction = Math.max(minEnd, Math.min(newEnd, 1f));
                     invalidate();
                     if (trimListener != null) {
-                        trimListener.onTrimChanged(trimStartFraction, trimEndFraction);
+                        trimListener.onTrimChanged(trimStartFraction, trimEndFraction, false);
                     }
                 } else if (activeDrag == DragTarget.PLAYHEAD) {
                     float newFrac = (x - baseLeft) / usableWidth;
@@ -325,6 +333,11 @@ public class TimelineView extends View {
                     }
                     Log.d(TAG, "Trim finished: start=" + trimStartFraction
                             + " end=" + trimEndFraction);
+                } else if (activeDrag == DragTarget.PLAYHEAD) {
+                    if (playheadListener != null) {
+                        playheadListener.onPlayheadDragFinished();
+                    }
+                    Log.d(TAG, "Playhead drag finished at: " + playheadFraction);
                 }
                 activeDrag = DragTarget.NONE;
                 getParent().requestDisallowInterceptTouchEvent(false);

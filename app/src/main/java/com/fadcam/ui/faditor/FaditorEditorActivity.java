@@ -21,6 +21,9 @@ import androidx.media3.transformer.ExportResult;
 import androidx.media3.ui.PlayerView;
 
 import com.fadcam.R;
+import com.fadcam.Constants;
+import com.fadcam.SharedPreferencesManager;
+import com.fadcam.playback.FragmentedMp4Remuxer;
 import com.fadcam.ui.faditor.export.ExportManager;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.FaditorProject;
@@ -28,6 +31,8 @@ import com.fadcam.ui.faditor.player.FaditorPlayerManager;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.fadcam.ui.faditor.timeline.TimelineView;
 import com.fadcam.ui.faditor.util.TimeFormatter;
+
+import java.io.File;
 
 /**
  * Full-screen video editor Activity for Faditor Mini.
@@ -46,6 +51,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private FaditorProject project;
     private FaditorPlayerManager playerManager;
     private ExportManager exportManager;
+    private SharedPreferencesManager prefsManager;
+    private FragmentedMp4Remuxer remuxer;
 
     // ── Views ────────────────────────────────────────────────────────
     private PlayerView playerView;
@@ -55,6 +62,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView timeTotal;
     private View exportProgressOverlay;
     private TextView exportProgressText;
+    private View remuxProgressOverlay;
+    private TextView remuxProgressText;
 
     // ── Persistence ──────────────────────────────────────────────────
     private ProjectStorage projectStorage;
@@ -69,6 +78,21 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /** True until we receive ExoPlayer's real duration and correct the project. */
     private boolean durationCorrectionPending = true;
+
+    /**
+     * True while the user is actively touching/dragging the timeline (playhead or trim).
+     * Prevents {@link #updatePlayheadPosition()} from overwriting the drag position.
+     */
+    private boolean userDragging = false;
+
+    /**
+     * Remembers if the player was playing when a drag started,
+     * so we can resume after the drag finishes.
+     */
+    private boolean wasPlayingBeforeDrag = false;
+
+    /** Tracks the last playhead fraction set by the user (drag or trim). */
+    private float lastUserPlayheadFraction = 0f;
 
     // ── Playhead sync ────────────────────────────────────────────────
     private final Handler playheadHandler = new Handler(Looper.getMainLooper());
@@ -93,6 +117,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_faditor_editor);
 
+        // Initialize preferences and remuxer
+        prefsManager = SharedPreferencesManager.getInstance(this);
+        remuxer = new FragmentedMp4Remuxer(this);
+
         // Parse video URI from intent
         Uri videoUri = parseVideoUri();
         if (videoUri == null) {
@@ -105,12 +133,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Initialize components
         projectStorage = new ProjectStorage(this);
         initViews();
-        initProject(videoUri);
-        initPlayer();
-        initTimeline();
-        initToolbar();
-        initExport();
-        initBackHandler();
+
+        // Check if video needs remuxing for seekable playback
+        attemptRemuxAndLoad(videoUri);
 
         Log.d(TAG, "Editor opened with: " + videoUri);
     }
@@ -163,9 +188,121 @@ public class FaditorEditorActivity extends AppCompatActivity {
         timeTotal = findViewById(R.id.time_total);
         exportProgressOverlay = findViewById(R.id.export_progress_overlay);
         exportProgressText = findViewById(R.id.export_progress_text);
+        remuxProgressOverlay = findViewById(R.id.remux_progress_overlay);
+        remuxProgressText = findViewById(R.id.remux_progress_text);
 
         // Close button
         findViewById(R.id.btn_close).setOnClickListener(v -> handleClose());
+    }
+
+    /**
+     * Attempt to remux a fragmented MP4 for seekable preview, then proceed
+     * with project initialisation. If the file doesn't need remuxing (or is
+     * not a local file) we skip straight to loading.
+     */
+    private void attemptRemuxAndLoad(@NonNull Uri videoUri) {
+        File sourceFile = resolveToFile(videoUri);
+
+        if (sourceFile != null && remuxer.needsRemux(sourceFile)) {
+            // Already remuxed?
+            if (remuxer.hasRemuxedVersion(sourceFile)) {
+                File remuxed = remuxer.getRemuxedFile(sourceFile);
+                Log.d(TAG, "Using cached remuxed file: " + remuxed.getName());
+                continueLoadWithUri(Uri.fromFile(remuxed), videoUri);
+                return;
+            }
+
+            // Show progress and remux async
+            showRemuxProgress();
+            Log.i(TAG, "Remuxing fragmented MP4 for seekable preview…");
+
+            remuxer.remuxAsync(sourceFile, new FragmentedMp4Remuxer.RemuxCallback() {
+                @Override
+                public void onRemuxComplete(boolean success, String outputPath) {
+                    runOnUiThread(() -> {
+                        hideRemuxProgress();
+                        if (success && outputPath != null) {
+                            Log.i(TAG, "Remux complete: " + outputPath);
+                            continueLoadWithUri(
+                                    Uri.fromFile(new File(outputPath)), videoUri);
+                        } else {
+                            Log.w(TAG, "Remux failed, loading original (seeking may not work)");
+                            continueLoadWithUri(videoUri, videoUri);
+                        }
+                    });
+                }
+
+                @Override
+                public void onRemuxProgress(int percent) {
+                    runOnUiThread(() -> {
+                        if (remuxProgressText != null) {
+                            remuxProgressText.setText(
+                                    getString(R.string.faditor_remuxing_percent, percent));
+                        }
+                    });
+                }
+            });
+        } else {
+            // No remux needed / not a local file
+            continueLoadWithUri(videoUri, videoUri);
+        }
+    }
+
+    /**
+     * Finish editor initialisation after (optional) remux is done.
+     *
+     * @param playUri   URI to use for preview playback (may be remuxed)
+     * @param exportUri original URI kept for export (same content, original container)
+     */
+    private void continueLoadWithUri(@NonNull Uri playUri, @NonNull Uri exportUri) {
+        initProject(playUri);
+        initPlayer();
+        initTimeline();
+        initToolbar();
+        initExport();
+        initBackHandler();
+    }
+
+    /**
+     * Try to resolve a URI to a local {@link File}.
+     * Handles file:// URIs and SAF content:// URIs (best-effort reconstruction).
+     *
+     * @return the File if resolvable, or null
+     */
+    @Nullable
+    private File resolveToFile(@NonNull Uri uri) {
+        if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+            return new File(uri.getPath());
+        }
+        // Best-effort: reconstruct from SAF content:// path
+        String path = uri.getPath();
+        if (path != null && path.contains(":")) {
+            int lastColon = path.lastIndexOf(':');
+            if (lastColon >= 0 && lastColon < path.length() - 1) {
+                String rel = path.substring(lastColon + 1);
+                File f = new File("/storage/emulated/0/" + rel);
+                if (f.exists() && f.canRead()) {
+                    return f;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void showRemuxProgress() {
+        if (remuxProgressOverlay != null) {
+            remuxProgressOverlay.setVisibility(View.VISIBLE);
+            remuxProgressOverlay.setAlpha(0f);
+            remuxProgressOverlay.animate().alpha(1f).setDuration(200).start();
+        }
+    }
+
+    private void hideRemuxProgress() {
+        if (remuxProgressOverlay != null) {
+            remuxProgressOverlay.animate().alpha(0f).setDuration(200).withEndAction(() -> {
+                remuxProgressOverlay.setVisibility(View.GONE);
+            }).start();
+        }
     }
 
     private void initProject(@NonNull Uri videoUri) {
@@ -229,23 +366,40 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Listen for trim handle changes
         timelineView.setTrimChangeListener(new TimelineView.TrimChangeListener() {
             @Override
-            public void onTrimChanged(float startFraction, float endFraction) {
+            public void onTrimChanged(float startFraction, float endFraction, boolean isLeftHandle) {
+                // On first drag event: remember play state and pause
+                if (!userDragging) {
+                    wasPlayingBeforeDrag = playerManager.isPlaying();
+                    if (wasPlayingBeforeDrag) playerManager.pause();
+                    userDragging = true;
+                }
+
                 // Update clip trim points while dragging (live feedback)
                 Clip c = project.getTimeline().getClip(0);
                 long duration = c.getSourceDurationMs();
                 c.setInPointMs((long) (startFraction * duration));
                 c.setOutPointMs((long) (endFraction * duration));
 
+                // Seek to the handle being dragged — live frame preview
+                long seekAbsoluteMs = isLeftHandle ? c.getInPointMs() : c.getOutPointMs();
+                playerManager.seekToAbsolute(seekAbsoluteMs);
+
+                // Move playhead to handle position
+                float handleFraction = isLeftHandle ? startFraction : endFraction;
+                lastUserPlayheadFraction = handleFraction;
+                timelineView.setPlayheadFraction(handleFraction);
+
                 // Update time display to show trimmed region duration
                 long trimmedDuration = c.getOutPointMs() - c.getInPointMs();
                 timeTotal.setText(TimeFormatter.formatAuto(trimmedDuration));
 
-                // Show start position in current time
-                timeCurrent.setText(TimeFormatter.formatAuto(0));
+                // Show relative position at the handle
+                long relativePos = isLeftHandle ? 0 : trimmedDuration;
+                timeCurrent.setText(TimeFormatter.formatAuto(relativePos));
 
-                Log.v(TAG, "Trim dragging: in=" + c.getInPointMs()
-                        + " out=" + c.getOutPointMs()
-                        + " trimDur=" + trimmedDuration);
+                Log.v(TAG, "Trim dragging (" + (isLeftHandle ? "left" : "right") + "): in="
+                        + c.getInPointMs() + " out=" + c.getOutPointMs()
+                        + " seekTo=" + seekAbsoluteMs + " trimDur=" + trimmedDuration);
             }
 
             @Override
@@ -258,34 +412,70 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         + " trimDur=" + (c.getOutPointMs() - c.getInPointMs()));
 
                 // Reset playhead to start of trimmed region
+                lastUserPlayheadFraction = startFraction;
                 timelineView.setPlayheadFraction(startFraction);
                 timeCurrent.setText(TimeFormatter.formatAuto(0));
 
-                // Reload player with new bounds
+                // Update player trim bounds (no re-prepare)
                 playerManager.updateTrimBounds(c);
                 project.touch();
                 scheduleAutoSave();
+
+                // Clear drag state after short delay
+                playheadHandler.postDelayed(() -> userDragging = false, 200);
             }
         });
 
         // Listen for playhead seeks on timeline
-        timelineView.setPlayheadChangeListener(fraction -> {
-            Clip c = project.getTimeline().getClip(0);
-            long sourceDuration = c.getSourceDurationMs();
-            if (sourceDuration <= 0) return;
+        // Only update time display during drag; seek player on release.
+        timelineView.setPlayheadChangeListener(new TimelineView.PlayheadChangeListener() {
+            @Override
+            public void onPlayheadSeeked(float fraction) {
+                // On first drag event: remember play state and pause
+                if (!userDragging) {
+                    wasPlayingBeforeDrag = playerManager.isPlaying();
+                    if (wasPlayingBeforeDrag) playerManager.pause();
+                    userDragging = true;
+                }
 
-            // fraction is in terms of full source duration
-            // ExoPlayer expects position relative to clipped start (0-based)
-            long absoluteMs = (long) (fraction * sourceDuration);
-            long seekPos = absoluteMs - c.getInPointMs();
-            seekPos = Math.max(0, Math.min(seekPos, c.getOutPointMs() - c.getInPointMs()));
+                Clip c = project.getTimeline().getClip(0);
+                long sourceDuration = c.getSourceDurationMs();
+                if (sourceDuration <= 0) return;
 
-            Log.v(TAG, "Playhead seek: fraction=" + fraction
-                    + " absoluteMs=" + absoluteMs
-                    + " seekPos=" + seekPos);
+                // fraction is in terms of full source duration
+                long absoluteMs = (long) (fraction * sourceDuration);
+                // Clamp to within trim bounds
+                absoluteMs = Math.max(c.getInPointMs(), Math.min(absoluteMs, c.getOutPointMs()));
 
-            playerManager.seekTo(seekPos);
-            timeCurrent.setText(TimeFormatter.formatAuto(seekPos));
+                // Track user's intended position
+                lastUserPlayheadFraction = fraction;
+
+                // Live seek the player — shows the frame at this position
+                playerManager.seekToAbsolute(absoluteMs);
+
+                // Update time display
+                long seekPos = absoluteMs - c.getInPointMs();
+                timeCurrent.setText(TimeFormatter.formatAuto(seekPos));
+
+                Log.v(TAG, "Playhead scrub: fraction=" + fraction
+                        + " absoluteMs=" + absoluteMs
+                        + " seekPos=" + seekPos);
+            }
+
+            @Override
+            public void onPlayheadDragFinished() {
+                Log.d(TAG, "Playhead released at fraction=" + lastUserPlayheadFraction
+                        + " wasPlaying=" + wasPlayingBeforeDrag);
+
+                // Resume playback if it was playing before the drag
+                if (wasPlayingBeforeDrag) {
+                    playerManager.play();
+                    wasPlayingBeforeDrag = false;
+                }
+
+                // Clear drag state after short delay
+                playheadHandler.postDelayed(() -> userDragging = false, 200);
+            }
         });
     }
 
@@ -295,13 +485,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
             if (playerManager.isPlaying()) {
                 playerManager.pause();
             } else {
+                Clip c = project.getTimeline().getClip(0);
+                Log.d(TAG, "Play pressed: trimIn=" + c.getInPointMs()
+                        + " trimOut=" + c.getOutPointMs()
+                        + " trimDur=" + (c.getOutPointMs() - c.getInPointMs()));
                 playerManager.play();
             }
         });
     }
 
     private void initExport() {
-        exportManager = new ExportManager(this);
+        exportManager = new ExportManager(this, prefsManager);
 
         // Export button
         findViewById(R.id.btn_export).setOnClickListener(v -> startExport());
@@ -377,10 +571,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Clip clip = project.getTimeline().getClip(0);
         long storedDuration = clip.getSourceDurationMs();
 
-        // Allow small tolerance (500ms) for rounding differences
-        if (Math.abs(playerDurationMs - storedDuration) > 500) {
-            Log.w(TAG, "Duration correction: stored=" + storedDuration
-                    + "ms, ExoPlayer source=" + playerDurationMs + "ms");
+        // Only correct if ExoPlayer reports SHORTER duration.
+        // For fragmented MP4, ExoPlayer may report the container duration
+        // (e.g. 60 000 ms) while FFprobe reports the actual content duration
+        // (e.g. 4 096 ms). We trust FFprobe for "longer" values.
+        if (playerDurationMs < storedDuration && (storedDuration - playerDurationMs) > 500) {
+            Log.w(TAG, "Duration correction (shorter): stored=" + storedDuration
+                    + "ms → ExoPlayer=" + playerDurationMs + "ms");
 
             clip.setSourceDurationMs(playerDurationMs);
             clip.setInPointMs(0);
@@ -395,8 +592,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             // Update player trim bounds (no re-prepare needed)
             playerManager.updateTrimBounds(clip);
         } else {
-            Log.d(TAG, "Duration verified: " + storedDuration
-                    + "ms ≈ player " + playerDurationMs + "ms");
+            Log.d(TAG, "Duration OK: stored=" + storedDuration
+                    + "ms, ExoPlayer=" + playerDurationMs + "ms (keeping stored)");
         }
     }
 
@@ -406,31 +603,42 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
-        if (!playerManager.isReady() && !playerManager.isPlaying()) return;
 
         Clip clip = project.getTimeline().getClip(0);
-        long position = playerManager.getCurrentPosition(); // 0-based within trimmed region
         long sourceDuration = clip.getSourceDurationMs();
-
         if (sourceDuration <= 0) return;
 
-        // Enforce trim end — pause if playback reached out-point
-        if (playerManager.isPlaying() && playerManager.isAtTrimEnd()) {
-            playerManager.pause();
-            long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
-            position = trimmedDur;
-            updatePlayPauseButton(false);
-            Log.d(TAG, "Playback stopped at trim end");
+        // Don't overwrite playhead while user is dragging
+        if (userDragging) return;
+
+        // ── While PLAYING: read player position and drive the playhead ──
+        if (playerManager.isPlaying()) {
+            // Enforce trim end — pause if playback reached out-point
+            if (playerManager.isAtTrimEnd()) {
+                playerManager.pause();
+                long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
+                float endFraction = (float) clip.getOutPointMs() / sourceDuration;
+                lastUserPlayheadFraction = endFraction;
+                timelineView.setPlayheadFraction(endFraction);
+                timeCurrent.setText(TimeFormatter.formatAuto(trimmedDur));
+                updatePlayPauseButton(false);
+                Log.d(TAG, "Playback stopped at trim end");
+                return;
+            }
+
+            long position = playerManager.getCurrentPosition(); // 0-based within trim
+            long absoluteMs = clip.getInPointMs() + position;
+            float fraction = (float) absoluteMs / sourceDuration;
+            fraction = Math.max(0f, Math.min(fraction, 1f));
+
+            lastUserPlayheadFraction = fraction;
+            timelineView.setPlayheadFraction(fraction);
+            timeCurrent.setText(TimeFormatter.formatAuto(position));
         }
-
-        // absolute position = inPoint + currentPosition (relative)
-        long absoluteMs = clip.getInPointMs() + position;
-        float fraction = (float) absoluteMs / sourceDuration;
-        fraction = Math.max(0f, Math.min(fraction, 1f));
-        timelineView.setPlayheadFraction(fraction);
-
-        // Show time relative to trimmed clip (0 = start of trim)
-        timeCurrent.setText(TimeFormatter.formatAuto(position));
+        // ── While PAUSED: do NOT overwrite the user's playhead position ──
+        // The playhead stays wherever the user last placed it or where
+        // playback stopped. This prevents snapping back because the player
+        // may not have actually seeked (content:// / fMP4 limitation).
     }
 
     // ── Export helpers ────────────────────────────────────────────────
