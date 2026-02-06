@@ -259,6 +259,7 @@ public class ProjectStorage {
                 clipJson.addProperty("outPointMs", clip.getOutPointMs());
                 clipJson.addProperty("sourceDurationMs", clip.getSourceDurationMs());
                 clipJson.addProperty("speedMultiplier", clip.getSpeedMultiplier());
+                clipJson.addProperty("audioMuted", clip.isAudioMuted());
                 clipsArray.add(clipJson);
             }
             timelineJson.add("clips", clipsArray);
@@ -302,9 +303,11 @@ public class ProjectStorage {
                         long sourceDurationMs = clipObj.get("sourceDurationMs").getAsLong();
                         float speed = clipObj.has("speedMultiplier")
                                 ? clipObj.get("speedMultiplier").getAsFloat() : 1.0f;
+                        boolean audioMuted = clipObj.has("audioMuted")
+                                && clipObj.get("audioMuted").getAsBoolean();
 
                         Clip clip = new Clip(clipId, sourceUri,
-                                inPointMs, outPointMs, sourceDurationMs, speed);
+                                inPointMs, outPointMs, sourceDurationMs, speed, audioMuted);
                         project.getTimeline().addClip(clip);
                     }
                 }

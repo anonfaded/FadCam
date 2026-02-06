@@ -10,9 +10,15 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
+import androidx.media3.common.audio.SonicAudioProcessor;
+import androidx.media3.common.audio.SpeedChangingAudioProcessor;
+import androidx.media3.effect.SpeedChangeEffect;
+import androidx.media3.common.Effect;
+import androidx.media3.common.audio.AudioProcessor;
 import androidx.media3.transformer.Composition;
 import androidx.media3.transformer.EditedMediaItem;
 import androidx.media3.transformer.EditedMediaItemSequence;
+import androidx.media3.transformer.Effects;
 import androidx.media3.transformer.ExportException;
 import androidx.media3.transformer.ExportResult;
 import androidx.media3.transformer.Transformer;
@@ -116,9 +122,10 @@ public class ExportManager {
                     .setVideoMimeType(MimeTypes.VIDEO_H264)
                     .setAudioMimeType(MimeTypes.AUDIO_AAC);
 
-            // For simple trim (single clip, no effects, normal speed) use near-lossless
+            // For simple trim (single clip, no effects, normal speed, audio intact) use near-lossless
             boolean isSimpleTrim = project.getTimeline().getClipCount() == 1
-                    && project.getTimeline().getClip(0).getSpeedMultiplier() == 1.0f;
+                    && project.getTimeline().getClip(0).getSpeedMultiplier() == 1.0f
+                    && !project.getTimeline().getClip(0).isAudioMuted();
 
             if (isSimpleTrim) {
                 builder.experimentalSetTrimOptimizationEnabled(true);
@@ -234,10 +241,33 @@ public class ExportManager {
                     .setClippingConfiguration(clipping)
                     .build();
 
-            EditedMediaItem editedItem = new EditedMediaItem.Builder(mediaItem)
-                    .build();
+            EditedMediaItem.Builder editedBuilder = new EditedMediaItem.Builder(mediaItem);
 
-            items.add(editedItem);
+            // Mute audio if requested
+            if (clip.isAudioMuted()) {
+                editedBuilder.setRemoveAudio(true);
+            }
+
+            // Apply speed change effects if not 1.0x
+            float speed = clip.getSpeedMultiplier();
+            if (speed != 1.0f) {
+                List<AudioProcessor> audioProcessors = new ArrayList<>();
+                List<Effect> videoEffects = new ArrayList<>();
+
+                // Video speed effect
+                videoEffects.add(new SpeedChangeEffect(speed));
+
+                // Audio speed effect (only if audio is not muted)
+                if (!clip.isAudioMuted()) {
+                    SonicAudioProcessor sonicProcessor = new SonicAudioProcessor();
+                    sonicProcessor.setSpeed(speed);
+                    audioProcessors.add(sonicProcessor);
+                }
+
+                editedBuilder.setEffects(new Effects(audioProcessors, videoEffects));
+            }
+
+            items.add(editedBuilder.build());
         }
 
         EditedMediaItemSequence sequence =

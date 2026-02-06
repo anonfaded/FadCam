@@ -33,8 +33,11 @@ public class Clip {
     /** Original (un-trimmed) duration of the source video (milliseconds). */
     private long sourceDurationMs;
 
-    /** Playback speed multiplier (0.25 – 4.0, default 1.0). */
+    /** Playback speed multiplier (0.1 – 10.0, default 1.0). */
     private float speedMultiplier = 1.0f;
+
+    /** Whether audio is muted for this clip. */
+    private boolean audioMuted = false;
 
     // Future: List<Effect> effects = new ArrayList<>();
 
@@ -57,13 +60,14 @@ public class Clip {
      */
     public Clip(@NonNull String id, @NonNull Uri sourceUri,
          long inPointMs, long outPointMs, long sourceDurationMs,
-         float speedMultiplier) {
+         float speedMultiplier, boolean audioMuted) {
         this.id = id;
         this.sourceUri = sourceUri;
         this.inPointMs = inPointMs;
         this.outPointMs = outPointMs;
         this.sourceDurationMs = sourceDurationMs;
         this.speedMultiplier = speedMultiplier;
+        this.audioMuted = audioMuted;
     }
 
     // ── Getters ──────────────────────────────────────────────────────
@@ -92,6 +96,10 @@ public class Clip {
 
     public float getSpeedMultiplier() {
         return speedMultiplier;
+    }
+
+    public boolean isAudioMuted() {
+        return audioMuted;
     }
 
     /**
@@ -123,7 +131,11 @@ public class Clip {
     }
 
     public void setSpeedMultiplier(float speed) {
-        this.speedMultiplier = Math.max(0.25f, Math.min(speed, 4.0f));
+        this.speedMultiplier = Math.max(0.1f, Math.min(speed, 10.0f));
+    }
+
+    public void setAudioMuted(boolean muted) {
+        this.audioMuted = muted;
     }
 
     /**
@@ -143,6 +155,7 @@ public class Clip {
                 + ", in=" + inPointMs
                 + ", out=" + outPointMs
                 + ", speed=" + speedMultiplier
+                + ", muted=" + audioMuted
                 + "}";
     }
 }

@@ -65,6 +65,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View remuxProgressOverlay;
     private TextView remuxProgressText;
 
+    // ── Tool buttons ─────────────────────────────────────────────────
+    private View toolTrim;
+    private View toolSpeed;
+    private View toolMute;
+    private TextView toolMuteIcon;
+    private TextView toolMuteLabel;
+    private TextView toolSpeedLabel;
+
     // ── Persistence ──────────────────────────────────────────────────
     private ProjectStorage projectStorage;
     private final Handler autoSaveHandler = new Handler(Looper.getMainLooper());
@@ -190,6 +198,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
         exportProgressText = findViewById(R.id.export_progress_text);
         remuxProgressOverlay = findViewById(R.id.remux_progress_overlay);
         remuxProgressText = findViewById(R.id.remux_progress_text);
+
+        // Tool buttons
+        toolTrim = findViewById(R.id.tool_trim);
+        toolSpeed = findViewById(R.id.tool_speed);
+        toolMute = findViewById(R.id.tool_mute);
+        toolMuteIcon = findViewById(R.id.tool_mute_icon);
+        toolMuteLabel = findViewById(R.id.tool_mute_label);
+        toolSpeedLabel = findViewById(R.id.tool_speed_label);
 
         // Close button
         findViewById(R.id.btn_close).setOnClickListener(v -> handleClose());
@@ -479,6 +495,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         });
     }
 
+    /** Available speed presets for the speed picker. */
+    private static final float[] SPEED_PRESETS = {
+        0.1f, 0.25f, 0.5f, 0.75f,
+        1f,
+        1.25f, 1.5f, 2f, 3f, 4f, 5f, 8f, 10f
+    };
+
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
@@ -492,6 +515,86 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 playerManager.play();
             }
         });
+
+        // Mute toggle
+        toolMute.setOnClickListener(v -> toggleMute());
+
+        // Speed picker
+        toolSpeed.setOnClickListener(v -> showSpeedPicker());
+
+        // Sync UI to existing clip state (e.g. reopened project)
+        Clip clip = project.getTimeline().getClip(0);
+        updateMuteUI(clip.isAudioMuted());
+        updateSpeedUI(clip.getSpeedMultiplier());
+    }
+
+    // ── Mute ─────────────────────────────────────────────────────────
+
+    private void toggleMute() {
+        Clip clip = project.getTimeline().getClip(0);
+        boolean newMuted = !clip.isAudioMuted();
+        clip.setAudioMuted(newMuted);
+        updateMuteUI(newMuted);
+
+        // Update preview volume instantly
+        playerManager.setVolume(newMuted ? 0f : 1f);
+        scheduleAutoSave();
+    }
+
+    private void updateMuteUI(boolean muted) {
+        if (toolMuteIcon != null) {
+            toolMuteIcon.setText(muted ? "volume_off" : "volume_up");
+            int color = muted ? 0xFF4CAF50 : 0xFF888888;
+            toolMuteIcon.setTextColor(color);
+            if (toolMuteLabel != null) {
+                toolMuteLabel.setTextColor(color);
+            }
+        }
+    }
+
+    // ── Speed ────────────────────────────────────────────────────────
+
+    private void showSpeedPicker() {
+        Clip clip = project.getTimeline().getClip(0);
+        float currentSpeed = clip.getSpeedMultiplier();
+
+        String[] labels = new String[SPEED_PRESETS.length];
+        int checkedIndex = 0;
+        for (int i = 0; i < SPEED_PRESETS.length; i++) {
+            labels[i] = formatSpeed(SPEED_PRESETS[i]);
+            if (Math.abs(SPEED_PRESETS[i] - currentSpeed) < 0.001f) {
+                checkedIndex = i;
+            }
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this, R.style.CustomBottomSheetDialogTheme)
+                .setTitle(R.string.faditor_speed_title)
+                .setSingleChoiceItems(labels, checkedIndex, (dialog, which) -> {
+                    float speed = SPEED_PRESETS[which];
+                    clip.setSpeedMultiplier(speed);
+                    updateSpeedUI(speed);
+                    playerManager.setPlaybackSpeed(speed);
+                    scheduleAutoSave();
+                    dialog.dismiss();
+                })
+                .show();
+    }
+
+    private void updateSpeedUI(float speed) {
+        if (toolSpeedLabel != null) {
+            toolSpeedLabel.setText(formatSpeed(speed));
+            int color = Math.abs(speed - 1f) < 0.001f ? 0xFF888888 : 0xFF4CAF50;
+            toolSpeedLabel.setTextColor(color);
+            TextView icon = findViewById(R.id.tool_speed_icon);
+            if (icon != null) icon.setTextColor(color);
+        }
+    }
+
+    private String formatSpeed(float speed) {
+        if (speed == (int) speed) {
+            return (int) speed + "x";
+        }
+        return String.format(java.util.Locale.US, "%.2gx", speed);
     }
 
     private void initExport() {

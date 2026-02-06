@@ -181,6 +181,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless">
 
                 <TextView
+                    android:id="@+id/tool_trim_icon"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:gravity="center"
@@ -190,10 +191,71 @@
                     android:textSize="22sp" />
 
                 <TextView
+                    android:id="@+id/tool_trim_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_trim"
                     android:textColor="#4CAF50"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Speed tool -->
+            <LinearLayout
+                android:id="@+id/tool_speed"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_speed_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="speed"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_speed_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_speed"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Mute tool -->
+            <LinearLayout
+                android:id="@+id/tool_mute"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_mute_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="volume_up"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_mute_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_audio"
+                    android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>

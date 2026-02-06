@@ -210,6 +210,29 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     }
 
     /**
+     * Set the player volume (0.0 = muted, 1.0 = full volume).
+     */
+    public void setVolume(float volume) {
+        if (player != null) {
+            player.setVolume(Math.max(0f, Math.min(1f, volume)));
+            Log.d(TAG, "Volume set to " + volume);
+        }
+    }
+
+    /**
+     * Set the playback speed for preview (does not affect export).
+     *
+     * @param speed multiplier (e.g. 0.5 = half speed, 2.0 = double speed)
+     */
+    public void setPlaybackSpeed(float speed) {
+        if (player != null) {
+            player.setPlaybackParameters(
+                    new androidx.media3.common.PlaybackParameters(speed));
+            Log.d(TAG, "Playback speed set to " + speed + "x");
+        }
+    }
+
+    /**
      * Seek to a position (0-based within the trimmed region).
      * Internally converted to absolute position.
      */
