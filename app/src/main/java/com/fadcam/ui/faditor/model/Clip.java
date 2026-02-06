@@ -126,6 +126,16 @@ public class Clip {
         this.speedMultiplier = Math.max(0.25f, Math.min(speed, 4.0f));
     }
 
+    /**
+     * Correct the source duration (e.g. after ExoPlayer reports the real duration
+     * for fragmented MP4 files where MediaMetadataRetriever was inaccurate).
+     *
+     * @param ms corrected source duration in milliseconds
+     */
+    public void setSourceDurationMs(long ms) {
+        this.sourceDurationMs = Math.max(1, ms);
+    }
+
     @NonNull
     @Override
     public String toString() {

@@ -67,6 +67,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
     };
 
+    /** True until we receive ExoPlayer's real duration and correct the project. */
+    private boolean durationCorrectionPending = true;
+
     // ── Playhead sync ────────────────────────────────────────────────
     private final Handler playheadHandler = new Handler(Looper.getMainLooper());
     private static final long PLAYHEAD_UPDATE_INTERVAL_MS = 50;
@@ -204,6 +207,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == Player.STATE_ENDED) {
                     updatePlayPauseButton(false);
+                }
+                // Once ExoPlayer is READY, correct the duration if needed.
+                // MediaMetadataRetriever is unreliable for fragmented MP4;
+                // ExoPlayer parses actual content and reports the real duration.
+                if (playbackState == Player.STATE_READY && durationCorrectionPending) {
+                    durationCorrectionPending = false;
+                    correctDurationFromPlayer();
                 }
             }
         });
@@ -355,6 +365,41 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Playback helpers ─────────────────────────────────────────────
 
+    /**
+     * Correct the project's source duration using ExoPlayer's actual reported duration.
+     * Both MMR and FFprobeKit can disagree with ExoPlayer for edge-case files;
+     * if ExoPlayer reports significantly different, prefer ExoPlayer's value.
+     */
+    private void correctDurationFromPlayer() {
+        long playerDurationMs = playerManager.getSourceDuration();
+        if (playerDurationMs <= 0) return;
+
+        Clip clip = project.getTimeline().getClip(0);
+        long storedDuration = clip.getSourceDurationMs();
+
+        // Allow small tolerance (500ms) for rounding differences
+        if (Math.abs(playerDurationMs - storedDuration) > 500) {
+            Log.w(TAG, "Duration correction: stored=" + storedDuration
+                    + "ms, ExoPlayer source=" + playerDurationMs + "ms");
+
+            clip.setSourceDurationMs(playerDurationMs);
+            clip.setInPointMs(0);
+            clip.setOutPointMs(playerDurationMs);
+
+            // Refresh UI with corrected duration
+            timeTotal.setText(TimeFormatter.formatAuto(playerDurationMs));
+            timeCurrent.setText(TimeFormatter.formatAuto(0));
+            timelineView.setTrimFromClip(clip);
+            timelineView.setPlayheadFraction(0f);
+
+            // Update player trim bounds (no re-prepare needed)
+            playerManager.updateTrimBounds(clip);
+        } else {
+            Log.d(TAG, "Duration verified: " + storedDuration
+                    + "ms ≈ player " + playerDurationMs + "ms");
+        }
+    }
+
     private void updatePlayPauseButton(boolean isPlaying) {
         btnPlayPause.setText(isPlaying ? "pause" : "play_arrow");
     }
@@ -364,13 +409,21 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (!playerManager.isReady() && !playerManager.isPlaying()) return;
 
         Clip clip = project.getTimeline().getClip(0);
-        long position = playerManager.getCurrentPosition(); // relative to clip start (0-based)
+        long position = playerManager.getCurrentPosition(); // 0-based within trimmed region
         long sourceDuration = clip.getSourceDurationMs();
 
         if (sourceDuration <= 0) return;
 
-        // ExoPlayer's getCurrentPosition() is 0-based within the clipped region,
-        // so absolute position = inPoint + currentPosition
+        // Enforce trim end — pause if playback reached out-point
+        if (playerManager.isPlaying() && playerManager.isAtTrimEnd()) {
+            playerManager.pause();
+            long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
+            position = trimmedDur;
+            updatePlayPauseButton(false);
+            Log.d(TAG, "Playback stopped at trim end");
+        }
+
+        // absolute position = inPoint + currentPosition (relative)
         long absoluteMs = clip.getInPointMs() + position;
         float fraction = (float) absoluteMs / sourceDuration;
         fraction = Math.max(0f, Math.min(fraction, 1f));
@@ -444,23 +497,79 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Utility ──────────────────────────────────────────────────────
 
+    /**
+     * Get video duration using FFprobeKit (reliable for fragmented MP4),
+     * with MediaMetadataRetriever as fallback.
+     */
     private long getVideoDuration(@NonNull Uri videoUri) {
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        // ── FFprobeKit (primary — reliable for fMP4) ────────────
         try {
-            retriever.setDataSource(this, videoUri);
+            String filePath = getFFprobePathForUri(videoUri);
+            com.arthenica.ffmpegkit.MediaInformationSession session =
+                    com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
+            com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
+            if (info != null) {
+                String durationStr = info.getDuration();
+                if (durationStr != null) {
+                    double durationSec = Double.parseDouble(durationStr);
+                    long durationMs = (long) (durationSec * 1000);
+                    Log.d(TAG, "Duration from FFprobe: " + durationMs + "ms");
+                    return durationMs;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "FFprobe duration failed", e);
+        }
+
+        // ── MediaMetadataRetriever fallback ──────────────────────
+        MediaMetadataRetriever retriever = null;
+        try {
+            retriever = new MediaMetadataRetriever();
+            if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
+                retriever.setDataSource(videoUri.getPath());
+            } else {
+                retriever.setDataSource(this, videoUri);
+            }
             String durationStr = retriever.extractMetadata(
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
-                return Long.parseLong(durationStr);
+                long ms = Long.parseLong(durationStr);
+                Log.d(TAG, "Duration from MMR fallback: " + ms + "ms");
+                return ms;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error extracting video duration", e);
+            Log.e(TAG, "MMR duration failed", e);
         } finally {
-            try {
-                retriever.release();
-            } catch (Exception ignored) {
+            if (retriever != null) {
+                try { retriever.release(); } catch (Exception ignored) { }
             }
         }
+
         return -1;
+    }
+
+    /**
+     * Build a file path suitable for FFprobeKit.
+     * Reconstructs /storage/emulated/0 path for SAF content:// URIs.
+     */
+    @NonNull
+    private static String getFFprobePathForUri(@NonNull Uri uri) {
+        if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+            return uri.getPath();
+        }
+        String path = uri.getPath();
+        if (path != null && path.contains(":")) {
+            int lastColon = path.lastIndexOf(':');
+            if (lastColon >= 0 && lastColon < path.length() - 1) {
+                String rel = path.substring(lastColon + 1);
+                String reconstructed = "/storage/emulated/0/" + rel;
+                java.io.File f = new java.io.File(reconstructed);
+                if (f.exists() && f.canRead()) {
+                    Log.d(TAG, "FFprobe using reconstructed path: " + reconstructed);
+                    return reconstructed;
+                }
+            }
+        }
+        return "saf:" + uri.toString();
     }
 }
