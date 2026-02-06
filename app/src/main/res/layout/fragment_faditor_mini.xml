@@ -45,21 +45,21 @@
             android:orientation="vertical"
             android:paddingBottom="24dp">
 
-            <!-- ─── Hero section ─────────────────────────────────── -->
+            <!-- ─── Hero section (compact, premium) ──────────────── -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingTop="32dp"
-                android:paddingBottom="20dp"
+                android:paddingTop="28dp"
+                android:paddingBottom="16dp"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp">
 
-                <!-- Big icon with tinted bg circle -->
+                <!-- Accent icon -->
                 <FrameLayout
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:background="@drawable/settings_group_card_bg">
 
                     <TextView
@@ -69,7 +69,7 @@
                         android:fontFamily="@font/materialicons"
                         android:text="movie_edit"
                         android:textColor="#4CAF50"
-                        android:textSize="36sp" />
+                        android:textSize="32sp" />
                 </FrameLayout>
 
                 <TextView
@@ -79,25 +79,25 @@
                     android:textSize="22sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="14dp"
                     android:textAlignment="center" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_home_tagline"
-                    android:textSize="14sp"
-                    android:textColor="#999999"
-                    android:layout_marginTop="6dp"
+                    android:textSize="13sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp"
                     android:textAlignment="center" />
 
-                <!-- New Project button -->
+                <!-- Start Project button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_select_video"
                     style="@style/Widget.Material3.Button"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="24dp"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="20dp"
                     android:text="@string/faditor_start_project"
                     android:textSize="15sp"
                     android:textAllCaps="false"
@@ -115,20 +115,96 @@
                 android:orientation="vertical"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Section header row: title + delete action -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_recent_projects"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="#BBBBBB"
-                    android:layout_marginBottom="8dp"
-                    android:textAllCaps="true"
-                    android:letterSpacing="0.08" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
 
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/faditor_recent_projects"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="#AAAAAA"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.08" />
+
+                    <!-- Selection mode toggle (long-press hint) -->
+                    <TextView
+                        android:id="@+id/btn_select_mode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/materialicons"
+                        android:text="checklist"
+                        android:textColor="#666666"
+                        android:textSize="22sp"
+                        android:padding="4dp" />
+                </LinearLayout>
+
+                <!-- Selection action bar (hidden by default) -->
+                <LinearLayout
+                    android:id="@+id/selection_action_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/settings_group_card_bg"
+                    android:visibility="gone">
+
+                    <!-- Select all checkbox -->
+                    <CheckBox
+                        android:id="@+id/cb_select_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="#4CAF50"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp" />
+
+                    <TextView
+                        android:id="@+id/tv_selection_count"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/faditor_select_items"
+                        android:textColor="#CCCCCC"
+                        android:textSize="13sp"
+                        android:layout_marginStart="4dp" />
+
+                    <!-- Delete selected -->
+                    <TextView
+                        android:id="@+id/btn_delete_selected"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/materialicons"
+                        android:text="delete"
+                        android:textColor="#EF5350"
+                        android:textSize="22sp"
+                        android:padding="6dp" />
+
+                    <!-- Cancel selection -->
+                    <TextView
+                        android:id="@+id/btn_cancel_selection"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/materialicons"
+                        android:text="close"
+                        android:textColor="#999999"
+                        android:textSize="22sp"
+                        android:padding="6dp" />
+                </LinearLayout>
+
+                <!-- Actual project items list -->
                 <LinearLayout
                     android:id="@+id/recent_projects_list"
                     android:layout_width="match_parent"
@@ -136,7 +212,7 @@
                     android:orientation="vertical" />
             </LinearLayout>
 
-            <!-- ─── Features / capabilities grid ─────────────────── -->
+            <!-- ─── Features (2 cards: Trim + Convert) ───────────── -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -149,21 +225,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_capabilities_title"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#BBBBBB"
-                    android:layout_marginBottom="12dp"
+                    android:textColor="#AAAAAA"
+                    android:layout_marginBottom="10dp"
                     android:textAllCaps="true"
                     android:letterSpacing="0.08" />
 
-                <!-- Row 1: Trim + Export -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="10dp">
+                    android:orientation="horizontal">
 
-                    <!-- Trim feature card -->
+                    <!-- Precision Trim card -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -194,12 +268,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/faditor_feature_trim_desc"
-                            android:textColor="#888888"
-                            android:textSize="12sp"
-                            android:layout_marginTop="2dp" />
+                            android:textColor="#777777"
+                            android:textSize="11sp"
+                            android:layout_marginTop="3dp"
+                            android:lineSpacingExtra="2dp" />
                     </LinearLayout>
 
-                    <!-- Export feature card -->
+                    <!-- Smart Convert card -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -213,14 +288,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/materialicons"
-                            android:text="file_download"
+                            android:text="sync"
                             android:textColor="#42A5F5"
                             android:textSize="24sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/faditor_feature_export"
+                            android:text="@string/faditor_feature_convert"
                             android:textColor="@android:color/white"
                             android:textSize="14sp"
                             android:textStyle="bold"
@@ -229,89 +304,11 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/faditor_feature_export_desc"
-                            android:textColor="#888888"
-                            android:textSize="12sp"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Row 2: Preview + Privacy -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <!-- Preview feature card -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:padding="14dp"
-                        android:layout_marginEnd="5dp"
-                        android:background="@drawable/settings_group_card_bg">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/materialicons"
-                            android:text="play_circle"
-                            android:textColor="#FFA726"
-                            android:textSize="24sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/faditor_feature_preview"
-                            android:textColor="@android:color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="8dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/faditor_feature_preview_desc"
-                            android:textColor="#888888"
-                            android:textSize="12sp"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <!-- Privacy feature card -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:padding="14dp"
-                        android:layout_marginStart="5dp"
-                        android:background="@drawable/settings_group_card_bg">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/materialicons"
-                            android:text="shield"
-                            android:textColor="#AB47BC"
-                            android:textSize="24sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/faditor_feature_privacy"
-                            android:textColor="@android:color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="8dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/faditor_feature_privacy_desc"
-                            android:textColor="#888888"
-                            android:textSize="12sp"
-                            android:layout_marginTop="2dp" />
+                            android:text="@string/faditor_feature_convert_desc"
+                            android:textColor="#777777"
+                            android:textSize="11sp"
+                            android:layout_marginTop="3dp"
+                            android:lineSpacingExtra="2dp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -322,10 +319,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="20dp"
                 android:text="@string/faditor_version_info"
-                android:textColor="#555555"
-                android:textSize="12sp"
+                android:textColor="#444444"
+                android:textSize="11sp"
                 android:textAlignment="center" />
 
         </LinearLayout>

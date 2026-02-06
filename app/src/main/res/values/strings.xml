@@ -757,6 +757,13 @@
     <string name="faditor_feature_preview_desc">Instant playback of your trimmed clips</string>
     <string name="faditor_feature_privacy">100% Offline</string>
     <string name="faditor_feature_privacy_desc">All editing happens locally — no uploads, no cloud</string>
+    <string name="faditor_feature_convert">Smart Convert</string>
+    <string name="faditor_feature_convert_desc">Auto-converts crash-safe recordings to seekable MP4 for smooth playback everywhere</string>
+    <string name="faditor_select_items">Select items</string>
+    <string name="faditor_selected_count">%1$d selected</string>
+    <string name="faditor_delete_projects_title">Delete projects?</string>
+    <string name="faditor_delete_projects_message">Delete %1$d project(s)? This cannot be undone.</string>
+    <string name="faditor_delete_confirm">Delete</string>
     <string name="faditor_version_info">Faditor Mini · Phase 1 · Trim + Export</string>
     <string name="faditor_your_recordings">Your Recordings</string>
     <string name="faditor_browse_device">Browse Device</string>
