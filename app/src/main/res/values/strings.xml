@@ -744,7 +744,7 @@
     <string name="faditor_error_no_video">No video selected</string>
     <string name="faditor_error_picker">Could not open file picker</string>
     <string name="faditor_tool_trim">Trim</string>
-    <string name="faditor_home_tagline">Lightweight video editing, right on your device</string>
+    <string name="faditor_home_tagline">Lightweight video editor</string>
     <string name="faditor_new_project">New Project</string>
     <string name="faditor_start_project">Start Project</string>
     <string name="faditor_recent_projects">Recent Projects</string>
@@ -765,6 +765,20 @@
     <string name="faditor_delete_projects_message">Delete %1$d project(s)? This cannot be undone.</string>
     <string name="faditor_delete_confirm">Delete</string>
     <string name="faditor_version_info">Faditor Mini · Phase 1 · Trim + Export</string>
+
+    <!-- Faditor Info Bottom Sheet -->
+    <string name="faditor_info_title">About Faditor Mini</string>
+    <string name="faditor_info_subtitle">Everything you need to know about the built-in editor</string>
+    <string name="faditor_info_how_title">How it works</string>
+    <string name="faditor_info_how_desc">Pick any video from your device or your FadCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on your device — nothing is uploaded.</string>
+    <string name="faditor_info_convert_title">Smart conversion</string>
+    <string name="faditor_info_convert_desc">FadCam records in crash-safe fragmented MP4 (fMP4) to protect against data loss. Faditor automatically converts these to standard seekable MP4 so you get smooth scrubbing and instant preview. The conversion is lossless — no quality loss.</string>
+    <string name="faditor_info_export_title">Exported files</string>
+    <string name="faditor_info_export_desc">Exported videos are saved to your active storage location (the same one configured in Settings) with the prefix \"Faditor_\" followed by a timestamp. They appear in the Records tab alongside your original recordings.</string>
+    <string name="faditor_info_temp_title">Temporary files</string>
+    <string name="faditor_info_temp_desc">During editing, temporary cache files may be created for preview optimization. These are automatically cleaned up after export and do not consume permanent storage.</string>
+    <string name="faditor_info_projects_title">Recent projects</string>
+    <string name="faditor_info_projects_desc">Your 10 most recent editing sessions are displayed for quick access. You can delete projects you no longer need using the multi-select checklist. Deleting a project only removes the editing session — your original videos are untouched.</string>
     <string name="faditor_your_recordings">Your Recordings</string>
     <string name="faditor_browse_device">Browse Device</string>
     <string name="faditor_no_recordings">No recordings found yet. Start recording with FadCam to see your videos here.</string>

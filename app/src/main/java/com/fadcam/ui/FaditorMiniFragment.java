@@ -30,6 +30,7 @@ import androidx.core.content.res.ResourcesCompat;
 
 import com.fadcam.R;
 import com.fadcam.ui.faditor.FaditorEditorActivity;
+import com.fadcam.ui.faditor.FaditorInfoBottomSheet;
 import com.fadcam.ui.faditor.VideoSourceBottomSheet;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -132,6 +133,15 @@ public class FaditorMiniFragment extends BaseFragment {
         View selectButton = view.findViewById(R.id.btn_select_video);
         if (selectButton != null) {
             selectButton.setOnClickListener(v -> showVideoSourceChooser());
+        }
+
+        // Info icon → opens Faditor info bottom sheet
+        View btnInfo = view.findViewById(R.id.btn_info);
+        if (btnInfo != null) {
+            btnInfo.setOnClickListener(v -> {
+                FaditorInfoBottomSheet.newInstance()
+                        .show(getChildFragmentManager(), "faditor_info");
+            });
         }
 
         recentProjectsSection = view.findViewById(R.id.recent_projects_section);
@@ -322,9 +332,11 @@ public class FaditorMiniFragment extends BaseFragment {
         int hPad = (int) (14 * dp);
         int vPad = (int) (10 * dp);
         row.setPadding(hPad, vPad, hPad, vPad);
-        row.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        rowLp.bottomMargin = (int) (6 * dp);
+        row.setLayoutParams(rowLp);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
         row.setTag(summary.id);
 
@@ -334,9 +346,9 @@ public class FaditorMiniFragment extends BaseFragment {
         cb.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
         cb.setMinWidth(0);
         cb.setMinHeight(0);
+        cb.setPadding(0, 0, 0, 0);
         LinearLayout.LayoutParams cbLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+                (int) (36 * dp), (int) (36 * dp));
         cbLp.setMarginEnd((int) (8 * dp));
         cb.setLayoutParams(cbLp);
         cb.setChecked(selectedIds.contains(summary.id));
