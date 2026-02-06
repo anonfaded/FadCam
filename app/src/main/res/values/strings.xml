@@ -772,13 +772,17 @@
     <string name="faditor_info_how_title">How it works</string>
     <string name="faditor_info_how_desc">Pick any video from your device or your FadCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on your device — nothing is uploaded.</string>
     <string name="faditor_info_convert_title">Smart conversion</string>
-    <string name="faditor_info_convert_desc">FadCam records in crash-safe fragmented MP4 (fMP4) to protect against data loss. Faditor automatically converts these to standard seekable MP4 so you get smooth scrubbing and instant preview. The conversion is lossless — no quality loss.</string>
+    <string name="faditor_info_convert_desc">FadCam records in a crash-safe format (fragmented MP4) so your videos stay intact even if the app crashes or recording stops suddenly. The trade-off is that normal video players and gallery apps may not be able to seek, scrub, or show the correct duration of these files. This is not a bug — it is a deliberate, reliable design.
+
+Faditor Mini fixes this automatically. When you open a FadCam recording, it is instantly remuxed into a standard seekable MP4 for smooth preview. To convert permanently, just open the video and tap Export — the output is a fully compatible MP4 that works in every media player. No rendering or re-encoding happens, so the process is instant and lossless.</string>
     <string name="faditor_info_export_title">Exported files</string>
     <string name="faditor_info_export_desc">Exported videos are saved to your active storage location (the same one configured in Settings) with the prefix \"Faditor_\" followed by a timestamp. They appear in the Records tab alongside your original recordings.</string>
     <string name="faditor_info_temp_title">Temporary files</string>
     <string name="faditor_info_temp_desc">During editing, temporary cache files may be created for preview optimization. These are automatically cleaned up after export and do not consume permanent storage.</string>
     <string name="faditor_info_projects_title">Recent projects</string>
-    <string name="faditor_info_projects_desc">Your 10 most recent editing sessions are displayed for quick access. You can delete projects you no longer need using the multi-select checklist. Deleting a project only removes the editing session — your original videos are untouched.</string>
+    <string name="faditor_info_projects_desc">Your 10 most recent editing sessions are shown for quick access. Each project is stored as a small JSON file on your device containing the video URI, trim points, and timestamps — no copies of your videos are made.
+
+You can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; your original video files remain untouched.</string>
     <string name="faditor_your_recordings">Your Recordings</string>
     <string name="faditor_browse_device">Browse Device</string>
     <string name="faditor_no_recordings">No recordings found yet. Start recording with FadCam to see your videos here.</string>
