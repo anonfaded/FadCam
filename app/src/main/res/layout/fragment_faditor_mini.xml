@@ -132,6 +132,69 @@
                     app:iconPadding="8dp" />
             </LinearLayout>
 
+            <!-- ─── Empty state (no projects) ───────────────────── -->
+            <LinearLayout
+                android:id="@+id/empty_state_container"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Section heading -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_recent_projects"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorHeading"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="16dp" />
+
+                <!-- Centered empty content -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/materialicons"
+                        android:text="video_library"
+                        android:textColor="#333333"
+                        android:textSize="48sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/faditor_empty_title"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#888888"
+                        android:textAlignment="center"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/faditor_empty_desc"
+                        android:textSize="13sp"
+                        android:textColor="#555555"
+                        android:textAlignment="center"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
+            </LinearLayout>
+
             <!-- ─── Recent Projects section ──────────────────────── -->
             <LinearLayout
                 android:id="@+id/recent_projects_section"

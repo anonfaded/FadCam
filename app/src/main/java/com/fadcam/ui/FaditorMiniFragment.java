@@ -67,6 +67,7 @@ public class FaditorMiniFragment extends BaseFragment {
     private ProjectStorage projectStorage;
     private LinearLayout recentProjectsSection;
     private LinearLayout recentProjectsList;
+    private View emptyStateContainer;
 
     // ── Selection mode ───────────────────────────────────────────────
     private boolean selectionMode = false;
@@ -146,6 +147,7 @@ public class FaditorMiniFragment extends BaseFragment {
 
         recentProjectsSection = view.findViewById(R.id.recent_projects_section);
         recentProjectsList = view.findViewById(R.id.recent_projects_list);
+        emptyStateContainer = view.findViewById(R.id.empty_state_container);
 
         // Selection UI
         selectionActionBar = view.findViewById(R.id.selection_action_bar);
@@ -299,10 +301,12 @@ public class FaditorMiniFragment extends BaseFragment {
 
         if (currentProjects.isEmpty()) {
             recentProjectsSection.setVisibility(View.GONE);
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
             return;
         }
 
         recentProjectsSection.setVisibility(View.VISIBLE);
+        if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
 
         // Show up to 10 most recent projects
         int limit = Math.min(currentProjects.size(), 10);

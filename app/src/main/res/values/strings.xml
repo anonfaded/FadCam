@@ -767,6 +767,8 @@
     <string name="faditor_version_info">Faditor Mini · Phase 1 · Trim + Export</string>
 
     <!-- Faditor Info Bottom Sheet -->
+    <string name="faditor_empty_title">No projects yet</string>
+    <string name="faditor_empty_desc">Tap \"Start New Project\" to pick a video and begin editing</string>
     <string name="faditor_info_title">About Faditor Mini</string>
     <string name="faditor_info_subtitle">Everything you need to know about the built-in editor</string>
     <string name="faditor_info_how_title">How it works</string>
