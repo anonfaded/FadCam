@@ -495,13 +495,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
         });
     }
 
-    /** Available speed presets for the speed picker. */
-    private static final float[] SPEED_PRESETS = {
-        0.1f, 0.25f, 0.5f, 0.75f,
-        1f,
-        1.25f, 1.5f, 2f, 3f, 4f, 5f, 8f, 10f
-    };
-
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
@@ -556,28 +549,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showSpeedPicker() {
         Clip clip = project.getTimeline().getClip(0);
-        float currentSpeed = clip.getSpeedMultiplier();
 
-        String[] labels = new String[SPEED_PRESETS.length];
-        int checkedIndex = 0;
-        for (int i = 0; i < SPEED_PRESETS.length; i++) {
-            labels[i] = formatSpeed(SPEED_PRESETS[i]);
-            if (Math.abs(SPEED_PRESETS[i] - currentSpeed) < 0.001f) {
-                checkedIndex = i;
-            }
-        }
-
-        new androidx.appcompat.app.AlertDialog.Builder(this, R.style.CustomBottomSheetDialogTheme)
-                .setTitle(R.string.faditor_speed_title)
-                .setSingleChoiceItems(labels, checkedIndex, (dialog, which) -> {
-                    float speed = SPEED_PRESETS[which];
-                    clip.setSpeedMultiplier(speed);
-                    updateSpeedUI(speed);
-                    playerManager.setPlaybackSpeed(speed);
-                    scheduleAutoSave();
-                    dialog.dismiss();
-                })
-                .show();
+        SpeedPickerBottomSheet sheet = SpeedPickerBottomSheet.newInstance(clip.getSpeedMultiplier());
+        sheet.setCallback(speed -> {
+            clip.setSpeedMultiplier(speed);
+            updateSpeedUI(speed);
+            playerManager.setPlaybackSpeed(speed);
+            scheduleAutoSave();
+        });
+        sheet.show(getSupportFragmentManager(), "speedPicker");
     }
 
     private void updateSpeedUI(float speed) {
