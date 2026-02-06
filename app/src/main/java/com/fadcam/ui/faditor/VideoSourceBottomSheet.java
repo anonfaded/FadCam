@@ -94,7 +94,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
             View bottomSheet = ((BottomSheetDialog) dialog)
                     .findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if (bottomSheet != null) {
-                bottomSheet.setBackgroundResource(R.drawable.gradient_background);
+                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_dark_gradient_bg);
             }
         });
         return dialog;
@@ -134,7 +134,13 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         root.addView(subtitle);
 
         // ── Option 1: Browse Device ─────────────────────────────
-        root.addView(createBrowseRow(materialIcons, dp));
+        View browseRow = createBrowseRow(materialIcons, dp);
+        LinearLayout.LayoutParams browseLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        browseLp.setMargins((int) (12 * dp), 0, (int) (12 * dp), 0);
+        browseRow.setLayoutParams(browseLp);
+        root.addView(browseRow);
 
         // ── Divider ─────────────────────────────────────────────
         View divider = new View(requireContext());
@@ -562,20 +568,92 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     // ── Utility methods ──────────────────────────────────────────────
 
     /**
-     * Retrieve video duration using {@link MediaMetadataRetriever}.
+     * Retrieve video duration using FFprobeKit (primary) with MediaMetadataRetriever fallback.
+     * Mirrors the approach used by RecordsAdapter for reliable duration on all URI schemes.
      *
      * @return duration in milliseconds, or 0 on error
      */
     private static long getVideoDuration(@NonNull Context ctx, @NonNull Uri uri) {
-        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
-            retriever.setDataSource(ctx, uri);
+        // ── FFprobeKit (primary – matches RecordsAdapter) ────────
+        try {
+            String filePath = getFFprobePathForUri(uri);
+            com.arthenica.ffmpegkit.MediaInformationSession session =
+                    com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
+            com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
+
+            if (info != null) {
+                String durationStr = info.getDuration();
+                if (durationStr != null) {
+                    double durationSec = Double.parseDouble(durationStr);
+                    long durationMs = (long) (durationSec * 1000);
+                    Log.d(TAG, "Duration from FFprobe: " + durationMs + "ms for " + uri.getLastPathSegment());
+                    return durationMs;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "FFprobe duration failed for: " + uri, e);
+        }
+
+        // ── MediaMetadataRetriever fallback ──────────────────────
+        MediaMetadataRetriever retriever = null;
+        try {
+            retriever = new MediaMetadataRetriever();
+
+            if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+                retriever.setDataSource(uri.getPath());
+            } else {
+                retriever.setDataSource(ctx, uri);
+            }
+
             String durationStr = retriever.extractMetadata(
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
-            return durationStr != null ? Long.parseLong(durationStr) : 0;
+            if (durationStr != null) {
+                long durationMs = Long.parseLong(durationStr);
+                Log.d(TAG, "Duration from MMR fallback: " + durationMs + "ms for " + uri.getLastPathSegment());
+                return durationMs;
+            }
         } catch (Exception e) {
-            Log.w(TAG, "Could not get duration for: " + uri, e);
-            return 0;
+            Log.w(TAG, "MMR fallback failed for: " + uri, e);
+        } finally {
+            if (retriever != null) {
+                try {
+                    retriever.release();
+                } catch (Exception ignored) { }
+            }
         }
+
+        Log.w(TAG, "Could not determine duration for: " + uri);
+        return 0;
+    }
+
+    /**
+     * Build a file path suitable for FFprobeKit.
+     * For content:// URIs (SAF), reconstructs a /storage/emulated/0 path when possible,
+     * otherwise falls back to saf: protocol.
+     */
+    private static String getFFprobePathForUri(@NonNull Uri uri) {
+        if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+            return uri.getPath();
+        }
+
+        // For content:// URIs, try to reconstruct actual file path
+        String path = uri.getPath();
+        if (path != null && path.contains(":")) {
+            int lastColonIndex = path.lastIndexOf(':');
+            if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
+                String relativePath = path.substring(lastColonIndex + 1);
+                String reconstructedPath = "/storage/emulated/0/" + relativePath;
+                java.io.File file = new java.io.File(reconstructedPath);
+                if (file.exists() && file.canRead()) {
+                    Log.d(TAG, "FFprobe using reconstructed path: " + reconstructedPath);
+                    return reconstructedPath;
+                }
+            }
+        }
+
+        // Fall back to SAF protocol
+        Log.d(TAG, "FFprobe using SAF protocol: saf:" + uri);
+        return "saf:" + uri.toString();
     }
 
     @NonNull
