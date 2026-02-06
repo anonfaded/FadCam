@@ -40,7 +40,7 @@
         android:layout_height="0dp"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="16dp"
+        android:padding="24dp"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -50,7 +50,7 @@
             android:id="@+id/faditor_icon"
             android:layout_width="96dp"
             android:layout_height="96dp"
-            android:src="@drawable/unknown_icon3"
+            android:src="@drawable/movie_edit_24px"
             android:contentDescription="@string/faditor_mini_title" />
 
         <TextView
@@ -58,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/faditor_mini_title"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="16dp"
             android:textAlignment="center"/>
@@ -67,11 +67,25 @@
             android:id="@+id/faditor_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/faditor_mini_coming_soon"
+            android:text="@string/faditor_mini_subtitle"
             android:textSize="14sp"
             android:layout_marginTop="8dp"
             android:textColor="@android:color/darker_gray"
             android:textAlignment="center"/>
+
+        <!-- Select Video button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_select_video"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/faditor_select_video"
+            android:textSize="15sp"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/movie_edit_24px"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
 
     </LinearLayout>
 
