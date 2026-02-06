@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <!-- Fixed Header -->
+    <LinearLayout
+        android:id="@+id/header_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:background="?attr/colorTopBar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        <ImageView
+            android:id="@+id/back_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="2dp"
+            android:src="@drawable/ic_close"
+            android:contentDescription="@string/universal_back"
+            android:tint="@android:color/white"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dual_camera_pip_settings"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="12dp"/>
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/content_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingBottom="24dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp">
+
+            <!-- ═══ Compatibility Banner (tap for details) ═══ -->
+            <LinearLayout
+                android:id="@+id/banner_compatibility"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/dual_cam_warning_banner_bg"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true">
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="10dp"
+                    android:gravity="center"
+                    android:text="info"
+                    android:textSize="20sp"
+                    android:textColor="#FF9800"
+                    android:fontFamily="@font/materialicons" />
+                <TextView
+                    android:id="@+id/text_banner_message"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/dual_cam_banner_checking"
+                    android:textColor="#FFD180"
+                    android:textSize="13sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dual_cam_banner_tap_details"
+                    android:textColor="#FF9800"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            <!-- ═══ Preview Section ═══ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/dual_cam_section_preview"
+                android:textColor="?attr/colorHeading"
+                android:textStyle="bold" />
+
+            <!-- Preview Card: simulated video frame + PiP overlay -->
+            <FrameLayout
+                android:id="@+id/preview_container"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:background="@drawable/dual_cam_preview_bg"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- Full-frame (primary camera) label -->
+                <TextView
+                    android:id="@+id/preview_primary_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/dual_cam_preview_primary"
+                    android:textColor="#88FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <!-- PiP overlay (programmatically positioned) -->
+                <FrameLayout
+                    android:id="@+id/preview_pip"
+                    android:layout_width="80dp"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="12dp"
+                    android:background="#FF333333">
+                    <TextView
+                        android:id="@+id/preview_pip_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="@string/dual_cam_preview_pip"
+                        android:textColor="#AAFFFFFF"
+                        android:textSize="10sp"
+                        android:textStyle="bold"/>
+                </FrameLayout>
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/text_preview_helper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="@string/dual_cam_preview_helper"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp"/>
+
+            <!-- ═══ Layout Section ═══ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/dual_cam_section_layout"
+                android:textColor="?attr/colorHeading"
+                android:textStyle="bold" />
+
+            <!-- Layout Group Card -->
+            <LinearLayout
+                android:id="@+id/group_card_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_group_card_bg"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
+                <!-- PiP Position Row -->
+                <LinearLayout
+                    android:id="@+id/row_pip_position"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="grid_view"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dual_cam_pip_position_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_pip_position"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <!-- PiP Size Row -->
+                <LinearLayout
+                    android:id="@+id/row_pip_size"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="aspect_ratio"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dual_cam_pip_size_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_pip_size"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <!-- Primary Camera Row -->
+                <LinearLayout
+                    android:id="@+id/row_primary_camera"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="videocam"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dual_cam_primary_camera_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_primary_camera"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Helper text for layout section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="@string/dual_cam_layout_helper"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp"/>
+
+            <!-- ═══ Appearance Section ═══ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/dual_cam_section_appearance"
+                android:textColor="?attr/colorHeading"
+                android:textStyle="bold" />
+
+            <!-- Appearance Group Card -->
+            <LinearLayout
+                android:id="@+id/group_card_appearance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_group_card_bg"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
+                <!-- Show Border Row -->
+                <LinearLayout
+                    android:id="@+id/row_show_border"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="border_style"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dual_cam_show_border_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_show_border"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <!-- Round Corners Row -->
+                <LinearLayout
+                    android:id="@+id/row_round_corners"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="rounded_corner"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dual_cam_round_corners_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_round_corners"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <!-- PiP Margin Row -->
+                <LinearLayout
+                    android:id="@+id/row_pip_margin"
+                    style="@style/SettingsGroupRow">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:gravity="center"
+                        android:text="padding"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:fontFamily="@font/materialicons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dual_cam_pip_margin_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_pip_margin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Helper text for appearance section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="@string/dual_cam_appearance_helper"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

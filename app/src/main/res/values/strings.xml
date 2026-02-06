@@ -210,6 +210,68 @@
     <string name="note_cam_sele">Select camera \n(Default: Back)</string>
     <string name="button_settings_cam_back">Back</string>
     <string name="button_settings_cam_front">Front</string>
+    <string name="button_settings_cam_dual">Dual (PiP)</string>
+    <string name="note_cam_dual_unsupported">Your device does not support concurrent dual camera recording.</string>
+    <string name="dual_recording_started">Dual camera recording started</string>
+    <string name="dual_recording_stopped">Dual camera recording stopped</string>
+    <string name="dual_cameras_swapped">Cameras swapped</string>
+    <string name="dual_camera_error">Dual camera error: %s</string>
+    <string name="dual_camera_not_supported_toast">Dual camera not supported on this device</string>
+    <string name="dual_camera_pip_settings">Dual Camera PiP Settings</string>
+
+    <!-- Dual Camera Settings Fragment -->
+    <string name="dual_cam_section_layout">Layout</string>
+    <string name="dual_cam_section_appearance">Appearance</string>
+    <string name="dual_cam_pip_position_title">PiP Position</string>
+    <string name="dual_cam_pip_position_helper">Choose which corner the secondary camera (PiP) overlay is placed in.</string>
+    <string name="dual_cam_pip_size_title">PiP Size</string>
+    <string name="dual_cam_pip_size_helper">Controls how large the PiP overlay is relative to the full output width.</string>
+    <string name="dual_cam_primary_camera_title">Primary Camera</string>
+    <string name="dual_cam_primary_camera_helper">Select which camera fills the full frame. The other camera will appear as the PiP overlay.</string>
+    <string name="dual_cam_show_border_title">PiP Border</string>
+    <string name="dual_cam_show_border_helper">Show a thin border around the PiP overlay to visually separate it from the background.</string>
+    <string name="dual_cam_round_corners_title">Rounded Corners</string>
+    <string name="dual_cam_round_corners_helper">Apply rounded corners to the PiP overlay for a modern look.</string>
+    <string name="dual_cam_pip_margin_title">PiP Margin</string>
+    <string name="dual_cam_pip_margin_hint">0 – 48 dp</string>
+    <string name="dual_cam_layout_helper">Configure the position, size and primary camera for the Picture-in-Picture overlay during dual camera recording.</string>
+    <string name="dual_cam_appearance_helper">Customise the visual appearance of the PiP overlay including border, corners and spacing.</string>
+
+    <!-- Dual Camera – Preview section -->
+    <string name="dual_cam_section_preview">Preview</string>
+    <string name="dual_cam_preview_primary">Main Camera</string>
+    <string name="dual_cam_preview_pip">PiP</string>
+    <string name="dual_cam_preview_helper">This is how the PiP mode will look like in landscape mode for example.</string>
+
+    <!-- Dual Camera – Compatibility banner -->
+    <string name="dual_cam_banner_checking">Checking device compatibility…</string>
+    <string name="dual_cam_banner_supported">Both cameras detected, but concurrent support is not confirmed. Tap for details.</string>
+    <string name="dual_cam_banner_supported_confirmed">Dual camera is fully supported and confirmed by your device.</string>
+    <string name="dual_cam_banner_unsupported">Dual camera is not supported on this device.</string>
+    <string name="dual_cam_banner_tap_details">Details</string>
+
+    <!-- Dual Camera – Info bottom sheet content -->
+    <string name="dual_cam_info_title">Device Compatibility</string>
+    <string name="dual_cam_info_device_label">Device</string>
+    <string name="dual_cam_info_processor_label">Processor</string>
+    <string name="dual_cam_info_android_label">Android Version</string>
+    <string name="dual_cam_info_api_label">API Level</string>
+    <string name="dual_cam_info_concurrent_label">Concurrent Camera API</string>
+    <string name="dual_cam_info_concurrent_yes">Confirmed ✓</string>
+    <string name="dual_cam_info_concurrent_no">Not confirmed</string>
+    <string name="dual_cam_info_status_label">Status</string>
+    <string name="dual_cam_info_supported_status">✓ Your device supports dual camera recording.</string>
+    <string name="dual_cam_info_supported_unconfirmed">⚠ Your device has both cameras, but concurrent support is not confirmed. It may or may not work.</string>
+    <string name="dual_cam_info_unsupported_status">✗ Your device does not support dual camera recording.</string>
+    <string name="dual_cam_info_why_unsupported">Why is dual camera not supported?</string>
+    <string name="dual_cam_info_unsupported_explanation">Dual camera recording requires your device to operate both front and back cameras simultaneously. This is a hardware capability that depends on your device\'s processor and camera hardware. Most flagship phones from 2020 onwards support this feature. Mid-range and older devices typically do not.\n\nThis is NOT a bug — it\'s a hardware limitation of your device.</string>
+    <string name="dual_cam_info_which_devices">Which devices support it?</string>
+    <string name="dual_cam_info_devices_explanation">Devices with Qualcomm Snapdragon 855 or newer, Google Tensor, Samsung Exynos 990 or newer, and MediaTek Dimensity 1000 or newer typically support concurrent camera access.</string>
+
+    <!-- Dual Camera row in Video Settings -->
+    <string name="dual_cam_settings_row_title">Dual Camera Settings</string>
+    <string name="dual_cam_settings_row_subtitle">Configure PiP layout and appearance</string>
+
     <string name="setting_quailty_title">Video Quality</string>
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="setting_zoom_ratio_title">Zoom Ratio</string>

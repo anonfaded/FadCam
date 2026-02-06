@@ -99,6 +99,50 @@
             <!-- Helper moved into dialog; reintroduce divider -->
             <View style="@style/SettingsDivider" />
 
+            <!-- Dual Camera Settings Row (visible only when DUAL_PIP selected) -->
+            <LinearLayout
+                android:id="@+id/row_dual_camera_settings"
+                style="@style/SettingsGroupRow"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:gravity="center"
+                    android:text="picture_in_picture"
+                    android:textSize="20sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:fontFamily="@font/materialicons" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/dual_cam_settings_row_title"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/dual_cam_settings_row_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+            <View
+                android:id="@+id/divider_dual_camera_settings"
+                style="@style/SettingsDivider"
+                android:visibility="gone" />
+
             <!-- Lens Row -->
             <LinearLayout
                 android:id="@+id/row_lens"
