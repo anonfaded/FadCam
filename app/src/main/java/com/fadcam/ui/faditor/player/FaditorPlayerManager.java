@@ -40,6 +40,22 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     private boolean playWhenReady = false;
     private long lastPosition = 0;
 
+    /** Pending seek after player becomes READY (e.g. after trim bounds change). */
+    private long pendingSeekMs = -1;
+
+    /** Internal listener for handling pending seeks after prepare(). */
+    private final Player.Listener internalListener = new Player.Listener() {
+        @Override
+        public void onPlaybackStateChanged(int playbackState) {
+            if (playbackState == Player.STATE_READY && pendingSeekMs >= 0) {
+                if (player != null) {
+                    player.seekTo(pendingSeekMs);
+                }
+                pendingSeekMs = -1;
+            }
+        }
+    };
+
     public FaditorPlayerManager(@NonNull Context context) {
         this.context = context.getApplicationContext();
     }
@@ -101,19 +117,23 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     }
 
     /**
-     * Update trim bounds without reloading the entire clip.
-     * Called when trim handles are dragged.
+     * Update trim bounds after handles are released.
+     *
+     * <p>Pauses playback, reloads the clip with new clipping bounds,
+     * and seeks to the start of the new trimmed region once ready.</p>
      */
     public void updateTrimBounds(@NonNull Clip clip) {
         this.currentClip = clip;
-        if (player != null) {
-            long currentPos = player.getCurrentPosition();
-            applyClipToPlayer(clip);
-            // Try to restore position within new bounds
-            long clampedPos = Math.max(clip.getInPointMs(),
-                    Math.min(currentPos, clip.getOutPointMs()));
-            player.seekTo(clampedPos - clip.getInPointMs());
-        }
+        if (player == null) return;
+
+        // Pause and reload with new bounds
+        player.setPlayWhenReady(false);
+
+        // Queue a seek-to-start once the new media is prepared
+        pendingSeekMs = 0;
+        applyClipToPlayer(clip);
+
+        Log.d(TAG, "Trim bounds updated, will seek to start when ready");
     }
 
     public void play() {
@@ -128,9 +148,18 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         }
     }
 
+    /**
+     * Seek to a position (0-based within the clipped region).
+     * If the player is not yet ready, the seek is queued.
+     */
     public void seekTo(long positionMs) {
-        if (player != null) {
+        if (player == null) return;
+        if (player.getPlaybackState() == Player.STATE_READY
+                || player.getPlaybackState() == Player.STATE_BUFFERING) {
             player.seekTo(positionMs);
+            pendingSeekMs = -1;
+        } else {
+            pendingSeekMs = positionMs;
         }
     }
 
@@ -144,6 +173,13 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
     public boolean isPlaying() {
         return player != null && player.isPlaying();
+    }
+
+    /**
+     * Check if the player is in a ready state for playback.
+     */
+    public boolean isReady() {
+        return player != null && player.getPlaybackState() == Player.STATE_READY;
     }
 
     /**
@@ -171,6 +207,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         try {
             player = new ExoPlayer.Builder(context).build();
             player.setRepeatMode(Player.REPEAT_MODE_OFF);
+            player.addListener(internalListener);
 
             if (playerView != null) {
                 playerView.setPlayer(player);
@@ -180,7 +217,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             if (currentClip != null) {
                 applyClipToPlayer(currentClip);
                 if (lastPosition > 0) {
-                    player.seekTo(lastPosition);
+                    pendingSeekMs = lastPosition;
                 }
                 player.setPlayWhenReady(playWhenReady);
             }
@@ -214,8 +251,10 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         if (player != null) {
             playWhenReady = player.getPlayWhenReady();
             lastPosition = player.getCurrentPosition();
+            player.removeListener(internalListener);
             player.release();
             player = null;
+            pendingSeekMs = -1;
             Log.d(TAG, "ExoPlayer released");
         }
     }

@@ -98,13 +98,74 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginTop="24dp"
-                    android:text="@string/faditor_new_project"
+                    android:text="@string/faditor_browse_device"
                     android:textSize="15sp"
                     android:textAllCaps="false"
                     app:backgroundTint="#4CAF50"
                     app:cornerRadius="14dp"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp" />
+            </LinearLayout>
+
+            <!-- ─── FadCam Recordings section ────────────────────── -->
+            <LinearLayout
+                android:id="@+id/fadcam_recordings_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_your_recordings"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#BBBBBB"
+                    android:layout_marginBottom="8dp"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08" />
+
+                <!-- Empty state (shown when no recordings) -->
+                <LinearLayout
+                    android:id="@+id/recordings_empty_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="24dp"
+                    android:background="@drawable/settings_group_card_bg"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/materialicons"
+                        android:text="videocam_off"
+                        android:textColor="#555555"
+                        android:textSize="32sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/faditor_no_recordings"
+                        android:textColor="#777777"
+                        android:textSize="13sp"
+                        android:textAlignment="center"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+                <!-- Recordings list container -->
+                <LinearLayout
+                    android:id="@+id/recordings_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/settings_group_card_bg"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp" />
             </LinearLayout>
 
             <!-- ─── Recent Projects section ──────────────────────── -->

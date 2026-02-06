@@ -2,8 +2,11 @@ package com.fadcam.ui.faditor.timeline;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -11,137 +14,143 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 
 import com.fadcam.ui.faditor.model.Clip;
 
 /**
  * Custom timeline view with draggable trim handles and playhead indicator.
  *
- * <p>For Phase 1 (MVP) this renders a simple waveform-style bar
- * with left/right trim handles and a playhead line.</p>
- *
- * <p>Future phases will add thumbnail strips and multi-clip support.</p>
+ * <p>Renders a waveform-style bar with left/right trim handles (rounded pill shape),
+ * an active (selected) region, dimmed excluded regions, and a playhead line.</p>
  */
 public class TimelineView extends View {
 
     private static final String TAG = "TimelineView";
 
-    // Minimum handle gap (px) so they can't overlap
-    private static final float MIN_HANDLE_GAP_DP = 24f;
-
-    // Handle width in dp
-    private static final float HANDLE_WIDTH_DP = 14f;
+    // Handle/layout dimensions (dp)
+    private static final float HANDLE_WIDTH_DP = 12f;
+    private static final float HANDLE_CORNER_DP = 6f;
+    private static final float MIN_HANDLE_GAP_DP = 20f;
+    private static final float TRACK_CORNER_DP = 10f;
+    private static final float TRACK_PADDING_V_DP = 10f;
+    private static final float PLAYHEAD_WIDTH_DP = 2.5f;
+    private static final float PLAYHEAD_CIRCLE_DP = 5f;
+    private static final float HANDLE_NOTCH_WIDTH_DP = 2f;
+    private static final float HANDLE_NOTCH_HEIGHT_DP = 14f;
 
     // ── Paint objects ────────────────────────────────────────────────
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint activePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint activeTopBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint activeBottomBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint handlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint handleNotchPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint playheadPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint playheadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    // ── Dimensions ───────────────────────────────────────────────────
+    // ── Computed pixel values ────────────────────────────────────────
     private float handleWidthPx;
+    private float handleCornerPx;
     private float minHandleGapPx;
-    private float trackTopPx;
-    private float trackBottomPx;
-    private float trackHeightPx;
-    private final float trackCornerRadius = 8f;
+    private float trackCornerPx;
+    private float trackPaddingVPx;
+    private float playheadWidthPx;
+    private float playheadCirclePx;
+    private float handleNotchWidthPx;
+    private float handleNotchHeightPx;
+
+    // Track bounds
+    private float trackTop;
+    private float trackBottom;
 
     // ── State ────────────────────────────────────────────────────────
-    /** Normalized in-point [0.0, 1.0) — left trim handle position. */
     private float trimStartFraction = 0f;
-
-    /** Normalized out-point (0.0, 1.0] — right trim handle position. */
     private float trimEndFraction = 1f;
-
-    /** Normalized playhead position [0.0, 1.0]. */
     private float playheadFraction = 0f;
 
-    /** Which handle is being dragged. */
     private enum DragTarget { NONE, LEFT, RIGHT, PLAYHEAD }
     private DragTarget activeDrag = DragTarget.NONE;
 
-    @Nullable
-    private TrimChangeListener trimListener;
-
-    @Nullable
-    private PlayheadChangeListener playheadListener;
+    @Nullable private TrimChangeListener trimListener;
+    @Nullable private PlayheadChangeListener playheadListener;
 
     // ── Listener interfaces ──────────────────────────────────────────
 
     public interface TrimChangeListener {
-        /** Called continuously while a trim handle is dragged. */
         void onTrimChanged(float startFraction, float endFraction);
-
-        /** Called once when the user lifts their finger from a trim handle. */
         void onTrimFinished(float startFraction, float endFraction);
     }
 
     public interface PlayheadChangeListener {
-        /** Called when the user taps / drags the playhead to a new position. */
         void onPlayheadSeeked(float fraction);
     }
 
     // ── Constructors ─────────────────────────────────────────────────
 
-    public TimelineView(Context context) {
-        super(context);
-        init();
-    }
-
-    public TimelineView(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
-
+    public TimelineView(Context context) { super(context); init(); }
+    public TimelineView(Context context, @Nullable AttributeSet attrs) { super(context, attrs); init(); }
     public TimelineView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
+        super(context, attrs, defStyleAttr); init();
     }
 
     // ── Setup ────────────────────────────────────────────────────────
 
     private void init() {
-        float density = getResources().getDisplayMetrics().density;
-        handleWidthPx = HANDLE_WIDTH_DP * density;
-        minHandleGapPx = MIN_HANDLE_GAP_DP * density;
+        float d = getResources().getDisplayMetrics().density;
+        handleWidthPx = HANDLE_WIDTH_DP * d;
+        handleCornerPx = HANDLE_CORNER_DP * d;
+        minHandleGapPx = MIN_HANDLE_GAP_DP * d;
+        trackCornerPx = TRACK_CORNER_DP * d;
+        trackPaddingVPx = TRACK_PADDING_V_DP * d;
+        playheadWidthPx = PLAYHEAD_WIDTH_DP * d;
+        playheadCirclePx = PLAYHEAD_CIRCLE_DP * d;
+        handleNotchWidthPx = HANDLE_NOTCH_WIDTH_DP * d;
+        handleNotchHeightPx = HANDLE_NOTCH_HEIGHT_DP * d;
 
-        // Track background (darker)
-        trackPaint.setColor(0xFF2C2C2C);
+        // Track background (subtle dark texture)
+        trackPaint.setColor(0xFF1E1E1E);
         trackPaint.setStyle(Paint.Style.FILL);
 
-        // Active (trimmed) region
-        activePaint.setColor(0xFF4CAF50); // FadCam green
+        // Active region (subtle gradient will be set in onSizeChanged)
+        activePaint.setColor(0xFF263228);
         activePaint.setStyle(Paint.Style.FILL);
 
-        // Trim handles
-        handlePaint.setColor(0xFFFFFFFF);
+        // Top/bottom borders of active region
+        activeTopBorderPaint.setColor(0xFF4CAF50);
+        activeTopBorderPaint.setStyle(Paint.Style.FILL);
+        activeBottomBorderPaint.setColor(0xFF4CAF50);
+        activeBottomBorderPaint.setStyle(Paint.Style.FILL);
+
+        // Trim handles — green pill
+        handlePaint.setColor(0xFF4CAF50);
         handlePaint.setStyle(Paint.Style.FILL);
 
-        // Playhead line
-        playheadPaint.setColor(0xFFFF5722); // Orange-red
-        playheadPaint.setStyle(Paint.Style.FILL);
-        playheadPaint.setStrokeWidth(3f * density);
+        // Handle notch (grip lines)
+        handleNotchPaint.setColor(0xCC1B5E20);
+        handleNotchPaint.setStyle(Paint.Style.FILL);
+        handleNotchPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        // Dimmed (excluded) regions
-        dimPaint.setColor(0x80000000);
+        // Playhead line — white
+        playheadPaint.setColor(0xFFFFFFFF);
+        playheadPaint.setStyle(Paint.Style.FILL);
+
+        // Playhead circle — white with slight shadow
+        playheadCirclePaint.setColor(0xFFFFFFFF);
+        playheadCirclePaint.setStyle(Paint.Style.FILL);
+        playheadCirclePaint.setShadowLayer(3f * d, 0, 1f * d, 0x40000000);
+        setLayerType(LAYER_TYPE_SOFTWARE, null); // needed for shadow
+
+        // Dimmed excluded regions
+        dimPaint.setColor(0xAA000000);
         dimPaint.setStyle(Paint.Style.FILL);
     }
 
     // ── Public setters ───────────────────────────────────────────────
 
-    public void setTrimChangeListener(@Nullable TrimChangeListener l) {
-        this.trimListener = l;
-    }
+    public void setTrimChangeListener(@Nullable TrimChangeListener l) { this.trimListener = l; }
+    public void setPlayheadChangeListener(@Nullable PlayheadChangeListener l) { this.playheadListener = l; }
 
-    public void setPlayheadChangeListener(@Nullable PlayheadChangeListener l) {
-        this.playheadListener = l;
-    }
-
-    /**
-     * Set trim positions from a Clip (converts ms → fraction of source duration).
-     */
     public void setTrimFromClip(@NonNull Clip clip) {
         if (clip.getSourceDurationMs() <= 0) return;
         this.trimStartFraction = (float) clip.getInPointMs() / clip.getSourceDurationMs();
@@ -149,11 +158,6 @@ public class TimelineView extends View {
         invalidate();
     }
 
-    /**
-     * Update playhead position (called from player position updates).
-     *
-     * @param fraction 0.0 – 1.0 within the full source duration
-     */
     public void setPlayheadFraction(float fraction) {
         this.playheadFraction = Math.max(0f, Math.min(fraction, 1f));
         invalidate();
@@ -167,10 +171,8 @@ public class TimelineView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        float padding = handleWidthPx;
-        trackTopPx = getPaddingTop() + 8f * getResources().getDisplayMetrics().density;
-        trackBottomPx = h - getPaddingBottom() - 8f * getResources().getDisplayMetrics().density;
-        trackHeightPx = trackBottomPx - trackTopPx;
+        trackTop = getPaddingTop() + trackPaddingVPx;
+        trackBottom = h - getPaddingBottom() - trackPaddingVPx;
     }
 
     @Override
@@ -180,55 +182,82 @@ public class TimelineView extends View {
         float w = getWidth();
         float usableWidth = w - 2 * handleWidthPx;
         float baseLeft = handleWidthPx;
+        float trackH = trackBottom - trackTop;
+        float borderThickness = 2.5f * getResources().getDisplayMetrics().density;
 
-        // 1. Full track background
-        RectF trackRect = new RectF(baseLeft, trackTopPx,
-                baseLeft + usableWidth, trackBottomPx);
-        canvas.drawRoundRect(trackRect, trackCornerRadius, trackCornerRadius, trackPaint);
-
-        // 2. Active (selected) region
+        // Positions for active region
         float activeLeft = baseLeft + trimStartFraction * usableWidth;
         float activeRight = baseLeft + trimEndFraction * usableWidth;
-        RectF activeRect = new RectF(activeLeft, trackTopPx, activeRight, trackBottomPx);
-        canvas.drawRoundRect(activeRect, trackCornerRadius, trackCornerRadius, activePaint);
 
-        // 3. Dimmed regions outside trim
-        if (trimStartFraction > 0f) {
-            RectF leftDim = new RectF(baseLeft, trackTopPx, activeLeft, trackBottomPx);
-            canvas.drawRoundRect(leftDim, trackCornerRadius, trackCornerRadius, dimPaint);
+        // 1. Full track background
+        RectF trackRect = new RectF(baseLeft, trackTop, baseLeft + usableWidth, trackBottom);
+        canvas.drawRoundRect(trackRect, trackCornerPx, trackCornerPx, trackPaint);
+
+        // 2. Active region fill
+        RectF activeRect = new RectF(activeLeft, trackTop, activeRight, trackBottom);
+        canvas.drawRect(activeRect, activePaint);
+
+        // 3. Top and bottom green borders on active region
+        RectF topBorder = new RectF(activeLeft, trackTop, activeRight, trackTop + borderThickness);
+        canvas.drawRect(topBorder, activeTopBorderPaint);
+        RectF bottomBorder = new RectF(activeLeft, trackBottom - borderThickness, activeRight, trackBottom);
+        canvas.drawRect(bottomBorder, activeBottomBorderPaint);
+
+        // 4. Dimmed regions outside trim
+        if (trimStartFraction > 0.001f) {
+            RectF leftDim = new RectF(baseLeft, trackTop, activeLeft, trackBottom);
+            canvas.drawRoundRect(leftDim, trackCornerPx, trackCornerPx, dimPaint);
         }
-        if (trimEndFraction < 1f) {
-            RectF rightDim = new RectF(activeRight, trackTopPx,
-                    baseLeft + usableWidth, trackBottomPx);
-            canvas.drawRoundRect(rightDim, trackCornerRadius, trackCornerRadius, dimPaint);
+        if (trimEndFraction < 0.999f) {
+            RectF rightDim = new RectF(activeRight, trackTop, baseLeft + usableWidth, trackBottom);
+            canvas.drawRoundRect(rightDim, trackCornerPx, trackCornerPx, dimPaint);
         }
 
-        // 4. Trim handles
-        float handleHeight = trackHeightPx + 16f * getResources().getDisplayMetrics().density;
-        float handleTop = trackTopPx - 8f * getResources().getDisplayMetrics().density;
-        float handleBottom = handleTop + handleHeight;
+        // 5. Trim handles — pill shaped, extends above/below track
+        float handleExtend = 4f * getResources().getDisplayMetrics().density;
+        float handleTop = trackTop - handleExtend;
+        float handleBottom = trackBottom + handleExtend;
 
         // Left handle
         RectF leftHandle = new RectF(
                 activeLeft - handleWidthPx, handleTop,
                 activeLeft, handleBottom);
-        canvas.drawRoundRect(leftHandle, 6f, 6f, handlePaint);
+        canvas.drawRoundRect(leftHandle, handleCornerPx, handleCornerPx, handlePaint);
+        drawHandleNotch(canvas, leftHandle);
 
         // Right handle
         RectF rightHandle = new RectF(
                 activeRight, handleTop,
                 activeRight + handleWidthPx, handleBottom);
-        canvas.drawRoundRect(rightHandle, 6f, 6f, handlePaint);
+        canvas.drawRoundRect(rightHandle, handleCornerPx, handleCornerPx, handlePaint);
+        drawHandleNotch(canvas, rightHandle);
 
-        // 5. Playhead line
+        // 6. Playhead line (only draw within active region)
         float playheadX = baseLeft + playheadFraction * usableWidth;
-        float phTop = trackTopPx - 12f * getResources().getDisplayMetrics().density;
-        float phBottom = trackBottomPx + 12f * getResources().getDisplayMetrics().density;
-        canvas.drawLine(playheadX, phTop, playheadX, phBottom, playheadPaint);
+        if (playheadX >= activeLeft && playheadX <= activeRight) {
+            float phTop = trackTop - handleExtend - playheadCirclePx;
+            float phBottom = trackBottom + handleExtend;
 
-        // Playhead circle indicator
-        canvas.drawCircle(playheadX, phTop, 6f * getResources().getDisplayMetrics().density,
-                playheadPaint);
+            // Line
+            RectF phLine = new RectF(
+                    playheadX - playheadWidthPx / 2, phTop + playheadCirclePx,
+                    playheadX + playheadWidthPx / 2, phBottom);
+            canvas.drawRoundRect(phLine, playheadWidthPx / 2, playheadWidthPx / 2, playheadPaint);
+
+            // Circle at top
+            canvas.drawCircle(playheadX, phTop + playheadCirclePx, playheadCirclePx, playheadCirclePaint);
+        }
+    }
+
+    /** Draw a small vertical notch (grip) in the center of a handle. */
+    private void drawHandleNotch(Canvas canvas, RectF handleRect) {
+        float cx = handleRect.centerX();
+        float cy = handleRect.centerY();
+        float halfH = handleNotchHeightPx / 2;
+        RectF notch = new RectF(
+                cx - handleNotchWidthPx / 2, cy - halfH,
+                cx + handleNotchWidthPx / 2, cy + halfH);
+        canvas.drawRoundRect(notch, handleNotchWidthPx / 2, handleNotchWidthPx / 2, handleNotchPaint);
     }
 
     // ── Touch handling ───────────────────────────────────────────────
@@ -294,13 +323,11 @@ public class TimelineView extends View {
     private DragTarget detectTarget(float x, float usableWidth, float baseLeft) {
         float leftHandleCenter = baseLeft + trimStartFraction * usableWidth;
         float rightHandleCenter = baseLeft + trimEndFraction * usableWidth;
-        float touchSlop = handleWidthPx * 1.5f;
+        float touchSlop = handleWidthPx * 2f; // generous touch target
 
-        // Check left handle first
         if (Math.abs(x - leftHandleCenter) < touchSlop) {
             return DragTarget.LEFT;
         }
-        // Then right handle
         if (Math.abs(x - rightHandleCenter) < touchSlop) {
             return DragTarget.RIGHT;
         }
@@ -309,7 +336,7 @@ public class TimelineView extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int defaultHeight = (int) (80 * getResources().getDisplayMetrics().density);
+        int defaultHeight = (int) (72 * getResources().getDisplayMetrics().density);
         int height = resolveSize(defaultHeight, heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
     }
