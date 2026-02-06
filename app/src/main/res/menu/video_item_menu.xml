@@ -21,7 +21,7 @@
         <item
             android:id="@+id/action_edit_faditorx"
             android:icon="@drawable/ic_edit_cut"
-            android:title="Edit with FaditorX"
+            android:title="@string/edit_with_faditorx"
         />
         <item
             android:id="@+id/action_upload_youtube"

@@ -1005,10 +1005,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         items.add(OptionItem.withLigatureBadge("action_upload_faddrive",
                 ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
                 ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
-        // Coming soon: Edit with FaditorX — after FadDrive
-        items.add(OptionItem.withLigatureBadge("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
-                "content_cut", ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green,
-                true, null));
+        // Edit with Faditor Mini
+        items.add(OptionItem.withLigature("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
+                "content_cut"));
         items.add(OptionItem.withLigature("action_delete", ctx.getString(R.string.video_menu_del), "delete"));
 
         String resultKey = "video_actions:"
@@ -1022,7 +1021,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 return;
             switch (id) {
                 case "action_edit_faditorx":
-                    Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                    launchFaditorMini(ctx, videoItem);
                     break;
                 case "action_upload_faddrive":
                     Toast.makeText(ctx, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
@@ -1200,7 +1199,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_edit_faditorx) {
-                Toast.makeText(context, R.string.remote_toast_coming_soon, Toast.LENGTH_SHORT).show();
+                launchFaditorMini(context, videoItem);
                 return true;
             } else if (id == R.id.action_save) {
                 saveVideoToGalleryInternal(videoItem);
@@ -1228,26 +1227,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return false;
         });
 
-        // After inflating the menu, update the 'Edit with FaditorX' item to show
-        // 'Coming Soon' and gray out
-        MenuItem faditorxItem = popup.getMenu().findItem(R.id.action_edit_faditorx);
-        if (faditorxItem != null) {
-            // Append badge text
-            String baseTitle = context.getString(R.string.edit_with_faditorx);
-            String badge = "  [Coming Soon]";
-            SpannableString spanString = new SpannableString(baseTitle + badge);
-            // Gray out the whole text
-            spanString.setSpan(new ForegroundColorSpan(Color.GRAY), 0, spanString.length(), 0);
-            faditorxItem.setTitle(spanString);
-            // Gray out the icon
-            Drawable icon = faditorxItem.getIcon();
-            if (icon != null) {
-                icon.mutate();
-                icon.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
-                faditorxItem.setIcon(icon);
-            }
-            // Do NOT disable the item, so it can show the toast
-        }
+        // Edit with Faditor Mini – no special badge needed
+        // (Item is fully functional — launches editor)
 
         return popup;
     }
@@ -1678,6 +1659,25 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         } catch (Exception e) {
             Log.e(TAG, "Error showing video info bottom sheet", e);
             Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Launches Faditor Mini editor with the selected video.
+     *
+     * @param ctx       the current context (must be an Activity)
+     * @param videoItem the video to edit
+     */
+    private void launchFaditorMini(@NonNull Context ctx, @NonNull VideoItem videoItem) {
+        if (videoItem.uri == null) return;
+        try {
+            Intent intent = new Intent(ctx, com.fadcam.ui.faditor.FaditorEditorActivity.class);
+            intent.setData(videoItem.uri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            ctx.startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to launch Faditor Mini", e);
+            Toast.makeText(ctx, "Could not open editor", Toast.LENGTH_SHORT).show();
         }
     }
 
