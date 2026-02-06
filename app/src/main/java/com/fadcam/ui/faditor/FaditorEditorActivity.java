@@ -213,41 +213,69 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Clip clip = project.getTimeline().getClip(0);
         timelineView.setTrimFromClip(clip);
 
+        Log.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
+                + "ms, in=" + clip.getInPointMs() + ", out=" + clip.getOutPointMs());
+
         // Listen for trim handle changes
         timelineView.setTrimChangeListener(new TimelineView.TrimChangeListener() {
             @Override
             public void onTrimChanged(float startFraction, float endFraction) {
-                // Update clip trim points while dragging
+                // Update clip trim points while dragging (live feedback)
                 Clip c = project.getTimeline().getClip(0);
                 long duration = c.getSourceDurationMs();
                 c.setInPointMs((long) (startFraction * duration));
                 c.setOutPointMs((long) (endFraction * duration));
 
-                // Update time display
+                // Update time display to show trimmed region duration
                 long trimmedDuration = c.getOutPointMs() - c.getInPointMs();
                 timeTotal.setText(TimeFormatter.formatAuto(trimmedDuration));
+
+                // Show start position in current time
+                timeCurrent.setText(TimeFormatter.formatAuto(0));
+
+                Log.v(TAG, "Trim dragging: in=" + c.getInPointMs()
+                        + " out=" + c.getOutPointMs()
+                        + " trimDur=" + trimmedDuration);
             }
 
             @Override
             public void onTrimFinished(float startFraction, float endFraction) {
                 // Update player clip bounds when handle released
                 Clip c = project.getTimeline().getClip(0);
+
+                Log.d(TAG, "Trim finished: in=" + c.getInPointMs()
+                        + " out=" + c.getOutPointMs()
+                        + " trimDur=" + (c.getOutPointMs() - c.getInPointMs()));
+
+                // Reset playhead to start of trimmed region
+                timelineView.setPlayheadFraction(startFraction);
+                timeCurrent.setText(TimeFormatter.formatAuto(0));
+
+                // Reload player with new bounds
                 playerManager.updateTrimBounds(c);
                 project.touch();
                 scheduleAutoSave();
-                Log.d(TAG, "Trim updated: " + c.getInPointMs() + " – " + c.getOutPointMs());
             }
         });
 
         // Listen for playhead seeks on timeline
         timelineView.setPlayheadChangeListener(fraction -> {
             Clip c = project.getTimeline().getClip(0);
+            long sourceDuration = c.getSourceDurationMs();
+            if (sourceDuration <= 0) return;
+
             // fraction is in terms of full source duration
             // ExoPlayer expects position relative to clipped start (0-based)
-            long absoluteMs = (long) (fraction * c.getSourceDurationMs());
+            long absoluteMs = (long) (fraction * sourceDuration);
             long seekPos = absoluteMs - c.getInPointMs();
             seekPos = Math.max(0, Math.min(seekPos, c.getOutPointMs() - c.getInPointMs()));
+
+            Log.v(TAG, "Playhead seek: fraction=" + fraction
+                    + " absoluteMs=" + absoluteMs
+                    + " seekPos=" + seekPos);
+
             playerManager.seekTo(seekPos);
+            timeCurrent.setText(TimeFormatter.formatAuto(seekPos));
         });
     }
 
@@ -333,6 +361,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
+        if (!playerManager.isReady() && !playerManager.isPlaying()) return;
 
         Clip clip = project.getTimeline().getClip(0);
         long position = playerManager.getCurrentPosition(); // relative to clip start (0-based)
@@ -342,7 +371,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // ExoPlayer's getCurrentPosition() is 0-based within the clipped region,
         // so absolute position = inPoint + currentPosition
-        float fraction = (float) (clip.getInPointMs() + position) / sourceDuration;
+        long absoluteMs = clip.getInPointMs() + position;
+        float fraction = (float) absoluteMs / sourceDuration;
         fraction = Math.max(0f, Math.min(fraction, 1f));
         timelineView.setPlayheadFraction(fraction);
 

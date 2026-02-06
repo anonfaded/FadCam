@@ -273,9 +273,12 @@ public class TimelineView extends View {
                 activeDrag = detectTarget(x, usableWidth, baseLeft);
                 if (activeDrag != DragTarget.NONE) {
                     getParent().requestDisallowInterceptTouchEvent(true);
+                    Log.d(TAG, "Drag started: " + activeDrag);
                     return true;
                 }
-                // Tap on track → seek playhead
+                // Tap on track → seek playhead (and start draggable seek)
+                activeDrag = DragTarget.PLAYHEAD;
+                getParent().requestDisallowInterceptTouchEvent(true);
                 float fraction = (x - baseLeft) / usableWidth;
                 fraction = Math.max(trimStartFraction, Math.min(fraction, trimEndFraction));
                 playheadFraction = fraction;
@@ -283,6 +286,7 @@ public class TimelineView extends View {
                 if (playheadListener != null) {
                     playheadListener.onPlayheadSeeked(fraction);
                 }
+                Log.d(TAG, "Playhead seek: " + fraction);
                 return true;
 
             case MotionEvent.ACTION_MOVE:
@@ -302,6 +306,14 @@ public class TimelineView extends View {
                     if (trimListener != null) {
                         trimListener.onTrimChanged(trimStartFraction, trimEndFraction);
                     }
+                } else if (activeDrag == DragTarget.PLAYHEAD) {
+                    float newFrac = (x - baseLeft) / usableWidth;
+                    newFrac = Math.max(trimStartFraction, Math.min(newFrac, trimEndFraction));
+                    playheadFraction = newFrac;
+                    invalidate();
+                    if (playheadListener != null) {
+                        playheadListener.onPlayheadSeeked(newFrac);
+                    }
                 }
                 return true;
 
@@ -311,6 +323,8 @@ public class TimelineView extends View {
                     if (trimListener != null) {
                         trimListener.onTrimFinished(trimStartFraction, trimEndFraction);
                     }
+                    Log.d(TAG, "Trim finished: start=" + trimStartFraction
+                            + " end=" + trimEndFraction);
                 }
                 activeDrag = DragTarget.NONE;
                 getParent().requestDisallowInterceptTouchEvent(false);

@@ -47,12 +47,29 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     private final Player.Listener internalListener = new Player.Listener() {
         @Override
         public void onPlaybackStateChanged(int playbackState) {
+            String stateStr;
+            switch (playbackState) {
+                case Player.STATE_IDLE: stateStr = "IDLE"; break;
+                case Player.STATE_BUFFERING: stateStr = "BUFFERING"; break;
+                case Player.STATE_READY: stateStr = "READY"; break;
+                case Player.STATE_ENDED: stateStr = "ENDED"; break;
+                default: stateStr = "UNKNOWN(" + playbackState + ")";
+            }
+            Log.d(TAG, "Playback state: " + stateStr + ", pendingSeek=" + pendingSeekMs);
+
             if (playbackState == Player.STATE_READY && pendingSeekMs >= 0) {
                 if (player != null) {
+                    Log.d(TAG, "Executing pending seek to " + pendingSeekMs + "ms");
                     player.seekTo(pendingSeekMs);
                 }
                 pendingSeekMs = -1;
             }
+        }
+
+        @Override
+        public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
+            Log.e(TAG, "Player error: " + error.getMessage()
+                    + ", code=" + error.errorCode, error);
         }
     };
 
@@ -126,14 +143,22 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         this.currentClip = clip;
         if (player == null) return;
 
-        // Pause and reload with new bounds
+        // Save current playback state
+        boolean wasPlaying = player.isPlaying();
         player.setPlayWhenReady(false);
 
         // Queue a seek-to-start once the new media is prepared
         pendingSeekMs = 0;
         applyClipToPlayer(clip);
 
-        Log.d(TAG, "Trim bounds updated, will seek to start when ready");
+        // After prepare, restore play if was playing
+        if (wasPlaying) {
+            player.setPlayWhenReady(true);
+        }
+
+        Log.d(TAG, "Trim bounds updated: in=" + clip.getInPointMs()
+                + " out=" + clip.getOutPointMs()
+                + " duration=" + (clip.getOutPointMs() - clip.getInPointMs()) + "ms");
     }
 
     public void play() {
@@ -154,12 +179,15 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
      */
     public void seekTo(long positionMs) {
         if (player == null) return;
-        if (player.getPlaybackState() == Player.STATE_READY
-                || player.getPlaybackState() == Player.STATE_BUFFERING) {
+        int state = player.getPlaybackState();
+        if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
             player.seekTo(positionMs);
             pendingSeekMs = -1;
+            Log.d(TAG, "Seek to " + positionMs + "ms (immediate)");
         } else {
             pendingSeekMs = positionMs;
+            Log.d(TAG, "Seek to " + positionMs + "ms (queued, state="
+                    + state + ")");
         }
     }
 
@@ -231,6 +259,11 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     private void applyClipToPlayer(@NonNull Clip clip) {
         if (player == null) return;
 
+        Log.d(TAG, "Applying clip: uri=" + clip.getSourceUri()
+                + " in=" + clip.getInPointMs()
+                + " out=" + clip.getOutPointMs()
+                + " sourceDur=" + clip.getSourceDurationMs());
+
         MediaItem.ClippingConfiguration clipping = new MediaItem.ClippingConfiguration.Builder()
                 .setStartPositionMs(clip.getInPointMs())
                 .setEndPositionMs(clip.getOutPointMs())
@@ -243,8 +276,6 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
         player.setMediaItem(mediaItem);
         player.prepare();
-
-        Log.d(TAG, "Clip loaded: " + clip);
     }
 
     private void releasePlayer() {

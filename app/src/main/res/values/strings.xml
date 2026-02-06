@@ -744,6 +744,7 @@
     <string name="faditor_tool_trim">Trim</string>
     <string name="faditor_home_tagline">Lightweight video editing, right on your device</string>
     <string name="faditor_new_project">New Project</string>
+    <string name="faditor_start_project">Start Project</string>
     <string name="faditor_recent_projects">Recent Projects</string>
     <string name="faditor_capabilities_title">What You Can Do</string>
     <string name="faditor_feature_trim">Precision Trim</string>
@@ -761,6 +762,8 @@
     <string name="faditor_video_count">%1$d video(s)</string>
     <string name="faditor_fadcam_source">FadCam</string>
     <string name="faditor_fadrec_source">FadRec</string>
+    <string name="faditor_browse_device_desc">Select any video from your device</string>
+    <string name="faditor_scanning">Scanning recordings…</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>
