@@ -98,10 +98,10 @@ public class SpeedPickerBottomSheet extends BottomSheetDialogFragment {
         float dp = getResources().getDisplayMetrics().density;
         Typeface materialIcons = ResourcesCompat.getFont(requireContext(), R.font.materialicons);
 
-        // Root layout
+        // Root layout (vertical)
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(0, (int) (12 * dp), 0, (int) (24 * dp));
+        root.setPadding(0, (int) (12 * dp), 0, 0);
 
         // ── Title ───────────────────────────────────────────────
         TextView title = new TextView(requireContext());
@@ -113,11 +113,24 @@ public class SpeedPickerBottomSheet extends BottomSheetDialogFragment {
                 (int) (20 * dp), (int) (16 * dp));
         root.addView(title);
 
-        // ── Speed rows ──────────────────────────────────────────
+        // ── Scrollable content ──────────────────────────────────
+        android.widget.ScrollView scrollView = new android.widget.ScrollView(requireContext());
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        scrollView.setLayoutParams(scrollLp);
+
+        LinearLayout scrollContent = new LinearLayout(requireContext());
+        scrollContent.setOrientation(LinearLayout.VERTICAL);
+        scrollContent.setPadding(0, 0, 0, (int) (24 * dp));
+
         for (float speed : SPEED_PRESETS) {
             View row = createSpeedRow(speed, materialIcons, dp);
-            root.addView(row);
+            scrollContent.addView(row);
         }
+
+        scrollView.addView(scrollContent);
+        root.addView(scrollView);
 
         return root;
     }
@@ -141,7 +154,7 @@ public class SpeedPickerBottomSheet extends BottomSheetDialogFragment {
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        rowLp.setMargins((int) (12 * dp), 0, (int) (12 * dp), 0);
+        rowLp.setMargins((int) (12 * dp), (int) (2 * dp), (int) (12 * dp), (int) (2 * dp));
         row.setLayoutParams(rowLp);
 
         // Speed icon (material icon)

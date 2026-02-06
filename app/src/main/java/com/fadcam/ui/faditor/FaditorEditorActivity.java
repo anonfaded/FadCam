@@ -72,6 +72,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView toolMuteIcon;
     private TextView toolMuteLabel;
     private TextView toolSpeedLabel;
+    private View toolRotate;
+    private TextView toolRotateIcon;
+    private TextView toolRotateLabel;
+    private View toolFlip;
+    private TextView toolFlipIcon;
+    private TextView toolFlipLabel;
+    private View toolCrop;
+    private TextView toolCropIcon;
+    private TextView toolCropLabel;
 
     // ── Persistence ──────────────────────────────────────────────────
     private ProjectStorage projectStorage;
@@ -206,6 +215,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolMuteIcon = findViewById(R.id.tool_mute_icon);
         toolMuteLabel = findViewById(R.id.tool_mute_label);
         toolSpeedLabel = findViewById(R.id.tool_speed_label);
+        toolRotate = findViewById(R.id.tool_rotate);
+        toolRotateIcon = findViewById(R.id.tool_rotate_icon);
+        toolRotateLabel = findViewById(R.id.tool_rotate_label);
+        toolFlip = findViewById(R.id.tool_flip);
+        toolFlipIcon = findViewById(R.id.tool_flip_icon);
+        toolFlipLabel = findViewById(R.id.tool_flip_label);
+        toolCrop = findViewById(R.id.tool_crop);
+        toolCropIcon = findViewById(R.id.tool_crop_icon);
+        toolCropLabel = findViewById(R.id.tool_crop_label);
 
         // Close button
         findViewById(R.id.btn_close).setOnClickListener(v -> handleClose());
@@ -515,10 +533,22 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Speed picker
         toolSpeed.setOnClickListener(v -> showSpeedPicker());
 
+        // Rotate (cycles 0 -> 90 -> 180 -> 270 -> 0)
+        toolRotate.setOnClickListener(v -> rotateNext());
+
+        // Flip picker
+        toolFlip.setOnClickListener(v -> showFlipPicker());
+
+        // Crop picker
+        toolCrop.setOnClickListener(v -> showCropPicker());
+
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = project.getTimeline().getClip(0);
         updateMuteUI(clip.isAudioMuted());
         updateSpeedUI(clip.getSpeedMultiplier());
+        updateRotateUI(clip.getRotationDegrees());
+        updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
+        updateCropUI(clip.getCropPreset());
     }
 
     // ── Mute ─────────────────────────────────────────────────────────
@@ -537,9 +567,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void updateMuteUI(boolean muted) {
         if (toolMuteIcon != null) {
             toolMuteIcon.setText(muted ? "volume_off" : "volume_up");
-            int color = muted ? 0xFF4CAF50 : 0xFF888888;
+            int color = muted ? 0xFFF44336 : 0xFF888888;
             toolMuteIcon.setTextColor(color);
             if (toolMuteLabel != null) {
+                toolMuteLabel.setText(muted
+                        ? R.string.faditor_tool_muted
+                        : R.string.faditor_tool_sound);
                 toolMuteLabel.setTextColor(color);
             }
         }
@@ -575,6 +608,90 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return (int) speed + "x";
         }
         return String.format(java.util.Locale.US, "%.2gx", speed);
+    }
+
+    // ── Rotate ───────────────────────────────────────────────────────
+
+    private void rotateNext() {
+        Clip clip = project.getTimeline().getClip(0);
+        int newDeg = (clip.getRotationDegrees() + 90) % 360;
+        clip.setRotationDegrees(newDeg);
+        updateRotateUI(newDeg);
+        scheduleAutoSave();
+    }
+
+    private void updateRotateUI(int degrees) {
+        boolean active = degrees != 0;
+        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        if (toolRotateIcon != null) {
+            toolRotateIcon.setTextColor(color);
+            // Visually rotate the icon to show current rotation
+            toolRotateIcon.setRotation(degrees);
+        }
+        if (toolRotateLabel != null) {
+            toolRotateLabel.setText(active ? (degrees + "\u00B0") : getString(R.string.faditor_tool_rotate));
+            toolRotateLabel.setTextColor(color);
+        }
+    }
+
+    // ── Flip ─────────────────────────────────────────────────────────
+
+    private void showFlipPicker() {
+        Clip clip = project.getTimeline().getClip(0);
+        FlipPickerBottomSheet sheet = FlipPickerBottomSheet.newInstance(
+                clip.isFlipHorizontal(), clip.isFlipVertical());
+        sheet.setCallback((flipH, flipV) -> {
+            clip.setFlipHorizontal(flipH);
+            clip.setFlipVertical(flipV);
+            updateFlipUI(flipH, flipV);
+            scheduleAutoSave();
+        });
+        sheet.show(getSupportFragmentManager(), "flipPicker");
+    }
+
+    private void updateFlipUI(boolean flipH, boolean flipV) {
+        boolean active = flipH || flipV;
+        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        if (toolFlipIcon != null) {
+            toolFlipIcon.setTextColor(color);
+            // Mirror the icon when horizontally flipped
+            toolFlipIcon.setScaleX(flipH ? -1f : 1f);
+            toolFlipIcon.setScaleY(flipV ? -1f : 1f);
+        }
+        if (toolFlipLabel != null) {
+            String label;
+            if (flipH && flipV) label = "H+V";
+            else if (flipH) label = "H";
+            else if (flipV) label = "V";
+            else label = getString(R.string.faditor_tool_flip);
+            toolFlipLabel.setText(label);
+            toolFlipLabel.setTextColor(color);
+        }
+    }
+
+    // ── Crop ─────────────────────────────────────────────────────────
+
+    private void showCropPicker() {
+        Clip clip = project.getTimeline().getClip(0);
+        CropPickerBottomSheet sheet = CropPickerBottomSheet.newInstance(clip.getCropPreset());
+        sheet.setCallback(preset -> {
+            clip.setCropPreset(preset);
+            updateCropUI(preset);
+            scheduleAutoSave();
+        });
+        sheet.show(getSupportFragmentManager(), "cropPicker");
+    }
+
+    private void updateCropUI(@NonNull String preset) {
+        boolean active = !"none".equals(preset);
+        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        if (toolCropIcon != null) {
+            toolCropIcon.setTextColor(color);
+        }
+        if (toolCropLabel != null) {
+            toolCropLabel.setText(active ? preset : getString(R.string.faditor_tool_crop));
+            toolCropLabel.setTextColor(color);
+        }
     }
 
     private void initExport() {
@@ -615,6 +732,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
                             getString(R.string.faditor_export_success),
                             Toast.LENGTH_LONG).show();
                     Log.d(TAG, "Export saved to: " + outputPath);
+
+                    // Notify Records tab to auto-refresh when user navigates back
+                    com.fadcam.ui.RecordsFragment.requestRefresh();
                 });
             }
 

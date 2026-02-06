@@ -745,8 +745,14 @@
     <string name="faditor_error_picker">Could not open file picker</string>
     <string name="faditor_tool_trim">Trim</string>
     <string name="faditor_tool_speed">1x</string>
-    <string name="faditor_tool_audio">Audio</string>
+    <string name="faditor_tool_muted">Muted</string>
+    <string name="faditor_tool_sound">Sound</string>
     <string name="faditor_speed_title">Playback Speed</string>
+    <string name="faditor_tool_rotate">Rotate</string>
+    <string name="faditor_tool_flip">Flip</string>
+    <string name="faditor_tool_crop">Crop</string>
+    <string name="faditor_crop_title">Crop Aspect Ratio</string>
+    <string name="faditor_flip_title">Flip</string>
     <string name="faditor_home_tagline">Lightweight video editor</string>
     <string name="faditor_new_project">New Project</string>
     <string name="faditor_start_project">Start New Project</string>

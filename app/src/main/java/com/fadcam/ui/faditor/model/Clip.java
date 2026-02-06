@@ -39,7 +39,21 @@ public class Clip {
     /** Whether audio is muted for this clip. */
     private boolean audioMuted = false;
 
-    // Future: List<Effect> effects = new ArrayList<>();
+    /** Rotation in degrees: 0, 90, 180, 270. */
+    private int rotationDegrees = 0;
+
+    /** Whether the video is flipped horizontally (mirror). */
+    private boolean flipHorizontal = false;
+
+    /** Whether the video is flipped vertically. */
+    private boolean flipVertical = false;
+
+    /**
+     * Crop aspect ratio preset key.
+     * Values: "none", "16:9", "9:16", "4:3", "3:4", "1:1", "21:9"
+     */
+    @NonNull
+    private String cropPreset = "none";
 
     /**
      * Create a new Clip from a video URI.
@@ -60,7 +74,9 @@ public class Clip {
      */
     public Clip(@NonNull String id, @NonNull Uri sourceUri,
          long inPointMs, long outPointMs, long sourceDurationMs,
-         float speedMultiplier, boolean audioMuted) {
+         float speedMultiplier, boolean audioMuted,
+         int rotationDegrees, boolean flipHorizontal, boolean flipVertical,
+         @NonNull String cropPreset) {
         this.id = id;
         this.sourceUri = sourceUri;
         this.inPointMs = inPointMs;
@@ -68,6 +84,10 @@ public class Clip {
         this.sourceDurationMs = sourceDurationMs;
         this.speedMultiplier = speedMultiplier;
         this.audioMuted = audioMuted;
+        this.rotationDegrees = rotationDegrees;
+        this.flipHorizontal = flipHorizontal;
+        this.flipVertical = flipVertical;
+        this.cropPreset = cropPreset;
     }
 
     // ── Getters ──────────────────────────────────────────────────────
@@ -102,6 +122,23 @@ public class Clip {
         return audioMuted;
     }
 
+    public int getRotationDegrees() {
+        return rotationDegrees;
+    }
+
+    public boolean isFlipHorizontal() {
+        return flipHorizontal;
+    }
+
+    public boolean isFlipVertical() {
+        return flipVertical;
+    }
+
+    @NonNull
+    public String getCropPreset() {
+        return cropPreset;
+    }
+
     /**
      * Trimmed duration in milliseconds (respects speed multiplier).
      */
@@ -111,6 +148,34 @@ public class Clip {
     }
 
     // ── Setters (for trim handle updates) ────────────────────────────
+
+    /**
+     * Set the rotation in degrees (clamped to 0, 90, 180, 270).
+     *
+     * @param degrees rotation angle; rounded to nearest 90°
+     */
+    public void setRotationDegrees(int degrees) {
+        this.rotationDegrees = ((degrees % 360) + 360) % 360;
+        // Snap to nearest 90
+        this.rotationDegrees = (Math.round(this.rotationDegrees / 90f) * 90) % 360;
+    }
+
+    public void setFlipHorizontal(boolean flip) {
+        this.flipHorizontal = flip;
+    }
+
+    public void setFlipVertical(boolean flip) {
+        this.flipVertical = flip;
+    }
+
+    /**
+     * Set the crop preset.
+     *
+     * @param preset one of "none", "16:9", "9:16", "4:3", "3:4", "1:1", "21:9"
+     */
+    public void setCropPreset(@NonNull String preset) {
+        this.cropPreset = preset;
+    }
 
     /**
      * Set the in-point (start trim position).
@@ -156,6 +221,9 @@ public class Clip {
                 + ", out=" + outPointMs
                 + ", speed=" + speedMultiplier
                 + ", muted=" + audioMuted
+                + ", rot=" + rotationDegrees
+                + ", flipH=" + flipHorizontal
+                + ", flipV=" + flipVertical
+                + ", crop=" + cropPreset
                 + "}";
     }
-}

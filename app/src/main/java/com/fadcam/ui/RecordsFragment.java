@@ -107,6 +107,20 @@ public class RecordsFragment extends BaseFragment implements
         RecordsAdapter.OnVideoLongClickListener,
         RecordActionListener {
 
+    /**
+     * Static flag set by other components (e.g. Faditor export) to signal
+     * that the records list should refresh on next resume.
+     */
+    private static volatile boolean sPendingRefresh = false;
+
+    /**
+     * Request a refresh of the records list on next resume.
+     * Safe to call from any thread.
+     */
+    public static void requestRefresh() {
+        sPendingRefresh = true;
+    }
+
     private BroadcastReceiver recordingCompleteReceiver; // ** ADD field for the receiver **
     private boolean isReceiverRegistered = false; // Track registration status
     // ** NEW: Fields for storage change receiver **
@@ -961,6 +975,16 @@ public class RecordsFragment extends BaseFragment implements
     public void onResume() {
         super.onResume();
         Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
+
+        // Check if an external event (e.g. Faditor export) requested a refresh
+        if (sPendingRefresh) {
+            sPendingRefresh = false;
+            Log.i(TAG, "onResume: Pending refresh flag set, invalidating cache");
+            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+            if (recordsAdapter != null) {
+                recordsAdapter.clearCaches();
+            }
+        }
 
         // Always update toolbar/menu and AppLock state
         androidx.viewpager2.widget.ViewPager2 viewPager = getActivity() != null

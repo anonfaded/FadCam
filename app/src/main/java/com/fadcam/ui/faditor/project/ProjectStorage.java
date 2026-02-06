@@ -260,6 +260,10 @@ public class ProjectStorage {
                 clipJson.addProperty("sourceDurationMs", clip.getSourceDurationMs());
                 clipJson.addProperty("speedMultiplier", clip.getSpeedMultiplier());
                 clipJson.addProperty("audioMuted", clip.isAudioMuted());
+                clipJson.addProperty("rotationDegrees", clip.getRotationDegrees());
+                clipJson.addProperty("flipHorizontal", clip.isFlipHorizontal());
+                clipJson.addProperty("flipVertical", clip.isFlipVertical());
+                clipJson.addProperty("cropPreset", clip.getCropPreset());
                 clipsArray.add(clipJson);
             }
             timelineJson.add("clips", clipsArray);
@@ -305,9 +309,18 @@ public class ProjectStorage {
                                 ? clipObj.get("speedMultiplier").getAsFloat() : 1.0f;
                         boolean audioMuted = clipObj.has("audioMuted")
                                 && clipObj.get("audioMuted").getAsBoolean();
+                        int rotationDeg = clipObj.has("rotationDegrees")
+                                ? clipObj.get("rotationDegrees").getAsInt() : 0;
+                        boolean flipH = clipObj.has("flipHorizontal")
+                                && clipObj.get("flipHorizontal").getAsBoolean();
+                        boolean flipV = clipObj.has("flipVertical")
+                                && clipObj.get("flipVertical").getAsBoolean();
+                        String crop = clipObj.has("cropPreset")
+                                ? clipObj.get("cropPreset").getAsString() : "none";
 
                         Clip clip = new Clip(clipId, sourceUri,
-                                inPointMs, outPointMs, sourceDurationMs, speed, audioMuted);
+                                inPointMs, outPointMs, sourceDurationMs, speed, audioMuted,
+                                rotationDeg, flipH, flipV, crop);
                         project.getTimeline().addClip(clip);
                     }
                 }

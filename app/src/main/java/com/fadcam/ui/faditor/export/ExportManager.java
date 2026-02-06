@@ -12,6 +12,8 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.audio.SonicAudioProcessor;
 import androidx.media3.common.audio.SpeedChangingAudioProcessor;
+import androidx.media3.effect.Crop;
+import androidx.media3.effect.ScaleAndRotateTransformation;
 import androidx.media3.effect.SpeedChangeEffect;
 import androidx.media3.common.Effect;
 import androidx.media3.common.audio.AudioProcessor;
@@ -125,7 +127,11 @@ public class ExportManager {
             // For simple trim (single clip, no effects, normal speed, audio intact) use near-lossless
             boolean isSimpleTrim = project.getTimeline().getClipCount() == 1
                     && project.getTimeline().getClip(0).getSpeedMultiplier() == 1.0f
-                    && !project.getTimeline().getClip(0).isAudioMuted();
+                    && !project.getTimeline().getClip(0).isAudioMuted()
+                    && project.getTimeline().getClip(0).getRotationDegrees() == 0
+                    && !project.getTimeline().getClip(0).isFlipHorizontal()
+                    && !project.getTimeline().getClip(0).isFlipVertical()
+                    && "none".equals(project.getTimeline().getClip(0).getCropPreset());
 
             if (isSimpleTrim) {
                 builder.experimentalSetTrimOptimizationEnabled(true);
@@ -248,22 +254,51 @@ public class ExportManager {
                 editedBuilder.setRemoveAudio(true);
             }
 
-            // Apply speed change effects if not 1.0x
+            // Collect effects
+            List<AudioProcessor> audioProcessors = new ArrayList<>();
+            List<Effect> videoEffects = new ArrayList<>();
+
+            // Speed change
             float speed = clip.getSpeedMultiplier();
             if (speed != 1.0f) {
-                List<AudioProcessor> audioProcessors = new ArrayList<>();
-                List<Effect> videoEffects = new ArrayList<>();
-
-                // Video speed effect
                 videoEffects.add(new SpeedChangeEffect(speed));
-
-                // Audio speed effect (only if audio is not muted)
                 if (!clip.isAudioMuted()) {
                     SonicAudioProcessor sonicProcessor = new SonicAudioProcessor();
                     sonicProcessor.setSpeed(speed);
                     audioProcessors.add(sonicProcessor);
                 }
+            }
 
+            // Rotation and/or flip
+            int rotation = clip.getRotationDegrees();
+            boolean flipH = clip.isFlipHorizontal();
+            boolean flipV = clip.isFlipVertical();
+            if (rotation != 0 || flipH || flipV) {
+                ScaleAndRotateTransformation.Builder transformBuilder =
+                        new ScaleAndRotateTransformation.Builder();
+                if (rotation != 0) {
+                    transformBuilder.setRotationDegrees(rotation);
+                }
+                float scaleX = flipH ? -1f : 1f;
+                float scaleY = flipV ? -1f : 1f;
+                if (flipH || flipV) {
+                    transformBuilder.setScale(scaleX, scaleY);
+                }
+                videoEffects.add(transformBuilder.build());
+            }
+
+            // Crop preset
+            String cropPreset = clip.getCropPreset();
+            if (!"none".equals(cropPreset)) {
+                float[] cropRect = getCropRect(cropPreset);
+                if (cropRect != null) {
+                    videoEffects.add(new Crop(
+                            cropRect[0], cropRect[1], cropRect[2], cropRect[3]));
+                }
+            }
+
+            // Apply effects if any
+            if (!audioProcessors.isEmpty() || !videoEffects.isEmpty()) {
                 editedBuilder.setEffects(new Effects(audioProcessors, videoEffects));
             }
 
@@ -274,6 +309,26 @@ public class ExportManager {
                 new EditedMediaItemSequence.Builder(items).build();
 
         return new Composition.Builder(sequence).build();
+    }
+
+    /**
+     * Returns crop bounds [left, right, bottom, top] for a Crop effect based on
+     * the aspect ratio preset, or null if the preset is unknown.
+     *
+     * @param preset crop preset key
+     * @return float array or null
+     */
+    @Nullable
+    private static float[] getCropRect(@NonNull String preset) {
+        switch (preset) {
+            case "1:1":   return new float[]{-1f, 1f, -1f, 1f};
+            case "16:9":  return new float[]{-1f, 1f, -1f, 1f};
+            case "9:16":  return new float[]{-0.3125f, 0.3125f, -1f, 1f};
+            case "4:3":   return new float[]{-0.833f, 0.833f, -1f, 1f};
+            case "3:4":   return new float[]{-0.375f, 0.375f, -1f, 1f};
+            case "21:9":  return new float[]{-1f, 1f, -0.643f, 0.643f};
+            default:      return null;
+        }
     }
 
     /**
