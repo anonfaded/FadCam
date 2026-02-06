@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/picker_bottom_sheet_dark_gradient_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <ImageView
+            android:id="@+id/btn_close"
+            android:layout_width="31dp"
+            android:layout_height="31dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_close"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:tint="?attr/pickerTextSecondary"
+            android:contentDescription="@string/close" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/dual_cam_info_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading"
+            android:textAlignment="viewStart" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#404040"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Info Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <!-- Device Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dual_cam_info_device_label"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/info_device_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <View style="@style/SettingsDivider" />
+
+        <!-- Processor Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dual_cam_info_processor_label"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/info_processor_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <View style="@style/SettingsDivider" />
+
+        <!-- Android Version Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dual_cam_info_android_label"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/info_android_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <View style="@style/SettingsDivider" />
+
+        <!-- API Level Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dual_cam_info_api_label"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/info_api_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <View style="@style/SettingsDivider" />
+
+        <!-- Concurrent Camera API Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dual_cam_info_concurrent_label"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/info_concurrent_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Status -->
+    <TextView
+        android:id="@+id/info_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:lineSpacingMultiplier="1.3"
+        android:text="-" />
+
+    <!-- Explanation (visible when not confirmed) -->
+    <LinearLayout
+        android:id="@+id/info_explanation_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="12dp">
+
+        <!-- Reason (only for unsupported) -->
+        <TextView
+            android:id="@+id/info_reason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFBBBBBB"
+            android:textSize="12sp"
+            android:lineSpacingMultiplier="1.3"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/dual_cam_info_why_unsupported"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/dual_cam_info_unsupported_explanation"
+            android:textColor="#FFBBBBBB"
+            android:textSize="12sp"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/dual_cam_info_which_devices"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/dual_cam_info_devices_explanation"
+            android:textColor="#FFBBBBBB"
+            android:textSize="12sp"
+            android:lineSpacingMultiplier="1.3" />
+    </LinearLayout>
+
+</LinearLayout>

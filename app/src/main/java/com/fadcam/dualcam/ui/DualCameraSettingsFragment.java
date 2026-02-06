@@ -1,7 +1,6 @@
 package com.fadcam.dualcam.ui;
 
 import android.graphics.drawable.GradientDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -139,97 +138,36 @@ public class DualCameraSettingsFragment extends Fragment {
         boolean supported = dualCapability.isSupported();
         boolean confirmed = dualCapability.isConcurrentApiConfirmed();
 
-        if (supported) {
-            // Green info banner
+        if (confirmed) {
+            // Green info banner — fully confirmed
             bannerCompatibility.setBackgroundResource(R.drawable.dual_cam_info_banner_bg);
-            // Update icon color to green
             View iconView = bannerCompatibility.getChildAt(0);
             if (iconView instanceof TextView) {
                 ((TextView) iconView).setTextColor(0xFF4CAF50);
             }
-            if (confirmed) {
-                textBannerMessage.setText(R.string.dual_cam_banner_supported_confirmed);
-            } else {
-                textBannerMessage.setText(R.string.dual_cam_banner_supported);
-            }
+            textBannerMessage.setText(R.string.dual_cam_banner_supported_confirmed);
             textBannerMessage.setTextColor(0xFFA5D6A7);
+        } else if (supported) {
+            // Amber/orange banner — has both cameras but NOT confirmed via concurrent API
+            bannerCompatibility.setBackgroundResource(R.drawable.dual_cam_warning_banner_bg);
+            textBannerMessage.setText(R.string.dual_cam_banner_supported);
+            textBannerMessage.setTextColor(0xFFFFD180);
         } else {
-            // Orange warning banner (default)
+            // Orange warning banner — unsupported
             bannerCompatibility.setBackgroundResource(R.drawable.dual_cam_warning_banner_bg);
             textBannerMessage.setText(R.string.dual_cam_banner_unsupported);
             textBannerMessage.setTextColor(0xFFFFD180);
         }
 
-        // Tap for device info details
+        // Tap for device info details — uses dedicated bottom sheet
         bannerCompatibility.setOnClickListener(v -> showDeviceInfoSheet());
     }
 
     /**
-     * Shows a detailed bottom sheet with device info, processor, and dual camera compatibility details.
+     * Shows the detailed device compatibility bottom sheet.
      */
     private void showDeviceInfoSheet() {
-        boolean supported = dualCapability.isSupported();
-        boolean confirmed = dualCapability.isConcurrentApiConfirmed();
-
-        // Build device info text
-        StringBuilder info = new StringBuilder();
-
-        // Device
-        info.append("• ").append(getString(R.string.dual_cam_info_device_label))
-                .append(": ").append(Build.MANUFACTURER).append(" ").append(Build.MODEL).append("\n");
-
-        // Processor
-        String processor;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            processor = Build.SOC_MODEL;
-            if (processor == null || processor.isEmpty() || "unknown".equalsIgnoreCase(processor)) {
-                processor = Build.HARDWARE;
-            }
-        } else {
-            processor = Build.HARDWARE;
-        }
-        info.append("• ").append(getString(R.string.dual_cam_info_processor_label))
-                .append(": ").append(processor).append("\n");
-
-        // Android version
-        info.append("• ").append(getString(R.string.dual_cam_info_android_label))
-                .append(": Android ").append(Build.VERSION.RELEASE).append("\n");
-
-        // API Level
-        info.append("• ").append(getString(R.string.dual_cam_info_api_label))
-                .append(": ").append(Build.VERSION.SDK_INT).append("\n");
-
-        // Concurrent API
-        info.append("• ").append(getString(R.string.dual_cam_info_concurrent_label))
-                .append(": ").append(confirmed
-                        ? getString(R.string.dual_cam_info_concurrent_yes)
-                        : getString(R.string.dual_cam_info_concurrent_no)).append("\n\n");
-
-        // Status
-        info.append("• ").append(getString(R.string.dual_cam_info_status_label))
-                .append(": ").append(supported
-                        ? getString(R.string.dual_cam_info_supported_status)
-                        : getString(R.string.dual_cam_info_unsupported_status)).append("\n");
-
-        // If unsupported, add reason and explanation
-        if (!supported) {
-            String reason = dualCapability.getUnsupportedReason();
-            if (reason != null) {
-                info.append("\nReason: ").append(reason).append("\n");
-            }
-            info.append("\n").append(getString(R.string.dual_cam_info_why_unsupported)).append("\n")
-                    .append(getString(R.string.dual_cam_info_unsupported_explanation)).append("\n\n")
-                    .append(getString(R.string.dual_cam_info_which_devices)).append("\n")
-                    .append(getString(R.string.dual_cam_info_devices_explanation));
-        }
-
-        // Show as picker bottom sheet with no items (info-only)
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
-                getString(R.string.dual_cam_info_title),
-                new ArrayList<>(),
-                null,
-                "picker_result_device_info",
-                info.toString());
+        DualCameraInfoBottomSheet sheet = DualCameraInfoBottomSheet.newInstance();
         sheet.show(getParentFragmentManager(), "device_info_sheet");
     }
 
