@@ -758,6 +758,14 @@
     <string name="faditor_tool_flip">Flip</string>
     <string name="faditor_tool_crop">Crop</string>
     <string name="faditor_tool_crop_free">Free</string>
+    <string name="faditor_tool_split">Split</string>
+    <string name="faditor_tool_delete">Delete</string>
+    <string name="faditor_tool_duplicate">Duplicate</string>
+    <string name="faditor_split_success">Segment split into two</string>
+    <string name="faditor_split_error">Cannot split here — too close to edge</string>
+    <string name="faditor_delete_last_segment">Cannot delete the only segment</string>
+    <string name="faditor_segment_deleted">Segment deleted</string>
+    <string name="faditor_segment_duplicated">Segment duplicated</string>
     <string name="faditor_crop_title">Crop Aspect Ratio</string>
     <string name="faditor_flip_title">Flip</string>
     <string name="faditor_home_tagline">Lightweight video editor</string>

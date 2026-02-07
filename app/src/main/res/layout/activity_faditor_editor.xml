@@ -367,6 +367,96 @@
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
+
+            <!-- Split tool -->
+            <LinearLayout
+                android:id="@+id/tool_split"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_split_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="carpenter"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_split_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_split"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Delete segment tool -->
+            <LinearLayout
+                android:id="@+id/tool_delete"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_delete_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="delete"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_delete_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_delete"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Duplicate segment tool -->
+            <LinearLayout
+                android:id="@+id/tool_duplicate"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_duplicate_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="content_copy"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_duplicate_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_duplicate"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
         </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>

@@ -77,13 +77,66 @@ public class Timeline {
     }
 
     /**
-     * Swap clip ordering (for drag-to-reorder, Phase 2).
+     * Swap clip ordering (for drag-to-reorder).
      */
     public void swapClips(int fromIndex, int toIndex) {
         if (fromIndex >= 0 && fromIndex < clips.size()
                 && toIndex >= 0 && toIndex < clips.size()) {
             Collections.swap(clips, fromIndex, toIndex);
         }
+    }
+
+    /**
+     * Split a clip at the given absolute position into two new clips.
+     *
+     * <p>The original clip is replaced by two clips:
+     * <ul>
+     *   <li>Clip A: same source, inPoint = original.inPoint, outPoint = splitPointMs</li>
+     *   <li>Clip B: same source, inPoint = splitPointMs, outPoint = original.outPoint</li>
+     * </ul>
+     * Both inherit all effects (speed, volume, rotate, flip, crop) from the original.</p>
+     *
+     * @param clipIndex       index of the clip to split
+     * @param splitPointMs    absolute position in the source video to split at
+     * @return the index of the first part (clipA), or -1 if invalid
+     */
+    public int splitAt(int clipIndex, long splitPointMs) {
+        if (clipIndex < 0 || clipIndex >= clips.size()) return -1;
+
+        Clip original = clips.get(clipIndex);
+
+        // Validate split point is within the clip's trim region (with margin)
+        long minSplitMs = original.getInPointMs() + 100; // At least 100ms from start
+        long maxSplitMs = original.getOutPointMs() - 100; // At least 100ms from end
+        if (splitPointMs < minSplitMs || splitPointMs > maxSplitMs) return -1;
+
+        // Create two copies with the same effects
+        Clip clipA = new Clip(original);
+        clipA.setOutPointMs(splitPointMs);
+
+        Clip clipB = new Clip(original);
+        clipB.setInPointMs(splitPointMs);
+
+        // Replace original with the two parts
+        clips.remove(clipIndex);
+        clips.add(clipIndex, clipB);
+        clips.add(clipIndex, clipA); // A goes first
+
+        return clipIndex;
+    }
+
+    /**
+     * Duplicate a clip at the given index. The copy is inserted
+     * immediately after the original.
+     *
+     * @param clipIndex index of the clip to duplicate
+     * @return the index of the new copy, or -1 if invalid
+     */
+    public int duplicateClip(int clipIndex) {
+        if (clipIndex < 0 || clipIndex >= clips.size()) return -1;
+        Clip copy = new Clip(clips.get(clipIndex));
+        clips.add(clipIndex + 1, copy);
+        return clipIndex + 1;
     }
 
     @NonNull

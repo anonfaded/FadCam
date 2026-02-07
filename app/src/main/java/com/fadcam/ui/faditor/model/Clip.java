@@ -108,6 +108,31 @@ public class Clip {
         this.cropBottom = cropBottom;
     }
 
+    /**
+     * Deep copy constructor. Creates a new clip with a fresh ID
+     * but identical source, trim, and all effect settings.
+     *
+     * @param other the clip to copy
+     */
+    public Clip(@NonNull Clip other) {
+        this.id = UUID.randomUUID().toString();
+        this.sourceUri = other.sourceUri;
+        this.inPointMs = other.inPointMs;
+        this.outPointMs = other.outPointMs;
+        this.sourceDurationMs = other.sourceDurationMs;
+        this.speedMultiplier = other.speedMultiplier;
+        this.audioMuted = other.audioMuted;
+        this.volumeLevel = other.volumeLevel;
+        this.rotationDegrees = other.rotationDegrees;
+        this.flipHorizontal = other.flipHorizontal;
+        this.flipVertical = other.flipVertical;
+        this.cropPreset = other.cropPreset;
+        this.cropLeft = other.cropLeft;
+        this.cropTop = other.cropTop;
+        this.cropRight = other.cropRight;
+        this.cropBottom = other.cropBottom;
+    }
+
     // ── Getters ──────────────────────────────────────────────────────
 
     @NonNull

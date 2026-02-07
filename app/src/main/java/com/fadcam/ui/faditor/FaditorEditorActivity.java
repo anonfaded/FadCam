@@ -30,6 +30,7 @@ import com.fadcam.ui.faditor.model.FaditorProject;
 import com.fadcam.ui.faditor.player.FaditorPlayerManager;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.fadcam.ui.faditor.timeline.TimelineView;
+import com.fadcam.ui.faditor.model.Timeline;
 import com.fadcam.ui.faditor.util.TimeFormatter;
 
 import java.io.File;
@@ -84,6 +85,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView toolCropIcon;
     private TextView toolCropLabel;
 
+    // ── Multi-segment state ──────────────────────────────────────────
+    /** Index of the currently selected clip/segment in the timeline. */
+    private int selectedClipIndex = 0;
+
     // ── Persistence ──────────────────────────────────────────────────
     private ProjectStorage projectStorage;
     private final Handler autoSaveHandler = new Handler(Looper.getMainLooper());
@@ -124,6 +129,61 @@ public class FaditorEditorActivity extends AppCompatActivity {
             playheadHandler.postDelayed(this, PLAYHEAD_UPDATE_INTERVAL_MS);
         }
     };
+
+    // ── Segment helpers ──────────────────────────────────────────────
+
+    /**
+     * Returns the currently selected clip.
+     * Falls back to clip 0 if the index is out of range.
+     */
+    @NonNull
+    private Clip getSelectedClip() {
+        int count = project.getTimeline().getClipCount();
+        if (selectedClipIndex < 0 || selectedClipIndex >= count) {
+            selectedClipIndex = 0;
+        }
+        return project.getTimeline().getClip(selectedClipIndex);
+    }
+
+    /**
+     * Select a segment by index, update the timeline and toolbar.
+     *
+     * @param index the segment index to select
+     */
+    private void selectSegment(int index) {
+        int count = project.getTimeline().getClipCount();
+        if (index < 0 || index >= count) return;
+        selectedClipIndex = index;
+        Clip clip = getSelectedClip();
+
+        // Sync timeline view to the selected segment's trim
+        timelineView.setTrimFromClip(clip);
+
+        // Sync toolbar tools to the selected segment's settings
+        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
+        updateSpeedUI(clip.getSpeedMultiplier());
+        updateRotateUI(clip.getRotationDegrees());
+        updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
+        updateCropUI(clip.getCropPreset());
+
+        // Load the selected segment in the player
+        playerManager.loadClip(clip);
+        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        updatePreviewTransforms();
+
+        // Reset playhead
+        timelineView.setPlayheadFraction(
+                (float) clip.getInPointMs() / clip.getSourceDurationMs());
+
+        long trimmedDuration = clip.getOutPointMs() - clip.getInPointMs();
+        timeCurrent.setText(TimeFormatter.formatAuto(0));
+        timeTotal.setText(TimeFormatter.formatAuto(trimmedDuration));
+
+        Log.d(TAG, "Selected segment " + index + "/" + count
+                + " id=" + clip.getId()
+                + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs());
+    }
 
     // ── Lifecycle ────────────────────────────────────────────────────
 
@@ -228,6 +288,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolCrop = findViewById(R.id.tool_crop);
         toolCropIcon = findViewById(R.id.tool_crop_icon);
         toolCropLabel = findViewById(R.id.tool_crop_label);
+
+        // Segment tools
+        findViewById(R.id.tool_split).setOnClickListener(v -> splitAtPlayhead());
+        findViewById(R.id.tool_delete).setOnClickListener(v -> deleteSelectedSegment());
+        findViewById(R.id.tool_duplicate).setOnClickListener(v -> duplicateSelectedSegment());
 
         // Close button
         findViewById(R.id.btn_close).setOnClickListener(v -> handleClose());
@@ -368,7 +433,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerManager.setPlayerView(playerView);
 
         // Load the clip
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         playerManager.loadClip(clip);
 
         // Listen for playback state changes
@@ -403,7 +468,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     private void initTimeline() {
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         timelineView.setTrimFromClip(clip);
 
         Log.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
@@ -421,7 +486,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 }
 
                 // Update clip trim points while dragging (live feedback)
-                Clip c = project.getTimeline().getClip(0);
+                Clip c = getSelectedClip();
                 long duration = c.getSourceDurationMs();
                 c.setInPointMs((long) (startFraction * duration));
                 c.setOutPointMs((long) (endFraction * duration));
@@ -451,7 +516,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onTrimFinished(float startFraction, float endFraction) {
                 // Update player clip bounds when handle released
-                Clip c = project.getTimeline().getClip(0);
+                Clip c = getSelectedClip();
 
                 Log.d(TAG, "Trim finished: in=" + c.getInPointMs()
                         + " out=" + c.getOutPointMs()
@@ -484,7 +549,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     userDragging = true;
                 }
 
-                Clip c = project.getTimeline().getClip(0);
+                Clip c = getSelectedClip();
                 long sourceDuration = c.getSourceDurationMs();
                 if (sourceDuration <= 0) return;
 
@@ -531,7 +596,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             if (playerManager.isPlaying()) {
                 playerManager.pause();
             } else {
-                Clip c = project.getTimeline().getClip(0);
+                Clip c = getSelectedClip();
                 Log.d(TAG, "Play pressed: trimIn=" + c.getInPointMs()
                         + " trimOut=" + c.getOutPointMs()
                         + " trimDur=" + (c.getOutPointMs() - c.getInPointMs()));
@@ -555,7 +620,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolCrop.setOnClickListener(v -> showCropPicker());
 
         // Sync UI to existing clip state (e.g. reopened project)
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
         updateSpeedUI(clip.getSpeedMultiplier());
         updateRotateUI(clip.getRotationDegrees());
@@ -574,7 +639,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Volume ────────────────────────────────────────────────────────
 
     private void showVolumeControl() {
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
 
         VolumeControlBottomSheet sheet = VolumeControlBottomSheet.newInstance(
                 clip.getVolumeLevel(), clip.isAudioMuted());
@@ -631,7 +696,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Speed ────────────────────────────────────────────────────────
 
     private void showSpeedSlider() {
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         SpeedSliderBottomSheet sheet = SpeedSliderBottomSheet.newInstance(clip.getSpeedMultiplier());
         sheet.setCallback(speed -> {
             clip.setSpeedMultiplier(speed);
@@ -660,7 +725,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Rotate ───────────────────────────────────────────────────────
 
     private void rotateNext() {
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         int newDeg = (clip.getRotationDegrees() + 90) % 360;
         clip.setRotationDegrees(newDeg);
         updateRotateUI(newDeg);
@@ -685,7 +750,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Flip ─────────────────────────────────────────────────────────
 
     private void showFlipPicker() {
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         FlipPickerBottomSheet sheet = FlipPickerBottomSheet.newInstance(
                 clip.isFlipHorizontal(), clip.isFlipVertical());
         sheet.setCallback((flipH, flipV) -> {
@@ -721,7 +786,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Crop ─────────────────────────────────────────────────────────
 
     private void showCropPicker() {
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         CropPickerBottomSheet sheet = CropPickerBottomSheet.newInstance(clip.getCropPreset());
         sheet.setCallback(preset -> {
             if ("custom".equals(preset)) {
@@ -759,7 +824,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             android.graphics.RectF videoRect = computeVideoContentRect();
             cropOverlay.setVideoContentRect(videoRect);
 
-            Clip clip = project.getTimeline().getClip(0);
+            Clip clip = getSelectedClip();
             if ("custom".equals(clip.getCropPreset())
                     && (clip.getCropLeft() > 0 || clip.getCropTop() > 0
                     || clip.getCropRight() < 1 || clip.getCropBottom() < 1)) {
@@ -846,7 +911,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void updatePreviewTransforms() {
         if (project == null || project.getTimeline().isEmpty()) return;
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
 
         int degrees = clip.getRotationDegrees();
         boolean flipH = clip.isFlipHorizontal();
@@ -886,7 +951,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
         } else if (!"none".equals(cropPreset)) {
             // For preset crops, we could clip the view but it's complex
             // with rotation. The exported result is what matters.
-            // Just reset any previous clip bounds.
         }
     }
 
@@ -967,7 +1031,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         long playerDurationMs = playerManager.getSourceDuration();
         if (playerDurationMs <= 0) return;
 
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         long storedDuration = clip.getSourceDurationMs();
 
         // Only correct if ExoPlayer reports SHORTER duration.
@@ -1003,7 +1067,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
 
-        Clip clip = project.getTimeline().getClip(0);
+        Clip clip = getSelectedClip();
         long sourceDuration = clip.getSourceDurationMs();
         if (sourceDuration <= 0) return;
 
@@ -1178,5 +1242,80 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
         }
         return "saf:" + uri.toString();
+    }
+
+    // ── Segment Operations ──────────────────────────────────────────────────
+
+    /**
+     * Split the selected segment at the current playhead position.
+     */
+    // ── Segment Operations ──────────────────────────────────────────────────
+
+    /**
+     * Split the selected segment at the current playhead position.
+     */
+    private void splitAtPlayhead() {
+        try {
+            Clip clip = getSelectedClip();
+            if (clip == null) return;
+
+            playerManager.pause();
+
+            long currentPositionMs = playerManager.getCurrentPosition();
+            long absoluteSplitMs = clip.getInPointMs() + currentPositionMs;
+
+            Timeline timeline = project.getTimeline();
+            int newIndex = timeline.splitAt(selectedClipIndex, absoluteSplitMs);
+            if (newIndex < 0) {
+                Toast.makeText(this, R.string.faditor_split_error, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            selectSegment(selectedClipIndex);
+            saveProjectNow();
+            Toast.makeText(this, R.string.faditor_split_success, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "splitAtPlayhead failed", e);
+            Toast.makeText(this, R.string.faditor_split_error, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Delete the currently selected segment (cannot delete the last remaining segment).
+     */
+    private void deleteSelectedSegment() {
+        try {
+            Timeline timeline = project.getTimeline();
+            if (timeline.getClipCount() <= 1) {
+                Toast.makeText(this, R.string.faditor_delete_last_segment, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            timeline.removeClip(selectedClipIndex);
+
+            int newIndex = Math.min(selectedClipIndex, timeline.getClipCount() - 1);
+            selectSegment(newIndex);
+            saveProjectNow();
+            Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "deleteSelectedSegment failed", e);
+        }
+    }
+
+    /**
+     * Duplicate the currently selected segment (inserts a copy right after it).
+     */
+    private void duplicateSelectedSegment() {
+        try {
+            Timeline timeline = project.getTimeline();
+            int newIndex = timeline.duplicateClip(selectedClipIndex);
+            if (newIndex < 0) return;
+
+            selectSegment(newIndex);
+            saveProjectNow();
+            Toast.makeText(this, R.string.faditor_segment_duplicated, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "duplicateSelectedSegment failed", e);
+        }
     }
 }
