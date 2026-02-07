@@ -219,6 +219,9 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
         }
 
         // ── Listeners ────────────────────────────────────────────────
+        // Holder for resetRow so lambdas can reference it before creation
+        final LinearLayout[] resetRowRef = new LinearLayout[1];
+
         slider.addOnChangeListener((sl, value, fromUser) -> {
             if (!fromUser) return;
             float vol = value / 100f;
@@ -236,6 +239,10 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
                     : R.string.faditor_volume_mute);
             muteLabel.setTextColor(currentMuted ? 0xFFF44336 : 0xFFCCCCCC);
             muteLabel.setTypeface(null, currentMuted ? Typeface.BOLD : Typeface.NORMAL);
+            if (resetRowRef[0] != null) {
+                boolean show = currentMuted || Math.abs(vol - 1.0f) > 0.01f;
+                resetRowRef[0].setVisibility(show ? View.VISIBLE : View.GONE);
+            }
 
             if (callback != null) callback.onVolumeChanged(vol, false);
         });
@@ -258,12 +265,74 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
                     : R.string.faditor_volume_mute);
             muteLabel.setTextColor(currentMuted ? 0xFFF44336 : 0xFFCCCCCC);
             muteLabel.setTypeface(null, currentMuted ? Typeface.BOLD : Typeface.NORMAL);
+            if (resetRowRef[0] != null) {
+                boolean show = currentMuted || Math.abs(currentVolume - 1.0f) > 0.01f;
+                resetRowRef[0].setVisibility(show ? View.VISIBLE : View.GONE);
+            }
 
             if (callback != null) callback.onVolumeChanged(currentVolume, currentMuted);
         });
 
         // Tap volume icon to toggle mute
         volumeIcon.setOnClickListener(v -> muteRow.performClick());
+
+        // ── Reset row (matches flip picker style) ────────────────────
+        boolean needsReset = currentMuted || Math.abs(currentVolume - 1.0f) > 0.01f;
+        LinearLayout resetRow = new LinearLayout(requireContext());
+        resetRowRef[0] = resetRow;
+        resetRow.setOrientation(LinearLayout.HORIZONTAL);
+        resetRow.setGravity(Gravity.CENTER_VERTICAL);
+        resetRow.setBackgroundResource(R.drawable.settings_home_row_bg);
+        int resetHPad = (int) (20 * dp);
+        int resetVPad = (int) (14 * dp);
+        resetRow.setPadding(resetHPad, resetVPad, resetHPad, resetVPad);
+        LinearLayout.LayoutParams resetRowLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        resetRowLp.setMargins((int) (12 * dp), (int) (8 * dp),
+                (int) (12 * dp), (int) (2 * dp));
+        resetRow.setLayoutParams(resetRowLp);
+
+        TextView resetIcon = new TextView(requireContext());
+        resetIcon.setTypeface(materialIcons);
+        resetIcon.setText("refresh");
+        resetIcon.setTextSize(20);
+        resetIcon.setTextColor(0xFFF44336);
+        LinearLayout.LayoutParams resetIconLp = new LinearLayout.LayoutParams(
+                (int) (28 * dp), (int) (28 * dp));
+        resetIconLp.setMarginEnd((int) (16 * dp));
+        resetIcon.setLayoutParams(resetIconLp);
+        resetIcon.setGravity(Gravity.CENTER);
+        resetRow.addView(resetIcon);
+
+        TextView resetLabel = new TextView(requireContext());
+        resetLabel.setText("Reset");
+        resetLabel.setTextSize(15);
+        resetLabel.setTextColor(0xFFF44336);
+        resetLabel.setTypeface(null, Typeface.BOLD);
+        LinearLayout.LayoutParams resetLabelLp = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        resetLabel.setLayoutParams(resetLabelLp);
+        resetRow.addView(resetLabel);
+
+        resetRow.setOnClickListener(v -> {
+            currentVolume = 1.0f;
+            currentMuted = false;
+            slider.setValue(100f);
+            updatePercentText(percentText, 1.0f, false);
+            updateVolumeIcon(volumeIcon, 1.0f, false);
+            updateSliderColors(slider, 1.0f, false);
+            warningText.setVisibility(View.GONE);
+            muteIcon.setTextColor(0xFF888888);
+            muteLabel.setText(R.string.faditor_volume_mute);
+            muteLabel.setTextColor(0xFFCCCCCC);
+            muteLabel.setTypeface(null, Typeface.NORMAL);
+            resetRow.setVisibility(View.GONE);
+            if (callback != null) callback.onVolumeChanged(1.0f, false);
+        });
+
+        resetRow.setVisibility(needsReset ? View.VISIBLE : View.GONE);
+        root.addView(resetRow);
 
         return root;
     }

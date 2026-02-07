@@ -1,6 +1,7 @@
 package com.fadcam.ui.faditor.player;
 
 import android.content.Context;
+import android.media.audiofx.LoudnessEnhancer;
 import android.net.Uri;
 import android.util.Log;
 
@@ -40,6 +41,10 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
     private boolean playWhenReady = false;
     private long lastPosition = 0;
+
+    /** LoudnessEnhancer for volume amplification above 100%. */
+    @Nullable
+    private LoudnessEnhancer loudnessEnhancer;
 
     // ── Manual trim bounds (replaces ClippingConfiguration) ──────────
     private long trimStartMs = 0;
@@ -210,12 +215,58 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     }
 
     /**
-     * Set the player volume (0.0 = muted, 1.0 = full volume).
+     * Set the player volume.
+     *
+     * <p>For values 0.0 – 1.0, uses ExoPlayer's native volume control.
+     * For values above 1.0, sets native volume to 1.0 and uses
+     * {@link LoudnessEnhancer} to amplify beyond 100% (like VLC).</p>
+     *
+     * @param volume 0.0 = muted, 1.0 = normal, 2.0 = 200%
      */
     public void setVolume(float volume) {
-        if (player != null) {
-            player.setVolume(Math.max(0f, Math.min(1f, volume)));
-            Log.d(TAG, "Volume set to " + volume);
+        if (player == null) return;
+
+        float clampedVolume = Math.max(0f, volume);
+
+        if (clampedVolume <= 1.0f) {
+            // Normal range: use ExoPlayer's native volume
+            player.setVolume(clampedVolume);
+            setLoudnessGain(0);
+        } else {
+            // Above 100%: max out native volume, use LoudnessEnhancer for extra gain
+            player.setVolume(1.0f);
+            // Convert volume factor to gain in millibels: dB = 20*log10(v), mB = dB*100
+            int gainMb = (int) (2000.0 * Math.log10(clampedVolume));
+            setLoudnessGain(gainMb);
+        }
+        Log.d(TAG, "Volume set to " + volume
+                + " (native=" + Math.min(clampedVolume, 1.0f)
+                + ", loudnessGainMb=" + (clampedVolume > 1.0f
+                    ? (int) (2000.0 * Math.log10(clampedVolume)) : 0) + ")");
+    }
+
+    /**
+     * Apply loudness gain via {@link LoudnessEnhancer}.
+     * Creates the enhancer lazily on first use.
+     *
+     * @param gainMb gain in millibels (0 = no boost)
+     */
+    private void setLoudnessGain(int gainMb) {
+        if (player == null) return;
+
+        try {
+            if (loudnessEnhancer == null) {
+                int audioSessionId = player.getAudioSessionId();
+                if (audioSessionId == 0) {
+                    Log.w(TAG, "Audio session ID is 0, cannot create LoudnessEnhancer");
+                    return;
+                }
+                loudnessEnhancer = new LoudnessEnhancer(audioSessionId);
+            }
+            loudnessEnhancer.setTargetGain(gainMb);
+            loudnessEnhancer.setEnabled(gainMb > 0);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to set loudness gain", e);
         }
     }
 
@@ -445,6 +496,14 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     }
 
     private void releasePlayer() {
+        if (loudnessEnhancer != null) {
+            try {
+                loudnessEnhancer.release();
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to release LoudnessEnhancer", e);
+            }
+            loudnessEnhancer = null;
+        }
         if (player != null) {
             playWhenReady = player.getPlayWhenReady();
             lastPosition = Math.max(0, player.getCurrentPosition() - trimStartMs);

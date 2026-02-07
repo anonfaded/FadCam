@@ -209,25 +209,27 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
             chipRow.addView(chip);
         }
 
-        // ── Reset button ─────────────────────────────────────────────
+        // ── Reset button (matches flip picker style) ─────────────────
         LinearLayout resetRow = new LinearLayout(requireContext());
         resetHolder[0] = resetRow;
         resetRow.setOrientation(LinearLayout.HORIZONTAL);
         resetRow.setGravity(Gravity.CENTER_VERTICAL);
         resetRow.setBackgroundResource(R.drawable.settings_home_row_bg);
-        resetRow.setPadding((int) (16 * dp), (int) (14 * dp),
-                (int) (16 * dp), (int) (14 * dp));
+        int resetHPad = (int) (20 * dp);
+        int resetVPad = (int) (14 * dp);
+        resetRow.setPadding(resetHPad, resetVPad, resetHPad, resetVPad);
         LinearLayout.LayoutParams resetLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        resetLp.topMargin = (int) (12 * dp);
+        resetLp.setMargins((int) (12 * dp), (int) (8 * dp),
+                (int) (12 * dp), (int) (2 * dp));
         resetRow.setLayoutParams(resetLp);
 
         TextView resetIcon = new TextView(requireContext());
         resetIcon.setTypeface(materialIcons);
-        resetIcon.setText("restart_alt");
+        resetIcon.setText("refresh");
         resetIcon.setTextSize(20);
-        resetIcon.setTextColor(0xFF888888);
+        resetIcon.setTextColor(0xFFF44336);
         resetIcon.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams resetIconLp = new LinearLayout.LayoutParams(
                 (int) (28 * dp), (int) (28 * dp));
@@ -236,9 +238,13 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
         resetRow.addView(resetIcon);
 
         TextView resetLabel = new TextView(requireContext());
-        resetLabel.setText(R.string.faditor_speed_reset);
+        resetLabel.setText("Reset");
         resetLabel.setTextSize(15);
-        resetLabel.setTextColor(0xFFCCCCCC);
+        resetLabel.setTextColor(0xFFF44336);
+        resetLabel.setTypeface(null, Typeface.BOLD);
+        LinearLayout.LayoutParams resetLabelLp = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        resetLabel.setLayoutParams(resetLabelLp);
         resetRow.addView(resetLabel);
 
         resetRow.setOnClickListener(v -> {
@@ -247,6 +253,7 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
             updateSpeedDisplay(speedDisplay, 1.0f);
             updateSliderColor(slider, 1.0f);
             updateChipSelection(chipViews, 1.0f);
+            resetRow.setVisibility(View.GONE);
             if (callback != null) callback.onSpeedChanged(1.0f);
         });
 
