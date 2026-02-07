@@ -16,6 +16,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.OverScroller;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -133,6 +134,7 @@ public class EditorTimelineView extends View {
     // Gesture detectors for zoom and scroll
     private ScaleGestureDetector scaleDetector;
     private GestureDetector gestureDetector;
+    private OverScroller flingScroller;
 
     @Nullable private OnSegmentActionListener listener;
 
@@ -222,6 +224,7 @@ public class EditorTimelineView extends View {
         // Initialize gesture detectors
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         gestureDetector = new GestureDetector(getContext(), new GestureListener());
+        flingScroller = new OverScroller(getContext());
     }
     
     private void updateDpPerSecond() {
@@ -431,40 +434,78 @@ public class EditorTimelineView extends View {
     private void drawRuler(Canvas canvas, int viewW) {
         if (totalEffectiveMs <= 0) return;
         
-        // Draw hierarchical ruler like real measuring tape
-        // Major ticks (5s) with labels, medium ticks (1s), minor ticks (0.2s)
-        long majorInterval = getMajorTickInterval(totalEffectiveMs);  // 5s, 10s, etc.
-        long minorInterval = 200;  // 0.2s sub-ticks for detail
+        // Dynamic label interval based on zoom (like professional editors)
+        // Calculate minimum pixels between labels to avoid overlap (~60dp)
+        float minLabelGapPx = 60f * density;
+        long labelInterval = calculateDynamicLabelInterval(minLabelGapPx);
         
-        // Draw minor ticks (finest detail)
-        rulerTickPaint.setStrokeWidth(1f * density);
-        for (long t = 0; t <= totalEffectiveMs; t += minorInterval) {
-            if (t % 1000 == 0) continue;  // Skip seconds (drawn as medium ticks)
-            float x = timeToX(t);
-            canvas.drawLine(x, rulerHeightPx - rulerTickHeightPx * 0.3f, x, rulerHeightPx, rulerTickPaint);
+        // Calculate tick hierarchy intervals to avoid conflicts
+        long minorInterval;
+        long mediumInterval;
+        
+        if (labelInterval >= 5000) {
+            // Three-tier system for large intervals (5s+)
+            minorInterval = 200;       // 0.2s detail ticks
+            mediumInterval = 1000;     // 1s medium ticks
+        } else if (labelInterval >= 1000) {
+            // Two-tier system for medium intervals (1-5s)
+            minorInterval = 200;       // 0.2s detail ticks
+            mediumInterval = labelInterval; // No medium tier, same as label
+        } else {
+            // Single-tier for sub-second intervals (<1s)
+            minorInterval = labelInterval; // No minor ticks, same as label
+            mediumInterval = labelInterval; // No medium ticks, same as label
         }
         
-        // Draw medium ticks (1s) with slightly taller marks
-        rulerTickPaint.setStrokeWidth(1.5f * density);
-        for (long t = 0; t <= totalEffectiveMs; t += 1000) {
-            if (t % majorInterval == 0) continue;  // Skip major ticks (drawn separately)
-            float x = timeToX(t);
-            canvas.drawLine(x, rulerHeightPx - rulerTickHeightPx * 0.6f, x, rulerHeightPx, rulerTickPaint);
+        // Draw minor ticks (finest detail) - skip if too dense
+        if (dpPerSecondPx > 25f * density) {  // Only show when zoomed in enough
+            rulerTickPaint.setStrokeWidth(1f * density);
+            for (long t = 0; t <= totalEffectiveMs; t += minorInterval) {
+                if (t % mediumInterval == 0) continue;  // Skip medium/major ticks
+                float x = timeToX(t);
+                canvas.drawLine(x, rulerHeightPx - rulerTickHeightPx * 0.3f, x, rulerHeightPx, rulerTickPaint);
+            }
         }
         
-        // Draw major ticks (5s, 10s, etc.) with labels
+        // Draw medium ticks (1s or sub-intervals)
+        if (labelInterval > mediumInterval) {
+            rulerTickPaint.setStrokeWidth(1.5f * density);
+            for (long t = 0; t <= totalEffectiveMs; t += mediumInterval) {
+                if (t % labelInterval == 0) continue;  // Skip labeled ticks
+                float x = timeToX(t);
+                canvas.drawLine(x, rulerHeightPx - rulerTickHeightPx * 0.6f, x, rulerHeightPx, rulerTickPaint);
+            }
+        }
+        
+        // Draw major ticks with labels (dynamic interval)
         rulerTickPaint.setStrokeWidth(2f * density);
-        for (long t = 0; t <= totalEffectiveMs; t += majorInterval) {
+        for (long t = 0; t <= totalEffectiveMs; t += labelInterval) {
             float x = timeToX(t);
             String text = fmtTime(t);
             float halfText = rulerTextPaint.measureText(text) / 2f;
             
-            // Tall tick for major intervals
+            // Tall tick for labeled intervals
             canvas.drawLine(x, rulerHeightPx - rulerTickHeightPx, x, rulerHeightPx, rulerTickPaint);
             
-            // Label for major intervals
+            // Label
             canvas.drawText(text, x - halfText, rulerHeightPx - rulerTickHeightPx - 2f * density, rulerTextPaint);
         }
+    }
+    
+    /** Calculate label interval dynamically based on zoom level to prevent overlap */
+    private long calculateDynamicLabelInterval(float minLabelGapPx) {
+        // Available intervals in ascending order
+        long[] intervals = {100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000};
+        
+        // Find smallest interval that gives enough pixel spacing
+        for (long interval : intervals) {
+            float pixelGap = (interval / 1000f) * dpPerSecondPx;
+            if (pixelGap >= minLabelGapPx) {
+                return interval;
+            }
+        }
+        
+        return 60000;  // Fallback to 60s for very zoomed out views
     }
 
     /** Maps absolute timeline time (ms) to x coordinate in timeline space (NOT screen space). */
@@ -493,9 +534,30 @@ public class EditorTimelineView extends View {
     }
 
     private String fmtTime(long ms) {
+        // Special case: show "0s" instead of "0.0s"
+        if (ms == 0) {
+            return "0s";
+        }
+        
+        // Show decimal seconds for sub-second precision (0.1s, 0.2s, etc.)
+        if (ms < 1000) {
+            return String.format(Locale.US, "0.%ds", ms / 100);
+        }
+        
         long sec = ms / 1000;
         long m = sec / 60;
         long s = sec % 60;
+        
+        // Show sub-second precision if not on whole second boundary
+        if (ms % 1000 > 0) {
+            long decimal = (ms % 1000) / 100;
+            if (m > 0) {
+                return String.format(Locale.US, "%d:%02d.%d", m, s, decimal);
+            } else {
+                return String.format(Locale.US, "%d.%ds", s, decimal);
+            }
+        }
+        
         return m > 0 ? String.format(Locale.US, "%d:%02d", m, s)
                       : String.format(Locale.US, "%ds", s);
     }
@@ -643,6 +705,26 @@ private void drawGhost(Canvas canvas) {
     // ══════════════════════════════════════════════════════════════════
     //  TOUCH HANDLING
     // ══════════════════════════════════════════════════════════════════
+
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+        
+        // Handle fling animation
+        if (flingScroller.computeScrollOffset()) {
+            float newScrollOffset = flingScroller.getCurrX();
+            
+            // Calculate playhead position from scroll offset
+            float centerX = getWidth() / 2f;
+            float playheadX = centerX + newScrollOffset;
+            
+            // Update playhead position (will trigger seek and centerPlayhead)
+            updatePlayheadFromX(playheadX);
+            
+            // Continue animation
+            postInvalidateOnAnimation();
+        }
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
@@ -945,6 +1027,10 @@ private void drawGhost(Canvas canvas) {
         @Override
         public boolean onDown(MotionEvent e) {
             Log.d(TAG, "GestureListener.onDown");
+            // Cancel any ongoing fling
+            if (!flingScroller.isFinished()) {
+                flingScroller.abortAnimation();
+            }
             return false; // Let custom onDown handle it
         }
         
@@ -967,6 +1053,28 @@ private void drawGhost(Canvas canvas) {
             updatePlayheadFromX(newPlayheadX);
             
             getParent().requestDisallowInterceptTouchEvent(true);
+            return true;
+        }
+        
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            Log.d(TAG, "GestureListener.onFling: velocityX=" + velocityX);
+            // Only fling if not dragging handles or reordering
+            if (activeDrag != Drag.NONE) {
+                return false;
+            }
+            
+            // Start fling animation (negative velocity because scrolling moves playhead position)
+            int startX = (int) scrollOffsetPx;
+            flingScroller.fling(
+                startX, 0,               // startX, startY
+                (int) -velocityX, 0,     // velocityX (invert), velocityY
+                Integer.MIN_VALUE,       // minX (unlimited)
+                Integer.MAX_VALUE,       // maxX (unlimited)
+                0, 0                     // minY, maxY (no vertical scroll)
+            );
+            
+            postInvalidateOnAnimation();
             return true;
         }
     }
