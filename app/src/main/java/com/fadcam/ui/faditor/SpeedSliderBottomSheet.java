@@ -209,20 +209,18 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
             chipRow.addView(chip);
         }
 
-        // ── Reset button (matches flip picker style) ─────────────────
+        // ── Reset button (consistent row style) ─────────────────────
         LinearLayout resetRow = new LinearLayout(requireContext());
         resetHolder[0] = resetRow;
         resetRow.setOrientation(LinearLayout.HORIZONTAL);
         resetRow.setGravity(Gravity.CENTER_VERTICAL);
         resetRow.setBackgroundResource(R.drawable.settings_home_row_bg);
-        int resetHPad = (int) (20 * dp);
-        int resetVPad = (int) (14 * dp);
-        resetRow.setPadding(resetHPad, resetVPad, resetHPad, resetVPad);
+        resetRow.setPadding((int) (16 * dp), (int) (14 * dp),
+                (int) (16 * dp), (int) (14 * dp));
         LinearLayout.LayoutParams resetLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        resetLp.setMargins((int) (12 * dp), (int) (8 * dp),
-                (int) (12 * dp), (int) (2 * dp));
+        resetLp.topMargin = (int) (12 * dp);
         resetRow.setLayoutParams(resetLp);
 
         TextView resetIcon = new TextView(requireContext());

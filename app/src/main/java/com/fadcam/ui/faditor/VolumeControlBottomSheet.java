@@ -276,21 +276,19 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
         // Tap volume icon to toggle mute
         volumeIcon.setOnClickListener(v -> muteRow.performClick());
 
-        // ── Reset row (matches flip picker style) ────────────────────
+        // ── Reset row (matches mute row style) ──────────────────────
         boolean needsReset = currentMuted || Math.abs(currentVolume - 1.0f) > 0.01f;
         LinearLayout resetRow = new LinearLayout(requireContext());
         resetRowRef[0] = resetRow;
         resetRow.setOrientation(LinearLayout.HORIZONTAL);
         resetRow.setGravity(Gravity.CENTER_VERTICAL);
         resetRow.setBackgroundResource(R.drawable.settings_home_row_bg);
-        int resetHPad = (int) (20 * dp);
-        int resetVPad = (int) (14 * dp);
-        resetRow.setPadding(resetHPad, resetVPad, resetHPad, resetVPad);
+        resetRow.setPadding((int) (16 * dp), (int) (14 * dp),
+                (int) (16 * dp), (int) (14 * dp));
         LinearLayout.LayoutParams resetRowLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        resetRowLp.setMargins((int) (12 * dp), (int) (8 * dp),
-                (int) (12 * dp), (int) (2 * dp));
+        resetRowLp.topMargin = (int) (8 * dp);
         resetRow.setLayoutParams(resetRowLp);
 
         TextView resetIcon = new TextView(requireContext());
