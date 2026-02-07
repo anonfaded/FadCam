@@ -79,6 +79,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             app:show_buffering="when_playing"
+            app:surface_type="texture_view"
             app:resize_mode="fit"
             app:use_controller="false" />
 
