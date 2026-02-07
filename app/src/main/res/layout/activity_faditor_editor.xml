@@ -159,25 +159,25 @@
                 android:fontFamily="monospace" />
         </LinearLayout>
 
-        <!-- Segment overview (visible when multiple segments exist) -->
-        <com.fadcam.ui.faditor.timeline.SegmentTimelineView
-            android:id="@+id/segment_timeline_view"
+        <!-- Unified NLE-style timeline (horizontally scrollable) -->
+        <HorizontalScrollView
+            android:id="@+id/timeline_scroll"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
             android:layout_marginTop="4dp"
-            android:visibility="gone" />
+            android:layout_marginBottom="8dp"
+            android:overScrollMode="always"
+            android:fadingEdge="none">
 
-        <!-- Timeline with trim handles -->
-        <com.fadcam.ui.faditor.timeline.TimelineView
-            android:id="@+id/timeline_view"
-            android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="8dp" />
+            <com.fadcam.ui.faditor.timeline.EditorTimelineView
+                android:id="@+id/editor_timeline_view"
+                android:layout_width="wrap_content"
+                android:layout_height="84dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+        </HorizontalScrollView>
+
 
         <!-- Bottom toolbar (scrollable) -->
         <HorizontalScrollView
@@ -187,18 +187,14 @@
             android:background="#FF141414"
             android:fillViewport="true">
 
-        <LinearLayout
-            android:id="@+id/editor_bottom_toolbar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingTop="4dp"
-            android:paddingBottom="12dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingEnd="8dp">
 
-            <!-- Trim tool (active by default) -->
+
+            <!-- Trim tool -->
             <LinearLayout
                 android:id="@+id/tool_trim"
                 android:layout_width="72dp"
@@ -215,7 +211,7 @@
                     android:gravity="center"
                     android:fontFamily="@font/materialicons"
                     android:text="content_cut"
-                    android:textColor="#4CAF50"
+                    android:textColor="#888888"
                     android:textSize="22sp" />
 
                 <TextView
@@ -223,7 +219,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_trim"
-                    android:textColor="#4CAF50"
+                    android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>

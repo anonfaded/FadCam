@@ -29,8 +29,7 @@ import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.FaditorProject;
 import com.fadcam.ui.faditor.player.FaditorPlayerManager;
 import com.fadcam.ui.faditor.project.ProjectStorage;
-import com.fadcam.ui.faditor.timeline.TimelineView;
-import com.fadcam.ui.faditor.timeline.SegmentTimelineView;
+import com.fadcam.ui.faditor.timeline.EditorTimelineView;
 import com.fadcam.ui.faditor.model.Timeline;
 import com.fadcam.ui.faditor.util.TimeFormatter;
 
@@ -59,8 +58,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Views ────────────────────────────────────────────────────────
     private PlayerView playerView;
     private View playerContainer;
-    private TimelineView timelineView;
-    private SegmentTimelineView segmentTimelineView;
+    private EditorTimelineView editorTimeline;
     private TextView btnPlayPause;
     private TextView timeCurrent;
     private TextView timeTotal;
@@ -159,7 +157,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Clip clip = getSelectedClip();
 
         // Sync timeline view to the selected segment's trim
-        timelineView.setTrimFromClip(clip);
+        editorTimeline.setTrimFromClip(clip);
 
         // Sync toolbar tools to the selected segment's settings
         updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
@@ -175,7 +173,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         updatePreviewTransforms();
 
         // Reset playhead
-        timelineView.setPlayheadFraction(
+        editorTimeline.setPlayheadFraction(
                 (float) clip.getInPointMs() / clip.getSourceDurationMs());
 
         long trimmedDuration = clip.getOutPointMs() - clip.getInPointMs();
@@ -187,8 +185,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs());
     
         // Update segment overview
-        segmentTimelineView.setTimeline(project.getTimeline(), selectedClipIndex);
-        segmentTimelineView.updateVisibility();
+        editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
+        ;
     }
     // ── Lifecycle ────────────────────────────────────────────────────
 
@@ -268,9 +266,69 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerView = findViewById(R.id.player_view);
         playerContainer = findViewById(R.id.player_container);
         cropOverlay = findViewById(R.id.crop_overlay);
-        timelineView = findViewById(R.id.timeline_view);
-        segmentTimelineView = findViewById(R.id.segment_timeline_view);
-        segmentTimelineView.setOnSegmentSelectedListener(index -> selectSegment(index));
+        editorTimeline = findViewById(R.id.editor_timeline_view);
+        editorTimeline.setOnSegmentActionListener(new EditorTimelineView.OnSegmentActionListener() {
+            @Override
+            public void onSegmentSelected(int index) {
+                selectSegment(index);
+            }
+
+            @Override
+            public void onTrimChanged(int segmentIndex, float startFraction, float endFraction, boolean isLeft) {
+                userDragging = true;
+                Clip clip = getSelectedClip();
+                if (clip == null) return;
+                long duration = clip.getSourceDurationMs();
+                clip.setInPointMs((long)(startFraction * duration));
+                clip.setOutPointMs((long)(endFraction * duration));
+                editorTimeline.setTrimFromClip(clip);
+                // Update time labels during drag
+                long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
+                timeCurrent.setText(TimeFormatter.formatAuto(0));
+                timeTotal.setText(TimeFormatter.formatAuto(trimDuration));
+            }
+
+            @Override
+            public void onTrimFinished(int segmentIndex, float startFraction, float endFraction) {
+                userDragging = false;
+                Clip clip = getSelectedClip();
+                if (clip == null) return;
+                long duration = clip.getSourceDurationMs();
+                clip.setInPointMs((long)(startFraction * duration));
+                clip.setOutPointMs((long)(endFraction * duration));
+                editorTimeline.setTrimFromClip(clip);
+                playerManager.updateTrimBounds(clip);
+                long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
+                timeCurrent.setText(TimeFormatter.formatAuto(0));
+                timeTotal.setText(TimeFormatter.formatAuto(trimDuration));
+                saveProjectNow();
+            }
+
+            @Override
+            public void onPlayheadSeeked(float fractionInSegment) {
+                userDragging = true;
+                Clip clip = getSelectedClip();
+                if (clip == null) return;
+                long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
+                long seekPosition = (long)(fractionInSegment * trimDuration);
+                playerManager.seekTo(seekPosition);
+                // Update time display during drag
+                timeCurrent.setText(TimeFormatter.formatAuto(seekPosition));
+            }
+
+            @Override
+            public void onPlayheadDragFinished() {
+                userDragging = false;
+            }
+
+            @Override
+            public void onSegmentReordered(int fromIndex, int toIndex) {
+                Timeline tl = project.getTimeline();
+                tl.moveClip(fromIndex, toIndex);
+                selectSegment(toIndex);
+                saveProjectNow();
+            }
+        });
         btnPlayPause = findViewById(R.id.btn_play_pause);
         timeCurrent = findViewById(R.id.time_current);
         timeTotal = findViewById(R.id.time_total);
@@ -476,125 +534,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void initTimeline() {
         Clip clip = getSelectedClip();
-        timelineView.setTrimFromClip(clip);
+        editorTimeline.setTrimFromClip(clip);
+        editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
 
         Log.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
                 + "ms, in=" + clip.getInPointMs() + ", out=" + clip.getOutPointMs());
-
-        // Listen for trim handle changes
-        timelineView.setTrimChangeListener(new TimelineView.TrimChangeListener() {
-            @Override
-            public void onTrimChanged(float startFraction, float endFraction, boolean isLeftHandle) {
-                // On first drag event: remember play state and pause
-                if (!userDragging) {
-                    wasPlayingBeforeDrag = playerManager.isPlaying();
-                    if (wasPlayingBeforeDrag) playerManager.pause();
-                    userDragging = true;
-                }
-
-                // Update clip trim points while dragging (live feedback)
-                Clip c = getSelectedClip();
-                long duration = c.getSourceDurationMs();
-                c.setInPointMs((long) (startFraction * duration));
-                c.setOutPointMs((long) (endFraction * duration));
-
-                // Seek to the handle being dragged — live frame preview
-                long seekAbsoluteMs = isLeftHandle ? c.getInPointMs() : c.getOutPointMs();
-                playerManager.seekToAbsolute(seekAbsoluteMs);
-
-                // Move playhead to handle position
-                float handleFraction = isLeftHandle ? startFraction : endFraction;
-                lastUserPlayheadFraction = handleFraction;
-                timelineView.setPlayheadFraction(handleFraction);
-
-                // Update time display to show trimmed region duration
-                long trimmedDuration = c.getOutPointMs() - c.getInPointMs();
-                timeTotal.setText(TimeFormatter.formatAuto(trimmedDuration));
-
-                // Show relative position at the handle
-                long relativePos = isLeftHandle ? 0 : trimmedDuration;
-                timeCurrent.setText(TimeFormatter.formatAuto(relativePos));
-
-                Log.v(TAG, "Trim dragging (" + (isLeftHandle ? "left" : "right") + "): in="
-                        + c.getInPointMs() + " out=" + c.getOutPointMs()
-                        + " seekTo=" + seekAbsoluteMs + " trimDur=" + trimmedDuration);
-            }
-
-            @Override
-            public void onTrimFinished(float startFraction, float endFraction) {
-                // Update player clip bounds when handle released
-                Clip c = getSelectedClip();
-
-                Log.d(TAG, "Trim finished: in=" + c.getInPointMs()
-                        + " out=" + c.getOutPointMs()
-                        + " trimDur=" + (c.getOutPointMs() - c.getInPointMs()));
-
-                // Reset playhead to start of trimmed region
-                lastUserPlayheadFraction = startFraction;
-                timelineView.setPlayheadFraction(startFraction);
-                timeCurrent.setText(TimeFormatter.formatAuto(0));
-
-                // Update player trim bounds (no re-prepare)
-                playerManager.updateTrimBounds(c);
-                project.touch();
-                scheduleAutoSave();
-
-                // Clear drag state after short delay
-                playheadHandler.postDelayed(() -> userDragging = false, 200);
-            }
-        });
-
-        // Listen for playhead seeks on timeline
-        // Only update time display during drag; seek player on release.
-        timelineView.setPlayheadChangeListener(new TimelineView.PlayheadChangeListener() {
-            @Override
-            public void onPlayheadSeeked(float fraction) {
-                // On first drag event: remember play state and pause
-                if (!userDragging) {
-                    wasPlayingBeforeDrag = playerManager.isPlaying();
-                    if (wasPlayingBeforeDrag) playerManager.pause();
-                    userDragging = true;
-                }
-
-                Clip c = getSelectedClip();
-                long sourceDuration = c.getSourceDurationMs();
-                if (sourceDuration <= 0) return;
-
-                // fraction is in terms of full source duration
-                long absoluteMs = (long) (fraction * sourceDuration);
-                // Clamp to within trim bounds
-                absoluteMs = Math.max(c.getInPointMs(), Math.min(absoluteMs, c.getOutPointMs()));
-
-                // Track user's intended position
-                lastUserPlayheadFraction = fraction;
-
-                // Live seek the player — shows the frame at this position
-                playerManager.seekToAbsolute(absoluteMs);
-
-                // Update time display
-                long seekPos = absoluteMs - c.getInPointMs();
-                timeCurrent.setText(TimeFormatter.formatAuto(seekPos));
-
-                Log.v(TAG, "Playhead scrub: fraction=" + fraction
-                        + " absoluteMs=" + absoluteMs
-                        + " seekPos=" + seekPos);
-            }
-
-            @Override
-            public void onPlayheadDragFinished() {
-                Log.d(TAG, "Playhead released at fraction=" + lastUserPlayheadFraction
-                        + " wasPlaying=" + wasPlayingBeforeDrag);
-
-                // Resume playback if it was playing before the drag
-                if (wasPlayingBeforeDrag) {
-                    playerManager.play();
-                    wasPlayingBeforeDrag = false;
-                }
-
-                // Clear drag state after short delay
-                playheadHandler.postDelayed(() -> userDragging = false, 200);
-            }
-        });
     }
 
     private void initToolbar() {
@@ -1056,8 +1000,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             // Refresh UI with corrected duration
             timeTotal.setText(TimeFormatter.formatAuto(playerDurationMs));
             timeCurrent.setText(TimeFormatter.formatAuto(0));
-            timelineView.setTrimFromClip(clip);
-            timelineView.setPlayheadFraction(0f);
+            editorTimeline.setTrimFromClip(clip);
+            editorTimeline.setPlayheadFraction(0f);
 
             // Update player trim bounds (no re-prepare needed)
             playerManager.updateTrimBounds(clip);
@@ -1083,16 +1027,48 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // ── While PLAYING: read player position and drive the playhead ──
         if (playerManager.isPlaying()) {
-            // Enforce trim end — pause if playback reached out-point
+            // Enforce trim end — auto-advance to next segment or pause
             if (playerManager.isAtTrimEnd()) {
-                playerManager.pause();
-                long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
-                float endFraction = (float) clip.getOutPointMs() / sourceDuration;
-                lastUserPlayheadFraction = endFraction;
-                timelineView.setPlayheadFraction(endFraction);
-                timeCurrent.setText(TimeFormatter.formatAuto(trimmedDur));
-                updatePlayPauseButton(false);
-                Log.d(TAG, "Playback stopped at trim end");
+                Timeline timeline = project.getTimeline();
+                int nextIndex = selectedClipIndex + 1;
+                if (nextIndex < timeline.getClipCount()) {
+                    // Auto-advance to next segment
+                    Log.d(TAG, "Auto-advancing to segment " + nextIndex);
+                    selectedClipIndex = nextIndex;
+                    Clip nextClip = getSelectedClip();
+                    editorTimeline.setTimeline(timeline, selectedClipIndex);
+                    editorTimeline.setTrimFromClip(nextClip);
+
+                    // Sync toolbar to new segment
+                    updateVolumeUI(nextClip.getVolumeLevel(), nextClip.isAudioMuted());
+                    updateSpeedUI(nextClip.getSpeedMultiplier());
+                    updateRotateUI(nextClip.getRotationDegrees());
+                    updateFlipUI(nextClip.isFlipHorizontal(), nextClip.isFlipVertical());
+                    updateCropUI(nextClip.getCropPreset());
+
+                    // Load and play the next segment
+                    playerManager.loadClip(nextClip);
+                    playerManager.setVolume(nextClip.isAudioMuted() ? 0f : nextClip.getVolumeLevel());
+                    playerManager.setPlaybackSpeed(nextClip.getSpeedMultiplier());
+                    updatePreviewTransforms();
+                    playerManager.play();
+
+                    float startFraction = (float) nextClip.getInPointMs() / nextClip.getSourceDurationMs();
+                    editorTimeline.setPlayheadFraction(startFraction);
+                    timeCurrent.setText(TimeFormatter.formatAuto(0));
+                    long trimmedDur = nextClip.getOutPointMs() - nextClip.getInPointMs();
+                    timeTotal.setText(TimeFormatter.formatAuto(trimmedDur));
+                } else {
+                    // Last segment reached its end — pause
+                    playerManager.pause();
+                    long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
+                    float endFraction = (float) clip.getOutPointMs() / sourceDuration;
+                    lastUserPlayheadFraction = endFraction;
+                    editorTimeline.setPlayheadFraction(endFraction);
+                    timeCurrent.setText(TimeFormatter.formatAuto(trimmedDur));
+                    updatePlayPauseButton(false);
+                    Log.d(TAG, "Playback stopped at last segment end");
+                }
                 return;
             }
 
@@ -1102,13 +1078,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
             fraction = Math.max(0f, Math.min(fraction, 1f));
 
             lastUserPlayheadFraction = fraction;
-            timelineView.setPlayheadFraction(fraction);
+            editorTimeline.setPlayheadFraction(fraction);
             timeCurrent.setText(TimeFormatter.formatAuto(position));
         }
         // ── While PAUSED: do NOT overwrite the user's playhead position ──
-        // The playhead stays wherever the user last placed it or where
-        // playback stopped. This prevents snapping back because the player
-        // may not have actually seeked (content:// / fMP4 limitation).
     }
 
     // ── Export helpers ────────────────────────────────────────────────
@@ -1251,11 +1224,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         return "saf:" + uri.toString();
     }
 
-    // ── Segment Operations ──────────────────────────────────────────────────
 
-    /**
-     * Split the selected segment at the current playhead position.
-     */
     // ── Segment Operations ──────────────────────────────────────────────────
 
     /**

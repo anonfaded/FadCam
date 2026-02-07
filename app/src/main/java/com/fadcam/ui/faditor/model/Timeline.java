@@ -87,6 +87,21 @@ public class Timeline {
     }
 
     /**
+     * Move a clip from one position to another (insert at new position).
+     * This removes the clip from the old position and inserts it at the new position.
+     *
+     * @param fromIndex current index of the clip
+     * @param toIndex   target index for the clip
+     */
+    public void moveClip(int fromIndex, int toIndex) {
+        if (fromIndex < 0 || fromIndex >= clips.size()
+                || toIndex < 0 || toIndex >= clips.size()
+                || fromIndex == toIndex) return;
+        Clip clip = clips.remove(fromIndex);
+        clips.add(toIndex, clip);
+    }
+
+    /**
      * Split a clip at the given absolute position into two new clips.
      *
      * <p>The original clip is replaced by two clips:
