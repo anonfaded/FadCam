@@ -37,7 +37,7 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
     private float currentSpeed = 1.0f;
 
     /** Common preset speeds. */
-    private static final float[] PRESETS = {0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 3.0f, 4.0f};
+    private static final float[] PRESETS = {0.25f, 0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 10.0f};
 
     /**
      * Create a new instance with the current speed.
@@ -139,10 +139,10 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
 
         // Material Slider (use step-free for smooth control, 0.25 to 4.0)
         Slider slider = new Slider(requireContext());
-        slider.setValueFrom(25f);  // 0.25x * 100
-        slider.setValueTo(400f);   // 4.0x * 100
+        slider.setValueFrom(25f);   // 0.25x * 100
+        slider.setValueTo(1000f);  // 10.0x * 100
         slider.setStepSize(5f);    // 0.05x increments
-        slider.setValue(Math.max(25f, Math.min(currentSpeed * 100f, 400f)));
+        slider.setValue(Math.max(25f, Math.min(currentSpeed * 100f, 1000f)));
 
         int trackColor = Math.abs(currentSpeed - 1f) < 0.01f ? 0xFF888888 : 0xFF4CAF50;
         slider.setTrackActiveTintList(
@@ -171,6 +171,7 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
 
         // List of preset TextViews so we can update their selection state
         java.util.List<TextView> chipViews = new java.util.ArrayList<>();
+        final LinearLayout[] resetHolder = new LinearLayout[1];
 
         for (float presetSpeed : PRESETS) {
             TextView chip = new TextView(requireContext());
@@ -199,6 +200,9 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
                 updateSpeedDisplay(speedDisplay, presetSpeed);
                 updateSliderColor(slider, presetSpeed);
                 updateChipSelection(chipViews, presetSpeed);
+                if (resetHolder[0] != null) {
+                    resetHolder[0].setVisibility(Math.abs(presetSpeed - 1f) < 0.01f ? View.GONE : View.VISIBLE);
+                }
                 if (callback != null) callback.onSpeedChanged(presetSpeed);
             });
 
@@ -207,6 +211,7 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
 
         // ── Reset button ─────────────────────────────────────────────
         LinearLayout resetRow = new LinearLayout(requireContext());
+        resetHolder[0] = resetRow;
         resetRow.setOrientation(LinearLayout.HORIZONTAL);
         resetRow.setGravity(Gravity.CENTER_VERTICAL);
         resetRow.setBackgroundResource(R.drawable.settings_home_row_bg);

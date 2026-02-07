@@ -127,8 +127,14 @@ public class CropOverlayView extends View {
      * this overlay. Must be called whenever the player layout changes.
      */
     public void setVideoContentRect(@NonNull RectF rect) {
-        videoRect.set(rect);
-        // Reset crop to full video area
+        // Inset by handle radius so corner handles are never clipped by the view edge
+        videoRect.set(
+                rect.left + HANDLE_RADIUS_PX,
+                rect.top + HANDLE_RADIUS_PX,
+                rect.right - HANDLE_RADIUS_PX,
+                rect.bottom - HANDLE_RADIUS_PX
+        );
+        // Reset crop to full (inset) video area
         cropRect.set(videoRect);
         invalidate();
     }

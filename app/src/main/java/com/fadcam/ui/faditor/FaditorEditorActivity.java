@@ -632,7 +632,34 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showSpeedSlider() {
         Clip clip = project.getTimeline().getClip(0);
+        SpeedSliderBottomSheet sheet = SpeedSliderBottomSheet.newInstance(clip.getSpeedMultiplier());
+        sheet.setCallback(speed -> {
+            clip.setSpeedMultiplier(speed);
+            playerManager.setPlaybackSpeed(speed);
+            updateSpeedUI(speed);
+            scheduleAutoSave();
+        });
+        sheet.show(getSupportFragmentManager(), "speed_slider");
+    }
 
+    private void updateSpeedUI(float speed) {
+        if (toolSpeedLabel != null) {
+            toolSpeedLabel.setText(formatSpeed(speed));
+            int color = Math.abs(speed - 1f) < 0.001f ? 0xFF888888 : 0xFF4CAF50;
+            toolSpeedLabel.setTextColor(color);
+            TextView icon = findViewById(R.id.tool_speed_icon);
+            if (icon != null) icon.setTextColor(color);
+        }
+    }
+
+    private String formatSpeed(float speed) {
+        if (speed == (int) speed) return (int) speed + "x";
+        return String.format(java.util.Locale.US, "%.2gx", speed);
+    }
+
+    // ── Rotate ───────────────────────────────────────────────────────
+
+    private void rotateNext() {
         Clip clip = project.getTimeline().getClip(0);
         int newDeg = (clip.getRotationDegrees() + 90) % 360;
         clip.setRotationDegrees(newDeg);

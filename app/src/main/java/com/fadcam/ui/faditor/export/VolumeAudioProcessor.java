@@ -1,7 +1,6 @@
 package com.fadcam.ui.faditor.export;
 
 import androidx.media3.common.C;
-import androidx.media3.common.C;
 import androidx.media3.common.audio.BaseAudioProcessor;
 import androidx.media3.common.audio.AudioProcessor;
 
@@ -35,12 +34,10 @@ public class VolumeAudioProcessor extends BaseAudioProcessor {
 
     @Override
     protected AudioFormat onConfigure(AudioFormat inputAudioFormat)
-            throws UnhandledAudioFormatExC
-        // Only support 16-bit PCM (the most common format)
+            throws UnhandledAudioFormatException {
         if (inputAudioFormat.encoding != C.ENCODING_PCM_16BIT) {
             throw new UnhandledAudioFormatException(inputAudioFormat);
         }
-        // Pass through format unchanged; we only modify amplitude
         return inputAudioFormat;
     }
 
@@ -57,7 +54,6 @@ public class VolumeAudioProcessor extends BaseAudioProcessor {
 
         while (inShort.hasRemaining()) {
             int sample = inShort.get();
-            // Scale and clamp to 16-bit range
             int scaled = Math.round(sample * volume);
             scaled = Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, scaled));
             outShort.put((short) scaled);
