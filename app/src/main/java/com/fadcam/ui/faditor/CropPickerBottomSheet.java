@@ -31,12 +31,6 @@ public class CropPickerBottomSheet extends BottomSheetDialogFragment {
     private static final String[][] CROP_OPTIONS = {
         {"none",    "Original",        "crop_free"},
         {"custom",  "Free Crop",       "crop"},
-        {"1:1",     "Square (1:1)",    "crop_square"},
-        {"16:9",    "Landscape 16:9",  "crop_16_9"},
-        {"9:16",    "Portrait 9:16",   "crop_portrait"},
-        {"4:3",     "Classic 4:3",     "crop"},
-        {"3:4",     "Portrait 3:4",    "crop_portrait"},
-        {"21:9",    "Cinematic 21:9",  "movie"},
     };
 
     @Nullable

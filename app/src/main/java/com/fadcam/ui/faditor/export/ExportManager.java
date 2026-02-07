@@ -128,6 +128,7 @@ public class ExportManager {
             boolean isSimpleTrim = project.getTimeline().getClipCount() == 1
                     && project.getTimeline().getClip(0).getSpeedMultiplier() == 1.0f
                     && !project.getTimeline().getClip(0).isAudioMuted()
+                    && Math.abs(project.getTimeline().getClip(0).getVolumeLevel() - 1.0f) < 0.01f
                     && project.getTimeline().getClip(0).getRotationDegrees() == 0
                     && !project.getTimeline().getClip(0).isFlipHorizontal()
                     && !project.getTimeline().getClip(0).isFlipVertical()
@@ -258,14 +259,23 @@ public class ExportManager {
             List<AudioProcessor> audioProcessors = new ArrayList<>();
             List<Effect> videoEffects = new ArrayList<>();
 
-            // Speed change
+            // Speed change and/or volume adjustment
             float speed = clip.getSpeedMultiplier();
+            float volume = clip.getVolumeLevel();
             if (speed != 1.0f) {
                 videoEffects.add(new SpeedChangeEffect(speed));
-                if (!clip.isAudioMuted()) {
+            }
+            // Apply audio processors (speed + volume) when audio is present
+            if (!clip.isAudioMuted()) {
+                if (speed != 1.0f) {
                     SonicAudioProcessor sonicProcessor = new SonicAudioProcessor();
                     sonicProcessor.setSpeed(speed);
                     audioProcessors.add(sonicProcessor);
+                }
+                if (Math.abs(volume - 1.0f) >= 0.01f) {
+                    VolumeAudioProcessor volumeProcessor = new VolumeAudioProcessor();
+                    volumeProcessor.setVolume(volume);
+                    audioProcessors.add(volumeProcessor);
                 }
             }
 

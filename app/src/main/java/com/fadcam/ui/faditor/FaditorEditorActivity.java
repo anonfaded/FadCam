@@ -392,6 +392,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // Sync initial volume and speed from clip state
+        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+
+        // Sync initial volume and speed from clip state
+        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
     }
 
     private void initTimeline() {
@@ -531,11 +539,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
         });
 
-        // Mute toggle
-        toolMute.setOnClickListener(v -> toggleMute());
+        // Volume control (replaces simple mute toggle)
+        toolMute.setOnClickListener(v -> showVolumeControl());
 
-        // Speed picker
-        toolSpeed.setOnClickListener(v -> showSpeedPicker());
+        // Speed slider
+        toolSpeed.setOnClickListener(v -> showSpeedSlider());
 
         // Rotate (cycles 0 -> 90 -> 180 -> 270 -> 0)
         toolRotate.setOnClickListener(v -> rotateNext());
@@ -548,7 +556,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = project.getTimeline().getClip(0);
-        updateMuteUI(clip.isAudioMuted());
+        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
         updateSpeedUI(clip.getSpeedMultiplier());
         updateRotateUI(clip.getRotationDegrees());
         updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
@@ -563,28 +571,58 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
     }
 
-    // ── Mute ─────────────────────────────────────────────────────────
+    // ── Volume ────────────────────────────────────────────────────────
 
-    private void toggleMute() {
+    private void showVolumeControl() {
         Clip clip = project.getTimeline().getClip(0);
-        boolean newMuted = !clip.isAudioMuted();
-        clip.setAudioMuted(newMuted);
-        updateMuteUI(newMuted);
 
-        // Update preview volume instantly
-        playerManager.setVolume(newMuted ? 0f : 1f);
-        scheduleAutoSave();
+        VolumeControlBottomSheet sheet = VolumeControlBottomSheet.newInstance(
+                clip.getVolumeLevel(), clip.isAudioMuted());
+        sheet.setCallback((volume, muted) -> {
+            clip.setVolumeLevel(volume);
+            clip.setAudioMuted(muted);
+            updateVolumeUI(volume, muted);
+            playerManager.setVolume(muted ? 0f : volume);
+            scheduleAutoSave();
+        });
+        sheet.show(getSupportFragmentManager(), "volumeControl");
     }
 
-    private void updateMuteUI(boolean muted) {
+    private void updateVolumeUI(float volume, boolean muted) {
         if (toolMuteIcon != null) {
-            toolMuteIcon.setText(muted ? "volume_off" : "volume_up");
-            int color = muted ? 0xFFF44336 : 0xFF888888;
+            String icon;
+            if (muted) {
+                icon = "volume_off";
+            } else if (volume < 0.01f) {
+                icon = "volume_mute";
+            } else if (volume <= 0.5f) {
+                icon = "volume_down";
+            } else {
+                icon = "volume_up";
+            }
+            toolMuteIcon.setText(icon);
+
+            int color;
+            if (muted) {
+                color = 0xFFF44336; // red
+            } else if (volume > 1.01f) {
+                color = 0xFFF44336; // red for overdrive
+            } else if (Math.abs(volume - 1f) < 0.01f) {
+                color = 0xFF888888; // default gray
+            } else {
+                color = 0xFF4CAF50; // green for modified
+            }
             toolMuteIcon.setTextColor(color);
+
             if (toolMuteLabel != null) {
-                toolMuteLabel.setText(muted
-                        ? R.string.faditor_tool_muted
-                        : R.string.faditor_tool_sound);
+                if (muted) {
+                    toolMuteLabel.setText(R.string.faditor_tool_muted);
+                } else {
+                    int pct = Math.round(volume * 100f);
+                    toolMuteLabel.setText(pct == 100
+                            ? getString(R.string.faditor_tool_volume)
+                            : pct + "%");
+                }
                 toolMuteLabel.setTextColor(color);
             }
         }
@@ -592,39 +630,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Speed ────────────────────────────────────────────────────────
 
-    private void showSpeedPicker() {
+    private void showSpeedSlider() {
         Clip clip = project.getTimeline().getClip(0);
 
-        SpeedPickerBottomSheet sheet = SpeedPickerBottomSheet.newInstance(clip.getSpeedMultiplier());
-        sheet.setCallback(speed -> {
-            clip.setSpeedMultiplier(speed);
-            updateSpeedUI(speed);
-            playerManager.setPlaybackSpeed(speed);
-            scheduleAutoSave();
-        });
-        sheet.show(getSupportFragmentManager(), "speedPicker");
-    }
-
-    private void updateSpeedUI(float speed) {
-        if (toolSpeedLabel != null) {
-            toolSpeedLabel.setText(formatSpeed(speed));
-            int color = Math.abs(speed - 1f) < 0.001f ? 0xFF888888 : 0xFF4CAF50;
-            toolSpeedLabel.setTextColor(color);
-            TextView icon = findViewById(R.id.tool_speed_icon);
-            if (icon != null) icon.setTextColor(color);
-        }
-    }
-
-    private String formatSpeed(float speed) {
-        if (speed == (int) speed) {
-            return (int) speed + "x";
-        }
-        return String.format(java.util.Locale.US, "%.2gx", speed);
-    }
-
-    // ── Rotate ───────────────────────────────────────────────────────
-
-    private void rotateNext() {
         Clip clip = project.getTimeline().getClip(0);
         int newDeg = (clip.getRotationDegrees() + 90) % 360;
         clip.setRotationDegrees(newDeg);

@@ -260,6 +260,7 @@ public class ProjectStorage {
                 clipJson.addProperty("sourceDurationMs", clip.getSourceDurationMs());
                 clipJson.addProperty("speedMultiplier", clip.getSpeedMultiplier());
                 clipJson.addProperty("audioMuted", clip.isAudioMuted());
+                clipJson.addProperty("volumeLevel", clip.getVolumeLevel());
                 clipJson.addProperty("rotationDegrees", clip.getRotationDegrees());
                 clipJson.addProperty("flipHorizontal", clip.isFlipHorizontal());
                 clipJson.addProperty("flipVertical", clip.isFlipVertical());
@@ -313,6 +314,8 @@ public class ProjectStorage {
                                 ? clipObj.get("speedMultiplier").getAsFloat() : 1.0f;
                         boolean audioMuted = clipObj.has("audioMuted")
                                 && clipObj.get("audioMuted").getAsBoolean();
+                        float volumeLevel = clipObj.has("volumeLevel")
+                                ? clipObj.get("volumeLevel").getAsFloat() : 1.0f;
                         int rotationDeg = clipObj.has("rotationDegrees")
                                 ? clipObj.get("rotationDegrees").getAsInt() : 0;
                         boolean flipH = clipObj.has("flipHorizontal")
@@ -331,7 +334,8 @@ public class ProjectStorage {
                                 ? clipObj.get("cropBottom").getAsFloat() : 1f;
 
                         Clip clip = new Clip(clipId, sourceUri,
-                                inPointMs, outPointMs, sourceDurationMs, speed, audioMuted,
+                                inPointMs, outPointMs, sourceDurationMs,
+                                speed, audioMuted, volumeLevel,
                                 rotationDeg, flipH, flipV, crop,
                                 cropL, cropT, cropR, cropB);
                         project.getTimeline().addClip(clip);

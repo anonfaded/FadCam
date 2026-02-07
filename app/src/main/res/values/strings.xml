@@ -748,6 +748,12 @@
     <string name="faditor_tool_muted">Muted</string>
     <string name="faditor_tool_sound">Sound</string>
     <string name="faditor_speed_title">Playback Speed</string>
+    <string name="faditor_speed_reset">Reset to 1x</string>
+    <string name="faditor_volume_title">Volume</string>
+    <string name="faditor_volume_warning">Above 100%% may degrade audio quality</string>
+    <string name="faditor_volume_mute">Mute Audio</string>
+    <string name="faditor_volume_unmute">Unmute Audio</string>
+    <string name="faditor_tool_volume">Volume</string>
     <string name="faditor_tool_rotate">Rotate</string>
     <string name="faditor_tool_flip">Flip</string>
     <string name="faditor_tool_crop">Crop</string>

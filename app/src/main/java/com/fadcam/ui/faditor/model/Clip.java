@@ -39,6 +39,9 @@ public class Clip {
     /** Whether audio is muted for this clip. */
     private boolean audioMuted = false;
 
+    /** Volume level (0.0 = silence, 1.0 = original, 2.0 = 200%). */
+    private float volumeLevel = 1.0f;
+
     /** Rotation in degrees: 0, 90, 180, 270. */
     private int rotationDegrees = 0;
 
@@ -83,7 +86,7 @@ public class Clip {
      */
     public Clip(@NonNull String id, @NonNull Uri sourceUri,
          long inPointMs, long outPointMs, long sourceDurationMs,
-         float speedMultiplier, boolean audioMuted,
+         float speedMultiplier, boolean audioMuted, float volumeLevel,
          int rotationDegrees, boolean flipHorizontal, boolean flipVertical,
          @NonNull String cropPreset,
          float cropLeft, float cropTop, float cropRight, float cropBottom) {
@@ -94,6 +97,7 @@ public class Clip {
         this.sourceDurationMs = sourceDurationMs;
         this.speedMultiplier = speedMultiplier;
         this.audioMuted = audioMuted;
+        this.volumeLevel = volumeLevel;
         this.rotationDegrees = rotationDegrees;
         this.flipHorizontal = flipHorizontal;
         this.flipVertical = flipVertical;
@@ -134,6 +138,10 @@ public class Clip {
 
     public boolean isAudioMuted() {
         return audioMuted;
+    }
+
+    public float getVolumeLevel() {
+        return volumeLevel;
     }
 
     public int getRotationDegrees() {
@@ -232,6 +240,10 @@ public class Clip {
 
     public void setAudioMuted(boolean muted) {
         this.audioMuted = muted;
+    }
+
+    public void setVolumeLevel(float level) {
+        this.volumeLevel = Math.max(0f, Math.min(level, 2.0f));
     }
 
     /**
