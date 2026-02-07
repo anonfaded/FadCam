@@ -287,9 +287,16 @@ public class ExportManager {
                 videoEffects.add(transformBuilder.build());
             }
 
-            // Crop preset
+            // Crop preset or custom crop
             String cropPreset = clip.getCropPreset();
-            if (!"none".equals(cropPreset)) {
+            if ("custom".equals(cropPreset)) {
+                // Convert normalised bounds (0-1) to NDC (-1 to 1)
+                float left  = clip.getCropLeft()  * 2f - 1f;
+                float right = clip.getCropRight() * 2f - 1f;
+                float top   = 1f - clip.getCropTop()    * 2f;
+                float bottom = 1f - clip.getCropBottom() * 2f;
+                videoEffects.add(new Crop(left, right, bottom, top));
+            } else if (!"none".equals(cropPreset)) {
                 float[] cropRect = getCropRect(cropPreset);
                 if (cropRect != null) {
                     videoEffects.add(new Crop(

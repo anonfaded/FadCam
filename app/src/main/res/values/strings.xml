@@ -751,6 +751,7 @@
     <string name="faditor_tool_rotate">Rotate</string>
     <string name="faditor_tool_flip">Flip</string>
     <string name="faditor_tool_crop">Crop</string>
+    <string name="faditor_tool_crop_free">Free</string>
     <string name="faditor_crop_title">Crop Aspect Ratio</string>
     <string name="faditor_flip_title">Flip</string>
     <string name="faditor_home_tagline">Lightweight video editor</string>

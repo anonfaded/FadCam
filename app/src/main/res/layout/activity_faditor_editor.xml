@@ -81,6 +81,13 @@
             app:show_buffering="when_playing"
             app:resize_mode="fit"
             app:use_controller="false" />
+
+        <!-- Crop overlay (on top of player, hidden by default) -->
+        <com.fadcam.ui.faditor.crop.CropOverlayView
+            android:id="@+id/crop_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
     </FrameLayout>
 
     <!-- ─── Controls section (bottom portion) ────────────────────── -->

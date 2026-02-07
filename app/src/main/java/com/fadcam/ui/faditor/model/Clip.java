@@ -50,10 +50,19 @@ public class Clip {
 
     /**
      * Crop aspect ratio preset key.
-     * Values: "none", "16:9", "9:16", "4:3", "3:4", "1:1", "21:9"
+     * Values: "none", "16:9", "9:16", "4:3", "3:4", "1:1", "21:9", "custom"
      */
     @NonNull
     private String cropPreset = "none";
+
+    /**
+     * Custom crop bounds (normalised 0.0 – 1.0).
+     * Only used when {@link #cropPreset} is "custom".
+     */
+    private float cropLeft = 0f;
+    private float cropTop = 0f;
+    private float cropRight = 1f;
+    private float cropBottom = 1f;
 
     /**
      * Create a new Clip from a video URI.
@@ -76,7 +85,8 @@ public class Clip {
          long inPointMs, long outPointMs, long sourceDurationMs,
          float speedMultiplier, boolean audioMuted,
          int rotationDegrees, boolean flipHorizontal, boolean flipVertical,
-         @NonNull String cropPreset) {
+         @NonNull String cropPreset,
+         float cropLeft, float cropTop, float cropRight, float cropBottom) {
         this.id = id;
         this.sourceUri = sourceUri;
         this.inPointMs = inPointMs;
@@ -88,6 +98,10 @@ public class Clip {
         this.flipHorizontal = flipHorizontal;
         this.flipVertical = flipVertical;
         this.cropPreset = cropPreset;
+        this.cropLeft = cropLeft;
+        this.cropTop = cropTop;
+        this.cropRight = cropRight;
+        this.cropBottom = cropBottom;
     }
 
     // ── Getters ──────────────────────────────────────────────────────
@@ -139,6 +153,11 @@ public class Clip {
         return cropPreset;
     }
 
+    public float getCropLeft() { return cropLeft; }
+    public float getCropTop() { return cropTop; }
+    public float getCropRight() { return cropRight; }
+    public float getCropBottom() { return cropBottom; }
+
     /**
      * Trimmed duration in milliseconds (respects speed multiplier).
      */
@@ -171,10 +190,22 @@ public class Clip {
     /**
      * Set the crop preset.
      *
-     * @param preset one of "none", "16:9", "9:16", "4:3", "3:4", "1:1", "21:9"
+     * @param preset one of "none", "16:9", "9:16", "4:3", "3:4", "1:1", "21:9", "custom"
      */
     public void setCropPreset(@NonNull String preset) {
         this.cropPreset = preset;
+    }
+
+    /**
+     * Set custom crop bounds (normalised 0.0 – 1.0).
+     * Automatically sets cropPreset to "custom".
+     */
+    public void setCustomCropBounds(float left, float top, float right, float bottom) {
+        this.cropPreset = "custom";
+        this.cropLeft = Math.max(0f, Math.min(left, 1f));
+        this.cropTop = Math.max(0f, Math.min(top, 1f));
+        this.cropRight = Math.max(0f, Math.min(right, 1f));
+        this.cropBottom = Math.max(0f, Math.min(bottom, 1f));
     }
 
     /**
@@ -226,4 +257,4 @@ public class Clip {
                 + ", flipV=" + flipVertical
                 + ", crop=" + cropPreset
                 + "}";
-    }
+    }}

@@ -264,6 +264,10 @@ public class ProjectStorage {
                 clipJson.addProperty("flipHorizontal", clip.isFlipHorizontal());
                 clipJson.addProperty("flipVertical", clip.isFlipVertical());
                 clipJson.addProperty("cropPreset", clip.getCropPreset());
+                clipJson.addProperty("cropLeft", clip.getCropLeft());
+                clipJson.addProperty("cropTop", clip.getCropTop());
+                clipJson.addProperty("cropRight", clip.getCropRight());
+                clipJson.addProperty("cropBottom", clip.getCropBottom());
                 clipsArray.add(clipJson);
             }
             timelineJson.add("clips", clipsArray);
@@ -317,10 +321,19 @@ public class ProjectStorage {
                                 && clipObj.get("flipVertical").getAsBoolean();
                         String crop = clipObj.has("cropPreset")
                                 ? clipObj.get("cropPreset").getAsString() : "none";
+                        float cropL = clipObj.has("cropLeft")
+                                ? clipObj.get("cropLeft").getAsFloat() : 0f;
+                        float cropT = clipObj.has("cropTop")
+                                ? clipObj.get("cropTop").getAsFloat() : 0f;
+                        float cropR = clipObj.has("cropRight")
+                                ? clipObj.get("cropRight").getAsFloat() : 1f;
+                        float cropB = clipObj.has("cropBottom")
+                                ? clipObj.get("cropBottom").getAsFloat() : 1f;
 
                         Clip clip = new Clip(clipId, sourceUri,
                                 inPointMs, outPointMs, sourceDurationMs, speed, audioMuted,
-                                rotationDeg, flipH, flipV, crop);
+                                rotationDeg, flipH, flipV, crop,
+                                cropL, cropT, cropR, cropB);
                         project.getTimeline().addClip(clip);
                     }
                 }
