@@ -1,15 +1,20 @@
 package com.fadcam.ui.faditor.timeline;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -17,11 +22,14 @@ import androidx.annotation.Nullable;
 
 import com.fadcam.ui.faditor.model.Clip;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Custom timeline view with draggable trim handles and playhead indicator.
+ * Advanced timeline view with fixed center playhead and scrollable content.
  *
- * <p>Renders a waveform-style bar with left/right trim handles (rounded pill shape),
- * an active (selected) region, dimmed excluded regions, and a playhead line.</p>
+ * <p>Features: fixed white center line, pinch-to-zoom, video frame thumbnails,
+ * scrollable timeline, click-to-select clips.</p>
  */
 public class TimelineView extends View {
 
@@ -33,10 +41,16 @@ public class TimelineView extends View {
     private static final float MIN_HANDLE_GAP_DP = 20f;
     private static final float TRACK_CORNER_DP = 10f;
     private static final float TRACK_PADDING_V_DP = 10f;
-    private static final float PLAYHEAD_WIDTH_DP = 2.5f;
-    private static final float PLAYHEAD_CIRCLE_DP = 5f;
+    private static final float PLAYHEAD_WIDTH_DP = 3f;
+    private static final float PLAYHEAD_CIRCLE_DP = 6f;
     private static final float HANDLE_NOTCH_WIDTH_DP = 2f;
     private static final float HANDLE_NOTCH_HEIGHT_DP = 14f;
+    private static final float RULER_HEIGHT_DP = 24f;
+    
+    // Zoom/scroll
+    private static final float MIN_ZOOM = 1f;
+    private static final float MAX_ZOOM = 10f;
+    private static final float DEFAULT_PIXELS_PER_MS = 0.1f;
 
     // ── Paint objects ────────────────────────────────────────────────
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -48,6 +62,9 @@ public class TimelineView extends View {
     private final Paint playheadPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint playheadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint rulerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint rulerTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint thumbnailPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // ── Computed pixel values ────────────────────────────────────────
     private float handleWidthPx;
@@ -59,18 +76,40 @@ public class TimelineView extends View {
     private float playheadCirclePx;
     private float handleNotchWidthPx;
     private float handleNotchHeightPx;
+    private float rulerHeightPx;
 
     // Track bounds
     private float trackTop;
     private float trackBottom;
+    private float rulerTop;
 
     // ── State ────────────────────────────────────────────────────────
     private float trimStartFraction = 0f;
     private float trimEndFraction = 1f;
-    private float playheadFraction = 0f;
+    private long playheadPositionMs = 0; // Playhead position in milliseconds
+    private long videoDurationMs = 0; // Total video duration
+    
+    // Scroll and zoom
+    private float scrollOffsetPx = 0f; // Horizontal scroll offset
+    private float zoomLevel = 1f; // Zoom level (1x to 10x)
+    private float pixelsPerMs = DEFAULT_PIXELS_PER_MS; // Pixels per millisecond at current zoom
+    
+    // Thumbnails
+    private List<Bitmap> thumbnails = new ArrayList<>();
+    private long thumbnailIntervalMs = 1000; // 1 thumbnail per second
+    private boolean thumbnailsLoaded = false;
+    
+    // Clip reference
+    private Clip currentClip;
 
-    private enum DragTarget { NONE, LEFT, RIGHT, PLAYHEAD }
+    private enum DragTarget { NONE, LEFT, RIGHT, TIMELINE }
     private DragTarget activeDrag = DragTarget.NONE;
+    private float lastTouchX = 0f;
+    
+    // Gesture detectors
+    private ScaleGestureDetector scaleDetector;
+    private GestureDetector gestureDetector;
+    private boolean isSelected = false;
 
     @Nullable private TrimChangeListener trimListener;
     @Nullable private PlayheadChangeListener playheadListener;
@@ -89,10 +128,17 @@ public class TimelineView extends View {
     }
 
     public interface PlayheadChangeListener {
-        void onPlayheadSeeked(float fraction);
-        /** Called when the user lifts their finger after dragging the playhead. */
+        void onPlayheadSeeked(long positionMs);
+        /** Called when the user lifts their finger after dragging the timeline. */
         void onPlayheadDragFinished();
     }
+    
+    public interface ClipSelectionListener {
+        void onClipSelected();
+        void onClipDeselected();
+    }
+    
+    @Nullable private ClipSelectionListener selectionListener;
 
     // ── Constructors ─────────────────────────────────────────────────
 
@@ -115,6 +161,7 @@ public class TimelineView extends View {
         playheadCirclePx = PLAYHEAD_CIRCLE_DP * d;
         handleNotchWidthPx = HANDLE_NOTCH_WIDTH_DP * d;
         handleNotchHeightPx = HANDLE_NOTCH_HEIGHT_DP * d;
+        rulerHeightPx = RULER_HEIGHT_DP * d;
 
         // Track background (subtle dark texture)
         trackPaint.setColor(0xFF1E1E1E);
@@ -142,44 +189,166 @@ public class TimelineView extends View {
         // Playhead line — white
         playheadPaint.setColor(0xFFFFFFFF);
         playheadPaint.setStyle(Paint.Style.FILL);
+        playheadPaint.setStrokeWidth(playheadWidthPx);
 
         // Playhead circle — white with slight shadow
         playheadCirclePaint.setColor(0xFFFFFFFF);
         playheadCirclePaint.setStyle(Paint.Style.FILL);
         playheadCirclePaint.setShadowLayer(3f * d, 0, 1f * d, 0x40000000);
-        setLayerType(LAYER_TYPE_SOFTWARE, null); // needed for shadow
 
         // Dimmed excluded regions
         dimPaint.setColor(0xAA000000);
         dimPaint.setStyle(Paint.Style.FILL);
+        
+        // Ruler
+        rulerPaint.setColor(0xFF888888);
+        rulerPaint.setStyle(Paint.Style.STROKE);
+        rulerPaint.setStrokeWidth(1f * d);
+        
+        rulerTextPaint.setColor(0xFFAAAAAA);
+        rulerTextPaint.setTextSize(10f * d);
+        rulerTextPaint.setTextAlign(Paint.Align.CENTER);
+        
+        setLayerType(LAYER_TYPE_SOFTWARE, null); // needed for shadow
+        
+        // Initialize gesture detectors
+        scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
+        gestureDetector = new GestureDetector(getContext(), new GestureListener());
     }
 
     // ── Public setters ───────────────────────────────────────────────
 
     public void setTrimChangeListener(@Nullable TrimChangeListener l) { this.trimListener = l; }
     public void setPlayheadChangeListener(@Nullable PlayheadChangeListener l) { this.playheadListener = l; }
+    public void setSelectionListener(@Nullable ClipSelectionListener l) { this.selectionListener = l; }
 
     public void setTrimFromClip(@NonNull Clip clip) {
-        if (clip.getSourceDurationMs() <= 0) return;
+        this.currentClip = clip;
+        this.videoDurationMs = clip.getSourceDurationMs();
+        if (this.videoDurationMs <= 0) return;
+        
         this.trimStartFraction = (float) clip.getInPointMs() / clip.getSourceDurationMs();
         this.trimEndFraction = (float) clip.getOutPointMs() / clip.getSourceDurationMs();
+        this.playheadPositionMs = clip.getInPointMs();
+        
+        // Calculate initial scroll so video starts at center line
+        updatePixelsPerMs();
+        centerPlayhead();
+        
+        // Load thumbnails in background
+        if (!thumbnailsLoaded) {
+            loadThumbnails(clip);
+        }
+        
         invalidate();
     }
 
-    public void setPlayheadFraction(float fraction) {
-        this.playheadFraction = Math.max(0f, Math.min(fraction, 1f));
+    public void setPlayheadPosition(long positionMs) {
+        this.playheadPositionMs = Math.max(0, Math.min(positionMs, videoDurationMs));
+        
+        // Auto-scroll to keep playhead centered
+        if (!isUserInteracting()) {
+            centerPlayhead();
+        }
+        
         invalidate();
+    }
+
+    public void setSelected(boolean selected) {
+        if (this.isSelected != selected) {
+            this.isSelected = selected;
+            if (selected && selectionListener != null) {
+                selectionListener.onClipSelected();
+            } else if (!selected && selectionListener != null) {
+                selectionListener.onClipDeselected();
+            }
+            invalidate();
+        }
+    }
+    
+    public boolean isSelected() {
+        return isSelected;
+    }
+    
+    private boolean isUserInteracting() {
+        return activeDrag != DragTarget.NONE;
+    }
+    
+    private void centerPlayhead() {
+        float centerX = getWidth() / 2f;
+        float playheadX = playheadPositionMs * pixelsPerMs;
+        scrollOffsetPx = playheadX - centerX;
+        clampScroll();
+    }
+    
+    private void clampScroll() {
+        float totalWidth = videoDurationMs * pixelsPerMs;
+        float viewWidth = getWidth();
+        
+        // Allow scrolling from 0 to (totalWidth - viewWidth)
+        float maxScroll = Math.max(0, totalWidth - viewWidth);
+        scrollOffsetPx = Math.max(0, Math.min(scrollOffsetPx, maxScroll));
+    }
+    
+    private void updatePixelsPerMs() {
+        pixelsPerMs = DEFAULT_PIXELS_PER_MS * zoomLevel;
     }
 
     public float getTrimStartFraction() { return trimStartFraction; }
     public float getTrimEndFraction() { return trimEndFraction; }
+    
+    private void loadThumbnails(@NonNull Clip clip) {
+        // Load thumbnails in background thread
+        new Thread(() -> {
+            try {
+                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                retriever.setDataSource(getContext(), clip.getSourceUri());
+                
+                List<Bitmap> newThumbnails = new ArrayList<>();
+                long duration = clip.getSourceDurationMs();
+                
+                for (long time = 0; time < duration; time += thumbnailIntervalMs) {
+                    Bitmap frame = retriever.getFrameAtTime(
+                        time * 1000, // microseconds
+                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                    );
+                    if (frame != null) {
+                        // Scale down for memory efficiency
+                        int targetHeight = (int)(48 * getResources().getDisplayMetrics().density);
+                        float scale = (float)targetHeight / frame.getHeight();
+                        int targetWidth = (int)(frame.getWidth() * scale);
+                        Bitmap scaled = Bitmap.createScaledBitmap(frame, targetWidth, targetHeight, true);
+                        frame.recycle();
+                        newThumbnails.add(scaled);
+                    }
+                }
+                
+                retriever.release();
+                
+                post(() -> {
+                    thumbnails = newThumbnails;
+                    thumbnailsLoaded = true;
+                    invalidate();
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to load thumbnails", e);
+            }
+        }).start();
+    }
+
+    public void setPlayheadFraction(float fraction) {
+        this.playheadPositionMs = (long)(fraction * videoDurationMs);
+        invalidate();
+    }
 
     // ── Drawing ──────────────────────────────────────────────────────
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        trackTop = getPaddingTop() + trackPaddingVPx;
+        rulerTop = getPaddingTop();
+        trackTop = rulerTop + rulerHeightPx + trackPaddingVPx;
         trackBottom = h - getPaddingBottom() - trackPaddingVPx;
     }
 
@@ -187,73 +356,171 @@ public class TimelineView extends View {
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
-        float w = getWidth();
-        float usableWidth = w - 2 * handleWidthPx;
-        float baseLeft = handleWidthPx;
+        if (videoDurationMs <= 0) return;
+        
+        float viewWidth = getWidth();
+        float centerX = viewWidth / 2f;
         float trackH = trackBottom - trackTop;
-        float borderThickness = 2.5f * getResources().getDisplayMetrics().density;
-
-        // Positions for active region
-        float activeLeft = baseLeft + trimStartFraction * usableWidth;
-        float activeRight = baseLeft + trimEndFraction * usableWidth;
-
-        // 1. Full track background
-        RectF trackRect = new RectF(baseLeft, trackTop, baseLeft + usableWidth, trackBottom);
-        canvas.drawRoundRect(trackRect, trackCornerPx, trackCornerPx, trackPaint);
-
-        // 2. Active region fill
-        RectF activeRect = new RectF(activeLeft, trackTop, activeRight, trackBottom);
-        canvas.drawRect(activeRect, activePaint);
-
-        // 3. Top and bottom green borders on active region
-        RectF topBorder = new RectF(activeLeft, trackTop, activeRight, trackTop + borderThickness);
-        canvas.drawRect(topBorder, activeTopBorderPaint);
-        RectF bottomBorder = new RectF(activeLeft, trackBottom - borderThickness, activeRight, trackBottom);
-        canvas.drawRect(bottomBorder, activeBottomBorderPaint);
-
-        // 4. Dimmed regions outside trim
-        if (trimStartFraction > 0.001f) {
-            RectF leftDim = new RectF(baseLeft, trackTop, activeLeft, trackBottom);
-            canvas.drawRoundRect(leftDim, trackCornerPx, trackCornerPx, dimPaint);
+        
+        // Calculate timeline positions
+        float totalWidth = videoDurationMs * pixelsPerMs;
+        float startX = -scrollOffsetPx;
+        
+        // Calculate trim positions
+        long trimStartMs = (long)(trimStartFraction * videoDurationMs);
+        long trimEndMs = (long)(trimEndFraction * videoDurationMs);
+        float trimStartX = startX + (trimStartMs * pixelsPerMs);
+        float trimEndX = startX + (trimEndMs * pixelsPerMs);
+        
+        // Only draw what's visible
+        canvas.save();
+        canvas.clipRect(0, 0, viewWidth, getHeight());
+        
+        // 1. Draw ruler at top
+        drawRuler(canvas, startX, viewWidth);
+        
+        // 2. Draw video frames/thumbnails
+        drawThumbnails(canvas, startX, trackTop, trackH);
+        
+        // 3. Draw dimmed regions outside trim
+        if (trimStartX > 0) {
+            RectF leftDim = new RectF(Math.max(0, startX), trackTop, 
+                Math.min(viewWidth, trimStartX), trackBottom);
+            canvas.drawRect(leftDim, dimPaint);
         }
-        if (trimEndFraction < 0.999f) {
-            RectF rightDim = new RectF(activeRight, trackTop, baseLeft + usableWidth, trackBottom);
-            canvas.drawRoundRect(rightDim, trackCornerPx, trackCornerPx, dimPaint);
+        if (trimEndX < startX + totalWidth) {
+            RectF rightDim = new RectF(Math.max(0, trimEndX), trackTop, 
+                Math.min(viewWidth, startX + totalWidth), trackBottom);
+            canvas.drawRect(rightDim, dimPaint);
         }
+        
+        // 4. Draw selection border if selected
+        if (isSelected) {
+            float borderThickness = 3f * getResources().getDisplayMetrics().density;
+            RectF topBorder = new RectF(Math.max(0, trimStartX), trackTop, 
+                Math.min(viewWidth, trimEndX), trackTop + borderThickness);
+            canvas.drawRect(topBorder, activeTopBorderPaint);
+            RectF bottomBorder = new RectF(Math.max(0, trimStartX), trackBottom - borderThickness, 
+                Math.min(viewWidth, trimEndX), trackBottom);
+            canvas.drawRect(bottomBorder, activeBottomBorderPaint);
+        }
+        
+        // 5. Draw trim handles if selected
+        if (isSelected) {
+            float handleExtend = 6f * getResources().getDisplayMetrics().density;
+            float handleTop = trackTop - handleExtend;
+            float handleBottom = trackBottom + handleExtend;
 
-        // 5. Trim handles — pill shaped, extends above/below track
-        float handleExtend = 4f * getResources().getDisplayMetrics().density;
-        float handleTop = trackTop - handleExtend;
-        float handleBottom = trackBottom + handleExtend;
+            // Left handle (only if visible)
+            if (trimStartX >= -handleWidthPx && trimStartX <= viewWidth) {
+                RectF leftHandle = new RectF(
+                    trimStartX - handleWidthPx, handleTop,
+                    trimStartX, handleBottom);
+                canvas.drawRoundRect(leftHandle, handleCornerPx, handleCornerPx, handlePaint);
+                drawHandleNotch(canvas, leftHandle);
+            }
 
-        // Left handle
-        RectF leftHandle = new RectF(
-                activeLeft - handleWidthPx, handleTop,
-                activeLeft, handleBottom);
-        canvas.drawRoundRect(leftHandle, handleCornerPx, handleCornerPx, handlePaint);
-        drawHandleNotch(canvas, leftHandle);
-
-        // Right handle
-        RectF rightHandle = new RectF(
-                activeRight, handleTop,
-                activeRight + handleWidthPx, handleBottom);
-        canvas.drawRoundRect(rightHandle, handleCornerPx, handleCornerPx, handlePaint);
-        drawHandleNotch(canvas, rightHandle);
-
-        // 6. Playhead line (only draw within active region)
-        float playheadX = baseLeft + playheadFraction * usableWidth;
-        if (playheadX >= activeLeft && playheadX <= activeRight) {
-            float phTop = trackTop - handleExtend - playheadCirclePx;
-            float phBottom = trackBottom + handleExtend;
-
-            // Line
-            RectF phLine = new RectF(
-                    playheadX - playheadWidthPx / 2, phTop + playheadCirclePx,
-                    playheadX + playheadWidthPx / 2, phBottom);
-            canvas.drawRoundRect(phLine, playheadWidthPx / 2, playheadWidthPx / 2, playheadPaint);
-
-            // Circle at top
-            canvas.drawCircle(playheadX, phTop + playheadCirclePx, playheadCirclePx, playheadCirclePaint);
+            // Right handle (only if visible)
+            if (trimEndX >= 0 && trimEndX <= viewWidth + handleWidthPx) {
+                RectF rightHandle = new RectF(
+                    trimEndX, handleTop,
+                    trimEndX + handleWidthPx, handleBottom);
+                canvas.drawRoundRect(rightHandle, handleCornerPx, handleCornerPx, handlePaint);
+                drawHandleNotch(canvas, rightHandle);
+            }
+        }
+        
+        // 6. Draw fixed center playhead line (ALWAYS visible)
+        float playheadTop = rulerTop + rulerHeightPx;
+        float playheadBottom = trackBottom;
+        
+        // White line
+        canvas.drawRect(centerX - playheadWidthPx / 2, playheadTop, 
+            centerX + playheadWidthPx / 2, playheadBottom, playheadPaint);
+        
+        // Circle at top
+        canvas.drawCircle(centerX, playheadTop + playheadCirclePx, 
+            playheadCirclePx, playheadCirclePaint);
+        
+        // Triangle at bottom
+        Path triangle = new Path();
+        float triangleSize = playheadCirclePx;
+        triangle.moveTo(centerX, playheadBottom);
+        triangle.lineTo(centerX - triangleSize, playheadBottom - triangleSize * 1.5f);
+        triangle.lineTo(centerX + triangleSize, playheadBottom - triangleSize * 1.5f);
+        triangle.close();
+        canvas.drawPath(triangle, playheadCirclePaint);
+        
+        canvas.restore();
+    }
+    
+    private void drawRuler(Canvas canvas, float startX, float viewWidth) {
+        // Draw time ruler at top
+        long startMs = (long)Math.max(0, scrollOffsetPx / pixelsPerMs);
+        long endMs = (long)Math.min(videoDurationMs, (scrollOffsetPx + viewWidth) / pixelsPerMs);
+        
+        // Determine tick interval based on zoom level
+        long tickIntervalMs = 1000; // 1 second default
+        if (zoomLevel < 2) tickIntervalMs = 5000; // 5 seconds
+        else if (zoomLevel > 5) tickIntervalMs = 100; // 100ms
+        
+        long firstTick = (startMs / tickIntervalMs) * tickIntervalMs;
+        
+        for (long time = firstTick; time <= endMs; time += tickIntervalMs) {
+            float x = startX + (time * pixelsPerMs);
+            if (x < 0 || x > viewWidth) continue;
+            
+            // Draw tick mark
+            float tickHeight = (time % (tickIntervalMs * 5) == 0) ? 12f : 6f;
+            tickHeight *= getResources().getDisplayMetrics().density;
+            canvas.drawLine(x, rulerTop + rulerHeightPx - tickHeight, 
+                x, rulerTop + rulerHeightPx, rulerPaint);
+            
+            // Draw time label for major ticks
+            if (time % (tickIntervalMs * 5) == 0) {
+                String label = formatTime(time);
+                canvas.drawText(label, x, rulerTop + rulerHeightPx - tickHeight - 4, rulerTextPaint);
+            }
+        }
+        
+        // Draw ruler baseline
+        canvas.drawLine(0, rulerTop + rulerHeightPx, viewWidth, rulerTop + rulerHeightPx, rulerPaint);
+    }
+    
+    private void drawThumbnails(Canvas canvas, float startX, float top, float height) {
+        if (!thumbnailsLoaded || thumbnails.isEmpty()) {
+            // Draw solid color background
+            RectF track = new RectF(Math.max(0, startX), top, 
+                Math.min(getWidth(), startX + videoDurationMs * pixelsPerMs), top + height);
+            canvas.drawRoundRect(track, trackCornerPx, trackCornerPx, trackPaint);
+            return;
+        }
+        
+        // Draw thumbnails
+        for (int i = 0; i < thumbnails.size(); i++) {
+            long time = i * thumbnailIntervalMs;
+            float x = startX + (time * pixelsPerMs);
+            
+            Bitmap thumb = thumbnails.get(i);
+            float thumbWidth = thumb.getWidth();
+            
+            // Only draw visible thumbnails
+            if (x + thumbWidth < 0 || x > getWidth()) continue;
+            
+            RectF dest = new RectF(x, top, x + thumbWidth, top + height);
+            canvas.drawBitmap(thumb, null, dest, thumbnailPaint);
+        }
+    }
+    
+    private String formatTime(long ms) {
+        long sec = ms / 1000;
+        long min = sec / 60;
+        sec = sec % 60;
+        
+        if (min > 0) {
+            return String.format("%d:%02d", min, sec);
+        } else {
+            return String.format("%ds", sec);
         }
     }
 
@@ -272,58 +539,78 @@ public class TimelineView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        // Handle pinch-to-zoom
+        boolean scaledEvent = scaleDetector.onTouchEvent(event);
+        
+        // Handle gestures (tap, scroll)
+        boolean gestureEvent = gestureDetector.onTouchEvent(event);
+        
         float x = event.getX();
-        float usableWidth = getWidth() - 2 * handleWidthPx;
-        float baseLeft = handleWidthPx;
-
+        
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                activeDrag = detectTarget(x, usableWidth, baseLeft);
-                if (activeDrag != DragTarget.NONE) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                    Log.d(TAG, "Drag started: " + activeDrag);
+                lastTouchX = x;
+                
+                // Check if touching handles (only if selected)
+                if (isSelected) {
+                    activeDrag = detectHandleTouch(x);
+                    if (activeDrag != DragTarget.NONE) {
+                        getParent().requestDisallowInterceptTouchEvent(true);
+                        return true;
+                    }
+                }
+                
+                // Check if touching the clip to select/deselect
+                float centerX = getWidth() / 2f;
+                float playheadX = -scrollOffsetPx + (playheadPositionMs * pixelsPerMs);
+                if (Math.abs(x - centerX) < 50 * getResources().getDisplayMetrics().density) {
+                    // Tapped near center - toggle selection
+                    setSelected(!isSelected);
                     return true;
                 }
-                // Tap on track → seek playhead (and start draggable seek)
-                activeDrag = DragTarget.PLAYHEAD;
-                getParent().requestDisallowInterceptTouchEvent(true);
-                float fraction = (x - baseLeft) / usableWidth;
-                fraction = Math.max(trimStartFraction, Math.min(fraction, trimEndFraction));
-                playheadFraction = fraction;
-                invalidate();
-                if (playheadListener != null) {
-                    playheadListener.onPlayheadSeeked(fraction);
-                }
-                Log.d(TAG, "Playhead seek: " + fraction);
-                return true;
+                
+                return false;
 
             case MotionEvent.ACTION_MOVE:
                 if (activeDrag == DragTarget.LEFT) {
-                    float newStart = (x - baseLeft) / usableWidth;
-                    float maxStart = trimEndFraction - minHandleGapPx / usableWidth;
-                    trimStartFraction = Math.max(0f, Math.min(newStart, maxStart));
+                    // Dragging left trim handle
+                    float deltaX = x - lastTouchX;
+                    long trimStartMs = (long)(trimStartFraction * videoDurationMs);
+                    trimStartMs += (long)(deltaX / pixelsPerMs);
+                    
+                    long minStart = 0;
+                    long maxStart = (long)(trimEndFraction * videoDurationMs) - (long)(minHandleGapPx / pixelsPerMs);
+                    trimStartMs = Math.max(minStart, Math.min(trimStartMs, maxStart));
+                    
+                    trimStartFraction = (float)trimStartMs / videoDurationMs;
+                    lastTouchX = x;
                     invalidate();
+                    
                     if (trimListener != null) {
                         trimListener.onTrimChanged(trimStartFraction, trimEndFraction, true);
                     }
+                    return true;
+                    
                 } else if (activeDrag == DragTarget.RIGHT) {
-                    float newEnd = (x - baseLeft) / usableWidth;
-                    float minEnd = trimStartFraction + minHandleGapPx / usableWidth;
-                    trimEndFraction = Math.max(minEnd, Math.min(newEnd, 1f));
+                    // Dragging right trim handle
+                    float deltaX = x - lastTouchX;
+                    long trimEndMs = (long)(trimEndFraction * videoDurationMs);
+                    trimEndMs += (long)(deltaX / pixelsPerMs);
+                    
+                    long minEnd = (long)(trimStartFraction * videoDurationMs) + (long)(minHandleGapPx / pixelsPerMs);
+                    long maxEnd = videoDurationMs;
+                    trimEndMs = Math.max(minEnd, Math.min(trimEndMs, maxEnd));
+                    
+                    trimEndFraction = (float)trimEndMs / videoDurationMs;
+                    lastTouchX = x;
                     invalidate();
+                    
                     if (trimListener != null) {
                         trimListener.onTrimChanged(trimStartFraction, trimEndFraction, false);
                     }
-                } else if (activeDrag == DragTarget.PLAYHEAD) {
-                    float newFrac = (x - baseLeft) / usableWidth;
-                    newFrac = Math.max(trimStartFraction, Math.min(newFrac, trimEndFraction));
-                    playheadFraction = newFrac;
-                    invalidate();
-                    if (playheadListener != null) {
-                        playheadListener.onPlayheadSeeked(newFrac);
-                    }
+                    return true;
                 }
-                return true;
+                return false;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -333,38 +620,132 @@ public class TimelineView extends View {
                     }
                     Log.d(TAG, "Trim finished: start=" + trimStartFraction
                             + " end=" + trimEndFraction);
-                } else if (activeDrag == DragTarget.PLAYHEAD) {
+                } else if (activeDrag == DragTarget.TIMELINE) {
                     if (playheadListener != null) {
                         playheadListener.onPlayheadDragFinished();
                     }
-                    Log.d(TAG, "Playhead drag finished at: " + playheadFraction);
                 }
                 activeDrag = DragTarget.NONE;
                 getParent().requestDisallowInterceptTouchEvent(false);
                 return true;
         }
 
-        return super.onTouchEvent(event);
+        return scaledEvent || gestureEvent || super.onTouchEvent(event);
     }
 
-    private DragTarget detectTarget(float x, float usableWidth, float baseLeft) {
-        float leftHandleCenter = baseLeft + trimStartFraction * usableWidth;
-        float rightHandleCenter = baseLeft + trimEndFraction * usableWidth;
-        float touchSlop = handleWidthPx * 2f; // generous touch target
+    private DragTarget detectHandleTouch(float x) {
+        if (!isSelected || videoDurationMs <= 0) return DragTarget.NONE;
+        
+        float startX = -scrollOffsetPx;
+        long trimStartMs = (long)(trimStartFraction * videoDurationMs);
+        long trimEndMs = (long)(trimEndFraction * videoDurationMs);
+        float trimStartX = startX + (trimStartMs * pixelsPerMs);
+        float trimEndX = startX + (trimEndMs * pixelsPerMs);
+        
+        float touchSlop = handleWidthPx * 3f; // generous touch target
 
-        if (Math.abs(x - leftHandleCenter) < touchSlop) {
+        if (Math.abs(x - trimStartX) < touchSlop) {
             return DragTarget.LEFT;
         }
-        if (Math.abs(x - rightHandleCenter) < touchSlop) {
+        if (Math.abs(x - trimEndX) < touchSlop) {
             return DragTarget.RIGHT;
         }
         return DragTarget.NONE;
     }
+    
+    // ── Gesture listeners ────────────────────────────────────────────
+    
+    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        private float initialZoom;
+        
+        @Override
+        public boolean onScaleBegin(ScaleGestureDetector detector) {
+            initialZoom = zoomLevel;
+            getParent().requestDisallowInterceptTouchEvent(true);
+            return true;
+        }
+        
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            float scaleFactor = detector.getScaleFactor();
+            zoomLevel = initialZoom * scaleFactor;
+            zoomLevel = Math.max(MIN_ZOOM, Math.min(zoomLevel, MAX_ZOOM));
+            
+            updatePixelsPerMs();
+            
+            // Adjust scroll to keep content under focus point
+            float focusX = detector.getFocusX();
+            float oldContentX = scrollOffsetPx + focusX;
+            float timeAtFocus = oldContentX / (DEFAULT_PIXELS_PER_MS * initialZoom);
+            float newContentX = timeAtFocus * pixelsPerMs;
+            scrollOffsetPx = newContentX - focusX;
+            
+            clampScroll();
+            invalidate();
+            return true;
+        }
+        
+        @Override
+        public void onScaleEnd(ScaleGestureDetector detector) {
+            getParent().requestDisallowInterceptTouchEvent(false);
+        }
+    }
+    
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return true;
+        }
+        
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            // Only scroll if not dragging handles
+            if (activeDrag == DragTarget.NONE) {
+                activeDrag = DragTarget.TIMELINE;
+                scrollOffsetPx += distanceX;
+                clampScroll();
+                
+                // Update playhead position based on center
+                float centerX = getWidth() / 2f;
+                playheadPositionMs = (long)((scrollOffsetPx + centerX) / pixelsPerMs);
+                playheadPositionMs = Math.max(0, Math.min(playheadPositionMs, videoDurationMs));
+                
+                if (playheadListener != null) {
+                    playheadListener.onPlayheadSeeked(playheadPositionMs);
+                }
+                
+                invalidate();
+                getParent().requestDisallowInterceptTouchEvent(true);
+                return true;
+            }
+            return false;
+        }
+        
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            // Toggle selection on tap
+            setSelected(!isSelected);
+            return true;
+        }
+    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int defaultHeight = (int) (72 * getResources().getDisplayMetrics().density);
+        int defaultHeight = (int) ((RULER_HEIGHT_DP + 48 + TRACK_PADDING_V_DP * 2) 
+            * getResources().getDisplayMetrics().density);
         int height = resolveSize(defaultHeight, heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
+    }
+    
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        // Clean up thumbnails
+        for (Bitmap bitmap : thumbnails) {
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+        }
+        thumbnails.clear();
     }
 }
