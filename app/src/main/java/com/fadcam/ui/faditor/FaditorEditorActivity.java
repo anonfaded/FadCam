@@ -30,6 +30,7 @@ import com.fadcam.ui.faditor.model.FaditorProject;
 import com.fadcam.ui.faditor.player.FaditorPlayerManager;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.fadcam.ui.faditor.timeline.TimelineView;
+import com.fadcam.ui.faditor.timeline.SegmentTimelineView;
 import com.fadcam.ui.faditor.model.Timeline;
 import com.fadcam.ui.faditor.util.TimeFormatter;
 
@@ -59,6 +60,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private PlayerView playerView;
     private View playerContainer;
     private TimelineView timelineView;
+    private SegmentTimelineView segmentTimelineView;
     private TextView btnPlayPause;
     private TextView timeCurrent;
     private TextView timeTotal;
@@ -183,8 +185,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Log.d(TAG, "Selected segment " + index + "/" + count
                 + " id=" + clip.getId()
                 + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs());
+    
+        // Update segment overview
+        segmentTimelineView.setTimeline(project.getTimeline(), selectedClipIndex);
+        segmentTimelineView.updateVisibility();
     }
-
     // ── Lifecycle ────────────────────────────────────────────────────
 
     @Override
@@ -264,6 +269,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerContainer = findViewById(R.id.player_container);
         cropOverlay = findViewById(R.id.crop_overlay);
         timelineView = findViewById(R.id.timeline_view);
+        segmentTimelineView = findViewById(R.id.segment_timeline_view);
+        segmentTimelineView.setOnSegmentSelectedListener(index -> selectSegment(index));
         btnPlayPause = findViewById(R.id.btn_play_pause);
         timeCurrent = findViewById(R.id.time_current);
         timeTotal = findViewById(R.id.time_total);

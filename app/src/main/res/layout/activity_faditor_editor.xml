@@ -159,6 +159,16 @@
                 android:fontFamily="monospace" />
         </LinearLayout>
 
+        <!-- Segment overview (visible when multiple segments exist) -->
+        <com.fadcam.ui.faditor.timeline.SegmentTimelineView
+            android:id="@+id/segment_timeline_view"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
         <!-- Timeline with trim handles -->
         <com.fadcam.ui.faditor.timeline.TimelineView
             android:id="@+id/timeline_view"
