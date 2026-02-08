@@ -332,8 +332,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 userDragging = true;
                 Clip clip = getSelectedClip();
                 if (clip == null) return;
+                // fractionInSegment is fraction of FULL source duration,
+                // convert back to source time then compute relative-to-trim-start position
+                long sourceMs = (long)(fractionInSegment * clip.getSourceDurationMs());
                 long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
-                long seekPosition = (long)(fractionInSegment * trimDuration);
+                long seekPosition = Math.max(0, Math.min(sourceMs - clip.getInPointMs(), trimDuration));
                 playerManager.seekTo(seekPosition);
                 // Update time display during drag
                 timeCurrent.setText(TimeFormatter.formatAuto(seekPosition));

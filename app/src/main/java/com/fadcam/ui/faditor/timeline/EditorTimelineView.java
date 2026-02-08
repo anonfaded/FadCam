@@ -15,6 +15,8 @@ import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.OverScroller;
 
@@ -135,7 +137,47 @@ public class EditorTimelineView extends View {
     private float trimDragX;                  // Timeline-space x of handle during trim drag
     private float trimDragStartFrac;          // Start fraction computed during trim drag
     private float trimDragEndFrac;            // End fraction computed during trim drag
+    private float lastTrimFingerScreenX;      // Last finger screen X during trim drag (for edge scroll)
     private static final long LONG_PRESS_MS = 400;
+
+    // ── Edge auto-scroll during trim drag ─────────────────────────────
+    private static final float EDGE_SCROLL_ZONE_DP = 60f;
+    private static final long EDGE_SCROLL_INTERVAL_MS = 16;  // ~60fps
+    private static final float EDGE_SCROLL_MAX_SPEED_DP = 12f; // max dp per tick
+    private float edgeScrollZonePx;
+    private float edgeScrollMaxSpeedPx;
+    private final Handler edgeScrollHandler = new Handler(Looper.getMainLooper());
+    private boolean isEdgeScrolling = false;
+    private final Runnable edgeScrollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (activeDrag != Drag.LEFT_HANDLE && activeDrag != Drag.RIGHT_HANDLE) {
+                isEdgeScrolling = false;
+                return;
+            }
+            float screenX = lastTrimFingerScreenX;
+            int viewWidth = getWidth();
+            float scrollDelta = 0;
+            if (screenX < edgeScrollZonePx) {
+                // Near left edge → scroll left (decrease scrollOffsetPx)
+                float depth = 1f - (screenX / edgeScrollZonePx);
+                scrollDelta = -edgeScrollMaxSpeedPx * depth;
+            } else if (screenX > viewWidth - edgeScrollZonePx) {
+                // Near right edge → scroll right (increase scrollOffsetPx)
+                float depth = 1f - ((viewWidth - screenX) / edgeScrollZonePx);
+                scrollDelta = edgeScrollMaxSpeedPx * depth;
+            } else {
+                isEdgeScrolling = false;
+                return;
+            }
+            scrollOffsetPx += scrollDelta;
+            clampScroll();
+            // Recompute trim with updated scroll (same screen X, new timeline position)
+            float scrolledX = screenX + scrollOffsetPx;
+            doTrimDrag(scrolledX);
+            edgeScrollHandler.postDelayed(this, EDGE_SCROLL_INTERVAL_MS);
+        }
+    };
     
     // Gesture detectors for zoom and scroll
     private ScaleGestureDetector scaleDetector;
@@ -231,6 +273,8 @@ public class EditorTimelineView extends View {
         trimOverlayPaint.setStyle(Paint.Style.FILL);
         trimRecoverPaint.setColor(0x404CAF50);
         trimRecoverPaint.setStyle(Paint.Style.FILL);
+        edgeScrollZonePx = EDGE_SCROLL_ZONE_DP * density;
+        edgeScrollMaxSpeedPx = EDGE_SCROLL_MAX_SPEED_DP * density;
         
         // Initialize gesture detectors
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
@@ -868,7 +912,10 @@ private void drawGhost(Canvas canvas) {
         }
 
         if (activeDrag == Drag.LEFT_HANDLE || activeDrag == Drag.RIGHT_HANDLE) {
+            lastTrimFingerScreenX = x;  // store screen-space X for edge scroll
             doTrimDrag(scrolledX);
+            // Start/stop edge auto-scroll based on finger proximity to screen edges
+            startOrStopEdgeScroll(x);
             return true;
         }
 
@@ -884,6 +931,9 @@ private void drawGhost(Canvas canvas) {
     private boolean onUp(float x, float y, boolean isUp) {
         Drag last = activeDrag;
         float scrolledX = x + scrollOffsetPx;
+
+        // Stop edge auto-scroll
+        stopEdgeScroll();
 
         if (last == Drag.LEFT_HANDLE || last == Drag.RIGHT_HANDLE) {
             if (listener != null) {
@@ -1001,6 +1051,26 @@ private void drawGhost(Canvas canvas) {
         }
     }
     
+    /**
+     * Start or stop edge auto-scrolling based on finger position.
+     * Called on every MOVE event during a trim drag.
+     */
+    private void startOrStopEdgeScroll(float screenX) {
+        int viewWidth = getWidth();
+        boolean nearEdge = screenX < edgeScrollZonePx || screenX > viewWidth - edgeScrollZonePx;
+        if (nearEdge && !isEdgeScrolling) {
+            isEdgeScrolling = true;
+            edgeScrollHandler.post(edgeScrollRunnable);
+        } else if (!nearEdge && isEdgeScrolling) {
+            stopEdgeScroll();
+        }
+    }
+
+    private void stopEdgeScroll() {
+        isEdgeScrolling = false;
+        edgeScrollHandler.removeCallbacks(edgeScrollRunnable);
+    }
+
     private int hitTestSegment(float x, float y) {
         if (y < rulerHeightPx - touchSlopPx / 2 || y > rulerHeightPx + trackHeightPx + touchSlopPx / 2) {
             return -1;
