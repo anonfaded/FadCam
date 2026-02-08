@@ -1,6 +1,7 @@
 package com.fadcam.ui.faditor.model;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,8 +18,13 @@ public class Timeline {
     @NonNull
     private final List<Clip> clips;
 
+    /** Audio clips on the audio track (independent of video segments). */
+    @NonNull
+    private final List<AudioClip> audioClips;
+
     public Timeline() {
         this.clips = new ArrayList<>();
+        this.audioClips = new ArrayList<>();
     }
 
     // ── Clip management ──────────────────────────────────────────────
@@ -66,9 +72,26 @@ public class Timeline {
     }
 
     /**
-     * Total duration of the timeline in milliseconds (sum of all trimmed clip durations).
+     * Total duration of the timeline in milliseconds.
+     * This is the maximum of the video track duration and the furthest audio clip end.
      */
     public long getTotalDurationMs() {
+        long videoTotal = 0;
+        for (Clip clip : clips) {
+            videoTotal += clip.getTrimmedDurationMs();
+        }
+        long audioEnd = 0;
+        for (AudioClip ac : audioClips) {
+            long end = ac.getEndOnTimelineMs();
+            if (end > audioEnd) audioEnd = end;
+        }
+        return Math.max(videoTotal, audioEnd);
+    }
+
+    /**
+     * Total duration of the video track only (sum of all trimmed clip durations).
+     */
+    public long getVideoTrackDurationMs() {
         long total = 0;
         for (Clip clip : clips) {
             total += clip.getTrimmedDurationMs();
@@ -158,6 +181,63 @@ public class Timeline {
     @Override
     public String toString() {
         return "Timeline{clips=" + clips.size()
+                + ", audioClips=" + audioClips.size()
                 + ", totalMs=" + getTotalDurationMs() + "}";
+    }
+
+    // ── Audio clip management ────────────────────────────────────────
+
+    /**
+     * Add an audio clip to the audio track.
+     */
+    public void addAudioClip(@NonNull AudioClip audioClip) {
+        audioClips.add(audioClip);
+    }
+
+    /**
+     * Remove an audio clip from the audio track.
+     */
+    public void removeAudioClip(@NonNull AudioClip audioClip) {
+        audioClips.remove(audioClip);
+    }
+
+    /**
+     * Remove an audio clip by index.
+     */
+    public void removeAudioClip(int index) {
+        if (index >= 0 && index < audioClips.size()) {
+            audioClips.remove(index);
+        }
+    }
+
+    /**
+     * Returns an unmodifiable view of the audio clip list.
+     */
+    @NonNull
+    public List<AudioClip> getAudioClips() {
+        return Collections.unmodifiableList(audioClips);
+    }
+
+    /**
+     * Returns the audio clip at the given index, or null if out of bounds.
+     */
+    @Nullable
+    public AudioClip getAudioClip(int index) {
+        if (index < 0 || index >= audioClips.size()) return null;
+        return audioClips.get(index);
+    }
+
+    /**
+     * Returns the number of audio clips.
+     */
+    public int getAudioClipCount() {
+        return audioClips.size();
+    }
+
+    /**
+     * Whether there are any audio clips.
+     */
+    public boolean hasAudioClips() {
+        return !audioClips.isEmpty();
     }
 }

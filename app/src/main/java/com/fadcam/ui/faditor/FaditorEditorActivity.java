@@ -37,6 +37,7 @@ import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.playback.FragmentedMp4Remuxer;
 import com.fadcam.ui.faditor.export.ExportManager;
+import com.fadcam.ui.faditor.model.AudioClip;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.FaditorProject;
 import com.fadcam.ui.faditor.player.FaditorPlayerManager;
@@ -45,7 +46,19 @@ import com.fadcam.ui.faditor.timeline.EditorTimelineView;
 import com.fadcam.ui.faditor.model.Timeline;
 import com.fadcam.ui.faditor.util.TimeFormatter;
 
+import android.media.MediaCodec;
+import android.media.MediaExtractor;
+import android.media.MediaFormat;
+import android.media.MediaMuxer;
+import android.media.MediaPlayer;
+
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Full-screen video editor Activity for Faditor Mini.
@@ -107,10 +120,27 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View toolCanvas;
     private TextView toolCanvasIcon;
     private TextView toolCanvasLabel;
+    private View toolAudio;
+    private TextView toolAudioIcon;
+    private TextView toolAudioLabel;
 
     // ── Multi-segment state ──────────────────────────────────────────
     /** Index of the currently selected clip/segment in the timeline. */
     private int selectedClipIndex = 0;
+
+    // ── Audio extraction ─────────────────────────────────────────────
+    private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
+
+    /** MediaPlayer for audio clip playback, synced with ExoPlayer. */
+    @Nullable
+    private MediaPlayer audioPlayer;
+    /** Whether the audioPlayer is prepared and ready. */
+    private boolean audioPlayerReady = false;
+
+    // ── Audio-tail mode: playhead continues past video for audio ─────
+    private boolean audioTailActive = false;
+    private long audioTailStartWall = 0;   // SystemClock.elapsedRealtime() when tail started
+    private long audioTailStartMs = 0;     // playheadPositionMs when tail started
 
     // ── Persistence ──────────────────────────────────────────────────
     private ProjectStorage projectStorage;
@@ -158,6 +188,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         public void run() {
             try {
                 updatePlayheadPosition();
+                syncAudioPlayerWithPlayhead();
             } catch (Exception e) {
                 Log.e(TAG, "Error in updatePlayheadPosition", e);
             }
@@ -178,6 +209,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
             selectedClipIndex = 0;
         }
         return project.getTimeline().getClip(selectedClipIndex);
+    }
+
+    /**
+     * Returns the total effective video duration (sum of all video clips' trimmed durations).
+     */
+    private long totalEffectiveMs() {
+        long total = 0;
+        Timeline tl = project.getTimeline();
+        for (int i = 0; i < tl.getClipCount(); i++) {
+            total += tl.getClip(i).getTrimmedDurationMs();
+        }
+        return total;
     }
 
     /**
@@ -331,6 +374,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         super.onDestroy();
         playheadHandler.removeCallbacks(playheadUpdater);
         autoSaveHandler.removeCallbacks(autoSaveRunnable);
+        releaseAudioPlayer();
+        audioExecutor.shutdownNow();
         saveProjectNow();
         if (exportManager != null && exportManager.isExporting()) {
             exportManager.cancel();
@@ -398,6 +443,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onPlayheadSeeked(int segmentIndex, float fractionInSegment) {
                 userDragging = true;
+                audioTailActive = false;  // Cancel audio-tail on seek
                 // Get clip directly — DON'T call selectSegment() during scrubbing.
                 // selectSegment triggers setPlayheadFraction → centerPlayhead which
                 // modifies scrollOffsetPx, causing a feedback loop that makes the
@@ -444,10 +490,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onPlayheadDragFinished() {
                 userDragging = false;
-                // After scrubbing completes, fully sync the UI to the current segment
-                // (safe now since no scroll gesture is active)
+                // Don't auto-select segment here — let the user control selection
+                // via explicit taps. Just sync the toolbar state to the current segment.
                 if (selectedClipIndex >= 0 && selectedClipIndex < project.getTimeline().getClipCount()) {
-                    selectSegment(selectedClipIndex);
+                    Clip clip = getSelectedClip();
+                    updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
+                    updateSpeedUI(clip.getSpeedMultiplier());
                 }
             }
 
@@ -479,6 +527,39 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     toolbar.setVisibility(entering ? View.GONE : View.VISIBLE);
                 }
             }
+
+            @Override
+            public void onAudioClipSelected(int audioIndex) {
+                Log.d(TAG, "Audio clip selected: " + audioIndex);
+                // Deselect video segment when audio clip is selected
+                if (audioIndex >= 0 && selectedClipIndex >= 0) {
+                    // Keep video segment for player but visual deselection
+                    // is handled in EditorTimelineView
+                }
+            }
+
+            @Override
+            public void onAudioTrimChanged(int audioIndex, long inPointMs, long outPointMs, boolean isLeft) {
+                // Real-time visual feedback during audio trim drag
+                Log.d(TAG, "Audio trim changed: index=" + audioIndex
+                        + " in=" + inPointMs + " out=" + outPointMs);
+            }
+
+            @Override
+            public void onAudioTrimFinished(int audioIndex, long inPointMs, long outPointMs) {
+                Log.d(TAG, "Audio trim finished: index=" + audioIndex
+                        + " in=" + inPointMs + " out=" + outPointMs);
+                if (project == null) return;
+                AudioClip ac = project.getTimeline().getAudioClip(audioIndex);
+                if (ac != null) {
+                    ac.setInPointMs(inPointMs);
+                    ac.setOutPointMs(outPointMs);
+                    editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+                    // Re-prepare audio player with new trim
+                    prepareAudioPlayer();
+                    scheduleAutoSave();
+                }
+            }
         });
         btnPlayPause = findViewById(R.id.btn_play_pause);
         timeCurrent = findViewById(R.id.time_current);
@@ -507,6 +588,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolCanvas = findViewById(R.id.tool_canvas);
         toolCanvasIcon = findViewById(R.id.tool_canvas_icon);
         toolCanvasLabel = findViewById(R.id.tool_canvas_label);
+        toolAudio = findViewById(R.id.tool_audio);
+        toolAudioIcon = findViewById(R.id.tool_audio_icon);
+        toolAudioLabel = findViewById(R.id.tool_audio_label);
 
         // Segment tools
         findViewById(R.id.tool_split).setOnClickListener(v -> splitAtPlayhead());
@@ -660,7 +744,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerManager.addListener(new Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
-                updatePlayPauseButton(isPlaying);
+                // Don't override button state during audio-tail (video paused, audio playing)
+                if (!audioTailActive) {
+                    updatePlayPauseButton(isPlaying);
+                }
+                // Sync audio player with ExoPlayer state
+                if (isPlaying) {
+                    syncAndPlayAudioPlayer();
+                } else if (!audioTailActive) {
+                    pauseAudioPlayer();
+                }
             }
 
             @Override
@@ -692,6 +785,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         editorTimeline.setTrimFromClip(clip);
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
 
+        // If audio clips exist (e.g. from a saved project), load them
+        if (project.getTimeline().hasAudioClips()) {
+            editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+            prepareAudioPlayer();
+            updateAudioToolUI();
+        }
+
         Log.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
                 + "ms, in=" + clip.getInPointMs() + ", out=" + clip.getOutPointMs());
     }
@@ -718,10 +818,29 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 }
             } else {
                 // Video clip: use ExoPlayer
-                if (playerManager.isPlaying()) {
+                if (playerManager.isPlaying() || audioTailActive) {
+                    audioTailActive = false;
                     playerManager.pause();
+                    pauseAudioPlayer();
                 } else {
-                    playerManager.play();
+                    long playheadMs = editorTimeline.getPlayheadPositionMs();
+                    long videoEndMs = totalEffectiveMs();
+                    long timelineEndMs = editorTimeline.getTimelineEndMs();
+
+                    if (playheadMs >= videoEndMs && timelineEndMs > videoEndMs) {
+                        // Playhead is in audio-only region past video
+                        // Enter audio-tail mode directly
+                        audioTailActive = true;
+                        audioTailStartWall = android.os.SystemClock.elapsedRealtime();
+                        audioTailStartMs = playheadMs;
+                        btnPlayPause.setText("pause");
+                        syncAndPlayAudioPlayer();
+                        playheadHandler.post(playheadUpdater);
+                        Log.d(TAG, "Play from audio-tail region: playhead=" + playheadMs + " videoEnd=" + videoEndMs);
+                    } else {
+                        playerManager.play();
+                        syncAndPlayAudioPlayer();
+                    }
                 }
             }
         });
@@ -743,6 +862,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // Canvas picker (project-level aspect ratio)
         toolCanvas.setOnClickListener(v -> showCanvasPicker());
+
+        // Audio tool
+        toolAudio.setOnClickListener(v -> showAddAudioPicker());
 
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = getSelectedClip();
@@ -768,6 +890,29 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Volume ────────────────────────────────────────────────────────
 
     private void showVolumeControl() {
+        // Check if an audio clip is selected — control its volume instead
+        int audioIdx = editorTimeline.getSelectedAudioIndex();
+        if (audioIdx >= 0 && project.getTimeline().hasAudioClips()) {
+            AudioClip ac = project.getTimeline().getAudioClip(audioIdx);
+            if (ac != null) {
+                VolumeControlBottomSheet sheet = VolumeControlBottomSheet.newInstance(
+                        ac.getVolumeLevel(), ac.isMuted());
+                sheet.setCallback((volume, muted) -> {
+                    ac.setVolumeLevel(volume);
+                    ac.setMuted(muted);
+                    // Update live audio player volume
+                    if (audioPlayer != null && audioPlayerReady) {
+                        float vol = muted ? 0f : volume;
+                        audioPlayer.setVolume(vol, vol);
+                    }
+                    updateVolumeUI(volume, muted);
+                    scheduleAutoSave();
+                });
+                sheet.show(getSupportFragmentManager(), "volumeControl");
+                return;
+            }
+        }
+
         Clip clip = getSelectedClip();
 
         VolumeControlBottomSheet sheet = VolumeControlBottomSheet.newInstance(
@@ -1182,6 +1327,403 @@ public class FaditorEditorActivity extends AppCompatActivity {
         } catch (Exception e) { return 0; }
     }
 
+    // ── Audio ─────────────────────────────────────────────────────────
+
+    /**
+     * Shows the add-audio bottom sheet with extraction options.
+     */
+    private void showAddAudioPicker() {
+        AddAudioBottomSheet sheet = AddAudioBottomSheet.newInstance();
+        sheet.setCallback(new AddAudioBottomSheet.Callback() {
+            @Override
+            public void onExtractFromCurrentVideo() {
+                extractAudioFromCurrentClip();
+            }
+
+            @Override
+            public void onSelectAudioFile() {
+                // TODO: Phase 2 – open audio file picker
+                Toast.makeText(FaditorEditorActivity.this,
+                        "Coming soon", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onExtractFromOtherVideo() {
+                // TODO: Phase 2 – open video picker → extract audio
+                Toast.makeText(FaditorEditorActivity.this,
+                        "Coming soon", Toast.LENGTH_SHORT).show();
+            }
+        });
+        sheet.show(getSupportFragmentManager(), "add_audio");
+    }
+
+    /**
+     * Extracts the audio track from the currently selected video clip,
+     * saves it to an AAC file, generates a waveform, and adds an AudioClip
+     * to the timeline.
+     */
+    private void extractAudioFromCurrentClip() {
+        Clip clip = getSelectedClip();
+        if (clip == null || clip.isImageClip()) {
+            Toast.makeText(this, R.string.faditor_audio_no_track, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Uri videoUri = clip.getSourceUri();
+        Toast.makeText(this, R.string.faditor_audio_extracting, Toast.LENGTH_SHORT).show();
+
+        audioExecutor.execute(() -> {
+            try {
+                // ── Step 1: Extract raw audio to AAC file ────────────────
+                MediaExtractor extractor = new MediaExtractor();
+                extractor.setDataSource(this, videoUri, null);
+
+                int audioTrackIndex = -1;
+                MediaFormat audioFormat = null;
+                for (int i = 0; i < extractor.getTrackCount(); i++) {
+                    MediaFormat fmt = extractor.getTrackFormat(i);
+                    String mime = fmt.getString(MediaFormat.KEY_MIME);
+                    if (mime != null && mime.startsWith("audio/")) {
+                        audioTrackIndex = i;
+                        audioFormat = fmt;
+                        break;
+                    }
+                }
+
+                if (audioTrackIndex < 0 || audioFormat == null) {
+                    runOnUiThread(() -> Toast.makeText(this,
+                            R.string.faditor_audio_no_track, Toast.LENGTH_SHORT).show());
+                    extractor.release();
+                    return;
+                }
+
+                long durationUs = audioFormat.containsKey(MediaFormat.KEY_DURATION)
+                        ? audioFormat.getLong(MediaFormat.KEY_DURATION) : 0;
+                long durationMs = durationUs / 1000;
+                if (durationMs <= 0) {
+                    // Fallback: use video duration
+                    durationMs = clip.getSourceDurationMs();
+                }
+
+                // Mux audio track into a proper M4A container (MediaPlayer needs headers)
+                extractor.selectTrack(audioTrackIndex);
+                File cacheDir = new File(getCacheDir(), "faditor_audio");
+                if (!cacheDir.exists()) cacheDir.mkdirs();
+                File audioFile = new File(cacheDir,
+                        "audio_" + System.currentTimeMillis() + ".m4a");
+
+                MediaMuxer muxer = new MediaMuxer(audioFile.getAbsolutePath(),
+                        MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+                int muxerTrackIndex = muxer.addTrack(audioFormat);
+                muxer.start();
+
+                ByteBuffer buffer = ByteBuffer.allocate(64 * 1024);
+                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                while (true) {
+                    buffer.clear();
+                    int sampleSize = extractor.readSampleData(buffer, 0);
+                    if (sampleSize < 0) break;
+                    bufferInfo.offset = 0;
+                    bufferInfo.size = sampleSize;
+                    bufferInfo.presentationTimeUs = extractor.getSampleTime();
+                    bufferInfo.flags = extractor.getSampleFlags();
+                    muxer.writeSampleData(muxerTrackIndex, buffer, bufferInfo);
+                    extractor.advance();
+                }
+
+                muxer.stop();
+                muxer.release();
+                extractor.release();
+
+                Uri audioUri = Uri.fromFile(audioFile);
+                final long finalDurationMs = durationMs;
+
+                // ── Step 2: Generate waveform ────────────────────────────
+                int[] waveform = generateWaveform(videoUri, audioTrackIndex, 200);
+
+                // ── Step 3: Create AudioClip and add to timeline ─────────
+                AudioClip audioClip = new AudioClip(audioUri, finalDurationMs);
+                audioClip.setLabel(getString(R.string.faditor_audio_extract_current));
+                audioClip.setWaveform(waveform);
+
+                runOnUiThread(() -> {
+                    project.getTimeline().addAudioClip(audioClip);
+                    editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+
+                    // Mute the source video clip since audio is now on a separate track
+                    Clip srcClip = getSelectedClip();
+                    if (srcClip != null) {
+                        srcClip.setAudioMuted(true);
+                        srcClip.setVolumeLevel(0f);
+                        playerManager.setVolume(0f);
+                        updateVolumeUI(0f, true);
+                    }
+
+                    updateAudioToolUI();
+                    prepareAudioPlayer();
+                    scheduleAutoSave();
+                    Toast.makeText(this, R.string.faditor_audio_extracted,
+                            Toast.LENGTH_SHORT).show();
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "Audio extraction failed", e);
+                runOnUiThread(() -> Toast.makeText(this,
+                        R.string.faditor_audio_extract_failed, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    /**
+     * Decodes audio from the given URI and produces a downsampled amplitude
+     * array for waveform visualisation.
+     *
+     * @param uri              source media URI
+     * @param audioTrackIndex  index of the audio track in the container
+     * @param targetSamples    desired number of waveform bars
+     * @return amplitude array (0–255), or null on failure
+     */
+    @Nullable
+    private int[] generateWaveform(@NonNull Uri uri, int audioTrackIndex, int targetSamples) {
+        try {
+            MediaExtractor extractor = new MediaExtractor();
+            extractor.setDataSource(this, uri, null);
+            extractor.selectTrack(audioTrackIndex);
+
+            MediaFormat format = extractor.getTrackFormat(audioTrackIndex);
+            String mime = format.getString(MediaFormat.KEY_MIME);
+            if (mime == null) {
+                extractor.release();
+                return null;
+            }
+
+            MediaCodec codec = MediaCodec.createDecoderByType(mime);
+            codec.configure(format, null, null, 0);
+            codec.start();
+
+            ByteBuffer[] inputBuffers = codec.getInputBuffers();
+            ByteBuffer[] outputBuffers = codec.getOutputBuffers();
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+
+            // Collect all decoded PCM samples (short values)
+            List<Short> allSamples = new ArrayList<>();
+            boolean inputDone = false;
+            boolean outputDone = false;
+
+            while (!outputDone) {
+                // Feed input
+                if (!inputDone) {
+                    int inIdx = codec.dequeueInputBuffer(10_000);
+                    if (inIdx >= 0) {
+                        ByteBuffer buf = inputBuffers[inIdx];
+                        int sampleSize = extractor.readSampleData(buf, 0);
+                        if (sampleSize < 0) {
+                            codec.queueInputBuffer(inIdx, 0, 0, 0,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            inputDone = true;
+                        } else {
+                            codec.queueInputBuffer(inIdx, 0, sampleSize,
+                                    extractor.getSampleTime(), 0);
+                            extractor.advance();
+                        }
+                    }
+                }
+
+                // Drain output
+                int outIdx = codec.dequeueOutputBuffer(info, 10_000);
+                if (outIdx >= 0) {
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        outputDone = true;
+                    }
+                    ByteBuffer outBuf = outputBuffers[outIdx];
+                    outBuf.position(info.offset);
+                    outBuf.limit(info.offset + info.size);
+                    ShortBuffer shorts = outBuf.asShortBuffer();
+                    while (shorts.hasRemaining()) {
+                        allSamples.add(shorts.get());
+                    }
+                    codec.releaseOutputBuffer(outIdx, false);
+                } else if (outIdx == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                    outputBuffers = codec.getOutputBuffers();
+                }
+            }
+
+            codec.stop();
+            codec.release();
+            extractor.release();
+
+            if (allSamples.isEmpty()) return null;
+
+            // Downsample to targetSamples bins
+            int totalSamples = allSamples.size();
+            int samplesPerBin = Math.max(1, totalSamples / targetSamples);
+            int[] waveform = new int[Math.min(targetSamples, totalSamples)];
+            for (int i = 0; i < waveform.length; i++) {
+                long sum = 0;
+                int start = i * samplesPerBin;
+                int end = Math.min(start + samplesPerBin, totalSamples);
+                for (int j = start; j < end; j++) {
+                    sum += Math.abs(allSamples.get(j));
+                }
+                long avg = sum / (end - start);
+                // Normalise to 0–255
+                waveform[i] = (int) Math.min(255, (avg * 255) / 32768);
+            }
+            return waveform;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Waveform generation failed", e);
+            return null;
+        }
+    }
+
+    /**
+     * Updates the audio tool button UI based on whether audio clips exist.
+     */
+    private void updateAudioToolUI() {
+        boolean hasAudio = project != null && project.getTimeline().hasAudioClips();
+        int color = hasAudio ? 0xFF4CAF50 : 0xFF888888;
+        if (toolAudioIcon != null) toolAudioIcon.setTextColor(color);
+        if (toolAudioLabel != null) toolAudioLabel.setTextColor(color);
+    }
+
+    // ── Audio player (playback sync) ─────────────────────────────────
+
+    /**
+     * Prepares the MediaPlayer for the first audio clip in the timeline.
+     * Called after an audio clip is added.
+     */
+    private void prepareAudioPlayer() {
+        releaseAudioPlayer();
+        if (project == null || !project.getTimeline().hasAudioClips()) return;
+
+        AudioClip ac = project.getTimeline().getAudioClip(0);
+        if (ac == null) return;
+
+        try {
+            audioPlayer = new MediaPlayer();
+            audioPlayer.setDataSource(this, ac.getSourceUri());
+            audioPlayer.setLooping(false);
+            float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
+            audioPlayer.setVolume(vol, vol);
+            audioPlayer.setOnPreparedListener(mp -> {
+                audioPlayerReady = true;
+                Log.d(TAG, "AudioPlayer prepared, duration=" + mp.getDuration() + "ms");
+            });
+            audioPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "AudioPlayer error: what=" + what + " extra=" + extra);
+                audioPlayerReady = false;
+                return true;
+            });
+            audioPlayer.prepareAsync();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to prepare audio player", e);
+            releaseAudioPlayer();
+        }
+    }
+
+    /**
+     * Calculates the correct audio-player seek position based on the
+     * current playhead timeline position and the audio clip's offset.
+     * Called once when user presses play.
+     */
+    private void syncAndPlayAudioPlayer() {
+        if (audioPlayer == null || !audioPlayerReady) return;
+        if (project == null || !project.getTimeline().hasAudioClips()) return;
+
+        AudioClip ac = project.getTimeline().getAudioClip(0);
+        if (ac == null) return;
+
+        // Get current playhead position on the timeline (absolute ms)
+        long playheadMs = editorTimeline.getPlayheadPositionMs();
+        long audioStartMs = ac.getOffsetMs();
+        long audioEndMs = ac.getEndOnTimelineMs();
+
+        if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
+            // Playhead is within the audio clip range
+            long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+            try {
+                audioPlayer.seekTo((int) seekPos);
+                float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
+                audioPlayer.setVolume(vol, vol);
+                audioPlayer.start();
+            } catch (Exception e) {
+                Log.e(TAG, "AudioPlayer sync error", e);
+            }
+        } else {
+            // Playhead is outside audio clip range — don't play yet
+            try {
+                if (audioPlayer.isPlaying()) audioPlayer.pause();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * Periodically called from playheadUpdater to start/stop audio player
+     * as the playhead enters/exits the audio clip range during playback.
+     */
+    private void syncAudioPlayerWithPlayhead() {
+        if (audioPlayer == null || !audioPlayerReady) return;
+        if (project == null || !project.getTimeline().hasAudioClips()) return;
+
+        // Only sync when something is supposed to be playing
+        boolean videoPlaying = playerManager != null && playerManager.getPlayWhenReady();
+        boolean imageActive = imagePlaybackActive;
+        if (!videoPlaying && !imageActive) return;
+
+        AudioClip ac = project.getTimeline().getAudioClip(0);
+        if (ac == null) return;
+
+        long playheadMs = editorTimeline.getPlayheadPositionMs();
+        long audioStartMs = ac.getOffsetMs();
+        long audioEndMs = ac.getEndOnTimelineMs();
+
+        try {
+            if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
+                if (!audioPlayer.isPlaying()) {
+                    // Playhead just entered audio range — start playing
+                    long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+                    audioPlayer.seekTo((int) seekPos);
+                    float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
+                    audioPlayer.setVolume(vol, vol);
+                    audioPlayer.start();
+                }
+            } else {
+                if (audioPlayer.isPlaying()) {
+                    audioPlayer.pause();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Audio sync error", e);
+        }
+    }
+
+    /**
+     * Pauses the audio player.
+     */
+    private void pauseAudioPlayer() {
+        if (audioPlayer == null || !audioPlayerReady) return;
+        try {
+            if (audioPlayer.isPlaying()) audioPlayer.pause();
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Releases the audio player resources.
+     */
+    private void releaseAudioPlayer() {
+        if (audioPlayer != null) {
+            try {
+                audioPlayer.stop();
+            } catch (Exception ignored) {}
+            try {
+                audioPlayer.release();
+            } catch (Exception ignored) {}
+            audioPlayer = null;
+            audioPlayerReady = false;
+        }
+    }
+
     // ── Live Preview Transforms ──────────────────────────────────────
 
     /**
@@ -1444,6 +1986,26 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
 
+        // ── Audio-tail mode: playhead continues past video end ───────
+        if (audioTailActive) {
+            long elapsed = android.os.SystemClock.elapsedRealtime() - audioTailStartWall;
+            long playheadMs = audioTailStartMs + elapsed;
+            long timelineEndMs = project.getTimeline().getTotalDurationMs();
+
+            if (playheadMs >= timelineEndMs) {
+                // Audio tail finished — fully stop
+                audioTailActive = false;
+                pauseAudioPlayer();
+                playheadMs = timelineEndMs;
+                updatePlayPauseButton(false);
+                Log.d(TAG, "Audio-tail ended at " + playheadMs + "ms");
+            }
+
+            editorTimeline.setPlayheadPositionMs(playheadMs);
+            timeCurrent.setText(TimeFormatter.formatAuto(playheadMs));
+            return;
+        }
+
         Clip clip = getSelectedClip();
         long sourceDuration = clip.getSourceDurationMs();
         if (sourceDuration <= 0) return;
@@ -1464,13 +2026,23 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (nextIndex < timeline.getClipCount()) {
                     advanceToSegment(nextIndex, true);
                 } else {
-                    // Last segment — set playhead to end
-                    float endFraction = (float) clip.getOutPointMs() / sourceDuration;
-                    lastUserPlayheadFraction = endFraction;
-                    editorTimeline.setPlayheadFraction(endFraction);
-                    long totalMs = project.getTimeline().getTotalDurationMs();
-                    timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
-                    Log.d(TAG, "Image playback stopped at last segment end");
+                    long timelineEndMs = timeline.getTotalDurationMs();
+                    if (timelineEndMs > totalEffectiveMs()) {
+                        // Audio extends beyond image clip — enter audio-tail
+                        stopImagePlayback();
+                        audioTailActive = true;
+                        audioTailStartMs = totalEffectiveMs();
+                        audioTailStartWall = android.os.SystemClock.elapsedRealtime();
+                        Log.d(TAG, "Image: entering audio-tail");
+                    } else {
+                        // Last segment — set playhead to end
+                        float endFraction = (float) clip.getOutPointMs() / sourceDuration;
+                        lastUserPlayheadFraction = endFraction;
+                        editorTimeline.setPlayheadFraction(endFraction);
+                        long totalMs = timeline.getTotalDurationMs();
+                        timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
+                        Log.d(TAG, "Image playback stopped at last segment end");
+                    }
                 }
                 return;
             }
@@ -1502,17 +2074,28 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (nextIndex < timeline.getClipCount()) {
                     advanceToSegment(nextIndex, true);
                 } else {
-                    // Last segment reached its end — pause
-                    playerManager.pause();
-                    long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
-                    float endFraction = (float) clip.getOutPointMs() / sourceDuration;
-                    lastUserPlayheadFraction = endFraction;
-                    editorTimeline.setPlayheadFraction(endFraction);
-                    // Show total project duration as current (at end)
-                    long totalMs = project.getTimeline().getTotalDurationMs();
-                    timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
-                    updatePlayPauseButton(false);
-                    Log.d(TAG, "Playback stopped at last segment end");
+                    // Last video segment reached its end
+                    long timelineEndMs = timeline.getTotalDurationMs();
+                    if (timelineEndMs > totalEffectiveMs()) {
+                        // Audio extends beyond video — enter audio-tail mode
+                        playerManager.pause();
+                        audioTailActive = true;
+                        audioTailStartMs = totalEffectiveMs();
+                        audioTailStartWall = android.os.SystemClock.elapsedRealtime();
+                        Log.d(TAG, "Entering audio-tail: videoEnd=" + audioTailStartMs
+                                + " timelineEnd=" + timelineEndMs);
+                    } else {
+                        // No audio beyond video — fully stop
+                        playerManager.pause();
+                        long trimmedDur = clip.getOutPointMs() - clip.getInPointMs();
+                        float endFraction = (float) clip.getOutPointMs() / sourceDuration;
+                        lastUserPlayheadFraction = endFraction;
+                        editorTimeline.setPlayheadFraction(endFraction);
+                        long totalMs = timeline.getTotalDurationMs();
+                        timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
+                        updatePlayPauseButton(false);
+                        Log.d(TAG, "Playback stopped at last segment end");
+                    }
                 }
                 return;
             }
@@ -1857,6 +2440,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void splitAtPlayhead() {
         try {
+            // Check if an audio clip is selected — split that
+            int audioIdx = editorTimeline.getSelectedAudioIndex();
+            if (audioIdx >= 0) {
+                splitAudioAtPlayhead(audioIdx);
+                return;
+            }
+
             Clip clip = getSelectedClip();
             if (clip == null) return;
 
@@ -1882,10 +2472,62 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     /**
+     * Split the selected audio clip at the current playhead position.
+     * Creates two audio clips from the original at the split point.
+     */
+    private void splitAudioAtPlayhead(int audioIdx) {
+        Timeline timeline = project.getTimeline();
+        AudioClip ac = timeline.getAudioClip(audioIdx);
+        if (ac == null) return;
+
+        long playheadMs = editorTimeline.getPlayheadPositionMs();
+        long audioStartOnTimeline = ac.getOffsetMs();
+        long audioEndOnTimeline = ac.getEndOnTimelineMs();
+
+        // Check if playhead is within the audio clip
+        if (playheadMs <= audioStartOnTimeline || playheadMs >= audioEndOnTimeline) {
+            Toast.makeText(this, R.string.faditor_split_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Minimum 500ms on each side
+        long splitInSource = ac.getInPointMs() + (playheadMs - audioStartOnTimeline);
+        if (splitInSource - ac.getInPointMs() < 500 || ac.getOutPointMs() - splitInSource < 500) {
+            Toast.makeText(this, R.string.faditor_split_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Create two clips from the original
+        AudioClip left = new AudioClip(ac);
+        left.setOutPointMs(splitInSource);
+
+        AudioClip right = new AudioClip(ac);
+        right.setInPointMs(splitInSource);
+        right.setOffsetMs(playheadMs); // Starts at the split point on the timeline
+
+        // Remove original, add the two new clips
+        timeline.removeAudioClip(audioIdx);
+        timeline.addAudioClip(left);
+        timeline.addAudioClip(right);
+
+        editorTimeline.setAudioClips(timeline.getAudioClips());
+        prepareAudioPlayer();
+        scheduleAutoSave();
+        Toast.makeText(this, R.string.faditor_split_success, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
      * Delete the currently selected segment (cannot delete the last remaining segment).
      */
     private void deleteSelectedSegment() {
         try {
+            // Check if an audio clip is selected — delete that instead
+            int audioIdx = editorTimeline.getSelectedAudioIndex();
+            if (audioIdx >= 0) {
+                deleteSelectedAudioClip(audioIdx);
+                return;
+            }
+
             Timeline timeline = project.getTimeline();
             if (timeline.getClipCount() <= 1) {
                 Toast.makeText(this, R.string.faditor_delete_last_segment, Toast.LENGTH_SHORT).show();
@@ -1901,6 +2543,24 @@ public class FaditorEditorActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "deleteSelectedSegment failed", e);
         }
+    }
+
+    /**
+     * Deletes the selected audio clip from the timeline.
+     */
+    private void deleteSelectedAudioClip(int audioIndex) {
+        Timeline timeline = project.getTimeline();
+        if (audioIndex < 0 || audioIndex >= timeline.getAudioClipCount()) return;
+
+        timeline.removeAudioClip(audioIndex);
+        editorTimeline.setAudioClips(timeline.getAudioClips());
+        releaseAudioPlayer();
+        if (timeline.hasAudioClips()) {
+            prepareAudioPlayer();
+        }
+        updateAudioToolUI();
+        saveProjectNow();
+        Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();
     }
 
     /**

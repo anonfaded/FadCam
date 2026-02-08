@@ -40,7 +40,7 @@ public class CropOverlayView extends View {
     private final Paint gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // ── Dimensions ───────────────────────────────────────────────────
-    private static final float BORDER_WIDTH_PX = 3f;
+    private static final float BORDER_WIDTH_PX = 1.5f;
     private static final float HANDLE_STROKE_PX = 4f;
     private static final float HANDLE_LENGTH_PX = 28f;
     private static final float HANDLE_TOUCH_RADIUS_PX = 40f;

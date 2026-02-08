@@ -24,6 +24,7 @@ import android.widget.OverScroller;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.ui.faditor.model.AudioClip;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.Timeline;
 
@@ -72,6 +73,12 @@ public class EditorTimelineView extends View {
     private static final float RULER_TICK_HEIGHT_DP = 5f;
     private static final float TOUCH_SLOP_DP = 22f;
 
+    // ── Audio track layout constants (dp) ─────────────────────────────
+    private static final float AUDIO_TRACK_HEIGHT_DP = 40f;
+    private static final float AUDIO_TRACK_GAP_DP    = 6f;
+    private static final float AUDIO_CORNER_DP       = 6f;
+    private static final float AUDIO_WAVEFORM_BAR_GAP_DP = 1f;
+
     // ── Colors ───────────────────────────────────────────────────────
     private static final int COLOR_RULER_BG      = 0xFF141414;
     private static final int COLOR_RULER_TEXT     = 0xFF777777;
@@ -85,6 +92,12 @@ public class EditorTimelineView extends View {
     private static final int COLOR_PLAYHEAD       = 0xFFFFFFFF;
     private static final int COLOR_LABEL          = 0xBBFFFFFF;
     private static final int COLOR_DRAG_GHOST     = 0x664CAF50;
+    private static final int COLOR_AUDIO_BG       = 0xFF1E2A1E;
+    private static final int COLOR_AUDIO_BG_SEL   = 0xFF1B3A20;
+    private static final int COLOR_AUDIO_WAVE     = 0xFF4CAF50;
+    private static final int COLOR_AUDIO_WAVE_MUTED = 0xFF555555;
+    private static final int COLOR_AUDIO_LABEL    = 0xBBFFFFFF;
+    private static final int COLOR_AUDIO_TRACK_BG = 0xFF151515;
 
     // ── Paints ───────────────────────────────────────────────────────
     private final Paint rulerBgPaint       = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -102,6 +115,13 @@ public class EditorTimelineView extends View {
     private final Paint trimOverlayPaint    = new Paint();
     private final Paint trimRecoverPaint    = new Paint();
 
+    // Audio track paints
+    private final Paint audioTrackBgPaint   = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint audioClipPaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint audioWavePaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint audioLabelPaint     = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint audioBorderPaint    = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     // ── Pixel dimensions ─────────────────────────────────────────────
     private float density;
     private float dpPerSecondPx, minSegmentPx, edgePaddingPx;
@@ -109,6 +129,7 @@ public class EditorTimelineView extends View {
     private float handleWidthPx, handleOverhangPx, handleNotchWidthPx, handleNotchHeightPx;
     private float playheadWidthPx, playheadCirclePx, borderWidthPx;
     private float touchSlopPx, rulerTickHeightPx;
+    private float audioTrackHeightPx, audioTrackGapPx, audioCornerPx, audioWaveBarGapPx;
 
     // ── State ────────────────────────────────────────────────────────
     private final List<SegmentData> segments = new ArrayList<>();
@@ -131,10 +152,26 @@ public class EditorTimelineView extends View {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Path clipPath = new Path();
 
+    // ── Audio track state ─────────────────────────────────────────────
+    private final List<AudioClip> audioClips = new ArrayList<>();
+    private final List<RectF> audioClipRects = new ArrayList<>();
+    private int selectedAudioIndex = -1;
+    private boolean isDraggingAudio = false;
+    private int dragAudioIndex = -1;
+    private float dragAudioStartX;
+    private long dragAudioStartOffsetMs;
+    private boolean audioLongPressTriggered = false;
+    private int pendingAudioIndex = -1;       // Index of audio clip awaiting long-press
+    private static final long AUDIO_LONG_PRESS_MS = 500;  // Longer hold to avoid accidental drags
+    // Audio trim drag state
+    private float audioTrimDragX;
+    private long audioTrimDragInMs;
+    private long audioTrimDragOutMs;
+
     // ── Touch ────────────────────────────────────────────────────────
     private boolean isScaling = false;
     
-    private enum Drag { NONE, LEFT_HANDLE, RIGHT_HANDLE }
+    private enum Drag { NONE, LEFT_HANDLE, RIGHT_HANDLE, AUDIO_LEFT_HANDLE, AUDIO_RIGHT_HANDLE }
     private Drag activeDrag = Drag.NONE;
     private float downX, downY;
     private long downTime;
@@ -193,6 +230,23 @@ public class EditorTimelineView extends View {
                 longPressTriggered = true;
                 performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 enterReorderMode();
+            }
+        }
+    };
+    private final Runnable audioLongPressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (pendingAudioIndex >= 0 && pendingAudioIndex < audioClips.size()
+                    && !isDraggingAudio && activeDrag == Drag.NONE) {
+                audioLongPressTriggered = true;
+                isDraggingAudio = true;
+                dragAudioIndex = pendingAudioIndex;
+                float scrolledX = downX + scrollOffsetPx;
+                dragAudioStartX = scrolledX;
+                dragAudioStartOffsetMs = audioClips.get(dragAudioIndex).getOffsetMs();
+                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                getParent().requestDisallowInterceptTouchEvent(true);
+                invalidate();
             }
         }
     };
@@ -272,6 +326,9 @@ public class EditorTimelineView extends View {
         void onPlayheadDragFinished();
         void onSegmentReordered(int fromIndex, int toIndex);
         void onReorderModeChanged(boolean entering);
+        void onAudioClipSelected(int audioIndex);
+        void onAudioTrimChanged(int audioIndex, long inPointMs, long outPointMs, boolean isLeft);
+        void onAudioTrimFinished(int audioIndex, long inPointMs, long outPointMs);
     }
 
     // ── Constructors ─────────────────────────────────────────────────
@@ -297,6 +354,10 @@ public class EditorTimelineView extends View {
         borderWidthPx = BORDER_WIDTH_DP * density;
         touchSlopPx = TOUCH_SLOP_DP * density;
         rulerTickHeightPx = RULER_TICK_HEIGHT_DP * density;
+        audioTrackHeightPx = AUDIO_TRACK_HEIGHT_DP * density;
+        audioTrackGapPx = AUDIO_TRACK_GAP_DP * density;
+        audioCornerPx = AUDIO_CORNER_DP * density;
+        audioWaveBarGapPx = AUDIO_WAVEFORM_BAR_GAP_DP * density;
 
         rulerBgPaint.setColor(COLOR_RULER_BG);
         rulerBgPaint.setStyle(Paint.Style.FILL);
@@ -357,6 +418,21 @@ public class EditorTimelineView extends View {
         reorderDropIndicatorPaint.setColor(COLOR_HANDLE);
         reorderDropIndicatorPaint.setStrokeWidth(3f * density);
         reorderDropIndicatorPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        // Audio track paints
+        audioTrackBgPaint.setColor(COLOR_AUDIO_TRACK_BG);
+        audioTrackBgPaint.setStyle(Paint.Style.FILL);
+        audioClipPaint.setColor(COLOR_AUDIO_BG);
+        audioClipPaint.setStyle(Paint.Style.FILL);
+        audioWavePaint.setColor(COLOR_AUDIO_WAVE);
+        audioWavePaint.setStyle(Paint.Style.FILL);
+        audioWavePaint.setStrokeWidth(2f * density);
+        audioLabelPaint.setColor(COLOR_AUDIO_LABEL);
+        audioLabelPaint.setTextSize(9f * density);
+        audioLabelPaint.setTextAlign(Paint.Align.LEFT);
+        audioBorderPaint.setColor(COLOR_BORDER_SEL);
+        audioBorderPaint.setStyle(Paint.Style.STROKE);
+        audioBorderPaint.setStrokeWidth(borderWidthPx);
         
         // Initialize gesture detectors
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
@@ -413,6 +489,28 @@ public class EditorTimelineView extends View {
         invalidate();
     }
 
+    /**
+     * Set the audio clips to display on the audio track below the video segments.
+     * Call this whenever the timeline's audio clips change.
+     *
+     * @param clips unmodifiable list from Timeline.getAudioClips()
+     */
+    public void setAudioClips(@NonNull List<AudioClip> clips) {
+        audioClips.clear();
+        audioClips.addAll(clips);
+        selectedAudioIndex = -1;
+        computeRects();
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the currently selected audio clip index, or -1 if none.
+     */
+    public int getSelectedAudioIndex() {
+        return selectedAudioIndex;
+    }
+
     public void setSelectedIndex(int index) {
         if (index != selectedIndex && index >= 0 && index < segments.size()) {
             selectedIndex = index;
@@ -426,6 +524,16 @@ public class EditorTimelineView extends View {
      */
     public long getPlayheadPositionMs() {
         return playheadPositionMs;
+    }
+
+    /**
+     * Sets playhead position in absolute timeline ms and redraws.
+     * Used by audio-tail mode when playhead advances past video segments.
+     */
+    public void setPlayheadPositionMs(long positionMs) {
+        playheadPositionMs = positionMs;
+        centerPlayhead();
+        invalidate();
     }
 
     /**
@@ -482,17 +590,30 @@ public class EditorTimelineView extends View {
         Log.d(TAG, "centerPlayhead: centerX=" + centerX + " playheadX=" + playheadX + " scrollOffset=" + scrollOffsetPx);
         clampScroll();
     }
+
+    /**
+     * Returns the effective end of the timeline in ms, accounting for both
+     * video segments and audio clips that may extend beyond video.
+     */
+    public long getTimelineEndMs() {
+        long end = totalEffectiveMs;
+        for (AudioClip ac : audioClips) {
+            end = Math.max(end, ac.getEndOnTimelineMs());
+        }
+        return end;
+    }
     
     private void clampScroll() {
         if (contentWidthPx <= 0 || getWidth() <= 0) return;
         
         float centerX = getWidth() / 2f;
+        long timelineEnd = getTimelineEndMs();
         
-        // Strict bounds: prevent scrolling past video start (0ms) or end (totalEffectiveMs)
+        // Strict bounds: prevent scrolling past timeline start (0ms) or end
         // minScroll: scroll offset when 0ms is at center
-        // maxScroll: scroll offset when totalEffectiveMs is at center
+        // maxScroll: scroll offset when timelineEnd is at center
         float minScroll = edgePaddingPx - centerX;  // Allows 0ms to be centered
-        float maxScroll = timeToX(totalEffectiveMs) - centerX;  // Allows end to be centered
+        float maxScroll = timeToX(timelineEnd) - centerX;  // Allows end to be centered
         
         scrollOffsetPx = Math.max(minScroll, Math.min(scrollOffsetPx, maxScroll));
     }
@@ -547,13 +668,35 @@ public class EditorTimelineView extends View {
             SegmentData sd = segments.get(i);
             loadThumbnailsForSegment(i);
         }
+
+        // Compute audio clip rectangles
+        audioClipRects.clear();
+        if (!audioClips.isEmpty() && totalEffectiveMs > 0) {
+            float audioTop = rulerHeightPx + trackHeightPx + audioTrackGapPx;
+            for (AudioClip ac : audioClips) {
+                float clipStartX = edgePaddingPx
+                        + (ac.getOffsetMs() / 1000f) * dpPerSecondPx;
+                float clipW = Math.max(minSegmentPx,
+                        (ac.getTrimmedDurationMs() / 1000f) * dpPerSecondPx);
+                RectF audioRect = new RectF(
+                        clipStartX, audioTop,
+                        clipStartX + clipW, audioTop + audioTrackHeightPx);
+                audioClipRects.add(audioRect);
+                // Extend contentWidthPx if audio extends beyond video
+                contentWidthPx = Math.max(contentWidthPx, audioRect.right + edgePaddingPx);
+            }
+        }
     }
 
     @Override
     protected void onMeasure(int wSpec, int hSpec) {
-        int defH = (int) ((RULER_HEIGHT_DP + TRACK_HEIGHT_DP + 12) * density);
+        float totalDp = RULER_HEIGHT_DP + TRACK_HEIGHT_DP + 12;
+        if (!audioClips.isEmpty()) {
+            totalDp += AUDIO_TRACK_GAP_DP + AUDIO_TRACK_HEIGHT_DP;
+        }
+        int defH = (int) (totalDp * density);
         int h = resolveSize(defH, hSpec);
-        int w = MeasureSpec.getSize(wSpec);  // Use parent width, not content width
+        int w = MeasureSpec.getSize(wSpec);
         setMeasuredDimension(w, h);
     }
 
@@ -585,10 +728,15 @@ public class EditorTimelineView extends View {
         int w = getWidth();
         float tTop = rulerHeightPx;
         float tBot = tTop + trackHeightPx;
+        float audioTop = tBot + audioTrackGapPx;
+        float audioBot = audioTop + audioTrackHeightPx;
 
         // Backgrounds
         canvas.drawRect(0, 0, w, rulerHeightPx, rulerBgPaint);
         canvas.drawRect(0, tTop, w, tBot, trackBgPaint);
+        if (!audioClips.isEmpty()) {
+            canvas.drawRect(0, audioTop, w, audioBot, audioTrackBgPaint);
+        }
 
         if (segments.isEmpty() || segRects.isEmpty()) return;
 
@@ -605,11 +753,17 @@ public class EditorTimelineView extends View {
         if (selectedIndex >= 0 && selectedIndex < segRects.size()) {
             drawTrimHandles(canvas, segRects.get(selectedIndex));
         }
+
+        // Draw audio clips
+        if (!audioClips.isEmpty()) {
+            drawAudioTrack(canvas);
+        }
         
         canvas.restore();
         
         // Draw fixed center playhead (NOT affected by scroll)
-        drawCenterPlayhead(canvas, tTop, tBot);
+        float playheadBot = !audioClips.isEmpty() ? audioBot : tBot;
+        drawCenterPlayhead(canvas, tTop, playheadBot);
     }
 
     private void drawRuler(Canvas canvas, int viewW) {
@@ -702,7 +856,12 @@ public class EditorTimelineView extends View {
             }
             cumulative += sd.effectiveMs;
         }
-        if (!segRects.isEmpty()) return segRects.get(segRects.size() - 1).right;
+        // Time is past all video segments — extend linearly from last segment edge
+        if (!segRects.isEmpty()) {
+            float lastRight = segRects.get(segRects.size() - 1).right;
+            long msPastVideo = timeMs - totalEffectiveMs;
+            return lastRight + (msPastVideo / 1000f) * dpPerSecondPx;
+        }
         return 0;
     }
 
@@ -965,6 +1124,64 @@ public class EditorTimelineView extends View {
     }
 
     /**
+     * Draws each audio clip as a rounded rectangle with waveform bars inside.
+     * Called within the scrolled canvas context.
+     */
+    private void drawAudioTrack(Canvas canvas) {
+        for (int i = 0; i < audioClips.size() && i < audioClipRects.size(); i++) {
+            AudioClip ac = audioClips.get(i);
+            RectF rect = audioClipRects.get(i);
+
+            // Clip background
+            boolean selected = (i == selectedAudioIndex);
+            audioClipPaint.setColor(selected ? COLOR_AUDIO_BG_SEL : COLOR_AUDIO_BG);
+            canvas.drawRoundRect(rect, audioCornerPx, audioCornerPx, audioClipPaint);
+
+            // Selection border
+            if (selected) {
+                canvas.drawRoundRect(rect, audioCornerPx, audioCornerPx, audioBorderPaint);
+            }
+
+            // Waveform bars
+            int[] waveform = ac.getWaveform();
+            if (waveform != null && waveform.length > 0) {
+                audioWavePaint.setColor(ac.isMuted() ? COLOR_AUDIO_WAVE_MUTED : COLOR_AUDIO_WAVE);
+                float clipW = rect.width();
+                float barWidth = Math.max(1f, (clipW / waveform.length) - audioWaveBarGapPx);
+                float maxBarH = rect.height() - 4f * density; // Padding top/bottom
+                float centerY = rect.centerY();
+
+                for (int j = 0; j < waveform.length; j++) {
+                    float barX = rect.left + (j * clipW / waveform.length);
+                    float amplitude = waveform[j] / 255f;
+                    float barH = Math.max(1f * density, amplitude * maxBarH);
+                    canvas.drawRect(
+                            barX, centerY - barH / 2f,
+                            barX + barWidth, centerY + barH / 2f,
+                            audioWavePaint);
+                }
+            }
+
+            // Label
+            String label = ac.getLabel();
+            if (label != null && !label.isEmpty()) {
+                float textX = rect.left + 6f * density;
+                float textY = rect.top + audioLabelPaint.getTextSize() + 2f * density;
+                // Clip text to clip bounds
+                canvas.save();
+                canvas.clipRect(rect);
+                canvas.drawText(label, textX, textY, audioLabelPaint);
+                canvas.restore();
+            }
+
+            // Trim handles on selected audio clip
+            if (selected) {
+                drawAudioTrimHandles(canvas, rect);
+            }
+        }
+    }
+
+    /**
      * Trim handles at left and right edges of the selected segment.
      * Fully rounded handles for seamless blend with segment curves.
      */
@@ -1024,6 +1241,25 @@ public class EditorTimelineView extends View {
         RectF n = new RectF(cx - handleNotchWidthPx / 2f, cy - half,
                             cx + handleNotchWidthPx / 2f, cy + half);
         canvas.drawRoundRect(n, handleNotchWidthPx / 2f, handleNotchWidthPx / 2f, handleNotchPaint);
+    }
+
+    /**
+     * Draws trim handles on the selected audio clip, matching video handle style.
+     */
+    private void drawAudioTrimHandles(Canvas canvas, RectF rect) {
+        float hTop = rect.top - handleOverhangPx;
+        float hBot = rect.bottom + handleOverhangPx;
+        float cornerRadius = audioCornerPx;
+
+        // Left handle
+        RectF leftH = new RectF(rect.left, hTop, rect.left + handleWidthPx, hBot);
+        canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+        drawNotch(canvas, leftH);
+
+        // Right handle
+        RectF rightH = new RectF(rect.right - handleWidthPx, hTop, rect.right, hBot);
+        canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+        drawNotch(canvas, rightH);
     }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1287,9 +1523,9 @@ public class EditorTimelineView extends View {
             return true;
         }
         
-        // When actively dragging a handle or reordering, bypass gesture detector
+        // When actively dragging a handle, audio clip, or reordering, bypass gesture detector
         // to prevent GestureDetector.onTouchEvent() returning true and blocking onMove/onUp.
-        if (activeDrag == Drag.NONE) {
+        if (activeDrag == Drag.NONE && !isDraggingAudio) {
             // Let gesture detector process events only when no active drag
             boolean gestureEvent = gestureDetector.onTouchEvent(e);
             if (gestureEvent) {
@@ -1348,6 +1584,33 @@ public class EditorTimelineView extends View {
 
         downSegIndex = hitTestSegment(scrolledX, y);
         Log.d(TAG, "onDown: hit segment " + downSegIndex);
+
+        // Check audio trim handles (before audio body hit test)
+        if (selectedAudioIndex >= 0 && selectedAudioIndex < audioClipRects.size()) {
+            Drag ah = hitTestAudioHandle(scrolledX, y);
+            if (ah != Drag.NONE) {
+                Log.d(TAG, "onDown: hit audio handle " + ah);
+                activeDrag = ah;
+                getParent().requestDisallowInterceptTouchEvent(true);
+                return true;
+            }
+        }
+
+        // Check if touch is on an audio clip (for select/drag)
+        if (downSegIndex < 0) {
+            int audioHit = hitTestAudioClip(scrolledX, y);
+            if (audioHit >= 0) {
+                Log.d(TAG, "onDown: hit audio clip " + audioHit);
+                pendingAudioIndex = audioHit;
+                audioLongPressTriggered = false;
+                // Schedule audio long-press for drag
+                longPressHandler.removeCallbacks(audioLongPressRunnable);
+                longPressHandler.postDelayed(audioLongPressRunnable, AUDIO_LONG_PRESS_MS);
+                getParent().requestDisallowInterceptTouchEvent(true);
+                return true;
+            }
+        }
+
         if (downSegIndex >= 0) {
             // Schedule long press detection via Handler
             longPressHandler.removeCallbacks(longPressRunnable);
@@ -1367,6 +1630,11 @@ public class EditorTimelineView extends View {
         // Cancel long press if finger moved beyond slop
         if (dx > touchSlopPx) {
             longPressHandler.removeCallbacks(longPressRunnable);
+            // Cancel audio long press too (if not already triggered)
+            if (!audioLongPressTriggered) {
+                longPressHandler.removeCallbacks(audioLongPressRunnable);
+                pendingAudioIndex = -1;
+            }
         }
 
         if (activeDrag == Drag.LEFT_HANDLE || activeDrag == Drag.RIGHT_HANDLE) {
@@ -1377,6 +1645,25 @@ public class EditorTimelineView extends View {
             return true;
         }
 
+        // Audio trim handle drag
+        if (activeDrag == Drag.AUDIO_LEFT_HANDLE || activeDrag == Drag.AUDIO_RIGHT_HANDLE) {
+            doAudioTrimDrag(scrolledX);
+            return true;
+        }
+
+        // Audio clip drag: update offset based on finger movement
+        if (isDraggingAudio && dragAudioIndex >= 0 && dragAudioIndex < audioClips.size()) {
+            float deltaX = scrolledX - dragAudioStartX;
+            float deltaSec = deltaX / dpPerSecondPx;
+            long newOffset = dragAudioStartOffsetMs + (long) (deltaSec * 1000f);
+            newOffset = Math.max(0, newOffset);
+            AudioClip ac = audioClips.get(dragAudioIndex);
+            ac.setOffsetMs(newOffset);
+            computeRects();
+            invalidate();
+            return true;
+        }
+
         return true;
     }
 
@@ -1384,14 +1671,54 @@ public class EditorTimelineView extends View {
         Drag last = activeDrag;
         float scrolledX = x + scrollOffsetPx;
 
-        // Stop edge auto-scroll and cancel long press
+        // Stop edge auto-scroll and cancel long presses
         stopEdgeScroll();
         longPressHandler.removeCallbacks(longPressRunnable);
+        longPressHandler.removeCallbacks(audioLongPressRunnable);
+
+        // Finish audio drag
+        if (isDraggingAudio) {
+            isDraggingAudio = false;
+            dragAudioIndex = -1;
+            pendingAudioIndex = -1;
+            computeRects();
+            invalidate();
+            getParent().requestDisallowInterceptTouchEvent(false);
+            return true;
+        }
+
+        // Audio tap: select/deselect (only if long press didn't trigger drag)
+        if (isUp && pendingAudioIndex >= 0 && !audioLongPressTriggered) {
+            float tapDist = Math.abs(x - downX);
+            if (tapDist < touchSlopPx) {
+                if (pendingAudioIndex == selectedAudioIndex) {
+                    selectedAudioIndex = -1; // Deselect
+                } else {
+                    selectedAudioIndex = pendingAudioIndex;
+                    // Deselect video segment when audio is selected
+                    if (selectedIndex >= 0) {
+                        selectedIndex = -1;
+                        if (listener != null) listener.onSegmentSelected(-1);
+                    }
+                }
+                invalidate();
+                if (listener != null) listener.onAudioClipSelected(selectedAudioIndex);
+            }
+            pendingAudioIndex = -1;
+            getParent().requestDisallowInterceptTouchEvent(false);
+            return true;
+        }
+        pendingAudioIndex = -1;
 
         if (last == Drag.LEFT_HANDLE || last == Drag.RIGHT_HANDLE) {
             if (listener != null) {
                 // Use the drag-tracked fractions (segment data was not updated during drag)
                 listener.onTrimFinished(selectedIndex, trimDragStartFrac, trimDragEndFrac);
+            }
+        } else if (last == Drag.AUDIO_LEFT_HANDLE || last == Drag.AUDIO_RIGHT_HANDLE) {
+            // Audio trim finished — data was already applied during drag
+            if (listener != null) {
+                listener.onAudioTrimFinished(selectedAudioIndex, audioTrimDragInMs, audioTrimDragOutMs);
             }
         } else if (isUp && downSegIndex >= 0) {
             if (Math.abs(x - downX) < touchSlopPx) {
@@ -1436,6 +1763,26 @@ public class EditorTimelineView extends View {
         // Right handle zone
         if (x >= seg.right - handleWidthPx - touchSlopPx / 2 && x <= seg.right + touchSlopPx / 2) {
             return Drag.RIGHT_HANDLE;
+        }
+        return Drag.NONE;
+    }
+
+    /**
+     * Hit-test trim handles on the selected audio clip.
+     */
+    private Drag hitTestAudioHandle(float x, float y) {
+        if (selectedAudioIndex < 0 || selectedAudioIndex >= audioClipRects.size()) return Drag.NONE;
+        RectF r = audioClipRects.get(selectedAudioIndex);
+        float hTop = r.top - handleOverhangPx;
+        float hBot = r.bottom + handleOverhangPx;
+
+        if (y < hTop - touchSlopPx / 2 || y > hBot + touchSlopPx / 2) return Drag.NONE;
+
+        if (x >= r.left - touchSlopPx / 2 && x <= r.left + handleWidthPx + touchSlopPx / 2) {
+            return Drag.AUDIO_LEFT_HANDLE;
+        }
+        if (x >= r.right - handleWidthPx - touchSlopPx / 2 && x <= r.right + touchSlopPx / 2) {
+            return Drag.AUDIO_RIGHT_HANDLE;
         }
         return Drag.NONE;
     }
@@ -1496,6 +1843,48 @@ public class EditorTimelineView extends View {
             listener.onTrimChanged(selectedIndex, trimDragStartFrac, trimDragEndFrac, isLeft);
         }
     }
+
+    /**
+     * Handles audio clip trim handle drag, updating in/out points visually.
+     * Data is committed on ACTION_UP via onAudioTrimChanged callback.
+     */
+    private void doAudioTrimDrag(float x) {
+        if (selectedAudioIndex < 0 || selectedAudioIndex >= audioClips.size()) return;
+        AudioClip ac = audioClips.get(selectedAudioIndex);
+        long srcDur = ac.getSourceDurationMs();
+        if (srcDur <= 0) return;
+
+        RectF rect = audioClipRects.get(selectedAudioIndex);
+        float pxPerMs = dpPerSecondPx / 1000f;
+        long minGap = 500; // minimum 500ms
+
+        boolean isLeft = (activeDrag == Drag.AUDIO_LEFT_HANDLE);
+        if (isLeft) {
+            float deltaX = x - rect.left;
+            long deltaMs = (long) (deltaX / pxPerMs);
+            long newIn = Math.max(0, Math.min(ac.getOutPointMs() - minGap, ac.getInPointMs() + deltaMs));
+            audioTrimDragInMs = newIn;
+            audioTrimDragOutMs = ac.getOutPointMs();
+        } else {
+            float deltaX = x - rect.right;
+            long deltaMs = (long) (deltaX / pxPerMs);
+            long newOut = Math.max(ac.getInPointMs() + minGap,
+                    Math.min(srcDur, ac.getOutPointMs() + deltaMs));
+            audioTrimDragInMs = ac.getInPointMs();
+            audioTrimDragOutMs = newOut;
+        }
+        audioTrimDragX = x;
+
+        // Apply trim changes immediately for visual feedback
+        ac.setInPointMs(audioTrimDragInMs);
+        ac.setOutPointMs(audioTrimDragOutMs);
+        computeRects();
+        invalidate();
+
+        if (listener != null) {
+            listener.onAudioTrimChanged(selectedAudioIndex, audioTrimDragInMs, audioTrimDragOutMs, isLeft);
+        }
+    }
     
     /**
      * Start or stop edge auto-scrolling based on finger position.
@@ -1524,6 +1913,22 @@ public class EditorTimelineView extends View {
         for (int i = 0; i < segRects.size(); i++) {
             RectF r = segRects.get(i);
             if (x >= r.left - segmentGapPx && x <= r.right + segmentGapPx) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Hit-tests audio clip rects. Returns the index of the audio clip under
+     * the given coordinates, or -1 if none.
+     */
+    private int hitTestAudioClip(float x, float y) {
+        if (audioClipRects.isEmpty()) return -1;
+        float audioTop = rulerHeightPx + trackHeightPx + audioTrackGapPx;
+        float audioBot = audioTop + audioTrackHeightPx;
+        if (y < audioTop - touchSlopPx / 2 || y > audioBot + touchSlopPx / 2) return -1;
+        for (int i = 0; i < audioClipRects.size(); i++) {
+            RectF r = audioClipRects.get(i);
+            if (x >= r.left && x <= r.right) return i;
         }
         return -1;
     }
@@ -1561,9 +1966,34 @@ public class EditorTimelineView extends View {
             }
             cumulative += segments.get(i).effectiveMs;
         }
-        Log.d(TAG, "updatePlayheadFromX: playhead outside all segments, snapping to nearest");
-        // Find the nearest segment (handles gaps between segments and before/after edges)
+        Log.d(TAG, "updatePlayheadFromX: playhead outside all segments");
+        // Check if playhead is past the last video segment and audio extends beyond
         if (!segments.isEmpty() && !segRects.isEmpty()) {
+            RectF lastRect = segRects.get(segRects.size() - 1);
+            long timelineEndMs = getTimelineEndMs();
+
+            if (playheadX > lastRect.right && timelineEndMs > totalEffectiveMs) {
+                // Playhead is in the audio-only region past video
+                float distPastVideo = playheadX - lastRect.right;
+                long msPastVideo = (long) ((distPastVideo / dpPerSecondPx) * 1000f);
+                playheadPositionMs = Math.min(totalEffectiveMs + msPastVideo, timelineEndMs);
+
+                Log.d(TAG, "updatePlayheadFromX: audio-only region, playheadMs=" + playheadPositionMs);
+
+                // Seek video to end of last segment
+                if (listener != null) {
+                    int lastIdx = segments.size() - 1;
+                    SegmentData sd = segments.get(lastIdx);
+                    float sourceFrac = sd.sourceDurationMs > 0
+                            ? (float) sd.outPointMs / sd.sourceDurationMs : 1f;
+                    listener.onPlayheadSeeked(lastIdx, sourceFrac);
+                }
+                centerPlayhead();
+                invalidate();
+                return;
+            }
+
+            // Before video start or in gaps — snap to nearest segment
             int nearestSeg = 0;
             float nearestDist = Float.MAX_VALUE;
             for (int i = 0; i < segRects.size(); i++) {
@@ -1696,10 +2126,11 @@ public class EditorTimelineView extends View {
             // Mark that a fling is starting so we can signal drag finished when it ends
             flingJustFinished = true;
             
-            // Calculate proper scroll bounds to keep playhead within video range
+            // Calculate proper scroll bounds to keep playhead within timeline range
             float centerX = getWidth() / 2f;
             float minScroll = edgePaddingPx - centerX;  // When 0ms at center
-            float maxScroll = timeToX(totalEffectiveMs) - centerX;  // When end at center
+            long timelineEnd = getTimelineEndMs();
+            float maxScroll = timeToX(timelineEnd) - centerX;  // When timeline end at center
             
             // Start fling animation (negative velocity because scrolling moves playhead position)
             int startX = (int) scrollOffsetPx;
