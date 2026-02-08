@@ -2,18 +2,25 @@ package com.fadcam.ui.faditor;
 
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.InputStream;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -97,6 +104,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View toolCrop;
     private TextView toolCropIcon;
     private TextView toolCropLabel;
+    private View toolCanvas;
+    private TextView toolCanvasIcon;
+    private TextView toolCanvasLabel;
 
     // ── Multi-segment state ──────────────────────────────────────────
     /** Index of the currently selected clip/segment in the timeline. */
@@ -489,6 +499,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolCrop = findViewById(R.id.tool_crop);
         toolCropIcon = findViewById(R.id.tool_crop_icon);
         toolCropLabel = findViewById(R.id.tool_crop_label);
+        toolCanvas = findViewById(R.id.tool_canvas);
+        toolCanvasIcon = findViewById(R.id.tool_canvas_icon);
+        toolCanvasLabel = findViewById(R.id.tool_canvas_label);
 
         // Segment tools
         findViewById(R.id.tool_split).setOnClickListener(v -> splitAtPlayhead());
@@ -723,6 +736,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Crop picker
         toolCrop.setOnClickListener(v -> showCropPicker());
 
+        // Canvas picker (project-level aspect ratio)
+        toolCanvas.setOnClickListener(v -> showCanvasPicker());
+
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = getSelectedClip();
         updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
@@ -730,9 +746,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         updateRotateUI(clip.getRotationDegrees());
         updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
         updateCropUI(clip.getCropPreset());
+        updateCanvasUI(project.getCanvasPreset());
 
         // Apply live preview transforms (delayed to ensure player view is laid out)
-        playerView.post(() -> updatePreviewTransforms());
+        playerView.post(() -> {
+            updatePreviewTransforms();
+            applyCanvasPreview(project.getCanvasPreset());
+        });
 
         // Restore free crop overlay if previously active
         if ("custom".equals(clip.getCropPreset())) {
@@ -1006,6 +1026,149 @@ public class FaditorEditorActivity extends AppCompatActivity {
             toolCropLabel.setText(label);
             toolCropLabel.setTextColor(color);
         }
+    }
+
+    // ── Canvas ────────────────────────────────────────────────────────
+
+    /**
+     * Shows the canvas aspect ratio picker bottom sheet.
+     */
+    private void showCanvasPicker() {
+        CanvasPickerBottomSheet sheet =
+                CanvasPickerBottomSheet.newInstance(project.getCanvasPreset());
+        sheet.setCallback(preset -> {
+            project.setCanvasPreset(preset);
+            updateCanvasUI(preset);
+            applyCanvasPreview(preset);
+            saveProjectNow();
+
+            // Format label for toast
+            String displayLabel = preset.replace("_", ":");
+            if ("original".equals(preset)) displayLabel = "Original";
+            Toast.makeText(this, getString(R.string.faditor_canvas_applied, displayLabel), Toast.LENGTH_SHORT).show();
+        });
+        sheet.show(getSupportFragmentManager(), "canvas_picker");
+    }
+
+    /**
+     * Updates the canvas tool button UI to reflect the current preset.
+     */
+    private void updateCanvasUI(@NonNull String preset) {
+        boolean active = !"original".equals(preset);
+        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        if (toolCanvasIcon != null) {
+            toolCanvasIcon.setTextColor(color);
+        }
+        if (toolCanvasLabel != null) {
+            String label = active ? preset.replace("_", ":") :
+                    getString(R.string.faditor_tool_canvas);
+            toolCanvasLabel.setText(label);
+            toolCanvasLabel.setTextColor(color);
+        }
+    }
+
+    /**
+     * Adjust player container to preview the canvas aspect ratio.
+     * When a canvas preset is active, constrains PlayerView to the target aspect ratio
+     * so black bars are visible around the video.
+     */
+    private void applyCanvasPreview(@NonNull String preset) {
+        if ("original".equals(preset)) {
+            // Reset to fill container
+            ViewGroup.LayoutParams lp = playerView.getLayoutParams();
+            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            playerView.setLayoutParams(lp);
+
+            ViewGroup.LayoutParams ipLp = imagePreview.getLayoutParams();
+            ipLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            ipLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            imagePreview.setLayoutParams(ipLp);
+            return;
+        }
+
+        // Get first clip's dimensions to compute canvas size
+        Clip firstClip = project.getTimeline().getClip(0);
+        int srcW = getVideoWidth(firstClip);
+        int srcH = getVideoHeight(firstClip);
+        if (srcW <= 0 || srcH <= 0) return;
+
+        int[] canvas = CanvasPickerBottomSheet.resolveCanvasDimensions(preset, srcW, srcH);
+        float canvasAspect = (float) canvas[0] / canvas[1];
+
+        // Apply aspect ratio constraint on PlayerView within the container
+        FrameLayout container = findViewById(R.id.player_container);
+        int containerW = container.getWidth();
+        int containerH = container.getHeight();
+        if (containerW <= 0 || containerH <= 0) return;
+
+        float containerAspect = (float) containerW / containerH;
+        int targetW, targetH;
+        if (canvasAspect > containerAspect) {
+            // Canvas is wider: fit to width
+            targetW = containerW;
+            targetH = Math.round(containerW / canvasAspect);
+        } else {
+            // Canvas is taller: fit to height
+            targetH = containerH;
+            targetW = Math.round(containerH * canvasAspect);
+        }
+
+        // Constrain PlayerView
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(targetW, targetH);
+        lp.gravity = android.view.Gravity.CENTER;
+        playerView.setLayoutParams(lp);
+
+        // Constrain ImagePreview too
+        FrameLayout.LayoutParams ipLp = new FrameLayout.LayoutParams(targetW, targetH);
+        ipLp.gravity = android.view.Gravity.CENTER;
+        imagePreview.setLayoutParams(ipLp);
+    }
+
+    /**
+     * Gets video width from clip using MediaMetadataRetriever.
+     */
+    private int getVideoWidth(@NonNull Clip clip) {
+        if (clip.isImageClip()) {
+            try (InputStream is = getContentResolver().openInputStream(clip.getSourceUri())) {
+                android.graphics.BitmapFactory.Options opts =
+                        new android.graphics.BitmapFactory.Options();
+                opts.inJustDecodeBounds = true;
+                android.graphics.BitmapFactory.decodeStream(is, null, opts);
+                return opts.outWidth;
+            } catch (Exception e) { return 0; }
+        }
+        try {
+            android.media.MediaMetadataRetriever r = new android.media.MediaMetadataRetriever();
+            r.setDataSource(this, clip.getSourceUri());
+            String w = r.extractMetadata(
+                    android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            r.release();
+            return w != null ? Integer.parseInt(w) : 0;
+        } catch (Exception e) { return 0; }
+    }
+
+    /**
+     * Gets video height from clip using MediaMetadataRetriever.
+     */
+    private int getVideoHeight(@NonNull Clip clip) {
+        if (clip.isImageClip()) {
+            try (InputStream is = getContentResolver().openInputStream(clip.getSourceUri())) {
+                android.graphics.BitmapFactory.Options opts =
+                        new android.graphics.BitmapFactory.Options();
+                opts.inJustDecodeBounds = true;
+                android.graphics.BitmapFactory.decodeStream(is, null, opts);
+                return opts.outHeight;
+            } catch (Exception e) { return 0; }
+        }
+        try {
+            android.media.MediaMetadataRetriever r = new android.media.MediaMetadataRetriever();
+            r.setDataSource(this, clip.getSourceUri());
+            String h = r.extractMetadata(
+                    android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            r.release();
+            return h != null ? Integer.parseInt(h) : 0;
+        } catch (Exception e) { return 0; }
     }
 
     // ── Live Preview Transforms ──────────────────────────────────────

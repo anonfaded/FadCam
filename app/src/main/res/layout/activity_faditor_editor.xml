@@ -386,6 +386,36 @@
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
+            <!-- Canvas tool -->
+            <LinearLayout
+                android:id="@+id/tool_canvas"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_canvas_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="aspect_ratio"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_canvas_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_canvas"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
             <!-- Split tool -->
             <LinearLayout
                 android:id="@+id/tool_split"

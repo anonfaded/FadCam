@@ -13,6 +13,7 @@ import androidx.media3.common.MimeTypes;
 import androidx.media3.common.audio.SonicAudioProcessor;
 import androidx.media3.common.audio.SpeedChangingAudioProcessor;
 import androidx.media3.effect.Crop;
+import androidx.media3.effect.Presentation;
 import androidx.media3.effect.ScaleAndRotateTransformation;
 import androidx.media3.effect.SpeedChangeEffect;
 import androidx.media3.common.Effect;
@@ -27,6 +28,7 @@ import androidx.media3.transformer.Transformer;
 
 import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.ui.faditor.CanvasPickerBottomSheet;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.ExportSettings;
 import com.fadcam.ui.faditor.model.FaditorProject;
@@ -133,7 +135,8 @@ public class ExportManager {
                     && project.getTimeline().getClip(0).getRotationDegrees() == 0
                     && !project.getTimeline().getClip(0).isFlipHorizontal()
                     && !project.getTimeline().getClip(0).isFlipVertical()
-                    && "none".equals(project.getTimeline().getClip(0).getCropPreset());
+                    && "none".equals(project.getTimeline().getClip(0).getCropPreset())
+                    && "original".equals(project.getCanvasPreset());
 
             if (isSimpleTrim) {
                 builder.experimentalSetTrimOptimizationEnabled(true);
@@ -237,6 +240,20 @@ public class ExportManager {
     private Composition buildComposition(@NonNull FaditorProject project) {
         List<EditedMediaItem> items = new ArrayList<>();
 
+        // Resolve canvas dimensions if a canvas preset is active
+        String canvasPreset = project.getCanvasPreset();
+        int[] canvasDims = null;
+        if (!"original".equals(canvasPreset)) {
+            // Use first clip's source dimensions as base
+            Clip firstClip = project.getTimeline().getClip(0);
+            int srcW = firstClip.isImageClip() ? 1080 : getSourceWidth(firstClip);
+            int srcH = firstClip.isImageClip() ? 1920 : getSourceHeight(firstClip);
+            if (srcW > 0 && srcH > 0) {
+                canvasDims = CanvasPickerBottomSheet.resolveCanvasDimensions(
+                        canvasPreset, srcW, srcH);
+            }
+        }
+
         for (Clip clip : project.getTimeline().getClips()) {
             MediaItem mediaItem;
 
@@ -332,6 +349,13 @@ public class ExportManager {
                 }
             }
 
+            // Canvas (output resolution / aspect ratio) — must be last video effect
+            if (canvasDims != null) {
+                videoEffects.add(Presentation.createForWidthAndHeight(
+                        canvasDims[0], canvasDims[1],
+                        Presentation.LAYOUT_SCALE_TO_FIT));
+            }
+
             // Apply effects if any
             if (!audioProcessors.isEmpty() || !videoEffects.isEmpty()) {
                 editedBuilder.setEffects(new Effects(audioProcessors, videoEffects));
@@ -363,6 +387,46 @@ public class ExportManager {
             case "3:4":   return new float[]{-0.375f, 0.375f, -1f, 1f};
             case "21:9":  return new float[]{-1f, 1f, -0.643f, 0.643f};
             default:      return null;
+        }
+    }
+
+    /**
+     * Get the source video width using MediaMetadataRetriever.
+     *
+     * @param clip the clip to query
+     * @return width in pixels, or 0 on failure
+     */
+    private int getSourceWidth(@NonNull Clip clip) {
+        try {
+            android.media.MediaMetadataRetriever r = new android.media.MediaMetadataRetriever();
+            r.setDataSource(context, clip.getSourceUri());
+            String w = r.extractMetadata(
+                    android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            r.release();
+            return w != null ? Integer.parseInt(w) : 0;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to get source width", e);
+            return 0;
+        }
+    }
+
+    /**
+     * Get the source video height using MediaMetadataRetriever.
+     *
+     * @param clip the clip to query
+     * @return height in pixels, or 0 on failure
+     */
+    private int getSourceHeight(@NonNull Clip clip) {
+        try {
+            android.media.MediaMetadataRetriever r = new android.media.MediaMetadataRetriever();
+            r.setDataSource(context, clip.getSourceUri());
+            String h = r.extractMetadata(
+                    android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            r.release();
+            return h != null ? Integer.parseInt(h) : 0;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to get source height", e);
+            return 0;
         }
     }
 

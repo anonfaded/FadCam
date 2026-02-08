@@ -29,6 +29,10 @@ public class FaditorProject {
     @NonNull
     private final ExportSettings exportSettings;
 
+    /** Canvas aspect ratio preset (project-level). "original" = no change. */
+    @NonNull
+    private String canvasPreset = "original";
+
     /**
      * Create a new empty project.
      *
@@ -73,7 +77,17 @@ public class FaditorProject {
         return exportSettings;
     }
 
+    @NonNull
+    public String getCanvasPreset() {
+        return canvasPreset;
+    }
+
     // ── Setters ──────────────────────────────────────────────────────
+
+    public void setCanvasPreset(@NonNull String canvasPreset) {
+        this.canvasPreset = canvasPreset;
+        touch();
+    }
 
     public void setName(@NonNull String name) {
         this.name = name;
