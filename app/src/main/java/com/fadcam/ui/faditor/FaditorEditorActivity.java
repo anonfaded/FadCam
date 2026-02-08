@@ -9,6 +9,8 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -367,6 +369,27 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 tl.moveClip(fromIndex, toIndex);
                 selectSegment(toIndex);
                 saveProjectNow();
+            }
+
+            @Override
+            public void onReorderModeChanged(boolean entering) {
+                // Hide/show bottom toolbar during reorder mode
+                // Skip timeline_scroll (first HorizontalScrollView) — target the bottom toolbar
+                HorizontalScrollView toolbar = null;
+                LinearLayout controlsSection = findViewById(R.id.controls_section);
+                if (controlsSection != null) {
+                    for (int i = 0; i < controlsSection.getChildCount(); i++) {
+                        View child = controlsSection.getChildAt(i);
+                        if (child instanceof HorizontalScrollView
+                                && child.getId() != R.id.timeline_scroll) {
+                            toolbar = (HorizontalScrollView) child;
+                            break;
+                        }
+                    }
+                }
+                if (toolbar != null) {
+                    toolbar.setVisibility(entering ? View.GONE : View.VISIBLE);
+                }
             }
         });
         btnPlayPause = findViewById(R.id.btn_play_pause);

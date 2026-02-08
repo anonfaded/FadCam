@@ -124,14 +124,12 @@ public class EditorTimelineView extends View {
     // ── Touch ────────────────────────────────────────────────────────
     private boolean isScaling = false;
     
-    private enum Drag { NONE, LEFT_HANDLE, RIGHT_HANDLE, REORDER }
+    private enum Drag { NONE, LEFT_HANDLE, RIGHT_HANDLE }
     private Drag activeDrag = Drag.NONE;
     private float downX, downY;
     private long downTime;
     private int downSegIndex = -1;
     private boolean longPressTriggered;
-    private int reorderIdx = -1;
-    private float reorderX;
     private long dragStartInMs, dragStartOutMs;
     private float dragStartSegLeft, dragStartSegRight;
     private float trimDragX;                  // Timeline-space x of handle during trim drag
@@ -148,6 +146,46 @@ public class EditorTimelineView extends View {
     private float edgeScrollMaxSpeedPx;
     private final Handler edgeScrollHandler = new Handler(Looper.getMainLooper());
     private boolean isEdgeScrolling = false;
+
+    // ── Reorder mode ────────────────────────────────────────────────
+    private boolean isReorderMode = false;
+    private final List<Integer> reorderOrder = new ArrayList<>();
+    private int reorderDragIdx = -1;           // index within reorderOrder being dragged
+    private float reorderDragCenterX;          // drag center X in view coords
+    private float reorderDragCenterY;          // drag center Y in view coords
+    private float reorderBlockSize;            // computed block side length
+    private float reorderRowStartX;            // X of first block
+    private float reorderRowCenterY;           // Y center of block row
+    private float reorderGapPx;               // gap between blocks
+    private static final float REORDER_BAR_HEIGHT_DP = 36f;
+    private static final float REORDER_BTN_PADDING_DP = 14f;
+    private static final float REORDER_BLOCK_CORNER_DP = 8f;
+    private float reorderBarHeightPx;
+    private float reorderBtnPaddingPx;
+    private float reorderBlockCornerPx;
+    private final RectF reorderCancelRect = new RectF();
+    private final RectF reorderDoneRect = new RectF();
+    private final Paint reorderBgPaint2 = new Paint();
+    private final Paint reorderBlockPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderBlockDragPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderBlockSelectedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderNumPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderBtnTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderBarPaint = new Paint();
+    private final Paint reorderDropIndicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    // ── Long press detection via Handler ─────────────────────────────
+    private final Handler longPressHandler = new Handler(Looper.getMainLooper());
+    private final Runnable longPressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (activeDrag == Drag.NONE && downSegIndex >= 0 && segments.size() > 1) {
+                longPressTriggered = true;
+                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                enterReorderMode();
+            }
+        }
+    };
     private final Runnable edgeScrollRunnable = new Runnable() {
         @Override
         public void run() {
@@ -216,6 +254,7 @@ public class EditorTimelineView extends View {
         void onPlayheadSeeked(float fractionInSegment);
         void onPlayheadDragFinished();
         void onSegmentReordered(int fromIndex, int toIndex);
+        void onReorderModeChanged(boolean entering);
     }
 
     // ── Constructors ─────────────────────────────────────────────────
@@ -275,6 +314,32 @@ public class EditorTimelineView extends View {
         trimRecoverPaint.setStyle(Paint.Style.FILL);
         edgeScrollZonePx = EDGE_SCROLL_ZONE_DP * density;
         edgeScrollMaxSpeedPx = EDGE_SCROLL_MAX_SPEED_DP * density;
+
+        // Reorder mode paints
+        reorderBarHeightPx = REORDER_BAR_HEIGHT_DP * density;
+        reorderBtnPaddingPx = REORDER_BTN_PADDING_DP * density;
+        reorderBlockCornerPx = REORDER_BLOCK_CORNER_DP * density;
+        reorderBgPaint2.setColor(0xE0111111);
+        reorderBgPaint2.setStyle(Paint.Style.FILL);
+        reorderBarPaint.setColor(0xFF1A1A1A);
+        reorderBarPaint.setStyle(Paint.Style.FILL);
+        reorderBlockPaint2.setColor(0xFF2D2D2D);
+        reorderBlockPaint2.setStyle(Paint.Style.FILL);
+        reorderBlockDragPaint.setColor(0xFF3A3A3A);
+        reorderBlockDragPaint.setStyle(Paint.Style.FILL);
+        reorderBlockSelectedPaint.setColor(COLOR_BORDER_SEL);
+        reorderBlockSelectedPaint.setStyle(Paint.Style.STROKE);
+        reorderBlockSelectedPaint.setStrokeWidth(2.5f * density);
+        reorderNumPaint.setColor(0xDDFFFFFF);
+        reorderNumPaint.setTextSize(14f * density);
+        reorderNumPaint.setTextAlign(Paint.Align.CENTER);
+        reorderNumPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        reorderBtnTextPaint.setColor(COLOR_HANDLE);
+        reorderBtnTextPaint.setTextSize(14f * density);
+        reorderBtnTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        reorderDropIndicatorPaint.setColor(COLOR_HANDLE);
+        reorderDropIndicatorPaint.setStrokeWidth(3f * density);
+        reorderDropIndicatorPaint.setStrokeCap(Paint.Cap.ROUND);
         
         // Initialize gesture detectors
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
@@ -479,6 +544,13 @@ public class EditorTimelineView extends View {
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
+
+        // Reorder mode draws its own UI over everything
+        if (isReorderMode) {
+            drawReorderMode(canvas);
+            return;
+        }
+
         int w = getWidth();
         float tTop = rulerHeightPx;
         float tBot = tTop + trackHeightPx;
@@ -501,10 +573,6 @@ public class EditorTimelineView extends View {
 
         if (selectedIndex >= 0 && selectedIndex < segRects.size()) {
             drawTrimHandles(canvas, segRects.get(selectedIndex));
-        }
-
-        if (activeDrag == Drag.REORDER && reorderIdx >= 0 && reorderIdx < segRects.size()) {
-            drawGhost(canvas);
         }
         
         canvas.restore();
@@ -648,12 +716,6 @@ public class EditorTimelineView extends View {
         RectF r = segRects.get(i);
         boolean sel = (i == selectedIndex);
 
-        if (activeDrag == Drag.REORDER && i == reorderIdx) {
-            segmentPaint.setColor(0xFF1A1A1A);
-            canvas.drawRoundRect(r, segmentCornerPx, segmentCornerPx, segmentPaint);
-            return;
-        }
-
         // Draw thumbnails if available, otherwise draw solid color
         String clipId = String.valueOf(i);
         if (thumbnailsCache.containsKey(clipId) && !thumbnailsCache.get(clipId).isEmpty()) {
@@ -784,14 +846,216 @@ public class EditorTimelineView extends View {
         canvas.drawRoundRect(n, handleNotchWidthPx / 2f, handleNotchWidthPx / 2f, handleNotchPaint);
     }
 
-private void drawGhost(Canvas canvas) {
-        if (reorderIdx < 0 || reorderIdx >= segRects.size()) return;
-        RectF orig = segRects.get(reorderIdx);
-        float hw = orig.width() / 2f;
-        RectF g = new RectF(reorderX - hw, orig.top, reorderX + hw, orig.bottom);
-        canvas.drawRoundRect(g, segmentCornerPx, segmentCornerPx, dragGhostPaint);
-        String lbl = String.valueOf(reorderIdx + 1);
-        canvas.drawText(lbl, g.centerX(), g.centerY() + labelPaint.getTextSize() / 3f, labelPaint);
+// ══════════════════════════════════════════════════════════════════
+    //  REORDER MODE DRAWING
+    // ══════════════════════════════════════════════════════════════════
+
+    private void drawReorderMode(@NonNull Canvas canvas) {
+        int w = getWidth();
+        if (w <= 0) w = getParent() instanceof View ? ((View) getParent()).getWidth() : 500;
+        int h = getHeight();
+        int n = reorderOrder.size();
+        if (n == 0) return;
+
+        // Dark overlay background
+        canvas.drawRect(0, 0, w, h, reorderBgPaint2);
+
+        // ── Top bar ──
+        canvas.drawRect(0, 0, w, reorderBarHeightPx, reorderBarPaint);
+
+        // Cancel "✕" on left
+        reorderBtnTextPaint.setTextAlign(Paint.Align.LEFT);
+        float btnY = reorderBarHeightPx / 2f + reorderBtnTextPaint.getTextSize() / 3f;
+        canvas.drawText("✕  Cancel", reorderBtnPaddingPx, btnY, reorderBtnTextPaint);
+        float cancelTextW = reorderBtnTextPaint.measureText("✕  Cancel");
+        reorderCancelRect.set(0, 0, reorderBtnPaddingPx + cancelTextW + reorderBtnPaddingPx, reorderBarHeightPx);
+
+        // "Done" on right
+        reorderBtnTextPaint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("Done", w - reorderBtnPaddingPx, btnY, reorderBtnTextPaint);
+        float doneTextW = reorderBtnTextPaint.measureText("Done");
+        reorderDoneRect.set(w - reorderBtnPaddingPx - doneTextW - reorderBtnPaddingPx, 0, w, reorderBarHeightPx);
+
+        // Title "Reorder" in center
+        reorderBtnTextPaint.setTextAlign(Paint.Align.CENTER);
+        reorderBtnTextPaint.setColor(0xAAFFFFFF);
+        canvas.drawText("Reorder", w / 2f, btnY, reorderBtnTextPaint);
+        reorderBtnTextPaint.setColor(COLOR_HANDLE);  // restore
+
+        // ── Compute block layout ──
+        float availW = w - reorderBtnPaddingPx * 2;
+        float availH = h - reorderBarHeightPx - 16f * density;  // vertical space for blocks
+        reorderGapPx = segmentGapPx * 2;
+        reorderBlockSize = Math.min(availH * 0.8f,
+                (availW - (n - 1) * reorderGapPx) / n);
+        reorderBlockSize = Math.max(reorderBlockSize, 36f * density);  // minimum size
+        float totalRowW = n * reorderBlockSize + (n - 1) * reorderGapPx;
+        reorderRowStartX = (w - totalRowW) / 2f;
+        reorderRowCenterY = reorderBarHeightPx + (h - reorderBarHeightPx) / 2f;
+
+        // ── Compute drop position if dragging ──
+        int dropTarget = -1;
+        if (reorderDragIdx >= 0) {
+            dropTarget = computeReorderDropTarget(reorderDragCenterX);
+        }
+
+        // ── Draw blocks ──
+        float drawIdx = 0;
+        for (int i = 0; i < n; i++) {
+            if (i == reorderDragIdx) continue; // Skip the dragged block (drawn later)
+
+            // If a block is being dragged, shift blocks to show drop gap
+            float visualPos = drawIdx;
+            if (reorderDragIdx >= 0 && dropTarget >= 0) {
+                int adjustedDrop = dropTarget;
+                if (reorderDragIdx < dropTarget) adjustedDrop--;
+                if (drawIdx >= adjustedDrop) visualPos = drawIdx + 1;
+            }
+
+            float bx = reorderRowStartX + visualPos * (reorderBlockSize + reorderGapPx);
+            float by = reorderRowCenterY - reorderBlockSize / 2f;
+            RectF blockRect = new RectF(bx, by, bx + reorderBlockSize, by + reorderBlockSize);
+
+            canvas.drawRoundRect(blockRect, reorderBlockCornerPx, reorderBlockCornerPx, reorderBlockPaint2);
+
+            // Segment number
+            int segNum = reorderOrder.get(i) + 1;
+            canvas.drawText(String.valueOf(segNum), blockRect.centerX(),
+                    blockRect.centerY() + reorderNumPaint.getTextSize() / 3f, reorderNumPaint);
+
+            drawIdx++;
+        }
+
+        // ── Draw drop indicator line ──
+        if (reorderDragIdx >= 0 && dropTarget >= 0) {
+            int adjustedDrop = dropTarget;
+            if (reorderDragIdx < dropTarget) adjustedDrop--;
+            float indicatorX = reorderRowStartX + adjustedDrop * (reorderBlockSize + reorderGapPx) - reorderGapPx / 2f;
+            float indicatorTop = reorderRowCenterY - reorderBlockSize / 2f - 4f * density;
+            float indicatorBot = reorderRowCenterY + reorderBlockSize / 2f + 4f * density;
+            canvas.drawLine(indicatorX, indicatorTop, indicatorX, indicatorBot, reorderDropIndicatorPaint);
+        }
+
+        // ── Draw dragged block last (on top) ──
+        if (reorderDragIdx >= 0 && reorderDragIdx < n) {
+            float bx = reorderDragCenterX - reorderBlockSize / 2f;
+            float by = reorderDragCenterY - reorderBlockSize / 2f;
+            RectF dragRect = new RectF(bx, by, bx + reorderBlockSize, by + reorderBlockSize);
+
+            canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx, reorderBlockDragPaint);
+            canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx, reorderBlockSelectedPaint);
+
+            int segNum = reorderOrder.get(reorderDragIdx) + 1;
+            canvas.drawText(String.valueOf(segNum), dragRect.centerX(),
+                    dragRect.centerY() + reorderNumPaint.getTextSize() / 3f, reorderNumPaint);
+        }
+    }
+
+    private int computeReorderDropTarget(float fingerX) {
+        int n = reorderOrder.size();
+        for (int i = 0; i < n; i++) {
+            float blockCenterX = reorderRowStartX + i * (reorderBlockSize + reorderGapPx) + reorderBlockSize / 2f;
+            if (fingerX < blockCenterX) return i;
+        }
+        return n; // drop at end
+    }
+
+    private void enterReorderMode() {
+        isReorderMode = true;
+        reorderOrder.clear();
+        for (int i = 0; i < segments.size(); i++) reorderOrder.add(i);
+        reorderDragIdx = -1;
+        if (listener != null) listener.onReorderModeChanged(true);
+        invalidate();
+    }
+
+    private void exitReorderMode(boolean commit) {
+        isReorderMode = false;
+        if (commit && listener != null) {
+            // Apply the permutation using a sequence of moveClip operations
+            // Build the desired final order
+            List<Integer> desired = new ArrayList<>(reorderOrder);
+            List<Integer> current = new ArrayList<>();
+            for (int i = 0; i < desired.size(); i++) current.add(i);
+
+            for (int targetPos = 0; targetPos < desired.size(); targetPos++) {
+                int wantIdx = desired.get(targetPos);
+                int currentPos = current.indexOf(wantIdx);
+                if (currentPos != targetPos) {
+                    listener.onSegmentReordered(currentPos, targetPos);
+                    // Reflect the move in our tracking list
+                    int moved = current.remove(currentPos);
+                    current.add(targetPos, moved);
+                }
+            }
+        }
+        reorderOrder.clear();
+        reorderDragIdx = -1;
+        if (listener != null) listener.onReorderModeChanged(false);
+        invalidate();
+    }
+
+    private boolean handleReorderTouch(MotionEvent e) {
+        float x = e.getX(), y = e.getY();
+        int n = reorderOrder.size();
+
+        // Prevent parent (HorizontalScrollView) from intercepting
+        getParent().requestDisallowInterceptTouchEvent(true);
+
+        switch (e.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                // Check cancel button
+                if (reorderCancelRect.contains(x, y)) {
+                    exitReorderMode(false);
+                    return true;
+                }
+                // Check done button
+                if (reorderDoneRect.contains(x, y)) {
+                    exitReorderMode(true);
+                    return true;
+                }
+                // Check if touching a block
+                for (int i = 0; i < n; i++) {
+                    float bx = reorderRowStartX + i * (reorderBlockSize + reorderGapPx);
+                    float by = reorderRowCenterY - reorderBlockSize / 2f;
+                    if (x >= bx && x <= bx + reorderBlockSize
+                            && y >= by && y <= by + reorderBlockSize) {
+                        reorderDragIdx = i;
+                        reorderDragCenterX = bx + reorderBlockSize / 2f;
+                        reorderDragCenterY = by + reorderBlockSize / 2f;
+                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                        invalidate();
+                        return true;
+                    }
+                }
+                return true;
+
+            case MotionEvent.ACTION_MOVE:
+                if (reorderDragIdx >= 0) {
+                    reorderDragCenterX = x;
+                    reorderDragCenterY = y;
+                    invalidate();
+                }
+                return true;
+
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                if (reorderDragIdx >= 0) {
+                    int dropTarget = computeReorderDropTarget(x);
+                    // Clamp
+                    dropTarget = Math.max(0, Math.min(dropTarget, n));
+                    // Perform the visual reorder
+                    int movedItem = reorderOrder.remove(reorderDragIdx);
+                    int insertAt = dropTarget;
+                    if (reorderDragIdx < dropTarget) insertAt--;
+                    insertAt = Math.max(0, Math.min(insertAt, reorderOrder.size()));
+                    reorderOrder.add(insertAt, movedItem);
+                    reorderDragIdx = -1;
+                    invalidate();
+                }
+                return true;
+        }
+        return true;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -827,6 +1091,11 @@ private void drawGhost(Canvas canvas) {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
+        // Reorder mode intercepts all touch events
+        if (isReorderMode) {
+            return handleReorderTouch(e);
+        }
+
         Log.d(TAG, "onTouchEvent: action=" + e.getActionMasked() + " x=" + e.getX() + " isScaling=" + isScaling + " activeDrag=" + activeDrag);
         
         // Let scale detector process ALL events (it needs to track for pinch detection)
@@ -900,6 +1169,11 @@ private void drawGhost(Canvas canvas) {
         downSegIndex = hitTestSegment(scrolledX, y);
         Log.d(TAG, "onDown: hit segment " + downSegIndex);
         if (downSegIndex >= 0) {
+            // Schedule long press detection via Handler
+            longPressHandler.removeCallbacks(longPressRunnable);
+            if (segments.size() > 1) {
+                longPressHandler.postDelayed(longPressRunnable, LONG_PRESS_MS);
+            }
             getParent().requestDisallowInterceptTouchEvent(true);
             return true;
         }
@@ -911,18 +1185,9 @@ private void drawGhost(Canvas canvas) {
         float dx = Math.abs(x - downX);
         float scrolledX = x + scrollOffsetPx;
 
-        // Long press for reorder
-        if (!longPressTriggered && activeDrag == Drag.NONE
-                && downSegIndex >= 0 && segments.size() > 1) {
-            if (System.currentTimeMillis() - downTime >= LONG_PRESS_MS && dx < touchSlopPx) {
-                longPressTriggered = true;
-                activeDrag = Drag.REORDER;
-                reorderIdx = downSegIndex;
-                reorderX = scrolledX;
-                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                invalidate();
-                return true;
-            }
+        // Cancel long press if finger moved beyond slop
+        if (dx > touchSlopPx) {
+            longPressHandler.removeCallbacks(longPressRunnable);
         }
 
         if (activeDrag == Drag.LEFT_HANDLE || activeDrag == Drag.RIGHT_HANDLE) {
@@ -933,12 +1198,6 @@ private void drawGhost(Canvas canvas) {
             return true;
         }
 
-        if (activeDrag == Drag.REORDER) {
-            reorderX = scrolledX;
-            invalidate();
-            return true;
-        }
-
         return true;
     }
 
@@ -946,21 +1205,15 @@ private void drawGhost(Canvas canvas) {
         Drag last = activeDrag;
         float scrolledX = x + scrollOffsetPx;
 
-        // Stop edge auto-scroll
+        // Stop edge auto-scroll and cancel long press
         stopEdgeScroll();
+        longPressHandler.removeCallbacks(longPressRunnable);
 
         if (last == Drag.LEFT_HANDLE || last == Drag.RIGHT_HANDLE) {
             if (listener != null) {
                 // Use the drag-tracked fractions (segment data was not updated during drag)
                 listener.onTrimFinished(selectedIndex, trimDragStartFrac, trimDragEndFrac);
             }
-        } else if (last == Drag.REORDER) {
-            int drop = findDrop(reorderX);
-            if (drop >= 0 && drop != reorderIdx && listener != null) {
-                listener.onSegmentReordered(reorderIdx, drop);
-            }
-            reorderIdx = -1;
-            invalidate();
         } else if (isUp && downSegIndex >= 0) {
             if (Math.abs(x - downX) < touchSlopPx) {
                 // Toggle selection: deselect if clicking same segment, select if different
@@ -1195,7 +1448,9 @@ private void drawGhost(Canvas canvas) {
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             Log.d(TAG, "GestureListener.onScroll: distanceX=" + distanceX + " activeDrag=" + activeDrag);
-            // Only handle scroll if not dragging handles or reordering
+            // Cancel long press — user is scrolling, not holding
+            longPressHandler.removeCallbacks(longPressRunnable);
+            // Only handle scroll if not dragging handles
             if (activeDrag != Drag.NONE) {
                 Log.d(TAG, "GestureListener.onScroll: ignoring, activeDrag=" + activeDrag);
                 return false;
