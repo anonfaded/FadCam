@@ -1174,11 +1174,10 @@ public class EditorTimelineView extends View {
             if (segments.size() > 1) {
                 longPressHandler.postDelayed(longPressRunnable, LONG_PRESS_MS);
             }
-            getParent().requestDisallowInterceptTouchEvent(true);
-            return true;
         }
-
-        return false;
+        // Always accept touch for scrolling (anywhere on timeline, not just on segments)
+        getParent().requestDisallowInterceptTouchEvent(true);
+        return true;
     }
 
     private boolean onMove(float x, float y) {
