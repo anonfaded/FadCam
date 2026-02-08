@@ -2,6 +2,7 @@ package com.fadcam.ui.faditor.timeline;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -26,11 +27,16 @@ import androidx.annotation.Nullable;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.Timeline;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Advanced NLE timeline: fixed center playhead, pinch-zoom, frame thumbnails.
@@ -117,9 +123,13 @@ public class EditorTimelineView extends View {
     private float zoomLevel = 1f;
     private float scrollOffsetPx = 0f;
     
-    // Thumbnails cache (key: clipId, value: list of thumbnails)
+    // Thumbnails cache (key: content-based cacheKey, value: list of thumbnails)
     private final Map<String, List<Bitmap>> thumbnailsCache = new HashMap<>();
-    private static final long THUMBNAIL_INTERVAL_MS = 1000;
+    private final Set<String> thumbnailsLoading = new HashSet<>();
+    private static final int MAX_THUMBNAILS_PER_SEGMENT = 30;
+    private final ExecutorService thumbnailExecutor = Executors.newFixedThreadPool(2);
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Path clipPath = new Path();
 
     // ── Touch ────────────────────────────────────────────────────────
     private boolean isScaling = false;
@@ -229,6 +239,9 @@ public class EditorTimelineView extends View {
     private static class SegmentData {
         final int index;
         final long sourceDurationMs;
+        final Uri sourceUri;
+        final boolean isImageClip;
+        final String cacheKey;
         long inPointMs;
         long outPointMs;
         long trimmedMs;
@@ -238,11 +251,15 @@ public class EditorTimelineView extends View {
         SegmentData(int i, @NonNull Clip clip) {
             this.index = i;
             this.sourceDurationMs = clip.getSourceDurationMs();
+            this.sourceUri = clip.getSourceUri();
+            this.isImageClip = clip.isImageClip();
             this.inPointMs = clip.getInPointMs();
             this.outPointMs = clip.getOutPointMs();
             this.trimmedMs = outPointMs - inPointMs;
             this.speed = clip.getSpeedMultiplier();
             this.effectiveMs = Math.max(1, (long)(trimmedMs / speed));
+            // Content-based key: same media + same trim = same thumbnails
+            this.cacheKey = sourceUri.hashCode() + "_" + inPointMs + "_" + outPointMs;
         }
     }
 
@@ -362,10 +379,24 @@ public class EditorTimelineView extends View {
     public void setTimeline(@NonNull Timeline timeline, int selected) {
         segments.clear();
         totalEffectiveMs = 0;
+        Set<String> activeKeys = new HashSet<>();
         for (int i = 0; i < timeline.getClipCount(); i++) {
             SegmentData sd = new SegmentData(i, timeline.getClip(i));
             segments.add(sd);
             totalEffectiveMs += sd.effectiveMs;
+            activeKeys.add(sd.cacheKey);
+        }
+        // Evict cache entries no longer referenced
+        Set<String> toEvict = new HashSet<>(thumbnailsCache.keySet());
+        toEvict.removeAll(activeKeys);
+        for (String key : toEvict) {
+            List<Bitmap> old = thumbnailsCache.remove(key);
+            if (old != null) {
+                for (Bitmap bmp : old) {
+                    if (bmp != null && !bmp.isRecycled()) bmp.recycle();
+                }
+            }
+            thumbnailsLoading.remove(key);
         }
         selectedIndex = selected;  // Allow -1 for no selection
         if (selected >= 0) {
@@ -715,15 +746,16 @@ public class EditorTimelineView extends View {
     private void drawSegment(Canvas canvas, int i) {
         RectF r = segRects.get(i);
         boolean sel = (i == selectedIndex);
+        SegmentData sd = segments.get(i);
 
         // Draw thumbnails if available, otherwise draw solid color
-        String clipId = String.valueOf(i);
-        if (thumbnailsCache.containsKey(clipId) && !thumbnailsCache.get(clipId).isEmpty()) {
-            drawThumbnailsForSegment(canvas, r, clipId);
+        List<Bitmap> thumbs = thumbnailsCache.get(sd.cacheKey);
+        if (thumbs != null && !thumbs.isEmpty()) {
+            drawThumbnailsForSegment(canvas, r, thumbs, sel);
         } else {
             segmentPaint.setColor(sel ? COLOR_SEGMENT_SEL : COLOR_SEGMENT);
             canvas.drawRoundRect(r, segmentCornerPx, segmentCornerPx, segmentPaint);
-}
+        }
 
         // Selection border
         if (sel) {
@@ -743,35 +775,183 @@ public class EditorTimelineView extends View {
         }
     }
     
-    private void drawThumbnailsForSegment(Canvas canvas, RectF rect, String clipId) {
-        List<Bitmap> thumbs = thumbnailsCache.get(clipId);
-        if (thumbs == null || thumbs.isEmpty()) return;
-        
-        float thumbWidth = thumbs.get(0).getWidth();
+    private void drawThumbnailsForSegment(Canvas canvas, RectF rect,
+                                          List<Bitmap> thumbs, boolean selected) {
+        if (thumbs.isEmpty()) return;
+
+        // Clip canvas to rounded rect so thumbnails don't bleed outside corners
+        canvas.save();
+        clipPath.reset();
+        clipPath.addRoundRect(rect, segmentCornerPx, segmentCornerPx, Path.Direction.CW);
+        canvas.clipPath(clipPath);
+
+        // Tile thumbnails across the segment
+        float tileWidth = rect.height();  // Square tiles matching track height
         float x = rect.left;
-        
-        for (Bitmap thumb : thumbs) {
-            if (x >= rect.right) break;
-            
-            float drawWidth = Math.min(thumbWidth, rect.right - x);
-            RectF dest = new RectF(x, rect.top, x + drawWidth, rect.bottom);
-            canvas.drawBitmap(thumb, null, dest, null);
-            
-            x += thumbWidth;
+        int thumbIdx = 0;
+
+        while (x < rect.right && thumbIdx < thumbs.size()) {
+            Bitmap thumb = thumbs.get(thumbIdx);
+            if (thumb != null && !thumb.isRecycled()) {
+                float drawRight = Math.min(x + tileWidth, rect.right);
+                RectF dest = new RectF(x, rect.top, drawRight, rect.bottom);
+                canvas.drawBitmap(thumb, null, dest, null);
+            }
+            x += tileWidth;
+            thumbIdx++;
+            // If we've used all thumbs but still have space, loop back
+            if (thumbIdx >= thumbs.size() && x < rect.right) {
+                thumbIdx = 0;
+            }
         }
+
+        // Darken overlay for selected segment (green tint)
+        if (selected) {
+            segmentPaint.setColor(0x40004400);
+            canvas.drawRect(rect, segmentPaint);
+        } else {
+            // Slight darken for unselected to make labels readable
+            segmentPaint.setColor(0x30000000);
+            canvas.drawRect(rect, segmentPaint);
+        }
+
+        canvas.restore();
     }
     
+    /**
+     * Loads thumbnails for a segment on a background thread.
+     * Uses MediaMetadataRetriever for video clips and BitmapFactory for image clips.
+     */
     private void loadThumbnailsForSegment(int index) {
         if (index < 0 || index >= segments.size()) return;
-        
-        String clipId = String.valueOf(index);
-        if (thumbnailsCache.containsKey(clipId)) return; // Already loaded/loading
-        
-        thumbnailsCache.put(clipId, new ArrayList<>()); // Mark as loading
-        
-        // Load in background
-        // For now, just mark as loaded without actual thumbnails
-        // You can implement actual MediaMetadataRetriever logic here
+        if (index >= segRects.size()) return;
+
+        SegmentData sd = segments.get(index);
+        String key = sd.cacheKey;
+
+        // Already loaded or currently loading
+        if (thumbnailsCache.containsKey(key) && !thumbnailsCache.get(key).isEmpty()) return;
+        if (thumbnailsLoading.contains(key)) return;
+
+        thumbnailsLoading.add(key);
+
+        // Calculate how many thumbnails we need based on segment width
+        RectF rect = segRects.get(index);
+        float tileWidth = trackHeightPx;  // Square tiles
+        int count = Math.max(1, (int) Math.ceil(rect.width() / tileWidth));
+        count = Math.min(count, MAX_THUMBNAILS_PER_SEGMENT);
+
+        int thumbSize = Math.max(1, (int) trackHeightPx);
+        Uri uri = sd.sourceUri;
+        boolean isImage = sd.isImageClip;
+        long inMs = sd.inPointMs;
+        long outMs = sd.outPointMs;
+        int finalCount = count;
+
+        thumbnailExecutor.execute(() -> {
+            List<Bitmap> thumbs = new ArrayList<>();
+            try {
+                if (isImage) {
+                    extractImageThumbnails(uri, thumbs, thumbSize);
+                } else {
+                    extractVideoThumbnails(uri, inMs, outMs, thumbs, thumbSize, finalCount);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to extract thumbnails for " + key, e);
+            }
+            mainHandler.post(() -> {
+                thumbnailsLoading.remove(key);
+                if (!thumbs.isEmpty()) {
+                    thumbnailsCache.put(key, thumbs);
+                    invalidate();
+                }
+            });
+        });
+    }
+
+    /**
+     * Extracts a single thumbnail from an image URI, scaled to thumbSize.
+     */
+    private void extractImageThumbnails(@NonNull Uri uri, @NonNull List<Bitmap> out, int thumbSize) {
+        try {
+            // First pass: get dimensions only
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inJustDecodeBounds = true;
+            try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
+                if (is == null) return;
+                BitmapFactory.decodeStream(is, null, opts);
+            }
+            if (opts.outWidth <= 0 || opts.outHeight <= 0) return;
+
+            // Calculate sample size for efficient decoding
+            int maxDim = Math.max(opts.outWidth, opts.outHeight);
+            opts.inSampleSize = Math.max(1, maxDim / (thumbSize * 2));
+            opts.inJustDecodeBounds = false;
+
+            // Second pass: decode scaled bitmap
+            Bitmap raw;
+            try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
+                if (is == null) return;
+                raw = BitmapFactory.decodeStream(is, null, opts);
+            }
+            if (raw == null) return;
+
+            // Center-crop to square
+            Bitmap cropped = centerCropSquare(raw, thumbSize);
+            if (cropped != raw) raw.recycle();
+            out.add(cropped);
+        } catch (Exception e) {
+            Log.w(TAG, "Image thumbnail extraction failed", e);
+        }
+    }
+
+    /**
+     * Extracts evenly-spaced video frames using MediaMetadataRetriever.
+     */
+    private void extractVideoThumbnails(@NonNull Uri uri, long inMs, long outMs,
+                                        @NonNull List<Bitmap> out, int thumbSize, int count) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(getContext(), uri);
+            long rangeMs = Math.max(1, outMs - inMs);
+
+            for (int i = 0; i < count; i++) {
+                long timeMs = inMs + (rangeMs * i) / count;
+                long timeUs = timeMs * 1000L;
+                Bitmap frame = retriever.getFrameAtTime(timeUs,
+                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                if (frame != null) {
+                    Bitmap cropped = centerCropSquare(frame, thumbSize);
+                    if (cropped != frame) frame.recycle();
+                    out.add(cropped);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Video thumbnail extraction failed", e);
+        } finally {
+            try {
+                retriever.release();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * Center-crops a bitmap to a square and scales to targetSize.
+     */
+    @NonNull
+    private static Bitmap centerCropSquare(@NonNull Bitmap src, int targetSize) {
+        int w = src.getWidth();
+        int h = src.getHeight();
+        int side = Math.min(w, h);
+        int x = (w - side) / 2;
+        int y = (h - side) / 2;
+        Bitmap cropped = Bitmap.createBitmap(src, x, y, side, side);
+        if (cropped.getWidth() != targetSize) {
+            Bitmap scaled = Bitmap.createScaledBitmap(cropped, targetSize, targetSize, true);
+            if (scaled != cropped) cropped.recycle();
+            return scaled;
+        }
+        return cropped;
     }
     
     private void drawCenterPlayhead(Canvas canvas, float tTop, float tBot) {
@@ -1539,6 +1719,9 @@ public class EditorTimelineView extends View {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        // Shut down thumbnail loader
+        thumbnailExecutor.shutdownNow();
+        thumbnailsLoading.clear();
         // Clean up thumbnails
         for (List<Bitmap> thumbs : thumbnailsCache.values()) {
             if (thumbs != null) {
