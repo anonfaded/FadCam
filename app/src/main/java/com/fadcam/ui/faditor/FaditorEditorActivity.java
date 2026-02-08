@@ -304,8 +304,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 long duration = clip.getSourceDurationMs();
                 clip.setInPointMs((long)(startFraction * duration));
                 clip.setOutPointMs((long)(endFraction * duration));
-                editorTimeline.setTrimFromClip(clip);
-                // Update time labels during drag
+                // View handles its own visual update during drag.
+                // setTrimFromClip is called in onTrimFinished for the final commit.
                 long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
                 timeCurrent.setText(TimeFormatter.formatAuto(0));
                 timeTotal.setText(TimeFormatter.formatAuto(trimDuration));

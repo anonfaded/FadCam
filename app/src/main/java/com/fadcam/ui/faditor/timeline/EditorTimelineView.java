@@ -91,6 +91,8 @@ public class EditorTimelineView extends View {
     private final Paint playheadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint labelPaint         = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dragGhostPaint     = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint trimOverlayPaint    = new Paint();
+    private final Paint trimRecoverPaint    = new Paint();
 
     // ── Pixel dimensions ─────────────────────────────────────────────
     private float density;
@@ -130,6 +132,9 @@ public class EditorTimelineView extends View {
     private float reorderX;
     private long dragStartInMs, dragStartOutMs;
     private float dragStartSegLeft, dragStartSegRight;
+    private float trimDragX;                  // Timeline-space x of handle during trim drag
+    private float trimDragStartFrac;          // Start fraction computed during trim drag
+    private float trimDragEndFrac;            // End fraction computed during trim drag
     private static final long LONG_PRESS_MS = 400;
     
     // Gesture detectors for zoom and scroll
@@ -222,6 +227,10 @@ public class EditorTimelineView extends View {
         labelPaint.setTextAlign(Paint.Align.CENTER);
         dragGhostPaint.setColor(COLOR_DRAG_GHOST);
         dragGhostPaint.setStyle(Paint.Style.FILL);
+        trimOverlayPaint.setColor(0x80000000);
+        trimOverlayPaint.setStyle(Paint.Style.FILL);
+        trimRecoverPaint.setColor(0x404CAF50);
+        trimRecoverPaint.setStyle(Paint.Style.FILL);
         
         // Initialize gesture detectors
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
@@ -340,6 +349,7 @@ public class EditorTimelineView extends View {
             totalEffectiveMs = 0;
             for (SegmentData sd : segments) totalEffectiveMs += sd.effectiveMs;
             computeRects();
+            clampScroll();
             requestLayout();
             invalidate();
         }
@@ -661,19 +671,51 @@ public class EditorTimelineView extends View {
     private void drawTrimHandles(Canvas canvas, RectF seg) {
         float hTop = seg.top - handleOverhangPx;
         float hBot = seg.bottom + handleOverhangPx;
-        
-        // Use same corner radius as segments for seamless blend
         float cornerRadius = segmentCornerPx;
 
-        // Left handle — fully rounded for smooth blend
-        RectF leftH = new RectF(seg.left, hTop, seg.left + handleWidthPx, hBot);
-        canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
-        drawNotch(canvas, leftH);
-
-        // Right handle — fully rounded for smooth blend
-        RectF rightH = new RectF(seg.right - handleWidthPx, hTop, seg.right, hBot);
-        canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
-        drawNotch(canvas, rightH);
+        if (activeDrag == Drag.LEFT_HANDLE) {
+            if (trimDragX > seg.left) {
+                // Trimming: dim overlay from seg.left to handle
+                canvas.drawRect(seg.left, seg.top, trimDragX, seg.bottom, trimOverlayPaint);
+            } else if (trimDragX < seg.left) {
+                // Recovering: green overlay from handle to seg.left
+                canvas.drawRect(trimDragX, seg.top, seg.left, seg.bottom, trimRecoverPaint);
+            }
+            // Left handle at drag position
+            RectF leftH = new RectF(trimDragX - handleWidthPx / 2f, hTop,
+                    trimDragX + handleWidthPx / 2f, hBot);
+            canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, leftH);
+            // Right handle at segment edge (unchanged)
+            RectF rightH = new RectF(seg.right - handleWidthPx, hTop, seg.right, hBot);
+            canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, rightH);
+        } else if (activeDrag == Drag.RIGHT_HANDLE) {
+            // Left handle at segment edge (unchanged)
+            RectF leftH = new RectF(seg.left, hTop, seg.left + handleWidthPx, hBot);
+            canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, leftH);
+            if (trimDragX < seg.right) {
+                // Trimming: dim overlay from handle to seg.right
+                canvas.drawRect(trimDragX, seg.top, seg.right, seg.bottom, trimOverlayPaint);
+            } else if (trimDragX > seg.right) {
+                // Recovering: green overlay from seg.right to handle
+                canvas.drawRect(seg.right, seg.top, trimDragX, seg.bottom, trimRecoverPaint);
+            }
+            // Right handle at drag position
+            RectF rightH = new RectF(trimDragX - handleWidthPx / 2f, hTop,
+                    trimDragX + handleWidthPx / 2f, hBot);
+            canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, rightH);
+        } else {
+            // Normal: handles at segment edges
+            RectF leftH = new RectF(seg.left, hTop, seg.left + handleWidthPx, hBot);
+            canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, leftH);
+            RectF rightH = new RectF(seg.right - handleWidthPx, hTop, seg.right, hBot);
+            canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, rightH);
+        }
     }
 
     private void drawNotch(Canvas canvas, RectF hr) {
@@ -727,10 +769,10 @@ private void drawGhost(Canvas canvas) {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        Log.d(TAG, "onTouchEvent: action=" + e.getActionMasked() + " x=" + e.getX() + " isScaling=" + isScaling);
+        Log.d(TAG, "onTouchEvent: action=" + e.getActionMasked() + " x=" + e.getX() + " isScaling=" + isScaling + " activeDrag=" + activeDrag);
         
         // Let scale detector process ALL events (it needs to track for pinch detection)
-        boolean scaledEvent = scaleDetector.onTouchEvent(e);
+        scaleDetector.onTouchEvent(e);
         
         // If actually pinch-zooming, block other handlers
         if (isScaling) {
@@ -738,11 +780,15 @@ private void drawGhost(Canvas canvas) {
             return true;
         }
         
-        // Let gesture detector process events
-        boolean gestureEvent = gestureDetector.onTouchEvent(e);
-        if (gestureEvent) {
-            Log.d(TAG, "onTouchEvent: consumed by gesture detector");
-            return true;
+        // When actively dragging a handle or reordering, bypass gesture detector
+        // to prevent GestureDetector.onTouchEvent() returning true and blocking onMove/onUp.
+        if (activeDrag == Drag.NONE) {
+            // Let gesture detector process events only when no active drag
+            boolean gestureEvent = gestureDetector.onTouchEvent(e);
+            if (gestureEvent) {
+                Log.d(TAG, "onTouchEvent: consumed by gesture detector");
+                return true;
+            }
         }
         
         // Handle custom touch logic for trim/reorder
@@ -784,6 +830,10 @@ private void drawGhost(Canvas canvas) {
                 RectF seg = segRects.get(selectedIndex);
                 dragStartSegLeft = seg.left;
                 dragStartSegRight = seg.right;
+                // Init trim drag visual state
+                trimDragStartFrac = sd.sourceDurationMs > 0 ? (float) sd.inPointMs / sd.sourceDurationMs : 0f;
+                trimDragEndFrac = sd.sourceDurationMs > 0 ? (float) sd.outPointMs / sd.sourceDurationMs : 1f;
+                trimDragX = scrolledX;
                 getParent().requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -837,7 +887,8 @@ private void drawGhost(Canvas canvas) {
 
         if (last == Drag.LEFT_HANDLE || last == Drag.RIGHT_HANDLE) {
             if (listener != null) {
-                listener.onTrimFinished(selectedIndex, getTrimStartFraction(), getTrimEndFraction());
+                // Use the drag-tracked fractions (segment data was not updated during drag)
+                listener.onTrimFinished(selectedIndex, trimDragStartFrac, trimDragEndFrac);
             }
         } else if (last == Drag.REORDER) {
             int drop = findDrop(reorderX);
@@ -894,8 +945,10 @@ private void drawGhost(Canvas canvas) {
     }
 
     /**
-     * Convert pixel drag to trim change using the scale-based px-per-ms.
-     * Uses captured drag-start values for stable, non-drifting conversion.
+     * Compute trim fractions from the pixel drag without updating segment data.
+     * Segment rect stays unchanged during drag — visual feedback is via a dim overlay
+     * and the trim handle drawn at the finger position (see drawTrimHandles).
+     * Segment data is applied only on ACTION_UP via onTrimFinished.
      */
     private void doTrimDrag(float x) {
         if (selectedIndex < 0 || selectedIndex >= segments.size()) return;
@@ -903,8 +956,6 @@ private void drawGhost(Canvas canvas) {
         if (sd.sourceDurationMs <= 0) return;
 
         boolean isLeft = (activeDrag == Drag.LEFT_HANDLE);
-        float currentStart = (float) sd.inPointMs / sd.sourceDurationMs;
-        float currentEnd = (float) sd.outPointMs / sd.sourceDurationMs;
 
         // px per effective ms at current scale
         float pxPerEffMs = dpPerSecondPx / 1000f;
@@ -914,20 +965,39 @@ private void drawGhost(Canvas canvas) {
         float minGapFrac = 500f / sd.sourceDurationMs;
 
         if (isLeft) {
+            float endFrac = (float) dragStartOutMs / sd.sourceDurationMs;
             float deltaX = x - dragStartSegLeft;
             float deltaSrcMs = deltaX / pxPerSrcMs;
-            long newInMs = Math.max(0, Math.min(sd.outPointMs - 500, dragStartInMs + (long) deltaSrcMs));
-            float newStart = (float) newInMs / sd.sourceDurationMs;
-            newStart = Math.max(0f, Math.min(newStart, currentEnd - minGapFrac));
-            if (listener != null) listener.onTrimChanged(selectedIndex, newStart, currentEnd, true);
+            long newInMs = Math.max(0, Math.min(dragStartOutMs - 500, dragStartInMs + (long) deltaSrcMs));
+            trimDragStartFrac = (float) newInMs / sd.sourceDurationMs;
+            trimDragStartFrac = Math.max(0f, Math.min(trimDragStartFrac, endFrac - minGapFrac));
+            trimDragEndFrac = endFrac;
         } else {
+            float startFrac = (float) dragStartInMs / sd.sourceDurationMs;
             float deltaX = x - dragStartSegRight;
             float deltaSrcMs = deltaX / pxPerSrcMs;
-            long newOutMs = Math.max(sd.inPointMs + 500,
+            long newOutMs = Math.max(dragStartInMs + 500,
                     Math.min(sd.sourceDurationMs, dragStartOutMs + (long) deltaSrcMs));
-            float newEnd = (float) newOutMs / sd.sourceDurationMs;
-            newEnd = Math.max(currentStart + minGapFrac, Math.min(1f, newEnd));
-            if (listener != null) listener.onTrimChanged(selectedIndex, currentStart, newEnd, false);
+            trimDragEndFrac = (float) newOutMs / sd.sourceDurationMs;
+            trimDragEndFrac = Math.max(startFrac + minGapFrac, Math.min(1f, trimDragEndFrac));
+            trimDragStartFrac = startFrac;
+        }
+
+        // Allow handle to extend beyond segment edges for trim recovery.
+        // Left extent: position where inPointMs would be 0
+        // Right extent: position where outPointMs would be sourceDurationMs
+        float pxPerSrcMs2 = (dpPerSecondPx / 1000f) / sd.speed;
+        float minTrimX = dragStartSegLeft - (dragStartInMs * pxPerSrcMs2);
+        float maxTrimX = dragStartSegRight + ((sd.sourceDurationMs - dragStartOutMs) * pxPerSrcMs2);
+        trimDragX = Math.max(minTrimX, Math.min(x, maxTrimX));
+
+        // Segment data and rects are NOT updated — visual feedback comes from
+        // the trim overlay drawn in drawTrimHandles. Data is committed in onUp.
+        invalidate();
+
+        // Notify listener for time label updates
+        if (listener != null) {
+            listener.onTrimChanged(selectedIndex, trimDragStartFrac, trimDragEndFrac, isLeft);
         }
     }
     
