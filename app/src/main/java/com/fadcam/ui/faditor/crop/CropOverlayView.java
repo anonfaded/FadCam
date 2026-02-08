@@ -41,7 +41,8 @@ public class CropOverlayView extends View {
 
     // ── Dimensions ───────────────────────────────────────────────────
     private static final float BORDER_WIDTH_PX = 3f;
-    private static final float HANDLE_RADIUS_PX = 14f;
+    private static final float HANDLE_STROKE_PX = 4f;
+    private static final float HANDLE_LENGTH_PX = 28f;
     private static final float HANDLE_TOUCH_RADIUS_PX = 40f;
     private static final float MIN_CROP_SIZE_PX = 60f;
 
@@ -113,7 +114,9 @@ public class CropOverlayView extends View {
         borderPaint.setStrokeWidth(BORDER_WIDTH_PX);
 
         handlePaint.setColor(Color.WHITE);
-        handlePaint.setStyle(Paint.Style.FILL);
+        handlePaint.setStyle(Paint.Style.STROKE);
+        handlePaint.setStrokeWidth(HANDLE_STROKE_PX);
+        handlePaint.setStrokeCap(Paint.Cap.ROUND);
 
         gridPaint.setColor(Color.argb(100, 255, 255, 255));
         gridPaint.setStyle(Paint.Style.STROKE);
@@ -127,14 +130,11 @@ public class CropOverlayView extends View {
      * this overlay. Must be called whenever the player layout changes.
      */
     public void setVideoContentRect(@NonNull RectF rect) {
-        // Inset by handle radius so corner handles are never clipped by the view edge
-        videoRect.set(
-                rect.left + HANDLE_RADIUS_PX,
-                rect.top + HANDLE_RADIUS_PX,
-                rect.right - HANDLE_RADIUS_PX,
-                rect.bottom - HANDLE_RADIUS_PX
-        );
-        // Reset crop to full (inset) video area
+        // Use the exact video content rect — no inset.
+        // Corner handles are drawn as L-brackets inside the crop area
+        // so they are never clipped by the view edge.
+        videoRect.set(rect);
+        // Reset crop to full video area
         cropRect.set(videoRect);
         invalidate();
     }
@@ -239,17 +239,17 @@ public class CropOverlayView extends View {
         // Draw crop border
         canvas.drawRect(cropRect, borderPaint);
 
-        // Draw corner handles
-        drawCornerHandle(canvas, cropRect.left, cropRect.top);
-        drawCornerHandle(canvas, cropRect.right, cropRect.top);
-        drawCornerHandle(canvas, cropRect.left, cropRect.bottom);
-        drawCornerHandle(canvas, cropRect.right, cropRect.bottom);
+        // Draw corner handles (L-shaped brackets — always inside the crop area)
+        drawCornerBracket(canvas, cropRect.left, cropRect.top, 1, 1);       // top-left
+        drawCornerBracket(canvas, cropRect.right, cropRect.top, -1, 1);     // top-right
+        drawCornerBracket(canvas, cropRect.left, cropRect.bottom, 1, -1);   // bottom-left
+        drawCornerBracket(canvas, cropRect.right, cropRect.bottom, -1, -1); // bottom-right
 
-        // Draw edge midpoint handles
-        drawEdgeHandle(canvas, cropRect.centerX(), cropRect.top);
-        drawEdgeHandle(canvas, cropRect.centerX(), cropRect.bottom);
-        drawEdgeHandle(canvas, cropRect.left, cropRect.centerY());
-        drawEdgeHandle(canvas, cropRect.right, cropRect.centerY());
+        // Draw edge midpoint handles (short dashes)
+        drawEdgeDash(canvas, cropRect.centerX(), cropRect.top, true);
+        drawEdgeDash(canvas, cropRect.centerX(), cropRect.bottom, true);
+        drawEdgeDash(canvas, cropRect.left, cropRect.centerY(), false);
+        drawEdgeDash(canvas, cropRect.right, cropRect.centerY(), false);
 
         // Draw grid (rule of thirds) while dragging
         if (showGrid && cropRect.width() > 10 && cropRect.height() > 10) {
@@ -268,12 +268,36 @@ public class CropOverlayView extends View {
         }
     }
 
-    private void drawCornerHandle(Canvas canvas, float cx, float cy) {
-        canvas.drawCircle(cx, cy, HANDLE_RADIUS_PX, handlePaint);
+    /**
+     * Draw an L-shaped corner bracket.
+     *
+     * @param cx    corner x coordinate (on the crop rect edge)
+     * @param cy    corner y coordinate (on the crop rect edge)
+     * @param dirX  +1 for left corners (bracket extends right), -1 for right corners
+     * @param dirY  +1 for top corners (bracket extends down), -1 for bottom corners
+     */
+    private void drawCornerBracket(Canvas canvas, float cx, float cy, int dirX, int dirY) {
+        // Horizontal arm of the L
+        canvas.drawLine(cx, cy, cx + dirX * HANDLE_LENGTH_PX, cy, handlePaint);
+        // Vertical arm of the L
+        canvas.drawLine(cx, cy, cx, cy + dirY * HANDLE_LENGTH_PX, handlePaint);
     }
 
-    private void drawEdgeHandle(Canvas canvas, float cx, float cy) {
-        canvas.drawCircle(cx, cy, HANDLE_RADIUS_PX * 0.6f, handlePaint);
+    /**
+     * Draw a short dash at an edge midpoint.
+     *
+     * @param cx         center x
+     * @param cy         center y
+     * @param horizontal true for top/bottom edges (draws horizontal dash),
+     *                   false for left/right edges (draws vertical dash)
+     */
+    private void drawEdgeDash(Canvas canvas, float cx, float cy, boolean horizontal) {
+        float halfLen = HANDLE_LENGTH_PX * 0.4f;
+        if (horizontal) {
+            canvas.drawLine(cx - halfLen, cy, cx + halfLen, cy, handlePaint);
+        } else {
+            canvas.drawLine(cx, cy - halfLen, cx, cy + halfLen, handlePaint);
+        }
     }
 
     // ── Touch handling ───────────────────────────────────────────────
