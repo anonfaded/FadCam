@@ -344,10 +344,27 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onPlayheadSeeked(float fractionInSegment) {
+            public void onPlayheadSeeked(int segmentIndex, float fractionInSegment) {
                 userDragging = true;
-                Clip clip = getSelectedClip();
+                // Get clip directly — DON'T call selectSegment() during scrubbing.
+                // selectSegment triggers setPlayheadFraction → centerPlayhead which
+                // modifies scrollOffsetPx, causing a feedback loop that makes the
+                // timeline bounce between segments.
+                Timeline tl = project.getTimeline();
+                if (segmentIndex < 0 || segmentIndex >= tl.getClipCount()) return;
+                Clip clip = tl.getClip(segmentIndex);
                 if (clip == null) return;
+
+                // If crossing to a different segment, load the new clip in the player
+                // (needed for correct seek bounds) but skip all scroll-altering calls
+                if (segmentIndex != selectedClipIndex) {
+                    selectedClipIndex = segmentIndex;
+                    playerManager.loadClip(clip);
+                    playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+                    playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+                    updatePreviewTransforms();
+                }
+
                 // fractionInSegment is fraction of FULL source duration,
                 // convert back to source time then compute relative-to-trim-start position
                 long sourceMs = (long)(fractionInSegment * clip.getSourceDurationMs());
@@ -361,6 +378,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onPlayheadDragFinished() {
                 userDragging = false;
+                // After scrubbing completes, fully sync the UI to the current segment
+                // (safe now since no scroll gesture is active)
+                if (selectedClipIndex >= 0 && selectedClipIndex < project.getTimeline().getClipCount()) {
+                    selectSegment(selectedClipIndex);
+                }
             }
 
             @Override

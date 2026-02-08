@@ -251,7 +251,7 @@ public class EditorTimelineView extends View {
         void onSegmentSelected(int index);
         void onTrimChanged(int segmentIndex, float startFraction, float endFraction, boolean isLeft);
         void onTrimFinished(int segmentIndex, float startFraction, float endFraction);
-        void onPlayheadSeeked(float fractionInSegment);
+        void onPlayheadSeeked(int segmentIndex, float fractionInSegment);
         void onPlayheadDragFinished();
         void onSegmentReordered(int fromIndex, int toIndex);
         void onReorderModeChanged(boolean entering);
@@ -1371,8 +1371,8 @@ public class EditorTimelineView extends View {
                 if (listener != null) {
                     long sourceMs = sd.inPointMs + (long)(localMs * sd.speed);
                     float sourceFrac = sd.sourceDurationMs > 0 ? (float)sourceMs / sd.sourceDurationMs : 0f;
-                    Log.d(TAG, "updatePlayheadFromX: calling onPlayheadSeeked with sourceFrac=" + sourceFrac);
-                    listener.onPlayheadSeeked(sourceFrac);
+                    Log.d(TAG, "updatePlayheadFromX: calling onPlayheadSeeked segment=" + i + " sourceFrac=" + sourceFrac);
+                    listener.onPlayheadSeeked(i, sourceFrac);
                 }
                 
                 // Auto-scroll to center the new playhead position (like during playback)
@@ -1382,7 +1382,44 @@ public class EditorTimelineView extends View {
             }
             cumulative += segments.get(i).effectiveMs;
         }
-        Log.d(TAG, "updatePlayheadFromX: playhead outside all segments");
+        Log.d(TAG, "updatePlayheadFromX: playhead outside all segments, snapping to nearest");
+        // Find the nearest segment (handles gaps between segments and before/after edges)
+        if (!segments.isEmpty() && !segRects.isEmpty()) {
+            int nearestSeg = 0;
+            float nearestDist = Float.MAX_VALUE;
+            for (int i = 0; i < segRects.size(); i++) {
+                RectF r = segRects.get(i);
+                float dist;
+                if (playheadX < r.left) {
+                    dist = r.left - playheadX;
+                } else if (playheadX > r.right) {
+                    dist = playheadX - r.right;
+                } else {
+                    dist = 0;
+                }
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestSeg = i;
+                }
+            }
+            // Clamp to nearest segment boundary
+            RectF nearestRect = segRects.get(nearestSeg);
+            float clampedX = Math.max(nearestRect.left, Math.min(playheadX, nearestRect.right));
+            float frac = nearestRect.width() > 0 ? (clampedX - nearestRect.left) / nearestRect.width() : 0f;
+            SegmentData sd = segments.get(nearestSeg);
+            long localMs = (long)(frac * sd.effectiveMs);
+            long cumulMs = 0;
+            for (int j = 0; j < nearestSeg; j++) cumulMs += segments.get(j).effectiveMs;
+            playheadPositionMs = cumulMs + localMs;
+            if (listener != null) {
+                long sourceMs = sd.inPointMs + (long)(localMs * sd.speed);
+                float sourceFrac = sd.sourceDurationMs > 0 ? (float) sourceMs / sd.sourceDurationMs : 0f;
+                Log.d(TAG, "updatePlayheadFromX: snapped to segment=" + nearestSeg + " frac=" + frac + " localMs=" + localMs);
+                listener.onPlayheadSeeked(nearestSeg, sourceFrac);
+            }
+            centerPlayhead();
+            invalidate();
+        }
     }
 
     private int findDrop(float x) {
