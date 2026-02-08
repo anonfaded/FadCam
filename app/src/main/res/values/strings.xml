@@ -728,7 +728,7 @@
     <string name="faditor_mini_subtitle">Trim and export your videos with precision</string>
     <string name="faditor_mini_toast">Faditor Mini — coming soon</string>
     <string name="faditor_select_video">Select Video</string>
-    <string name="faditor_editor_title">Faditor</string>
+    <string name="faditor_editor_title">Faditor Mini</string>
     <string name="faditor_close">Close editor</string>
     <string name="faditor_play_pause">Play or pause</string>
     <string name="faditor_export">Export</string>
@@ -758,6 +758,9 @@
     <string name="faditor_tool_flip">Flip</string>
     <string name="faditor_tool_crop">Crop</string>
     <string name="faditor_tool_crop_free">Free</string>
+    <string name="faditor_tool_canvas">Canvas</string>
+    <string name="faditor_canvas_title">Canvas</string>
+    <string name="faditor_canvas_applied">Canvas set to %s</string>
     <string name="faditor_tool_split">Split</string>
     <string name="faditor_tool_delete">Delete</string>
     <string name="faditor_tool_duplicate">Duplicate</string>
