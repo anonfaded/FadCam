@@ -215,6 +215,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
         updateCropUI(clip.getCropPreset());
 
+        // Deactivate crop overlay when switching segments (or reselecting)
+        if (cropOverlay != null && cropOverlay.isActive()) {
+            cropOverlay.deactivate();
+        }
+
         // Only reload and reset playhead if selecting a different segment
         if (!isReselection) {
             // Stop any active image playback timer
@@ -976,6 +981,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
         int viewW = playerView.getWidth();
         int viewH = playerView.getHeight();
 
+        // Offset for PlayerView position within its parent (e.g. when canvas preview
+        // constrains PlayerView to a smaller centered area inside the container).
+        // The crop overlay is match_parent on the container, so we need absolute offsets.
+        float offsetX = playerView.getLeft();
+        float offsetY = playerView.getTop();
+
         // Try to get actual video dimensions
         if (playerManager != null && playerManager.getPlayer() != null) {
             androidx.media3.common.VideoSize videoSize =
@@ -998,14 +1009,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     renderW = viewH * videoAspect;
                 }
 
-                float left = (viewW - renderW) / 2f;
-                float top = (viewH - renderH) / 2f;
+                float left = offsetX + (viewW - renderW) / 2f;
+                float top = offsetY + (viewH - renderH) / 2f;
                 return new android.graphics.RectF(left, top, left + renderW, top + renderH);
             }
         }
 
         // Fallback: assume full view
-        return new android.graphics.RectF(0, 0, viewW, viewH);
+        return new android.graphics.RectF(offsetX, offsetY, offsetX + viewW, offsetY + viewH);
     }
 
     private void updateCropUI(@NonNull String preset) {
@@ -1526,6 +1537,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void advanceToSegment(int nextIndex, boolean autoPlay) {
         Log.d(TAG, "Auto-advancing to segment " + nextIndex);
+
+        // Deactivate crop overlay when switching segments
+        if (cropOverlay != null && cropOverlay.isActive()) {
+            cropOverlay.deactivate();
+        }
+
         Timeline timeline = project.getTimeline();
         selectedClipIndex = nextIndex;
         Clip nextClip = getSelectedClip();
