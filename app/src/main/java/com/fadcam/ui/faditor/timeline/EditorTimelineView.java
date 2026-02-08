@@ -326,6 +326,20 @@ public class EditorTimelineView extends View {
     }
 
     /**
+     * Returns the current playhead position in absolute timeline milliseconds.
+     */
+    public long getPlayheadPositionMs() {
+        return playheadPositionMs;
+    }
+
+    /**
+     * Returns the start time (in timeline ms) for the given segment index.
+     */
+    public long getSegmentStartTimeMs(int index) {
+        return getSegmentStartTime(index);
+    }
+
+    /**
      * Accept a source-absolute fraction (0..1 of source duration).
      * Converts to absolute ms position in timeline.
      * Works regardless of UI selection state - uses last known playing segment.

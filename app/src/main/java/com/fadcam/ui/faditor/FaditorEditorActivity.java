@@ -186,17 +186,31 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // Only reload and reset playhead if selecting a different segment
         if (!isReselection) {
+            // Preserve current playhead position within the new segment
+            long currentPlayheadMs = editorTimeline.getPlayheadPositionMs();
+            long segStartMs = editorTimeline.getSegmentStartTimeMs(index);
+            long effectiveMs = clip.getOutPointMs() - clip.getInPointMs();
+            if (clip.getSpeedMultiplier() > 0) {
+                effectiveMs = (long)(effectiveMs / clip.getSpeedMultiplier());
+            }
+            long localMs = Math.max(0, Math.min(currentPlayheadMs - segStartMs, effectiveMs));
+            // Convert local (effective) ms to source position
+            long sourcePositionMs = clip.getInPointMs() + (long)(localMs * clip.getSpeedMultiplier());
+            sourcePositionMs = Math.max(clip.getInPointMs(), Math.min(sourcePositionMs, clip.getOutPointMs()));
+            float sourceFrac = clip.getSourceDurationMs() > 0
+                    ? (float) sourcePositionMs / clip.getSourceDurationMs() : 0f;
+
             // Load the selected segment in the player
             playerManager.loadClip(clip);
             playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
             playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
             updatePreviewTransforms();
 
-            // Reset playhead to start of new segment
-            editorTimeline.setPlayheadFraction(
-                    (float) clip.getInPointMs() / clip.getSourceDurationMs());
+            // Set playhead to preserved position (not segment start)
+            editorTimeline.setPlayheadFraction(sourceFrac);
             
-            timeCurrent.setText(TimeFormatter.formatAuto(0));
+            long seekPositionMs = sourcePositionMs - clip.getInPointMs();
+            timeCurrent.setText(TimeFormatter.formatAuto(seekPositionMs));
         }
 
         long trimmedDuration = clip.getOutPointMs() - clip.getInPointMs();
