@@ -103,7 +103,8 @@ public class EditorTimelineView extends View {
     // ── State ────────────────────────────────────────────────────────
     private final List<SegmentData> segments = new ArrayList<>();
     private final List<RectF> segRects = new ArrayList<>();
-    private int selectedIndex = -1;
+    private int selectedIndex = -1;  // UI selection (-1 = none selected)
+    private int lastPlaybackIndex = 0;  // Playback tracking (persists when deselected)
     private long playheadPositionMs = 0; // Absolute playhead position in timeline
     private long totalEffectiveMs = 0;
     private float contentWidthPx = 0;
@@ -135,6 +136,7 @@ public class EditorTimelineView extends View {
     private ScaleGestureDetector scaleDetector;
     private GestureDetector gestureDetector;
     private OverScroller flingScroller;
+    private boolean flingJustFinished = false;  // Tracks when fling ends so we can reset userDragging
 
     @Nullable private OnSegmentActionListener listener;
 
@@ -248,6 +250,9 @@ public class EditorTimelineView extends View {
             totalEffectiveMs += sd.effectiveMs;
         }
         selectedIndex = selected;  // Allow -1 for no selection
+        if (selected >= 0) {
+            lastPlaybackIndex = selected;  // Track for playback continuation
+        }
         computeRects();
         
         // Center timeline on current playhead position
@@ -262,6 +267,7 @@ public class EditorTimelineView extends View {
     public void setSelectedIndex(int index) {
         if (index != selectedIndex && index >= 0 && index < segments.size()) {
             selectedIndex = index;
+            lastPlaybackIndex = index;  // Update playback tracking
             invalidate();
         }
     }
@@ -269,18 +275,26 @@ public class EditorTimelineView extends View {
     /**
      * Accept a source-absolute fraction (0..1 of source duration).
      * Converts to absolute ms position in timeline.
+     * Works regardless of UI selection state - uses last known playing segment.
      */
     public void setPlayheadFraction(float sourceFraction) {
-        Log.d(TAG, "setPlayheadFraction: fraction=" + sourceFraction + " selectedIndex=" + selectedIndex);
-        if (selectedIndex >= 0 && selectedIndex < segments.size()) {
-            SegmentData sd = segments.get(selectedIndex);
-            long selectedSegmentStartMs = getSegmentStartTime(selectedIndex);
+        // Use last valid index for playback if currently deselected
+        int playbackIndex = selectedIndex >= 0 ? selectedIndex : lastPlaybackIndex;
+        
+        Log.d(TAG, "setPlayheadFraction: fraction=" + sourceFraction + " selectedIndex=" + selectedIndex + " playbackIndex=" + playbackIndex);
+        
+        if (playbackIndex >= 0 && playbackIndex < segments.size()) {
+            SegmentData sd = segments.get(playbackIndex);
+            long selectedSegmentStartMs = getSegmentStartTime(playbackIndex);
             long localMs = (long)(sourceFraction * sd.sourceDurationMs);
             // Convert from source position to trimmed position
             localMs = Math.max(sd.inPointMs, Math.min(localMs, sd.outPointMs)) - sd.inPointMs;
             // Adjust for speed
             localMs = (long)(localMs / sd.speed);
             playheadPositionMs = selectedSegmentStartMs + localMs;
+            
+            // Remember this index for playback continuation
+            lastPlaybackIndex = playbackIndex;
             
             Log.d(TAG, "setPlayheadFraction: playheadPositionMs=" + playheadPositionMs);
             
@@ -633,55 +647,33 @@ public class EditorTimelineView extends View {
     private void drawCenterPlayhead(Canvas canvas, float tTop, float tBot) {
         float centerX = getWidth() / 2f;
         
-        // White line from ruler to bottom
+        // Simple white line from top to bottom (like professional editors)
         float lineTop = 0;
         float lineBot = tBot;
         canvas.drawRect(centerX - playheadWidthPx / 2f, lineTop,
                 centerX + playheadWidthPx / 2f, lineBot, playheadPaint);
-        
-        // Circle at top
-        canvas.drawCircle(centerX, playheadCirclePx + 2f * density, playheadCirclePx, playheadCirclePaint);
-        
-        // Triangle at bottom
-        Path triangle = new Path();
-        float triangleSize = playheadCirclePx;
-        triangle.moveTo(centerX, lineBot);
-        triangle.lineTo(centerX - triangleSize, lineBot - triangleSize * 1.5f);
-        triangle.lineTo(centerX + triangleSize, lineBot - triangleSize * 1.5f);
-        triangle.close();
-        canvas.drawPath(triangle, playheadCirclePaint);
     }
 
     /**
      * Trim handles at left and right edges of the selected segment.
-     * Left handle: only left corners rounded. Right handle: only right corners rounded.
+     * Fully rounded handles for seamless blend with segment curves.
      */
     private void drawTrimHandles(Canvas canvas, RectF seg) {
         float hTop = seg.top - handleOverhangPx;
         float hBot = seg.bottom + handleOverhangPx;
+        
+        // Use same corner radius as segments for seamless blend
+        float cornerRadius = segmentCornerPx;
 
-        // Left handle — overlaps the left edge
+        // Left handle — fully rounded for smooth blend
         RectF leftH = new RectF(seg.left, hTop, seg.left + handleWidthPx, hBot);
-        Path leftPath = roundedRectPath(leftH, handleWidthPx / 2f, handleWidthPx / 2f, 0, 0);
-        canvas.drawPath(leftPath, handlePaint);
+        canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
         drawNotch(canvas, leftH);
 
-        // Right handle — overlaps the right edge
+        // Right handle — fully rounded for smooth blend
         RectF rightH = new RectF(seg.right - handleWidthPx, hTop, seg.right, hBot);
-        Path rightPath = roundedRectPath(rightH, 0, 0, handleWidthPx / 2f, handleWidthPx / 2f);
-        canvas.drawPath(rightPath, handlePaint);
+        canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
         drawNotch(canvas, rightH);
-    }
-
-    /**
-     * Creates a path for a rounded rect with individual corner radii.
-     * Order: topLeft, bottomLeft, topRight, bottomRight.
-     */
-    private Path roundedRectPath(RectF r, float tl, float bl, float tr, float br) {
-        Path p = new Path();
-        float[] radii = {tl, tl, tr, tr, br, br, bl, bl};
-        p.addRoundRect(r, radii, Path.Direction.CW);
-        return p;
     }
 
     private void drawNotch(Canvas canvas, RectF hr) {
@@ -723,6 +715,13 @@ private void drawGhost(Canvas canvas) {
             
             // Continue animation
             postInvalidateOnAnimation();
+        } else if (flingJustFinished) {
+            // Fling completed — notify listener so userDragging gets reset
+            flingJustFinished = false;
+            if (listener != null) {
+                Log.d(TAG, "computeScroll: fling finished, calling onPlayheadDragFinished");
+                listener.onPlayheadDragFinished();
+            }
         }
     }
 
@@ -849,8 +848,13 @@ private void drawGhost(Canvas canvas) {
             invalidate();
         } else if (isUp && downSegIndex >= 0) {
             if (Math.abs(x - downX) < touchSlopPx) {
-                if (downSegIndex != selectedIndex) {
-                    selectedIndex = downSegIndex;
+                // Toggle selection: deselect if clicking same segment, select if different
+                if (downSegIndex == selectedIndex) {
+                    selectedIndex = -1; // Deselect
+                    invalidate();
+                    if (listener != null) listener.onSegmentSelected(-1);
+                } else {
+                    selectedIndex = downSegIndex; // Select new segment
                     invalidate();
                     if (listener != null) listener.onSegmentSelected(downSegIndex);
                 }
@@ -1064,13 +1068,21 @@ private void drawGhost(Canvas canvas) {
                 return false;
             }
             
+            // Mark that a fling is starting so we can signal drag finished when it ends
+            flingJustFinished = true;
+            
+            // Calculate proper scroll bounds to keep playhead within video range
+            float centerX = getWidth() / 2f;
+            float minScroll = edgePaddingPx - centerX;  // When 0ms at center
+            float maxScroll = timeToX(totalEffectiveMs) - centerX;  // When end at center
+            
             // Start fling animation (negative velocity because scrolling moves playhead position)
             int startX = (int) scrollOffsetPx;
             flingScroller.fling(
                 startX, 0,               // startX, startY
                 (int) -velocityX, 0,     // velocityX (invert), velocityY
-                Integer.MIN_VALUE,       // minX (unlimited)
-                Integer.MAX_VALUE,       // maxX (unlimited)
+                (int) minScroll,         // minX (video start bound)
+                (int) maxScroll,         // maxX (video end bound)
                 0, 0                     // minY, maxY (no vertical scroll)
             );
             

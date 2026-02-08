@@ -70,13 +70,6 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             }
             Log.d(TAG, "Playback state: " + stateStr + ", pendingSeek=" + pendingSeekMs);
 
-            // Diagnostic: check seekability when player becomes ready
-            if (playbackState == Player.STATE_READY && player != null) {
-                Log.d(TAG, "DIAG STATE_READY: isSeekable=" + player.isCurrentMediaItemSeekable()
-                        + " position=" + player.getCurrentPosition()
-                        + " duration=" + player.getDuration());
-            }
-
             if (playbackState == Player.STATE_READY && pendingSeekMs >= 0) {
                 if (player != null) {
                     Log.d(TAG, "Executing pending seek to " + pendingSeekMs + "ms (absolute)");
@@ -190,18 +183,9 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
     public void play() {
         if (player != null) {
-            // Diagnostic: what does ExoPlayer actually report?
             long pos = player.getCurrentPosition();
-            boolean seekable = player.isCurrentMediaItemSeekable();
-            Log.d(TAG, "DIAG play(): currentPosition=" + pos
-                    + " isSeekable=" + seekable
-                    + " trimStart=" + trimStartMs
-                    + " trimEnd=" + trimEndMs);
-
             // Ensure we start from trim start if at/beyond trim end
             if (pos < trimStartMs || pos >= trimEndMs) {
-                Log.d(TAG, "DIAG play(): resetting to trimStart=" + trimStartMs
-                        + " (pos " + pos + " outside trim range)");
                 player.seekTo(trimStartMs);
             }
             player.play();
@@ -316,13 +300,8 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
         int state = player.getPlaybackState();
         if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
-            long beforePos = player.getCurrentPosition();
             player.seekTo(absoluteMs);
-            long afterPos = player.getCurrentPosition();
             pendingSeekMs = -1;
-            Log.d(TAG, "DIAG seekToAbsolute: target=" + absoluteMs
-                    + " beforePos=" + beforePos + " afterPos=" + afterPos
-                    + " seekable=" + player.isCurrentMediaItemSeekable());
         } else {
             pendingSeekMs = absoluteMs;
             Log.d(TAG, "Seek absolute queued: " + absoluteMs + "ms (state=" + state + ")");
@@ -355,6 +334,14 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
     public boolean isPlaying() {
         return player != null && player.isPlaying();
+    }
+
+    /**
+     * Returns whether the player will play when ready (user intent to play).
+     * More reliable than isPlaying() which returns false during buffering.
+     */
+    public boolean getPlayWhenReady() {
+        return player != null && player.getPlayWhenReady();
     }
 
     /**

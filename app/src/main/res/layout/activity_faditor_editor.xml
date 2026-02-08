@@ -194,7 +194,7 @@
                 android:paddingEnd="8dp">
 
 
-            <!-- Trim tool -->
+            <!-- Trim tool - REMOVED: Use segment edge handles for trimming instead -->
             <LinearLayout
                 android:id="@+id/tool_trim"
                 android:layout_width="72dp"
@@ -202,7 +202,8 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless">
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:visibility="gone">
 
                 <TextView
                     android:id="@+id/tool_trim_icon"

@@ -125,7 +125,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private final Runnable playheadUpdater = new Runnable() {
         @Override
         public void run() {
-            updatePlayheadPosition();
+            try {
+                updatePlayheadPosition();
+            } catch (Exception e) {
+                Log.e(TAG, "Error in updatePlayheadPosition", e);
+            }
             playheadHandler.postDelayed(this, PLAYHEAD_UPDATE_INTERVAL_MS);
         }
     };
@@ -148,11 +152,25 @@ public class FaditorEditorActivity extends AppCompatActivity {
     /**
      * Select a segment by index, update the timeline and toolbar.
      *
-     * @param index the segment index to select
+     * @param index the segment index to select (-1 to deselect)
      */
     private void selectSegment(int index) {
         int count = project.getTimeline().getClipCount();
-        if (index < 0 || index >= count) return;
+        
+        // Handle deselection
+        if (index < 0) {
+            selectedClipIndex = -1;
+            editorTimeline.setTimeline(project.getTimeline(), -1);
+            Log.d(TAG, "Deselected all segments");
+            return;
+        }
+        
+        // Validate index
+        if (index >= count) return;
+        
+        // Track if this is a reselection of the same segment
+        boolean isReselection = (index == selectedClipIndex);
+        
         selectedClipIndex = index;
         Clip clip = getSelectedClip();
 
@@ -166,23 +184,28 @@ public class FaditorEditorActivity extends AppCompatActivity {
         updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
         updateCropUI(clip.getCropPreset());
 
-        // Load the selected segment in the player
-        playerManager.loadClip(clip);
-        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-        updatePreviewTransforms();
+        // Only reload and reset playhead if selecting a different segment
+        if (!isReselection) {
+            // Load the selected segment in the player
+            playerManager.loadClip(clip);
+            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+            updatePreviewTransforms();
 
-        // Reset playhead
-        editorTimeline.setPlayheadFraction(
-                (float) clip.getInPointMs() / clip.getSourceDurationMs());
+            // Reset playhead to start of new segment
+            editorTimeline.setPlayheadFraction(
+                    (float) clip.getInPointMs() / clip.getSourceDurationMs());
+            
+            timeCurrent.setText(TimeFormatter.formatAuto(0));
+        }
 
         long trimmedDuration = clip.getOutPointMs() - clip.getInPointMs();
-        timeCurrent.setText(TimeFormatter.formatAuto(0));
         timeTotal.setText(TimeFormatter.formatAuto(trimmedDuration));
 
         Log.d(TAG, "Selected segment " + index + "/" + count
                 + " id=" + clip.getId()
-                + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs());
+                + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs()
+                + " isReselection=" + isReselection);
     
         // Update segment overview
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
@@ -548,9 +571,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 playerManager.pause();
             } else {
                 Clip c = getSelectedClip();
-                Log.d(TAG, "Play pressed: trimIn=" + c.getInPointMs()
-                        + " trimOut=" + c.getOutPointMs()
-                        + " trimDur=" + (c.getOutPointMs() - c.getInPointMs()));
                 playerManager.play();
             }
         });
@@ -1026,9 +1046,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (userDragging) return;
 
         // ── While PLAYING: read player position and drive the playhead ──
-        if (playerManager.isPlaying()) {
+        // Use getPlayWhenReady() instead of isPlaying() to handle buffering state at position 0
+        boolean isPlaying = playerManager.getPlayWhenReady();
+        
+        if (isPlaying) {
+            long currentPos = playerManager.getCurrentPosition();
+            boolean isAtEnd = playerManager.isAtTrimEnd();
+            
             // Enforce trim end — auto-advance to next segment or pause
-            if (playerManager.isAtTrimEnd()) {
+            if (isAtEnd) {
                 Timeline timeline = project.getTimeline();
                 int nextIndex = selectedClipIndex + 1;
                 if (nextIndex < timeline.getClipCount()) {
