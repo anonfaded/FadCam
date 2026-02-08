@@ -126,6 +126,7 @@ public class ExportManager {
 
             // For simple trim (single clip, no effects, normal speed, audio intact) use near-lossless
             boolean isSimpleTrim = project.getTimeline().getClipCount() == 1
+                    && !project.getTimeline().getClip(0).isImageClip()
                     && project.getTimeline().getClip(0).getSpeedMultiplier() == 1.0f
                     && !project.getTimeline().getClip(0).isAudioMuted()
                     && Math.abs(project.getTimeline().getClip(0).getVolumeLevel() - 1.0f) < 0.01f
@@ -237,21 +238,38 @@ public class ExportManager {
         List<EditedMediaItem> items = new ArrayList<>();
 
         for (Clip clip : project.getTimeline().getClips()) {
-            MediaItem.ClippingConfiguration clipping =
-                    new MediaItem.ClippingConfiguration.Builder()
-                            .setStartPositionMs(clip.getInPointMs())
-                            .setEndPositionMs(clip.getOutPointMs())
-                            .build();
+            MediaItem mediaItem;
 
-            MediaItem mediaItem = new MediaItem.Builder()
-                    .setUri(clip.getSourceUri())
-                    .setClippingConfiguration(clipping)
-                    .build();
+            if (clip.isImageClip()) {
+                // Image clip: set image duration for Transformer to render still frames
+                long imageDurationMs = clip.getTrimmedDurationMs();
+                mediaItem = new MediaItem.Builder()
+                        .setUri(clip.getSourceUri())
+                        .setImageDurationMs(imageDurationMs)
+                        .build();
+            } else {
+                // Video clip: apply clipping configuration
+                MediaItem.ClippingConfiguration clipping =
+                        new MediaItem.ClippingConfiguration.Builder()
+                                .setStartPositionMs(clip.getInPointMs())
+                                .setEndPositionMs(clip.getOutPointMs())
+                                .build();
+
+                mediaItem = new MediaItem.Builder()
+                        .setUri(clip.getSourceUri())
+                        .setClippingConfiguration(clipping)
+                        .build();
+            }
 
             EditedMediaItem.Builder editedBuilder = new EditedMediaItem.Builder(mediaItem);
 
-            // Mute audio if requested
-            if (clip.isAudioMuted()) {
+            // Image clips require frameRate for ImageAssetLoader
+            if (clip.isImageClip()) {
+                editedBuilder.setFrameRate(30);
+            }
+
+            // Mute audio if requested or if image clip (no audio track)
+            if (clip.isAudioMuted() || clip.isImageClip()) {
                 editedBuilder.setRemoveAudio(true);
             }
 

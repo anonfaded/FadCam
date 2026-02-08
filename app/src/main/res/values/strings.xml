@@ -761,6 +761,12 @@
     <string name="faditor_tool_split">Split</string>
     <string name="faditor_tool_delete">Delete</string>
     <string name="faditor_tool_duplicate">Duplicate</string>
+    <string name="faditor_tool_add">Add</string>
+    <string name="faditor_add_asset_title">Add Asset</string>
+    <string name="faditor_add_asset_image">Image (5s still)</string>
+    <string name="faditor_add_asset_video">Video clip</string>
+    <string name="faditor_asset_added">Asset added to timeline</string>
+    <string name="faditor_asset_error">Could not add asset</string>
     <string name="faditor_split_success">Segment split into two</string>
     <string name="faditor_split_error">Cannot split here — too close to edge</string>
     <string name="faditor_delete_last_segment">Cannot delete the only segment</string>

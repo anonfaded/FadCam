@@ -1,6 +1,7 @@
 package com.fadcam.ui.faditor;
 
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,6 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -50,12 +53,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
     /** Intent extra key for the video URI string. */
     public static final String EXTRA_VIDEO_URI = "faditor_video_uri";
 
+    /** Default duration for still image clips (milliseconds). */
+    private static final long IMAGE_CLIP_DURATION_MS = 5000;
+
     // ── Core components ──────────────────────────────────────────────
     private FaditorProject project;
     private FaditorPlayerManager playerManager;
     private ExportManager exportManager;
     private SharedPreferencesManager prefsManager;
     private FragmentedMp4Remuxer remuxer;
+
+    // ── Asset pickers ────────────────────────────────────────────────
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private ActivityResultLauncher<Intent> videoPickerLauncher;
 
     // ── Views ────────────────────────────────────────────────────────
     private PlayerView playerView;
@@ -69,6 +79,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View remuxProgressOverlay;
     private TextView remuxProgressText;
     private com.fadcam.ui.faditor.crop.CropOverlayView cropOverlay;
+    private android.widget.ImageView imagePreview;
 
     // ── Tool buttons ─────────────────────────────────────────────────
     private View toolTrim;
@@ -119,6 +130,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /** Tracks the last playhead fraction set by the user (drag or trim). */
     private float lastUserPlayheadFraction = 0f;
+
+    // ── Image clip playback ──────────────────────────────────────────
+    /** True while an image clip is being "played" via internal timer. */
+    private boolean imagePlaybackActive = false;
+    /** System time (ms) when image playback started, for computing elapsed. */
+    private long imagePlaybackStartSystemMs = 0;
+    /** Position within the image clip when playback started (ms). */
+    private long imagePlaybackStartOffsetMs = 0;
 
     // ── Playhead sync ────────────────────────────────────────────────
     private final Handler playheadHandler = new Handler(Looper.getMainLooper());
@@ -188,6 +207,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         // Only reload and reset playhead if selecting a different segment
         if (!isReselection) {
+            // Stop any active image playback timer
+            imagePlaybackActive = false;
+
             // Preserve current playhead position within the new segment
             long currentPlayheadMs = editorTimeline.getPlayheadPositionMs();
             long segStartMs = editorTimeline.getSegmentStartTimeMs(index);
@@ -202,21 +224,32 @@ public class FaditorEditorActivity extends AppCompatActivity {
             float sourceFrac = clip.getSourceDurationMs() > 0
                     ? (float) sourcePositionMs / clip.getSourceDurationMs() : 0f;
 
-            // Load the selected segment in the player
-            playerManager.loadClip(clip);
-            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-            updatePreviewTransforms();
+            if (clip.isImageClip()) {
+                // Image clip: show image preview, hide video player
+                showImagePreview(clip.getSourceUri());
+            } else {
+                // Video clip: hide image preview, show video player
+                hideImagePreview();
+
+                // Load the selected segment in the player
+                playerManager.loadClip(clip);
+                playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+                playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+                updatePreviewTransforms();
+            }
 
             // Set playhead to preserved position (not segment start)
             editorTimeline.setPlayheadFraction(sourceFrac);
             
             long seekPositionMs = sourcePositionMs - clip.getInPointMs();
-            timeCurrent.setText(TimeFormatter.formatAuto(seekPositionMs));
+            if (!clip.isImageClip()) {
+                // Only seek ExoPlayer for video clips
+                playerManager.seekTo(seekPositionMs);
+            }
+            updateCurrentTimeDisplay(seekPositionMs);
         }
 
-        long trimmedDuration = clip.getOutPointMs() - clip.getInPointMs();
-        timeTotal.setText(TimeFormatter.formatAuto(trimmedDuration));
+        refreshTotalTimeDisplay();
 
         Log.d(TAG, "Selected segment " + index + "/" + count
                 + " id=" + clip.getId()
@@ -232,6 +265,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Register asset picker launchers (must be before onStart)
+        registerAssetPickers();
 
         // Keep screen on while editing
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -305,6 +341,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerView = findViewById(R.id.player_view);
         playerContainer = findViewById(R.id.player_container);
         cropOverlay = findViewById(R.id.crop_overlay);
+        imagePreview = findViewById(R.id.image_preview);
         editorTimeline = findViewById(R.id.editor_timeline_view);
         editorTimeline.setOnSegmentActionListener(new EditorTimelineView.OnSegmentActionListener() {
             @Override
@@ -322,9 +359,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 clip.setOutPointMs((long)(endFraction * duration));
                 // View handles its own visual update during drag.
                 // setTrimFromClip is called in onTrimFinished for the final commit.
-                long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
-                timeCurrent.setText(TimeFormatter.formatAuto(0));
-                timeTotal.setText(TimeFormatter.formatAuto(trimDuration));
+                updateCurrentTimeDisplay(0);
+                refreshTotalTimeDisplay();
             }
 
             @Override
@@ -336,10 +372,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 clip.setInPointMs((long)(startFraction * duration));
                 clip.setOutPointMs((long)(endFraction * duration));
                 editorTimeline.setTrimFromClip(clip);
-                playerManager.updateTrimBounds(clip);
-                long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
-                timeCurrent.setText(TimeFormatter.formatAuto(0));
-                timeTotal.setText(TimeFormatter.formatAuto(trimDuration));
+                if (!clip.isImageClip()) {
+                    playerManager.updateTrimBounds(clip);
+                }
+                updateCurrentTimeDisplay(0);
+                refreshTotalTimeDisplay();
                 saveProjectNow();
             }
 
@@ -359,10 +396,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 // (needed for correct seek bounds) but skip all scroll-altering calls
                 if (segmentIndex != selectedClipIndex) {
                     selectedClipIndex = segmentIndex;
-                    playerManager.loadClip(clip);
-                    playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-                    playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-                    updatePreviewTransforms();
+                    if (clip.isImageClip()) {
+                        // Image clip: show image preview instead of loading into ExoPlayer
+                        showImagePreview(clip.getSourceUri());
+                        stopImagePlayback();
+                    } else {
+                        // Video clip: load into ExoPlayer as usual
+                        hideImagePreview();
+                        playerManager.loadClip(clip);
+                        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+                        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+                        updatePreviewTransforms();
+                    }
                 }
 
                 // fractionInSegment is fraction of FULL source duration,
@@ -370,9 +415,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 long sourceMs = (long)(fractionInSegment * clip.getSourceDurationMs());
                 long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
                 long seekPosition = Math.max(0, Math.min(sourceMs - clip.getInPointMs(), trimDuration));
-                playerManager.seekTo(seekPosition);
-                // Update time display during drag
-                timeCurrent.setText(TimeFormatter.formatAuto(seekPosition));
+                if (!clip.isImageClip()) {
+                    // Only seek ExoPlayer for video clips
+                    playerManager.seekTo(seekPosition);
+                } else {
+                    // For image clips: store the seek position for playback resumption
+                    imagePlaybackStartOffsetMs = seekPosition;
+                }
+                // Update time display during drag (show absolute project position)
+                updateCurrentTimeDisplay(seekPosition);
             }
 
             @Override
@@ -443,6 +494,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         findViewById(R.id.tool_split).setOnClickListener(v -> splitAtPlayhead());
         findViewById(R.id.tool_delete).setOnClickListener(v -> deleteSelectedSegment());
         findViewById(R.id.tool_duplicate).setOnClickListener(v -> duplicateSelectedSegment());
+        findViewById(R.id.tool_add_asset).setOnClickListener(v -> showAddAssetPicker());
 
         // Close button
         findViewById(R.id.btn_close).setOnClickListener(v -> handleClose());
@@ -571,8 +623,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Clip clip = new Clip(videoUri, durationMs);
         project.getTimeline().addClip(clip);
 
-        // Update total time display
-        timeTotal.setText(TimeFormatter.formatAuto(durationMs));
+        // Update total time display (project-wide duration)
+        refreshTotalTimeDisplay();
 
         Log.d(TAG, "Project created: duration=" + durationMs + "ms");
     }
@@ -629,11 +681,30 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
-            if (playerManager.isPlaying()) {
-                playerManager.pause();
+            Clip c = getSelectedClip();
+            if (c.isImageClip()) {
+                // Image clip: toggle internal timer playback
+                if (imagePlaybackActive) {
+                    // Pause: record current position
+                    imagePlaybackStartOffsetMs = getImagePlaybackPositionMs();
+                    stopImagePlayback();
+                } else {
+                    // Compute current position from playhead
+                    long currentPos = imagePlaybackStartOffsetMs;
+                    long clipDuration = c.getTrimmedDurationMs();
+                    if (currentPos >= clipDuration) {
+                        // At end: restart from beginning
+                        currentPos = 0;
+                    }
+                    startImagePlayback(currentPos);
+                }
             } else {
-                Clip c = getSelectedClip();
-                playerManager.play();
+                // Video clip: use ExoPlayer
+                if (playerManager.isPlaying()) {
+                    playerManager.pause();
+                } else {
+                    playerManager.play();
+                }
             }
         });
 
@@ -1065,6 +1136,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (playerDurationMs <= 0) return;
 
         Clip clip = getSelectedClip();
+        // Image clips have a fixed duration; no correction needed
+        if (clip.isImageClip()) return;
+
         long storedDuration = clip.getSourceDurationMs();
 
         // Only correct if ExoPlayer reports SHORTER duration.
@@ -1080,8 +1154,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             clip.setOutPointMs(playerDurationMs);
 
             // Refresh UI with corrected duration
-            timeTotal.setText(TimeFormatter.formatAuto(playerDurationMs));
-            timeCurrent.setText(TimeFormatter.formatAuto(0));
+            refreshTotalTimeDisplay();
+            updateCurrentTimeDisplay(0);
             editorTimeline.setTrimFromClip(clip);
             editorTimeline.setPlayheadFraction(0f);
 
@@ -1097,6 +1171,102 @@ public class FaditorEditorActivity extends AppCompatActivity {
         btnPlayPause.setText(isPlaying ? "pause" : "play_arrow");
     }
 
+    // ── Time display helpers ─────────────────────────────────────────
+
+    /**
+     * Refresh the total time display to show full project duration.
+     * Should be called whenever clips are added, removed, trimmed, or speed-changed.
+     */
+    private void refreshTotalTimeDisplay() {
+        if (project == null || project.getTimeline().isEmpty()) return;
+        long totalMs = project.getTimeline().getTotalDurationMs();
+        timeTotal.setText(TimeFormatter.formatAuto(totalMs));
+    }
+
+    /**
+     * Compute the absolute playhead position within the entire project timeline.
+     * This sums up durations of all preceding segments plus the position within the current one.
+     *
+     * @param positionInCurrentSegmentMs 0-based position within the current clip's trimmed region
+     * @return absolute position in the full project timeline
+     */
+    private long getAbsolutePlayheadMs(long positionInCurrentSegmentMs) {
+        Timeline tl = project.getTimeline();
+        long absoluteMs = 0;
+        for (int i = 0; i < selectedClipIndex && i < tl.getClipCount(); i++) {
+            absoluteMs += tl.getClip(i).getTrimmedDurationMs();
+        }
+        absoluteMs += positionInCurrentSegmentMs;
+        return absoluteMs;
+    }
+
+    /**
+     * Update the current time display with the absolute playhead position.
+     *
+     * @param positionInCurrentSegmentMs 0-based position within the current clip's trimmed region
+     */
+    private void updateCurrentTimeDisplay(long positionInCurrentSegmentMs) {
+        long absoluteMs = getAbsolutePlayheadMs(positionInCurrentSegmentMs);
+        timeCurrent.setText(TimeFormatter.formatAuto(absoluteMs));
+    }
+
+    // ── Image preview helpers ────────────────────────────────────────
+
+    /**
+     * Show the image preview overlay and hide the video player.
+     *
+     * @param imageUri URI of the image to display
+     */
+    private void showImagePreview(@NonNull Uri imageUri) {
+        if (imagePreview == null) return;
+        playerView.setVisibility(View.INVISIBLE);
+        imagePreview.setVisibility(View.VISIBLE);
+        // Use Glide for efficient image loading
+        com.bumptech.glide.Glide.with(this)
+                .load(imageUri)
+                .into(imagePreview);
+    }
+
+    /**
+     * Hide the image preview overlay and restore the video player.
+     */
+    private void hideImagePreview() {
+        if (imagePreview == null) return;
+        imagePreview.setVisibility(View.GONE);
+        playerView.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Start image clip playback (internal timer, no ExoPlayer).
+     *
+     * @param startOffsetMs position within the image clip to start from (0-based)
+     */
+    private void startImagePlayback(long startOffsetMs) {
+        imagePlaybackActive = true;
+        imagePlaybackStartOffsetMs = startOffsetMs;
+        imagePlaybackStartSystemMs = System.currentTimeMillis();
+        updatePlayPauseButton(true);
+    }
+
+    /**
+     * Stop image clip playback timer.
+     */
+    private void stopImagePlayback() {
+        imagePlaybackActive = false;
+        updatePlayPauseButton(false);
+    }
+
+    /**
+     * Get the current elapsed position (ms) within the image clip during playback.
+     *
+     * @return elapsed position in ms, or 0 if not playing
+     */
+    private long getImagePlaybackPositionMs() {
+        if (!imagePlaybackActive) return imagePlaybackStartOffsetMs;
+        long elapsed = System.currentTimeMillis() - imagePlaybackStartSystemMs;
+        return imagePlaybackStartOffsetMs + elapsed;
+    }
+
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
 
@@ -1107,7 +1277,43 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Don't overwrite playhead while user is dragging
         if (userDragging) return;
 
-        // ── While PLAYING: read player position and drive the playhead ──
+        // ── Image clip playback (internal timer) ─────────────────────
+        if (clip.isImageClip() && imagePlaybackActive) {
+            long positionMs = getImagePlaybackPositionMs();
+            long clipDuration = clip.getTrimmedDurationMs();
+
+            if (positionMs >= clipDuration) {
+                // Image clip reached its end — auto-advance or pause
+                stopImagePlayback();
+                Timeline timeline = project.getTimeline();
+                int nextIndex = selectedClipIndex + 1;
+                if (nextIndex < timeline.getClipCount()) {
+                    advanceToSegment(nextIndex, true);
+                } else {
+                    // Last segment — set playhead to end
+                    float endFraction = (float) clip.getOutPointMs() / sourceDuration;
+                    lastUserPlayheadFraction = endFraction;
+                    editorTimeline.setPlayheadFraction(endFraction);
+                    long totalMs = project.getTimeline().getTotalDurationMs();
+                    timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
+                    Log.d(TAG, "Image playback stopped at last segment end");
+                }
+                return;
+            }
+
+            // Convert position to source fraction for timeline view
+            float fraction = (float) (clip.getInPointMs() + positionMs) / sourceDuration;
+            fraction = Math.max(0f, Math.min(fraction, 1f));
+            lastUserPlayheadFraction = fraction;
+            editorTimeline.setPlayheadFraction(fraction);
+            updateCurrentTimeDisplay(positionMs);
+            return;
+        }
+
+        // ── Video clip playback (ExoPlayer) ──────────────────────────
+        // Skip ExoPlayer polling for image clips (they don't have media loaded)
+        if (clip.isImageClip()) return;
+
         // Use getPlayWhenReady() instead of isPlaying() to handle buffering state at position 0
         boolean isPlaying = playerManager.getPlayWhenReady();
         
@@ -1120,32 +1326,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 Timeline timeline = project.getTimeline();
                 int nextIndex = selectedClipIndex + 1;
                 if (nextIndex < timeline.getClipCount()) {
-                    // Auto-advance to next segment
-                    Log.d(TAG, "Auto-advancing to segment " + nextIndex);
-                    selectedClipIndex = nextIndex;
-                    Clip nextClip = getSelectedClip();
-                    editorTimeline.setTimeline(timeline, selectedClipIndex);
-                    editorTimeline.setTrimFromClip(nextClip);
-
-                    // Sync toolbar to new segment
-                    updateVolumeUI(nextClip.getVolumeLevel(), nextClip.isAudioMuted());
-                    updateSpeedUI(nextClip.getSpeedMultiplier());
-                    updateRotateUI(nextClip.getRotationDegrees());
-                    updateFlipUI(nextClip.isFlipHorizontal(), nextClip.isFlipVertical());
-                    updateCropUI(nextClip.getCropPreset());
-
-                    // Load and play the next segment
-                    playerManager.loadClip(nextClip);
-                    playerManager.setVolume(nextClip.isAudioMuted() ? 0f : nextClip.getVolumeLevel());
-                    playerManager.setPlaybackSpeed(nextClip.getSpeedMultiplier());
-                    updatePreviewTransforms();
-                    playerManager.play();
-
-                    float startFraction = (float) nextClip.getInPointMs() / nextClip.getSourceDurationMs();
-                    editorTimeline.setPlayheadFraction(startFraction);
-                    timeCurrent.setText(TimeFormatter.formatAuto(0));
-                    long trimmedDur = nextClip.getOutPointMs() - nextClip.getInPointMs();
-                    timeTotal.setText(TimeFormatter.formatAuto(trimmedDur));
+                    advanceToSegment(nextIndex, true);
                 } else {
                     // Last segment reached its end — pause
                     playerManager.pause();
@@ -1153,7 +1334,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     float endFraction = (float) clip.getOutPointMs() / sourceDuration;
                     lastUserPlayheadFraction = endFraction;
                     editorTimeline.setPlayheadFraction(endFraction);
-                    timeCurrent.setText(TimeFormatter.formatAuto(trimmedDur));
+                    // Show total project duration as current (at end)
+                    long totalMs = project.getTimeline().getTotalDurationMs();
+                    timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
                     updatePlayPauseButton(false);
                     Log.d(TAG, "Playback stopped at last segment end");
                 }
@@ -1167,9 +1350,53 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             lastUserPlayheadFraction = fraction;
             editorTimeline.setPlayheadFraction(fraction);
-            timeCurrent.setText(TimeFormatter.formatAuto(position));
+            updateCurrentTimeDisplay(position);
         }
         // ── While PAUSED: do NOT overwrite the user's playhead position ──
+    }
+
+    /**
+     * Auto-advance to a new segment during playback, handling both image and video clips.
+     *
+     * @param nextIndex     the segment index to advance to
+     * @param autoPlay      whether to start playback immediately
+     */
+    private void advanceToSegment(int nextIndex, boolean autoPlay) {
+        Log.d(TAG, "Auto-advancing to segment " + nextIndex);
+        Timeline timeline = project.getTimeline();
+        selectedClipIndex = nextIndex;
+        Clip nextClip = getSelectedClip();
+        editorTimeline.setTimeline(timeline, selectedClipIndex);
+        editorTimeline.setTrimFromClip(nextClip);
+
+        // Sync toolbar to new segment
+        updateVolumeUI(nextClip.getVolumeLevel(), nextClip.isAudioMuted());
+        updateSpeedUI(nextClip.getSpeedMultiplier());
+        updateRotateUI(nextClip.getRotationDegrees());
+        updateFlipUI(nextClip.isFlipHorizontal(), nextClip.isFlipVertical());
+        updateCropUI(nextClip.getCropPreset());
+
+        if (nextClip.isImageClip()) {
+            // Image clip: show image preview and start timer
+            showImagePreview(nextClip.getSourceUri());
+            if (autoPlay) {
+                startImagePlayback(0);
+            }
+        } else {
+            // Video clip: load and play
+            hideImagePreview();
+            playerManager.loadClip(nextClip);
+            playerManager.setVolume(nextClip.isAudioMuted() ? 0f : nextClip.getVolumeLevel());
+            playerManager.setPlaybackSpeed(nextClip.getSpeedMultiplier());
+            updatePreviewTransforms();
+            if (autoPlay) {
+                playerManager.play();
+            }
+        }
+
+        float startFraction = (float) nextClip.getInPointMs() / nextClip.getSourceDurationMs();
+        editorTimeline.setPlayheadFraction(startFraction);
+        updateCurrentTimeDisplay(0);
     }
 
     // ── Export helpers ────────────────────────────────────────────────
@@ -1312,6 +1539,136 @@ public class FaditorEditorActivity extends AppCompatActivity {
         return "saf:" + uri.toString();
     }
 
+
+    // ── Add Asset ──────────────────────────────────────────────────
+
+    /**
+     * Registers ActivityResultLaunchers for image and video asset picking.
+     * Must be called early in onCreate (before onStart).
+     */
+    private void registerAssetPickers() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            onImageAssetPicked(uri);
+                        }
+                    }
+                });
+
+        videoPickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            onVideoAssetPicked(uri);
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Show a bottom sheet letting the user choose between adding an image or video asset.
+     */
+    private void showAddAssetPicker() {
+        AddAssetBottomSheet sheet = AddAssetBottomSheet.newInstance();
+        sheet.setCallback(isImage -> {
+            if (isImage) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/*");
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                imagePickerLauncher.launch(intent);
+            } else {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("video/*");
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                videoPickerLauncher.launch(intent);
+            }
+        });
+        sheet.show(getSupportFragmentManager(), "addAsset");
+    }
+
+    /**
+     * Handle a picked image URI: create a still-image clip (5 seconds)
+     * and add it to the timeline after the currently selected segment.
+     */
+    private void onImageAssetPicked(@NonNull Uri imageUri) {
+        try {
+            // Take persistable permission so the URI stays valid across sessions
+            try {
+                getContentResolver().takePersistableUriPermission(
+                        imageUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (SecurityException e) {
+                Log.w(TAG, "Could not take persistable URI permission", e);
+            }
+
+            Clip imageClip = new Clip(imageUri, IMAGE_CLIP_DURATION_MS);
+            imageClip.setImageClip(true);
+            imageClip.setAudioMuted(true); // Images have no audio
+
+            // Insert after the currently selected segment
+            Timeline timeline = project.getTimeline();
+            int insertIndex = selectedClipIndex + 1;
+            timeline.addClip(insertIndex, imageClip);
+
+            // Select the new clip
+            selectSegment(insertIndex);
+            refreshTotalTimeDisplay();
+            saveProjectNow();
+
+            Toast.makeText(this, R.string.faditor_asset_added, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Image asset added at index " + insertIndex
+                    + " duration=" + IMAGE_CLIP_DURATION_MS + "ms uri=" + imageUri);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to add image asset", e);
+            Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Handle a picked video URI: determine its duration, create a clip,
+     * and add it to the timeline after the currently selected segment.
+     */
+    private void onVideoAssetPicked(@NonNull Uri videoUri) {
+        try {
+            // Take persistable permission so the URI stays valid across sessions
+            try {
+                getContentResolver().takePersistableUriPermission(
+                        videoUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (SecurityException e) {
+                Log.w(TAG, "Could not take persistable URI permission", e);
+            }
+
+            long durationMs = getVideoDuration(videoUri);
+            if (durationMs <= 0) {
+                Log.w(TAG, "Could not determine video duration for added asset");
+                Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Clip videoClip = new Clip(videoUri, durationMs);
+
+            // Insert after the currently selected segment
+            Timeline timeline = project.getTimeline();
+            int insertIndex = selectedClipIndex + 1;
+            timeline.addClip(insertIndex, videoClip);
+
+            // Select the new clip
+            selectSegment(insertIndex);
+            refreshTotalTimeDisplay();
+            saveProjectNow();
+
+            Toast.makeText(this, R.string.faditor_asset_added, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Video asset added at index " + insertIndex
+                    + " duration=" + durationMs + "ms uri=" + videoUri);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to add video asset", e);
+            Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
+        }
+    }
 
     // ── Segment Operations ──────────────────────────────────────────────────
 

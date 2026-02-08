@@ -85,6 +85,17 @@
             app:resize_mode="fit"
             app:use_controller="false" />
 
+        <!-- Image preview overlay for still image clips -->
+        <ImageView
+            android:id="@+id/image_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:background="#FF0D0D0D"
+            android:visibility="gone"
+            android:contentDescription="@string/faditor_add_asset_image" />
+
         <!-- Crop overlay (on top of player, hidden by default) -->
         <com.fadcam.ui.faditor.crop.CropOverlayView
             android:id="@+id/crop_overlay"
@@ -460,6 +471,36 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_duplicate"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Add asset tool -->
+            <LinearLayout
+                android:id="@+id/tool_add_asset"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_add_asset_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="add_circle"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_add_asset_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_add"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />

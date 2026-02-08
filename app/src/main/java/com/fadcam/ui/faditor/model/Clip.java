@@ -68,6 +68,13 @@ public class Clip {
     private float cropBottom = 1f;
 
     /**
+     * Whether this clip is a still image (not a video).
+     * Image clips have a fixed playback duration (e.g. 5 seconds)
+     * and display as a single still frame during preview/export.
+     */
+    private boolean imageClip = false;
+
+    /**
      * Create a new Clip from a video URI.
      *
      * @param sourceUri        URI of the source video file
@@ -131,6 +138,7 @@ public class Clip {
         this.cropTop = other.cropTop;
         this.cropRight = other.cropRight;
         this.cropBottom = other.cropBottom;
+        this.imageClip = other.imageClip;
     }
 
     // ── Getters ──────────────────────────────────────────────────────
@@ -190,6 +198,13 @@ public class Clip {
     public float getCropTop() { return cropTop; }
     public float getCropRight() { return cropRight; }
     public float getCropBottom() { return cropBottom; }
+
+    /**
+     * Whether this clip represents a still image rather than a video.
+     */
+    public boolean isImageClip() {
+        return imageClip;
+    }
 
     /**
      * Trimmed duration in milliseconds (respects speed multiplier).
@@ -269,6 +284,15 @@ public class Clip {
 
     public void setVolumeLevel(float level) {
         this.volumeLevel = Math.max(0f, Math.min(level, 2.0f));
+    }
+
+    /**
+     * Mark this clip as a still image clip (not video).
+     *
+     * @param imageClip true if this clip represents a still image
+     */
+    public void setImageClip(boolean imageClip) {
+        this.imageClip = imageClip;
     }
 
     /**
