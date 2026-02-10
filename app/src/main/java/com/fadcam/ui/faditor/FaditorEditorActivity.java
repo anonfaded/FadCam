@@ -926,7 +926,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolCanvas.setOnClickListener(v -> showCanvasPicker());
 
         // Audio tool
-        toolAudio.setOnClickListener(v -> showAddAudioPicker());
+        toolAudio.setOnClickListener(v -> extractAudioFromCurrentClip());
 
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = getSelectedClip();
@@ -1592,34 +1592,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     // ── Audio ─────────────────────────────────────────────────────────
-
-    /**
-     * Shows the add-audio bottom sheet with extraction options.
-     */
-    private void showAddAudioPicker() {
-        AddAudioBottomSheet sheet = AddAudioBottomSheet.newInstance();
-        sheet.setCallback(new AddAudioBottomSheet.Callback() {
-            @Override
-            public void onExtractFromCurrentVideo() {
-                extractAudioFromCurrentClip();
-            }
-
-            @Override
-            public void onSelectAudioFile() {
-                // TODO: Phase 2 – open audio file picker
-                Toast.makeText(FaditorEditorActivity.this,
-                        "Coming soon", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onExtractFromOtherVideo() {
-                // TODO: Phase 2 – open video picker → extract audio
-                Toast.makeText(FaditorEditorActivity.this,
-                        "Coming soon", Toast.LENGTH_SHORT).show();
-            }
-        });
-        sheet.show(getSupportFragmentManager(), "add_audio");
-    }
 
     /**
      * Extracts the audio track from the currently selected video clip,
