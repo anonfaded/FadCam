@@ -912,6 +912,27 @@ public class EditorTimelineView extends View {
                       : String.format(Locale.US, "%ds", s);
     }
 
+    /**
+     * Format a duration in ms as a compact label for timeline segments.
+     * e.g. "3s", "1:25", "0.8s"
+     */
+    private String formatDurationCompact(long ms) {
+        if (ms <= 0) return "0s";
+        if (ms < 1000) {
+            return String.format(Locale.US, "0.%ds", ms / 100);
+        }
+        long sec = ms / 1000;
+        long m = sec / 60;
+        long s = sec % 60;
+        if (m > 0) {
+            return String.format(Locale.US, "%d:%02d", m, s);
+        }
+        if (ms % 1000 >= 100) {
+            return String.format(Locale.US, "%d.%ds", s, (ms % 1000) / 100);
+        }
+        return String.format(Locale.US, "%ds", s);
+    }
+
     private void drawSegment(Canvas canvas, int i) {
         RectF r = segRects.get(i);
         boolean sel = (i == selectedIndex);
@@ -933,13 +954,27 @@ public class EditorTimelineView extends View {
             canvas.drawRoundRect(br, segmentCornerPx, segmentCornerPx, borderPaint);
         }
 
-        if (r.width() > labelPaint.getTextSize() * 2f) {
-            String label = String.valueOf(i + 1);
-            float ty = r.centerY() + labelPaint.getTextSize() / 3f;
-            
+        if (r.width() > labelPaint.getTextSize() * 3f) {
+            // Show segment duration at the bottom-right — sticky to visible portion
+            String label = formatDurationCompact(sd.effectiveMs);
+            float ty = r.bottom - 4f * density;
+
+            // Compute visible portion of this segment for sticky positioning
+            float viewLeft = scrollOffsetPx;
+            float viewRight = scrollOffsetPx + getWidth();
+            float visRight = Math.min(r.right, viewRight);
+
+            float labelWidth = labelPaint.measureText(label);
+            float padding = 6f * density;
+            // Position at right edge of visible portion
+            float cx = visRight - padding - labelWidth / 2f;
+            // Clamp within segment bounds
+            cx = Math.max(r.left + labelWidth / 2f + padding, cx);
+            cx = Math.min(r.right - labelWidth / 2f - padding, cx);
+
             // Shadow for better visibility
             labelPaint.setShadowLayer(2f * density, 0, 0, 0xFF000000);
-            canvas.drawText(label, r.centerX(), ty, labelPaint);
+            canvas.drawText(label, cx, ty, labelPaint);
             labelPaint.clearShadowLayer();
         }
     }
@@ -1214,6 +1249,27 @@ public class EditorTimelineView extends View {
                 canvas.clipRect(rect);
                 canvas.drawText(label, textX, textY, audioLabelPaint);
                 canvas.restore();
+            }
+
+            // Duration label at bottom-right, sticky to visible portion
+            long audioDurMs = ac.getOutPointMs() - ac.getInPointMs();
+            if (rect.width() > labelPaint.getTextSize() * 3f) {
+                String durLabel = formatDurationCompact(audioDurMs);
+                float durY = rect.bottom - 3f * density;
+
+                float viewLeft = scrollOffsetPx;
+                float viewRight = scrollOffsetPx + getWidth();
+                float visRight = Math.min(rect.right, viewRight);
+
+                float durWidth = labelPaint.measureText(durLabel);
+                float padding = 6f * density;
+                float cx = visRight - padding - durWidth / 2f;
+                cx = Math.max(rect.left + durWidth / 2f + padding, cx);
+                cx = Math.min(rect.right - durWidth / 2f - padding, cx);
+
+                labelPaint.setShadowLayer(2f * density, 0, 0, 0xFF000000);
+                canvas.drawText(durLabel, cx, durY, labelPaint);
+                labelPaint.clearShadowLayer();
             }
 
             // Trim handles on selected audio clip

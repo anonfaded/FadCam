@@ -122,10 +122,10 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="4dp">
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="2dp">
 
             <!-- Current time -->
             <TextView
@@ -133,25 +133,33 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="00:00"
-                android:textColor="#BBBBBB"
-                android:textSize="13sp"
+                android:textColor="#999999"
+                android:textSize="11sp"
                 android:fontFamily="monospace" />
 
-            <!-- Undo button with count badge -->
-            <FrameLayout
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Undo: icon + count stacked vertically -->
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginStart="8dp">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginEnd="4dp">
 
                 <TextView
                     android:id="@+id/btn_undo"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
                     android:gravity="center"
                     android:fontFamily="@font/materialicons"
                     android:text="undo"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:alpha="0.3"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/faditor_undo" />
@@ -159,55 +167,45 @@
                 <TextView
                     android:id="@+id/undo_count"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="top|end"
-                    android:paddingStart="3dp"
-                    android:paddingEnd="3dp"
-                    android:textSize="9sp"
-                    android:textColor="#AAAAAA"
-                    android:visibility="gone" />
-            </FrameLayout>
+                    android:layout_height="12dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="0"
+                    android:textSize="8sp"
+                    android:textColor="#777777"
+                    android:alpha="0.3" />
+            </LinearLayout>
 
-            <!-- Spacer -->
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <!-- Play / Pause toggle (Material Icon) -->
+            <!-- Play / Pause -->
             <TextView
                 android:id="@+id/btn_play_pause"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:gravity="center"
                 android:fontFamily="@font/materialicons"
                 android:text="play_arrow"
                 android:textColor="#FFFFFF"
-                android:textSize="32sp"
+                android:textSize="28sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/faditor_play_pause" />
 
-            <!-- Spacer -->
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <!-- Redo button with count badge -->
-            <FrameLayout
+            <!-- Redo: icon + count stacked vertically -->
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="4dp">
 
                 <TextView
                     android:id="@+id/btn_redo"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
                     android:gravity="center"
                     android:fontFamily="@font/materialicons"
                     android:text="redo"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:alpha="0.3"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/faditor_redo" />
@@ -215,14 +213,20 @@
                 <TextView
                     android:id="@+id/redo_count"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="top|start"
-                    android:paddingStart="3dp"
-                    android:paddingEnd="3dp"
-                    android:textSize="9sp"
-                    android:textColor="#AAAAAA"
-                    android:visibility="gone" />
-            </FrameLayout>
+                    android:layout_height="12dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="0"
+                    android:textSize="8sp"
+                    android:textColor="#777777"
+                    android:alpha="0.3" />
+            </LinearLayout>
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
             <!-- Total time -->
             <TextView
@@ -230,8 +234,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="00:00"
-                android:textColor="#BBBBBB"
-                android:textSize="13sp"
+                android:textColor="#999999"
+                android:textSize="11sp"
                 android:fontFamily="monospace" />
         </LinearLayout>
 

@@ -758,18 +758,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             int uCount = undoManager.getUndoCount();
             int rCount = undoManager.getRedoCount();
-            if (uCount > 0) {
-                undoCount.setText(String.valueOf(uCount));
-                undoCount.setVisibility(View.VISIBLE);
-            } else {
-                undoCount.setVisibility(View.GONE);
-            }
-            if (rCount > 0) {
-                redoCount.setText(String.valueOf(rCount));
-                redoCount.setVisibility(View.VISIBLE);
-            } else {
-                redoCount.setVisibility(View.GONE);
-            }
+            undoCount.setText(String.valueOf(uCount));
+            undoCount.setVisibility(View.VISIBLE);
+            undoCount.setAlpha(uCount > 0 ? 1.0f : 0.3f);
+            redoCount.setText(String.valueOf(rCount));
+            redoCount.setVisibility(View.VISIBLE);
+            redoCount.setAlpha(rCount > 0 ? 1.0f : 0.3f);
         });
 
         // Segment tools
