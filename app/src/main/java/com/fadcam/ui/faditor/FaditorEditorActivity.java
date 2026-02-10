@@ -103,6 +103,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView exportEtaText;
     private TextView exportStatusIcon;
     private TextView exportBtnDone;
+    private TextView exportTitle;
     private com.google.android.material.progressindicator.LinearProgressIndicator exportProgressBar;
     private long exportStartTimeMs;
     private View remuxProgressOverlay;
@@ -591,6 +592,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         exportEtaText = findViewById(R.id.export_eta_text);
         exportStatusIcon = findViewById(R.id.export_status_icon);
         exportBtnDone = findViewById(R.id.export_btn_done);
+        exportTitle = findViewById(R.id.export_title);
         exportProgressBar = findViewById(R.id.export_progress_bar);
         remuxProgressOverlay = findViewById(R.id.remux_progress_overlay);
         remuxProgressText = findViewById(R.id.remux_progress_text);
@@ -2195,10 +2197,25 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                     if (exportEtaText != null) exportEtaText.setVisibility(View.GONE);
 
+                    // Update title to "Export Complete"
+                    if (exportTitle != null) {
+                        exportTitle.setText(R.string.faditor_export_complete_title);
+                    }
+
+                    // Stop progress bar animation
+                    if (exportProgressBar != null) {
+                        exportProgressBar.setIndeterminate(false);
+                        exportProgressBar.setProgress(100);
+                    }
+
                     // Hide cancel, show Done
                     View cancelBtn = findViewById(R.id.btn_cancel_export);
                     if (cancelBtn != null) cancelBtn.setVisibility(View.GONE);
                     if (exportBtnDone != null) exportBtnDone.setVisibility(View.VISIBLE);
+
+                    // Hide Back button (export is done, user should tap Done)
+                    View backBtn = findViewById(R.id.export_btn_back);
+                    if (backBtn != null) backBtn.setVisibility(View.INVISIBLE);
 
                     // Notify Records tab to auto-refresh when user navigates back
                     com.fadcam.ui.RecordsFragment.requestRefresh();
@@ -2605,11 +2622,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void showExportProgress() {
         if (exportProgressOverlay == null) return;
 
-        // Reset to initial exporting state
-        if (exportProgressPercent != null) exportProgressPercent.setText("0%");
+        // Reset to initial exporting state (indeterminate until first progress poll)
+        if (exportProgressPercent != null) exportProgressPercent.setText("–");
         if (exportProgressBar != null) {
             exportProgressBar.setIndeterminate(true);
-            exportProgressBar.setProgress(0);
         }
         if (exportProgressText != null) {
             exportProgressText.setText(R.string.faditor_exporting);
@@ -2617,7 +2633,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
         if (exportEtaText != null) exportEtaText.setVisibility(View.GONE);
         if (exportStatusIcon != null) exportStatusIcon.setText("movie");
+        if (exportTitle != null) exportTitle.setText(R.string.faditor_exporting);
         if (exportBtnDone != null) exportBtnDone.setVisibility(View.INVISIBLE);
+
+        // Reset Back button visibility
+        View backBtn = findViewById(R.id.export_btn_back);
+        if (backBtn != null) backBtn.setVisibility(View.VISIBLE);
+
         View cancelBtn = findViewById(R.id.btn_cancel_export);
         if (cancelBtn != null) cancelBtn.setVisibility(View.VISIBLE);
 
@@ -2645,23 +2667,40 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return;
         }
 
-        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
-                getString(R.string.faditor_close_confirm_title),
-                getString(R.string.faditor_close_confirm_action),
-                getString(R.string.faditor_close_confirm_subtitle),
-                R.drawable.ic_save,
-                getString(R.string.faditor_close_confirm_helper));
+        try {
+            InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
+                    getString(R.string.faditor_close_confirm_title),
+                    getString(R.string.faditor_close_confirm_action),
+                    getString(R.string.faditor_close_confirm_subtitle),
+                    R.drawable.ic_save,
+                    getString(R.string.faditor_close_confirm_helper));
 
-        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
-            @Override
-            public void onImportConfirmed(org.json.JSONObject json) { }
+            sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+                @Override
+                public void onImportConfirmed(org.json.JSONObject json) { }
 
-            @Override
-            public void onResetConfirmed() {
-                handleClose();
-            }
-        });
-        sheet.show(getSupportFragmentManager(), "close_confirm");
+                @Override
+                public void onResetConfirmed() {
+                    handleClose();
+                }
+            });
+            sheet.show(getSupportFragmentManager(), "close_confirm");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to show close confirmation sheet, using dialog fallback", e);
+            showCloseConfirmationDialog();
+        }
+    }
+
+    /**
+     * Fallback confirmation dialog if bottom sheet fails.
+     */
+    private void showCloseConfirmationDialog() {
+        new android.app.AlertDialog.Builder(this, R.style.CustomBottomSheetDialogTheme)
+                .setTitle(R.string.faditor_close_confirm_title)
+                .setMessage(R.string.faditor_close_confirm_helper)
+                .setPositiveButton(R.string.faditor_close_confirm_action, (d, w) -> handleClose())
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void handleClose() {

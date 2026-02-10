@@ -102,5 +102,12 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">#FF1A1A1A</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <!-- Required for picker_bottom_sheet and InputActionBottomSheetFragment -->
+        <item name="pickerTextSecondary">#999999</item>
+        <item name="pickerTextPrimary">@android:color/white</item>
+        <item name="colorHeading">#FF4CAF50</item>
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF1A1A1A</item>
+        <item name="pickerGradientEnd">#FF2A2A2A</item>
     </style>
 </resources>

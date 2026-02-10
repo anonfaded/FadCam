@@ -3,11 +3,14 @@ package com.fadcam.ui.faditor.export;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.media3.transformer.ProgressHolder;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.audio.SonicAudioProcessor;
@@ -80,6 +83,15 @@ public class ExportManager {
     /** The display filename used for the SAF DocumentFile. */
     @Nullable
     private String safExportFileName = null;
+
+    /** Handler for periodic progress polling. */
+    private final Handler progressHandler = new Handler(Looper.getMainLooper());
+
+    /** Reusable progress holder to avoid allocation on every poll. */
+    private final ProgressHolder progressHolder = new ProgressHolder();
+
+    /** Interval between progress polls (ms). */
+    private static final long PROGRESS_POLL_INTERVAL_MS = 300;
 
     /**
      * Callback interface for export progress and completion events.
@@ -157,6 +169,7 @@ public class ExportManager {
                 @Override
                 public void onCompleted(@NonNull Composition composition,
                                         @NonNull ExportResult result) {
+                    stopProgressPolling();
                     isExporting = false;
                     String finalPath = outputPath;
 
@@ -183,6 +196,7 @@ public class ExportManager {
                 public void onError(@NonNull Composition composition,
                                     @NonNull ExportResult result,
                                     @NonNull ExportException exception) {
+                    stopProgressPolling();
                     isExporting = false;
                     pendingSafCopy = false;
                     safExportFileName = null;
@@ -207,6 +221,9 @@ public class ExportManager {
             // Start export
             transformer.start(composition, outputPath);
 
+            // Begin polling for progress (Transformer doesn't push progress via Listener)
+            startProgressPolling();
+
             Log.d(TAG, "Export started → " + outputPath);
             if (listener != null) {
                 listener.onExportStarted(outputPath);
@@ -226,6 +243,7 @@ public class ExportManager {
      */
     public void cancel() {
         if (transformer != null && isExporting) {
+            stopProgressPolling();
             transformer.cancel();
             isExporting = false;
             Log.d(TAG, "Export cancelled");
@@ -233,15 +251,41 @@ public class ExportManager {
     }
 
     /**
-     * Get current export progress (0.0 – 1.0).
-     * Call from a periodic handler to update progress UI.
+     * Start periodic progress polling using Transformer.getProgress().
+     * Media3 Transformer does not push progress via its Listener; it must be polled.
      */
-    public float getProgress() {
-        if (transformer == null || !isExporting) return 0f;
-        // Transformer progress is polled
-        // Requires periodic calling — the Activity handles this via Handler
-        return -1f; // Indeterminate; polled in Activity
+    private void startProgressPolling() {
+        progressHandler.removeCallbacksAndMessages(null);
+        progressHandler.postDelayed(progressPoller, PROGRESS_POLL_INTERVAL_MS);
     }
+
+    /** Stop polling for progress. */
+    private void stopProgressPolling() {
+        progressHandler.removeCallbacksAndMessages(null);
+    }
+
+    /** Runnable that periodically polls Transformer progress and forwards to listener. */
+    private final Runnable progressPoller = new Runnable() {
+        @Override
+        public void run() {
+            if (transformer == null || !isExporting) return;
+            try {
+                int state = transformer.getProgress(progressHolder);
+                if (state == Transformer.PROGRESS_STATE_AVAILABLE) {
+                    float progress = progressHolder.progress / 100f;
+                    if (listener != null) {
+                        listener.onExportProgress(progress);
+                    }
+                }
+                // Continue polling regardless of state (may become available later)
+                progressHandler.postDelayed(this, PROGRESS_POLL_INTERVAL_MS);
+            } catch (Exception e) {
+                Log.w(TAG, "Progress poll error", e);
+                // Keep polling in case of transient errors
+                progressHandler.postDelayed(this, PROGRESS_POLL_INTERVAL_MS);
+            }
+        }
+    };
 
     // ── Internal ─────────────────────────────────────────────────────
 
