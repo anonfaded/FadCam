@@ -401,6 +401,15 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
                     pendingSeekMs = trimStartMs + lastPosition;
                 }
                 player.setPlayWhenReady(playWhenReady);
+
+                // Re-apply volume from clip state.  A newly created ExoPlayer
+                // defaults to volume 1.0 — if the clip was muted (e.g. after audio
+                // extraction) we must enforce that here, otherwise the user hears
+                // double audio after a lifecycle resume.
+                float vol = currentClip.isAudioMuted() ? 0f : currentClip.getVolumeLevel();
+                setVolume(vol);
+                Log.d(TAG, "Restored volume from clip state: vol=" + vol
+                        + ", muted=" + currentClip.isAudioMuted());
             }
 
             Log.d(TAG, "ExoPlayer initialized");

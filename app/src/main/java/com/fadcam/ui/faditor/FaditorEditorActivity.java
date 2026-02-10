@@ -773,10 +773,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Sync initial volume and speed from clip state
         playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
         playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-
-        // Sync initial volume and speed from clip state
-        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
     }
 
     private void initTimeline() {
@@ -1458,6 +1454,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         srcClip.setVolumeLevel(0f);
                         playerManager.setVolume(0f);
                         updateVolumeUI(0f, true);
+                        Log.i(TAG, "Auto-muted video clip after audio extraction: "
+                                + "audioMuted=" + srcClip.isAudioMuted()
+                                + ", volumeLevel=" + srcClip.getVolumeLevel());
+                    } else {
+                        Log.w(TAG, "Could not auto-mute: getSelectedClip() returned null");
                     }
 
                     updateAudioToolUI();
