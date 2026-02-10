@@ -3420,11 +3420,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 // Start real audio analysis if we have a video URI
                 android.net.Uri currentUri = getCurrentVideoUri();
                 if (currentUri != null) {
-                    Log.d(
+                    Log.i(
                         TAG,
-                        "Starting real audio analysis for: " + currentUri
+                        "Starting real audio analysis for URI: " + currentUri +
+                        " (scheme=" + currentUri.getScheme() + ")"
                     );
                     waveformView.analyzeAudioFromVideo(currentUri);
+                } else {
+                    Log.w(TAG, "No current video URI for waveform analysis");
                 }
             }
 

@@ -248,6 +248,7 @@ public final class PlayerHolder {
         
         // Check if this is a fragmented MP4 - always rebuild index since file might have changed
         boolean isFmp4 = fmp4SourceFactory != null && fmp4SourceFactory.isFragmentedMp4(uri);
+        Log.i(TAG, "fMP4 detection: isFmp4=" + isFmp4 + ", scheme=" + uri.getScheme());
         
         // For fMP4, always rebuild index. File content may change (new recording with same name,
         // or file was still being recorded when first opened). Index scan is fast (~5ms).

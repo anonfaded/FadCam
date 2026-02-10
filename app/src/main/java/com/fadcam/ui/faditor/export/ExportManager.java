@@ -29,16 +29,23 @@ import androidx.media3.transformer.Transformer;
 import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.faditor.CanvasPickerBottomSheet;
+import com.fadcam.ui.faditor.model.AudioClip;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.ExportSettings;
 import com.fadcam.ui.faditor.model.FaditorProject;
+import com.fadcam.ui.faditor.model.Timeline;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -126,8 +133,10 @@ public class ExportManager {
                     .setVideoMimeType(MimeTypes.VIDEO_H264)
                     .setAudioMimeType(MimeTypes.AUDIO_AAC);
 
-            // For simple trim (single clip, no effects, normal speed, audio intact) use near-lossless
+            // For simple trim (single clip, no effects, normal speed, audio intact,
+            // and no audio clips on the audio track) use near-lossless
             boolean isSimpleTrim = project.getTimeline().getClipCount() == 1
+                    && !project.getTimeline().hasAudioClips()
                     && !project.getTimeline().getClip(0).isImageClip()
                     && project.getTimeline().getClip(0).getSpeedMultiplier() == 1.0f
                     && !project.getTimeline().getClip(0).isAudioMuted()
@@ -364,10 +373,198 @@ public class ExportManager {
             items.add(editedBuilder.build());
         }
 
-        EditedMediaItemSequence sequence =
+        EditedMediaItemSequence videoSequence =
                 new EditedMediaItemSequence.Builder(items).build();
 
-        return new Composition.Builder(sequence).build();
+        // Build audio sequence from AudioClips on the audio track (if any)
+        Timeline timeline = project.getTimeline();
+        if (timeline.hasAudioClips()) {
+            EditedMediaItemSequence audioSequence = buildAudioSequence(timeline);
+            if (audioSequence != null) {
+                return new Composition.Builder(videoSequence, audioSequence).build();
+            }
+        }
+
+        return new Composition.Builder(videoSequence).build();
+    }
+
+    /**
+     * Build an audio-only {@link EditedMediaItemSequence} from the timeline's
+     * {@link AudioClip}s. Silence gaps are inserted so that each clip starts
+     * at its correct {@link AudioClip#getOffsetMs()} position.
+     *
+     * @param timeline the project timeline
+     * @return the audio sequence, or null if building failed
+     */
+    @Nullable
+    private EditedMediaItemSequence buildAudioSequence(@NonNull Timeline timeline) {
+        List<AudioClip> clips = new ArrayList<>(timeline.getAudioClips());
+        if (clips.isEmpty()) return null;
+
+        // Sort by offset so we insert gaps correctly
+        Collections.sort(clips, Comparator.comparingLong(AudioClip::getOffsetMs));
+
+        // Generate a reusable silence WAV file in cache
+        File silenceFile = getOrCreateSilenceFile();
+        if (silenceFile == null) {
+            Log.e(TAG, "Failed to create silence file — skipping audio track");
+            return null;
+        }
+        Uri silenceUri = Uri.fromFile(silenceFile);
+
+        List<EditedMediaItem> audioItems = new ArrayList<>();
+        long cursorMs = 0; // current position on the timeline
+
+        for (AudioClip ac : clips) {
+            if (ac.isMuted()) {
+                // Skip muted audio clips entirely
+                continue;
+            }
+
+            long clipStartMs = ac.getOffsetMs();
+
+            // Insert silence gap if necessary
+            if (clipStartMs > cursorMs) {
+                long gapMs = clipStartMs - cursorMs;
+                EditedMediaItem silenceItem = buildSilenceItem(silenceUri, gapMs);
+                audioItems.add(silenceItem);
+                cursorMs = clipStartMs;
+            }
+
+            // Build the audio clip item with trim & volume
+            MediaItem.ClippingConfiguration clipping =
+                    new MediaItem.ClippingConfiguration.Builder()
+                            .setStartPositionMs(ac.getInPointMs())
+                            .setEndPositionMs(ac.getOutPointMs())
+                            .build();
+
+            MediaItem mediaItem = new MediaItem.Builder()
+                    .setUri(ac.getSourceUri())
+                    .setClippingConfiguration(clipping)
+                    .build();
+
+            EditedMediaItem.Builder editBuilder = new EditedMediaItem.Builder(mediaItem)
+                    .setRemoveVideo(true); // audio only
+
+            // Apply volume adjustment if needed
+            float volume = ac.getVolumeLevel();
+            if (Math.abs(volume - 1.0f) >= 0.01f) {
+                VolumeAudioProcessor volumeProcessor = new VolumeAudioProcessor();
+                volumeProcessor.setVolume(volume);
+                List<AudioProcessor> processors = new ArrayList<>();
+                processors.add(volumeProcessor);
+                editBuilder.setEffects(new Effects(processors, Collections.emptyList()));
+            }
+
+            audioItems.add(editBuilder.build());
+            cursorMs = clipStartMs + ac.getTrimmedDurationMs();
+        }
+
+        if (audioItems.isEmpty()) {
+            Log.d(TAG, "All audio clips muted — no audio sequence");
+            return null;
+        }
+
+        return new EditedMediaItemSequence.Builder(audioItems).build();
+    }
+
+    /**
+     * Build an {@link EditedMediaItem} of silence for the given duration.
+     * Uses a pre-generated 1-second silent WAV file and clips it to the
+     * required duration. For gaps longer than 1 s the file is looped or
+     * a longer file is generated.
+     */
+    @NonNull
+    private EditedMediaItem buildSilenceItem(@NonNull Uri silenceUri, long durationMs) {
+        // Clip the silence file to the required duration
+        MediaItem mediaItem = new MediaItem.Builder()
+                .setUri(silenceUri)
+                .setClippingConfiguration(
+                        new MediaItem.ClippingConfiguration.Builder()
+                                .setStartPositionMs(0)
+                                .setEndPositionMs(durationMs)
+                                .build())
+                .build();
+
+        return new EditedMediaItem.Builder(mediaItem)
+                .setRemoveVideo(true)
+                .build();
+    }
+
+    /**
+     * Get or create a silent WAV file in the app's cache directory.
+     * The file is long enough to cover any reasonable gap (10 minutes).
+     * Format: 16-bit PCM mono at 44100 Hz.
+     *
+     * @return the silence file, or null on failure
+     */
+    @Nullable
+    private File getOrCreateSilenceFile() {
+        File cacheDir = new File(context.getCacheDir(), "faditor_export");
+        if (!cacheDir.exists()) cacheDir.mkdirs();
+
+        File silenceFile = new File(cacheDir, "silence.wav");
+        if (silenceFile.exists() && silenceFile.length() > 44) {
+            return silenceFile;
+        }
+
+        try {
+            // Generate a 10-minute silent WAV (enough for any gap)
+            int sampleRate = 44100;
+            int channels = 1;
+            int bitsPerSample = 16;
+            long durationSeconds = 600; // 10 minutes
+            long numSamples = sampleRate * durationSeconds;
+            long dataSize = numSamples * channels * (bitsPerSample / 8);
+
+            FileOutputStream fos = new FileOutputStream(silenceFile);
+
+            // WAV header (44 bytes)
+            ByteBuffer header = ByteBuffer.allocate(44);
+            header.order(ByteOrder.LITTLE_ENDIAN);
+            // RIFF chunk
+            header.put((byte) 'R'); header.put((byte) 'I');
+            header.put((byte) 'F'); header.put((byte) 'F');
+            header.putInt((int) (36 + dataSize)); // file size - 8
+            header.put((byte) 'W'); header.put((byte) 'A');
+            header.put((byte) 'V'); header.put((byte) 'E');
+            // fmt sub-chunk
+            header.put((byte) 'f'); header.put((byte) 'm');
+            header.put((byte) 't'); header.put((byte) ' ');
+            header.putInt(16);                          // sub-chunk size
+            header.putShort((short) 1);                 // PCM format
+            header.putShort((short) channels);
+            header.putInt(sampleRate);
+            header.putInt(sampleRate * channels * bitsPerSample / 8); // byte rate
+            header.putShort((short) (channels * bitsPerSample / 8)); // block align
+            header.putShort((short) bitsPerSample);
+            // data sub-chunk
+            header.put((byte) 'd'); header.put((byte) 'a');
+            header.put((byte) 't'); header.put((byte) 'a');
+            header.putInt((int) dataSize);
+
+            fos.write(header.array());
+
+            // Write silence data in chunks (all zeros = silence)
+            byte[] zeroChunk = new byte[8192];
+            long remaining = dataSize;
+            while (remaining > 0) {
+                int toWrite = (int) Math.min(zeroChunk.length, remaining);
+                fos.write(zeroChunk, 0, toWrite);
+                remaining -= toWrite;
+            }
+
+            fos.flush();
+            fos.close();
+
+            Log.d(TAG, "Created silence file: " + silenceFile.getAbsolutePath()
+                    + " (" + silenceFile.length() + " bytes)");
+            return silenceFile;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create silence WAV file", e);
+            return null;
+        }
     }
 
     /**

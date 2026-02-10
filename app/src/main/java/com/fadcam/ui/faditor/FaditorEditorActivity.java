@@ -131,11 +131,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Audio extraction ─────────────────────────────────────────────
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
 
-    /** MediaPlayer for audio clip playback, synced with ExoPlayer. */
-    @Nullable
-    private MediaPlayer audioPlayer;
-    /** Whether the audioPlayer is prepared and ready. */
-    private boolean audioPlayerReady = false;
+    /** MediaPlayers for audio clips — one per clip, synced with playhead. */
+    private final List<MediaPlayer> audioPlayers = new ArrayList<>();
+    /** Whether each audioPlayer is prepared and ready. */
+    private final List<Boolean> audioPlayersReady = new ArrayList<>();
 
     // ── Audio-tail mode: playhead continues past video for audio ─────
     private boolean audioTailActive = false;
@@ -758,7 +757,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
-                if (playbackState == Player.STATE_ENDED) {
+                if (playbackState == Player.STATE_ENDED && !audioTailActive) {
                     updatePlayPauseButton(false);
                 }
                 // Once ExoPlayer is READY, correct the duration if needed.
@@ -822,6 +821,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     audioTailActive = false;
                     playerManager.pause();
                     pauseAudioPlayer();
+                    updatePlayPauseButton(false);
                 } else {
                     long playheadMs = editorTimeline.getPlayheadPositionMs();
                     long videoEndMs = totalEffectiveMs();
@@ -900,10 +900,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 sheet.setCallback((volume, muted) -> {
                     ac.setVolumeLevel(volume);
                     ac.setMuted(muted);
-                    // Update live audio player volume
-                    if (audioPlayer != null && audioPlayerReady) {
+                    // Update live audio player volume for this clip
+                    if (audioIdx < audioPlayers.size() && audioIdx < audioPlayersReady.size()
+                            && audioPlayersReady.get(audioIdx)) {
                         float vol = muted ? 0f : volume;
-                        audioPlayer.setVolume(vol, vol);
+                        audioPlayers.get(audioIdx).setVolume(vol, vol);
                     }
                     updateVolumeUI(volume, muted);
                     scheduleAutoSave();
@@ -1439,7 +1440,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 final long finalDurationMs = durationMs;
 
                 // ── Step 2: Generate waveform ────────────────────────────
-                int[] waveform = generateWaveform(videoUri, audioTrackIndex, 200);
+                int[] waveform = generateWaveform(videoUri, audioTrackIndex, 800);
 
                 // ── Step 3: Create AudioClip and add to timeline ─────────
                 AudioClip audioClip = new AudioClip(audioUri, finalDurationMs);
@@ -1590,138 +1591,153 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Audio player (playback sync) ─────────────────────────────────
 
     /**
-     * Prepares the MediaPlayer for the first audio clip in the timeline.
-     * Called after an audio clip is added.
+     * Prepares MediaPlayers for ALL audio clips in the timeline.
+     * One MediaPlayer per clip, each pre-prepared for instant playback.
      */
     private void prepareAudioPlayer() {
         releaseAudioPlayer();
         if (project == null || !project.getTimeline().hasAudioClips()) return;
 
-        AudioClip ac = project.getTimeline().getAudioClip(0);
-        if (ac == null) return;
+        List<AudioClip> clips = project.getTimeline().getAudioClips();
+        for (int i = 0; i < clips.size(); i++) {
+            AudioClip ac = clips.get(i);
+            if (ac == null) continue;
+            final int idx = i;
 
-        try {
-            audioPlayer = new MediaPlayer();
-            audioPlayer.setDataSource(this, ac.getSourceUri());
-            audioPlayer.setLooping(false);
-            float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
-            audioPlayer.setVolume(vol, vol);
-            audioPlayer.setOnPreparedListener(mp -> {
-                audioPlayerReady = true;
-                Log.d(TAG, "AudioPlayer prepared, duration=" + mp.getDuration() + "ms");
-            });
-            audioPlayer.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "AudioPlayer error: what=" + what + " extra=" + extra);
-                audioPlayerReady = false;
-                return true;
-            });
-            audioPlayer.prepareAsync();
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to prepare audio player", e);
-            releaseAudioPlayer();
+            try {
+                MediaPlayer mp = new MediaPlayer();
+                mp.setDataSource(this, ac.getSourceUri());
+                mp.setLooping(false);
+                float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
+                mp.setVolume(vol, vol);
+
+                audioPlayers.add(mp);
+                audioPlayersReady.add(false);
+
+                mp.setOnPreparedListener(p -> {
+                    if (idx < audioPlayersReady.size()) {
+                        audioPlayersReady.set(idx, true);
+                    }
+                    Log.d(TAG, "AudioPlayer[" + idx + "] prepared, duration=" + p.getDuration() + "ms");
+                });
+                mp.setOnErrorListener((p, what, extra) -> {
+                    Log.e(TAG, "AudioPlayer[" + idx + "] error: what=" + what + " extra=" + extra);
+                    if (idx < audioPlayersReady.size()) {
+                        audioPlayersReady.set(idx, false);
+                    }
+                    return true;
+                });
+                mp.prepareAsync();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to prepare audio player[" + i + "]", e);
+            }
         }
     }
 
     /**
-     * Calculates the correct audio-player seek position based on the
-     * current playhead timeline position and the audio clip's offset.
+     * Syncs and plays the correct audio player(s) for the current playhead position.
      * Called once when user presses play.
      */
     private void syncAndPlayAudioPlayer() {
-        if (audioPlayer == null || !audioPlayerReady) return;
         if (project == null || !project.getTimeline().hasAudioClips()) return;
 
-        AudioClip ac = project.getTimeline().getAudioClip(0);
-        if (ac == null) return;
-
-        // Get current playhead position on the timeline (absolute ms)
         long playheadMs = editorTimeline.getPlayheadPositionMs();
-        long audioStartMs = ac.getOffsetMs();
-        long audioEndMs = ac.getEndOnTimelineMs();
+        List<AudioClip> clips = project.getTimeline().getAudioClips();
 
-        if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
-            // Playhead is within the audio clip range
-            long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+        for (int i = 0; i < clips.size() && i < audioPlayers.size(); i++) {
+            if (i >= audioPlayersReady.size() || !audioPlayersReady.get(i)) continue;
+            AudioClip ac = clips.get(i);
+            MediaPlayer mp = audioPlayers.get(i);
+            if (ac == null || mp == null) continue;
+
+            long audioStartMs = ac.getOffsetMs();
+            long audioEndMs = ac.getEndOnTimelineMs();
+
             try {
-                audioPlayer.seekTo((int) seekPos);
-                float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
-                audioPlayer.setVolume(vol, vol);
-                audioPlayer.start();
+                if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
+                    long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+                    mp.seekTo((int) seekPos);
+                    float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
+                    mp.setVolume(vol, vol);
+                    mp.start();
+                } else {
+                    if (mp.isPlaying()) mp.pause();
+                }
             } catch (Exception e) {
-                Log.e(TAG, "AudioPlayer sync error", e);
+                Log.e(TAG, "AudioPlayer[" + i + "] sync error", e);
             }
-        } else {
-            // Playhead is outside audio clip range — don't play yet
-            try {
-                if (audioPlayer.isPlaying()) audioPlayer.pause();
-            } catch (Exception ignored) {}
         }
     }
 
     /**
-     * Periodically called from playheadUpdater to start/stop audio player
-     * as the playhead enters/exits the audio clip range during playback.
+     * Periodically called from playheadUpdater to start/stop audio players
+     * as the playhead enters/exits each audio clip range during playback.
      */
     private void syncAudioPlayerWithPlayhead() {
-        if (audioPlayer == null || !audioPlayerReady) return;
         if (project == null || !project.getTimeline().hasAudioClips()) return;
 
         // Only sync when something is supposed to be playing
         boolean videoPlaying = playerManager != null && playerManager.getPlayWhenReady();
         boolean imageActive = imagePlaybackActive;
-        if (!videoPlaying && !imageActive) return;
-
-        AudioClip ac = project.getTimeline().getAudioClip(0);
-        if (ac == null) return;
+        if (!videoPlaying && !imageActive && !audioTailActive) return;
 
         long playheadMs = editorTimeline.getPlayheadPositionMs();
-        long audioStartMs = ac.getOffsetMs();
-        long audioEndMs = ac.getEndOnTimelineMs();
+        List<AudioClip> clips = project.getTimeline().getAudioClips();
 
-        try {
-            if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
-                if (!audioPlayer.isPlaying()) {
-                    // Playhead just entered audio range — start playing
-                    long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
-                    audioPlayer.seekTo((int) seekPos);
-                    float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
-                    audioPlayer.setVolume(vol, vol);
-                    audioPlayer.start();
+        for (int i = 0; i < clips.size() && i < audioPlayers.size(); i++) {
+            if (i >= audioPlayersReady.size() || !audioPlayersReady.get(i)) continue;
+            AudioClip ac = clips.get(i);
+            MediaPlayer mp = audioPlayers.get(i);
+            if (ac == null || mp == null) continue;
+
+            long audioStartMs = ac.getOffsetMs();
+            long audioEndMs = ac.getEndOnTimelineMs();
+
+            try {
+                if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
+                    if (!mp.isPlaying()) {
+                        long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+                        mp.seekTo((int) seekPos);
+                        float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
+                        mp.setVolume(vol, vol);
+                        mp.start();
+                    }
+                } else {
+                    if (mp.isPlaying()) {
+                        mp.pause();
+                    }
                 }
-            } else {
-                if (audioPlayer.isPlaying()) {
-                    audioPlayer.pause();
-                }
+            } catch (Exception e) {
+                Log.e(TAG, "Audio sync[" + i + "] error", e);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Audio sync error", e);
         }
     }
 
     /**
-     * Pauses the audio player.
+     * Pauses all audio players.
      */
     private void pauseAudioPlayer() {
-        if (audioPlayer == null || !audioPlayerReady) return;
-        try {
-            if (audioPlayer.isPlaying()) audioPlayer.pause();
-        } catch (Exception ignored) {}
+        for (int i = 0; i < audioPlayers.size(); i++) {
+            if (i >= audioPlayersReady.size() || !audioPlayersReady.get(i)) continue;
+            try {
+                MediaPlayer mp = audioPlayers.get(i);
+                if (mp != null && mp.isPlaying()) mp.pause();
+            } catch (Exception ignored) {}
+        }
     }
 
     /**
-     * Releases the audio player resources.
+     * Releases all audio player resources.
      */
     private void releaseAudioPlayer() {
-        if (audioPlayer != null) {
-            try {
-                audioPlayer.stop();
-            } catch (Exception ignored) {}
-            try {
-                audioPlayer.release();
-            } catch (Exception ignored) {}
-            audioPlayer = null;
-            audioPlayerReady = false;
+        for (MediaPlayer mp : audioPlayers) {
+            if (mp != null) {
+                try { mp.stop(); } catch (Exception ignored) {}
+                try { mp.release(); } catch (Exception ignored) {}
+            }
         }
+        audioPlayers.clear();
+        audioPlayersReady.clear();
     }
 
     // ── Live Preview Transforms ──────────────────────────────────────
@@ -1990,7 +2006,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (audioTailActive) {
             long elapsed = android.os.SystemClock.elapsedRealtime() - audioTailStartWall;
             long playheadMs = audioTailStartMs + elapsed;
-            long timelineEndMs = project.getTimeline().getTotalDurationMs();
+            long timelineEndMs = editorTimeline.getTimelineEndMs();
 
             if (playheadMs >= timelineEndMs) {
                 // Audio tail finished — fully stop
@@ -2026,13 +2042,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (nextIndex < timeline.getClipCount()) {
                     advanceToSegment(nextIndex, true);
                 } else {
-                    long timelineEndMs = timeline.getTotalDurationMs();
+                    long timelineEndMs = editorTimeline.getTimelineEndMs();
                     if (timelineEndMs > totalEffectiveMs()) {
                         // Audio extends beyond image clip — enter audio-tail
                         stopImagePlayback();
                         audioTailActive = true;
                         audioTailStartMs = totalEffectiveMs();
                         audioTailStartWall = android.os.SystemClock.elapsedRealtime();
+                        updatePlayPauseButton(true);
                         Log.d(TAG, "Image: entering audio-tail");
                     } else {
                         // Last segment — set playhead to end
@@ -2075,13 +2092,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     advanceToSegment(nextIndex, true);
                 } else {
                     // Last video segment reached its end
-                    long timelineEndMs = timeline.getTotalDurationMs();
+                    long timelineEndMs = editorTimeline.getTimelineEndMs();
                     if (timelineEndMs > totalEffectiveMs()) {
                         // Audio extends beyond video — enter audio-tail mode
                         playerManager.pause();
                         audioTailActive = true;
                         audioTailStartMs = totalEffectiveMs();
                         audioTailStartWall = android.os.SystemClock.elapsedRealtime();
+                        updatePlayPauseButton(true);
                         Log.d(TAG, "Entering audio-tail: videoEnd=" + audioTailStartMs
                                 + " timelineEnd=" + timelineEndMs);
                     } else {

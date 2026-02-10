@@ -77,7 +77,7 @@ public class EditorTimelineView extends View {
     private static final float AUDIO_TRACK_HEIGHT_DP = 40f;
     private static final float AUDIO_TRACK_GAP_DP    = 6f;
     private static final float AUDIO_CORNER_DP       = 6f;
-    private static final float AUDIO_WAVEFORM_BAR_GAP_DP = 1f;
+    private static final float AUDIO_WAVEFORM_BAR_GAP_DP = 0.5f;
 
     // ── Colors ───────────────────────────────────────────────────────
     private static final int COLOR_RULER_BG      = 0xFF141414;
@@ -96,6 +96,8 @@ public class EditorTimelineView extends View {
     private static final int COLOR_AUDIO_BG_SEL   = 0xFF1B3A20;
     private static final int COLOR_AUDIO_WAVE     = 0xFF4CAF50;
     private static final int COLOR_AUDIO_WAVE_MUTED = 0xFF555555;
+    private static final int COLOR_AUDIO_WAVE_DIM = 0x404CAF50; // Faded version for mirror half
+    private static final int COLOR_AUDIO_CENTERLINE = 0x334CAF50;
     private static final int COLOR_AUDIO_LABEL    = 0xBBFFFFFF;
     private static final int COLOR_AUDIO_TRACK_BG = 0xFF151515;
 
@@ -119,6 +121,8 @@ public class EditorTimelineView extends View {
     private final Paint audioTrackBgPaint   = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint audioClipPaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint audioWavePaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint audioWaveMirrorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint audioCenterlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint audioLabelPaint     = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint audioBorderPaint    = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -162,7 +166,7 @@ public class EditorTimelineView extends View {
     private long dragAudioStartOffsetMs;
     private boolean audioLongPressTriggered = false;
     private int pendingAudioIndex = -1;       // Index of audio clip awaiting long-press
-    private static final long AUDIO_LONG_PRESS_MS = 500;  // Longer hold to avoid accidental drags
+    private static final long AUDIO_LONG_PRESS_MS = 1000;  // Long hold to avoid accidental drags
     // Audio trim drag state
     private float audioTrimDragX;
     private long audioTrimDragInMs;
@@ -426,7 +430,13 @@ public class EditorTimelineView extends View {
         audioClipPaint.setStyle(Paint.Style.FILL);
         audioWavePaint.setColor(COLOR_AUDIO_WAVE);
         audioWavePaint.setStyle(Paint.Style.FILL);
-        audioWavePaint.setStrokeWidth(2f * density);
+        audioWavePaint.setStrokeCap(Paint.Cap.ROUND);
+        audioWaveMirrorPaint.setColor(COLOR_AUDIO_WAVE_DIM);
+        audioWaveMirrorPaint.setStyle(Paint.Style.FILL);
+        audioWaveMirrorPaint.setStrokeCap(Paint.Cap.ROUND);
+        audioCenterlinePaint.setColor(COLOR_AUDIO_CENTERLINE);
+        audioCenterlinePaint.setStyle(Paint.Style.STROKE);
+        audioCenterlinePaint.setStrokeWidth(1f * density);
         audioLabelPaint.setColor(COLOR_AUDIO_LABEL);
         audioLabelPaint.setTextSize(9f * density);
         audioLabelPaint.setTextAlign(Paint.Align.LEFT);
@@ -1132,42 +1142,74 @@ public class EditorTimelineView extends View {
             AudioClip ac = audioClips.get(i);
             RectF rect = audioClipRects.get(i);
 
-            // Clip background
+            // Clip background (always rounded, handles drawn on top)
             boolean selected = (i == selectedAudioIndex);
             audioClipPaint.setColor(selected ? COLOR_AUDIO_BG_SEL : COLOR_AUDIO_BG);
             canvas.drawRoundRect(rect, audioCornerPx, audioCornerPx, audioClipPaint);
 
-            // Selection border
+            // Selection border (rounded to match)
             if (selected) {
+                audioBorderPaint.setStyle(Paint.Style.STROKE);
                 canvas.drawRoundRect(rect, audioCornerPx, audioCornerPx, audioBorderPaint);
             }
 
-            // Waveform bars
+            // Waveform fills the full width (handles overlap edge bars, like video thumbnails)
             int[] waveform = ac.getWaveform();
             if (waveform != null && waveform.length > 0) {
-                audioWavePaint.setColor(ac.isMuted() ? COLOR_AUDIO_WAVE_MUTED : COLOR_AUDIO_WAVE);
-                float clipW = rect.width();
-                float barWidth = Math.max(1f, (clipW / waveform.length) - audioWaveBarGapPx);
-                float maxBarH = rect.height() - 4f * density; // Padding top/bottom
-                float centerY = rect.centerY();
+                boolean muted = ac.isMuted();
+                int waveColor = muted ? COLOR_AUDIO_WAVE_MUTED : COLOR_AUDIO_WAVE;
+                int mirrorColor = muted ? 0x40555555 : COLOR_AUDIO_WAVE_DIM;
+                audioWavePaint.setColor(waveColor);
+                audioWaveMirrorPaint.setColor(mirrorColor);
 
-                for (int j = 0; j < waveform.length; j++) {
-                    float barX = rect.left + (j * clipW / waveform.length);
-                    float amplitude = waveform[j] / 255f;
-                    float barH = Math.max(1f * density, amplitude * maxBarH);
-                    canvas.drawRect(
-                            barX, centerY - barH / 2f,
-                            barX + barWidth, centerY + barH / 2f,
-                            audioWavePaint);
+                float clipW = rect.width();
+                float centerY = rect.centerY();
+                float topHalf = (centerY - rect.top) - 1f * density;
+                float botHalf = (rect.bottom - centerY) - 1f * density;
+
+                // Draw centerline
+                canvas.drawLine(rect.left, centerY,
+                        rect.right, centerY, audioCenterlinePaint);
+
+                // 3dp bars with 0.5dp gaps
+                float barW = 3f * density;
+                float gap = 0.5f * density;
+                int barCount = Math.max(1, (int) (clipW / (barW + gap)));
+                float step = clipW / barCount;
+
+                canvas.save();
+                canvas.clipRect(rect);
+                RectF barRect = new RectF();
+                for (int j = 0; j < barCount; j++) {
+                    float samplePos = (j / (float) barCount) * waveform.length;
+                    int si = Math.min((int) samplePos, waveform.length - 1);
+                    int si2 = Math.min(si + 1, waveform.length - 1);
+                    float frac = samplePos - si;
+                    float amplitude = ((waveform[si] * (1f - frac)) + (waveform[si2] * frac)) / 255f;
+
+                    amplitude = (float) Math.pow(amplitude, 0.7);
+
+                    float minBar = 1f * density;
+                    float topH = Math.max(minBar, amplitude * topHalf);
+                    float botH = Math.max(minBar, amplitude * botHalf * 0.85f);
+
+                    float barX = rect.left + j * step;
+                    float barRadius = barW * 0.4f;
+
+                    barRect.set(barX, centerY - topH, barX + barW, centerY);
+                    canvas.drawRoundRect(barRect, barRadius, barRadius, audioWavePaint);
+
+                    barRect.set(barX, centerY, barX + barW, centerY + botH);
+                    canvas.drawRoundRect(barRect, barRadius, barRadius, audioWaveMirrorPaint);
                 }
+                canvas.restore();
             }
 
-            // Label
+            // Label (always offset to clear handle area)
             String label = ac.getLabel();
             if (label != null && !label.isEmpty()) {
-                float textX = rect.left + 6f * density;
+                float textX = rect.left + handleWidthPx + 4f * density;
                 float textY = rect.top + audioLabelPaint.getTextSize() + 2f * density;
-                // Clip text to clip bounds
                 canvas.save();
                 canvas.clipRect(rect);
                 canvas.drawText(label, textX, textY, audioLabelPaint);
@@ -1245,21 +1287,48 @@ public class EditorTimelineView extends View {
 
     /**
      * Draws trim handles on the selected audio clip, matching video handle style.
+     * Includes trim overlay feedback and notch indicators.
      */
     private void drawAudioTrimHandles(Canvas canvas, RectF rect) {
         float hTop = rect.top - handleOverhangPx;
         float hBot = rect.bottom + handleOverhangPx;
         float cornerRadius = audioCornerPx;
 
-        // Left handle
-        RectF leftH = new RectF(rect.left, hTop, rect.left + handleWidthPx, hBot);
-        canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
-        drawNotch(canvas, leftH);
-
-        // Right handle
-        RectF rightH = new RectF(rect.right - handleWidthPx, hTop, rect.right, hBot);
-        canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
-        drawNotch(canvas, rightH);
+        if (activeDrag == Drag.AUDIO_LEFT_HANDLE) {
+            if (audioTrimDragX > rect.left) {
+                canvas.drawRect(rect.left, rect.top, audioTrimDragX, rect.bottom, trimOverlayPaint);
+            } else if (audioTrimDragX < rect.left) {
+                canvas.drawRect(audioTrimDragX, rect.top, rect.left, rect.bottom, trimRecoverPaint);
+            }
+            RectF leftH = new RectF(audioTrimDragX - handleWidthPx / 2f, hTop,
+                    audioTrimDragX + handleWidthPx / 2f, hBot);
+            canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, leftH);
+            RectF rightH = new RectF(rect.right - handleWidthPx, hTop, rect.right, hBot);
+            canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, rightH);
+        } else if (activeDrag == Drag.AUDIO_RIGHT_HANDLE) {
+            RectF leftH = new RectF(rect.left, hTop, rect.left + handleWidthPx, hBot);
+            canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, leftH);
+            if (audioTrimDragX < rect.right) {
+                canvas.drawRect(audioTrimDragX, rect.top, rect.right, rect.bottom, trimOverlayPaint);
+            } else if (audioTrimDragX > rect.right) {
+                canvas.drawRect(rect.right, rect.top, audioTrimDragX, rect.bottom, trimRecoverPaint);
+            }
+            RectF rightH = new RectF(audioTrimDragX - handleWidthPx / 2f, hTop,
+                    audioTrimDragX + handleWidthPx / 2f, hBot);
+            canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, rightH);
+        } else {
+            // Normal: handles at edges
+            RectF leftH = new RectF(rect.left, hTop, rect.left + handleWidthPx, hBot);
+            canvas.drawRoundRect(leftH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, leftH);
+            RectF rightH = new RectF(rect.right - handleWidthPx, hTop, rect.right, hBot);
+            canvas.drawRoundRect(rightH, cornerRadius, cornerRadius, handlePaint);
+            drawNotch(canvas, rightH);
+        }
     }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1729,6 +1798,11 @@ public class EditorTimelineView extends View {
                     if (listener != null) listener.onSegmentSelected(-1);
                 } else {
                     selectedIndex = downSegIndex; // Select new segment
+                    // Deselect audio when video is selected
+                    if (selectedAudioIndex >= 0) {
+                        selectedAudioIndex = -1;
+                        if (listener != null) listener.onAudioClipSelected(-1);
+                    }
                     invalidate();
                     if (listener != null) listener.onSegmentSelected(downSegIndex);
                 }

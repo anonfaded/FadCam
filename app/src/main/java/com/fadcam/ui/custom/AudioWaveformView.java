@@ -3,43 +3,77 @@ package com.fadcam.ui.custom;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
+import android.graphics.RectF;
+import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.media.AudioFormat;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
-import com.arthenica.ffmpegkit.FFprobeKit;
-import com.arthenica.ffmpegkit.MediaInformation;
-import com.arthenica.ffmpegkit.MediaInformationSession;
-
-import androidx.media3.exoplayer.ExoPlayer;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Audio waveform visualization for the video player progress bar.
+ *
+ * <p>Renders mirror-style waveform bars (upper + lower, split by a centerline),
+ * matching the same visual style used in the Faditor Mini editor timeline.</p>
+ *
+ * <ul>
+ *   <li>Upper bars use the primary wave colour, lower bars a dimmed version.</li>
+ *   <li>Bars before the current playback position are drawn in the "played" colour.</li>
+ *   <li>A thin centerline separates upper and lower halves.</li>
+ *   <li>Amplitude data comes from real audio analysis via {@link MediaExtractor}.</li>
+ * </ul>
+ */
 public class AudioWaveformView extends View {
+
     private static final String TAG = "AudioWaveformView";
-    private Paint wavePaint;
-    private Paint playedWavePaint;
-    // Removed fake waveform data - only real audio data is used
+
+    // ── Colours (matching Faditor Mini editor timeline) ──────────────
+    /** Primary upper-bar colour (green, matching editor). */
+    private static final int COLOR_WAVE         = 0xFF4CAF50;
+    /** Dimmed lower-bar colour (alpha-reduced green). */
+    private static final int COLOR_WAVE_DIM     = 0x404CAF50;
+    /** Played upper-bar colour (brighter accent). */
+    private static final int COLOR_WAVE_PLAYED      = 0xFFFFFFFF;
+    /** Played lower-bar colour (semi-transparent white). */
+    private static final int COLOR_WAVE_PLAYED_DIM  = 0x60FFFFFF;
+    /** Centerline colour (subtle green). */
+    private static final int COLOR_CENTERLINE   = 0x334CAF50;
+
+    // ── Layout constants ─────────────────────────────────────────────
+    /** Bar width in dp (matches editor's 3dp). */
+    private static final float BAR_WIDTH_DP = 3f;
+    /** Gap between bars in dp (matches editor's 0.5dp). */
+    private static final float BAR_GAP_DP   = 0.5f;
+    /** Power curve applied to amplitude for better dynamics. */
+    private static final float AMPLITUDE_POWER = 0.7f;
+
+    // ── Paints ───────────────────────────────────────────────────────
+    private final Paint wavePaint        = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint waveMirrorPaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint playedWavePaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint playedWaveMirrorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint centerlinePaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     private float progress = 0f;
 
-    // Real audio analysis fields
-    private boolean useRealAudio = true;
+    // ── Audio analysis fields ────────────────────────────────────────
     private final List<Float> realWaveformData = new ArrayList<>();
-    private boolean isAnalyzingAudio = false;
-    private final int waveformPoints = 120; // More points for denser WhatsApp-style bars
+    private volatile boolean isAnalyzingAudio = false;
+    private final int waveformPoints = 120;
     private final ExecutorService audioAnalysisExecutor = Executors.newSingleThreadExecutor();
     private Uri currentVideoUri;
-    private java.util.Random random = new java.util.Random(); // For fallback generation
+
+    // ── Constructors ─────────────────────────────────────────────────
 
     public AudioWaveformView(Context context) {
         super(context);
@@ -52,417 +86,304 @@ public class AudioWaveformView extends View {
     }
 
     private void init() {
-        // WhatsApp-style discrete bars
-        wavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        wavePaint.setColor(0x60FFFFFF); // Semi-transparent white for unplayed bars
-        wavePaint.setStyle(Paint.Style.FILL); // Fill for solid bars
-        wavePaint.setStrokeCap(Paint.Cap.ROUND); // Rounded bar ends
+        float density = getContext().getResources().getDisplayMetrics().density;
 
-        playedWavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        playedWavePaint.setColor(0xFF4A90E2); // Blue for played bars
-        playedWavePaint.setStyle(Paint.Style.FILL); // Fill for solid bars
-        playedWavePaint.setStrokeCap(Paint.Cap.ROUND); // Rounded bar ends
+        // Upper bars (unplayed)
+        wavePaint.setColor(COLOR_WAVE);
+        wavePaint.setStyle(Paint.Style.FILL);
+        wavePaint.setStrokeCap(Paint.Cap.ROUND);
 
-        // No fake waveform generation - only real audio data will be used
+        // Lower / mirror bars (unplayed)
+        waveMirrorPaint.setColor(COLOR_WAVE_DIM);
+        waveMirrorPaint.setStyle(Paint.Style.FILL);
+        waveMirrorPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        // Upper bars (played)
+        playedWavePaint.setColor(COLOR_WAVE_PLAYED);
+        playedWavePaint.setStyle(Paint.Style.FILL);
+        playedWavePaint.setStrokeCap(Paint.Cap.ROUND);
+
+        // Lower / mirror bars (played)
+        playedWaveMirrorPaint.setColor(COLOR_WAVE_PLAYED_DIM);
+        playedWaveMirrorPaint.setStyle(Paint.Style.FILL);
+        playedWaveMirrorPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        // Centerline
+        centerlinePaint.setColor(COLOR_CENTERLINE);
+        centerlinePaint.setStyle(Paint.Style.STROKE);
+        centerlinePaint.setStrokeWidth(1f * density);
     }
 
-    // Removed fake waveform generation - only real audio analysis is used
-
+    /**
+     * Set the current playback progress (0.0 – 1.0).
+     */
     public void setProgress(float progress) {
         this.progress = Math.max(0f, Math.min(1f, progress));
         invalidate();
     }
 
     /**
-     * Analyze real audio from video file using MediaExtractor
+     * Analyze real audio from video file using MediaExtractor.
      */
     public void analyzeAudioFromVideo(Uri videoUri) {
         if (videoUri == null || videoUri.equals(currentVideoUri)) {
-            Log.d(TAG, "Skipping audio analysis - URI is null or same as current");
             return;
         }
 
         this.currentVideoUri = videoUri;
 
         if (isAnalyzingAudio) {
-            Log.d(TAG, "Stopping previous audio analysis");
             stopAudioAnalysis();
         }
 
         isAnalyzingAudio = true;
         realWaveformData.clear();
 
-        Log.d(TAG, "Starting real audio analysis for: " + videoUri);
-        Log.d(TAG, "Target waveform points: " + waveformPoints);
-
-        // Initialize with small default values while analyzing
+        // Initialize with minimal values while analysing
         for (int i = 0; i < waveformPoints; i++) {
-            realWaveformData.add(0.1f);
+            realWaveformData.add(0.02f);
         }
 
-        Log.d(TAG, "Initialized " + realWaveformData.size() + " default waveform points");
-
-        // Start audio analysis in background
         audioAnalysisExecutor.submit(() -> extractRealAudioData(videoUri));
     }
 
     /**
-     * Extract real audio data using MediaExtractor with FFprobeKit for duration
+     * Extract real audio amplitude data by decoding audio via {@link MediaCodec}.
+     *
+     * <p>Matches FaditorEditorActivity's approach:
+     * <ol>
+     *   <li>Decode full audio track to PCM using MediaCodec.</li>
+     *   <li>Downsample to {@link #waveformPoints} bins (average of abs(sample)).</li>
+     *   <li>Normalise each bin to 0–1 range (avg / 32768).</li>
+     * </ol>
+     * The resulting values are drawn with a 0.7 power curve in {@link #onDraw}.
      */
+    @SuppressWarnings("deprecation")
     private void extractRealAudioData(Uri videoUri) {
+        Log.i(TAG, "═══ WAVEFORM ANALYSIS START ═══");
+        Log.i(TAG, "URI: " + videoUri);
+        Log.i(TAG, "URI scheme: " + videoUri.getScheme());
+
         MediaExtractor extractor = null;
+        MediaCodec codec = null;
         try {
             extractor = new MediaExtractor();
             extractor.setDataSource(getContext(), videoUri, null);
+            Log.d(TAG, "MediaExtractor: track count = " + extractor.getTrackCount());
 
             // Find audio track
             int audioTrackIndex = -1;
+            MediaFormat audioFormat = null;
             for (int i = 0; i < extractor.getTrackCount(); i++) {
                 MediaFormat format = extractor.getTrackFormat(i);
                 String mime = format.getString(MediaFormat.KEY_MIME);
+                Log.d(TAG, "  Track " + i + ": mime=" + mime);
                 if (mime != null && mime.startsWith("audio/")) {
                     audioTrackIndex = i;
+                    audioFormat = format;
                     break;
                 }
             }
 
-            if (audioTrackIndex == -1) {
-                Log.w(TAG, "No audio track found in video - showing silence");
-                // Fill with true silence data instead of fake waveform
-                post(() -> {
-                    realWaveformData.clear();
-                    for (int i = 0; i < waveformPoints; i++) {
-                        realWaveformData.add(0.02f); // True silence - minimal bars
-                    }
-                    invalidate();
-                });
+            if (audioTrackIndex == -1 || audioFormat == null) {
+                Log.w(TAG, "No audio track found — showing silence");
+                postSilence();
                 return;
             }
 
+            String mime = audioFormat.getString(MediaFormat.KEY_MIME);
+            if (mime == null) {
+                Log.w(TAG, "Audio mime is null — showing silence");
+                postSilence();
+                return;
+            }
+
+            Log.d(TAG, "Selected audio track " + audioTrackIndex + ": " + mime);
             extractor.selectTrack(audioTrackIndex);
 
-            // Get duration using FFprobeKit for reliable fragmented MP4 support
-            long durationUs = 0;
-            String filePath;
-            if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
-                filePath = videoUri.getPath();
-            } else {
-                // For content:// URIs, use SAF protocol
-                filePath = "saf:" + videoUri.toString();
-            }
-            
-            try {
-                MediaInformationSession session = FFprobeKit.getMediaInformation(filePath);
-                MediaInformation info = session.getMediaInformation();
-                if (info != null) {
-                    String durationStr = info.getDuration();
-                    if (durationStr != null) {
-                        double durationSec = Double.parseDouble(durationStr);
-                        durationUs = (long) (durationSec * 1000000);
-                        Log.d(TAG, "Duration from FFprobe: " + durationSec + "s (" + durationUs + "us)");
+            // ─── Decode audio to PCM using MediaCodec ────────────────
+            codec = MediaCodec.createDecoderByType(mime);
+            codec.configure(audioFormat, null, null, 0);
+            codec.start();
+
+            ByteBuffer[] inputBuffers = codec.getInputBuffers();
+            ByteBuffer[] outputBuffers = codec.getOutputBuffers();
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+
+            List<Short> allSamples = new ArrayList<>();
+            boolean inputDone = false;
+            boolean outputDone = false;
+
+            while (!outputDone && isAnalyzingAudio) {
+                // Feed encoded input
+                if (!inputDone) {
+                    int inIdx = codec.dequeueInputBuffer(10_000);
+                    if (inIdx >= 0) {
+                        ByteBuffer buf = inputBuffers[inIdx];
+                        int sampleSize = extractor.readSampleData(buf, 0);
+                        if (sampleSize < 0) {
+                            codec.queueInputBuffer(inIdx, 0, 0, 0,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            inputDone = true;
+                        } else {
+                            codec.queueInputBuffer(inIdx, 0, sampleSize,
+                                    extractor.getSampleTime(), 0);
+                            extractor.advance();
+                        }
                     }
                 }
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to get duration from FFprobe", e);
+
+                // Drain decoded PCM output
+                int outIdx = codec.dequeueOutputBuffer(info, 10_000);
+                if (outIdx >= 0) {
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        outputDone = true;
+                    }
+                    ByteBuffer outBuf = outputBuffers[outIdx];
+                    outBuf.position(info.offset);
+                    outBuf.limit(info.offset + info.size);
+                    ShortBuffer shorts = outBuf.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+                    while (shorts.hasRemaining()) {
+                        allSamples.add(shorts.get());
+                    }
+                    codec.releaseOutputBuffer(outIdx, false);
+                } else if (outIdx == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                    outputBuffers = codec.getOutputBuffers();
+                }
             }
 
-            if (durationUs <= 0) {
-                Log.w(TAG, "Could not determine audio duration - showing silence");
-                post(() -> {
-                    realWaveformData.clear();
-                    for (int i = 0; i < waveformPoints; i++) {
-                        realWaveformData.add(0.02f); // True silence - minimal bars
-                    }
-                    invalidate();
-                });
+            codec.stop();
+            codec.release();
+            codec = null;
+
+            Log.d(TAG, "Decoded " + allSamples.size() + " PCM samples");
+
+            if (allSamples.isEmpty()) {
+                Log.w(TAG, "No PCM samples decoded — showing silence");
+                postSilence();
                 return;
             }
 
-            Log.d(TAG, "Audio track found - Duration: " + (durationUs / 1000) + "ms");
+            // ─── Downsample to waveformPoints bins ───────────────────
+            int totalSamples = allSamples.size();
+            int samplesPerBin = Math.max(1, totalSamples / waveformPoints);
+            int binCount = Math.min(waveformPoints, totalSamples);
 
-            // Calculate segment duration for waveform points
-            long segmentDurationUs = durationUs / waveformPoints;
+            // Compute raw amplitude for every bin into a local array FIRST.
+            // We must NOT post values progressively because normalisation
+            // needs to see all bins before we publish them to the UI.
+            float[] rawBins = new float[waveformPoints];
 
-            ByteBuffer buffer = ByteBuffer.allocate(8192);
-            long currentTimeUs = 0;
-            int segmentIndex = 0;
-            List<Float> segmentSamples = new ArrayList<>();
-
-            while (isAnalyzingAudio && segmentIndex < waveformPoints) {
-                int sampleSize = extractor.readSampleData(buffer, 0);
-                if (sampleSize < 0)
-                    break;
-
-                long sampleTimeUs = extractor.getSampleTime();
-
-                // Process audio samples in this buffer
-                buffer.rewind();
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-
-                // Extract 16-bit PCM samples with better precision
-                while (buffer.remaining() >= 2 && segmentIndex < waveformPoints) {
-                    short sample = buffer.getShort();
-                    // More conservative amplitude calculation
-                    float amplitude = Math.abs(sample) / 32768.0f;
-
-                    // Apply gentle logarithmic scaling for better dynamic range
-                    if (amplitude > 0.002f) {
-                        amplitude = (float) (Math.log10(amplitude * 5 + 1) / Math.log10(6));
-                    }
-
-                    segmentSamples.add(amplitude);
+            for (int i = 0; i < binCount; i++) {
+                long sum = 0;
+                int start = i * samplesPerBin;
+                int end = Math.min(start + samplesPerBin, totalSamples);
+                for (int j = start; j < end; j++) {
+                    sum += Math.abs(allSamples.get(j));
                 }
-
-                // Check if we've filled current segment
-                if (sampleTimeUs >= (segmentIndex + 1) * segmentDurationUs) {
-                    if (!segmentSamples.isEmpty()) {
-                        float rms = calculateRMS(segmentSamples);
-
-                        // WhatsApp-style enhancement: heavily favor short bars
-                        float enhanced = enhanceAudioForWhatsAppStyle(rms);
-                        final float finalAmplitude = Math.min(1.0f, enhanced);
-
-                        final int finalSegmentIndex = segmentIndex;
-
-                        // Log every 20th segment to avoid spam
-                        if (segmentIndex % 20 == 0) {
-                            Log.d(TAG, "Segment " + segmentIndex + ": samples=" + segmentSamples.size() +
-                                    ", rms=" + String.format("%.4f", rms) +
-                                    ", enhanced=" + String.format("%.4f", enhanced) +
-                                    ", final=" + String.format("%.4f", finalAmplitude));
-                        }
-
-                        post(() -> {
-                            if (finalSegmentIndex < realWaveformData.size()) {
-                                realWaveformData.set(finalSegmentIndex, finalAmplitude);
-                                invalidate();
-                            }
-                        });
-
-                        segmentSamples.clear();
-                        segmentIndex++;
-                    }
-                }
-
-                buffer.clear();
-                extractor.advance();
+                long avg = sum / (end - start);
+                rawBins[i] = Math.min(1.0f, avg / 32768.0f);
             }
+            // Remaining bins (short file) stay 0.0f by default.
 
-            // Fill remaining segments if needed - use true silence for no audio
-            while (segmentIndex < waveformPoints) {
-                final int finalIndex = segmentIndex;
-                post(() -> {
-                    if (finalIndex < realWaveformData.size()) {
-                        realWaveformData.set(finalIndex, 0.02f); // True silence - minimal bar
-                        invalidate();
-                    }
-                });
-                segmentIndex++;
+            Log.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE ═══");
+            Log.i(TAG, "  PCM samples: " + totalSamples + ", bins: " + binCount +
+                  ", samplesPerBin: " + samplesPerBin);
+
+            // Log pre-normalization range for debugging
+            float rawMin = Float.MAX_VALUE, rawMax = Float.MIN_VALUE;
+            for (int i = 0; i < binCount; i++) {
+                if (rawBins[i] < rawMin) rawMin = rawBins[i];
+                if (rawBins[i] > rawMax) rawMax = rawBins[i];
             }
+            Log.i(TAG, "  Pre-norm amplitude range: [" + rawMin + " .. " + rawMax + "]");
 
-            Log.d(TAG, "Real audio analysis completed with " + segmentIndex + " segments");
-
-            // Log some sample values to verify data
-            if (!realWaveformData.isEmpty()) {
-                float min = Float.MAX_VALUE, max = Float.MIN_VALUE, avg = 0f;
-                for (float val : realWaveformData) {
-                    min = Math.min(min, val);
-                    max = Math.max(max, val);
-                    avg += val;
-                }
-                avg /= realWaveformData.size();
-                Log.d(TAG, "Waveform data stats - Min: " + String.format("%.4f", min) +
-                        ", Max: " + String.format("%.4f", max) +
-                        ", Avg: " + String.format("%.4f", avg) +
-                        ", Size: " + realWaveformData.size());
-            }
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error extracting real audio data", e);
-            Log.d(TAG, "Showing silence due to audio extraction error");
-            // Fill with true silence data instead of fake waveform
-            post(() -> {
-                realWaveformData.clear();
+            // Normalise so the loudest bin fills ~95% of bar height.
+            float peak = rawMax;
+            if (peak > 1e-6f) {
+                float scale = 0.95f / peak;
                 for (int i = 0; i < waveformPoints; i++) {
-                    realWaveformData.add(0.02f); // True silence - minimal bars
+                    rawBins[i] = rawBins[i] * scale;
+                }
+                Log.i(TAG, "  normalizeWaveformData: peak=" + peak + ", scale=" + scale);
+            } else {
+                Log.d(TAG, "  normalizeWaveformData: peak ≈ 0 → all bins set to 0");
+            }
+
+            // Publish all bins to the UI in ONE post.
+            post(() -> {
+                for (int i = 0; i < waveformPoints && i < realWaveformData.size(); i++) {
+                    realWaveformData.set(i, rawBins[i]);
                 }
                 invalidate();
             });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error extracting audio data", e);
+            postSilence();
         } finally {
+            if (codec != null) {
+                try { codec.stop(); } catch (Exception ignored) { }
+                try { codec.release(); } catch (Exception ignored) { }
+            }
             if (extractor != null) {
-                try {
-                    extractor.release();
-                } catch (Exception e) {
-                    Log.w(TAG, "Error releasing MediaExtractor", e);
-                }
+                try { extractor.release(); } catch (Exception ignored) { }
             }
             isAnalyzingAudio = false;
         }
     }
 
     /**
-     * Generate fallback waveform when real analysis fails - WhatsApp style
+     * Fill wave data with silence values on the UI thread.
      */
-    private void generateFallbackWaveform() {
-        Log.d(TAG, "Generating WhatsApp-style fallback waveform with " + waveformPoints + " points");
+    private void postSilence() {
         post(() -> {
             realWaveformData.clear();
-
-            // WhatsApp-style: mostly short bars with occasional tall ones
             for (int i = 0; i < waveformPoints; i++) {
-                float amplitude;
-                float randomValue = random.nextFloat();
-
-                // WhatsApp distribution: 75% short, 20% medium, 5% tall
-                if (randomValue < 0.75f) {
-                    // Short bars (2-20% height) - most common
-                    amplitude = 0.02f + (random.nextFloat() * 0.18f);
-                } else if (randomValue < 0.95f) {
-                    // Medium bars (20-45% height) - less common
-                    amplitude = 0.2f + (random.nextFloat() * 0.25f);
-                } else {
-                    // Tall bars (45-80% height) - rare
-                    amplitude = 0.45f + (random.nextFloat() * 0.35f);
-                }
-
-                // Create natural speech-like clustering
-                if (i > 0 && realWaveformData.get(i - 1) > 0.3f && random.nextFloat() < 0.4f) {
-                    // Continue speech activity
-                    amplitude = Math.max(amplitude, 0.15f + (random.nextFloat() * 0.25f));
-                }
-
-                // Add silence periods (pauses in speech)
-                if (random.nextFloat() < 0.2f) {
-                    amplitude = 0.02f + (random.nextFloat() * 0.08f); // Very short for silence
-                }
-
-                realWaveformData.add(amplitude);
+                realWaveformData.add(0.02f);
             }
-
-            // Minimal smoothing to preserve natural variation
-            for (int i = 1; i < realWaveformData.size() - 1; i++) {
-                float current = realWaveformData.get(i);
-                float prev = realWaveformData.get(i - 1);
-                float next = realWaveformData.get(i + 1);
-                // Very light smoothing
-                float smoothed = (prev * 0.05f + current * 0.9f + next * 0.05f);
-                realWaveformData.set(i, smoothed);
-            }
-
-            Log.d(TAG, "WhatsApp-style fallback waveform generated with " + realWaveformData.size() + " points");
             invalidate();
         });
     }
 
     /**
-     * Calculate RMS (Root Mean Square) amplitude using industry-standard methods
-     * This is the standard way to measure audio levels in professional audio
+     * Attempts to reconstruct a real file system path from a SAF
+     * {@code content://} URI on primary storage.
+     *
+     * <p>SAF URIs on primary storage often contain a colon-separated relative
+     * path, e.g.
+     * {@code content://...document/primary:Download/FadCam/file.mp4}
+     * → {@code /storage/emulated/0/Download/FadCam/file.mp4}.
+     *
+     * @return the reconstructed absolute path if the file exists and is
+     *         readable, or {@code null} otherwise.
      */
-    private float calculateRMS(List<Float> samples) {
-        if (samples.isEmpty())
-            return 0f;
+    @androidx.annotation.Nullable
+    private String tryReconstructFilePath(Uri uri) {
+        String path = uri.getPath();
+        if (path == null || !path.contains(":")) return null;
 
-        // Industry Standard: True RMS calculation
-        double sumOfSquares = 0.0;
-        for (Float sample : samples) {
-            sumOfSquares += sample * sample;
+        int lastColonIndex = path.lastIndexOf(':');
+        if (lastColonIndex < 0 || lastColonIndex >= path.length() - 1) return null;
+
+        String relativePath = path.substring(lastColonIndex + 1);
+        String reconstructed = "/storage/emulated/0/" + relativePath;
+        java.io.File file = new java.io.File(reconstructed);
+        if (file.exists() && file.canRead()) {
+            return reconstructed;
         }
-
-        float rms = (float) Math.sqrt(sumOfSquares / samples.size());
-
-        // Industry Standard: Apply DC offset removal (high-pass filter simulation)
-        // This removes any DC bias that might affect the measurement
-        if (rms < 0.0001f) {
-            return 0f; // True digital silence
-        }
-
-        // Industry Standard: Apply windowing function (Hann window approximation)
-        // This reduces spectral leakage and gives more accurate measurements
-        float windowedRms = rms * 0.5f * (1f + (float) Math.cos(Math.PI * rms));
-
-        return Math.max(0f, windowedRms);
+        return null;
     }
 
     /**
-     * Enhance audio sensitivity for WhatsApp-style realistic waveform visualization
-     */
-    private float enhanceAudioSensitivity(float rms) {
-        // Much stricter silence detection - if truly quiet, show minimal bar
-        if (rms <= 0.0005f)
-            return 0.05f; // True silence - very short bar (5% height)
-        if (rms <= 0.002f)
-            return 0.1f + (rms * 20f); // Very quiet - short bars (10-15% height)
-        if (rms <= 0.008f)
-            return 0.15f + (rms * 25f); // Quiet speech - low bars (15-35% height)
-        if (rms <= 0.02f)
-            return 0.25f + (rms * 15f); // Normal speech - medium bars (25-55% height)
-        if (rms <= 0.05f)
-            return 0.4f + (rms * 8f); // Louder speech - taller bars (40-80% height)
-        if (rms <= 0.1f)
-            return 0.6f + (rms * 3f); // Loud audio - tall bars (60-90% height)
-
-        // Very loud sounds - maximum height but capped
-        return Math.min(0.95f, 0.8f + (rms * 1.5f)); // Cap at 95% with minimal boost
-    }
-
-    /**
-     * Simple, realistic audio enhancement that actually reflects the audio content
-     * Creates WhatsApp-style mostly-short bars with proper silence detection
-     */
-    private float enhanceAudioForWhatsAppStyle(float rms) {
-        // Step 1: Aggressive silence detection - if truly quiet, show minimal bars
-        if (rms <= 0.0001f) {
-            return 0.02f + (random.nextFloat() * 0.03f); // 2-5% height for true silence
-        }
-
-        // Step 2: Apply square root scaling (more natural than logarithmic for
-        // visualization)
-        float sqrtScaled = (float) Math.sqrt(rms);
-
-        // Step 3: Create realistic distribution based on actual audio levels
-        float amplitude;
-        if (sqrtScaled <= 0.05f) {
-            // Very quiet sounds -> 2-12% height (most common)
-            amplitude = 0.02f + (sqrtScaled * 2f);
-        } else if (sqrtScaled <= 0.15f) {
-            // Quiet speech -> 12-25% height
-            amplitude = 0.12f + ((sqrtScaled - 0.05f) * 1.3f);
-        } else if (sqrtScaled <= 0.3f) {
-            // Normal speech -> 25-45% height
-            amplitude = 0.25f + ((sqrtScaled - 0.15f) * 1.33f);
-        } else if (sqrtScaled <= 0.5f) {
-            // Loud speech/music -> 45-70% height
-            amplitude = 0.45f + ((sqrtScaled - 0.3f) * 1.25f);
-        } else {
-            // Very loud sounds -> 70-85% height (rare)
-            amplitude = 0.7f + ((sqrtScaled - 0.5f) * 0.3f);
-        }
-
-        // Step 4: Add natural variation to prevent uniform appearance
-        float variation = (random.nextFloat() - 0.5f) * 0.08f; // ±4% variation
-        amplitude += variation;
-
-        // Step 5: Apply WhatsApp-style distribution bias (favor shorter bars)
-        float randomBias = random.nextFloat();
-        if (randomBias < 0.6f && amplitude > 0.2f) {
-            // 60% chance to make medium/tall bars shorter
-            amplitude *= 0.7f;
-        }
-
-        // Step 6: Final clamping
-        return Math.max(0.02f, Math.min(0.85f, amplitude));
-    }
-
-    /**
-     * Stop audio analysis when player is released
+     * Stop any in-progress audio analysis.
      */
     public void stopAudioAnalysis() {
         isAnalyzingAudio = false;
-        Log.d(TAG, "Audio analysis stopped");
     }
 
     /**
-     * Clean up resources
+     * Release all resources.
      */
     public void cleanup() {
         stopAudioAnalysis();
@@ -471,76 +392,75 @@ public class AudioWaveformView extends View {
         currentVideoUri = null;
     }
 
+    // ── Drawing ──────────────────────────────────────────────────────
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // ALWAYS use real waveform data - no fake fallbacks
-        List<Float> dataToUse = realWaveformData.isEmpty() ? null : realWaveformData;
+        if (realWaveformData.isEmpty()) return;
 
-        // Only show waveform if we have REAL audio data
-        if (dataToUse == null || dataToUse.isEmpty()) {
-            // Show minimal flat line while waiting for real audio analysis
-            Log.d(TAG, "onDraw: Waiting for real audio analysis...");
-            return;
-        }
-
-        // Log real audio data usage
-        if (System.currentTimeMillis() % 10000 < 50) {
-            Log.d(TAG, "onDraw: Using REAL audio data, size=" + dataToUse.size() +
-                    ", progress=" + String.format("%.2f", progress));
-        }
-
-        int width = getWidth();
+        int width  = getWidth();
         int height = getHeight();
-        int centerY = height / 2;
+        float density = getContext().getResources().getDisplayMetrics().density;
 
-        // WhatsApp-style discrete bars with SeekBar thumb padding compensation
-        int totalBars = Math.min(dataToUse.size(), 150); // More bars to fill full width
+        float centerY = height / 2f;
+        float topHalf  = centerY - 1f * density;   // available height above centre
+        float botHalf  = centerY - 1f * density;   // available height below centre (slightly smaller mirror)
 
-        // Add minimal padding to match SeekBar's internal thumb padding (reduced for
-        // perfect alignment)
-        float thumbPadding = 6f * getContext().getResources().getDisplayMetrics().density; // Convert to pixels (reduced
-                                                                                           // from 16dp to 6dp)
-        float startX = thumbPadding; // Start after thumb padding
-        float endX = width - thumbPadding; // End before thumb padding
-        float totalWidth = endX - startX; // Available width after padding
-        float barWidth = 2f; // Thinner bars (2dp like WhatsApp)
-        float barSpacing = (totalWidth - (totalBars * barWidth)) / Math.max(1, totalBars - 1); // Calculate spacing to
-                                                                                               // fill width
+        // Bar geometry (dp → px)
+        float barW = BAR_WIDTH_DP * density;
+        float gap  = BAR_GAP_DP * density;
 
-        // Minimum and maximum bar heights - increased for better visibility
-        float minBarHeight = height * 0.25f; // 25% of view height (increased)
-        float maxBarHeight = height * 0.9f; // 90% of view height (increased)
+        // Slider thumb padding compensation
+        float thumbPadding = 6f * density;
+        float startX = thumbPadding;
+        float endX   = width - thumbPadding;
+        float totalWidth = endX - startX;
 
-        // Calculate played position based on padded width (matching SeekBar)
-        float playedPosition = startX + (totalWidth * progress);
+        int barCount = Math.max(1, (int) (totalWidth / (barW + gap)));
+        float step   = totalWidth / barCount;
 
-        // Draw discrete bars
-        for (int i = 0; i < totalBars; i++) {
-            // Sample from waveform data (distribute evenly across available data)
-            int dataIndex = (int) ((float) i / totalBars * dataToUse.size());
-            dataIndex = Math.min(dataIndex, dataToUse.size() - 1);
+        // Draw centerline across the full width
+        canvas.drawLine(startX, centerY, endX, centerY, centerlinePaint);
 
-            float amplitude = dataToUse.get(dataIndex);
+        // Played-position boundary
+        float playedX = startX + totalWidth * progress;
 
-            // Calculate bar position and height
-            float barX = startX + i * (barWidth + barSpacing);
-            float barHeight = minBarHeight + (amplitude * (maxBarHeight - minBarHeight));
+        // Minimum bar height (always visible)
+        float minBar = 1f * density;
 
-            // Ensure minimum visibility
-            barHeight = Math.max(minBarHeight * 0.3f, barHeight);
+        RectF barRect = new RectF();
+        float barRadius = barW * 0.4f;
 
-            // Bar coordinates (centered vertically)
-            float barTop = centerY - (barHeight / 2f);
-            float barBottom = centerY + (barHeight / 2f);
+        for (int j = 0; j < barCount; j++) {
+            // Map bar index to waveform data index
+            float samplePos = (j / (float) barCount) * realWaveformData.size();
+            int si  = Math.min((int) samplePos, realWaveformData.size() - 1);
+            int si2 = Math.min(si + 1, realWaveformData.size() - 1);
+            float frac = samplePos - si;
 
-            // Choose paint based on progress - properly synced with waveform position
-            Paint paintToUse = (barX + barWidth / 2) <= playedPosition ? playedWavePaint : wavePaint;
+            float amplitude = (realWaveformData.get(si) * (1f - frac))
+                    + (realWaveformData.get(si2) * frac);
 
-            // Draw rounded rectangle bar
-            canvas.drawRoundRect(barX, barTop, barX + barWidth, barBottom,
-                    barWidth / 2f, barWidth / 2f, paintToUse);
+            // Apply power curve for better dynamic range (same as editor)
+            amplitude = (float) Math.pow(amplitude, AMPLITUDE_POWER);
+
+            float topH = Math.max(minBar, amplitude * topHalf);
+            float botH = Math.max(minBar, amplitude * botHalf * 0.85f);
+
+            float barX = startX + j * step;
+            boolean played = (barX + barW / 2f) <= playedX;
+
+            // Upper bar
+            barRect.set(barX, centerY - topH, barX + barW, centerY);
+            canvas.drawRoundRect(barRect, barRadius, barRadius,
+                    played ? playedWavePaint : wavePaint);
+
+            // Mirror (lower) bar
+            barRect.set(barX, centerY, barX + barW, centerY + botH);
+            canvas.drawRoundRect(barRect, barRadius, barRadius,
+                    played ? playedWaveMirrorPaint : waveMirrorPaint);
         }
     }
 }
