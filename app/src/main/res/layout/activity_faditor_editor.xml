@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF0D0D0D"
+    android:fitsSystemWindows="true"
+    tools:context="com.fadcam.ui.faditor.FaditorEditorActivity">
+
+<LinearLayout
+    android:id="@+id/editor_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- ─── Top bar ──────────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/editor_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="12dp"
+        android:background="#FF1A1A1A"
+        android:elevation="2dp">
+
+        <!-- Close button (Material Icon) -->
+        <TextView
+            android:id="@+id/btn_close"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="close"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/faditor_close" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/editor_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/faditor_editor_title"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="middle" />
+
+        <!-- Export button (compact icon) -->
+        <TextView
+            android:id="@+id/btn_export"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="upload"
+            android:textColor="#FF4CAF50"
+            android:textSize="24sp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/faditor_export" />
+    </LinearLayout>
+
+    <!-- ─── Player section (fills available space) ───────────────── -->
+    <FrameLayout
+        android:id="@+id/player_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:background="#FF0D0D0D">
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/player_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            app:show_buffering="when_playing"
+            app:surface_type="texture_view"
+            app:resize_mode="fit"
+            app:use_controller="false" />
+
+        <!-- Image preview overlay for still image clips -->
+        <ImageView
+            android:id="@+id/image_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:background="#FF0D0D0D"
+            android:visibility="gone"
+            android:contentDescription="@string/faditor_add_asset_image" />
+
+        <!-- Crop overlay (on top of player, hidden by default) -->
+        <com.fadcam.ui.faditor.crop.CropOverlayView
+            android:id="@+id/crop_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- ─── Controls section (bottom portion) ────────────────────── -->
+    <LinearLayout
+        android:id="@+id/controls_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FF1A1A1A"
+        android:elevation="4dp">
+
+        <!-- Time display + play/pause -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="2dp">
+
+            <!-- Current time -->
+            <TextView
+                android:id="@+id/time_current"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#999999"
+                android:textSize="11sp"
+                android:fontFamily="monospace" />
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Undo: icon + count stacked vertically -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginEnd="4dp">
+
+                <TextView
+                    android:id="@+id/btn_undo"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="undo"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:alpha="0.3"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/faditor_undo" />
+
+                <TextView
+                    android:id="@+id/undo_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="12dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="0"
+                    android:textSize="8sp"
+                    android:textColor="#777777"
+                    android:alpha="0.3" />
+            </LinearLayout>
+
+            <!-- Play / Pause -->
+            <TextView
+                android:id="@+id/btn_play_pause"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="play_arrow"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/faditor_play_pause" />
+
+            <!-- Redo: icon + count stacked vertically -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="4dp">
+
+                <TextView
+                    android:id="@+id/btn_redo"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="redo"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:alpha="0.3"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/faditor_redo" />
+
+                <TextView
+                    android:id="@+id/redo_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="12dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="0"
+                    android:textSize="8sp"
+                    android:textColor="#777777"
+                    android:alpha="0.3" />
+            </LinearLayout>
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Total time -->
+            <TextView
+                android:id="@+id/time_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#999999"
+                android:textSize="11sp"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <!-- Unified NLE-style timeline (horizontally scrollable) -->
+        <HorizontalScrollView
+            android:id="@+id/timeline_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"
+            android:overScrollMode="always"
+            android:fadingEdge="none">
+
+            <com.fadcam.ui.faditor.timeline.EditorTimelineView
+                android:id="@+id/editor_timeline_view"
+                android:layout_width="wrap_content"
+                android:layout_height="140dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+        </HorizontalScrollView>
+
+
+        <!-- Bottom toolbar (scrollable) -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:background="#FF141414"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingEnd="8dp">
+
+
+            <!-- Trim tool - REMOVED: Use segment edge handles for trimming instead -->
+            <LinearLayout
+                android:id="@+id/tool_trim"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tool_trim_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="content_cut"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_trim_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_trim"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Speed tool -->
+            <LinearLayout
+                android:id="@+id/tool_speed"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_speed_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="speed"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_speed_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_speed"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Mute tool -->
+            <LinearLayout
+                android:id="@+id/tool_mute"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_mute_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="volume_up"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_mute_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_sound"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Rotate tool -->
+            <LinearLayout
+                android:id="@+id/tool_rotate"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_rotate_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="rotate_right"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_rotate_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_rotate"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Flip tool -->
+            <LinearLayout
+                android:id="@+id/tool_flip"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_flip_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="flip"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_flip_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_flip"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Crop tool -->
+            <LinearLayout
+                android:id="@+id/tool_crop"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_crop_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="crop"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_crop_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_crop"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Canvas tool -->
+            <LinearLayout
+                android:id="@+id/tool_canvas"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_canvas_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="aspect_ratio"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_canvas_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_canvas"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Audio tool -->
+            <LinearLayout
+                android:id="@+id/tool_audio"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_audio_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="graphic_eq"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_audio_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_audio"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Split tool -->
+            <LinearLayout
+                android:id="@+id/tool_split"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_split_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="carpenter"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_split_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_split"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Delete segment tool -->
+            <LinearLayout
+                android:id="@+id/tool_delete"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_delete_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="delete"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_delete_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_delete"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Duplicate segment tool -->
+            <LinearLayout
+                android:id="@+id/tool_duplicate"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_duplicate_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="content_copy"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_duplicate_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_duplicate"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <!-- Add asset tool -->
+            <LinearLayout
+                android:id="@+id/tool_add_asset"
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <TextView
+                    android:id="@+id/tool_add_asset_icon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="add_circle"
+                    android:textColor="#888888"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tool_add_asset_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/faditor_tool_add"
+                    android:textColor="#888888"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- ─── Crop mode toolbar (hidden by default) ──────────────────── -->
+    <LinearLayout
+        android:id="@+id/crop_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FF1A1A1A"
+        android:elevation="4dp"
+        android:visibility="gone">
+
+        <!-- Aspect ratio presets -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/crop_presets_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+        </HorizontalScrollView>
+
+        <!-- Cancel / Done buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <!-- Cancel button -->
+            <TextView
+                android:id="@+id/crop_btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="@string/faditor_cancel"
+                android:textColor="#FFCCCCCC"
+                android:textSize="14sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Reset button -->
+            <TextView
+                android:id="@+id/crop_btn_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="restart_alt"
+                android:textColor="#FF888888"
+                android:textSize="24sp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Done button -->
+            <TextView
+                android:id="@+id/crop_btn_done"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="check"
+                android:textColor="#FF4CAF50"
+                android:textSize="28sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ─── Remux progress overlay (hidden by default) ────────────── -->
+    <FrameLayout
+        android:id="@+id/remux_progress_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        android:elevation="20dp">
+
+        <LinearLayout
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="28dp"
+            android:background="@drawable/settings_group_card_bg">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/materialicons"
+                android:text="sync"
+                android:textColor="#4CAF50"
+                android:textSize="36sp"
+                android:layout_marginBottom="16dp" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/remux_progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminate="true"
+                app:indicatorColor="#4CAF50"
+                app:trackColor="#333333"
+                app:trackCornerRadius="4dp"
+                app:trackThickness="6dp" />
+
+            <TextView
+                android:id="@+id/remux_progress_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/faditor_remuxing"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+</LinearLayout> <!-- end editor_root -->
+
+    <!-- ─── Export screen (fullscreen, hidden by default) ──────────── -->
+    <FrameLayout
+        android:id="@+id/export_progress_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FF0D0D0D"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        android:elevation="20dp">
+
+        <!-- Top bar: Back + title + Done -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_gravity="top"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:background="#FF1A1A1A"
+            android:elevation="2dp">
+
+            <!-- Back to editor -->
+            <TextView
+                android:id="@+id/export_btn_back"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="arrow_back"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/faditor_export_back" />
+
+            <TextView
+                android:id="@+id/export_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/faditor_exporting"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:singleLine="true" />
+
+            <!-- Done (navigate to Faditor Mini) — hidden during export -->
+            <TextView
+                android:id="@+id/export_btn_done"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="check"
+                android:textColor="#4CAF50"
+                android:textSize="24sp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:visibility="invisible"
+                android:contentDescription="@string/faditor_export_done" />
+        </LinearLayout>
+
+        <!-- Centered content area -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingStart="40dp"
+            android:paddingEnd="40dp">
+
+            <!-- Export icon -->
+            <TextView
+                android:id="@+id/export_status_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/materialicons"
+                android:text="movie"
+                android:textColor="#4CAF50"
+                android:textSize="48sp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Progress percentage -->
+            <TextView
+                android:id="@+id/export_progress_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textColor="#FFFFFF"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Progress bar -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/export_progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
+                app:indicatorColor="#4CAF50"
+                app:trackColor="#333333"
+                app:trackCornerRadius="4dp"
+                app:trackThickness="8dp" />
+
+            <!-- Status text -->
+            <TextView
+                android:id="@+id/export_progress_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/faditor_exporting"
+                android:textColor="#AAAAAA"
+                android:textSize="14sp"
+                android:layout_marginTop="16dp" />
+
+            <!-- ETA text -->
+            <TextView
+                android:id="@+id/export_eta_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#666666"
+                android:textSize="13sp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+            <!-- Export info (clips, duration, codec) -->
+            <TextView
+                android:id="@+id/export_info_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#555555"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
+
+            <!-- Cancel export button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel_export"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/faditor_cancel"
+                android:textSize="13sp"
+                android:layout_marginTop="32dp"
+                app:cornerRadius="20dp"
+                app:strokeColor="#666666" />
+        </LinearLayout>
+    </FrameLayout>
+
+</FrameLayout> <!-- end root -->

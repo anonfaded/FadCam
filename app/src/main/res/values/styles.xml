@@ -87,4 +87,27 @@
     <style name="FadCamProTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:fontFamily">@font/ubuntu_regular</item>
     </style>
+
+    <!-- Faditor Editor dark immersive theme -->
+    <style name="Theme.FadCam.FaditorEditor" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:colorBackground">#FF0D0D0D</item>
+        <item name="colorSurface">#FF1A1A1A</item>
+        <item name="colorSurfaceVariant">#FF252525</item>
+        <item name="colorOnSurface">#FFFFFFFF</item>
+        <item name="colorOnSurfaceVariant">#FFAAAAAA</item>
+        <item name="colorPrimary">#FF4CAF50</item>
+        <item name="colorOnPrimary">#FF000000</item>
+        <item name="colorSecondaryContainer">#FF2E7D32</item>
+        <item name="android:windowBackground">#FF0D0D0D</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#FF1A1A1A</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <!-- Required for picker_bottom_sheet and InputActionBottomSheetFragment -->
+        <item name="pickerTextSecondary">#999999</item>
+        <item name="pickerTextPrimary">@android:color/white</item>
+        <item name="colorHeading">#FF4CAF50</item>
+        <item name="pickerGradientStart">@color/black</item>
+        <item name="pickerGradientMid">#FF1A1A1A</item>
+        <item name="pickerGradientEnd">#FF2A2A2A</item>
+    </style>
 </resources>

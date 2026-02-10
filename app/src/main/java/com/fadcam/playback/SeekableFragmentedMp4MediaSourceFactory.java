@@ -1,6 +1,7 @@
 package com.fadcam.playback;
 
 import android.content.Context;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.util.Log;
 
@@ -12,8 +13,10 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DataSpec;
+import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.FileDataSource;
 import androidx.media3.datasource.TransferListener;
+import androidx.media3.exoplayer.source.ClippingMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.extractor.ChunkIndex;
@@ -32,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Factory for creating MediaSources for fragmented MP4 files with proper seeking support.
@@ -63,7 +67,14 @@ public class SeekableFragmentedMp4MediaSourceFactory {
 
     /**
      * Creates a MediaSource for the given MediaItem with proper fMP4 seeking support.
-     * 
+     *
+     * <p>For {@code file://} URIs, builds a full fragment index using
+     * {@link FragmentedMp4IndexBuilder} for precise seeking. For {@code content://} URIs
+     * (SAF / custom storage), uses a {@link ClippingMediaSource} with the duration
+     * obtained from {@link MediaMetadataRetriever}, because
+     * {@link FragmentedMp4IndexBuilder} requires {@link java.io.RandomAccessFile} which
+     * is unavailable for content URIs.
+     *
      * @param mediaItem The MediaItem to create a source for.
      * @return A MediaSource with proper seeking for fMP4 files.
      */
@@ -76,9 +87,17 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             throw new IllegalArgumentException("MediaItem has no URI");
         }
 
-        // Build the fragment index for this file
+        String scheme = uri.getScheme();
+
+        if ("content".equals(scheme)) {
+            // For content:// URIs, use ClippingMediaSource approach since
+            // FragmentedMp4IndexBuilder requires RandomAccessFile (file:// only).
+            return createContentUriMediaSource(mediaItem, uri);
+        }
+
+        // Build the fragment index for file:// URIs
         FragmentedMp4IndexBuilder.FragmentIndex fragmentIndex = null;
-        if ("file".equals(uri.getScheme())) {
+        if ("file".equals(scheme)) {
             String path = uri.getPath();
             if (path != null) {
                 File file = new File(path);
@@ -108,18 +127,251 @@ public class SeekableFragmentedMp4MediaSourceFactory {
     }
 
     /**
-     * Checks if a file is a fragmented MP4 that needs our special handling.
+     * Creates a MediaSource for a {@code content://} URI fMP4 file.
+     *
+     * <p>First tries to reconstruct the real file path from the SAF URI
+     * (e.g. {@code /storage/emulated/0/Download/FadCam/file.mp4}). If the
+     * file is accessible on disk, uses the full
+     * {@link FragmentedMp4IndexBuilder} approach (same quality as
+     * {@code file://} URIs). Otherwise falls back to the
+     * {@link ClippingMediaSource} approach with duration from
+     * {@link MediaMetadataRetriever}.
+     */
+    @NonNull
+    private MediaSource createContentUriMediaSource(@NonNull MediaItem mediaItem,
+                                                     @NonNull Uri uri) {
+        // Try to reconstruct path — if available, use full index-based approach
+        String reconstructedPath = tryReconstructFilePath(uri);
+        if (reconstructedPath != null) {
+            File file = new File(reconstructedPath);
+            Log.d(TAG, "Content URI → reconstructed path: " + reconstructedPath);
+
+            long startTime = System.currentTimeMillis();
+            FragmentedMp4IndexBuilder.FragmentIndex fragmentIndex = indexBuilder.buildIndex(file);
+            long scanTime = System.currentTimeMillis() - startTime;
+            Log.d(TAG, "Index built from content URI in " + scanTime + "ms: " +
+                  fragmentIndex.fragments.size() + " fragments, " +
+                  "duration=" + (fragmentIndex.durationUs / 1_000_000.0) + "s, " +
+                  "seekable=" + fragmentIndex.isSeekable);
+
+            // Build MediaItem from file URI for FileDataSource compatibility
+            Uri fileUri = Uri.fromFile(file);
+            MediaItem fileItem = MediaItem.fromUri(fileUri);
+
+            final FragmentedMp4IndexBuilder.FragmentIndex index = fragmentIndex;
+            ExtractorsFactory extractorsFactory = () -> new Extractor[] {
+                new SeekMapInjectingExtractor(index)
+            };
+
+            DataSource.Factory dataSourceFactory = new FileDataSource.Factory();
+            return new ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+                    .createMediaSource(fileItem);
+        }
+
+        // Fallback: ClippingMediaSource with DefaultDataSource
+        Log.d(TAG, "Could not reconstruct path, using ClippingMediaSource fallback");
+        long durationUs = getDurationFromRetriever(uri);
+
+        // DefaultDataSource handles content:// URIs natively
+        DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context);
+
+        ExtractorsFactory extractorsFactory = () -> new Extractor[] {
+            new SeekMapInjectingExtractor(null)
+        };
+
+        MediaSource baseSource = new ProgressiveMediaSource.Factory(
+                dataSourceFactory, extractorsFactory)
+                .createMediaSource(mediaItem);
+
+        if (durationUs > 0) {
+            Log.d(TAG, "Content URI fMP4: ClippingMediaSource duration=" +
+                  (durationUs / 1_000_000.0) + "s");
+            return new ClippingMediaSource(
+                    baseSource,
+                    /* startPositionUs= */ 0,
+                    /* endPositionUs= */ durationUs,
+                    /* enableInitialDiscontinuity= */ false,
+                    /* allowDynamicClippingUpdates= */ true,
+                    /* relativeToDefaultPosition= */ false
+            );
+        }
+
+        Log.w(TAG, "Content URI fMP4: could not determine duration, using raw source");
+        return baseSource;
+    }
+
+    /**
+     * Attempts to reconstruct a real file system path from a SAF
+     * {@code content://} URI.
+     *
+     * <p>SAF URIs on primary storage often contain a colon-separated relative
+     * path. For example:
+     * <pre>
+     * content://...document/primary:Download/FadCam/file.mp4
+     * </pre>
+     * becomes {@code /storage/emulated/0/Download/FadCam/file.mp4}.
+     *
+     * @return the reconstructed absolute path if the file exists and is
+     *         readable, or {@code null} otherwise.
+     */
+    @Nullable
+    private String tryReconstructFilePath(@NonNull Uri uri) {
+        String path = uri.getPath();
+        if (path == null || !path.contains(":")) return null;
+
+        int lastColonIndex = path.lastIndexOf(':');
+        if (lastColonIndex < 0 || lastColonIndex >= path.length() - 1) return null;
+
+        String relativePath = path.substring(lastColonIndex + 1);
+        String reconstructed = "/storage/emulated/0/" + relativePath;
+        File file = new File(reconstructed);
+        if (file.exists() && file.canRead()) {
+            return reconstructed;
+        }
+        return null;
+    }
+
+    /**
+     * Retrieves the media duration using {@link MediaMetadataRetriever}, which
+     * correctly parses fragmented MP4 structure for both {@code file://} and
+     * {@code content://} URIs. For content:// URIs, tries the reconstructed
+     * file path first since {@code setDataSource(context, contentUri)} often
+     * returns 0 for fMP4 files.
+     *
+     * @return Duration in microseconds, or {@link C#TIME_UNSET} on failure.
+     */
+    private long getDurationFromRetriever(@NonNull Uri uri) {
+        MediaMetadataRetriever retriever = null;
+        try {
+            retriever = new MediaMetadataRetriever();
+            String scheme = uri.getScheme();
+
+            if ("content".equals(scheme)) {
+                // Reconstructed path works much better for fMP4 files
+                String reconstructedPath = tryReconstructFilePath(uri);
+                if (reconstructedPath != null) {
+                    Log.d(TAG, "Retriever: using reconstructed path: " + reconstructedPath);
+                    retriever.setDataSource(reconstructedPath);
+                } else {
+                    retriever.setDataSource(context, uri);
+                }
+            } else if ("file".equals(scheme)) {
+                retriever.setDataSource(uri.getPath());
+            } else {
+                retriever.setDataSource(uri.toString());
+            }
+            String durationStr = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (durationStr != null) {
+                long durationMs = Long.parseLong(durationStr);
+                long durationUs = durationMs * 1000;
+                Log.d(TAG, "Retriever duration: " + durationMs + "ms for " +
+                      uri.getLastPathSegment());
+                return durationUs;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error getting duration via Retriever for: " + uri, e);
+        } finally {
+            if (retriever != null) {
+                try { retriever.release(); } catch (Exception ignored) {}
+            }
+        }
+        return C.TIME_UNSET;
+    }
+
+    /**
+     * Checks if a URI points to a fragmented MP4 that needs our special handling.
+     * Supports both {@code file://} and {@code content://} (SAF / custom storage) URIs.
      */
     public boolean isFragmentedMp4(@NonNull Uri uri) {
-        if (!"file".equals(uri.getScheme())) {
-            return false;
+        String scheme = uri.getScheme();
+        if ("file".equals(scheme)) {
+            String path = uri.getPath();
+            if (path == null) return false;
+            File file = new File(path);
+            return isFragmentedMp4File(file);
+        } else if ("content".equals(scheme)) {
+            return isFragmentedMp4ContentUri(uri);
         }
-        String path = uri.getPath();
-        if (path == null) {
+        return false;
+    }
+
+    /**
+     * Checks if a {@code content://} URI points to a fragmented MP4 by reading
+     * the first &leq;1&thinsp;MB through ContentResolver and looking for
+     * {@code ftyp} + {@code moof} box types.
+     */
+    private boolean isFragmentedMp4ContentUri(@NonNull Uri uri) {
+        InputStream is = null;
+        try {
+            is = context.getContentResolver().openInputStream(uri);
+            if (is == null) return false;
+
+            // Read up to 1MB (enough to find ftyp near the start and the first moof)
+            byte[] data = new byte[1024 * 1024];
+            int totalRead = 0;
+            while (totalRead < data.length) {
+                int n = is.read(data, totalRead, data.length - totalRead);
+                if (n == -1) break;
+                totalRead += n;
+            }
+
+            boolean foundFtyp = false;
+            boolean foundMoof = false;
+            int position = 0;
+
+            while (position + 8 <= totalRead) {
+                long size = ((long)(data[position] & 0xFF) << 24) |
+                            ((long)(data[position + 1] & 0xFF) << 16) |
+                            ((long)(data[position + 2] & 0xFF) << 8) |
+                            ((long)(data[position + 3] & 0xFF));
+                int type = ((data[position + 4] & 0xFF) << 24) |
+                           ((data[position + 5] & 0xFF) << 16) |
+                           ((data[position + 6] & 0xFF) << 8) |
+                           (data[position + 7] & 0xFF);
+
+                // Handle extended size (size == 1)
+                if (size == 1 && position + 16 <= totalRead) {
+                    size = ((long)(data[position + 8] & 0xFF) << 56) |
+                           ((long)(data[position + 9] & 0xFF) << 48) |
+                           ((long)(data[position + 10] & 0xFF) << 40) |
+                           ((long)(data[position + 11] & 0xFF) << 32) |
+                           ((long)(data[position + 12] & 0xFF) << 24) |
+                           ((long)(data[position + 13] & 0xFF) << 16) |
+                           ((long)(data[position + 14] & 0xFF) << 8) |
+                           ((long)(data[position + 15] & 0xFF));
+                } else if (size == 0) {
+                    // Size 0 means box extends to EOF — impossible to skip, stop scanning
+                    break;
+                }
+
+                if (size < 8) break; // Invalid box
+
+                if (type == 0x66747970) {        // 'ftyp'
+                    foundFtyp = true;
+                } else if (type == 0x6D6F6F66) { // 'moof'
+                    foundMoof = true;
+                    break;
+                }
+
+                if (size > totalRead - position) break; // Box extends past buffer
+                position += (int) size;
+            }
+
+            boolean result = foundFtyp && foundMoof;
+            Log.d(TAG, "isFragmentedMp4ContentUri: " + result +
+                  " (ftyp=" + foundFtyp + ", moof=" + foundMoof +
+                  ", scanned " + totalRead + " bytes) for " + uri.getLastPathSegment());
+            return result;
+
+        } catch (Exception e) {
+            Log.w(TAG, "Error checking content URI for fMP4: " + uri, e);
             return false;
+        } finally {
+            if (is != null) {
+                try { is.close(); } catch (Exception ignored) {}
+            }
         }
-        File file = new File(path);
-        return isFragmentedMp4File(file);
     }
 
     /**
