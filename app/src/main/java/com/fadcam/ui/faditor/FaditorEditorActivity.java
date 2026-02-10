@@ -398,6 +398,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
         remuxer = new FragmentedMp4Remuxer(this);
         projectStorage = new ProjectStorage(this);
         undoManager = new UndoManager();
+        undoManager.setSnapshotRestorer(new UndoManager.SnapshotRestorer() {
+            @Nullable
+            @Override
+            public String captureSnapshot() {
+                if (project == null || projectStorage == null) return null;
+                return projectStorage.toJson(project);
+            }
+
+            @Override
+            public void restoreFromSnapshot(@NonNull String projectJson) {
+                restoreProjectFromSnapshot(projectJson);
+            }
+        });
 
         // Check if opening a saved project by ID
         String projectId = getIntent().getStringExtra(EXTRA_PROJECT_ID);
@@ -613,6 +626,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onSegmentReordered(int fromIndex, int toIndex) {
                 Timeline tl = project.getTimeline();
+                undoManager.recordAction(new EditActions.ReorderClipAction(
+                        tl, fromIndex, toIndex));
                 tl.moveClip(fromIndex, toIndex);
                 selectSegment(toIndex);
                 saveProjectNow();
@@ -849,6 +864,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (project.getCanvasPreset() != null
                 && !"original".equals(project.getCanvasPreset())) {
             applyCanvasPreview(project.getCanvasPreset());
+        }
+
+        // Restore undo history from disk
+        List<String> descriptions = new ArrayList<>();
+        List<String> snapshots = new ArrayList<>();
+        if (projectStorage.loadUndoHistory(project.getId(), descriptions, snapshots)) {
+            undoManager.loadHistory(descriptions, snapshots);
+            Log.d(TAG, "Restored " + descriptions.size() + " undo history entries");
         }
 
         Log.d(TAG, "Editor loaded saved project: " + project.getId()
@@ -3015,14 +3038,42 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     /**
+     * Restore the entire project from a JSON snapshot.
+     * Called by UndoManager's SnapshotRestorer during snapshot-based undo/redo.
+     * Replaces the project object and all model references.
+     *
+     * @param projectJson the serialized project JSON to restore from
+     */
+    private void restoreProjectFromSnapshot(@NonNull String projectJson) {
+        FaditorProject restored = projectStorage.fromJson(projectJson);
+        if (restored == null) {
+            Log.e(TAG, "Failed to restore project from snapshot");
+            return;
+        }
+        this.project = restored;
+        Log.d(TAG, "Project restored from snapshot, clips="
+                + restored.getTimeline().getClipCount()
+                + ", audioClips=" + restored.getTimeline().getAudioClipCount());
+    }
+
+    /**
      * Refresh all editor UI after an undo/redo operation.
      * Syncs timeline, toolbar, player state, and preview transforms with the current model.
+     * Handles both action-based (same objects) and snapshot-based (new objects) restoration.
      */
     private void refreshEditorAfterUndoRedo() {
+        // Clamp selected index in case clip count changed (e.g. after snapshot restore)
+        int clipCount = project.getTimeline().getClipCount();
+        if (clipCount == 0) return;
+        if (selectedClipIndex < 0 || selectedClipIndex >= clipCount) {
+            selectedClipIndex = Math.max(0, clipCount - 1);
+        }
+
         Clip clip = getSelectedClip();
         if (clip == null) return;
 
-        // Update timeline view
+        // Rebuild timeline view completely (handles both action and snapshot changes)
+        editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
         editorTimeline.setTrimFromClip(clip);
         editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
 
@@ -3062,11 +3113,27 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /**
      * Save project immediately (blocking on current thread, fast for small JSON).
+     * Also persists the undo history snapshots alongside the project.
      */
     private void saveProjectNow() {
         if (project != null && projectStorage != null) {
             autoSaveHandler.removeCallbacks(autoSaveRunnable);
             projectStorage.save(project);
+
+            // Persist undo history
+            List<UndoManager.HistoryEntry> history = undoManager.getUndoHistory();
+            if (!history.isEmpty()) {
+                List<String> descriptions = new ArrayList<>();
+                List<String> snapshots = new ArrayList<>();
+                for (UndoManager.HistoryEntry entry : history) {
+                    if (entry.getSnapshotBefore() != null) {
+                        descriptions.add(entry.getDescription());
+                        snapshots.add(entry.getSnapshotBefore());
+                    }
+                }
+                projectStorage.saveUndoHistory(project.getId(), descriptions, snapshots);
+            }
+
             Log.d(TAG, "Project saved: " + project.getId());
         }
     }
@@ -3224,6 +3291,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
             int insertIndex = selectedClipIndex + 1;
             timeline.addClip(insertIndex, imageClip);
 
+            // Record undo action
+            undoManager.recordAction(new EditActions.AddClipAction(
+                    timeline, imageClip, insertIndex));
+
             // Select the new clip
             selectSegment(insertIndex);
             refreshTotalTimeDisplay();
@@ -3266,6 +3337,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
             int insertIndex = selectedClipIndex + 1;
             timeline.addClip(insertIndex, videoClip);
 
+            // Record undo action
+            undoManager.recordAction(new EditActions.AddClipAction(
+                    timeline, videoClip, insertIndex));
+
             // Select the new clip
             selectSegment(insertIndex);
             refreshTotalTimeDisplay();
@@ -3302,12 +3377,22 @@ public class FaditorEditorActivity extends AppCompatActivity {
             long currentPositionMs = playerManager.getCurrentPosition();
             long absoluteSplitMs = clip.getInPointMs() + currentPositionMs;
 
+            // Save reference to original clip before split
+            Clip originalClip = clip;
+            int originalIndex = selectedClipIndex;
+
             Timeline timeline = project.getTimeline();
             int newIndex = timeline.splitAt(selectedClipIndex, absoluteSplitMs);
             if (newIndex < 0) {
                 Toast.makeText(this, R.string.faditor_split_error, Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            // Record undo action with the two new clips
+            Clip clipA = timeline.getClip(newIndex);
+            Clip clipB = timeline.getClip(newIndex + 1);
+            undoManager.recordAction(new EditActions.SplitClipAction(
+                    timeline, originalIndex, originalClip, clipA, clipB));
 
             selectSegment(selectedClipIndex);
             saveProjectNow();
@@ -3352,6 +3437,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         right.setInPointMs(splitInSource);
         right.setOffsetMs(playheadMs); // Starts at the split point on the timeline
 
+        // Record undo action before modifying timeline
+        undoManager.recordAction(new EditActions.SplitAudioClipAction(
+                timeline, audioIdx, ac, left, right));
+
         // Remove original, add the two new clips
         timeline.removeAudioClip(audioIdx);
         timeline.addAudioClip(left);
@@ -3381,6 +3470,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 return;
             }
 
+            // Record undo action before deletion
+            Clip deletedClip = timeline.getClip(selectedClipIndex);
+            int deletedIndex = selectedClipIndex;
+            undoManager.recordAction(new EditActions.DeleteClipAction(
+                    timeline, deletedClip, deletedIndex));
+
             timeline.removeClip(selectedClipIndex);
 
             int newIndex = Math.min(selectedClipIndex, timeline.getClipCount() - 1);
@@ -3398,6 +3493,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void deleteSelectedAudioClip(int audioIndex) {
         Timeline timeline = project.getTimeline();
         if (audioIndex < 0 || audioIndex >= timeline.getAudioClipCount()) return;
+
+        // Record undo action before deletion
+        AudioClip deletedClip = timeline.getAudioClip(audioIndex);
+        undoManager.recordAction(new EditActions.DeleteAudioClipAction(
+                timeline, deletedClip, audioIndex));
 
         timeline.removeAudioClip(audioIndex);
         editorTimeline.setAudioClips(timeline.getAudioClips());
@@ -3418,6 +3518,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
             Timeline timeline = project.getTimeline();
             int newIndex = timeline.duplicateClip(selectedClipIndex);
             if (newIndex < 0) return;
+
+            // Record undo action for the duplication
+            Clip duplicated = timeline.getClip(newIndex);
+            undoManager.recordAction(new EditActions.DuplicateClipAction(
+                    timeline, duplicated, newIndex));
 
             selectSegment(newIndex);
             saveProjectNow();

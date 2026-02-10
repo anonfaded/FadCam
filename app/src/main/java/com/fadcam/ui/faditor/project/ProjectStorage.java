@@ -198,6 +198,119 @@ public class ProjectStorage {
         return new File(getProjectDir(projectId), PROJECT_FILE).exists();
     }
 
+    // ── Serialization helpers (for snapshot capture) ─────────────────
+
+    /**
+     * Serialize a project to a JSON string.
+     * Used by UndoManager's SnapshotRestorer to capture project state.
+     *
+     * @param project the project to serialize
+     * @return JSON string representation
+     */
+    @NonNull
+    public String toJson(@NonNull FaditorProject project) {
+        return gson.toJson(project);
+    }
+
+    /**
+     * Deserialize a project from a JSON string.
+     * Used by UndoManager's SnapshotRestorer to restore project state.
+     *
+     * @param json the JSON string to parse
+     * @return the deserialized project, or null if parsing fails
+     */
+    @Nullable
+    public FaditorProject fromJson(@NonNull String json) {
+        try {
+            return gson.fromJson(json, FaditorProject.class);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to deserialize project from JSON snapshot", e);
+            return null;
+        }
+    }
+
+    // ── Undo history persistence ─────────────────────────────────────
+
+    private static final String UNDO_HISTORY_FILE = "undo_history.json";
+
+    /**
+     * Save undo history alongside the project.
+     * Each entry stores a description and a project JSON snapshot.
+     *
+     * @param projectId the project ID
+     * @param descriptions list of action descriptions (oldest first)
+     * @param snapshots    list of project JSON snapshots (oldest first)
+     * @return true if saved successfully
+     */
+    public boolean saveUndoHistory(@NonNull String projectId,
+                                   @NonNull List<String> descriptions,
+                                   @NonNull List<String> snapshots) {
+        File projectDir = getProjectDir(projectId);
+        if (!projectDir.exists() && !projectDir.mkdirs()) {
+            Log.e(TAG, "Failed to create project directory for undo history");
+            return false;
+        }
+
+        File file = new File(projectDir, UNDO_HISTORY_FILE);
+        try (FileWriter writer = new FileWriter(file)) {
+            JsonArray historyArray = new JsonArray();
+            int count = Math.min(descriptions.size(), snapshots.size());
+            for (int i = 0; i < count; i++) {
+                JsonObject entry = new JsonObject();
+                entry.addProperty("description", descriptions.get(i));
+                entry.addProperty("snapshot", snapshots.get(i));
+                historyArray.add(entry);
+            }
+            gson.toJson(historyArray, writer);
+            Log.d(TAG, "Saved " + count + " undo history entries for: " + projectId);
+            return true;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to save undo history: " + projectId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Load undo history for a project.
+     *
+     * @param projectId the project ID
+     * @param outDescriptions output list populated with descriptions (oldest first)
+     * @param outSnapshots    output list populated with snapshots (oldest first)
+     * @return true if loaded successfully, false if no history or error
+     */
+    public boolean loadUndoHistory(@NonNull String projectId,
+                                   @NonNull List<String> outDescriptions,
+                                   @NonNull List<String> outSnapshots) {
+        File file = new File(getProjectDir(projectId), UNDO_HISTORY_FILE);
+        if (!file.exists()) {
+            Log.d(TAG, "No undo history found for: " + projectId);
+            return false;
+        }
+
+        try (FileReader reader = new FileReader(file)) {
+            JsonArray historyArray = gson.fromJson(reader, JsonArray.class);
+            if (historyArray == null) return false;
+
+            for (int i = 0; i < historyArray.size(); i++) {
+                JsonObject entry = historyArray.get(i).getAsJsonObject();
+                String desc = entry.has("description")
+                        ? entry.get("description").getAsString() : "Unknown";
+                String snap = entry.has("snapshot")
+                        ? entry.get("snapshot").getAsString() : null;
+                if (snap != null) {
+                    outDescriptions.add(desc);
+                    outSnapshots.add(snap);
+                }
+            }
+            Log.d(TAG, "Loaded " + outDescriptions.size()
+                    + " undo history entries for: " + projectId);
+            return !outDescriptions.isEmpty();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load undo history: " + projectId, e);
+            return false;
+        }
+    }
+
     // ── Internal ─────────────────────────────────────────────────────
 
     @NonNull
