@@ -454,7 +454,7 @@ public class FaditorMiniFragment extends BaseFragment {
             // Normal mode: tap opens editor, long-press enters selection
             row.setOnClickListener(v -> {
                 if (summary.videoUri != null) {
-                    launchEditor(Uri.parse(summary.videoUri));
+                    launchEditor(Uri.parse(summary.videoUri), summary.id);
                 }
             });
             row.setOnLongClickListener(v -> {
@@ -626,12 +626,25 @@ public class FaditorMiniFragment extends BaseFragment {
     }
 
     /**
-     * Launch the full-screen editor with the selected video.
+     * Launch the full-screen editor with the selected video (new project).
      */
     private void launchEditor(@NonNull Uri videoUri) {
+        launchEditor(videoUri, null);
+    }
+
+    /**
+     * Launch the full-screen editor, optionally loading a saved project.
+     *
+     * @param videoUri  the video URI for playback
+     * @param projectId the saved project ID to restore, or null for a new project
+     */
+    private void launchEditor(@NonNull Uri videoUri, @Nullable String projectId) {
         Intent intent = new Intent(requireContext(), FaditorEditorActivity.class);
         intent.setData(videoUri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        if (projectId != null) {
+            intent.putExtra(FaditorEditorActivity.EXTRA_PROJECT_ID, projectId);
+        }
         editorLauncher.launch(intent);
     }
 }

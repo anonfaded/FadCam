@@ -48,6 +48,8 @@ import com.fadcam.ui.faditor.player.FaditorPlayerManager;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.fadcam.ui.faditor.timeline.EditorTimelineView;
 import com.fadcam.ui.faditor.model.Timeline;
+import com.fadcam.ui.faditor.undo.EditActions;
+import com.fadcam.ui.faditor.undo.UndoManager;
 import com.fadcam.ui.faditor.util.TimeFormatter;
 
 import android.media.MediaCodec;
@@ -76,6 +78,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /** Intent extra key for the video URI string. */
     public static final String EXTRA_VIDEO_URI = "faditor_video_uri";
+
+    /** Intent extra key for opening a saved project by ID. */
+    public static final String EXTRA_PROJECT_ID = "faditor_project_id";
 
     /** Default duration for still image clips (milliseconds). */
     private static final long IMAGE_CLIP_DURATION_MS = 5000;
@@ -167,6 +172,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View toolAudio;
     private TextView toolAudioIcon;
     private TextView toolAudioLabel;
+
+    // ── Undo/Redo ────────────────────────────────────────────────────
+    private UndoManager undoManager;
+    private TextView btnUndo;
+    private TextView btnRedo;
+
+    // Pre-edit state capture for undo recording
+    private long preTrimInMs = -1;
+    private long preTrimOutMs = -1;
+    private long preAudioTrimInMs = -1;
+    private long preAudioTrimOutMs = -1;
 
     // ── Multi-segment state ──────────────────────────────────────────
     /** Index of the currently selected clip/segment in the timeline. */
@@ -380,8 +396,33 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Initialize preferences and remuxer
         prefsManager = SharedPreferencesManager.getInstance(this);
         remuxer = new FragmentedMp4Remuxer(this);
+        projectStorage = new ProjectStorage(this);
+        undoManager = new UndoManager();
 
-        // Parse video URI from intent
+        // Check if opening a saved project by ID
+        String projectId = getIntent().getStringExtra(EXTRA_PROJECT_ID);
+        if (projectId != null) {
+            FaditorProject loaded = projectStorage.load(projectId);
+            if (loaded != null && !loaded.getTimeline().isEmpty()) {
+                initViews();
+                project = loaded;
+                Uri playUri = project.getTimeline().getClip(0).getSourceUri();
+                // Check if the video needs remuxing
+                File sourceFile = resolveToFile(playUri);
+                if (sourceFile != null && remuxer.needsRemux(sourceFile)) {
+                    if (remuxer.hasRemuxedVersion(sourceFile)) {
+                        File remuxed = remuxer.getRemuxedFile(sourceFile);
+                        playUri = Uri.fromFile(remuxed);
+                    }
+                }
+                continueLoadFromSavedProject(playUri);
+                Log.d(TAG, "Editor opened saved project: " + projectId);
+                return;
+            }
+            Log.w(TAG, "Could not load saved project: " + projectId + ", falling back");
+        }
+
+        // Parse video URI from intent (new project)
         Uri videoUri = parseVideoUri();
         if (videoUri == null) {
             Log.e(TAG, "No video URI provided");
@@ -391,7 +432,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         // Initialize components
-        projectStorage = new ProjectStorage(this);
         initViews();
 
         // Check if video needs remuxing for seekable playback
@@ -463,6 +503,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             @Override
             public void onTrimChanged(int segmentIndex, float startFraction, float endFraction, boolean isLeft) {
+                if (!userDragging) {
+                    // First drag callback — capture pre-trim values for undo
+                    Clip clip = getSelectedClip();
+                    if (clip != null) {
+                        preTrimInMs = clip.getInPointMs();
+                        preTrimOutMs = clip.getOutPointMs();
+                    }
+                }
                 userDragging = true;
                 Clip clip = getSelectedClip();
                 if (clip == null) return;
@@ -481,8 +529,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 Clip clip = getSelectedClip();
                 if (clip == null) return;
                 long duration = clip.getSourceDurationMs();
-                clip.setInPointMs((long)(startFraction * duration));
-                clip.setOutPointMs((long)(endFraction * duration));
+                long newIn = (long)(startFraction * duration);
+                long newOut = (long)(endFraction * duration);
+
+                // Record undo action before applying final values
+                if (preTrimInMs >= 0 && (preTrimInMs != newIn || preTrimOutMs != newOut)) {
+                    undoManager.recordAction(new EditActions.TrimAction(
+                            clip, preTrimInMs, preTrimOutMs, newIn, newOut));
+                }
+                preTrimInMs = -1;
+                preTrimOutMs = -1;
+
+                clip.setInPointMs(newIn);
+                clip.setOutPointMs(newOut);
                 editorTimeline.setTrimFromClip(clip);
                 if (!clip.isImageClip()) {
                     playerManager.updateTrimBounds(clip);
@@ -592,6 +651,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             @Override
             public void onAudioTrimChanged(int audioIndex, long inPointMs, long outPointMs, boolean isLeft) {
+                // Capture pre-trim values on first drag
+                if (preAudioTrimInMs < 0 && project != null) {
+                    AudioClip ac = project.getTimeline().getAudioClip(audioIndex);
+                    if (ac != null) {
+                        preAudioTrimInMs = ac.getInPointMs();
+                        preAudioTrimOutMs = ac.getOutPointMs();
+                    }
+                }
                 // Real-time visual feedback during audio trim drag
                 Log.d(TAG, "Audio trim changed: index=" + audioIndex
                         + " in=" + inPointMs + " out=" + outPointMs);
@@ -604,6 +671,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (project == null) return;
                 AudioClip ac = project.getTimeline().getAudioClip(audioIndex);
                 if (ac != null) {
+                    // Record undo action
+                    if (preAudioTrimInMs >= 0
+                            && (preAudioTrimInMs != inPointMs || preAudioTrimOutMs != outPointMs)) {
+                        undoManager.recordAction(new EditActions.AudioTrimAction(
+                                ac, preAudioTrimInMs, preAudioTrimOutMs,
+                                inPointMs, outPointMs));
+                    }
+                    preAudioTrimInMs = -1;
+                    preAudioTrimOutMs = -1;
+
                     ac.setInPointMs(inPointMs);
                     ac.setOutPointMs(outPointMs);
                     editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
@@ -650,6 +727,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolAudio = findViewById(R.id.tool_audio);
         toolAudioIcon = findViewById(R.id.tool_audio_icon);
         toolAudioLabel = findViewById(R.id.tool_audio_label);
+
+        // Undo/Redo buttons
+        btnUndo = findViewById(R.id.btn_undo);
+        btnRedo = findViewById(R.id.btn_redo);
+        btnUndo.setOnClickListener(v -> performUndo());
+        btnRedo.setOnClickListener(v -> performRedo());
+        undoManager.setOnStateChangedListener((canUndo, canRedo) -> {
+            btnUndo.setAlpha(canUndo ? 1.0f : 0.3f);
+            btnRedo.setAlpha(canRedo ? 1.0f : 0.3f);
+            btnUndo.setEnabled(canUndo);
+            btnRedo.setEnabled(canRedo);
+        });
 
         // Segment tools
         findViewById(R.id.tool_split).setOnClickListener(v -> splitAtPlayhead());
@@ -733,6 +822,38 @@ public class FaditorEditorActivity extends AppCompatActivity {
         initToolbar();
         initExport();
         initBackHandler();
+    }
+
+    /**
+     * Finish editor initialisation when loading a saved project.
+     * Skips initProject() since the project is already loaded from storage.
+     *
+     * @param playUri URI to use for preview playback (may be remuxed)
+     */
+    private void continueLoadFromSavedProject(@NonNull Uri playUri) {
+        // Project is already set from saved data, refresh time display
+        refreshTotalTimeDisplay();
+        initPlayer();
+        initTimeline();
+        initToolbar();
+        initExport();
+        initBackHandler();
+
+        // Restore audio clips into timeline view if any exist
+        if (project.getTimeline().hasAudioClips()) {
+            editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+            updateAudioToolUI();
+        }
+
+        // Restore canvas preset
+        if (project.getCanvasPreset() != null
+                && !"original".equals(project.getCanvasPreset())) {
+            applyCanvasPreview(project.getCanvasPreset());
+        }
+
+        Log.d(TAG, "Editor loaded saved project: " + project.getId()
+                + ", clips=" + project.getTimeline().getClipCount()
+                + ", audioClips=" + project.getTimeline().getAudioClipCount());
     }
 
     /**
@@ -956,9 +1077,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (audioIdx >= 0 && project.getTimeline().hasAudioClips()) {
             AudioClip ac = project.getTimeline().getAudioClip(audioIdx);
             if (ac != null) {
+                float oldVol = ac.getVolumeLevel();
+                boolean oldMuted = ac.isMuted();
                 VolumeControlBottomSheet sheet = VolumeControlBottomSheet.newInstance(
                         ac.getVolumeLevel(), ac.isMuted());
                 sheet.setCallback((volume, muted) -> {
+                    // Record undo action if changed
+                    if (oldVol != volume || oldMuted != muted) {
+                        undoManager.recordAction(new EditActions.AudioVolumeAction(
+                                ac, oldVol, volume));
+                        if (oldMuted != muted) {
+                            undoManager.recordAction(new EditActions.AudioMuteAction(
+                                    ac, oldMuted, muted));
+                        }
+                    }
                     ac.setVolumeLevel(volume);
                     ac.setMuted(muted);
                     // Update live audio player volume for this clip
@@ -976,10 +1108,21 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         Clip clip = getSelectedClip();
+        float oldVol = clip.getVolumeLevel();
+        boolean oldMuted = clip.isAudioMuted();
 
         VolumeControlBottomSheet sheet = VolumeControlBottomSheet.newInstance(
                 clip.getVolumeLevel(), clip.isAudioMuted());
         sheet.setCallback((volume, muted) -> {
+            // Record undo action if changed
+            if (oldVol != volume) {
+                undoManager.recordAction(new EditActions.VolumeAction(
+                        clip, oldVol, volume));
+            }
+            if (oldMuted != muted) {
+                undoManager.recordAction(new EditActions.MuteAction(
+                        clip, oldMuted, oldVol, muted, volume));
+            }
             clip.setVolumeLevel(volume);
             clip.setAudioMuted(muted);
             updateVolumeUI(volume, muted);
@@ -1033,8 +1176,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showSpeedSlider() {
         Clip clip = getSelectedClip();
+        float oldSpeed = clip.getSpeedMultiplier();
         SpeedSliderBottomSheet sheet = SpeedSliderBottomSheet.newInstance(clip.getSpeedMultiplier());
         sheet.setCallback(speed -> {
+            if (oldSpeed != speed) {
+                undoManager.recordAction(new EditActions.SpeedAction(
+                        clip, oldSpeed, speed));
+            }
             clip.setSpeedMultiplier(speed);
             playerManager.setPlaybackSpeed(speed);
             updateSpeedUI(speed);
@@ -1062,7 +1210,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void rotateNext() {
         Clip clip = getSelectedClip();
-        int newDeg = (clip.getRotationDegrees() + 90) % 360;
+        int oldDeg = clip.getRotationDegrees();
+        int newDeg = (oldDeg + 90) % 360;
+        undoManager.recordAction(new EditActions.RotateAction(clip, oldDeg, newDeg));
         clip.setRotationDegrees(newDeg);
         updateRotateUI(newDeg);
         updatePreviewTransforms();
@@ -1087,9 +1237,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showFlipPicker() {
         Clip clip = getSelectedClip();
+        boolean oldH = clip.isFlipHorizontal();
+        boolean oldV = clip.isFlipVertical();
         FlipPickerBottomSheet sheet = FlipPickerBottomSheet.newInstance(
                 clip.isFlipHorizontal(), clip.isFlipVertical());
         sheet.setCallback((flipH, flipV) -> {
+            if (oldH != flipH) {
+                undoManager.recordAction(new EditActions.FlipHorizontalAction(
+                        clip, oldH, flipH));
+            }
+            if (oldV != flipV) {
+                undoManager.recordAction(new EditActions.FlipVerticalAction(
+                        clip, oldV, flipV));
+            }
             clip.setFlipHorizontal(flipH);
             clip.setFlipVertical(flipV);
             updateFlipUI(flipH, flipV);
@@ -1219,6 +1379,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
             if (isFullFrame) {
                 clip.setCropPreset("none");
                 clip.setCustomCropBounds(0f, 0f, 1f, 1f);
+            }
+            // Record undo action for crop change
+            String newPreset = clip.getCropPreset();
+            float newL = clip.getCropLeft(), newT = clip.getCropTop();
+            float newR = clip.getCropRight(), newB = clip.getCropBottom();
+            if (!preCropPreset.equals(newPreset)
+                    || preCropLeft != newL || preCropTop != newT
+                    || preCropRight != newR || preCropBottom != newB) {
+                undoManager.recordAction(new EditActions.CropAction(
+                        clip,
+                        preCropPreset, preCropLeft, preCropTop, preCropRight, preCropBottom,
+                        newPreset, newL, newT, newR, newB));
             }
             // else keep "custom" preset with current bounds
             Toast.makeText(this, R.string.faditor_crop_applied, Toast.LENGTH_SHORT).show();
@@ -1454,9 +1626,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * Shows the canvas aspect ratio picker bottom sheet.
      */
     private void showCanvasPicker() {
+        String oldPreset = project.getCanvasPreset();
         CanvasPickerBottomSheet sheet =
                 CanvasPickerBottomSheet.newInstance(project.getCanvasPreset());
         sheet.setCallback(preset -> {
+            if (!oldPreset.equals(preset)) {
+                undoManager.recordAction(new EditActions.CanvasPresetAction(
+                        project, oldPreset, preset));
+            }
             project.setCanvasPreset(preset);
             updateCanvasUI(preset);
             applyCanvasPreview(preset);
@@ -1683,11 +1860,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 audioClip.setWaveform(waveform);
 
                 runOnUiThread(() -> {
+                    Clip srcClip = getSelectedClip();
+                    // Capture pre-extraction state for undo
+                    boolean prevMuted = srcClip != null && srcClip.isAudioMuted();
+                    float prevVolume = srcClip != null ? srcClip.getVolumeLevel() : 1.0f;
+
                     project.getTimeline().addAudioClip(audioClip);
                     editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
 
+                    // Record undo action for adding audio clip
+                    undoManager.recordAction(new EditActions.AddAudioClipAction(
+                            project.getTimeline(), audioClip,
+                            srcClip, prevMuted, prevVolume));
+
                     // Mute the source video clip since audio is now on a separate track
-                    Clip srcClip = getSelectedClip();
                     if (srcClip != null) {
                         srcClip.setAudioMuted(true);
                         srcClip.setVolumeLevel(0f);
@@ -2806,6 +2992,69 @@ public class FaditorEditorActivity extends AppCompatActivity {
     /**
      * Schedule a debounced auto-save (resets timer on each call).
      */
+    // ── Undo / Redo ───────────────────────────────────────────────
+
+    /**
+     * Perform undo: reverts the last edit action and refreshes all relevant UI.
+     */
+    private void performUndo() {
+        if (!undoManager.canUndo()) return;
+        undoManager.undo();
+        refreshEditorAfterUndoRedo();
+        scheduleAutoSave();
+    }
+
+    /**
+     * Perform redo: re-applies a previously undone edit action and refreshes UI.
+     */
+    private void performRedo() {
+        if (!undoManager.canRedo()) return;
+        undoManager.redo();
+        refreshEditorAfterUndoRedo();
+        scheduleAutoSave();
+    }
+
+    /**
+     * Refresh all editor UI after an undo/redo operation.
+     * Syncs timeline, toolbar, player state, and preview transforms with the current model.
+     */
+    private void refreshEditorAfterUndoRedo() {
+        Clip clip = getSelectedClip();
+        if (clip == null) return;
+
+        // Update timeline view
+        editorTimeline.setTrimFromClip(clip);
+        editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+
+        // Update player state
+        if (!clip.isImageClip()) {
+            playerManager.updateTrimBounds(clip);
+            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        }
+
+        // Update toolbar UI
+        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
+        updateSpeedUI(clip.getSpeedMultiplier());
+        updateRotateUI(clip.getRotationDegrees());
+        updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
+        updateCropUI(clip.getCropPreset());
+        updateCanvasUI(project.getCanvasPreset());
+        updateAudioToolUI();
+
+        // Update preview transforms (rotation, flip, crop, canvas)
+        updatePreviewTransforms();
+
+        // Update time displays
+        updateCurrentTimeDisplay(0);
+        refreshTotalTimeDisplay();
+
+        // Re-prepare audio player for any audio clip changes
+        prepareAudioPlayer();
+    }
+
+    // ── Auto-save ────────────────────────────────────────────────────
+
     private void scheduleAutoSave() {
         autoSaveHandler.removeCallbacks(autoSaveRunnable);
         autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_DELAY_MS);

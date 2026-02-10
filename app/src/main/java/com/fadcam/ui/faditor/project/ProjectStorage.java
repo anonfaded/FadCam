@@ -7,6 +7,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.ui.faditor.model.AudioClip;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.ExportSettings;
 import com.fadcam.ui.faditor.model.FaditorProject;
@@ -272,7 +273,36 @@ public class ProjectStorage {
                 clipsArray.add(clipJson);
             }
             timelineJson.add("clips", clipsArray);
+
+            // Serialize audio clips
+            JsonArray audioArray = new JsonArray();
+            for (AudioClip ac : src.getTimeline().getAudioClips()) {
+                JsonObject acJson = new JsonObject();
+                acJson.addProperty("id", ac.getId());
+                acJson.addProperty("sourceUri", ac.getSourceUri().toString());
+                acJson.addProperty("sourceDurationMs", ac.getSourceDurationMs());
+                acJson.addProperty("inPointMs", ac.getInPointMs());
+                acJson.addProperty("outPointMs", ac.getOutPointMs());
+                acJson.addProperty("offsetMs", ac.getOffsetMs());
+                acJson.addProperty("volumeLevel", ac.getVolumeLevel());
+                acJson.addProperty("muted", ac.isMuted());
+                acJson.addProperty("label", ac.getLabel());
+                // Serialize waveform as int array
+                int[] waveform = ac.getWaveform();
+                if (waveform != null) {
+                    JsonArray wfArray = new JsonArray();
+                    for (int val : waveform) {
+                        wfArray.add(val);
+                    }
+                    acJson.add("waveform", wfArray);
+                }
+                audioArray.add(acJson);
+            }
+            timelineJson.add("audioClips", audioArray);
             json.add("timeline", timelineJson);
+
+            // Serialize canvas preset
+            json.addProperty("canvasPreset", src.getCanvasPreset());
 
             // Serialize export settings
             JsonObject exportJson = new JsonObject();
@@ -296,7 +326,18 @@ public class ProjectStorage {
             JsonObject obj = json.getAsJsonObject();
 
             String name = obj.has("name") ? obj.get("name").getAsString() : "Untitled";
-            FaditorProject project = new FaditorProject(name);
+
+            // Restore project with original ID and timestamps
+            FaditorProject project;
+            if (obj.has("id") && obj.has("createdAt")) {
+                String id = obj.get("id").getAsString();
+                long createdAt = obj.get("createdAt").getAsLong();
+                long lastModified = obj.has("lastModified")
+                        ? obj.get("lastModified").getAsLong() : createdAt;
+                project = new FaditorProject(id, name, createdAt, lastModified);
+            } else {
+                project = new FaditorProject(name);
+            }
 
             // Restore timeline clips
             if (obj.has("timeline")) {
@@ -341,6 +382,48 @@ public class ProjectStorage {
                         project.getTimeline().addClip(clip);
                     }
                 }
+            }
+
+            // Restore audio clips
+            if (obj.has("timeline")) {
+                JsonObject tl = obj.getAsJsonObject("timeline");
+                if (tl.has("audioClips")) {
+                    JsonArray audioArr = tl.getAsJsonArray("audioClips");
+                    for (int i = 0; i < audioArr.size(); i++) {
+                        JsonObject acObj = audioArr.get(i).getAsJsonObject();
+                        Uri acUri = Uri.parse(acObj.get("sourceUri").getAsString());
+                        long acDuration = acObj.get("sourceDurationMs").getAsLong();
+                        AudioClip ac = new AudioClip(acUri, acDuration);
+                        ac.setInPointMs(acObj.get("inPointMs").getAsLong());
+                        ac.setOutPointMs(acObj.get("outPointMs").getAsLong());
+                        if (acObj.has("offsetMs")) {
+                            ac.setOffsetMs(acObj.get("offsetMs").getAsLong());
+                        }
+                        if (acObj.has("volumeLevel")) {
+                            ac.setVolumeLevel(acObj.get("volumeLevel").getAsFloat());
+                        }
+                        if (acObj.has("muted")) {
+                            ac.setMuted(acObj.get("muted").getAsBoolean());
+                        }
+                        if (acObj.has("label")) {
+                            ac.setLabel(acObj.get("label").getAsString());
+                        }
+                        if (acObj.has("waveform")) {
+                            JsonArray wfArr = acObj.getAsJsonArray("waveform");
+                            int[] waveform = new int[wfArr.size()];
+                            for (int j = 0; j < wfArr.size(); j++) {
+                                waveform[j] = wfArr.get(j).getAsInt();
+                            }
+                            ac.setWaveform(waveform);
+                        }
+                        project.getTimeline().addAudioClip(ac);
+                    }
+                }
+            }
+
+            // Restore canvas preset
+            if (obj.has("canvasPreset")) {
+                project.setCanvasPreset(obj.get("canvasPreset").getAsString());
             }
 
             // Restore export settings

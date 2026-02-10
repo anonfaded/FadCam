@@ -730,6 +730,8 @@
     <string name="faditor_select_video">Select Video</string>
     <string name="faditor_editor_title">Faditor Mini</string>
     <string name="faditor_close">Close editor</string>
+    <string name="faditor_undo">Undo</string>
+    <string name="faditor_redo">Redo</string>
     <string name="faditor_play_pause">Play or pause</string>
     <string name="faditor_export">Export</string>
     <string name="faditor_cancel">Cancel</string>

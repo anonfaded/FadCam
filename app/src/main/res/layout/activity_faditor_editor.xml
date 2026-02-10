@@ -54,6 +54,34 @@
             android:singleLine="true"
             android:ellipsize="middle" />
 
+        <!-- Undo button (Material Icon) -->
+        <TextView
+            android:id="@+id/btn_undo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="undo"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:alpha="0.3"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/faditor_undo" />
+
+        <!-- Redo button (Material Icon) -->
+        <TextView
+            android:id="@+id/btn_redo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="redo"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:alpha="0.3"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/faditor_redo" />
+
         <!-- Export button (compact icon) -->
         <TextView
             android:id="@+id/btn_export"

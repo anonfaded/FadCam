@@ -47,6 +47,25 @@ public class FaditorProject {
         this.exportSettings = new ExportSettings();
     }
 
+    /**
+     * Restore a project from persisted data.
+     * Used by {@code ProjectStorage} deserialization.
+     *
+     * @param id           the original project ID
+     * @param name         display name
+     * @param createdAt    original creation timestamp
+     * @param lastModified last modification timestamp
+     */
+    public FaditorProject(@NonNull String id, @NonNull String name,
+                          long createdAt, long lastModified) {
+        this.id = id;
+        this.name = name;
+        this.createdAt = createdAt;
+        this.lastModified = lastModified;
+        this.timeline = new Timeline();
+        this.exportSettings = new ExportSettings();
+    }
+
     // ── Getters ──────────────────────────────────────────────────────
 
     @NonNull
