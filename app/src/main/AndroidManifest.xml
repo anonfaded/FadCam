@@ -272,6 +272,9 @@
         <!-- File operation service for background copy/move/delete operations -->
         <service android:name=".service.FileOperationService" android:exported="false" android:foregroundServiceType="dataSync" />
 
+        <!-- Faditor export service for background video export -->
+        <service android:name=".ui.faditor.export.ExportService" android:exported="false" android:foregroundServiceType="dataSync" />
+
         <!-- Media button receiver to satisfy MediaSessionCompat requirement for a unique receiver -->
         <receiver android:name=".services.MediaButtonReceiver" android:exported="false">
             <intent-filter>

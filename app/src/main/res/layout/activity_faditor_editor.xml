@@ -844,6 +844,17 @@
                 android:layout_marginTop="8dp"
                 android:visibility="gone" />
 
+            <!-- Export info (clips, duration, codec) -->
+            <TextView
+                android:id="@+id/export_info_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#555555"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
+
             <!-- Cancel export button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_cancel_export"

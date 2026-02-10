@@ -40,6 +40,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.playback.FragmentedMp4Remuxer;
 import com.fadcam.ui.InputActionBottomSheetFragment;
 import com.fadcam.ui.faditor.export.ExportManager;
+import com.fadcam.ui.faditor.export.ExportService;
 import com.fadcam.ui.faditor.model.AudioClip;
 import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.FaditorProject;
@@ -86,6 +87,29 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private SharedPreferencesManager prefsManager;
     private FragmentedMp4Remuxer remuxer;
 
+    // ── Export service binding ────────────────────────────────────────
+    private ExportService exportService;
+    private boolean exportServiceBound = false;
+    private final android.content.ServiceConnection exportServiceConnection =
+            new android.content.ServiceConnection() {
+                @Override
+                public void onServiceConnected(android.content.ComponentName name,
+                                               android.os.IBinder service) {
+                    ExportService.ExportBinder binder = (ExportService.ExportBinder) service;
+                    exportService = binder.getService();
+                    exportServiceBound = true;
+                    exportService.setServiceListener(exportServiceListener);
+                    Log.d(TAG, "ExportService bound");
+                }
+
+                @Override
+                public void onServiceDisconnected(android.content.ComponentName name) {
+                    exportService = null;
+                    exportServiceBound = false;
+                    Log.d(TAG, "ExportService unbound");
+                }
+            };
+
     // ── Asset pickers ────────────────────────────────────────────────
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<Intent> videoPickerLauncher;
@@ -105,6 +129,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView exportBtnDone;
     private TextView exportTitle;
     private com.google.android.material.progressindicator.LinearProgressIndicator exportProgressBar;
+    private TextView exportInfoText;
     private long exportStartTimeMs;
     private View remuxProgressOverlay;
     private TextView remuxProgressText;
@@ -397,8 +422,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         releaseAudioPlayer();
         audioExecutor.shutdownNow();
         saveProjectNow();
-        if (exportManager != null && exportManager.isExporting()) {
-            exportManager.cancel();
+        // Unbind from export service but do NOT cancel — let it continue in background
+        if (exportServiceBound) {
+            if (exportService != null) {
+                exportService.setServiceListener(null);
+            }
+            unbindService(exportServiceConnection);
+            exportServiceBound = false;
         }
     }
 
@@ -594,6 +624,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         exportBtnDone = findViewById(R.id.export_btn_done);
         exportTitle = findViewById(R.id.export_title);
         exportProgressBar = findViewById(R.id.export_progress_bar);
+        exportInfoText = findViewById(R.id.export_info_text);
         remuxProgressOverlay = findViewById(R.id.remux_progress_overlay);
         remuxProgressText = findViewById(R.id.remux_progress_text);
 
@@ -2116,20 +2147,22 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void initExport() {
         exportManager = new ExportManager(this, prefsManager);
 
-        // Export button
-        findViewById(R.id.btn_export).setOnClickListener(v -> startExport());
+        // Export button → show confirmation bottom sheet
+        findViewById(R.id.btn_export).setOnClickListener(v -> showExportConfirmation());
 
         // Cancel export button
         findViewById(R.id.btn_cancel_export).setOnClickListener(v -> {
-            exportManager.cancel();
+            if (exportServiceBound && exportService != null) {
+                exportService.cancelExport();
+            }
             hideExportProgress();
             Toast.makeText(this, R.string.faditor_export_cancelled, Toast.LENGTH_SHORT).show();
         });
 
         // Back button on export screen → cancel and return to editor
         findViewById(R.id.export_btn_back).setOnClickListener(v -> {
-            if (exportManager.isExporting()) {
-                exportManager.cancel();
+            if (exportServiceBound && exportService != null && exportService.isExporting()) {
+                exportService.cancelExport();
             }
             hideExportProgress();
         });
@@ -2142,98 +2175,95 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 finish();
             });
         }
-
-        exportManager.setExportListener(new ExportManager.ExportListener() {
-            @Override
-            public void onExportStarted(@NonNull String outputPath) {
-                exportStartTimeMs = System.currentTimeMillis();
-                runOnUiThread(() -> showExportProgress());
-            }
-
-            @Override
-            public void onExportProgress(float progress) {
-                runOnUiThread(() -> {
-                    int percent = (int) (progress * 100);
-
-                    // Update percentage display
-                    if (exportProgressPercent != null) {
-                        exportProgressPercent.setText(percent + "%");
-                    }
-                    if (exportProgressBar != null) {
-                        exportProgressBar.setIndeterminate(false);
-                        exportProgressBar.setProgress(percent);
-                    }
-                    if (exportProgressText != null) {
-                        exportProgressText.setText(
-                                getString(R.string.faditor_exporting_percent, percent));
-                    }
-
-                    // Compute ETA
-                    if (progress > 0.05f && exportEtaText != null) {
-                        long elapsed = System.currentTimeMillis() - exportStartTimeMs;
-                        long totalEstimated = (long) (elapsed / progress);
-                        long remainingMs = totalEstimated - elapsed;
-                        exportEtaText.setText(getString(R.string.faditor_export_eta,
-                                formatEta(remainingMs)));
-                        exportEtaText.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
-
-            @Override
-            public void onExportCompleted(@NonNull String outputPath, @NonNull ExportResult result) {
-                runOnUiThread(() -> {
-                    Log.d(TAG, "Export saved to: " + outputPath);
-
-                    // Switch to completion state
-                    if (exportProgressPercent != null) exportProgressPercent.setText("100%");
-                    if (exportProgressBar != null) exportProgressBar.setProgress(100);
-                    if (exportProgressText != null) {
-                        exportProgressText.setText(R.string.faditor_export_complete_summary);
-                        exportProgressText.setTextColor(0xFFFFFFFF);
-                    }
-                    if (exportStatusIcon != null) {
-                        exportStatusIcon.setText("check_circle");
-                    }
-                    if (exportEtaText != null) exportEtaText.setVisibility(View.GONE);
-
-                    // Update title to "Export Complete"
-                    if (exportTitle != null) {
-                        exportTitle.setText(R.string.faditor_export_complete_title);
-                    }
-
-                    // Stop progress bar animation
-                    if (exportProgressBar != null) {
-                        exportProgressBar.setIndeterminate(false);
-                        exportProgressBar.setProgress(100);
-                    }
-
-                    // Hide cancel, show Done
-                    View cancelBtn = findViewById(R.id.btn_cancel_export);
-                    if (cancelBtn != null) cancelBtn.setVisibility(View.GONE);
-                    if (exportBtnDone != null) exportBtnDone.setVisibility(View.VISIBLE);
-
-                    // Hide Back button (export is done, user should tap Done)
-                    View backBtn = findViewById(R.id.export_btn_back);
-                    if (backBtn != null) backBtn.setVisibility(View.INVISIBLE);
-
-                    // Notify Records tab to auto-refresh when user navigates back
-                    com.fadcam.ui.RecordsFragment.requestRefresh();
-                });
-            }
-
-            @Override
-            public void onExportError(@NonNull Exception error) {
-                runOnUiThread(() -> {
-                    hideExportProgress();
-                    Toast.makeText(FaditorEditorActivity.this,
-                            getString(R.string.faditor_export_error, error.getMessage()),
-                            Toast.LENGTH_LONG).show();
-                    Log.e(TAG, "Export failed", error);
-                });
-            }
-        });
     }
+
+    /**
+     * Service listener for export progress/completion events.
+     * Updates the in-app overlay UI. If the Activity is destroyed, events
+     * are only reflected via the service's notification.
+     */
+    private final ExportService.ExportServiceListener exportServiceListener =
+            new ExportService.ExportServiceListener() {
+                @Override
+                public void onExportStarted(@NonNull String outputPath) {
+                    exportStartTimeMs = System.currentTimeMillis();
+                    runOnUiThread(() -> showExportProgress());
+                }
+
+                @Override
+                public void onExportProgress(float progress) {
+                    runOnUiThread(() -> {
+                        int percent = (int) (progress * 100);
+
+                        if (exportProgressPercent != null) {
+                            exportProgressPercent.setText(percent + "%");
+                        }
+                        if (exportProgressBar != null) {
+                            exportProgressBar.setIndeterminate(false);
+                            exportProgressBar.setProgress(percent);
+                        }
+                        if (exportProgressText != null) {
+                            exportProgressText.setText(
+                                    getString(R.string.faditor_exporting_percent, percent));
+                        }
+
+                        // Compute ETA
+                        if (progress > 0.05f && exportEtaText != null) {
+                            long elapsed = System.currentTimeMillis() - exportStartTimeMs;
+                            long totalEstimated = (long) (elapsed / progress);
+                            long remainingMs = totalEstimated - elapsed;
+                            exportEtaText.setText(getString(R.string.faditor_export_eta,
+                                    formatEta(remainingMs)));
+                            exportEtaText.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+
+                @Override
+                public void onExportCompleted(@NonNull String outputPath,
+                                              @NonNull ExportResult result) {
+                    runOnUiThread(() -> {
+                        Log.d(TAG, "Export saved to: " + outputPath);
+
+                        if (exportProgressPercent != null) exportProgressPercent.setText("100%");
+                        if (exportProgressBar != null) exportProgressBar.setProgress(100);
+                        if (exportProgressText != null) {
+                            exportProgressText.setText(R.string.faditor_export_complete_summary);
+                            exportProgressText.setTextColor(0xFFFFFFFF);
+                        }
+                        if (exportStatusIcon != null) exportStatusIcon.setText("check_circle");
+                        if (exportEtaText != null) exportEtaText.setVisibility(View.GONE);
+                        if (exportInfoText != null) exportInfoText.setVisibility(View.GONE);
+                        if (exportTitle != null) {
+                            exportTitle.setText(R.string.faditor_export_complete_title);
+                        }
+                        if (exportProgressBar != null) {
+                            exportProgressBar.setIndeterminate(false);
+                            exportProgressBar.setProgress(100);
+                        }
+
+                        View cancelBtn = findViewById(R.id.btn_cancel_export);
+                        if (cancelBtn != null) cancelBtn.setVisibility(View.GONE);
+                        if (exportBtnDone != null) exportBtnDone.setVisibility(View.VISIBLE);
+
+                        View backBtn = findViewById(R.id.export_btn_back);
+                        if (backBtn != null) backBtn.setVisibility(View.INVISIBLE);
+
+                        com.fadcam.ui.RecordsFragment.requestRefresh();
+                    });
+                }
+
+                @Override
+                public void onExportError(@NonNull Exception error) {
+                    runOnUiThread(() -> {
+                        hideExportProgress();
+                        Toast.makeText(FaditorEditorActivity.this,
+                                getString(R.string.faditor_export_error, error.getMessage()),
+                                Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Export failed", error);
+                    });
+                }
+            };
 
     /**
      * Format remaining time estimate into human-readable string.
@@ -2261,7 +2291,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 }
 
                 // If exporting, block back
-                if (exportManager != null && exportManager.isExporting()) {
+                if (isExportRunning()) {
                     Toast.makeText(FaditorEditorActivity.this,
                             R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
                     return;
@@ -2608,15 +2638,118 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Export helpers ────────────────────────────────────────────────
 
-    private void startExport() {
-        if (exportManager.isExporting()) {
+    /**
+     * Show an export confirmation bottom sheet with project info.
+     * On confirm, starts the export via the foreground service.
+     */
+    private void showExportConfirmation() {
+        if (isExportRunning()) {
+            Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Timeline tl = project.getTimeline();
+        int clipCount = tl.getClipCount();
+        long totalDurationMs = tl.getTotalDurationMs();
+        String durationStr = TimeFormatter.formatAuto(totalDurationMs);
+        boolean hasAudio = tl.hasAudioClips();
+        String audioInfo = hasAudio
+                ? " • " + tl.getAudioClips().size() + " audio"
+                : "";
+
+        String helperText = getString(R.string.faditor_export_confirm_helper,
+                durationStr, clipCount, audioInfo);
+
+        try {
+            InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
+                    getString(R.string.faditor_export_confirm_title),
+                    getString(R.string.faditor_export_confirm_action),
+                    getString(R.string.faditor_export_confirm_subtitle),
+                    R.drawable.ic_save,
+                    helperText);
+
+            sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+                @Override
+                public void onImportConfirmed(org.json.JSONObject json) { }
+
+                @Override
+                public void onResetConfirmed() {
+                    startExportViaService();
+                }
+            });
+            sheet.show(getSupportFragmentManager(), "export_confirm");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to show export confirmation, starting directly", e);
+            startExportViaService();
+        }
+    }
+
+    /**
+     * Start the export via the foreground service.
+     * The service handles the Transformer lifecycle and survives Activity destruction.
+     */
+    private void startExportViaService() {
+        if (isExportRunning()) {
             Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
             return;
         }
 
         // Pause playback during export
         playerManager.pause();
-        exportManager.export(project);
+
+        // Pass project to the service via static bridge
+        ExportService.setPendingProject(project);
+
+        // Start and bind to service
+        android.content.Intent serviceIntent =
+                new android.content.Intent(this, ExportService.class);
+        serviceIntent.setAction(ExportService.ACTION_START_EXPORT);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+
+        // Bind for real-time UI progress
+        bindService(new android.content.Intent(this, ExportService.class),
+                exportServiceConnection, BIND_AUTO_CREATE);
+
+        // Show export info on the overlay
+        showExportInfoOnScreen();
+    }
+
+    /**
+     * Check if an export is currently running (via bound service or manager).
+     */
+    private boolean isExportRunning() {
+        if (exportServiceBound && exportService != null && exportService.isExporting()) {
+            return true;
+        }
+        if (exportManager != null && exportManager.isExporting()) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Show export info (duration, clips, codec) on the export progress screen.
+     */
+    private void showExportInfoOnScreen() {
+        if (exportInfoText == null || project == null) return;
+
+        Timeline tl = project.getTimeline();
+        int clipCount = tl.getClipCount();
+        long totalDurationMs = tl.getTotalDurationMs();
+        String durationStr = TimeFormatter.formatAuto(totalDurationMs);
+        boolean hasAudio = tl.hasAudioClips();
+        String audioInfo = hasAudio
+                ? " • " + tl.getAudioClips().size() + " audio"
+                : "";
+
+        exportInfoText.setText(getString(R.string.faditor_export_info,
+                durationStr, clipCount, audioInfo));
+        exportInfoText.setVisibility(View.VISIBLE);
     }
 
     private void showExportProgress() {
@@ -2662,7 +2795,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * Show a confirmation bottom sheet before closing the editor.
      */
     private void showCloseConfirmation() {
-        if (exportManager != null && exportManager.isExporting()) {
+        if (isExportRunning()) {
             Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -2704,7 +2837,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     private void handleClose() {
-        if (exportManager != null && exportManager.isExporting()) {
+        if (isExportRunning()) {
             // Don't close while exporting
             Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
             return;

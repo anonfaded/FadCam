@@ -804,6 +804,21 @@
     <string name="faditor_export_eta">Estimated time: %s</string>
     <string name="faditor_export_complete_title">Export Complete</string>
     <string name="faditor_export_complete_summary">Your video has been saved to the Records Tab.</string>
+
+    <!-- Export confirmation bottom sheet -->
+    <string name="faditor_export_confirm_title">Export Video</string>
+    <string name="faditor_export_confirm_action">Export Now</string>
+    <string name="faditor_export_confirm_subtitle">Export will continue in background</string>
+    <string name="faditor_export_confirm_helper">%1$s • %2$d clip(s)%3$s\nExport runs as a background service — you can close the app and it will keep exporting.</string>
+
+    <!-- Export notification -->
+    <string name="faditor_export_notif_channel">Faditor Export</string>
+    <string name="faditor_export_notif_channel_desc">Notifications for ongoing video exports</string>
+    <string name="faditor_export_notif_title">Exporting video…</string>
+    <string name="faditor_export_notif_error_title">Export Failed</string>
+
+    <!-- Export info on export screen -->
+    <string name="faditor_export_info">%1$s • %2$d clip(s)%3$s • H.264 + AAC</string>
     <string name="faditor_flip_title">Flip</string>
     <string name="faditor_home_tagline">Lightweight video editor</string>
     <string name="faditor_new_project">New Project</string>
