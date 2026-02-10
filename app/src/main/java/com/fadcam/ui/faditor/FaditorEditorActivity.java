@@ -743,9 +743,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolAudioIcon = findViewById(R.id.tool_audio_icon);
         toolAudioLabel = findViewById(R.id.tool_audio_label);
 
-        // Undo/Redo buttons
+        // Undo/Redo buttons with count badges
         btnUndo = findViewById(R.id.btn_undo);
         btnRedo = findViewById(R.id.btn_redo);
+        TextView undoCount = findViewById(R.id.undo_count);
+        TextView redoCount = findViewById(R.id.redo_count);
         btnUndo.setOnClickListener(v -> performUndo());
         btnRedo.setOnClickListener(v -> performRedo());
         undoManager.setOnStateChangedListener((canUndo, canRedo) -> {
@@ -753,6 +755,21 @@ public class FaditorEditorActivity extends AppCompatActivity {
             btnRedo.setAlpha(canRedo ? 1.0f : 0.3f);
             btnUndo.setEnabled(canUndo);
             btnRedo.setEnabled(canRedo);
+
+            int uCount = undoManager.getUndoCount();
+            int rCount = undoManager.getRedoCount();
+            if (uCount > 0) {
+                undoCount.setText(String.valueOf(uCount));
+                undoCount.setVisibility(View.VISIBLE);
+            } else {
+                undoCount.setVisibility(View.GONE);
+            }
+            if (rCount > 0) {
+                redoCount.setText(String.valueOf(rCount));
+                redoCount.setVisibility(View.VISIBLE);
+            } else {
+                redoCount.setVisibility(View.GONE);
+            }
         });
 
         // Segment tools

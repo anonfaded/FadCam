@@ -29,7 +29,7 @@ import java.util.List;
 public class UndoManager {
 
     private static final String TAG = "UndoManager";
-    private static final int DEFAULT_MAX_HISTORY = 50;
+    private static final int DEFAULT_MAX_HISTORY = 200;
 
     @NonNull
     private final Deque<HistoryEntry> undoStack;
@@ -273,6 +273,16 @@ public class UndoManager {
     /** Whether there are actions to redo. */
     public boolean canRedo() {
         return !redoStack.isEmpty();
+    }
+
+    /** Number of actions that can be undone. */
+    public int getUndoCount() {
+        return undoStack.size();
+    }
+
+    /** Number of actions that can be redone. */
+    public int getRedoCount() {
+        return redoStack.size();
     }
 
     /** Get the description of the action that would be undone. */

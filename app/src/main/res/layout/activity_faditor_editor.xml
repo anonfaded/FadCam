@@ -137,20 +137,36 @@
                 android:textSize="13sp"
                 android:fontFamily="monospace" />
 
-            <!-- Undo button -->
-            <TextView
-                android:id="@+id/btn_undo"
-                android:layout_width="36dp"
+            <!-- Undo button with count badge -->
+            <FrameLayout
+                android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:layout_marginStart="8dp"
-                android:gravity="center"
-                android:fontFamily="@font/materialicons"
-                android:text="undo"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp"
-                android:alpha="0.3"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/faditor_undo" />
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:id="@+id/btn_undo"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="undo"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:alpha="0.3"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/faditor_undo" />
+
+                <TextView
+                    android:id="@+id/undo_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:paddingStart="3dp"
+                    android:paddingEnd="3dp"
+                    android:textSize="9sp"
+                    android:textColor="#AAAAAA"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <!-- Spacer -->
             <View
@@ -177,20 +193,36 @@
                 android:layout_height="0dp"
                 android:layout_weight="1" />
 
-            <!-- Redo button -->
-            <TextView
-                android:id="@+id/btn_redo"
-                android:layout_width="36dp"
+            <!-- Redo button with count badge -->
+            <FrameLayout
+                android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:gravity="center"
-                android:fontFamily="@font/materialicons"
-                android:text="redo"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp"
-                android:alpha="0.3"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/faditor_redo" />
+                android:layout_marginEnd="8dp">
+
+                <TextView
+                    android:id="@+id/btn_redo"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:fontFamily="@font/materialicons"
+                    android:text="redo"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:alpha="0.3"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/faditor_redo" />
+
+                <TextView
+                    android:id="@+id/redo_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|start"
+                    android:paddingStart="3dp"
+                    android:paddingEnd="3dp"
+                    android:textSize="9sp"
+                    android:textColor="#AAAAAA"
+                    android:visibility="gone" />
+            </FrameLayout>
 
             <!-- Total time -->
             <TextView
