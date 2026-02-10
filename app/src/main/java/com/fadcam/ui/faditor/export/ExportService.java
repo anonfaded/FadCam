@@ -269,7 +269,7 @@ public class ExportService extends Service {
         }
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification_icon)
+                .setSmallIcon(R.drawable.ic_export_video)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setProgress(100, percent, indeterminate)
@@ -296,7 +296,7 @@ public class ExportService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification_icon)
+                .setSmallIcon(R.drawable.ic_export_video)
                 .setContentTitle(getString(R.string.faditor_export_complete_title))
                 .setContentText(getString(R.string.faditor_export_complete_summary))
                 .setOngoing(false)
@@ -311,7 +311,7 @@ public class ExportService extends Service {
 
     private void showErrorNotification(@Nullable String errorMsg) {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification_icon)
+                .setSmallIcon(R.drawable.ic_export_video)
                 .setContentTitle(getString(R.string.faditor_export_notif_error_title))
                 .setContentText(errorMsg != null ? errorMsg
                         : getString(R.string.faditor_export_error, "Unknown error"))

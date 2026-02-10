@@ -2290,13 +2290,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     return;
                 }
 
-                // If exporting, block back
-                if (isExportRunning()) {
-                    Toast.makeText(FaditorEditorActivity.this,
-                            R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
                 // Double-press to exit
                 long now = System.currentTimeMillis();
                 if (now - lastBackPressTime < BACK_PRESS_INTERVAL_MS) {
@@ -2795,11 +2788,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * Show a confirmation bottom sheet before closing the editor.
      */
     private void showCloseConfirmation() {
-        if (isExportRunning()) {
-            Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
                     getString(R.string.faditor_close_confirm_title),
@@ -2837,11 +2825,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     private void handleClose() {
-        if (isExportRunning()) {
-            // Don't close while exporting
-            Toast.makeText(this, R.string.faditor_export_in_progress, Toast.LENGTH_SHORT).show();
-            return;
-        }
         saveProjectNow();
         finish();
     }
