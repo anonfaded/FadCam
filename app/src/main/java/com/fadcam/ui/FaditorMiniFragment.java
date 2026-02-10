@@ -308,12 +308,18 @@ public class FaditorMiniFragment extends BaseFragment {
         recentProjectsSection.setVisibility(View.VISIBLE);
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
 
-        // Show up to 10 most recent projects
-        int limit = Math.min(currentProjects.size(), 10);
+        // Update project count badge in the section header
+        TextView countBadge = recentProjectsSection.findViewById(R.id.project_count_badge);
+        if (countBadge != null) {
+            countBadge.setText(String.valueOf(currentProjects.size()));
+            countBadge.setVisibility(View.VISIBLE);
+        }
+
+        // Show all projects
         Typeface materialIcons = ResourcesCompat.getFont(requireContext(), R.font.materialicons);
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault());
 
-        for (int i = 0; i < limit; i++) {
+        for (int i = 0; i < currentProjects.size(); i++) {
             ProjectStorage.ProjectSummary summary = currentProjects.get(i);
             View row = createProjectRow(summary, materialIcons, dateFormat);
             recentProjectsList.addView(row);

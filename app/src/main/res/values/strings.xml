@@ -793,6 +793,17 @@
     <string name="faditor_crop_applied">Crop applied</string>
     <string name="faditor_crop_cancelled">Crop cancelled</string>
     <string name="faditor_crop_reset">Crop reset</string>
+    <string name="faditor_close_confirm_title">Close Editor?</string>
+    <string name="faditor_close_confirm_action">Close &amp; Save</string>
+    <string name="faditor_close_confirm_subtitle">Save project and return</string>
+    <string name="faditor_close_confirm_helper">Your project will be saved automatically. You can reopen it from recent projects anytime.</string>
+    <string name="faditor_back_press_exit">Press again to exit editor</string>
+    <string name="faditor_export_back_confirm">Export in progress. Go back to editor?</string>
+    <string name="faditor_export_done">Done</string>
+    <string name="faditor_export_back">Back</string>
+    <string name="faditor_export_eta">Estimated time: %s</string>
+    <string name="faditor_export_complete_title">Export Complete</string>
+    <string name="faditor_export_complete_summary">Your video has been saved to the Records Tab.</string>
     <string name="faditor_flip_title">Flip</string>
     <string name="faditor_home_tagline">Lightweight video editor</string>
     <string name="faditor_new_project">New Project</string>
@@ -830,7 +841,7 @@
     <string name="faditor_info_temp_title">Temporary files</string>
     <string name="faditor_info_temp_desc">During editing, temporary cache files may be created for preview optimization. These are automatically cleaned up after export and do not consume permanent storage.</string>
     <string name="faditor_info_projects_title">Recent projects</string>
-    <string name="faditor_info_projects_desc">Your 10 most recent editing sessions are shown for quick access. Each project is stored as a small JSON file on your device containing the video URI, trim points, and timestamps — no copies of your videos are made. Projects are auto-saved every few seconds, so your progress is never lost.\n\nYou can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; your original video files remain untouched.</string>
+    <string name="faditor_info_projects_desc">All your editing sessions are shown for quick access. Each project is stored as a small JSON file on your device containing the video URI, trim points, and timestamps — no copies of your videos are made. Projects are auto-saved every few seconds, so your progress is never lost.\n\nYou can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; your original video files remain untouched.</string>
     <string name="faditor_your_recordings">Your Recordings</string>
     <string name="faditor_browse_device">Browse Device</string>
     <string name="faditor_no_recordings">No recordings found yet. Start recording with FadCam to see your videos here.</string>

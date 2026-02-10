@@ -215,15 +215,29 @@
                     android:layout_marginBottom="8dp">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="@string/faditor_recent_projects"
                         android:textSize="13sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading"
                         android:textAllCaps="true"
                         android:letterSpacing="0.08" />
+
+                    <!-- Project count badge -->
+                    <TextView
+                        android:id="@+id/project_count_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textColor="#888888"
+                        android:layout_marginStart="6dp"
+                        android:visibility="gone" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
 
                     <!-- Selection mode toggle (long-press hint) -->
                     <TextView
