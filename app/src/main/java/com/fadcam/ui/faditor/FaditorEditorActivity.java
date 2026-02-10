@@ -3,6 +3,7 @@ package com.fadcam.ui.faditor;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.Typeface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.media3.common.Player;
 import androidx.media3.transformer.ExportResult;
 import androidx.media3.ui.PlayerView;
@@ -100,6 +102,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView remuxProgressText;
     private com.fadcam.ui.faditor.crop.CropOverlayView cropOverlay;
     private android.widget.ImageView imagePreview;
+
+    // ── Crop mode state ──────────────────────────────────────────────
+    private boolean inCropMode = false;
+    private String preCropPreset;           // saved on entering crop mode
+    private float preCropLeft, preCropTop, preCropRight, preCropBottom; // saved custom bounds
+    private View cropToolbar;
+    private View controlsSection;
 
     // ── Tool buttons ─────────────────────────────────────────────────
     private View toolTrim;
@@ -258,7 +267,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         updateCropUI(clip.getCropPreset());
 
         // Deactivate crop overlay when switching segments (or reselecting)
-        if (cropOverlay != null && cropOverlay.isActive()) {
+        if (inCropMode) {
+            exitCropMode(false);
+        } else if (cropOverlay != null && cropOverlay.isActive()) {
             cropOverlay.deactivate();
         }
 
@@ -401,6 +412,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerContainer = findViewById(R.id.player_container);
         cropOverlay = findViewById(R.id.crop_overlay);
         imagePreview = findViewById(R.id.image_preview);
+        controlsSection = findViewById(R.id.controls_section);
+        cropToolbar = findViewById(R.id.crop_toolbar);
         editorTimeline = findViewById(R.id.editor_timeline_view);
         editorTimeline.setOnSegmentActionListener(new EditorTimelineView.OnSegmentActionListener() {
             @Override
@@ -598,7 +611,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         findViewById(R.id.tool_add_asset).setOnClickListener(v -> showAddAssetPicker());
 
         // Close button
-        findViewById(R.id.btn_close).setOnClickListener(v -> handleClose());
+        findViewById(R.id.btn_close).setOnClickListener(v -> {
+            if (inCropMode) {
+                exitCropMode(false);
+                return;
+            }
+            handleClose();
+        });
     }
 
     /**
@@ -854,7 +873,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolFlip.setOnClickListener(v -> showFlipPicker());
 
         // Crop picker
-        toolCrop.setOnClickListener(v -> showCropPicker());
+        toolCrop.setOnClickListener(v -> enterCropMode());
 
         // Canvas picker (project-level aspect ratio)
         toolCanvas.setOnClickListener(v -> showCanvasPicker());
@@ -877,10 +896,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
             applyCanvasPreview(project.getCanvasPreset());
         });
 
-        // Restore free crop overlay if previously active
-        if ("custom".equals(clip.getCropPreset())) {
-            playerView.post(this::activateFreeCrop);
-        }
+        // Crop is stored in the model but NOT shown as overlay on restore.
+        // User must tap the Crop tool to enter crop mode.
+        // The crop will be applied on export regardless.
     }
 
     // ── Volume ────────────────────────────────────────────────────────
@@ -1056,31 +1074,218 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Crop ─────────────────────────────────────────────────────────
 
-    private void showCropPicker() {
+    /** The aspect ratio presets shown in crop mode. */
+    private static final String[][] CROP_ASPECT_PRESETS = {
+        {"free",  "Free"},
+        {"1_1",   "1:1"},
+        {"4_3",   "4:3"},
+        {"3_4",   "3:4"},
+        {"16_9",  "16:9"},
+        {"9_16",  "9:16"},
+    };
+
+    /**
+     * Enters crop mode: shows the crop overlay on the video preview and
+     * replaces the bottom controls with a crop-specific toolbar containing
+     * Cancel, aspect-ratio presets, and Done buttons.
+     */
+    private void enterCropMode() {
+        if (inCropMode) return;
+        inCropMode = true;
+
         Clip clip = getSelectedClip();
-        CropPickerBottomSheet sheet = CropPickerBottomSheet.newInstance(clip.getCropPreset());
-        sheet.setCallback(preset -> {
-            if ("custom".equals(preset)) {
-                // Activate free crop overlay
-                clip.setCropPreset("custom");
-                activateFreeCrop();
-            } else {
-                // Deactivate free crop overlay if active
-                if (cropOverlay != null && cropOverlay.isActive()) {
-                    cropOverlay.deactivate();
-                }
-                clip.setCropPreset(preset);
-                // Reset custom bounds when using a preset
-                if (!"none".equals(preset)) {
-                    // Store the preset bounds for later reference
-                    clip.setCustomCropBounds(0f, 0f, 1f, 1f);
-                }
+
+        // Save current state for cancel restoration
+        preCropPreset = clip.getCropPreset();
+        preCropLeft   = clip.getCropLeft();
+        preCropTop    = clip.getCropTop();
+        preCropRight  = clip.getCropRight();
+        preCropBottom = clip.getCropBottom();
+
+        // Pause playback while cropping
+        if (playerManager != null && playerManager.isPlaying()) {
+            playerManager.pause();
+            pauseAudioPlayer();
+            updatePlayPauseButton(false);
+        }
+
+        // Swap UI FIRST so the layout reflows before we compute the video rect.
+        // The player_container grows taller when controls_section is hidden.
+        if (controlsSection != null) controlsSection.setVisibility(View.GONE);
+        if (cropToolbar != null) cropToolbar.setVisibility(View.VISIBLE);
+
+        // Build aspect preset chips and wire buttons
+        buildCropPresetChips();
+        findViewById(R.id.crop_btn_done).setOnClickListener(v -> exitCropMode(true));
+        findViewById(R.id.crop_btn_cancel).setOnClickListener(v -> exitCropMode(false));
+        findViewById(R.id.crop_btn_reset).setOnClickListener(v -> {
+            if (cropOverlay != null) {
+                cropOverlay.setLockedAspectRatio(0f);
+                // Re-compute videoRect after reset since container may have changed
+                android.graphics.RectF videoRect = computeVideoContentRect();
+                cropOverlay.setVideoContentRect(videoRect);
+                cropOverlay.activate();
+                Clip c = getSelectedClip();
+                c.setCustomCropBounds(0f, 0f, 1f, 1f);
+                highlightActivePresetChip("free");
             }
-            updateCropUI(clip.getCropPreset());
-            updatePreviewTransforms();
-            scheduleAutoSave();
+            Toast.makeText(this, R.string.faditor_crop_reset, Toast.LENGTH_SHORT).show();
         });
-        sheet.show(getSupportFragmentManager(), "cropPicker");
+
+        // Set clip to "custom" and defer crop overlay activation until layout is complete.
+        // Using OnGlobalLayoutListener ensures the player container has its final
+        // dimensions after the controls section went GONE.
+        clip.setCropPreset("custom");
+        FrameLayout container = findViewById(R.id.player_container);
+        container.getViewTreeObserver().addOnGlobalLayoutListener(
+                new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        container.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        activateFreeCrop();
+                    }
+                });
+
+        Log.d(TAG, "Entered crop mode (saved: preset=" + preCropPreset
+                + ", bounds=[" + preCropLeft + "," + preCropTop
+                + "," + preCropRight + "," + preCropBottom + "])");
+    }
+
+    /**
+     * Exit crop mode.
+     *
+     * @param apply {@code true} to keep the crop, {@code false} to revert
+     */
+    private void exitCropMode(boolean apply) {
+        if (!inCropMode) return;
+        inCropMode = false;
+
+        Clip clip = getSelectedClip();
+
+        if (apply) {
+            // Keep current overlay bounds — they were already saved to the clip
+            // via the OnCropChangeListener. Determine if user made a meaningful crop.
+            boolean isFullFrame = Math.abs(clip.getCropLeft()) < 0.01f
+                    && Math.abs(clip.getCropTop()) < 0.01f
+                    && Math.abs(clip.getCropRight() - 1f) < 0.01f
+                    && Math.abs(clip.getCropBottom() - 1f) < 0.01f;
+            if (isFullFrame) {
+                clip.setCropPreset("none");
+                clip.setCustomCropBounds(0f, 0f, 1f, 1f);
+            }
+            // else keep "custom" preset with current bounds
+            Toast.makeText(this, R.string.faditor_crop_applied, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Crop applied: preset=" + clip.getCropPreset()
+                    + ", bounds=[" + clip.getCropLeft() + "," + clip.getCropTop()
+                    + "," + clip.getCropRight() + "," + clip.getCropBottom() + "]");
+        } else {
+            // Revert to saved state
+            clip.setCropPreset(preCropPreset);
+            clip.setCustomCropBounds(preCropLeft, preCropTop, preCropRight, preCropBottom);
+            Toast.makeText(this, R.string.faditor_crop_cancelled, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Crop cancelled, reverted to: " + preCropPreset);
+        }
+
+        // Deactivate the overlay
+        if (cropOverlay != null && cropOverlay.isActive()) {
+            cropOverlay.deactivate();
+        }
+
+        // Swap: show controls, hide crop toolbar
+        if (cropToolbar != null) cropToolbar.setVisibility(View.GONE);
+        if (controlsSection != null) controlsSection.setVisibility(View.VISIBLE);
+
+        updateCropUI(clip.getCropPreset());
+
+        // Defer preview transforms until layout has settled — the player container
+        // changes size when the controls section becomes visible again.
+        FrameLayout container = findViewById(R.id.player_container);
+        container.getViewTreeObserver().addOnGlobalLayoutListener(
+                new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        container.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        updatePreviewTransforms();
+                    }
+                });
+
+        scheduleAutoSave();
+    }
+
+    /**
+     * Builds the aspect-ratio preset chips inside the crop toolbar.
+     */
+    private void buildCropPresetChips() {
+        LinearLayout row = findViewById(R.id.crop_presets_row);
+        if (row == null) return;
+        row.removeAllViews();
+
+        float dp = getResources().getDisplayMetrics().density;
+        Typeface materialIcons = ResourcesCompat.getFont(this, R.font.materialicons);
+
+        for (String[] preset : CROP_ASPECT_PRESETS) {
+            String key   = preset[0];
+            String label = preset[1];
+
+            TextView chip = new TextView(this);
+            chip.setText(label);
+            chip.setTextSize(13);
+            chip.setTextColor(0xFFCCCCCC);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding((int)(14 * dp), (int)(8 * dp), (int)(14 * dp), (int)(8 * dp));
+            chip.setBackgroundResource(R.drawable.settings_home_row_bg);
+            chip.setTag(key);
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd((int)(6 * dp));
+            chip.setLayoutParams(lp);
+
+            chip.setOnClickListener(v -> applyCropAspectPreset(key));
+            row.addView(chip);
+        }
+
+        // Highlight the default ("free")
+        highlightActivePresetChip("free");
+    }
+
+    /**
+     * Applies an aspect ratio preset to the crop overlay.
+     */
+    private void applyCropAspectPreset(String key) {
+        if (cropOverlay == null || !cropOverlay.isActive()) return;
+
+        float ratio;
+        switch (key) {
+            case "1_1":  ratio = 1f;            break;
+            case "4_3":  ratio = 4f / 3f;       break;
+            case "3_4":  ratio = 3f / 4f;       break;
+            case "16_9": ratio = 16f / 9f;      break;
+            case "9_16": ratio = 9f / 16f;      break;
+            default:     ratio = 0f;             break; // free
+        }
+
+        cropOverlay.setLockedAspectRatio(ratio);
+        highlightActivePresetChip(key);
+    }
+
+    /**
+     * Highlights the active aspect ratio chip and dims the others.
+     */
+    private void highlightActivePresetChip(String activeKey) {
+        LinearLayout row = findViewById(R.id.crop_presets_row);
+        if (row == null) return;
+
+        for (int i = 0; i < row.getChildCount(); i++) {
+            View child = row.getChildAt(i);
+            if (child instanceof TextView) {
+                boolean isActive = activeKey.equals(child.getTag());
+                ((TextView) child).setTextColor(isActive ? 0xFF4CAF50 : 0xFFCCCCCC);
+                ((TextView) child).setTypeface(null,
+                        isActive ? Typeface.BOLD : Typeface.NORMAL);
+            }
+        }
     }
 
     /**
@@ -1093,6 +1298,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // PlayerView with resize_mode="fit" centres the video
         playerView.post(() -> {
             android.graphics.RectF videoRect = computeVideoContentRect();
+            Log.d(TAG, "activateFreeCrop: videoRect=" + videoRect
+                    + ", cropOverlay size=" + cropOverlay.getWidth() + "x" + cropOverlay.getHeight());
             cropOverlay.setVideoContentRect(videoRect);
 
             Clip clip = getSelectedClip();
@@ -1100,10 +1307,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     && (clip.getCropLeft() > 0 || clip.getCropTop() > 0
                     || clip.getCropRight() < 1 || clip.getCropBottom() < 1)) {
                 // Restore previous custom crop bounds
+                Log.d(TAG, "activateFreeCrop: restoring bounds ["
+                        + clip.getCropLeft() + "," + clip.getCropTop()
+                        + "," + clip.getCropRight() + "," + clip.getCropBottom() + "]");
                 cropOverlay.activate(
                         clip.getCropLeft(), clip.getCropTop(),
                         clip.getCropRight(), clip.getCropBottom());
             } else {
+                Log.d(TAG, "activateFreeCrop: full frame (no prior custom bounds)");
                 cropOverlay.activate();
             }
 
@@ -1129,12 +1340,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
         float offsetX = playerView.getLeft();
         float offsetY = playerView.getTop();
 
+        Log.d(TAG, "computeVideoContentRect: playerView size=" + viewW + "x" + viewH
+                + ", offset=(" + offsetX + "," + offsetY + ")");
+
         // Try to get actual video dimensions
         if (playerManager != null && playerManager.getPlayer() != null) {
             androidx.media3.common.VideoSize videoSize =
                     playerManager.getPlayer().getVideoSize();
             int videoW = videoSize.width;
             int videoH = videoSize.height;
+
+            Log.d(TAG, "computeVideoContentRect: videoSize=" + videoW + "x" + videoH);
 
             if (videoW > 0 && videoH > 0) {
                 float videoAspect = (float) videoW / videoH;
@@ -1153,11 +1369,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
                 float left = offsetX + (viewW - renderW) / 2f;
                 float top = offsetY + (viewH - renderH) / 2f;
-                return new android.graphics.RectF(left, top, left + renderW, top + renderH);
+                android.graphics.RectF result = new android.graphics.RectF(
+                        left, top, left + renderW, top + renderH);
+                Log.d(TAG, "computeVideoContentRect: result=" + result);
+                return result;
             }
         }
 
         // Fallback: assume full view
+        Log.d(TAG, "computeVideoContentRect: FALLBACK to full view");
         return new android.graphics.RectF(offsetX, offsetY, offsetX + viewW, offsetY + viewH);
     }
 
@@ -1757,38 +1977,124 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Apply rotation
         playerView.setRotation(degrees);
 
-        // Calculate scale for 90/270 rotation (video dimensions swap)
-        float flipScaleX = flipH ? -1f : 1f;
-        float flipScaleY = flipV ? -1f : 1f;
+        // Base scale: flip + 90/270 shrink
+        float baseScaleX = flipH ? -1f : 1f;
+        float baseScaleY = flipV ? -1f : 1f;
 
         if (degrees == 90 || degrees == 270) {
-            // When rotated 90 or 270, the video overflows its container.
-            // Scale down so rotated content fits within the original bounds.
             int w = playerView.getWidth();
             int h = playerView.getHeight();
             if (w > 0 && h > 0) {
-                float scale = Math.min((float) w / h, (float) h / w);
-                playerView.setScaleX(flipScaleX * scale);
-                playerView.setScaleY(flipScaleY * scale);
-            } else {
-                // Fallback: apply without scale adjustment
-                playerView.setScaleX(flipScaleX);
-                playerView.setScaleY(flipScaleY);
+                float rotScale = Math.min((float) w / h, (float) h / w);
+                baseScaleX *= rotScale;
+                baseScaleY *= rotScale;
             }
-        } else {
-            playerView.setScaleX(flipScaleX);
-            playerView.setScaleY(flipScaleY);
         }
 
-        // Crop preview: apply clip bounds on the PlayerView
+        // ── Crop preview ─────────────────────────────────────────────
+        // When a crop is applied and we're NOT in crop-mode (overlay active),
+        // clip the PlayerView to the crop region and scale it to fill the view.
+        FrameLayout container = findViewById(R.id.player_container);
         String cropPreset = clip.getCropPreset();
-        if ("custom".equals(cropPreset)) {
-            // Free crop: the overlay handles visual feedback
-            // Don't clip the player view — the overlay shows the crop
-        } else if (!"none".equals(cropPreset)) {
-            // For preset crops, we could clip the view but it's complex
-            // with rotation. The exported result is what matters.
+        boolean applyCropZoom = false;
+
+        if ("custom".equals(cropPreset) && !inCropMode) {
+            float cropL = clip.getCropLeft();
+            float cropT = clip.getCropTop();
+            float cropR = clip.getCropRight();
+            float cropB = clip.getCropBottom();
+            float cropW = cropR - cropL;
+            float cropH = cropB - cropT;
+
+            if (cropW > 0.01f && cropH > 0.01f
+                    && (cropW < 0.99f || cropH < 0.99f)) {
+
+                int viewW = playerView.getWidth();
+                int viewH = playerView.getHeight();
+                if (viewW > 0 && viewH > 0) {
+                    // Compute video render rect inside PlayerView (no parent offset)
+                    float renderW = viewW, renderH = viewH;
+                    float videoLeft = 0f, videoTop = 0f;
+
+                    if (playerManager != null && playerManager.getPlayer() != null) {
+                        androidx.media3.common.VideoSize vs =
+                                playerManager.getPlayer().getVideoSize();
+                        if (vs.width > 0 && vs.height > 0) {
+                            float vidAspect = (float) vs.width / vs.height;
+                            float viewAspect = (float) viewW / viewH;
+                            if (vidAspect > viewAspect) {
+                                renderW = viewW;
+                                renderH = viewW / vidAspect;
+                            } else {
+                                renderH = viewH;
+                                renderW = viewH * vidAspect;
+                            }
+                            videoLeft = (viewW - renderW) / 2f;
+                            videoTop = (viewH - renderH) / 2f;
+                        }
+                    }
+
+                    // Crop rect in PlayerView's own coordinate space
+                    float cL = videoLeft + cropL * renderW;
+                    float cT = videoTop + cropT * renderH;
+                    float cR = videoLeft + cropR * renderW;
+                    float cB = videoTop + cropB * renderH;
+
+                    // Clip the PlayerView so only the crop region is drawn
+                    playerView.setClipBounds(new android.graphics.Rect(
+                            Math.round(cL), Math.round(cT),
+                            Math.round(cR), Math.round(cB)));
+
+                    // Scale up so the clipped crop region fills the container
+                    float cropPixW = cR - cL;
+                    float cropPixH = cB - cT;
+                    float sX = (float) viewW / cropPixW;
+                    float sY = (float) viewH / cropPixH;
+                    float cropScale = Math.min(sX, sY);
+
+                    baseScaleX *= cropScale;
+                    baseScaleY *= cropScale;
+
+                    // Crop center in PlayerView coordinates
+                    float cropCX = (cL + cR) / 2f;
+                    float cropCY = (cT + cB) / 2f;
+
+                    // Pivot stays at view center. We need translation so that
+                    // the crop center maps to the container center after scaling.
+                    // With pivot = (vW/2, vH/2):
+                    //   mapped_x = vW/2 + totalScaleX*(cx - vW/2) + tx
+                    //   Want mapped_x = vW/2 → tx = -totalScaleX*(cx - vW/2)
+                    // Use absolute cropScale for translation (flip sign handled by scaleX).
+                    float tx = cropScale * (viewW / 2f - cropCX);
+                    float ty = cropScale * (viewH / 2f - cropCY);
+
+                    playerView.setPivotX(viewW / 2f);
+                    playerView.setPivotY(viewH / 2f);
+                    playerView.setTranslationX(tx);
+                    playerView.setTranslationY(ty);
+
+                    container.setClipChildren(true);
+                    container.setClipToPadding(true);
+                    applyCropZoom = true;
+                }
+            }
         }
+
+        if (!applyCropZoom) {
+            // Reset crop-related transforms
+            playerView.setClipBounds(null);
+            playerView.setPivotX(playerView.getWidth() / 2f);
+            playerView.setPivotY(playerView.getHeight() / 2f);
+            playerView.setTranslationX(0f);
+            playerView.setTranslationY(0f);
+            if (container != null) {
+                container.setClipChildren(false);
+                container.setClipToPadding(false);
+            }
+        }
+
+        playerView.setScaleX(baseScaleX);
+        playerView.setScaleY(baseScaleY);
     }
 
     private void initExport() {
@@ -1852,6 +2158,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                // If in crop mode, back = cancel crop
+                if (inCropMode) {
+                    exitCropMode(false);
+                    return;
+                }
                 handleClose();
             }
         });
@@ -2141,7 +2452,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Log.d(TAG, "Auto-advancing to segment " + nextIndex);
 
         // Deactivate crop overlay when switching segments
-        if (cropOverlay != null && cropOverlay.isActive()) {
+        if (inCropMode) {
+            exitCropMode(false);
+        } else if (cropOverlay != null && cropOverlay.isActive()) {
             cropOverlay.deactivate();
         }
 

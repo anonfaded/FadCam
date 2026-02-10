@@ -569,6 +569,97 @@
         </HorizontalScrollView>
     </LinearLayout>
 
+    <!-- ─── Crop mode toolbar (hidden by default) ──────────────────── -->
+    <LinearLayout
+        android:id="@+id/crop_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FF1A1A1A"
+        android:elevation="4dp"
+        android:visibility="gone">
+
+        <!-- Aspect ratio presets -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/crop_presets_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+        </HorizontalScrollView>
+
+        <!-- Cancel / Done buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <!-- Cancel button -->
+            <TextView
+                android:id="@+id/crop_btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="@string/faditor_cancel"
+                android:textColor="#FFCCCCCC"
+                android:textSize="14sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Reset button -->
+            <TextView
+                android:id="@+id/crop_btn_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="restart_alt"
+                android:textColor="#FF888888"
+                android:textSize="24sp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Done button -->
+            <TextView
+                android:id="@+id/crop_btn_done"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="check"
+                android:textColor="#FF4CAF50"
+                android:textSize="28sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+        </LinearLayout>
+    </LinearLayout>
+
     <!-- ─── Remux progress overlay (hidden by default) ────────────── -->
     <FrameLayout
         android:id="@+id/remux_progress_overlay"

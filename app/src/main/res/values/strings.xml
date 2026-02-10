@@ -789,6 +789,10 @@
     <string name="faditor_segment_deleted">Segment deleted</string>
     <string name="faditor_segment_duplicated">Segment duplicated</string>
     <string name="faditor_crop_title">Crop Aspect Ratio</string>
+    <string name="faditor_crop_free">Free</string>
+    <string name="faditor_crop_applied">Crop applied</string>
+    <string name="faditor_crop_cancelled">Crop cancelled</string>
+    <string name="faditor_crop_reset">Crop reset</string>
     <string name="faditor_flip_title">Flip</string>
     <string name="faditor_home_tagline">Lightweight video editor</string>
     <string name="faditor_new_project">New Project</string>
