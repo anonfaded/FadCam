@@ -28,6 +28,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.utils.RecordingStoragePaths;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -309,11 +310,21 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
             try {
                 File externalDir = ctx.getExternalFilesDir(null);
                 if (externalDir != null) {
+                    File base = new File(externalDir, Constants.RECORDING_DIRECTORY);
                     items.addAll(scanFileDir(
-                            new File(externalDir, Constants.RECORDING_DIRECTORY),
+                            new File(base, Constants.RECORDING_SUBDIR_CAMERA),
                             getString(R.string.faditor_fadcam_source)));
                     items.addAll(scanFileDir(
-                            new File(externalDir, Constants.RECORDING_DIRECTORY_FADREC),
+                            new File(base, Constants.RECORDING_SUBDIR_DUAL),
+                            getString(R.string.faditor_fadcam_source)));
+                    items.addAll(scanFileDir(
+                            new File(base, Constants.RECORDING_SUBDIR_SCREEN),
+                            getString(R.string.faditor_fadrec_source)));
+                    items.addAll(scanFileDir(
+                            new File(base, Constants.RECORDING_SUBDIR_FADITOR),
+                            getString(R.string.faditor_fadcam_source)));
+                    items.addAll(scanFileDir(
+                            new File(base, Constants.RECORDING_SUBDIR_STREAM),
                             getString(R.string.faditor_fadrec_source)));
                     Log.d(TAG, "Scanned internal storage: " + items.size() + " videos");
                 }
@@ -352,23 +363,36 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         try {
             DocumentFile dir = DocumentFile.fromTreeUri(ctx, treeUri);
             if (dir == null || !dir.isDirectory() || !dir.canRead()) return items;
-
-            for (DocumentFile doc : dir.listFiles()) {
-                if (doc == null || !doc.isFile()) continue;
-                String name = doc.getName();
-                String mime = doc.getType();
-                if (name != null && mime != null && mime.startsWith("video/")
-                        && name.endsWith(Constants.RECORDING_FILE_EXTENSION)
-                        && !name.startsWith("temp_")) {
-                    items.add(new RecordingItem(
-                            doc.getUri(), name, doc.length(), doc.lastModified(),
-                            getString(R.string.faditor_fadcam_source)));
-                }
-            }
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_CAMERA, getString(R.string.faditor_fadcam_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_DUAL, getString(R.string.faditor_fadcam_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_SCREEN, getString(R.string.faditor_fadrec_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_FADITOR, getString(R.string.faditor_fadcam_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_STREAM, getString(R.string.faditor_fadrec_source));
         } catch (Exception e) {
             Log.e(TAG, "Error listing SAF files", e);
         }
         return items;
+    }
+
+    private void addSafDirectoryItems(
+            @NonNull List<RecordingItem> items,
+            @NonNull DocumentFile baseDir,
+            @NonNull String directoryName,
+            @NonNull String source
+    ) {
+        DocumentFile child = RecordingStoragePaths.findOrCreateChildDirectory(baseDir, directoryName, false);
+        if (child == null || !child.isDirectory() || !child.canRead()) return;
+        for (DocumentFile doc : child.listFiles()) {
+            if (doc == null || !doc.isFile()) continue;
+            String name = doc.getName();
+            String mime = doc.getType();
+            if (name != null && mime != null && mime.startsWith("video/")
+                    && name.endsWith(Constants.RECORDING_FILE_EXTENSION)
+                    && !name.startsWith("temp_")) {
+                items.add(new RecordingItem(
+                        doc.getUri(), name, doc.length(), doc.lastModified(), source));
+            }
+        }
     }
 
     private boolean hasSafPermission(@NonNull Context ctx, @NonNull Uri treeUri) {

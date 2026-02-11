@@ -35,6 +35,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.ScreenRecordingState;
 import com.fadcam.fadrec.encoding.ScreenRecordingPipeline;
 import com.fadcam.opengl.WatermarkInfoProvider;
+import com.fadcam.utils.RecordingStoragePaths;
 
 import java.io.File;
 import java.io.IOException;
@@ -694,9 +695,13 @@ public class ScreenRecordingService extends Service {
                     Log.e(TAG, "Custom storage selected but URI is null, falling back to internal");
                     // Fall through to internal storage
                 } else {
-                    android.net.Uri treeUri = android.net.Uri.parse(customUriString);
-                    androidx.documentfile.provider.DocumentFile pickedDir = 
-                        androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri);
+                    androidx.documentfile.provider.DocumentFile pickedDir =
+                        RecordingStoragePaths.getSafCategoryDir(
+                            this,
+                            customUriString,
+                            RecordingStoragePaths.Category.SCREEN,
+                            true
+                        );
                     
                     if (pickedDir == null || !pickedDir.canWrite()) {
                         Log.e(TAG, "Cannot write to custom directory, falling back to internal");
@@ -731,9 +736,13 @@ public class ScreenRecordingService extends Service {
             }
             
             // Internal storage (default or fallback)
-            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY_FADREC);
-            if (!videoDir.exists() && !videoDir.mkdirs()) {
-                Log.e(TAG, "Cannot create FadRec directory: " + videoDir.getAbsolutePath());
+            File videoDir = RecordingStoragePaths.getInternalCategoryDir(
+                this,
+                RecordingStoragePaths.Category.SCREEN,
+                true
+            );
+            if (videoDir == null) {
+                Log.e(TAG, "Cannot create Screen directory in recording root");
                 Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
                 return null;
             }

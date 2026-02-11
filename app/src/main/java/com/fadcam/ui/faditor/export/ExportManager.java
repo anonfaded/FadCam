@@ -37,6 +37,7 @@ import com.fadcam.ui.faditor.model.Clip;
 import com.fadcam.ui.faditor.model.ExportSettings;
 import com.fadcam.ui.faditor.model.FaditorProject;
 import com.fadcam.ui.faditor.model.Timeline;
+import com.fadcam.utils.RecordingStoragePaths;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -700,12 +701,14 @@ public class ExportManager {
             return new File(tempDir, fileName).getAbsolutePath();
         } else {
             // Internal mode — same directory as recordings
-            File outputDir = new File(
-                    context.getExternalFilesDir(null),
-                    Constants.RECORDING_DIRECTORY
+            File outputDir = RecordingStoragePaths.getInternalCategoryDir(
+                    context,
+                    RecordingStoragePaths.Category.FADITOR,
+                    true
             );
-            if (!outputDir.exists()) {
-                outputDir.mkdirs();
+            if (outputDir == null) {
+                // Fallback to app files dir if category dir could not be created.
+                outputDir = context.getExternalFilesDir(null);
             }
             pendingSafCopy = false;
             safExportFileName = null;
@@ -738,6 +741,15 @@ public class ExportManager {
             DocumentFile pickedDir = DocumentFile.fromTreeUri(context, treeUri);
             if (pickedDir == null || !pickedDir.canWrite()) {
                 Log.e(TAG, "SAF copy: cannot write to custom directory");
+                return null;
+            }
+            pickedDir = RecordingStoragePaths.findOrCreateChildDirectory(
+                    pickedDir,
+                    Constants.RECORDING_SUBDIR_FADITOR,
+                    true
+            );
+            if (pickedDir == null || !pickedDir.canWrite()) {
+                Log.e(TAG, "SAF copy: cannot write to Faditor subdirectory");
                 return null;
             }
 

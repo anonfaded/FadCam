@@ -41,6 +41,7 @@ import com.fadcam.dualcam.DualCameraConfig;
 import com.fadcam.dualcam.DualCameraState;
 import com.fadcam.opengl.GLRecordingPipeline;
 import com.fadcam.opengl.WatermarkInfoProvider;
+import com.fadcam.utils.RecordingStoragePaths;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -1258,8 +1259,8 @@ public class DualCameraRecordingService extends Service {
                     return null;
                 }
 
-                Uri treeUri = Uri.parse(treeUriString);
-                DocumentFile treeDoc = DocumentFile.fromTreeUri(this, treeUri);
+                DocumentFile treeDoc = RecordingStoragePaths.getSafCategoryDir(
+                        this, treeUriString, RecordingStoragePaths.Category.DUAL, true);
                 if (treeDoc == null || !treeDoc.exists() || !treeDoc.canWrite()) {
                     Log.e(TAG, "Cannot write to custom storage location");
                     return null;
@@ -1283,9 +1284,10 @@ public class DualCameraRecordingService extends Service {
             }
         } else {
             // Internal mode — write directly to recording directory
-            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-            if (!videoDir.exists() && !videoDir.mkdirs()) {
-                Log.e(TAG, "Cannot create recording directory: " + videoDir.getAbsolutePath());
+            File videoDir = RecordingStoragePaths.getInternalCategoryDir(
+                    this, RecordingStoragePaths.Category.DUAL, true);
+            if (videoDir == null) {
+                Log.e(TAG, "Cannot create recording directory for dual camera");
                 return null;
             }
             safRecordingPfd = null;

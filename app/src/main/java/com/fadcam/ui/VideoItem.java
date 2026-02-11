@@ -8,10 +8,21 @@ import java.util.Objects;
  * whether it's stored internally (File) or via SAF (DocumentFile).
  */
 public class VideoItem {
+    public enum Category {
+        ALL,
+        CAMERA,
+        DUAL,
+        SCREEN,
+        FADITOR,
+        STREAM,
+        UNKNOWN
+    }
+
     public final Uri uri; // The unique identifier (file:// or content://)
     public final String displayName; // Filename
     public final long size; // Size in bytes
     public final long lastModified; // Timestamp
+    public final Category category; // Folder-derived source category
 
     public boolean isTemporary = false;
     public boolean isNew = false;
@@ -19,10 +30,15 @@ public class VideoItem {
     public boolean isSkeleton = false; // Flag for skeleton loading
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
+        this(uri, displayName, size, lastModified, Category.UNKNOWN);
+    }
+
+    public VideoItem(Uri uri, String displayName, long size, long lastModified, Category category) {
         this.uri = uri;
         this.displayName = displayName;
         this.size = size;
         this.lastModified = lastModified;
+        this.category = category == null ? Category.UNKNOWN : category;
     }
     
     /**
@@ -59,6 +75,7 @@ public class VideoItem {
                 ", displayName='" + displayName + '\'' +
                 ", size=" + size +
                 ", lastModified=" + lastModified +
+                ", category=" + category +
                 '}';
     }
 }

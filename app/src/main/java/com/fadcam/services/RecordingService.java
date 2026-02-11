@@ -54,6 +54,7 @@ import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.GeotagHelper;
+import com.fadcam.utils.RecordingStoragePaths;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -3030,6 +3031,9 @@ public class RecordingService extends Service {
             com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
         boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        RecordingStoragePaths.Category category = isStreamAndSave
+                ? RecordingStoragePaths.Category.STREAM
+                : RecordingStoragePaths.Category.CAMERA;
         
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/DocumentFile mode
@@ -3038,8 +3042,8 @@ public class RecordingService extends Service {
                 Log.e(TAG, "createNextSegmentOutputFile: Custom storage selected but URI is null");
                 return null;
             }
-            Uri treeUri = Uri.parse(customUriString);
-            DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
+            DocumentFile pickedDir = RecordingStoragePaths.getSafCategoryDir(
+                    this, customUriString, category, true);
             if (pickedDir == null || !pickedDir.canWrite()) {
                 Log.e(TAG, "createNextSegmentOutputFile: Cannot write to selected custom directory");
                 return null;
@@ -3077,9 +3081,9 @@ public class RecordingService extends Service {
                     + Constants.RECORDING_FILE_EXTENSION;
 
             // Use the same directory as the first segment (app's external files directory)
-            File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-            if (!videoDir.exists() && !videoDir.mkdirs()) {
-                Log.e(TAG, "Cannot create recording directory: " + videoDir.getAbsolutePath());
+            File videoDir = RecordingStoragePaths.getInternalCategoryDir(this, category, true);
+            if (videoDir == null) {
+                Log.e(TAG, "Cannot create recording directory for category: " + category);
                 Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
                 return null;
             }
@@ -3718,12 +3722,15 @@ public class RecordingService extends Service {
             com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
         boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        RecordingStoragePaths.Category category = isStreamAndSave
+                ? RecordingStoragePaths.Category.STREAM
+                : RecordingStoragePaths.Category.CAMERA;
         
         String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                 + Constants.RECORDING_FILE_EXTENSION;
-        File videoDir = new File(getExternalFilesDir(null), Constants.RECORDING_DIRECTORY);
-        if (!videoDir.exists() && !videoDir.mkdirs()) {
-            Log.e(TAG, "Cannot create internal recording directory: " + videoDir.getAbsolutePath());
+        File videoDir = RecordingStoragePaths.getInternalCategoryDir(this, category, true);
+        if (videoDir == null) {
+            Log.e(TAG, "Cannot create internal recording directory for category: " + category);
             Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
             return null;
         }
@@ -3746,9 +3753,16 @@ public class RecordingService extends Service {
                     stopRecording();
                     return;
                 }
-                Uri treeUri = Uri.parse(customUriString);
-                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile
-                        .fromTreeUri(RecordingService.this, treeUri);
+                boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode =
+                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamAndSave = isStreamingActive
+                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                RecordingStoragePaths.Category category = isStreamAndSave
+                        ? RecordingStoragePaths.Category.STREAM
+                        : RecordingStoragePaths.Category.CAMERA;
+                androidx.documentfile.provider.DocumentFile pickedDir = RecordingStoragePaths.getSafCategoryDir(
+                        RecordingService.this, customUriString, category, true);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     Log.e(TAG, "Segment rollover: Cannot write to selected custom directory");
                     stopRecording();
@@ -3756,7 +3770,8 @@ public class RecordingService extends Service {
                 }
                 String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
                 String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
-                String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + segmentSuffix + ".mp4";
+                String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+                String baseFilename = filenamePrefix + timestamp + segmentSuffix + ".mp4";
                 Log.d(TAG, "Creating new segment file: " + baseFilename);
                 androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
                 if (videoFile == null) {
@@ -3956,9 +3971,16 @@ public class RecordingService extends Service {
                     stopSelf();
                     return;
                 }
-                Uri treeUri = Uri.parse(customUriString);
-                androidx.documentfile.provider.DocumentFile pickedDir = androidx.documentfile.provider.DocumentFile
-                        .fromTreeUri(this, treeUri);
+                boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamAndSave = isStreamingActive
+                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                RecordingStoragePaths.Category category = isStreamAndSave
+                        ? RecordingStoragePaths.Category.STREAM
+                        : RecordingStoragePaths.Category.CAMERA;
+                androidx.documentfile.provider.DocumentFile pickedDir = RecordingStoragePaths.getSafCategoryDir(
+                        this, customUriString, category, true);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     Log.e(TAG, "Cannot write to selected custom directory");
                     Toast.makeText(this, "Cannot write to selected custom directory", Toast.LENGTH_LONG).show();
@@ -3966,7 +3988,8 @@ public class RecordingService extends Service {
                     return;
                 }
                 String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-                String baseFilename = Constants.RECORDING_DIRECTORY + "_" + timestamp + ".mp4";
+                String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+                String baseFilename = filenamePrefix + timestamp + ".mp4";
                 androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
                 if (videoFile == null) {
                     Log.e(TAG, "Failed to create SAF file");

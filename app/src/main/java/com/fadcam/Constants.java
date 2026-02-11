@@ -261,6 +261,11 @@ public abstract class Constants {
         "com.fadcam.EXTRA_CAMERA_TYPE_SWITCH";
 
     public static final String RECORDING_DIRECTORY = "FadCam";
+    public static final String RECORDING_SUBDIR_CAMERA = "Camera";
+    public static final String RECORDING_SUBDIR_DUAL = "Dual";
+    public static final String RECORDING_SUBDIR_SCREEN = "Screen";
+    public static final String RECORDING_SUBDIR_FADITOR = "Faditor";
+    public static final String RECORDING_SUBDIR_STREAM = "Stream";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
     public static final double RECORDING_COMPRESSION_FACTOR = 0.33;
 

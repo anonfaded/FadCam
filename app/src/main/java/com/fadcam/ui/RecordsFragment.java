@@ -55,6 +55,7 @@ import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager; // Import your manager
 import com.fadcam.Utils;
+import com.fadcam.utils.RecordingStoragePaths;
 // Import the new VideoItem class
 // Ensure adapter import is correct
 import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
@@ -62,6 +63,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.chip.Chip;
 
 // Add AppLock imports
 import com.guardanis.applock.AppLock;
@@ -200,17 +202,11 @@ public class RecordsFragment extends BaseFragment implements
                     recordsAdapter.setSkeletonMode(false);
                 }
 
-                // Replace data in all collections
+                // Replace source data, then apply active filter to visible list.
                 allLoadedItems.clear();
                 allLoadedItems.addAll(actualItems);
-                videoItems.clear();
-                videoItems.addAll(actualItems);
-
-                // CRITICAL FIX: Update adapter's internal records list
-                if (recordsAdapter != null) {
-                    recordsAdapter.updateRecords(actualItems);
-                    Log.d(TAG, "Adapter updated with " + actualItems.size() + " videos");
-                }
+                applyActiveFilterToUi();
+                Log.d(TAG, "Applied active filter to " + actualItems.size() + " loaded videos");
 
                 // Update UI visibility
                 updateUiVisibility();
@@ -324,6 +320,15 @@ public class RecordsFragment extends BaseFragment implements
     private View selectAllContainer;
     private android.widget.ImageView selectAllCheck;
     private CharSequence originalToolbarTitle;
+    private Chip chipFilterAll;
+    private Chip chipFilterCamera;
+    private Chip chipFilterDual;
+    private Chip chipFilterScreen;
+    private Chip chipFilterFaditor;
+    private Chip chipFilterStream;
+    private TextView filterHelperText;
+    private TextView filterChecklistButton;
+    private VideoItem.Category activeFilter = VideoItem.Category.ALL;
 
     // --- Selection State ---
     private boolean isInSelectionMode = false;
@@ -582,6 +587,12 @@ public class RecordsFragment extends BaseFragment implements
                                     break;
                                 }
                             }
+                            for (int i = allLoadedItems.size() - 1; i >= 0; i--) {
+                                if (allLoadedItems.get(i).uri.equals(originalTempSafUri)) {
+                                    allLoadedItems.remove(i);
+                                    break;
+                                }
+                            }
 
                             if (success && finalUriString != null) {
                                 Uri finalUri = Uri.parse(finalUriString);
@@ -595,6 +606,7 @@ public class RecordsFragment extends BaseFragment implements
                                     newItem.isTemporary = false;
                                     newItem.isNew = true;
                                     videoItems.add(0, newItem); // Add to top, assuming latest
+                                    allLoadedItems.add(0, newItem);
                                     Log.d(TAG, "Added final SAF VideoItem: " + finalUriString);
                                 } else {
                                     Log.w(TAG, "Final SAF DocumentFile does not exist or is null: " + finalUriString);
@@ -608,11 +620,9 @@ public class RecordsFragment extends BaseFragment implements
                             }
 
                             if (foundAndRemoved || (success && finalUriString != null)) {
-                                // Sort and update UI only if changes were made
-                                performVideoSort(); // Re-sort the list
-                                if (recordsAdapter != null) {
-                                    recordsAdapter.notifyDataSetChanged(); // Consider more specific notifications
-                                }
+                                // Sort source list and re-apply current filter.
+                                sortItems(allLoadedItems, currentSortOption);
+                                applyActiveFilterToUi();
                                 updateUiVisibility();
                             }
                             return; // Handled SAF replacement case
@@ -755,6 +765,14 @@ public class RecordsFragment extends BaseFragment implements
         closeButton = view.findViewById(R.id.action_close);
         selectAllContainer = view.findViewById(R.id.action_select_all_container);
         selectAllCheck = view.findViewById(R.id.action_select_all_check);
+        chipFilterAll = view.findViewById(R.id.chip_filter_all);
+        chipFilterCamera = view.findViewById(R.id.chip_filter_camera);
+        chipFilterDual = view.findViewById(R.id.chip_filter_dual);
+        chipFilterScreen = view.findViewById(R.id.chip_filter_screen);
+        chipFilterFaditor = view.findViewById(R.id.chip_filter_faditor);
+        chipFilterStream = view.findViewById(R.id.chip_filter_stream);
+        filterHelperText = view.findViewById(R.id.filter_helper_text);
+        filterChecklistButton = view.findViewById(R.id.btn_filter_checklist);
 
         // Setup menu button click listener
         if (menuButton != null) {
@@ -848,6 +866,7 @@ public class RecordsFragment extends BaseFragment implements
                 updateUiForSelectionMode();
             });
         }
+        setupFilterUi();
 
         originalToolbarTitle = getString(R.string.records_title);
 
@@ -942,9 +961,11 @@ public class RecordsFragment extends BaseFragment implements
             loadRecordsList();
         } else {
             Log.d(TAG, "onViewCreated: Existing data found (" + videoItems.size() + " items), updating UI visibility.");
-            // If data exists (e.g., fragment recreated), update adapter & UI
-            if (recordsAdapter != null)
-                recordsAdapter.updateRecords(videoItems); // Make sure adapter has the data
+            // If data exists (e.g., fragment recreated), ensure source list + active filter are applied.
+            if (allLoadedItems.isEmpty()) {
+                allLoadedItems.addAll(videoItems);
+            }
+            applyActiveFilterToUi();
             updateUiVisibility();
         }
         // unlocked (session-based) -----
@@ -1386,6 +1407,16 @@ public class RecordsFragment extends BaseFragment implements
     private final List<VideoItem> cachedSafItems = new ArrayList<>(); // Cache SAF items
     private final List<VideoItem> cachedTempItems = new ArrayList<>(); // Cache temp items
 
+    private static final class SafCandidate {
+        final DocumentFile file;
+        final VideoItem.Category category;
+
+        SafCandidate(@NonNull DocumentFile file, @NonNull VideoItem.Category category) {
+            this.file = file;
+            this.category = category;
+        }
+    }
+
     // --- Listing Helpers ---
 
     // Helper to combine lists, avoiding duplicates
@@ -1415,13 +1446,21 @@ public class RecordsFragment extends BaseFragment implements
             return items;
         }
         
-        // Scan FadCam directory
-        File fadCamDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
-        items.addAll(scanDirectory(fadCamDir, "FadCam"));
-        
-        // Scan FadRec directory
-        File fadRecDir = new File(recordsDir, Constants.RECORDING_DIRECTORY_FADREC);
-        items.addAll(scanDirectory(fadRecDir, "FadRec"));
+        File baseDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
+        if (!baseDir.exists() || !baseDir.isDirectory()) {
+            Log.i(TAG, "LOG_GET_INTERNAL: Base directory does not exist yet: " + baseDir.getAbsolutePath());
+            return items;
+        }
+
+        // Preferred folder-based categorization.
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_CAMERA), VideoItem.Category.CAMERA);
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_DUAL), VideoItem.Category.DUAL);
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_SCREEN), VideoItem.Category.SCREEN);
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_FADITOR), VideoItem.Category.FADITOR);
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_STREAM), VideoItem.Category.STREAM);
+
+        // Backward compatibility: include legacy root-level files under FadCam.
+        scanLegacyRootInternal(items, baseDir);
         
         Log.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " total internal records. END.");
         return items;
@@ -1430,45 +1469,59 @@ public class RecordsFragment extends BaseFragment implements
     /**
      * Helper method to scan a directory for video files.
      */
-    private List<VideoItem> scanDirectory(File directory, String dirName) {
-        List<VideoItem> items = new ArrayList<>();
-        Log.d(TAG, "LOG_GET_INTERNAL: Checking directory: " + directory.getAbsolutePath());
-
-        if (directory.exists() && directory.isDirectory()) {
-            Log.d(TAG, "LOG_GET_INTERNAL: Directory exists. Listing files.");
-            File[] files = directory.listFiles();
-            if (files != null) {
-                Log.d(TAG, "LOG_GET_INTERNAL: Found " + files.length + " files/dirs in " + dirName + " storage.");
-                for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)
-                            && !file.getName().startsWith("temp_")) {
-                        long lastModifiedMeta = file.lastModified();
-                        long timestampFromFile = Utils.parseTimestampFromFilename(file.getName());
-                        long finalTimestamp = lastModifiedMeta;
-
-                        if (lastModifiedMeta <= 0 && timestampFromFile > 0) {
-                            finalTimestamp = timestampFromFile;
-                        } else if (lastModifiedMeta <= 0 && timestampFromFile <= 0) {
-                            finalTimestamp = System.currentTimeMillis();
-                        }
-                        Uri uri = Uri.fromFile(file);
-                        VideoItem newItem = new VideoItem(uri, file.getName(), file.length(), finalTimestamp);
-                        newItem.isTemporary = false;
-                        newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
-                        items.add(newItem);
-                        Log.v(TAG, "LOG_GET_INTERNAL: Added internal item: " + file.getName());
-                    } else {
-                        Log.v(TAG, "LOG_GET_INTERNAL: Skipped item (not a valid video file or is temp): "
-                                + file.getName());
-                    }
-                }
-            } else {
-                Log.w(TAG, "LOG_GET_INTERNAL: Directory listFiles returned null for " + dirName);
-            }
-        } else {
-            Log.i(TAG, "LOG_GET_INTERNAL: Directory does not exist yet: " + directory.getAbsolutePath());
+    private void scanCategoryDirectoryInternal(List<VideoItem> out, File directory, VideoItem.Category category) {
+        Log.d(TAG, "LOG_GET_INTERNAL: Checking category dir: " + directory.getAbsolutePath() + " (" + category + ")");
+        if (!directory.exists() || !directory.isDirectory()) {
+            return;
         }
-        return items;
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            if (!file.isFile()) {
+                continue;
+            }
+            String name = file.getName();
+            if (!isSupportedVideoFile(name) || name.startsWith("temp_")) {
+                continue;
+            }
+            long lastModifiedMeta = file.lastModified();
+            long timestampFromFile = Utils.parseTimestampFromFilename(name);
+            long finalTimestamp = lastModifiedMeta > 0
+                    ? lastModifiedMeta
+                    : (timestampFromFile > 0 ? timestampFromFile : System.currentTimeMillis());
+            VideoItem newItem = new VideoItem(Uri.fromFile(file), name, file.length(), finalTimestamp, category);
+            newItem.isTemporary = false;
+            newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
+            out.add(newItem);
+        }
+    }
+
+    private void scanLegacyRootInternal(List<VideoItem> out, File baseDir) {
+        File[] files = baseDir.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            if (!file.isFile()) {
+                continue;
+            }
+            String name = file.getName();
+            if (!isSupportedVideoFile(name) || name.startsWith("temp_")) {
+                continue;
+            }
+            VideoItem.Category inferred = inferCategoryFromLegacyName(name);
+            long lastModifiedMeta = file.lastModified();
+            long timestampFromFile = Utils.parseTimestampFromFilename(name);
+            long finalTimestamp = lastModifiedMeta > 0
+                    ? lastModifiedMeta
+                    : (timestampFromFile > 0 ? timestampFromFile : System.currentTimeMillis());
+            VideoItem item = new VideoItem(Uri.fromFile(file), name, file.length(), finalTimestamp, inferred);
+            item.isTemporary = false;
+            item.isNew = Utils.isVideoConsideredNew(finalTimestamp);
+            out.add(item);
+        }
     }
 
     private List<VideoItem> getSafRecordsList(Uri treeUri) {
@@ -1493,89 +1546,39 @@ public class RecordsFragment extends BaseFragment implements
         }
         Log.d(TAG, "LOG_GET_SAF: SAF Directory " + targetDir.getName() + " is accessible. Listing files.");
 
-        DocumentFile[] files = targetDir.listFiles();
-        Log.d(TAG, "LOG_GET_SAF: Found " + files.length + " files/dirs in SAF location.");
+        List<SafCandidate> bucketedFiles = new ArrayList<>();
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_CAMERA, VideoItem.Category.CAMERA);
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_DUAL, VideoItem.Category.DUAL);
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_SCREEN, VideoItem.Category.SCREEN);
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_FADITOR, VideoItem.Category.FADITOR);
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_STREAM, VideoItem.Category.STREAM);
 
-        // Progressive processing: process files in chunks to avoid blocking
-        final int CHUNK_SIZE = 10; // Process 10 files at a time
-        int totalFiles = files.length;
-
-        for (int i = 0; i < totalFiles; i += CHUNK_SIZE) {
-            int endIndex = Math.min(i + CHUNK_SIZE, totalFiles);
-
-            // Process chunk
-            for (int j = i; j < endIndex; j++) {
-                DocumentFile docFile = files[j];
-                if (docFile == null || !docFile.isFile()) {
-                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a file or null): "
-                            + (docFile != null ? docFile.getName() : "null"));
+        // Backward compatibility: include root files and infer category by filename prefix.
+        DocumentFile[] rootFiles = targetDir.listFiles();
+        if (rootFiles != null) {
+            for (DocumentFile rootFile : rootFiles) {
+                if (rootFile == null || !rootFile.isFile()) {
                     continue;
                 }
-
-                String fileName = docFile.getName();
-                String mimeType = docFile.getType();
-
-                if (fileName != null && mimeType != null && mimeType.startsWith("video/")) {
-                    if (fileName.endsWith(Constants.RECORDING_FILE_EXTENSION)) {
-                        if (fileName.startsWith("temp_")) {
-                            Log.d(TAG, "LOG_GET_SAF: Found temporary SAF video: " + fileName);
-                            VideoItem tempVideoItem = new VideoItem(
-                                    docFile.getUri(),
-                                    fileName,
-                                    docFile.length(),
-                                    docFile.lastModified());
-                            tempVideoItem.isTemporary = true;
-                            tempVideoItem.isNew = false;
-                            // Check if this temp file is currently being processed
-                            if (currentlyProcessingUris.contains(docFile.getUri())) {
-                                tempVideoItem.isProcessingUri = true;
-                                Log.d(TAG,
-                                        "LOG_GET_SAF: Temporary SAF video " + fileName + " is marked as processing.");
-                            }
-                            safVideoItems.add(tempVideoItem);
-                        } else if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) {
-                            Log.d(TAG, "LOG_GET_SAF: Added SAF item: " + fileName);
-                            VideoItem newItem = new VideoItem(
-                                    docFile.getUri(),
-                                    fileName,
-                                    docFile.length(),
-                                    docFile.lastModified());
-                            newItem.isTemporary = false;
-                            newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
-                            safVideoItems.add(newItem);
-                        } else {
-                            // Log other video files that don't match temp or standard FadCam prefix but are
-                            // video type
-                            Log.d(TAG, "LOG_GET_SAF: Added OTHER video item (non-FadCam, non-temp): " + fileName);
-                            VideoItem newItem = new VideoItem(
-                                    docFile.getUri(),
-                                    fileName,
-                                    docFile.length(),
-                                    docFile.lastModified());
-                            newItem.isTemporary = false;
-                            newItem.isNew = Utils.isVideoConsideredNew(docFile.lastModified());
-                            safVideoItems.add(newItem);
-                        }
-                    } else {
-                        Log.d(TAG, "LOG_GET_SAF: Skipped item (not a video file with correct extension): " + fileName
-                                + " | type: " + mimeType);
-                    }
-                } else {
-                    Log.d(TAG, "LOG_GET_SAF: Skipped item (not a valid video file or is temp): " + fileName
-                            + " | isFile: " + docFile.isFile() + " | type: " + mimeType);
-                }
+                bucketedFiles.add(new SafCandidate(rootFile, VideoItem.Category.UNKNOWN));
             }
+        }
 
-            // Progressive callback: update UI with current progress
+        final int CHUNK_SIZE = 12;
+        int totalFiles = bucketedFiles.size();
+        for (int i = 0; i < totalFiles; i += CHUNK_SIZE) {
+            int endIndex = Math.min(i + CHUNK_SIZE, totalFiles);
+            for (int j = i; j < endIndex; j++) {
+                SafCandidate candidate = bucketedFiles.get(j);
+                addSafVideoItem(safVideoItems, candidate.file, candidate.category);
+            }
             if (callback != null && !safVideoItems.isEmpty()) {
-                int progress = Math.round(((float) endIndex / totalFiles) * 100);
+                int progress = totalFiles == 0 ? 100 : Math.round(((float) endIndex / totalFiles) * 100);
                 callback.onProgress(new ArrayList<>(safVideoItems), progress, endIndex < totalFiles);
             }
-
-            // Small delay between chunks to prevent overwhelming the system
             if (endIndex < totalFiles) {
                 try {
-                    Thread.sleep(10); // 10ms pause between chunks
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     Log.w(TAG, "LOG_GET_SAF: Progressive loading interrupted");
                     break;
@@ -1845,6 +1848,9 @@ public class RecordsFragment extends BaseFragment implements
             int count = selectedUris.size();
             titleText.setText(count > 0 ? count + " selected" : "Select items");
             fabDeleteSelected.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
+            if (filterChecklistButton != null) {
+                filterChecklistButton.setTextColor(resolveThemeColor(R.attr.colorToggle));
+            }
             // FAB removed
             // Show left-side close button and hide more-options
             if (closeButton != null) {
@@ -1873,6 +1879,9 @@ public class RecordsFragment extends BaseFragment implements
         } else {
             titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
             fabDeleteSelected.setVisibility(View.GONE);
+            if (filterChecklistButton != null) {
+                filterChecklistButton.setTextColor(0xFF666666);
+            }
             // FAB removed
             // Restore more-options icon and hide close button
             if (menuButton != null) {
@@ -1894,6 +1903,109 @@ public class RecordsFragment extends BaseFragment implements
         if (getActivity() != null) {
             getActivity().invalidateOptionsMenu();
         }
+    }
+
+    private void setupFilterUi() {
+        if (chipFilterAll != null) {
+            chipFilterAll.setOnClickListener(v -> setActiveFilter(VideoItem.Category.ALL));
+        }
+        if (chipFilterCamera != null) {
+            chipFilterCamera.setOnClickListener(v -> setActiveFilter(VideoItem.Category.CAMERA));
+        }
+        if (chipFilterDual != null) {
+            chipFilterDual.setOnClickListener(v -> setActiveFilter(VideoItem.Category.DUAL));
+        }
+        if (chipFilterScreen != null) {
+            chipFilterScreen.setOnClickListener(v -> setActiveFilter(VideoItem.Category.SCREEN));
+        }
+        if (chipFilterFaditor != null) {
+            chipFilterFaditor.setOnClickListener(v -> setActiveFilter(VideoItem.Category.FADITOR));
+        }
+        if (chipFilterStream != null) {
+            chipFilterStream.setOnClickListener(v -> setActiveFilter(VideoItem.Category.STREAM));
+        }
+        if (filterChecklistButton != null) {
+            filterChecklistButton.setOnClickListener(v -> {
+                if (isInSelectionMode) {
+                    exitSelectionMode();
+                } else {
+                    enterSelectionMode();
+                }
+            });
+        }
+        updateFilterChipUi();
+        updateFilterHelperText();
+    }
+
+    private void setActiveFilter(@NonNull VideoItem.Category filter) {
+        if (activeFilter == filter) return;
+        activeFilter = filter;
+        // Prevent hidden selections when the visible set changes.
+        if (isInSelectionMode) {
+            exitSelectionMode();
+        }
+        applyActiveFilterToUi();
+    }
+
+    private void applyActiveFilterToUi() {
+        List<VideoItem> filteredItems = new ArrayList<>();
+        for (VideoItem item : allLoadedItems) {
+            if (activeFilter == VideoItem.Category.ALL || item.category == activeFilter) {
+                filteredItems.add(item);
+            }
+        }
+        videoItems.clear();
+        videoItems.addAll(filteredItems);
+        if (recordsAdapter != null) {
+            recordsAdapter.updateRecords(videoItems);
+        }
+        updateFilterChipUi();
+        updateFilterHelperText();
+        updateUiVisibility();
+    }
+
+    private void updateFilterChipUi() {
+        if (chipFilterAll != null) chipFilterAll.setChecked(activeFilter == VideoItem.Category.ALL);
+        if (chipFilterCamera != null) chipFilterCamera.setChecked(activeFilter == VideoItem.Category.CAMERA);
+        if (chipFilterDual != null) chipFilterDual.setChecked(activeFilter == VideoItem.Category.DUAL);
+        if (chipFilterScreen != null) chipFilterScreen.setChecked(activeFilter == VideoItem.Category.SCREEN);
+        if (chipFilterFaditor != null) chipFilterFaditor.setChecked(activeFilter == VideoItem.Category.FADITOR);
+        if (chipFilterStream != null) chipFilterStream.setChecked(activeFilter == VideoItem.Category.STREAM);
+    }
+
+    private void updateFilterHelperText() {
+        if (filterHelperText == null) return;
+        if (activeFilter == VideoItem.Category.ALL) {
+            filterHelperText.setVisibility(View.GONE);
+            filterHelperText.setText("");
+            return;
+        }
+        int textRes;
+        switch (activeFilter) {
+            case CAMERA:
+                textRes = R.string.records_filter_helper_camera;
+                break;
+            case DUAL:
+                textRes = R.string.records_filter_helper_dual;
+                break;
+            case SCREEN:
+                textRes = R.string.records_filter_helper_screen;
+                break;
+            case FADITOR:
+                textRes = R.string.records_filter_helper_faditor;
+                break;
+            case STREAM:
+                textRes = R.string.records_filter_helper_stream;
+                break;
+            case UNKNOWN:
+            case ALL:
+            default:
+                filterHelperText.setVisibility(View.GONE);
+                filterHelperText.setText("");
+                return;
+        }
+        filterHelperText.setText(textRes);
+        filterHelperText.setVisibility(View.VISIBLE);
     }
     // --- Deletion Logic ---
 
@@ -2992,23 +3104,16 @@ public class RecordsFragment extends BaseFragment implements
         getActivity().runOnUiThread(() -> {
             if (isPartial) {
                 // For partial updates (e.g., just temp videos), we want to show them right away
-                videoItems.clear();
-                videoItems.addAll(newVideos);
-
-                if (recordsAdapter != null) {
-                    recordsAdapter.updateRecords(videoItems);
-                    if (recyclerView != null)
-                        recyclerView.setVisibility(View.VISIBLE);
-                }
+                allLoadedItems.clear();
+                allLoadedItems.addAll(newVideos);
+                applyActiveFilterToUi();
+                if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
                 // Don't hide loading indicator yet for partial updates
             } else {
                 // For complete updates, replace everything
-                videoItems.clear();
-                videoItems.addAll(newVideos);
-
-                if (recordsAdapter != null) {
-                    recordsAdapter.updateRecords(videoItems);
-                }
+                allLoadedItems.clear();
+                allLoadedItems.addAll(newVideos);
+                applyActiveFilterToUi();
 
                 updateUiVisibility();
                 if (loadingIndicator != null) {
@@ -3025,6 +3130,84 @@ public class RecordsFragment extends BaseFragment implements
             isLoading = false;
             isInitialLoad = false;
         });
+    }
+
+    private boolean isSupportedVideoFile(@Nullable String fileName) {
+        if (fileName == null) return false;
+        String lower = fileName.toLowerCase();
+        String expectedExt = "." + Constants.RECORDING_FILE_EXTENSION.toLowerCase();
+        return lower.endsWith(expectedExt);
+    }
+
+    private VideoItem.Category inferCategoryFromLegacyName(@Nullable String fileName) {
+        if (fileName == null) return VideoItem.Category.UNKNOWN;
+        if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) return VideoItem.Category.CAMERA;
+        if (fileName.startsWith("DualCam_")) return VideoItem.Category.DUAL;
+        if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADREC)) return VideoItem.Category.SCREEN;
+        if (fileName.startsWith("Faditor_")) return VideoItem.Category.FADITOR;
+        if (fileName.startsWith("Stream_")) return VideoItem.Category.STREAM;
+        return VideoItem.Category.UNKNOWN;
+    }
+
+    private void addSafCategoryFiles(
+            @NonNull List<SafCandidate> out,
+            @NonNull DocumentFile baseDir,
+            @NonNull String childFolderName,
+            @NonNull VideoItem.Category category
+    ) {
+        DocumentFile childDir = RecordingStoragePaths.findOrCreateChildDirectory(baseDir, childFolderName, false);
+        if (childDir == null || !childDir.isDirectory() || !childDir.canRead()) {
+            return;
+        }
+        DocumentFile[] files = childDir.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (DocumentFile file : files) {
+            if (file != null && file.isFile()) {
+                out.add(new SafCandidate(file, category));
+            }
+        }
+    }
+
+    private void addSafVideoItem(
+            @NonNull List<VideoItem> out,
+            @NonNull DocumentFile docFile,
+            @NonNull VideoItem.Category explicitCategory
+    ) {
+        String fileName = docFile.getName();
+        if (!isSupportedVideoFile(fileName)) {
+            return;
+        }
+        if (fileName != null && fileName.startsWith("temp_")) {
+            VideoItem tempVideoItem = new VideoItem(
+                    docFile.getUri(),
+                    fileName,
+                    docFile.length(),
+                    docFile.lastModified(),
+                    VideoItem.Category.UNKNOWN);
+            tempVideoItem.isTemporary = true;
+            tempVideoItem.isNew = false;
+            if (currentlyProcessingUris.contains(docFile.getUri())) {
+                tempVideoItem.isProcessingUri = true;
+            }
+            out.add(tempVideoItem);
+            return;
+        }
+
+        VideoItem.Category category = explicitCategory != VideoItem.Category.UNKNOWN
+                ? explicitCategory
+                : inferCategoryFromLegacyName(fileName);
+        long lastModified = docFile.lastModified();
+        VideoItem item = new VideoItem(
+                docFile.getUri(),
+                fileName,
+                docFile.length(),
+                lastModified,
+                category);
+        item.isTemporary = false;
+        item.isNew = Utils.isVideoConsideredNew(lastModified);
+        out.add(item);
     }
 
     // functionality -----------

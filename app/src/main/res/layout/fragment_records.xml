@@ -77,6 +77,108 @@
         </FrameLayout>
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/records_filter_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:scrollbars="none"
+            android:overScrollMode="never">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_records_filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:singleLine="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_all"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/records_filter_all" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_camera"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_camera" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_dual"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_dual" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_screen"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_screen" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_faditor"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_faditor" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_stream"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_stream" />
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/btn_filter_checklist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/materialicons"
+            android:text="checklist"
+            android:textColor="#666666"
+            android:textSize="22sp"
+            android:padding="4dp"
+            android:contentDescription="@string/records_filter_checklist_desc" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/filter_helper_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="2dp"
+        android:textColor="#99FFFFFF"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/records_filter_row"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Normal camera recordings" />
+
     <!-- *** START: Loading Indicator *** -->
     <ProgressBar
         android:id="@+id/loading_indicator"
@@ -84,7 +186,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -100,7 +202,7 @@
         android:orientation="vertical"
         android:gravity="center"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"> <!-- Initially hidden -->
@@ -128,7 +230,7 @@
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
