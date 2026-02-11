@@ -17,7 +17,11 @@ import java.io.RandomAccessFile;
 
 import java.nio.ByteBuffer;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.fadcam.VideoCodec;
+import com.fadcam.dualcam.DualCameraConfig;
 import com.fadcam.media.FragmentedMp4MuxerWrapper;
 
 /**
@@ -185,6 +189,13 @@ public class GLRecordingPipeline {
 
     private final VideoCodec videoCodec;
 
+    /** Optional dual camera config — when non-null, enables PiP rendering in the GL pipeline. */
+    @Nullable
+    private DualCameraConfig dualCameraConfig;
+
+    /** Secondary camera input surface, lazily obtained from GLWatermarkRenderer after PiP init. */
+    private Surface secondaryCameraInputSurface;
+
     // Location metadata fields
     private Float locationLatitude = null;
     private Float locationLongitude = null;
@@ -302,6 +313,95 @@ public class GLRecordingPipeline {
         initAudioSettings();
     }
 
+    // ════════════════════════════════════════════════════════════════════
+    // DUAL CAMERA CONSTRUCTORS
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Dual camera constructor for file path (internal storage).
+     * Creates a pipeline with PiP support enabled via the DualCameraConfig.
+     */
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider,
+            int videoWidth, int videoHeight, int videoFramerate, String outputFilePath,
+            long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback,
+            Surface previewSurface, String orientation, int sensorOrientation,
+            VideoCodec videoCodec, Float latitude, Float longitude,
+            @NonNull DualCameraConfig dualCameraConfig) {
+        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate,
+                outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback,
+                previewSurface, orientation, sensorOrientation, videoCodec, latitude, longitude);
+        this.dualCameraConfig = dualCameraConfig;
+        Log.d(TAG, "Dual camera mode enabled: " + dualCameraConfig);
+    }
+
+    /**
+     * Dual camera constructor for FileDescriptor (SAF storage).
+     * Creates a pipeline with PiP support enabled via the DualCameraConfig.
+     */
+    public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider,
+            int videoWidth, int videoHeight, int videoFramerate, FileDescriptor outputFd,
+            long maxFileSizeBytes, int segmentNumber, SegmentCallback segmentCallback,
+            Surface previewSurface, String orientation, int sensorOrientation,
+            VideoCodec videoCodec, Float latitude, Float longitude,
+            @NonNull DualCameraConfig dualCameraConfig) {
+        this(context, watermarkInfoProvider, videoWidth, videoHeight, videoFramerate,
+                outputFd, maxFileSizeBytes, segmentNumber, segmentCallback,
+                previewSurface, orientation, sensorOrientation, videoCodec, latitude, longitude);
+        this.dualCameraConfig = dualCameraConfig;
+        Log.d(TAG, "Dual camera mode enabled (SAF): " + dualCameraConfig);
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // DUAL CAMERA PUBLIC API
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Returns the primary camera input surface (alias for getCameraInputSurface).
+     * For consistency with the dual camera API nomenclature.
+     */
+    @NonNull
+    public Surface getPrimaryCameraInputSurface() {
+        Surface s = getCameraInputSurface();
+        if (s == null) throw new IllegalStateException("Call prepareSurfaces() first");
+        return s;
+    }
+
+    /**
+     * Returns the secondary (PiP) camera input surface.
+     * Only available after {@link #prepareSurfaces()} when dual camera mode is enabled.
+     *
+     * @return Secondary camera Surface, or null if not in dual camera mode.
+     */
+    @Nullable
+    public Surface getSecondaryCameraInputSurface() {
+        return secondaryCameraInputSurface;
+    }
+
+    /**
+     * Swaps primary ↔ PiP camera rendering without changing camera sessions.
+     * Thread-safe — can be called from any thread.
+     */
+    public void swapCameras() {
+        if (glRenderer != null) {
+            glRenderer.swapCameras();
+            Log.d(TAG, "Camera rendering swapped");
+        }
+    }
+
+    /**
+     * Live-updates the PiP configuration (position, size, border, corners).
+     * Thread-safe — can be called from any thread.
+     *
+     * @param newConfig Updated PiP configuration.
+     */
+    public void updateConfig(@NonNull DualCameraConfig newConfig) {
+        this.dualCameraConfig = newConfig;
+        if (glRenderer != null) {
+            glRenderer.updatePipConfig(newConfig);
+            Log.d(TAG, "PiP config updated: " + newConfig);
+        }
+    }
+
     /**
      * Prepares the GL renderer and camera input surface for the camera session.
      * Call this after constructing the pipeline, before creating the camera
@@ -343,6 +443,14 @@ public class GLRecordingPipeline {
                         videoWidth, videoHeight);
                 glRenderer.setUserOrientationSetting(orientation);
                 glRenderer.setRecordingPipeline(this); // Set reference for timestamp synchronization
+                // Propagate encoder dimensions that were computed during initializeEncoder().
+                // initializeEncoder() runs BEFORE the renderer is created, so its
+                // setEncoderDimensions() call hits null and is silently skipped.
+                // We must forward them now so the renderer uses the correct
+                // (post-orientation-swap) dimensions for viewport and aspect ratio.
+                if (encoderWidth > 0 && encoderHeight > 0) {
+                    glRenderer.setEncoderDimensions(encoderWidth, encoderHeight);
+                }
                 // Create EGL context and camera surface strictly on the GL render thread
                 // Ensure render thread exists
                 if (renderThread == null || handler == null) {
@@ -358,6 +466,19 @@ public class GLRecordingPipeline {
                         Log.d(TAG, "Requesting camera input surface from renderer (GL thread)");
                         Surface camSurf = glRenderer.getCameraInputSurface();
                         cameraInputSurface = camSurf;
+
+                        // Initialize PiP if dual camera mode is enabled
+                        if (dualCameraConfig != null) {
+                            Log.d(TAG, "Initializing PiP on GL thread for dual camera mode");
+                            glRenderer.initializePiP(dualCameraConfig);
+                            secondaryCameraInputSurface = glRenderer.getSecondaryCameraInputSurface();
+                            if (secondaryCameraInputSurface == null || !secondaryCameraInputSurface.isValid()) {
+                                Log.e(TAG, "Secondary camera input surface is invalid after PiP init");
+                            } else {
+                                Log.d(TAG, "Secondary camera input surface obtained successfully");
+                            }
+                        }
+
                         if (previewSurface != null && previewSurface.isValid()) {
                             // Log.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
                             glRenderer.setPreviewSurface(previewSurface);

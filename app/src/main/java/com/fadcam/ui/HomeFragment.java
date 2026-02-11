@@ -8156,9 +8156,26 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
-        // Dual camera recording does not use a preview surface from HomeFragment
+        // When dual camera recording is active, send the surface to
+        // DualCameraRecordingService instead of RecordingService.
         if (isDualRecordingActive) {
-            Log.d(TAG, "updateServiceWithCurrentSurface: Skipped — dual recording active");
+            Intent dualIntent = new Intent(getContext(),
+                    com.fadcam.dualcam.service.DualCameraRecordingService.class);
+            dualIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
+            if (surfaceToUse != null && surfaceToUse.isValid()) {
+                dualIntent.putExtra("SURFACE", surfaceToUse);
+                if (width > 0 && height > 0) {
+                    dualIntent.putExtra("SURFACE_WIDTH", width);
+                    dualIntent.putExtra("SURFACE_HEIGHT", height);
+                }
+            } else {
+                dualIntent.putExtra("SURFACE", (Surface) null);
+            }
+            Context ctx = getContext();
+            if (ctx != null) {
+                ctx.startService(dualIntent);
+            }
+            Log.d(TAG, "updateServiceWithCurrentSurface: Sent to DualCameraRecordingService");
             return;
         }
 

@@ -19,6 +19,11 @@ import android.util.Log;
 import android.view.Surface;
 import android.opengl.EGLExt;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.fadcam.dualcam.DualCameraConfig;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -75,6 +80,47 @@ public class GLWatermarkRenderer {
     // Exposure compensation value (EV stops, e.g., -2.0 to +2.0)
     private float currentExposureCompensation = 0.0f;
     private float lastLoggedExposureCompensation = Float.NaN; // Track last logged value
+
+    // ── PiP (Picture-in-Picture) fields ────────────────────────────────
+    // These are only initialized when initializePiP() is called (dual camera mode).
+    // When null/0, PiP rendering is skipped — single camera mode is unaffected.
+
+    /** Secondary camera OES texture ID for PiP overlay. */
+    private int pipOesTextureId = 0;
+    /** SurfaceTexture receiving frames from the secondary (PiP) camera. */
+    private SurfaceTexture pipSurfaceTexture;
+    /** Surface exposed to Camera2 for secondary camera capture. */
+    private Surface pipCameraInputSurface;
+    /** Whether a new PiP frame is available from the secondary camera. */
+    private volatile boolean pipFrameAvailable = false;
+    /** Sync object for PiP frame availability. */
+    private final Object pipFrameSyncObject = new Object();
+    /** Current PiP configuration (position, size, border, corner style). */
+    private volatile DualCameraConfig pipConfig;
+    /** Whether PiP rendering is enabled (initializePiP has been called). */
+    private boolean pipEnabled = false;
+    /** Whether cameras are swapped — when true, textures are drawn in reverse roles. */
+    private volatile boolean camerasSwapped = false;
+    /** PiP shader program handle for rounded corner + border rendering. */
+    private int pipProgram = 0;
+    private int pipPositionHandle;
+    private int pipTexCoordHandle;
+    private int pipTextureHandle;
+    private int pipMvpMatrixHandle;
+    private int pipTexMatrixHandle;
+    /** PiP border/rounding uniforms. */
+    private int pipRoundedHandle;      // bool: enable rounded corners
+    private int pipBorderHandle;       // bool: enable border
+    private int pipCornerRadiusHandle; // float: corner radius in UV space
+    private int pipBorderWidthHandle;  // float: border width in UV space
+    private int pipBorderColorHandle;  // vec4: border color
+    private int pipAspectRatioHandle;  // float: aspect ratio for circular rounding
+    /** Vertex buffer for PiP quad (computed from DualCameraConfig). */
+    private FloatBuffer pipVertexBuffer;
+    /** Texture matrix from PiP SurfaceTexture. */
+    private final float[] pipTexMatrix = new float[16];
+    /** MVP matrix for PiP rendering (identity for encoder, transformed for preview). */
+    private final float[] pipMvpMatrix = new float[16];
 
     // Using matrices in real-time for the first time in this app!
     // These 2x4 matrices define the vertex coordinates and texture mapping
@@ -374,6 +420,14 @@ public class GLWatermarkRenderer {
                 return; // Abort this frame gracefully instead of throwing
             }
 
+            // Set viewport to encoder dimensions explicitly so we don't
+            // inherit the preview viewport from a prior renderToPreview() call.
+            {
+                int vpW = encoderWidth > 0 ? encoderWidth : videoWidth;
+                int vpH = encoderHeight > 0 ? encoderHeight : videoHeight;
+                GLES20.glViewport(0, 0, vpW, vpH);
+            }
+
             // Check if cameraSurfaceTexture is still valid
             if (cameraSurfaceTexture == null) {
                 throw new IllegalStateException("cameraSurfaceTexture is null");
@@ -460,7 +514,26 @@ public class GLWatermarkRenderer {
 
             // Draw to encoder
             try {
-                drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+                // Determine which texture is primary based on swap state
+                int primaryTextureId = camerasSwapped ? pipOesTextureId : oesTextureId;
+                if (mFullFrameBlit != null && primaryTextureId == oesTextureId) {
+                    // Normal (unswapped): use standard draw path
+                    drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+                } else if (camerasSwapped && mFullFrameBlit != null) {
+                    // Swapped: draw PiP texture as full screen using standard method
+                    drawOESTextureWithId(pipOesTextureId, recordingMvpMatrix, encoderTexMatrix);
+                } else {
+                    drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+                }
+
+                // Draw PiP overlay (if dual camera mode is active)
+                // Use identity MVP for PiP so rotation doesn't distort the PiP rectangle.
+                // The PiP geometry is computed in post-rotation NDC space.
+                if (pipEnabled) {
+                    updatePipTexture();
+                    drawPipOverlay(pipMvpMatrix); // identity, not recordingMvpMatrix
+                }
+
                 drawWatermark();
 
                 // Swap buffers to complete the frame
@@ -533,6 +606,59 @@ public class GLWatermarkRenderer {
             }
             // Success: clear retry gate
             previewCreateRetryDeadlineNs = 0L;
+
+            // ── Aspect-ratio-preserving viewport (industry-standard letterbox/pillarbox) ──
+            // The preview surface (TextureView) can be any shape — it fills the remaining
+            // card space. The encoder content has a fixed aspect ratio (e.g. 720×1280 portrait).
+            // Instead of stretching the content to fill the surface (causing distortion),
+            // we compute a centered viewport that preserves the content's aspect ratio,
+            // leaving black bars (letterbox or pillarbox) on the excess edges.
+            //
+            // NOTE: The MVP matrix aspect-ratio correction in updateMatrices() is NOT effective
+            // because Grafika's FullFrameRect.drawFrame() always overrides uMVPMatrix to IDENTITY.
+            // Therefore, the viewport is the correct place to handle aspect ratio for preview.
+            int[] pvW = new int[1], pvH = new int[1];
+            EGL14.eglQuerySurface(eglDisplay, previewEglSurface, EGL14.EGL_WIDTH, pvW, 0);
+            EGL14.eglQuerySurface(eglDisplay, previewEglSurface, EGL14.EGL_HEIGHT, pvH, 0);
+
+            if (pvW[0] > 0 && pvH[0] > 0) {
+                // Content dimensions = encoder output (already rotation-corrected)
+                int contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
+                int contentH = encoderHeight > 0 ? encoderHeight : videoHeight;
+
+                float contentAR = (float) contentW / contentH;
+                float surfaceAR = (float) pvW[0] / pvH[0];
+
+                int vpX, vpY, vpW, vpH;
+                if (Math.abs(surfaceAR - contentAR) < 0.01f) {
+                    // Aspect ratios match — use full surface
+                    vpX = 0;
+                    vpY = 0;
+                    vpW = pvW[0];
+                    vpH = pvH[0];
+                } else if (surfaceAR > contentAR) {
+                    // Surface is wider than content → pillarbox (black bars on sides)
+                    vpH = pvH[0];
+                    vpW = Math.round(pvH[0] * contentAR);
+                    vpX = (pvW[0] - vpW) / 2;
+                    vpY = 0;
+                } else {
+                    // Surface is taller than content → letterbox (black bars top/bottom)
+                    vpW = pvW[0];
+                    vpH = Math.round(pvW[0] / contentAR);
+                    vpX = 0;
+                    vpY = (pvH[0] - vpH) / 2;
+                }
+
+                // Clear full surface to black (for letterbox/pillarbox bars)
+                GLES20.glViewport(0, 0, pvW[0], pvH[0]);
+                GLES20.glClearColor(0f, 0f, 0f, 1f);
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+                // Set the aspect-ratio-preserving viewport for content rendering
+                GLES20.glViewport(vpX, vpY, vpW, vpH);
+            }
+
             float[] texMatrix = new float[16];
             if (cameraSurfaceTexture != null) {
                 cameraSurfaceTexture.getTransformMatrix(texMatrix);
@@ -567,6 +693,13 @@ public class GLWatermarkRenderer {
 
             updateMatrices();
             drawOESTexture(previewMvpMatrix, previewTexMatrix);
+
+            // Draw PiP overlay on preview too (if dual camera mode is active)
+            // Use identity MVP for PiP so aspect-ratio correction doesn't distort it.
+            if (pipEnabled) {
+                drawPipOverlay(pipMvpMatrix); // identity, not previewMvpMatrix
+            }
+
             boolean swapOk = EGL14.eglSwapBuffers(eglDisplay, previewEglSurface);
             if (!swapOk) {
                 int error = EGL14.eglGetError();
@@ -981,6 +1114,68 @@ public class GLWatermarkRenderer {
         }
     }
 
+    /**
+     * Draws a specific OES texture ID as full-screen using the grafika FullFrameRect.
+     * Used when cameras are swapped — draws the PiP texture as the primary full-screen image.
+     *
+     * @param textureId OES texture ID to draw.
+     * @param mvpMatrix Model-View-Projection matrix.
+     * @param texMatrix Texture transform matrix.
+     */
+    private void drawOESTextureWithId(int textureId, float[] mvpMatrix, float[] texMatrix) {
+        try {
+            if (released || textureId == 0) return;
+
+            if (mFullFrameBlit != null) {
+                try {
+                    com.fadcam.opengl.grafika.Texture2dProgram program = mFullFrameBlit.getProgram();
+                    if (program != null) {
+                        int programHandle = program.getProgramHandle();
+                        GLES20.glUseProgram(programHandle);
+                        int mvpLoc = GLES20.glGetUniformLocation(programHandle, "uMVPMatrix");
+                        if (mvpLoc >= 0) {
+                            GLES20.glUniformMatrix4fv(mvpLoc, 1, false, mvpMatrix, 0);
+                        }
+                    }
+                    mFullFrameBlit.drawFrame(textureId, texMatrix);
+                } catch (Exception e) {
+                    Log.w(TAG, "drawOESTextureWithId: grafika draw failed, using fallback", e);
+                    drawWithFallbackMethodId(textureId, mvpMatrix, texMatrix);
+                }
+            } else {
+                drawWithFallbackMethodId(textureId, mvpMatrix, texMatrix);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in drawOESTextureWithId", e);
+        }
+    }
+
+    /**
+     * Fallback drawing for a specific texture ID using the basic OES shader.
+     */
+    private void drawWithFallbackMethodId(int textureId, float[] mvpMatrix, float[] texMatrix) {
+        try {
+            GLES20.glUseProgram(oesProgram);
+            GLES20.glUniformMatrix4fv(oesMvpMatrixHandle, 1, false, mvpMatrix, 0);
+            GLES20.glUniformMatrix4fv(oesTexMatrixHandle, 1, false, texMatrix, 0);
+            GLES20.glEnableVertexAttribArray(oesPositionHandle);
+            GLES20.glVertexAttribPointer(oesPositionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
+            GLES20.glEnableVertexAttribArray(oesTexCoordHandle);
+            GLES20.glVertexAttribPointer(oesTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
+            GLES20.glUniform1i(oesTextureHandle, 0);
+            GLES20.glUniform1f(oesExposureHandle, currentExposureCompensation);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+            GLES20.glDisableVertexAttribArray(oesPositionHandle);
+            GLES20.glDisableVertexAttribArray(oesTexCoordHandle);
+            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+            GLES20.glUseProgram(0);
+        } catch (Exception e) {
+            Log.e(TAG, "Error in drawWithFallbackMethodId", e);
+        }
+    }
+
     private void setupSimpleWatermarkShader() {
         // Vertex and fragment shader for rendering watermark bitmap as a texture
         String vertexShaderCode = "attribute vec4 aPosition;\n" +
@@ -1118,6 +1313,8 @@ public class GLWatermarkRenderer {
             } catch (Exception e) {
                 Log.e(TAG, "Exception during releasePreviewEGL", e);
             }
+            // Release PiP resources
+            releasePipResources();
             // Null out all references
             outputSurface = null;
             cameraInputSurface = null;
@@ -1129,8 +1326,396 @@ public class GLWatermarkRenderer {
         }
     }
 
-    public void setDeviceOrientation(int orientation) {
-        if (this.deviceOrientation == orientation)
+    // ════════════════════════════════════════════════════════════════════
+    // PiP (Picture-in-Picture) Support
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Initializes PiP rendering for dual camera mode.
+     * Creates a second OES texture + SurfaceTexture for the PiP camera,
+     * sets up the PiP shader, and computes PiP geometry from config.
+     *
+     * <p>Must be called on the GL thread AFTER {@link #initializeEGL()}.
+     * If never called, the renderer operates in single-camera mode.
+     *
+     * @param config PiP configuration (position, size, border, corners, margin).
+     */
+    public void initializePiP(@NonNull DualCameraConfig config) {
+        if (!initialized) {
+            throw new IllegalStateException("Call initializeEGL() before initializePiP()");
+        }
+        this.pipConfig = config;
+        this.pipEnabled = true;
+
+        // Create second OES texture for PiP camera
+        int[] textures = new int[1];
+        GLES20.glGenTextures(1, textures, 0);
+        pipOesTextureId = textures[0];
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, pipOesTextureId);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
+        // Create SurfaceTexture and Surface for secondary camera
+        pipSurfaceTexture = new SurfaceTexture(pipOesTextureId);
+        pipSurfaceTexture.setDefaultBufferSize(videoWidth, videoHeight);
+        pipCameraInputSurface = new Surface(pipSurfaceTexture);
+
+        // Set frame available listener on GL thread handler
+        pipSurfaceTexture.setOnFrameAvailableListener(surfaceTexture -> {
+            synchronized (pipFrameSyncObject) {
+                pipFrameAvailable = true;
+            }
+            // Also trigger a render so PiP updates even if primary camera is idle
+            if (externalFrameListener != null) {
+                externalFrameListener.onFrameAvailable();
+            }
+        }, glThreadHandler);
+
+        // Setup PiP shader program
+        setupPipShader();
+
+        // Compute PiP quad geometry
+        computePipGeometry();
+
+        // Initialize PiP MVP matrix to identity (encoder renders without transformation)
+        Matrix.setIdentityM(pipMvpMatrix, 0);
+
+        Log.d(TAG, "PiP initialized: " + config);
+    }
+
+    /**
+     * Returns the Surface for the secondary (PiP) camera.
+     * Camera2 should target this surface for the PiP camera feed.
+     *
+     * @return Secondary camera input surface, or null if PiP is not initialized.
+     */
+    @Nullable
+    public Surface getSecondaryCameraInputSurface() {
+        return pipCameraInputSurface;
+    }
+
+    /**
+     * Swaps primary ↔ PiP camera rendering without changing camera sessions.
+     * The primary camera feed will be shown as PiP and vice versa.
+     */
+    public void swapCameras() {
+        camerasSwapped = !camerasSwapped;
+        Log.d(TAG, "Cameras swapped: " + camerasSwapped);
+    }
+
+    /**
+     * Live-updates PiP configuration (position, size, border, corners).
+     *
+     * @param newConfig Updated PiP configuration.
+     */
+    public void updatePipConfig(@NonNull DualCameraConfig newConfig) {
+        this.pipConfig = newConfig;
+        computePipGeometry();
+        Log.d(TAG, "PiP config updated: " + newConfig);
+    }
+
+    /**
+     * Sets up the PiP fragment/vertex shader with rounded corner + border support.
+     */
+    private void setupPipShader() {
+        String vertexShaderCode =
+                "uniform mat4 uMVPMatrix;\n" +
+                "uniform mat4 uTexMatrix;\n" +
+                "attribute vec4 aPosition;\n" +
+                "attribute vec4 aTextureCoord;\n" +
+                "varying vec2 vTextureCoord;\n" +
+                "void main() {\n" +
+                "    gl_Position = uMVPMatrix * aPosition;\n" +
+                "    vTextureCoord = (uTexMatrix * aTextureCoord).xy;\n" +
+                "}\n";
+
+        String fragmentShaderCode =
+                "#extension GL_OES_EGL_image_external : require\n" +
+                "precision mediump float;\n" +
+                "varying vec2 vTextureCoord;\n" +
+                "uniform samplerExternalOES uTexture;\n" +
+                "uniform bool uRounded;\n" +
+                "uniform bool uBorder;\n" +
+                "uniform float uCornerRadius;\n" +
+                "uniform float uBorderWidth;\n" +
+                "uniform vec4 uBorderColor;\n" +
+                "uniform float uAspectRatio;\n" +
+                "\n" +
+                "float roundedBoxSDF(vec2 center, vec2 halfSize, float radius) {\n" +
+                "    vec2 d = abs(center) - halfSize + vec2(radius);\n" +
+                "    return length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0) - radius;\n" +
+                "}\n" +
+                "\n" +
+                "void main() {\n" +
+                "    vec4 color = texture2D(uTexture, vTextureCoord);\n" +
+                "    \n" +
+                "    if (uRounded || uBorder) {\n" +
+                "        // Map UV [0,1] to centered coordinates, accounting for aspect ratio\n" +
+                "        vec2 uv = vTextureCoord;\n" +
+                "        vec2 center = (uv - 0.5) * vec2(uAspectRatio, 1.0);\n" +
+                "        vec2 halfSize = vec2(uAspectRatio * 0.5, 0.5);\n" +
+                "        float radius = uCornerRadius;\n" +
+                "        \n" +
+                "        float dist = roundedBoxSDF(center, halfSize, radius);\n" +
+                "        \n" +
+                "        // Outer edge: discard pixels outside rounded rect\n" +
+                "        if (uRounded && dist > 0.0) {\n" +
+                "            discard;\n" +
+                "        }\n" +
+                "        \n" +
+                "        // Border ring: between outer edge and inner edge\n" +
+                "        if (uBorder && dist > -uBorderWidth) {\n" +
+                "            color = uBorderColor;\n" +
+                "        }\n" +
+                "    }\n" +
+                "    \n" +
+                "    gl_FragColor = color;\n" +
+                "}\n";
+
+        pipProgram = createProgram(vertexShaderCode, fragmentShaderCode);
+        pipPositionHandle = GLES20.glGetAttribLocation(pipProgram, "aPosition");
+        pipTexCoordHandle = GLES20.glGetAttribLocation(pipProgram, "aTextureCoord");
+        pipTextureHandle = GLES20.glGetUniformLocation(pipProgram, "uTexture");
+        pipMvpMatrixHandle = GLES20.glGetUniformLocation(pipProgram, "uMVPMatrix");
+        pipTexMatrixHandle = GLES20.glGetUniformLocation(pipProgram, "uTexMatrix");
+        pipRoundedHandle = GLES20.glGetUniformLocation(pipProgram, "uRounded");
+        pipBorderHandle = GLES20.glGetUniformLocation(pipProgram, "uBorder");
+        pipCornerRadiusHandle = GLES20.glGetUniformLocation(pipProgram, "uCornerRadius");
+        pipBorderWidthHandle = GLES20.glGetUniformLocation(pipProgram, "uBorderWidth");
+        pipBorderColorHandle = GLES20.glGetUniformLocation(pipProgram, "uBorderColor");
+        pipAspectRatioHandle = GLES20.glGetUniformLocation(pipProgram, "uAspectRatio");
+
+        Log.d(TAG, "PiP shader program created: " + pipProgram);
+    }
+
+    /**
+     * Computes PiP quad vertices in NDC space based on the current {@link #pipConfig}.
+     * The output encoder dimensions are used for aspect-correct margin conversion.
+     */
+    private void computePipGeometry() {
+        if (pipConfig == null) return;
+
+        // Use post-rotation encoder dimensions.
+        // In portrait mode, the encoder is configured as e.g. 1080x1920 (H>W)
+        // but we need the dimensions of the final rendered frame which includes rotation.
+        // The renderToEncoder MVP rotates the camera feed, so the final encoded frame
+        // has the rotated dimensions. We must use those for PiP positioning.
+        int rawW = encoderWidth > 0 ? encoderWidth : videoWidth;
+        int rawH = encoderHeight > 0 ? encoderHeight : videoHeight;
+
+        // Determine rotation to see if the output is effectively portrait
+        int rotationDeg = getRequiredRotation();
+        boolean isRotated = (rotationDeg == 90 || rotationDeg == 270);
+        int outW = isRotated ? rawH : rawW; // post-rotation width
+        int outH = isRotated ? rawW : rawH; // post-rotation height
+
+        // PiP size as fraction of output width
+        float pipWidthFraction = pipConfig.getPipSize().ratio;
+        // The PiP camera outputs at videoWidth x videoHeight, same as primary
+        // but after rotation the effective aspect changes
+        float pipCameraAspect = isRotated
+                ? (float) videoHeight / (float) videoWidth
+                : (float) videoWidth / (float) videoHeight;
+        // In NDC the full-screen quad is [-1, 1] in both axes. The PiP width in NDC:
+        float pipNdcW = pipWidthFraction * 2.0f; // fraction of full width in NDC
+        // PiP height in NDC, corrected for output aspect ratio:
+        float outputAspect = (float) outW / (float) outH;
+        float pipNdcH = (pipNdcW / pipCameraAspect) * outputAspect;
+
+        // Margin in NDC (dp → fraction of smaller dimension → NDC)
+        float marginDp = pipConfig.getPipMarginDp();
+        float density = context.getResources().getDisplayMetrics().density;
+        float marginPx = marginDp * density;
+        float referenceDim = Math.min(outW, outH);
+        float marginFraction = marginPx / referenceDim;
+        float marginNdc = marginFraction * 2.0f;
+
+        // Compute PiP position in NDC based on config
+        float left, top;
+        switch (pipConfig.getPipPosition()) {
+            case TOP_LEFT:
+                left = -1.0f + marginNdc;
+                top = 1.0f - marginNdc;
+                break;
+            case TOP_RIGHT:
+                left = 1.0f - marginNdc - pipNdcW;
+                top = 1.0f - marginNdc;
+                break;
+            case BOTTOM_LEFT:
+                left = -1.0f + marginNdc;
+                top = -1.0f + marginNdc + pipNdcH;
+                break;
+            case BOTTOM_RIGHT:
+            default:
+                left = 1.0f - marginNdc - pipNdcW;
+                top = -1.0f + marginNdc + pipNdcH;
+                break;
+        }
+
+        float right = left + pipNdcW;
+        float bottom = top - pipNdcH;
+
+        // Build vertex buffer for PiP quad (triangle strip)
+        float[] pipVerts = {
+                left,  bottom,  // bottom-left
+                right, bottom,  // bottom-right
+                left,  top,     // top-left
+                right, top      // top-right
+        };
+
+        pipVertexBuffer = ByteBuffer.allocateDirect(pipVerts.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        pipVertexBuffer.put(pipVerts).position(0);
+
+        Log.d(TAG, String.format("PiP geometry: NDC[%.2f,%.2f → %.2f,%.2f] size=%.0f%%",
+                left, bottom, right, top, pipWidthFraction * 100));
+    }
+
+    /**
+     * Draws the PiP overlay on top of the current framebuffer.
+     * Call after drawing the primary camera texture and before drawing the watermark.
+     *
+     * @param mvpMatrix MVP matrix (identity for encoder, transformed for preview).
+     */
+    private void drawPipOverlay(float[] mvpMatrix) {
+        if (!pipEnabled || pipOesTextureId == 0 || pipVertexBuffer == null) {
+            return;
+        }
+
+        // Determine which texture is primary vs PiP based on swap state
+        int pipTextureId = camerasSwapped ? oesTextureId : pipOesTextureId;
+        SurfaceTexture pipST = camerasSwapped ? cameraSurfaceTexture : pipSurfaceTexture;
+
+        // Get the PiP texture matrix
+        float[] currentPipTexMatrix = new float[16];
+        if (pipST != null) {
+            pipST.getTransformMatrix(currentPipTexMatrix);
+        } else {
+            Matrix.setIdentityM(currentPipTexMatrix, 0);
+        }
+
+        // Apply the same orientation fix as the primary camera for the PiP texture
+        boolean isLandscape = false;
+        if (userOrientationSetting != null) {
+            isLandscape = "landscape".equalsIgnoreCase(userOrientationSetting);
+        }
+
+        float[] pipEncoderTexMatrix;
+        if (isLandscape) {
+            float[] fixedTexMatrix = new float[16];
+            Matrix.setIdentityM(fixedTexMatrix, 0);
+            Matrix.scaleM(fixedTexMatrix, 0, 1f, -1f, 1f);
+            Matrix.translateM(fixedTexMatrix, 0, 0f, -1f, 0f);
+            pipEncoderTexMatrix = fixedTexMatrix;
+        } else {
+            pipEncoderTexMatrix = currentPipTexMatrix;
+        }
+
+        // Enable blending for smooth edges on rounded corners
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
+        GLES20.glUseProgram(pipProgram);
+
+        // Set uniforms
+        GLES20.glUniformMatrix4fv(pipMvpMatrixHandle, 1, false, mvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(pipTexMatrixHandle, 1, false, pipEncoderTexMatrix, 0);
+
+        // Rounded corners
+        boolean rounded = pipConfig != null && pipConfig.isRoundPipCorners();
+        GLES20.glUniform1i(pipRoundedHandle, rounded ? 1 : 0);
+
+        // Border
+        boolean border = pipConfig != null && pipConfig.isShowPipBorder();
+        GLES20.glUniform1i(pipBorderHandle, border ? 1 : 0);
+
+        // Corner radius and border width in UV space
+        float cornerRadius = rounded ? 0.08f : 0.0f;
+        float borderWidth = border ? 0.02f : 0.0f;
+        GLES20.glUniform1f(pipCornerRadiusHandle, cornerRadius);
+        GLES20.glUniform1f(pipBorderWidthHandle, borderWidth);
+        GLES20.glUniform4f(pipBorderColorHandle, 1.0f, 1.0f, 1.0f, 1.0f); // White border
+
+        // Aspect ratio for circular rounding — use the post-rotation PiP aspect
+        int rotDeg = getRequiredRotation();
+        boolean rotated = (rotDeg == 90 || rotDeg == 270);
+        float pipAR = rotated
+                ? (float) videoHeight / (float) videoWidth
+                : (float) videoWidth / (float) videoHeight;
+        GLES20.glUniform1f(pipAspectRatioHandle, pipAR > 1.0f ? pipAR : 1.0f / pipAR);
+
+        // Set up vertex attributes
+        GLES20.glEnableVertexAttribArray(pipPositionHandle);
+        GLES20.glVertexAttribPointer(pipPositionHandle, 2, GLES20.GL_FLOAT, false, 0, pipVertexBuffer);
+        GLES20.glEnableVertexAttribArray(pipTexCoordHandle);
+        GLES20.glVertexAttribPointer(pipTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
+
+        // Bind PiP texture
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, pipTextureId);
+        GLES20.glUniform1i(pipTextureHandle, 0);
+
+        // Draw PiP quad
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
+        // Clean up
+        GLES20.glDisableVertexAttribArray(pipPositionHandle);
+        GLES20.glDisableVertexAttribArray(pipTexCoordHandle);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        GLES20.glUseProgram(0);
+        GLES20.glDisable(GLES20.GL_BLEND);
+    }
+
+    /**
+     * Releases PiP-specific resources (texture, surface, SurfaceTexture).
+     */
+    private void releasePipResources() {
+        pipEnabled = false;
+        if (pipCameraInputSurface != null) {
+            try { pipCameraInputSurface.release(); } catch (Exception e) { Log.w(TAG, "Error releasing PiP surface", e); }
+            pipCameraInputSurface = null;
+        }
+        if (pipSurfaceTexture != null) {
+            try { pipSurfaceTexture.release(); } catch (Exception e) { Log.w(TAG, "Error releasing PiP SurfaceTexture", e); }
+            pipSurfaceTexture = null;
+        }
+        if (pipOesTextureId != 0) {
+            try { GLES20.glDeleteTextures(1, new int[]{pipOesTextureId}, 0); } catch (Exception e) { /* ignored */ }
+            pipOesTextureId = 0;
+        }
+        if (pipProgram != 0) {
+            try { GLES20.glDeleteProgram(pipProgram); } catch (Exception e) { /* ignored */ }
+            pipProgram = 0;
+        }
+        camerasSwapped = false;
+        pipConfig = null;
+    }
+
+    /**
+     * Updates PiP secondary texture if a new frame is available.
+     * Called at the beginning of each render cycle for best-effort PiP updates.
+     * Does NOT block — if no new frame, keeps the last frame.
+     */
+    private void updatePipTexture() {
+        if (!pipEnabled || pipSurfaceTexture == null) return;
+
+        boolean needUpdate;
+        synchronized (pipFrameSyncObject) {
+            needUpdate = pipFrameAvailable;
+            pipFrameAvailable = false;
+        }
+        if (needUpdate) {
+            try {
+                pipSurfaceTexture.updateTexImage();
+            } catch (Exception e) {
+                Log.w(TAG, "Error updating PiP texture", e);
+            }
+        }
+    }
+
+    public void setDeviceOrientation(int orientation) {        if (this.deviceOrientation == orientation)
             return;
         this.deviceOrientation = orientation;
         updateMatrices();
@@ -1282,16 +1867,6 @@ public class GLWatermarkRenderer {
         float videoAspectRatio = (float) orientedVideoWidth / orientedVideoHeight;
         float previewAspectRatio = (float) mSurfaceWidth / mSurfaceHeight;
 
-        // Log.d(TAG, "Aspect ratios - video: " + videoAspectRatio +
-        // ", preview: " + previewAspectRatio +
-        // ", orientedVideoWidth: " + orientedVideoWidth +
-        // ", orientedVideoHeight: " + orientedVideoHeight +
-        // ", surfaceWidth: " + mSurfaceWidth +
-        // ", surfaceHeight: " + mSurfaceHeight);
-        // Log.d("FAD-MATRIX", "Surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
-        // Log.d("FAD-MATRIX", "Encoder: " + orientedVideoWidth + "x" +
-        // orientedVideoHeight);
-
         float scaleX = 1.0f;
         float scaleY = 1.0f;
 
@@ -1299,18 +1874,12 @@ public class GLWatermarkRenderer {
             if (previewAspectRatio > videoAspectRatio) {
                 // Preview is wider than video: pillarbox (scale X down)
                 scaleX = videoAspectRatio / previewAspectRatio;
-                // Log.d(TAG, "Applying pillarbox with scaleX = " + scaleX);
             } else {
                 // Preview is taller than video: letterbox (scale Y down)
                 scaleY = previewAspectRatio / videoAspectRatio;
-                // Log.d(TAG, "Applying letterbox with scaleY = " + scaleY);
             }
         }
-        // Log.d("FAD-MATRIX", String.format("ScaleX: %.2f ScaleY: %.2f", scaleX,
-        // scaleY));
         Matrix.scaleM(previewMvpMatrix, 0, scaleX, scaleY, 1.0f);
-        // Log.d("FAD-MATRIX", "recordingMvpMatrix: " +
-        // java.util.Arrays.toString(recordingMvpMatrix));
     }
 
     private int getDisplayRotation() {
