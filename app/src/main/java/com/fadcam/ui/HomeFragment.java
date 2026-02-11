@@ -8167,10 +8167,21 @@ public class HomeFragment extends BaseFragment {
             registerForActivityResult(
                     new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                     result -> {
-                        // Fullscreen activity finished — delay briefly so its onDestroy
-                        // (which sends a null surface) completes before we push ours.
+                        // Fullscreen activity finished — push our surface immediately.
+                        // FullscreenPreview does NOT send null on destroy, so there
+                        // is no race condition. We just need to reclaim the preview.
+                        resetTextureView();
+                        // Safety retry: if TextureView wasn't ready yet (e.g. it
+                        // was recreated), onSurfaceTextureAvailable handles it.
+                        // But if it IS available and the first reset didn't take
+                        // (debounce / timing), retry once more.
                         new android.os.Handler(android.os.Looper.getMainLooper())
-                                .postDelayed(this::resetTextureView, 350);
+                                .postDelayed(() -> {
+                                    if (textureViewSurface == null
+                                            || !textureViewSurface.isValid()) {
+                                        resetTextureView();
+                                    }
+                                }, 600);
                     });
 
     /**

@@ -166,8 +166,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         super.onDestroy();
         autoHideHandler.removeCallbacks(autoHideRunnable);
         unregisterTorchReceiver();
-        // Release preview → service will stop rendering to this surface
-        sendSurfaceToService(null, -1, -1);
+        // Release local surface only — do NOT send null to service.
+        // HomeFragment will immediately push its own surface when it resumes,
+        // avoiding the race condition that causes "stuck preview" frames.
         if (previewSurface != null) {
             previewSurface.release();
             previewSurface = null;
@@ -237,7 +238,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
             @Override
             public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture st) {
-                sendSurfaceToService(null, -1, -1);
+                // Do NOT send null to service here — HomeFragment will push its
+                // own surface immediately when it resumes. Sending null causes
+                // a race condition with HomeFragment's surface push.
                 previewSurface = null;
                 return true;
             }

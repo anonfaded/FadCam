@@ -80,29 +80,31 @@
                 android:id="@+id/btnFullscreenCamSwitch"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="24dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/fullscreen_action_btn_bg"
                 android:clickable="true"
                 android:focusable="true"
                 android:fontFamily="@font/materialicons"
                 android:gravity="center"
                 android:text="flip_camera_android"
                 android:textColor="@android:color/white"
-                android:textSize="28sp" />
+                android:textSize="24sp"
+                android:padding="4dp" />
 
             <!-- Torch toggle -->
             <TextView
                 android:id="@+id/btnFullscreenTorch"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/fullscreen_action_btn_bg"
                 android:clickable="true"
                 android:focusable="true"
                 android:fontFamily="@font/materialicons"
                 android:gravity="center"
                 android:text="flash_off"
                 android:textColor="@android:color/white"
-                android:textSize="28sp" />
+                android:textSize="24sp"
+                android:padding="4dp" />
 
         </LinearLayout>
 

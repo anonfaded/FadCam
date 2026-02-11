@@ -168,8 +168,49 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                     .createMediaSource(fileItem);
         }
 
-        // Fallback: ClippingMediaSource with DefaultDataSource
-        Log.d(TAG, "Could not reconstruct path, using ClippingMediaSource fallback");
+        // Fallback 1: Use /proc/self/fd/ trick for full index-based seeking
+        // This works for any content:// URI including SD card files
+        Log.d(TAG, "Path reconstruction failed, trying FD-based index building");
+        android.os.ParcelFileDescriptor pfd = null;
+        try {
+            pfd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd != null) {
+                String fdPath = "/proc/self/fd/" + pfd.getFd();
+                File fdFile = new File(fdPath);
+                if (fdFile.exists() && fdFile.canRead()) {
+                    long startTime = System.currentTimeMillis();
+                    FragmentedMp4IndexBuilder.FragmentIndex fragmentIndex =
+                            indexBuilder.buildIndex(fdFile);
+                    long scanTime = System.currentTimeMillis() - startTime;
+                    Log.d(TAG, "Index built from FD in " + scanTime + "ms: " +
+                          fragmentIndex.fragments.size() + " fragments, " +
+                          "duration=" + (fragmentIndex.durationUs / 1_000_000.0) + "s, " +
+                          "seekable=" + fragmentIndex.isSeekable);
+
+                    if (fragmentIndex.isSeekable && !fragmentIndex.fragments.isEmpty()) {
+                        final FragmentedMp4IndexBuilder.FragmentIndex index = fragmentIndex;
+                        ExtractorsFactory extractorsFactory = () -> new Extractor[] {
+                            new SeekMapInjectingExtractor(index)
+                        };
+                        DataSource.Factory ds = new DefaultDataSource.Factory(context);
+                        // Keep PFD open for the lifetime of playback
+                        final android.os.ParcelFileDescriptor keptPfd = pfd;
+                        pfd = null; // Prevent closing in finally
+                        return new ProgressiveMediaSource.Factory(ds, extractorsFactory)
+                                .createMediaSource(mediaItem);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "FD-based index building failed: " + e.getMessage());
+        } finally {
+            if (pfd != null) {
+                try { pfd.close(); } catch (Exception ignored) {}
+            }
+        }
+
+        // Fallback 2: ClippingMediaSource with DefaultDataSource
+        Log.d(TAG, "Could not build index, using ClippingMediaSource fallback");
         long durationUs = getDurationFromRetriever(uri);
 
         // DefaultDataSource handles content:// URIs natively
@@ -204,12 +245,14 @@ public class SeekableFragmentedMp4MediaSourceFactory {
      * Attempts to reconstruct a real file system path from a SAF
      * {@code content://} URI.
      *
-     * <p>SAF URIs on primary storage often contain a colon-separated relative
-     * path. For example:
+     * <p>SAF URIs on primary/external storage often contain a colon-separated
+     * relative path. For example:
      * <pre>
      * content://...document/primary:Download/FadCam/file.mp4
+     * content://...document/XXXX-XXXX:FadCam/file.mp4  (SD card)
      * </pre>
-     * becomes {@code /storage/emulated/0/Download/FadCam/file.mp4}.
+     * This method checks ALL mounted storage volumes (internal + SD cards)
+     * instead of hardcoding {@code /storage/emulated/0/}.
      *
      * @return the reconstructed absolute path if the file exists and is
      *         readable, or {@code null} otherwise.
@@ -223,10 +266,28 @@ public class SeekableFragmentedMp4MediaSourceFactory {
         if (lastColonIndex < 0 || lastColonIndex >= path.length() - 1) return null;
 
         String relativePath = path.substring(lastColonIndex + 1);
-        String reconstructed = "/storage/emulated/0/" + relativePath;
-        File file = new File(reconstructed);
-        if (file.exists() && file.canRead()) {
-            return reconstructed;
+
+        // Try all mounted storage volumes (internal + SD cards)
+        try {
+            File[] externalDirs = context.getExternalFilesDirs(null);
+            if (externalDirs != null) {
+                for (File dir : externalDirs) {
+                    if (dir == null) continue;
+                    // externalDirs paths: /storage/XXXX-XXXX/Android/data/com.fadcam/files
+                    String dirPath = dir.getAbsolutePath();
+                    int androidIdx = dirPath.indexOf("/Android/");
+                    if (androidIdx > 0) {
+                        String volumeRoot = dirPath.substring(0, androidIdx + 1);
+                        String reconstructed = volumeRoot + relativePath;
+                        File file = new File(reconstructed);
+                        if (file.exists() && file.canRead()) {
+                            return reconstructed;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error resolving storage volumes: " + e.getMessage());
         }
         return null;
     }

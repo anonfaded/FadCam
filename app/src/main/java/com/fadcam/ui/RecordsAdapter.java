@@ -2127,23 +2127,51 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Get file path for FFprobe - try multiple approaches for content:// URIs
         String filePath = getFFprobePathForUri(videoUri);
         
-        // Use FFprobeKit to get accurate duration
-        try {
-            com.arthenica.ffmpegkit.MediaInformationSession session = 
-                com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
-            com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
-            
-            if (info != null) {
-                String durationStr = info.getDuration();
-                if (durationStr != null) {
-                    double durationSec = Double.parseDouble(durationStr);
-                    long durationMs = (long) (durationSec * 1000);
-                    Log.d(TAG, "Duration from FFprobe: " + durationMs + "ms");
-                    return durationMs;
+        // Use FFprobeKit to get accurate duration (direct file path)
+        if (!filePath.startsWith("saf:")) {
+            try {
+                com.arthenica.ffmpegkit.MediaInformationSession session = 
+                    com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
+                com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
+                
+                if (info != null) {
+                    String durationStr = info.getDuration();
+                    if (durationStr != null) {
+                        double durationSec = Double.parseDouble(durationStr);
+                        long durationMs = (long) (durationSec * 1000);
+                        Log.d(TAG, "Duration from FFprobe (path): " + durationMs + "ms");
+                        return durationMs;
+                    }
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "Error getting duration from FFprobe for path: " + filePath, e);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Error getting duration from FFprobe for URI: " + videoUri, e);
+        }
+
+        // For content:// URIs where path reconstruction failed, use FD-based FFprobe
+        if ("content".equals(videoUri.getScheme())) {
+            try {
+                ParcelFileDescriptor pfd = context.getContentResolver()
+                        .openFileDescriptor(videoUri, "r");
+                if (pfd != null) {
+                    try {
+                        String fdPath = "/proc/self/fd/" + pfd.getFd();
+                        com.arthenica.ffmpegkit.MediaInformationSession session =
+                                com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(fdPath);
+                        com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
+                        if (info != null && info.getDuration() != null) {
+                            double durationSec = Double.parseDouble(info.getDuration());
+                            long durationMs = (long) (durationSec * 1000);
+                            Log.d(TAG, "Duration from FFprobe (fd): " + durationMs + "ms");
+                            return durationMs;
+                        }
+                    } finally {
+                        pfd.close();
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "FFprobe FD-based duration failed for: " + videoUri, e);
+            }
         }
         
         // Fallback: Use MediaMetadataRetriever (proper Android API for content:// URIs)
@@ -2174,7 +2202,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     
     /**
      * Gets the appropriate file path for FFprobeKit.
-     * For content:// URIs, tries reconstructed path first, then falls back to SAF protocol.
+     * For content:// URIs, tries reconstructed path on ALL storage volumes
+     * (internal + SD card), then falls back to SAF protocol.
      */
     private String getFFprobePathForUri(Uri videoUri) {
         if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
@@ -2184,16 +2213,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // For content:// URIs, try to get actual file path first (more reliable)
         String path = videoUri.getPath();
         if (path != null && path.contains(":")) {
-            // SAF URIs often have format /tree/primary:FadCam/document/primary:FadCam/file.mp4
-            // or /document/primary:Download/FadCam/file.mp4
             int lastColonIndex = path.lastIndexOf(':');
             if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
                 String relativePath = path.substring(lastColonIndex + 1);
-                String reconstructedPath = "/storage/emulated/0/" + relativePath;
-                java.io.File file = new java.io.File(reconstructedPath);
-                if (file.exists() && file.canRead()) {
-                    Log.d(TAG, "Using reconstructed file path for FFprobe: " + reconstructedPath);
-                    return reconstructedPath;
+                // Try all mounted storage volumes (internal + SD cards)
+                String resolved = resolveRelativePathOnVolumes(relativePath);
+                if (resolved != null) {
+                    Log.d(TAG, "Using reconstructed file path for FFprobe: " + resolved);
+                    return resolved;
                 }
             }
         }
@@ -2201,6 +2228,36 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Fall back to SAF protocol
         Log.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
         return "saf:" + videoUri.toString();
+    }
+
+    /**
+     * Resolves a relative path against all mounted storage volumes.
+     * Checks internal (/storage/emulated/0/) and any SD cards (/storage/XXXX-XXXX/).
+     */
+    private String resolveRelativePathOnVolumes(String relativePath) {
+        if (context == null || relativePath == null) return null;
+        try {
+            java.io.File[] externalDirs = context.getExternalFilesDirs(null);
+            if (externalDirs != null) {
+                for (java.io.File dir : externalDirs) {
+                    if (dir == null) continue;
+                    // externalDirs paths look like: /storage/XXXX-XXXX/Android/data/com.fadcam/files
+                    String dirPath = dir.getAbsolutePath();
+                    int androidIdx = dirPath.indexOf("/Android/");
+                    if (androidIdx > 0) {
+                        String volumeRoot = dirPath.substring(0, androidIdx + 1);
+                        String reconstructed = volumeRoot + relativePath;
+                        java.io.File file = new java.io.File(reconstructed);
+                        if (file.exists() && file.canRead()) {
+                            return reconstructed;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error resolving storage volumes: " + e.getMessage());
+        }
+        return null;
     }
 
     // Get file name from URI (Helper) - Crucial for Save to Gallery/Rename default
