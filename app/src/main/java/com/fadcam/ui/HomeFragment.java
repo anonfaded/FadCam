@@ -270,6 +270,13 @@ public class HomeFragment extends BaseFragment {
      * {@link #onPause()} from sending a null surface to the service.
      */
     private volatile boolean isLaunchingFullscreen = false;
+
+    /**
+     * Guard flag: set when returning from fullscreen to prevent
+     * {@link #onSurfaceTextureDestroyed()} from sending null surface
+     * during texture recreation. Cleared when new surface is ready.
+     */
+    private volatile boolean isReturningFromFullscreen = false;
     private BroadcastReceiver broadcastOnDualRecordingStarted;
     private BroadcastReceiver broadcastOnDualRecordingStopped;
     private BroadcastReceiver broadcastOnDualRecordingPaused;
@@ -2816,11 +2823,11 @@ public class HomeFragment extends BaseFragment {
         // Stop bubble rotation animation to save battery
         stopBubbleRotation();
 
-        if (textureViewSurface != null && !isLaunchingFullscreen) {
+        if (textureViewSurface != null && !isReturningFromFullscreen) {
             Log.d(TAG, "onPause: Explicitly sending null surface to service");
             updateServiceWithCurrentSurface(null);
-        } else if (isLaunchingFullscreen) {
-            Log.d(TAG, "onPause: Skipping null surface — launching fullscreen preview");
+        } else if (isReturningFromFullscreen) {
+            Log.d(TAG, "onPause: Skipping null surface — returning from fullscreen, new surface incoming");
         }
         // locationHelper.stopLocationUpdates();
 
@@ -4567,6 +4574,11 @@ public class HomeFragment extends BaseFragment {
                         TAG,
                         "onSurfaceTextureAvailable: Created new surface from texture"
                     );
+                    // Clear the returning flag now that surface is ready
+                    if (isReturningFromFullscreen) {
+                        Log.d(TAG, "onSurfaceTextureAvailable: Clearing isReturningFromFullscreen flag");
+                        isReturningFromFullscreen = false;
+                    }
                     if (isPreviewEnabled && isRecordingOrPaused()) {
                         Log.d(
                             TAG,
@@ -4587,7 +4599,7 @@ public class HomeFragment extends BaseFragment {
 
                 @Override
                 public void onSurfaceTextureSizeChanged(
-                    @NonNull SurfaceTexture surfaceTexture,
+                    @NonNull SurfaceTexture surface,
                     int width,
                     int height
                 ) {
@@ -4625,12 +4637,20 @@ public class HomeFragment extends BaseFragment {
                         "onSurfaceTextureDestroyed: SurfaceTexture is being destroyed."
                     );
                     if (textureViewSurface != null) {
-                        if (isRecordingOrPaused()) {
+                        // Only send null if we're not returning from fullscreen.
+                        // During fullscreen return, texture is destroyed/recreated rapidly, and
+                        // sending null causes "Surface lost" dummy surface creation.
+                        if (isRecordingOrPaused() && !isReturningFromFullscreen) {
                             Log.d(
                                 TAG,
                                 "onSurfaceTextureDestroyed: Recording active, sending null surface to service."
                             );
                             updateServiceWithCurrentSurface(null);
+                        } else if (isReturningFromFullscreen) {
+                            Log.d(
+                                TAG,
+                                "onSurfaceTextureDestroyed: Skipping null surface — returning from fullscreen"
+                            );
                         }
                         textureViewSurface.release();
                         textureViewSurface = null;
@@ -8180,6 +8200,7 @@ public class HomeFragment extends BaseFragment {
                         // FullscreenPreview does NOT send null on destroy, so there
                         // is no race condition. We just need to reclaim the preview.
                         isLaunchingFullscreen = false;
+                        isReturningFromFullscreen = true;
                         resetTextureView();
                         // Safety retry: if TextureView wasn't ready yet (e.g. it
                         // was recreated), onSurfaceTextureAvailable handles it.
@@ -8191,6 +8212,8 @@ public class HomeFragment extends BaseFragment {
                                             || !textureViewSurface.isValid()) {
                                         resetTextureView();
                                     }
+                                    // Clear the guard flag after surface should be stable
+                                    isReturningFromFullscreen = false;
                                 }, 600);
                     });
 

@@ -251,7 +251,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     }
 
     private void setupCloseButton() {
-        TextView btnClose = findViewById(R.id.btnClose);
+        android.widget.ImageView btnClose = findViewById(R.id.btnClose);
         if (btnClose != null) btnClose.setOnClickListener(v -> finish());
     }
 

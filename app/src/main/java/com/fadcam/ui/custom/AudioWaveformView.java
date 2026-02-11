@@ -158,7 +158,9 @@ public class AudioWaveformView extends View {
      * <p>Falls back to streaming accumulation if duration is unavailable.</p>
      */
     private void extractRealAudioData(Uri videoUri) {
+        long startTime = System.currentTimeMillis();
         Log.i(TAG, "═══ WAVEFORM ANALYSIS START ═══");
+        Log.d(TAG, "Analyzing waveform for URI: " + videoUri);
 
         MediaExtractor extractor = null;
         MediaCodec codec = null;
@@ -228,7 +230,8 @@ public class AudioWaveformView extends View {
                 for (int i = 0; i < waveformPoints; i++) rawBins[i] *= scale;
             }
 
-            Log.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE ═══");
+            long elapsedMs = System.currentTimeMillis() - startTime;
+            Log.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE in " + elapsedMs + "ms ═══");
 
             final float[] finalBins = rawBins;
             post(() -> {
@@ -280,7 +283,7 @@ public class AudioWaveformView extends View {
             while (!binDone && isAnalyzingAudio) {
                 // Feed input
                 if (!inputEos) {
-                    int inIdx = codec.dequeueInputBuffer(5_000);
+                    int inIdx = codec.dequeueInputBuffer(2_000);
                     if (inIdx >= 0) {
                         ByteBuffer buf = codec.getInputBuffer(inIdx);
                         if (buf == null) { inputEos = true; continue; }
@@ -298,7 +301,7 @@ public class AudioWaveformView extends View {
                 }
 
                 // Drain output
-                int outIdx = codec.dequeueOutputBuffer(info, 5_000);
+                int outIdx = codec.dequeueOutputBuffer(info, 2_000);
                 if (outIdx >= 0) {
                     if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         binDone = true;
