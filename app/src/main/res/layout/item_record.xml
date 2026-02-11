@@ -39,7 +39,7 @@
                 android:id="@+id/selection_dim_overlay"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#7A000000"
+                android:background="#B5000000"
                 android:visibility="gone" />
 
             <!-- Serial Number Overlay -->

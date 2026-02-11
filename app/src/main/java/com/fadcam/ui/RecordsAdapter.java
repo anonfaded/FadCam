@@ -2341,17 +2341,31 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     @SuppressLint("NotifyDataSetChanged")
     public void setSelectionModeActive(boolean isActive, @NonNull List<Uri> currentSelection) {
         boolean modeChanged = this.isSelectionModeActive != isActive;
-        boolean selectionChanged = !this.currentSelectedUris.equals(currentSelection); // Check if selection list
-                                                                                       // differs
+        List<Uri> previousSelection = new ArrayList<>(this.currentSelectedUris);
+        boolean selectionChanged = !previousSelection.equals(currentSelection);
 
         this.isSelectionModeActive = isActive;
         this.currentSelectedUris = new ArrayList<>(currentSelection); // Update internal copy
 
-        // If mode changed OR selection changed, refresh visuals
-        if (modeChanged || selectionChanged) {
-            Log.d(TAG, "setSelectionModeActive: Mode=" + isActive + ", SelCount=" + currentSelectedUris.size()
-                    + ". Triggering notifyDataSetChanged.");
-            notifyDataSetChanged(); // Full refresh easiest way to update all visuals
+        if (modeChanged) {
+            Log.d(TAG, "setSelectionModeActive: mode changed, full refresh");
+            notifyDataSetChanged();
+            return;
+        }
+
+        if (selectionChanged) {
+            java.util.Set<Uri> changed = new java.util.HashSet<>(previousSelection);
+            changed.addAll(currentSelection);
+            for (Uri uri : changed) {
+                boolean before = previousSelection.contains(uri);
+                boolean after = currentSelection.contains(uri);
+                if (before != after) {
+                    int pos = findPositionByUri(uri);
+                    if (pos != -1) {
+                        notifyItemChanged(pos, "SELECTION_TOGGLE");
+                    }
+                }
+            }
         } else {
             Log.d(TAG, "setSelectionModeActive: Mode and selection unchanged, no refresh needed.");
         }

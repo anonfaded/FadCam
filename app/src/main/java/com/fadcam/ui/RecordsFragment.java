@@ -46,6 +46,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -56,6 +57,8 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager; // Import your manager
 import com.fadcam.Utils;
 import com.fadcam.utils.RecordingStoragePaths;
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
 // Import the new VideoItem class
 // Ensure adapter import is correct
 import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
@@ -204,7 +207,7 @@ public class RecordsFragment extends BaseFragment implements
 
                 // Replace source data, then apply active filter to visible list.
                 allLoadedItems.clear();
-                allLoadedItems.addAll(actualItems);
+                allLoadedItems.addAll(normalizeVideoCategories(actualItems));
                 applyActiveFilterToUi();
                 Log.d(TAG, "Applied active filter to " + actualItems.size() + " loaded videos");
 
@@ -1362,7 +1365,7 @@ public class RecordsFragment extends BaseFragment implements
                     Log.e(TAG, "fabDeleteSelected clicked but fragment not ready!");
                     return;
                 }
-                confirmDeleteSelected(); // Call the confirmation dialog method
+                showBatchActionsSheet();
             });
             Log.d(TAG, "FAB Delete listener set.");
         } else {
@@ -1861,7 +1864,7 @@ public class RecordsFragment extends BaseFragment implements
         if (isInSelectionMode) {
             int count = selectedUris.size();
             titleText.setText(count > 0 ? count + " selected" : "Select items");
-            fabDeleteSelected.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
+            fabDeleteSelected.setVisibility(View.VISIBLE);
             if (filterChecklistButton != null) {
                 filterChecklistButton.setTextColor(resolveThemeColor(R.attr.colorToggle));
             }
@@ -2004,12 +2007,26 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private void styleFilterChips() {
+        applyChipIcon(chipFilterAll, R.drawable.ic_list);
+        applyChipIcon(chipFilterCamera, R.drawable.ic_camera);
+        applyChipIcon(chipFilterDual, R.drawable.ic_cam_switch);
+        applyChipIcon(chipFilterScreen, R.drawable.ic_vid_cam);
+        applyChipIcon(chipFilterFaditor, R.drawable.ic_edit_cut);
+        applyChipIcon(chipFilterStream, R.drawable.ic_wifi);
         styleFilterChip(chipFilterAll);
         styleFilterChip(chipFilterCamera);
         styleFilterChip(chipFilterDual);
         styleFilterChip(chipFilterScreen);
         styleFilterChip(chipFilterFaditor);
         styleFilterChip(chipFilterStream);
+    }
+
+    private void applyChipIcon(@Nullable Chip chip, int drawableRes) {
+        if (chip == null) return;
+        chip.setChipIconResource(drawableRes);
+        chip.setChipIconVisible(true);
+        chip.setIconStartPadding(dpToPx(2));
+        chip.setChipIconSize(dpToPx(14));
     }
 
     private void styleFilterChip(@Nullable Chip chip) {
@@ -2062,6 +2079,51 @@ public class RecordsFragment extends BaseFragment implements
         chip.setText(getString(baseLabelRes) + " " + count);
     }
 
+    private List<VideoItem> normalizeVideoCategories(@NonNull List<VideoItem> input) {
+        List<VideoItem> normalized = new ArrayList<>(input.size());
+        for (VideoItem item : input) {
+            if (item == null || item.uri == null) {
+                continue;
+            }
+            VideoItem.Category category = item.category;
+            if (category == null || category == VideoItem.Category.UNKNOWN) {
+                category = inferCategoryForVideoItem(item);
+            }
+            VideoItem copy = new VideoItem(item.uri, item.displayName, item.size, item.lastModified, category);
+            copy.isTemporary = item.isTemporary;
+            copy.isNew = item.isNew;
+            copy.isProcessingUri = item.isProcessingUri;
+            copy.isSkeleton = item.isSkeleton;
+            normalized.add(copy);
+        }
+        return normalized;
+    }
+
+    private VideoItem.Category inferCategoryForVideoItem(@NonNull VideoItem item) {
+        String uri = item.uri.toString();
+        if (uri.contains("/" + Constants.RECORDING_SUBDIR_CAMERA + "/")
+                || uri.contains("%2F" + Constants.RECORDING_SUBDIR_CAMERA + "%2F")) {
+            return VideoItem.Category.CAMERA;
+        }
+        if (uri.contains("/" + Constants.RECORDING_SUBDIR_DUAL + "/")
+                || uri.contains("%2F" + Constants.RECORDING_SUBDIR_DUAL + "%2F")) {
+            return VideoItem.Category.DUAL;
+        }
+        if (uri.contains("/" + Constants.RECORDING_SUBDIR_SCREEN + "/")
+                || uri.contains("%2F" + Constants.RECORDING_SUBDIR_SCREEN + "%2F")) {
+            return VideoItem.Category.SCREEN;
+        }
+        if (uri.contains("/" + Constants.RECORDING_SUBDIR_FADITOR + "/")
+                || uri.contains("%2F" + Constants.RECORDING_SUBDIR_FADITOR + "%2F")) {
+            return VideoItem.Category.FADITOR;
+        }
+        if (uri.contains("/" + Constants.RECORDING_SUBDIR_STREAM + "/")
+                || uri.contains("%2F" + Constants.RECORDING_SUBDIR_STREAM + "%2F")) {
+            return VideoItem.Category.STREAM;
+        }
+        return inferCategoryFromLegacyName(item.displayName);
+    }
+
     private void updateFilterHelperText() {
         if (filterHelperText == null) return;
         if (activeFilter == VideoItem.Category.ALL) {
@@ -2098,14 +2160,7 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private void updateSelectionActionRow() {
-        if (selectionActionsRow == null) return;
-        selectionActionsRow.setVisibility(isInSelectionMode ? View.VISIBLE : View.GONE);
-        if (btnActionSelectAll != null) {
-            boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
-            btnActionSelectAll.setText(getString(allSelected
-                    ? R.string.records_batch_deselect_all
-                    : R.string.records_batch_select_all));
-        }
+        if (selectionActionsRow != null) selectionActionsRow.setVisibility(View.GONE);
     }
 
     private void toggleSelectAllVisibleItems() {
@@ -2123,6 +2178,168 @@ public class RecordsFragment extends BaseFragment implements
             recordsAdapter.setSelectionModeActive(true, selectedUris);
         }
         updateUiForSelectionMode();
+    }
+
+    private void showBatchActionsSheet() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (!(getActivity() instanceof FragmentActivity)) return;
+
+        int selectedCount = selectedUris.size();
+        String suffix = selectedCount > 0 ? " (" + selectedCount + ")" : "";
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+        items.add(new OptionItem(
+                "batch_select_all",
+                getString(allSelected ? R.string.records_batch_deselect_all : R.string.records_batch_select_all) + suffix,
+                getString(R.string.records_batch_select_all_desc),
+                null, null, null, null, null, "select_all"));
+        items.add(new OptionItem(
+                "batch_save_gallery",
+                getString(R.string.records_batch_save) + suffix,
+                getString(R.string.records_batch_save_desc),
+                null, null, null, null, null, "download"));
+        items.add(new OptionItem(
+                "batch_open_faditor",
+                getString(R.string.records_batch_faditor) + suffix,
+                getString(R.string.records_batch_faditor_desc),
+                null, null, null, null, null, "movie_edit"));
+        items.add(new OptionItem(
+                "batch_delete",
+                getString(R.string.records_batch_delete) + suffix,
+                getString(R.string.records_batch_delete_desc),
+                null, null, null, null, null, "delete"));
+
+        FragmentActivity activity = (FragmentActivity) getActivity();
+        String resultKey = "records_batch_actions";
+        activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
+            if (bundle == null) return;
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (id == null) return;
+            switch (id) {
+                case "batch_select_all":
+                    toggleSelectAllVisibleItems();
+                    break;
+                case "batch_save_gallery":
+                    if (selectedUris.isEmpty()) {
+                        Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+                    } else {
+                        showBatchSaveOptionsSheet();
+                    }
+                    break;
+                case "batch_open_faditor":
+                    handleBatchOpenInFaditor();
+                    break;
+                case "batch_delete":
+                    if (selectedUris.isEmpty()) {
+                        Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+                    } else {
+                        confirmDeleteSelected();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.records_batch_actions_title),
+                items,
+                null,
+                resultKey,
+                null,
+                true
+        );
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        sheet.show(activity.getSupportFragmentManager(), "records_batch_actions_sheet");
+    }
+
+    private void showBatchSaveOptionsSheet() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (!(getActivity() instanceof FragmentActivity)) return;
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem(
+                "save_copy",
+                getString(R.string.video_menu_save_copy),
+                getString(R.string.video_menu_save_copy_desc),
+                null, null, null, null, null, "content_copy"));
+        items.add(new OptionItem(
+                "save_move",
+                getString(R.string.video_menu_save_move),
+                getString(R.string.video_menu_save_move_desc),
+                null, null, null, null, null, "drive_file_move"));
+
+        FragmentActivity activity = (FragmentActivity) getActivity();
+        String resultKey = "records_batch_save_options";
+        activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
+            if (bundle == null) return;
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (id == null) return;
+            if ("save_copy".equals(id)) {
+                queueBatchSaveToGallery(false);
+            } else if ("save_move".equals(id)) {
+                queueBatchSaveToGallery(true);
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.video_menu_save_copy_or_move_title),
+                items,
+                "save_copy",
+                resultKey,
+                null,
+                true
+        );
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        sheet.show(activity.getSupportFragmentManager(), "records_batch_save_sheet");
+    }
+
+    private void queueBatchSaveToGallery(boolean moveFiles) {
+        if (selectedUris.isEmpty() || getContext() == null) {
+            Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int queued = 0;
+        for (Uri uri : new ArrayList<>(selectedUris)) {
+            VideoItem item = findVideoItemByUri(allLoadedItems, uri);
+            String name = (item != null && item.displayName != null) ? item.displayName : "video.mp4";
+            if (moveFiles) {
+                com.fadcam.service.FileOperationService.startMoveToGallery(requireContext(), uri, name, name);
+            } else {
+                com.fadcam.service.FileOperationService.startCopyToGallery(requireContext(), uri, name, name);
+            }
+            queued++;
+        }
+        Toast.makeText(requireContext(),
+                getString(R.string.records_batch_save_queued, queued),
+                Toast.LENGTH_SHORT).show();
+
+        if (moveFiles) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                loadRecordsList();
+            }, 1800);
+        }
+    }
+
+    private void handleBatchOpenInFaditor() {
+        if (selectedUris.isEmpty() || getContext() == null) {
+            Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Uri first = selectedUris.get(0);
+        Intent intent = new Intent(requireContext(), com.fadcam.ui.faditor.FaditorEditorActivity.class);
+        intent.setData(first);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(intent);
+        if (selectedUris.size() > 1) {
+            Toast.makeText(requireContext(),
+                    getString(R.string.records_batch_faditor_first_only, selectedUris.size()),
+                    Toast.LENGTH_SHORT).show();
+        }
     }
     // --- Deletion Logic ---
 
@@ -3052,17 +3269,18 @@ public class RecordsFragment extends BaseFragment implements
             Log.d(TAG, "CACHE HIT: Using " + cachedVideos.size() + " cached videos (from memory or disk)");
 
             // Sort cached videos
-            sortItems(cachedVideos, currentSortOption);
+            List<VideoItem> normalizedCached = normalizeVideoCategories(cachedVideos);
+            sortItems(normalizedCached, currentSortOption);
 
             // Show skeleton first, then replace
-            int estimatedCount = cachedVideos.size();
+            int estimatedCount = normalizedCached.size();
             if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
                 Log.d(TAG, "Showing " + estimatedCount + " skeleton items for cache hit");
                 showSkeletonLoading(estimatedCount);
             }
 
             // Replace skeleton with cached data immediately
-            replaceSkeletonsWithData(cachedVideos);
+            replaceSkeletonsWithData(normalizedCached);
 
             isLoading = false;
             return;
@@ -3222,14 +3440,14 @@ public class RecordsFragment extends BaseFragment implements
             if (isPartial) {
                 // For partial updates (e.g., just temp videos), we want to show them right away
                 allLoadedItems.clear();
-                allLoadedItems.addAll(newVideos);
+                allLoadedItems.addAll(normalizeVideoCategories(newVideos));
                 applyActiveFilterToUi();
                 if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
                 // Don't hide loading indicator yet for partial updates
             } else {
                 // For complete updates, replace everything
                 allLoadedItems.clear();
-                allLoadedItems.addAll(newVideos);
+                allLoadedItems.addAll(normalizeVideoCategories(newVideos));
                 applyActiveFilterToUi();
 
                 updateUiVisibility();

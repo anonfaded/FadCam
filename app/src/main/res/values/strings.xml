@@ -217,6 +217,13 @@
     <string name="records_batch_delete">Delete</string>
     <string name="records_batch_coming_soon">This batch action will be added next.</string>
     <string name="records_batch_select_items_first">Select one or more videos first.</string>
+    <string name="records_batch_actions_title">Batch Actions</string>
+    <string name="records_batch_select_all_desc">Quickly select or clear all videos in the current filter.</string>
+    <string name="records_batch_save_desc">Save selected videos to gallery. Choose copy or move in next step.</string>
+    <string name="records_batch_faditor_desc">Open selected videos in Faditor workflow.</string>
+    <string name="records_batch_delete_desc">Move selected videos to Trash.</string>
+    <string name="records_batch_save_queued">%1$d save task(s) added to queue.</string>
+    <string name="records_batch_faditor_first_only">Opened first video. %1$d selected; multi-edit queue coming next.</string>
     <string name="records_hide_thumbnails_row_title">Hide</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>
