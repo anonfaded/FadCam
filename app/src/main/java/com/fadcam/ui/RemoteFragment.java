@@ -324,6 +324,7 @@ public class RemoteFragment extends BaseFragment {
             MainActivity mainActivity = (MainActivity) getActivity();
             mainActivity.setBottomNavColor(0xFF000000); // Pure black
             mainActivity.setStatusBarColor(0xFF000000); // Pure black
+            mainActivity.setNavigationBarColor(0xFF000000); // Pure black
         }
         
         boolean serviceRunning = RemoteStreamManager.getInstance().isStreamingEnabled();
@@ -360,6 +361,7 @@ public class RemoteFragment extends BaseFragment {
             mainActivity.refreshFeatureBadges(); // Update badge UI immediately
             mainActivity.setBottomNavColor(0); // Restore original
             mainActivity.setStatusBarColor(0); // Restore original from theme
+            mainActivity.setNavigationBarColor(0); // Restore original from theme
         }
         
         if (serviceBound) {

@@ -155,6 +155,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Set the system navigation bar (gesture/buttons area at bottom) color.
+     *
+     * @param color Color as integer (e.g., 0xFF000000 for black), or 0 to restore theme color
+     */
+    public void setNavigationBarColor(int color) {
+        if (getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            if (color == 0) {
+                int navColor = resolveThemeColor(this, R.attr.colorBottomNav);
+                getWindow().setNavigationBarColor(navColor);
+            } else {
+                getWindow().setNavigationBarColor(color);
+            }
+        }
+    }
+
+    /**
      * Update feature badge visibility based on whether features have been seen.
      * Uses Material Design BadgeDrawable on BottomNavigationView items.
      */
@@ -492,12 +508,14 @@ public class MainActivity extends AppCompatActivity {
                         // Reset nav and status bar color when leaving remote
                         setBottomNavColor(0);
                         setStatusBarColor(0);
+                        setNavigationBarColor(0);
                         break;
                     case 1:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_records);
                         // Reset nav and status bar color when leaving remote
                         setBottomNavColor(0);
                         setStatusBarColor(0);
+                        setNavigationBarColor(0);
                         // Trigger lazy loading when user navigates to Records tab
                         try {
                             Fragment recordsFragment = getSupportFragmentManager().findFragmentByTag("f" + position);
@@ -517,12 +535,14 @@ public class MainActivity extends AppCompatActivity {
                         // Reset nav and status bar color when leaving remote
                         setBottomNavColor(0);
                         setStatusBarColor(0);
+                        setNavigationBarColor(0);
                         break;
                     case 4:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
                         // Reset nav and status bar color when leaving remote
                         setBottomNavColor(0);
                         setStatusBarColor(0);
+                        setNavigationBarColor(0);
                         // Mark settings nav badge as seen when entering Settings
                         NewFeatureManager.markFeatureAsSeen(MainActivity.this, "settings_nav");
                         // Refresh badges after marking
