@@ -658,6 +658,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.iconCheckContainer == null || holder.checkIcon == null) {
             return;
         }
+        holder.itemView.setAlpha((isSelectionModeActive && isCurrentlySelected) ? 0.58f : 1f);
         if (holder.selectionDimOverlay != null) {
             holder.selectionDimOverlay.setVisibility((isSelectionModeActive && isCurrentlySelected) ? View.VISIBLE : View.GONE);
         }
@@ -843,6 +844,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     VideoItem videoItem = records.get(position);
                     boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
                     applySelectionVisuals(holder, isCurrentlySelected, false);
+                    boolean isProcessing = this.currentlyProcessingUris.contains(videoItem.uri);
+                    boolean allowGeneralInteractions = !isProcessing;
+                    boolean allowMenuClick = !isProcessing && !this.isSelectionModeActive;
+                    holder.itemView.setEnabled(allowGeneralInteractions);
+                    if (holder.menuButtonContainer != null) {
+                        holder.menuButtonContainer.setEnabled(allowMenuClick);
+                        holder.menuButtonContainer.setClickable(allowMenuClick);
+                    }
+                    if (holder.menuButton != null) {
+                        holder.menuButton.setAlpha(allowMenuClick ? 1.0f : 0.4f);
+                    }
                 }
                 return;
             }

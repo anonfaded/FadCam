@@ -219,6 +219,7 @@
     <string name="records_batch_coming_soon">This batch action will be added next.</string>
     <string name="records_batch_select_items_first">Select one or more videos first.</string>
     <string name="records_batch_actions_title">Batch Actions</string>
+    <string name="records_batch_fab_label">Batch</string>
     <string name="records_batch_select_all_desc">Select or clear all videos in the current filter.</string>
     <string name="records_batch_save_desc">Copy, move, or export selected videos to another folder.</string>
     <string name="records_batch_faditor_desc">Run background automations without opening the Faditor tab.</string>
@@ -236,7 +237,7 @@
     <string name="records_batch_faditor_export_standard">Export to Standard MP4</string>
     <string name="records_batch_faditor_export_standard_desc">Converts fragmented MP4 to seekable standard MP4 for external players.</string>
     <string name="records_batch_faditor_merge">Merge Selected Videos</string>
-    <string name="records_batch_faditor_merge_desc">Combines compatible clips. Incompatible clips are skipped and reported.</string>
+    <string name="records_batch_faditor_merge_desc">Combines selected clips into one video in background.</string>
     <string name="records_batch_faditor_queued">%1$d batch item(s) queued in background.</string>
     <string name="records_batch_completed">Batch operation completed.</string>
     <string name="records_batch_notif_channel_name">Batch Media Actions</string>

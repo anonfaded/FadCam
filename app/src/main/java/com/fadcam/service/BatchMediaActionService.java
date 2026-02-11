@@ -201,40 +201,25 @@ public class BatchMediaActionService extends Service {
             return new MergeResult(false, inputUris.size());
         }
 
-        ArrayList<InputPathHolder> holders = new ArrayList<>();
+        ArrayList<File> tempInputs = new ArrayList<>();
         File concatFile = null;
         OutputTarget outputTarget = null;
         try {
-            MediaProfile baseProfile = null;
-            ArrayList<InputPathHolder> compatible = new ArrayList<>();
             int skippedCount = 0;
-
+            ArrayList<String> mergePaths = new ArrayList<>();
+            int sourceIndex = 0;
             for (Uri uri : inputUris) {
-                InputPathHolder holder = resolveInputPath(uri);
-                if (holder == null) {
+                sourceIndex++;
+                File tmp = copyUriToTempMergeFile(uri, sourceIndex);
+                if (tmp == null) {
                     skippedCount++;
                     continue;
                 }
-                holders.add(holder);
-
-                MediaProfile profile = extractProfile(holder.path);
-                if (profile == null || !profile.hasVideo) {
-                    skippedCount++;
-                    continue;
-                }
-
-                if (baseProfile == null) {
-                    baseProfile = profile;
-                    compatible.add(holder);
-                } else if (baseProfile.isCompatibleWith(profile)) {
-                    compatible.add(holder);
-                } else {
-                    skippedCount++;
-                }
+                tempInputs.add(tmp);
+                mergePaths.add(tmp.getAbsolutePath());
             }
 
-            if (compatible.size() < 2) {
-                skippedCount += compatible.size();
+            if (mergePaths.size() < 2) {
                 return new MergeResult(false, skippedCount);
             }
 
@@ -246,22 +231,42 @@ public class BatchMediaActionService extends Service {
 
             concatFile = new File(getCacheDir(), "faditor_batch_concat_" + System.currentTimeMillis() + ".txt");
             try (FileOutputStream fos = new FileOutputStream(concatFile)) {
-                for (InputPathHolder holder : compatible) {
-                    String escapedPath = holder.path.replace("'", "'\\''");
+                for (String path : mergePaths) {
+                    String escapedPath = path.replace("'", "'\\''");
                     fos.write(("file '" + escapedPath + "'\n").getBytes());
                 }
             }
 
-            String cmd = String.format(
+            String concatCopyCmd = String.format(
                     Locale.US,
                     "-f concat -safe 0 -i \"%s\" -c copy -movflags +faststart -y \"%s\"",
                     concatFile.getAbsolutePath(),
                     outputTarget.processingPath
             );
-            FFmpegSession session = FFmpegKit.execute(cmd);
+            FFmpegSession session = FFmpegKit.execute(concatCopyCmd);
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
-                Log.w(TAG, "Merge FFmpeg failed: " + session.getOutput());
-                return new MergeResult(false, skippedCount);
+                Log.w(TAG, "Merge copy mode failed, trying safe re-encode fallback");
+                StringBuilder inputArgs = new StringBuilder();
+                StringBuilder concatFilter = new StringBuilder();
+                int count = mergePaths.size();
+                for (int i = 0; i < count; i++) {
+                    inputArgs.append(" -i \"").append(mergePaths.get(i)).append("\"");
+                    concatFilter.append("[").append(i).append(":v:0]")
+                            .append("[").append(i).append(":a:0]");
+                }
+                String concatReencodeCmd = String.format(
+                        Locale.US,
+                        "%s -filter_complex \"%sconcat=n=%d:v=1:a=1[outv][outa]\" -map \"[outv]\" -map \"[outa]\" -c:v libx264 -preset veryfast -crf 20 -c:a aac -movflags +faststart -y \"%s\"",
+                        inputArgs.toString(),
+                        concatFilter.toString(),
+                        count,
+                        outputTarget.processingPath
+                );
+                FFmpegSession fallbackSession = FFmpegKit.execute(concatReencodeCmd);
+                if (!ReturnCode.isSuccess(fallbackSession.getReturnCode())) {
+                    Log.w(TAG, "Merge fallback failed: " + fallbackSession.getOutput());
+                    return new MergeResult(false, skippedCount);
+                }
             }
 
             if (!finalizeOutput(outputTarget)) {
@@ -276,10 +281,43 @@ public class BatchMediaActionService extends Service {
                 //noinspection ResultOfMethodCallIgnored
                 concatFile.delete();
             }
-            for (InputPathHolder holder : holders) {
-                closeQuietly(holder);
+            for (File temp : tempInputs) {
+                if (temp != null && temp.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    temp.delete();
+                }
             }
             cleanupOutputTarget(outputTarget);
+        }
+    }
+
+    @Nullable
+    private File copyUriToTempMergeFile(@NonNull Uri uri, int index) {
+        File mergeDir = new File(getCacheDir(), "batch_merge_inputs");
+        if (!mergeDir.exists() && !mergeDir.mkdirs()) {
+            return null;
+        }
+        String name = getDisplayName(uri);
+        if (name == null || name.trim().isEmpty()) {
+            name = "merge_source_" + index + ".mp4";
+        }
+        File target = createUniqueFile(mergeDir, name);
+        try (InputStream in = getContentResolver().openInputStream(uri);
+             OutputStream out = new FileOutputStream(target)) {
+            if (in == null) return null;
+            byte[] buffer = new byte[16 * 1024];
+            int len;
+            while ((len = in.read(buffer)) > 0) {
+                out.write(buffer, 0, len);
+            }
+            out.flush();
+            return target;
+        } catch (Exception e) {
+            if (target.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                target.delete();
+            }
+            return null;
         }
     }
 

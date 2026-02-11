@@ -67,8 +67,10 @@ import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 // Add AppLock imports
 import com.guardanis.applock.AppLock;
@@ -303,7 +305,7 @@ public class RecordsFragment extends BaseFragment implements
     private LinearLayout emptyStateContainer; // Add field for the empty state layout
     private RecordsAdapter recordsAdapter;
     private boolean isGridView = true;
-    private FloatingActionButton fabDeleteSelected;
+    private ExtendedFloatingActionButton fabDeleteSelected;
     private FloatingActionButton fabScrollNavigation; // Navigation FAB for scroll to top/bottom
     private boolean isScrollingDown = true; // Track scroll direction for FAB icon
     private ObjectAnimator currentRotationAnimator; // Smooth rotation animation for FAB icon
@@ -331,6 +333,7 @@ public class RecordsFragment extends BaseFragment implements
     private Chip chipFilterScreen;
     private Chip chipFilterFaditor;
     private Chip chipFilterStream;
+    private ChipGroup chipGroupRecordsFilter;
     private TextView filterHelperText;
     private TextView filterChecklistButton;
     private View selectionActionsRow;
@@ -843,6 +846,7 @@ public class RecordsFragment extends BaseFragment implements
         chipFilterScreen = view.findViewById(R.id.chip_filter_screen);
         chipFilterFaditor = view.findViewById(R.id.chip_filter_faditor);
         chipFilterStream = view.findViewById(R.id.chip_filter_stream);
+        chipGroupRecordsFilter = view.findViewById(R.id.chip_group_records_filter);
         filterHelperText = view.findViewById(R.id.filter_helper_text);
         filterChecklistButton = view.findViewById(R.id.btn_filter_checklist);
         selectionActionsRow = view.findViewById(R.id.selection_actions_row);
@@ -1064,11 +1068,11 @@ public class RecordsFragment extends BaseFragment implements
         // ?attr/colorTopBar in XML
         // No need to set background color programmatically
         // Apply theme to FABs
-        int colorButton = resolveThemeColor(R.attr.colorButton);
+        int colorButton = resolveThemeColor(R.attr.colorToggle);
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colorButton));
-            fabDeleteSelected
-                    .setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+            fabDeleteSelected.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+            fabDeleteSelected.setTextColor(android.graphics.Color.WHITE);
         }
         // RecordsFragment -----
     } // End onViewCreated
@@ -1928,7 +1932,7 @@ public class RecordsFragment extends BaseFragment implements
         if (isInSelectionMode) {
             int count = selectedUris.size();
             titleText.setText(count > 0 ? count + " selected" : "Select items");
-            fabDeleteSelected.setVisibility(View.VISIBLE);
+            showBatchFabAnimated();
             if (filterChecklistButton != null) {
                 filterChecklistButton.setTextColor(resolveThemeColor(R.attr.colorToggle));
             }
@@ -1947,7 +1951,7 @@ public class RecordsFragment extends BaseFragment implements
             }
         } else {
             titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
-            fabDeleteSelected.setVisibility(View.GONE);
+            hideBatchFabAnimated();
             if (filterChecklistButton != null) {
                 filterChecklistButton.setTextColor(0xFF666666);
             }
@@ -1971,6 +1975,49 @@ public class RecordsFragment extends BaseFragment implements
         if (getActivity() != null) {
             getActivity().invalidateOptionsMenu();
         }
+    }
+
+    private void showBatchFabAnimated() {
+        if (fabDeleteSelected == null) return;
+        if (fabDeleteSelected.getVisibility() == View.VISIBLE && fabDeleteSelected.getAlpha() >= 0.99f) {
+            return;
+        }
+        fabDeleteSelected.setVisibility(View.VISIBLE);
+        fabDeleteSelected.setAlpha(0f);
+        fabDeleteSelected.setScaleX(0.88f);
+        fabDeleteSelected.setScaleY(0.88f);
+        fabDeleteSelected.setTranslationY(dpToPx(16));
+        fabDeleteSelected.extend();
+        fabDeleteSelected.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(220)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+    }
+
+    private void hideBatchFabAnimated() {
+        if (fabDeleteSelected == null) return;
+        if (fabDeleteSelected.getVisibility() != View.VISIBLE) return;
+        fabDeleteSelected.animate()
+                .alpha(0f)
+                .scaleX(0.9f)
+                .scaleY(0.9f)
+                .translationY(dpToPx(14))
+                .setDuration(170)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> {
+                    if (fabDeleteSelected != null) {
+                        fabDeleteSelected.setVisibility(View.GONE);
+                        fabDeleteSelected.setAlpha(1f);
+                        fabDeleteSelected.setScaleX(1f);
+                        fabDeleteSelected.setScaleY(1f);
+                        fabDeleteSelected.setTranslationY(0f);
+                    }
+                })
+                .start();
     }
 
     private void setupFilterUi() {
@@ -2131,17 +2178,75 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private void updateFilterChipLabels() {
-        setChipLabelWithCount(chipFilterAll, R.string.records_filter_all, getCategoryCount(VideoItem.Category.ALL));
-        setChipLabelWithCount(chipFilterCamera, R.string.records_filter_camera, getCategoryCount(VideoItem.Category.CAMERA));
-        setChipLabelWithCount(chipFilterDual, R.string.records_filter_dual, getCategoryCount(VideoItem.Category.DUAL));
-        setChipLabelWithCount(chipFilterScreen, R.string.records_filter_screen, getCategoryCount(VideoItem.Category.SCREEN));
-        setChipLabelWithCount(chipFilterFaditor, R.string.records_filter_faditor, getCategoryCount(VideoItem.Category.FADITOR));
-        setChipLabelWithCount(chipFilterStream, R.string.records_filter_stream, getCategoryCount(VideoItem.Category.STREAM));
+        int all = getCategoryCount(VideoItem.Category.ALL);
+        int camera = getCategoryCount(VideoItem.Category.CAMERA);
+        int dual = getCategoryCount(VideoItem.Category.DUAL);
+        int screen = getCategoryCount(VideoItem.Category.SCREEN);
+        int faditor = getCategoryCount(VideoItem.Category.FADITOR);
+        int stream = getCategoryCount(VideoItem.Category.STREAM);
+
+        setChipLabelWithCount(chipFilterAll, R.string.records_filter_all, all);
+        setChipLabelWithCount(chipFilterCamera, R.string.records_filter_camera, camera);
+        setChipLabelWithCount(chipFilterDual, R.string.records_filter_dual, dual);
+        setChipLabelWithCount(chipFilterScreen, R.string.records_filter_screen, screen);
+        setChipLabelWithCount(chipFilterFaditor, R.string.records_filter_faditor, faditor);
+        setChipLabelWithCount(chipFilterStream, R.string.records_filter_stream, stream);
+
+        reorderFilterChipsByCount(camera, dual, screen, faditor, stream);
     }
 
     private void setChipLabelWithCount(@Nullable Chip chip, int baseLabelRes, int count) {
         if (chip == null) return;
         chip.setText(getString(baseLabelRes) + " " + count);
+    }
+
+    private void reorderFilterChipsByCount(int camera, int dual, int screen, int faditor, int stream) {
+        if (chipGroupRecordsFilter == null || chipFilterAll == null) return;
+        List<ChipOrderItem> ordered = new ArrayList<>();
+        ordered.add(new ChipOrderItem(chipFilterCamera, camera));
+        ordered.add(new ChipOrderItem(chipFilterDual, dual));
+        ordered.add(new ChipOrderItem(chipFilterScreen, screen));
+        ordered.add(new ChipOrderItem(chipFilterFaditor, faditor));
+        ordered.add(new ChipOrderItem(chipFilterStream, stream));
+        Collections.sort(ordered, (a, b) -> Integer.compare(b.count, a.count));
+
+        chipGroupRecordsFilter.removeAllViews();
+        chipGroupRecordsFilter.addView(chipFilterAll);
+        for (ChipOrderItem item : ordered) {
+            if (item.chip != null) {
+                chipGroupRecordsFilter.addView(item.chip);
+            }
+        }
+        chipGroupRecordsFilter.check(getChipIdForActiveFilter(activeFilter));
+    }
+
+    private int getChipIdForActiveFilter(@NonNull VideoItem.Category filter) {
+        switch (filter) {
+            case CAMERA:
+                return R.id.chip_filter_camera;
+            case DUAL:
+                return R.id.chip_filter_dual;
+            case SCREEN:
+                return R.id.chip_filter_screen;
+            case FADITOR:
+                return R.id.chip_filter_faditor;
+            case STREAM:
+                return R.id.chip_filter_stream;
+            case UNKNOWN:
+            case ALL:
+            default:
+                return R.id.chip_filter_all;
+        }
+    }
+
+    private static final class ChipOrderItem {
+        final Chip chip;
+        final int count;
+
+        ChipOrderItem(Chip chip, int count) {
+            this.chip = chip;
+            this.count = count;
+        }
     }
 
     private List<VideoItem> normalizeVideoCategories(@NonNull List<VideoItem> input) {
@@ -2228,10 +2333,12 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private String getStorageLocationLabel() {
-        if (getContext() == null || sharedPreferencesManager == null) return "Internal";
+        if (getContext() == null || sharedPreferencesManager == null) {
+            return "Internal/" + Constants.RECORDING_DIRECTORY;
+        }
         String customUri = sharedPreferencesManager.getCustomStorageUri();
         if (customUri == null || customUri.trim().isEmpty()) {
-            return "Internal";
+            return "Internal/" + Constants.RECORDING_DIRECTORY;
         }
         try {
             Uri uri = Uri.parse(customUri);
@@ -2247,19 +2354,19 @@ public class RecordsFragment extends BaseFragment implements
     private String getCategoryFolderLabel(@NonNull VideoItem.Category category) {
         switch (category) {
             case CAMERA:
-                return "FadCam/" + Constants.RECORDING_SUBDIR_CAMERA;
+                return Constants.RECORDING_SUBDIR_CAMERA;
             case DUAL:
-                return "FadCam/" + Constants.RECORDING_SUBDIR_DUAL;
+                return Constants.RECORDING_SUBDIR_DUAL;
             case SCREEN:
-                return "FadCam/" + Constants.RECORDING_SUBDIR_SCREEN;
+                return Constants.RECORDING_SUBDIR_SCREEN;
             case FADITOR:
-                return "FadCam/" + Constants.RECORDING_SUBDIR_FADITOR;
+                return Constants.RECORDING_SUBDIR_FADITOR;
             case STREAM:
-                return "FadCam/" + Constants.RECORDING_SUBDIR_STREAM;
+                return Constants.RECORDING_SUBDIR_STREAM;
             case ALL:
             case UNKNOWN:
             default:
-                return "FadCam";
+                return Constants.RECORDING_DIRECTORY;
         }
     }
 

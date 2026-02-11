@@ -291,18 +291,20 @@
 
     <!-- FABs -->
     <!-- Removed: View mode FAB moved to Records Options side sheet -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_delete_selected"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:visibility="gone"
         android:contentDescription="@string/records_batch_actions_title"
-        app:srcCompat="@drawable/ic_check_circle"
+        android:text="@string/records_batch_fab_label"
+        app:icon="@drawable/ic_list"
         app:backgroundTint="?attr/colorPrimary"
-        app:tint="@android:color/white"
+        app:iconTint="@android:color/white"
+        android:textColor="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Navigation FAB for scroll to top/bottom (mini size, circular, dark gray) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
