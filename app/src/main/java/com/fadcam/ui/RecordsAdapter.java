@@ -837,6 +837,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
                 return;
             }
+
+            if (payloads.contains("SELECTION_MODE")) {
+                if (position < records.size()) {
+                    VideoItem videoItem = records.get(position);
+                    boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
+                    applySelectionVisuals(holder, isCurrentlySelected, false);
+                }
+                return;
+            }
         }
         // If no specific payload, do a full bind
         onBindViewHolder(holder, position);
@@ -2348,9 +2357,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         this.currentSelectedUris = new ArrayList<>(currentSelection); // Update internal copy
 
         if (modeChanged) {
-            Log.d(TAG, "setSelectionModeActive: mode changed, full refresh");
-            notifyDataSetChanged();
-            return;
+            Log.d(TAG, "setSelectionModeActive: mode changed, payload refresh");
+            notifyItemRangeChanged(0, getItemCount(), "SELECTION_MODE");
         }
 
         if (selectionChanged) {

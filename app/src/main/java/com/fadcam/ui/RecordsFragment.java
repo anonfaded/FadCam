@@ -38,6 +38,8 @@ import android.widget.CheckBox;
 import android.widget.TextView; // Import TextView
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog; // Import AlertDialog
 import android.widget.ProgressBar;
 // Import Toolbar
@@ -337,6 +339,10 @@ public class RecordsFragment extends BaseFragment implements
     private TextView btnActionBatchFaditor;
     private TextView btnActionBatchDelete;
     private VideoItem.Category activeFilter = VideoItem.Category.ALL;
+    private ActivityResultLauncher<Uri> customExportTreePickerLauncher;
+    private List<Uri> pendingCustomExportUris = new ArrayList<>();
+    private BroadcastReceiver batchMediaCompletedReceiver;
+    private boolean isBatchMediaReceiverRegistered = false;
 
     // --- Selection State ---
     private boolean isInSelectionMode = false;
@@ -492,6 +498,7 @@ public class RecordsFragment extends BaseFragment implements
         registerStorageLocationChangedReceiver();
         registerProcessingStateReceivers();
         registerSegmentCompleteReceiver();
+        registerBatchMediaCompletedReceiver();
     }
 
     // *** Unregister in onStop ***
@@ -502,6 +509,43 @@ public class RecordsFragment extends BaseFragment implements
         unregisterStorageLocationChangedReceiver();
         unregisterProcessingStateReceivers();
         unregisterSegmentCompleteReceiver();
+        unregisterBatchMediaCompletedReceiver();
+    }
+
+    private void registerBatchMediaCompletedReceiver() {
+        if (isBatchMediaReceiverRegistered || getContext() == null) return;
+        if (batchMediaCompletedReceiver == null) {
+            batchMediaCompletedReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (!isAdded() || intent == null) return;
+                    if (!Constants.ACTION_BATCH_MEDIA_COMPLETED.equals(intent.getAction())) return;
+                    String message = intent.getStringExtra(Constants.EXTRA_BATCH_COMPLETED_MESSAGE);
+                    if (message == null || message.trim().isEmpty()) {
+                        message = getString(R.string.records_batch_completed);
+                    }
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                    com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                    loadRecordsList();
+                }
+            };
+        }
+        ContextCompat.registerReceiver(
+                requireContext(),
+                batchMediaCompletedReceiver,
+                new IntentFilter(Constants.ACTION_BATCH_MEDIA_COMPLETED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+        isBatchMediaReceiverRegistered = true;
+    }
+
+    private void unregisterBatchMediaCompletedReceiver() {
+        if (!isBatchMediaReceiverRegistered || batchMediaCompletedReceiver == null || getContext() == null) return;
+        try {
+            requireContext().unregisterReceiver(batchMediaCompletedReceiver);
+        } catch (IllegalArgumentException ignored) {
+        }
+        isBatchMediaReceiverRegistered = false;
     }
 
     // ** NEW: Method to register the storage location change receiver **
@@ -731,6 +775,26 @@ public class RecordsFragment extends BaseFragment implements
             executorService = Executors.newSingleThreadExecutor();
             Log.d(TAG, "ExecutorService initialized in onCreate.");
         }
+
+        if (customExportTreePickerLauncher == null) {
+            customExportTreePickerLauncher = registerForActivityResult(
+                    new ActivityResultContracts.OpenDocumentTree(),
+                    uri -> {
+                        if (uri == null) {
+                            pendingCustomExportUris.clear();
+                            return;
+                        }
+                        if (getContext() == null) return;
+                        try {
+                            final int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                            requireContext().getContentResolver().takePersistableUriPermission(uri, flags);
+                        } catch (Exception ignored) {
+                        }
+                        exportSelectedToCustomTree(uri);
+                    });
+        }
+
         // --- Back Press Handling ---
         requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -2010,7 +2074,7 @@ public class RecordsFragment extends BaseFragment implements
         applyChipIcon(chipFilterAll, R.drawable.ic_list);
         applyChipIcon(chipFilterCamera, R.drawable.ic_camera);
         applyChipIcon(chipFilterDual, R.drawable.ic_cam_switch);
-        applyChipIcon(chipFilterScreen, R.drawable.ic_vid_cam);
+        applyChipIcon(chipFilterScreen, R.drawable.screen_recorder);
         applyChipIcon(chipFilterFaditor, R.drawable.ic_edit_cut);
         applyChipIcon(chipFilterStream, R.drawable.ic_wifi);
         styleFilterChip(chipFilterAll);
@@ -2042,6 +2106,7 @@ public class RecordsFragment extends BaseFragment implements
         };
         chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
         chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipIconTint(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
         chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
         chip.setChipStrokeWidth(dpToPx(1));
         chip.setEnsureMinTouchTargetSize(false);
@@ -2155,8 +2220,47 @@ public class RecordsFragment extends BaseFragment implements
                 filterHelperText.setText("");
                 return;
         }
-        filterHelperText.setText(textRes);
+        String helper = getString(textRes)
+                + " • "
+                + getString(R.string.records_location_format, getStorageLocationLabel(), getCategoryFolderLabel(activeFilter));
+        filterHelperText.setText(helper);
         filterHelperText.setVisibility(View.VISIBLE);
+    }
+
+    private String getStorageLocationLabel() {
+        if (getContext() == null || sharedPreferencesManager == null) return "Internal";
+        String customUri = sharedPreferencesManager.getCustomStorageUri();
+        if (customUri == null || customUri.trim().isEmpty()) {
+            return "Internal";
+        }
+        try {
+            Uri uri = Uri.parse(customUri);
+            DocumentFile dir = DocumentFile.fromTreeUri(requireContext(), uri);
+            if (dir != null && dir.getName() != null && !dir.getName().trim().isEmpty()) {
+                return dir.getName();
+            }
+        } catch (Exception ignored) {
+        }
+        return "Custom";
+    }
+
+    private String getCategoryFolderLabel(@NonNull VideoItem.Category category) {
+        switch (category) {
+            case CAMERA:
+                return "FadCam/" + Constants.RECORDING_SUBDIR_CAMERA;
+            case DUAL:
+                return "FadCam/" + Constants.RECORDING_SUBDIR_DUAL;
+            case SCREEN:
+                return "FadCam/" + Constants.RECORDING_SUBDIR_SCREEN;
+            case FADITOR:
+                return "FadCam/" + Constants.RECORDING_SUBDIR_FADITOR;
+            case STREAM:
+                return "FadCam/" + Constants.RECORDING_SUBDIR_STREAM;
+            case ALL:
+            case UNKNOWN:
+            default:
+                return "FadCam";
+        }
     }
 
     private void updateSelectionActionRow() {
@@ -2186,6 +2290,7 @@ public class RecordsFragment extends BaseFragment implements
 
         int selectedCount = selectedUris.size();
         String suffix = selectedCount > 0 ? " (" + selectedCount + ")" : "";
+        boolean hasSelection = selectedCount > 0;
 
         ArrayList<OptionItem> items = new ArrayList<>();
         boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
@@ -2198,12 +2303,12 @@ public class RecordsFragment extends BaseFragment implements
                 "batch_save_gallery",
                 getString(R.string.records_batch_save) + suffix,
                 getString(R.string.records_batch_save_desc),
-                null, null, null, null, null, "download"));
+                null, null, R.drawable.ic_arrow_right, null, null, "download"));
         items.add(new OptionItem(
-                "batch_open_faditor",
+                "batch_faditor_actions",
                 getString(R.string.records_batch_faditor) + suffix,
                 getString(R.string.records_batch_faditor_desc),
-                null, null, null, null, null, "movie_edit"));
+                null, null, R.drawable.ic_arrow_right, null, null, "auto_awesome"));
         items.add(new OptionItem(
                 "batch_delete",
                 getString(R.string.records_batch_delete) + suffix,
@@ -2227,8 +2332,12 @@ public class RecordsFragment extends BaseFragment implements
                         showBatchSaveOptionsSheet();
                     }
                     break;
-                case "batch_open_faditor":
-                    handleBatchOpenInFaditor();
+                case "batch_faditor_actions":
+                    if (selectedUris.isEmpty()) {
+                        Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+                    } else {
+                        showBatchFaditorOptionsSheet();
+                    }
                     break;
                 case "batch_delete":
                     if (selectedUris.isEmpty()) {
@@ -2259,17 +2368,23 @@ public class RecordsFragment extends BaseFragment implements
         if (!isAdded() || getContext() == null || getActivity() == null) return;
         if (!(getActivity() instanceof FragmentActivity)) return;
 
+        String destinationLabel = getGalleryDestinationLabel();
         ArrayList<OptionItem> items = new ArrayList<>();
         items.add(new OptionItem(
                 "save_copy",
                 getString(R.string.video_menu_save_copy),
-                getString(R.string.video_menu_save_copy_desc),
+                getString(R.string.records_batch_save_copy_helper, destinationLabel),
                 null, null, null, null, null, "content_copy"));
         items.add(new OptionItem(
                 "save_move",
                 getString(R.string.video_menu_save_move),
-                getString(R.string.video_menu_save_move_desc),
+                getString(R.string.records_batch_save_move_helper, destinationLabel),
                 null, null, null, null, null, "drive_file_move"));
+        items.add(new OptionItem(
+                "save_export_custom_location",
+                getString(R.string.records_batch_save_custom_location),
+                getString(R.string.records_batch_save_custom_location_desc),
+                null, null, null, null, null, "folder_open"));
 
         FragmentActivity activity = (FragmentActivity) getActivity();
         String resultKey = "records_batch_save_options";
@@ -2281,6 +2396,11 @@ public class RecordsFragment extends BaseFragment implements
                 queueBatchSaveToGallery(false);
             } else if ("save_move".equals(id)) {
                 queueBatchSaveToGallery(true);
+            } else if ("save_export_custom_location".equals(id)) {
+                if (customExportTreePickerLauncher != null) {
+                    pendingCustomExportUris = new ArrayList<>(selectedUris);
+                    customExportTreePickerLauncher.launch(null);
+                }
             }
         });
 
@@ -2295,6 +2415,69 @@ public class RecordsFragment extends BaseFragment implements
         Bundle args = sheet.getArguments();
         if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         sheet.show(activity.getSupportFragmentManager(), "records_batch_save_sheet");
+    }
+
+    private void showBatchFaditorOptionsSheet() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (!(getActivity() instanceof FragmentActivity)) return;
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem(
+                "faditor_export_standard_mp4",
+                getString(R.string.records_batch_faditor_export_standard),
+                getString(R.string.records_batch_faditor_export_standard_desc),
+                null, null, null, null, null, "movie_edit"));
+        items.add(new OptionItem(
+                "faditor_merge_selected",
+                getString(R.string.records_batch_faditor_merge),
+                getString(R.string.records_batch_faditor_merge_desc),
+                null, null, null, null, null, "merge_type"));
+
+        FragmentActivity activity = (FragmentActivity) getActivity();
+        String resultKey = "records_batch_faditor_options";
+        activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
+            if (bundle == null) return;
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if ("faditor_export_standard_mp4".equals(id)) {
+                startBatchMediaAction(Constants.INTENT_ACTION_BATCH_EXPORT_STANDARD_MP4);
+            } else if ("faditor_merge_selected".equals(id)) {
+                startBatchMediaAction(Constants.INTENT_ACTION_BATCH_MERGE_VIDEOS);
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.records_batch_faditor_sheet_title),
+                items,
+                null,
+                resultKey,
+                null,
+                true
+        );
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        sheet.show(activity.getSupportFragmentManager(), "records_batch_faditor_sheet");
+    }
+
+    private void startBatchMediaAction(@NonNull String action) {
+        if (selectedUris.isEmpty() || getContext() == null) {
+            Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(requireContext(), com.fadcam.service.BatchMediaActionService.class);
+        intent.setAction(action);
+        ArrayList<String> uriStrings = new ArrayList<>();
+        for (Uri uri : selectedUris) {
+            uriStrings.add(uri.toString());
+        }
+        intent.putStringArrayListExtra(Constants.EXTRA_BATCH_INPUT_URIS, uriStrings);
+        intent.putExtra(Constants.EXTRA_BATCH_OUTPUT_MODE, Constants.BATCH_OUTPUT_MODE_DEFAULT_FADITOR);
+        ContextCompat.startForegroundService(requireContext(), intent);
+        Toast.makeText(requireContext(), getString(R.string.records_batch_faditor_queued, uriStrings.size()), Toast.LENGTH_SHORT).show();
+    }
+
+    @NonNull
+    private String getGalleryDestinationLabel() {
+        return "Downloads/" + Constants.RECORDING_DIRECTORY;
     }
 
     private void queueBatchSaveToGallery(boolean moveFiles) {
@@ -2325,21 +2508,79 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    private void handleBatchOpenInFaditor() {
-        if (selectedUris.isEmpty() || getContext() == null) {
-            Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
+    private void exportSelectedToCustomTree(@NonNull Uri treeUri) {
+        if (pendingCustomExportUris == null || pendingCustomExportUris.isEmpty()) {
             return;
         }
-        Uri first = selectedUris.get(0);
-        Intent intent = new Intent(requireContext(), com.fadcam.ui.faditor.FaditorEditorActivity.class);
-        intent.setData(first);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(intent);
-        if (selectedUris.size() > 1) {
-            Toast.makeText(requireContext(),
-                    getString(R.string.records_batch_faditor_first_only, selectedUris.size()),
-                    Toast.LENGTH_SHORT).show();
+        if (getContext() == null) return;
+        final List<Uri> urisToExport = new ArrayList<>(pendingCustomExportUris);
+        pendingCustomExportUris.clear();
+        Toast.makeText(requireContext(), getString(R.string.records_batch_custom_export_started, urisToExport.size()),
+                Toast.LENGTH_SHORT).show();
+        executorService.submit(() -> {
+            int success = 0;
+            int failed = 0;
+            DocumentFile targetDir = DocumentFile.fromTreeUri(requireContext(), treeUri);
+            if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
+                            getString(R.string.records_batch_custom_export_invalid_folder), Toast.LENGTH_LONG).show());
+                }
+                return;
+            }
+            for (Uri uri : urisToExport) {
+                try {
+                    VideoItem item = findVideoItemByUri(allLoadedItems, uri);
+                    String name = item != null && item.displayName != null ? item.displayName : "video.mp4";
+                    DocumentFile out = createUniqueSafFile(targetDir, name);
+                    if (out == null) {
+                        failed++;
+                        continue;
+                    }
+                    try (java.io.InputStream in = requireContext().getContentResolver().openInputStream(uri);
+                         java.io.OutputStream os = requireContext().getContentResolver().openOutputStream(out.getUri(), "w")) {
+                        if (in == null || os == null) {
+                            failed++;
+                            continue;
+                        }
+                        byte[] buffer = new byte[16 * 1024];
+                        int len;
+                        while ((len = in.read(buffer)) > 0) {
+                            os.write(buffer, 0, len);
+                        }
+                        os.flush();
+                        success++;
+                    }
+                } catch (Exception e) {
+                    failed++;
+                }
+            }
+            final int successFinal = success;
+            final int failedFinal = failed;
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
+                        getString(R.string.records_batch_custom_export_done, successFinal, failedFinal),
+                        Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    @Nullable
+    private DocumentFile createUniqueSafFile(@NonNull DocumentFile targetDir, @NonNull String originalName) {
+        String base = originalName;
+        String ext = "";
+        int dot = originalName.lastIndexOf('.');
+        if (dot > 0) {
+            base = originalName.substring(0, dot);
+            ext = originalName.substring(dot);
         }
+        String candidate = originalName;
+        int suffix = 1;
+        while (targetDir.findFile(candidate) != null) {
+            candidate = base + " (" + suffix + ")" + ext;
+            suffix++;
+        }
+        return targetDir.createFile("video/mp4", candidate);
     }
     // --- Deletion Logic ---
 

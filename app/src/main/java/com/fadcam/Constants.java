@@ -197,6 +197,26 @@ public abstract class Constants {
     public static final String ACTION_SCREEN_RECORDING_PERMISSION_DENIED =
         "com.fadcam.ACTION_SCREEN_RECORDING_PERMISSION_DENIED";
 
+    // Batch media actions (Records tab automations)
+    public static final String INTENT_ACTION_BATCH_EXPORT_STANDARD_MP4 =
+        "com.fadcam.ACTION_BATCH_EXPORT_STANDARD_MP4";
+    public static final String INTENT_ACTION_BATCH_MERGE_VIDEOS =
+        "com.fadcam.ACTION_BATCH_MERGE_VIDEOS";
+    public static final String EXTRA_BATCH_INPUT_URIS =
+        "com.fadcam.EXTRA_BATCH_INPUT_URIS";
+    public static final String EXTRA_BATCH_CUSTOM_TREE_URI =
+        "com.fadcam.EXTRA_BATCH_CUSTOM_TREE_URI";
+    public static final String EXTRA_BATCH_OUTPUT_MODE =
+        "com.fadcam.EXTRA_BATCH_OUTPUT_MODE";
+    public static final String BATCH_OUTPUT_MODE_DEFAULT_FADITOR =
+        "DEFAULT_FADITOR";
+    public static final String BATCH_OUTPUT_MODE_CUSTOM_TREE_URI =
+        "CUSTOM_TREE_URI";
+    public static final String ACTION_BATCH_MEDIA_COMPLETED =
+        "com.fadcam.ACTION_BATCH_MEDIA_COMPLETED";
+    public static final String EXTRA_BATCH_COMPLETED_MESSAGE =
+        "com.fadcam.EXTRA_BATCH_COMPLETED_MESSAGE";
+
     // Screen recording broadcast actions
     public static final String BROADCAST_ON_SCREEN_RECORDING_STARTED =
         "com.fadcam.ON_SCREEN_RECORDING_STARTED";
@@ -267,6 +287,10 @@ public abstract class Constants {
     public static final String RECORDING_SUBDIR_FADITOR = "Faditor";
     public static final String RECORDING_SUBDIR_STREAM = "Stream";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
+    public static final String RECORDING_FILE_PREFIX_FADITOR_STANDARD =
+        "Faditor_Std_";
+    public static final String RECORDING_FILE_PREFIX_FADITOR_MERGE =
+        "Faditor_Merge_";
     public static final double RECORDING_COMPRESSION_FACTOR = 0.33;
 
     public static final CameraType DEFAULT_CAMERA_TYPE = CameraType.BACK;

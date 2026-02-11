@@ -278,6 +278,9 @@
         <!-- File operation service for background copy/move/delete operations -->
         <service android:name=".service.FileOperationService" android:exported="false" android:foregroundServiceType="dataSync" />
 
+        <!-- Batch media action service for Records automation flows -->
+        <service android:name=".service.BatchMediaActionService" android:exported="false" android:foregroundServiceType="dataSync" />
+
         <!-- Faditor export service for background video export -->
         <service android:name=".ui.faditor.export.ExportService" android:exported="false" android:foregroundServiceType="dataSync" />
 
