@@ -128,6 +128,8 @@ public class DualCameraRecordingService extends Service {
     private android.os.ParcelFileDescriptor safRecordingPfd;  // ParcelFileDescriptor for SAF mode
     private Uri safRecordingUri;  // SAF URI
     private String safOutputFileName;   // Filename for SAF
+    @Nullable
+    private String lastRecordingUriString;
 
     // Guard against duplicate open/close races
     private volatile boolean isStopping = false;
@@ -250,6 +252,7 @@ public class DualCameraRecordingService extends Service {
             Log.w(TAG, "Cannot start dual recording — state=" + state);
             return;
         }
+        lastRecordingUriString = null;
 
         // ── Permission check ──────────────────────────────────────────
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -377,6 +380,8 @@ public class DualCameraRecordingService extends Service {
         prefs.setRecordingInProgress(false);
         releaseWakeLock();
 
+        broadcastRecordingComplete(true);
+        lastRecordingUriString = null;
         broadcastAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
         stopSelf();
     }
@@ -863,6 +868,13 @@ public class DualCameraRecordingService extends Service {
 
             // ── Output file ───────────────────────────────────────────
             File outputFile = createOutputFile();
+            if (safRecordingPfd != null && safRecordingUri != null) {
+                lastRecordingUriString = safRecordingUri.toString();
+            } else if (outputFile != null) {
+                lastRecordingUriString = Uri.fromFile(outputFile).toString();
+            } else {
+                lastRecordingUriString = null;
+            }
 
             // ── Watermark provider ────────────────────────────────────
             WatermarkInfoProvider watermarkProvider = () -> {
@@ -1245,9 +1257,13 @@ public class DualCameraRecordingService extends Service {
     // ── Error handling ────────────────────────────────────────────────
 
     private void transitionToError(@NonNull String reason) {
+        DualCameraState previousState = state;
         Log.e(TAG, "Dual camera error: " + reason);
         state = DualCameraState.ERROR;
         broadcastError(reason);
+        if (previousState == DualCameraState.RECORDING || previousState == DualCameraState.PAUSED) {
+            broadcastRecordingComplete(false);
+        }
 
         mainHandler.post(() ->
                 Toast.makeText(getApplicationContext(), reason, Toast.LENGTH_LONG).show());
@@ -1274,5 +1290,19 @@ public class DualCameraRecordingService extends Service {
         Intent intent = new Intent(Constants.BROADCAST_ON_DUAL_CAMERA_ERROR);
         intent.putExtra("error_reason", reason);
         sendBroadcast(intent);
+    }
+
+    private void broadcastRecordingComplete(boolean success) {
+        try {
+            Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+            recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, success);
+            if (lastRecordingUriString != null && !lastRecordingUriString.isEmpty()) {
+                recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, lastRecordingUriString);
+            }
+            sendBroadcast(recordingCompleteIntent);
+            Log.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for dual recording. success=" + success);
+        } catch (Exception e) {
+            Log.e(TAG, "Error broadcasting ACTION_RECORDING_COMPLETE for dual recording", e);
+        }
     }
 }
