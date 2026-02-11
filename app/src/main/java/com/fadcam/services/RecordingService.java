@@ -728,11 +728,8 @@ public class RecordingService extends Service {
         } else if (Constants.INTENT_ACTION_CHANGE_SURFACE.equals(action)) {
             // Handle surface changes for preview
             setupSurfaceTexture(intent);
-            if (glRecordingPipeline != null) {
-                // Only update the preview surface, never re-initialize or re-prepare the
-                // pipeline
-                glRecordingPipeline.setPreviewSurface(previewSurface);
-            }
+            // NOTE: setupSurfaceTexture already calls glRecordingPipeline.setPreviewSurface()
+            // Do NOT call it again here to avoid double-debounce churn
             // surface change when using GL path -----------
             // If we're still in STARTING and were waiting for preview, attempt to start now
             if (recordingState == RecordingState.STARTING && waitForPreviewBeforeStart && previewSurface != null

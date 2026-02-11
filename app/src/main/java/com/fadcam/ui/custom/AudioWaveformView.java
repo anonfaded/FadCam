@@ -148,28 +148,23 @@ public class AudioWaveformView extends View {
     }
 
     /**
-     * Extract real audio amplitude data by decoding audio via {@link MediaCodec}.
+     * Extract real audio amplitude data using seek-based chunk sampling.
      *
-     * <p>Matches FaditorEditorActivity's approach:
-     * <ol>
-     *   <li>Decode full audio track to PCM using MediaCodec.</li>
-     *   <li>Downsample to {@link #waveformPoints} bins (average of abs(sample)).</li>
-     *   <li>Normalise each bin to 0–1 range (avg / 32768).</li>
-     * </ol>
-     * The resulting values are drawn with a 0.7 power curve in {@link #onDraw}.
+     * <p>Instead of decoding the entire audio track (slow for large files),
+     * this seeks to evenly-spaced positions and decodes small ~50ms chunks.
+     * Total decode time is constant (~6s of audio for 120 bins) regardless
+     * of video duration, making waveform generation nearly instant.</p>
+     *
+     * <p>Falls back to streaming accumulation if duration is unavailable.</p>
      */
-    @SuppressWarnings("deprecation")
     private void extractRealAudioData(Uri videoUri) {
         Log.i(TAG, "═══ WAVEFORM ANALYSIS START ═══");
-        Log.i(TAG, "URI: " + videoUri);
-        Log.i(TAG, "URI scheme: " + videoUri.getScheme());
 
         MediaExtractor extractor = null;
         MediaCodec codec = null;
         try {
             extractor = new MediaExtractor();
             extractor.setDataSource(getContext(), videoUri, null);
-            Log.d(TAG, "MediaExtractor: track count = " + extractor.getTrackCount());
 
             // Find audio track
             int audioTrackIndex = -1;
@@ -177,7 +172,6 @@ public class AudioWaveformView extends View {
             for (int i = 0; i < extractor.getTrackCount(); i++) {
                 MediaFormat format = extractor.getTrackFormat(i);
                 String mime = format.getString(MediaFormat.KEY_MIME);
-                Log.d(TAG, "  Track " + i + ": mime=" + mime);
                 if (mime != null && mime.startsWith("audio/")) {
                     audioTrackIndex = i;
                     audioFormat = format;
@@ -192,128 +186,54 @@ public class AudioWaveformView extends View {
             }
 
             String mime = audioFormat.getString(MediaFormat.KEY_MIME);
-            if (mime == null) {
-                Log.w(TAG, "Audio mime is null — showing silence");
-                postSilence();
-                return;
-            }
+            if (mime == null) { postSilence(); return; }
 
-            Log.d(TAG, "Selected audio track " + audioTrackIndex + ": " + mime);
             extractor.selectTrack(audioTrackIndex);
 
-            // ─── Decode audio to PCM using MediaCodec ────────────────
+            long durationUs = audioFormat.containsKey(MediaFormat.KEY_DURATION)
+                    ? audioFormat.getLong(MediaFormat.KEY_DURATION) : 0;
+            int sampleRate = audioFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+            int channels = audioFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT)
+                    ? audioFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT) : 1;
+
+            Log.d(TAG, "Audio: " + mime + ", " + sampleRate + "Hz, " +
+                    channels + "ch, duration=" + durationUs + "us");
+
             codec = MediaCodec.createDecoderByType(mime);
             codec.configure(audioFormat, null, null, 0);
             codec.start();
 
-            ByteBuffer[] inputBuffers = codec.getInputBuffers();
-            ByteBuffer[] outputBuffers = codec.getOutputBuffers();
-            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-
-            List<Short> allSamples = new ArrayList<>();
-            boolean inputDone = false;
-            boolean outputDone = false;
-
-            while (!outputDone && isAnalyzingAudio) {
-                // Feed encoded input
-                if (!inputDone) {
-                    int inIdx = codec.dequeueInputBuffer(10_000);
-                    if (inIdx >= 0) {
-                        ByteBuffer buf = inputBuffers[inIdx];
-                        int sampleSize = extractor.readSampleData(buf, 0);
-                        if (sampleSize < 0) {
-                            codec.queueInputBuffer(inIdx, 0, 0, 0,
-                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            inputDone = true;
-                        } else {
-                            codec.queueInputBuffer(inIdx, 0, sampleSize,
-                                    extractor.getSampleTime(), 0);
-                            extractor.advance();
-                        }
-                    }
-                }
-
-                // Drain decoded PCM output
-                int outIdx = codec.dequeueOutputBuffer(info, 10_000);
-                if (outIdx >= 0) {
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        outputDone = true;
-                    }
-                    ByteBuffer outBuf = outputBuffers[outIdx];
-                    outBuf.position(info.offset);
-                    outBuf.limit(info.offset + info.size);
-                    ShortBuffer shorts = outBuf.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-                    while (shorts.hasRemaining()) {
-                        allSamples.add(shorts.get());
-                    }
-                    codec.releaseOutputBuffer(outIdx, false);
-                } else if (outIdx == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    outputBuffers = codec.getOutputBuffers();
-                }
+            float[] rawBins;
+            if (durationUs > 0) {
+                // ── FAST PATH: Seek-based chunk sampling ─────────────
+                rawBins = extractSeekBased(extractor, codec, durationUs,
+                        sampleRate, channels);
+            } else {
+                // ── FALLBACK: Stream accumulation (no ArrayList) ─────
+                rawBins = extractStreamBased(extractor, codec,
+                        sampleRate, channels);
             }
 
             codec.stop();
             codec.release();
             codec = null;
 
-            Log.d(TAG, "Decoded " + allSamples.size() + " PCM samples");
-
-            if (allSamples.isEmpty()) {
-                Log.w(TAG, "No PCM samples decoded — showing silence");
-                postSilence();
-                return;
-            }
-
-            // ─── Downsample to waveformPoints bins ───────────────────
-            int totalSamples = allSamples.size();
-            int samplesPerBin = Math.max(1, totalSamples / waveformPoints);
-            int binCount = Math.min(waveformPoints, totalSamples);
-
-            // Compute raw amplitude for every bin into a local array FIRST.
-            // We must NOT post values progressively because normalisation
-            // needs to see all bins before we publish them to the UI.
-            float[] rawBins = new float[waveformPoints];
-
-            for (int i = 0; i < binCount; i++) {
-                long sum = 0;
-                int start = i * samplesPerBin;
-                int end = Math.min(start + samplesPerBin, totalSamples);
-                for (int j = start; j < end; j++) {
-                    sum += Math.abs(allSamples.get(j));
-                }
-                long avg = sum / (end - start);
-                rawBins[i] = Math.min(1.0f, avg / 32768.0f);
-            }
-            // Remaining bins (short file) stay 0.0f by default.
-
-            Log.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE ═══");
-            Log.i(TAG, "  PCM samples: " + totalSamples + ", bins: " + binCount +
-                  ", samplesPerBin: " + samplesPerBin);
-
-            // Log pre-normalization range for debugging
-            float rawMin = Float.MAX_VALUE, rawMax = Float.MIN_VALUE;
-            for (int i = 0; i < binCount; i++) {
-                if (rawBins[i] < rawMin) rawMin = rawBins[i];
-                if (rawBins[i] > rawMax) rawMax = rawBins[i];
-            }
-            Log.i(TAG, "  Pre-norm amplitude range: [" + rawMin + " .. " + rawMax + "]");
+            if (rawBins == null) { postSilence(); return; }
 
             // Normalise so the loudest bin fills ~95% of bar height.
-            float peak = rawMax;
+            float peak = 0;
+            for (float v : rawBins) if (v > peak) peak = v;
             if (peak > 1e-6f) {
                 float scale = 0.95f / peak;
-                for (int i = 0; i < waveformPoints; i++) {
-                    rawBins[i] = rawBins[i] * scale;
-                }
-                Log.i(TAG, "  normalizeWaveformData: peak=" + peak + ", scale=" + scale);
-            } else {
-                Log.d(TAG, "  normalizeWaveformData: peak ≈ 0 → all bins set to 0");
+                for (int i = 0; i < waveformPoints; i++) rawBins[i] *= scale;
             }
 
-            // Publish all bins to the UI in ONE post.
+            Log.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE ═══");
+
+            final float[] finalBins = rawBins;
             post(() -> {
                 for (int i = 0; i < waveformPoints && i < realWaveformData.size(); i++) {
-                    realWaveformData.set(i, rawBins[i]);
+                    realWaveformData.set(i, finalBins[i]);
                 }
                 invalidate();
             });
@@ -331,6 +251,166 @@ public class AudioWaveformView extends View {
             }
             isAnalyzingAudio = false;
         }
+    }
+
+    /**
+     * Fast seek-based waveform extraction. Seeks to evenly-spaced positions
+     * and decodes small audio chunks (~50ms each). Total decode time is
+     * constant regardless of video duration (~6s of audio for 120 bins).
+     */
+    private float[] extractSeekBased(
+            MediaExtractor extractor, MediaCodec codec,
+            long durationUs, int sampleRate, int channels) {
+
+        float[] bins = new float[waveformPoints];
+        int targetSamplesPerBin = sampleRate * channels / 20; // ~50ms of audio
+        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+
+        for (int bin = 0; bin < waveformPoints && isAnalyzingAudio; bin++) {
+            long targetUs = (long) ((double) bin / waveformPoints * durationUs);
+
+            extractor.seekTo(targetUs, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
+            codec.flush();
+
+            long sumAbs = 0;
+            int sampleCount = 0;
+            boolean binDone = false;
+            boolean inputEos = false;
+
+            while (!binDone && isAnalyzingAudio) {
+                // Feed input
+                if (!inputEos) {
+                    int inIdx = codec.dequeueInputBuffer(5_000);
+                    if (inIdx >= 0) {
+                        ByteBuffer buf = codec.getInputBuffer(inIdx);
+                        if (buf == null) { inputEos = true; continue; }
+                        int size = extractor.readSampleData(buf, 0);
+                        if (size < 0) {
+                            codec.queueInputBuffer(inIdx, 0, 0, 0,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            inputEos = true;
+                        } else {
+                            codec.queueInputBuffer(inIdx, 0, size,
+                                    extractor.getSampleTime(), 0);
+                            extractor.advance();
+                        }
+                    }
+                }
+
+                // Drain output
+                int outIdx = codec.dequeueOutputBuffer(info, 5_000);
+                if (outIdx >= 0) {
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        binDone = true;
+                    }
+                    ByteBuffer outBuf = codec.getOutputBuffer(outIdx);
+                    if (outBuf != null) {
+                        outBuf.position(info.offset);
+                        outBuf.limit(info.offset + info.size);
+                        ShortBuffer shorts = outBuf.order(ByteOrder.LITTLE_ENDIAN)
+                                .asShortBuffer();
+                        while (shorts.hasRemaining()
+                                && sampleCount < targetSamplesPerBin) {
+                            sumAbs += Math.abs(shorts.get());
+                            sampleCount++;
+                        }
+                    }
+                    codec.releaseOutputBuffer(outIdx, false);
+                    if (sampleCount >= targetSamplesPerBin) binDone = true;
+                } else if (outIdx == MediaCodec.INFO_TRY_AGAIN_LATER
+                        && inputEos) {
+                    binDone = true;
+                }
+            }
+
+            bins[bin] = sampleCount > 0
+                    ? Math.min(1.0f, (float) (sumAbs / sampleCount) / 32768.0f)
+                    : 0f;
+        }
+
+        return bins;
+    }
+
+    /**
+     * Streaming fallback when audio duration is unknown. Decodes entire audio
+     * but accumulates directly into amplitude chunks without storing individual
+     * samples, then downsamples to {@link #waveformPoints} bins.
+     */
+    private float[] extractStreamBased(
+            MediaExtractor extractor, MediaCodec codec,
+            int sampleRate, int channels) {
+
+        int chunkSize = Math.max(1, sampleRate * channels / 20); // ~50ms per chunk
+        List<Float> chunks = new ArrayList<>();
+        long chunkSum = 0;
+        int chunkCount = 0;
+
+        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        boolean inputDone = false;
+        boolean outputDone = false;
+
+        while (!outputDone && isAnalyzingAudio) {
+            if (!inputDone) {
+                int inIdx = codec.dequeueInputBuffer(10_000);
+                if (inIdx >= 0) {
+                    ByteBuffer buf = codec.getInputBuffer(inIdx);
+                    if (buf == null) { inputDone = true; continue; }
+                    int size = extractor.readSampleData(buf, 0);
+                    if (size < 0) {
+                        codec.queueInputBuffer(inIdx, 0, 0, 0,
+                                MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                        inputDone = true;
+                    } else {
+                        codec.queueInputBuffer(inIdx, 0, size,
+                                extractor.getSampleTime(), 0);
+                        extractor.advance();
+                    }
+                }
+            }
+
+            int outIdx = codec.dequeueOutputBuffer(info, 10_000);
+            if (outIdx >= 0) {
+                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    outputDone = true;
+                }
+                ByteBuffer outBuf = codec.getOutputBuffer(outIdx);
+                if (outBuf != null) {
+                    outBuf.position(info.offset);
+                    outBuf.limit(info.offset + info.size);
+                    ShortBuffer shorts = outBuf.order(ByteOrder.LITTLE_ENDIAN)
+                            .asShortBuffer();
+                    while (shorts.hasRemaining()) {
+                        chunkSum += Math.abs(shorts.get());
+                        chunkCount++;
+                        if (chunkCount >= chunkSize) {
+                            chunks.add(Math.min(1.0f,
+                                    (float) (chunkSum / chunkCount) / 32768.0f));
+                            chunkSum = 0;
+                            chunkCount = 0;
+                        }
+                    }
+                }
+                codec.releaseOutputBuffer(outIdx, false);
+            } else if (outIdx == MediaCodec.INFO_TRY_AGAIN_LATER && inputDone) {
+                outputDone = true;
+            }
+        }
+        // Flush last partial chunk
+        if (chunkCount > 0) {
+            chunks.add(Math.min(1.0f,
+                    (float) (chunkSum / chunkCount) / 32768.0f));
+        }
+
+        if (chunks.isEmpty()) return null;
+
+        // Downsample collected chunks to waveformPoints bins
+        float[] bins = new float[waveformPoints];
+        for (int i = 0; i < waveformPoints; i++) {
+            float pos = (float) i / waveformPoints * chunks.size();
+            int idx = Math.min((int) pos, chunks.size() - 1);
+            bins[i] = chunks.get(idx);
+        }
+        return bins;
     }
 
     /**

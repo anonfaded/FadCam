@@ -280,6 +280,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 float normX = event.getX() / v.getWidth();
                 float normY = event.getY() / v.getHeight();
                 Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
+                intent.setClass(this, getTargetServiceClass());
                 startService(intent);
                 showFocusIndicator(event.getX(), event.getY());
             }
@@ -299,8 +300,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         updateTorchIcon();
 
         btnFullscreenTorch.setOnClickListener(v -> {
-            // Send toggle to recording service (already foreground during recording)
-            Intent intent = new Intent(this, RecordingService.class);
+            // Send toggle to correct recording service (single or dual)
+            Intent intent = new Intent(this, getTargetServiceClass());
             intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
             try {
                 startService(intent);
@@ -503,6 +504,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                         } catch (NumberFormatException ignored) { }
                     }
                     Intent intent = RecordingControlIntents.setExposureCompensation(this, currentEvIndex);
+                    intent.setClass(this, getTargetServiceClass());
                     startService(intent);
                     updateExpTileTint();
                 });
@@ -512,6 +514,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 Constants.RK_AE_LOCK, this, (key, result) -> {
                     aeLocked = result.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, false);
                     Intent intent = RecordingControlIntents.toggleAeLock(this, aeLocked);
+                    intent.setClass(this, getTargetServiceClass());
                     startService(intent);
                     updateExpTileTint();
                 });
@@ -530,6 +533,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                                         ? "center_focus_strong" : "center_focus_weak");
                     }
                     Intent intent = RecordingControlIntents.setAfMode(this, afMode);
+                    intent.setClass(this, getTargetServiceClass());
                     startService(intent);
                 });
 
@@ -545,6 +549,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     prefs.setSpecificZoomRatio(cam, zoomRatio);
                     updateZoomTileTint();
                     Intent intent = RecordingControlIntents.setZoomRatio(this, zoomRatio);
+                    intent.setClass(this, getTargetServiceClass());
                     startService(intent);
                 });
     }
@@ -744,13 +749,24 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Service routing
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the correct recording service class based on current mode.
+     */
+    private Class<?> getTargetServiceClass() {
+        return isDualRecordingRunning()
+                ? DualCameraRecordingService.class
+                : RecordingService.class;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Surface → service communication
     // ─────────────────────────────────────────────────────────────────────────
 
     private void sendSurfaceToService(@Nullable Surface surface, int w, int h) {
-        Class<?> svc = isDualRecordingRunning()
-                ? DualCameraRecordingService.class
-                : RecordingService.class;
+        Class<?> svc = getTargetServiceClass();
 
         if (!isServiceRunning(svc)) return;
 

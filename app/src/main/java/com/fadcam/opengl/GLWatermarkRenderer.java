@@ -732,7 +732,7 @@ public class GLWatermarkRenderer {
             if (needsLetterbox) {
                 drawOESTexture(previewMvpMatrix, previewTexMatrix);
                 // Dim the background so the sharp foreground visually pops
-                drawDimOverlay(0.55f);
+                drawDimOverlay(0.75f);
                 // Switch to the fit viewport for the sharp foreground
                 GLES20.glViewport(vpX, vpY, vpW, vpH);
             }

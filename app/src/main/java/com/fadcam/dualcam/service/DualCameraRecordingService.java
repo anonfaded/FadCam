@@ -101,6 +101,9 @@ public class DualCameraRecordingService extends Service {
     private String frontCameraId;
     private String backCameraId;
 
+    /** Current torch state for the primary camera. */
+    private boolean isTorchOn = false;
+
     // ── Pipeline ───────────────────────────────────────────────────────
 
     /** Unified recording pipeline — same as single-camera mode, but with PiP enabled. */
@@ -211,6 +214,30 @@ public class DualCameraRecordingService extends Service {
 
             case Constants.INTENT_ACTION_CHANGE_SURFACE:
                 handleChangeSurface(intent);
+                break;
+
+            case Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH:
+                handleToggleTorch();
+                break;
+
+            case Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION:
+                handleSetExposureCompensation(intent);
+                break;
+
+            case Constants.INTENT_ACTION_TOGGLE_AE_LOCK:
+                handleToggleAeLock(intent);
+                break;
+
+            case Constants.INTENT_ACTION_SET_AF_MODE:
+                handleSetAfMode(intent);
+                break;
+
+            case Constants.INTENT_ACTION_TAP_TO_FOCUS:
+                handleTapToFocus();
+                break;
+
+            case Constants.INTENT_ACTION_SET_ZOOM_RATIO:
+                handleSetZoomRatio(intent);
                 break;
 
             default:
@@ -475,6 +502,122 @@ public class DualCameraRecordingService extends Service {
                     (surface != null && surface.isValid() ? surfaceW + "x" + surfaceH : "null"));
         } else {
             Log.w(TAG, "handleChangeSurface: pipeline not ready, surface change ignored");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // RUNTIME CAMERA CONTROLS (torch, zoom, exposure, AF)
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Toggles the torch (flash) on the primary camera.
+     */
+    private void handleToggleTorch() {
+        if (primaryRequestBuilder == null || primarySession == null) {
+            Log.w(TAG, "handleToggleTorch: no active primary session");
+            return;
+        }
+        isTorchOn = !isTorchOn;
+        primaryRequestBuilder.set(CaptureRequest.FLASH_MODE,
+                isTorchOn ? CaptureRequest.FLASH_MODE_TORCH
+                          : CaptureRequest.FLASH_MODE_OFF);
+        if (applyPrimaryRepeating()) {
+            Log.d(TAG, "Torch toggled: " + (isTorchOn ? "ON" : "OFF"));
+        }
+        // Persist and broadcast
+        prefs.sharedPreferences.edit()
+                .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn).apply();
+        Intent broadcast = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+        broadcast.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
+        sendBroadcast(broadcast);
+    }
+
+    /**
+     * Sets the exposure compensation value on the primary camera.
+     */
+    private void handleSetExposureCompensation(@NonNull Intent intent) {
+        if (primaryRequestBuilder == null || primarySession == null) return;
+        int ev = intent.getIntExtra(Constants.EXTRA_EXPOSURE_COMPENSATION, 0);
+        primaryRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, ev);
+        if (applyPrimaryRepeating()) {
+            Log.d(TAG, "Exposure compensation set to: " + ev);
+        }
+    }
+
+    /**
+     * Toggles the AE lock on the primary camera.
+     */
+    private void handleToggleAeLock(@NonNull Intent intent) {
+        if (primaryRequestBuilder == null || primarySession == null) return;
+        boolean lock = intent.getBooleanExtra(Constants.EXTRA_AE_LOCK, false);
+        primaryRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, lock);
+        if (applyPrimaryRepeating()) {
+            Log.d(TAG, "AE lock set to: " + lock);
+        }
+    }
+
+    /**
+     * Sets the autofocus mode on the primary camera.
+     */
+    private void handleSetAfMode(@NonNull Intent intent) {
+        if (primaryRequestBuilder == null || primarySession == null) return;
+        int mode = intent.getIntExtra(Constants.EXTRA_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+        primaryRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mode);
+        if (applyPrimaryRepeating()) {
+            Log.d(TAG, "AF mode set to: " + mode);
+        }
+    }
+
+    /**
+     * Triggers an AF scan on the primary camera.
+     */
+    private void handleTapToFocus() {
+        if (primaryRequestBuilder == null || primarySession == null) return;
+        try {
+            primaryRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_START);
+            primarySession.capture(primaryRequestBuilder.build(),
+                    null, backgroundHandler);
+            // Reset trigger for subsequent repeating requests
+            primaryRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+            Log.d(TAG, "Tap-to-focus triggered");
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Tap-to-focus failed", e);
+        }
+    }
+
+    /**
+     * Sets the zoom ratio on the primary camera (API 30+).
+     */
+    private void handleSetZoomRatio(@NonNull Intent intent) {
+        if (primaryRequestBuilder == null || primarySession == null) return;
+        float zoom = intent.getFloatExtra(Constants.EXTRA_ZOOM_RATIO, 1.0f);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            primaryRequestBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoom);
+        }
+        if (applyPrimaryRepeating()) {
+            Log.d(TAG, "Zoom ratio set to: " + zoom);
+        }
+    }
+
+    /**
+     * Applies the current primary request builder as a repeating request.
+     *
+     * @return {@code true} if the request was applied successfully.
+     */
+    private boolean applyPrimaryRepeating() {
+        try {
+            primarySession.setRepeatingRequest(
+                    primaryRequestBuilder.build(), null, backgroundHandler);
+            return true;
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Failed to apply primary repeating request", e);
+            return false;
+        } catch (IllegalStateException e) {
+            Log.w(TAG, "Primary session already closed", e);
+            return false;
         }
     }
 

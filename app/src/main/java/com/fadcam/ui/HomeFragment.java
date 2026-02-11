@@ -265,6 +265,11 @@ public class HomeFragment extends BaseFragment {
     // ── Dual Camera ────────────────────────────────────────────────────
     /** {@code true} while a dual-camera recording session is active. */
     private volatile boolean isDualRecordingActive = false;
+    /**
+     * Guard flag: set before launching fullscreen preview to prevent
+     * {@link #onPause()} from sending a null surface to the service.
+     */
+    private volatile boolean isLaunchingFullscreen = false;
     private BroadcastReceiver broadcastOnDualRecordingStarted;
     private BroadcastReceiver broadcastOnDualRecordingStopped;
     private BroadcastReceiver broadcastOnDualRecordingPaused;
@@ -1519,17 +1524,18 @@ public class HomeFragment extends BaseFragment {
 
         // Critical: When resuming, send the appropriate surface to the service
         // This ensures preview shows correctly after app is minimized/restored
-        if (
-            isPreviewEnabled &&
-            isRecordingOrPaused() &&
-            textureViewSurface != null &&
-            textureViewSurface.isValid()
-        ) {
-            Log.d(
-                TAG,
-                "onResume: Preview enabled, sending valid surface to service"
-            );
-            updateServiceWithCurrentSurface(textureViewSurface);
+        if (isPreviewEnabled && isRecordingOrPaused()) {
+            // Attempt to recover surface if it was lost
+            if (textureViewSurface == null || !textureViewSurface.isValid()) {
+                Log.d(TAG, "onResume: Surface null/invalid, attempting recovery via resetTextureView");
+                resetTextureView();
+            }
+            if (textureViewSurface != null && textureViewSurface.isValid()) {
+                Log.d(TAG, "onResume: Preview enabled, sending valid surface to service");
+                updateServiceWithCurrentSurface(textureViewSurface);
+            } else {
+                Log.d(TAG, "onResume: Surface still unavailable after reset — onSurfaceTextureAvailable will handle it");
+            }
         } else if (!isPreviewEnabled || !isRecordingOrPaused()) {
             // If preview is disabled or not recording, send null surface
             Log.d(
@@ -2810,9 +2816,11 @@ public class HomeFragment extends BaseFragment {
         // Stop bubble rotation animation to save battery
         stopBubbleRotation();
 
-        if (textureViewSurface != null) {
+        if (textureViewSurface != null && !isLaunchingFullscreen) {
             Log.d(TAG, "onPause: Explicitly sending null surface to service");
             updateServiceWithCurrentSurface(null);
+        } else if (isLaunchingFullscreen) {
+            Log.d(TAG, "onPause: Skipping null surface — launching fullscreen preview");
         }
         // locationHelper.stopLocationUpdates();
 
@@ -8155,6 +8163,7 @@ public class HomeFragment extends BaseFragment {
             }
             // Launch fullscreen preview — the activity will take over the preview surface
             Intent intent = new Intent(requireContext(), FullscreenPreviewActivity.class);
+            isLaunchingFullscreen = true;
             fullscreenLauncher.launch(intent);
         });
     }
@@ -8170,6 +8179,7 @@ public class HomeFragment extends BaseFragment {
                         // Fullscreen activity finished — push our surface immediately.
                         // FullscreenPreview does NOT send null on destroy, so there
                         // is no race condition. We just need to reclaim the preview.
+                        isLaunchingFullscreen = false;
                         resetTextureView();
                         // Safety retry: if TextureView wasn't ready yet (e.g. it
                         // was recreated), onSurfaceTextureAvailable handles it.
