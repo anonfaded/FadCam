@@ -39,6 +39,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
@@ -49,6 +51,7 @@ import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,13 +80,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private TextureView textureView;
     private View topBar;
     private View bottomBar;
-    private TextView btnFullscreenTorch;
-    private TextView btnFullscreenCamSwitch;
+    private MaterialButton btnFullscreenTorch;
+    private MaterialButton btnFullscreenCamSwitch;
+    private MaterialButton btnTapFocusToggle;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
     private TextView tileExp;
     private TextView tileZoom;
+    private TextView labelExp;
+    private TextView labelZoom;
 
     // ── Surface ──────────────────────────────────────────────────────────────
     private Surface previewSurface;
@@ -93,6 +99,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private CameraManager cameraManager;
     private boolean controlsVisible = true;
     private boolean isTorchOn = false;
+    private boolean tapToFocusEnabled = true;
 
     // Camera control state — mirrors HomeFragment's fields
     private int currentEvIndex;
@@ -137,10 +144,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupTextureView();
         setupRecordingTiles();
         registerResultListeners();
+        setupTapFocusToggle();
         setupTouchHandling();
         setupCloseButton();
         setupTorchButton();
         setupCamSwitchButton();
+        setupSystemInsets();
         registerTorchReceiver();
         scheduleAutoHide();
     }
@@ -221,6 +230,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         bottomBar = findViewById(R.id.bottomBar);
         btnFullscreenTorch = findViewById(R.id.btnFullscreenTorch);
         btnFullscreenCamSwitch = findViewById(R.id.btnFullscreenCamSwitch);
+        btnTapFocusToggle = findViewById(R.id.btnTapFocusToggle);
     }
 
     private void setupTextureView() {
@@ -279,22 +289,79 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
             if (fraction < EDGE_ZONE_FRACTION || fraction > (1f - EDGE_ZONE_FRACTION)) {
                 // Edge zone — toggle controls
-                if (controlsVisible) {
-                    hideControls();
-                } else {
-                    showControls();
-                    scheduleAutoHide();
-                }
+                toggleControls();
             } else {
-                // Center zone — tap-to-focus
-                float normX = event.getX() / v.getWidth();
-                float normY = event.getY() / v.getHeight();
-                Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
-                intent.setClass(this, getTargetServiceClass());
-                startService(intent);
-                showFocusIndicator(event.getX(), event.getY());
+                if (tapToFocusEnabled) {
+                    // Center zone — tap-to-focus
+                    float normX = event.getX() / v.getWidth();
+                    float normY = event.getY() / v.getHeight();
+                    Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
+                    intent.setClass(this, getTargetServiceClass());
+                    startService(intent);
+                    showFocusIndicator(event.getX(), event.getY());
+                } else {
+                    // Tap-to-focus disabled — center tap only toggles controls.
+                    toggleControls();
+                }
             }
             return true;
+        });
+    }
+
+    private void toggleControls() {
+        if (controlsVisible) {
+            hideControls();
+        } else {
+            showControls();
+            scheduleAutoHide();
+        }
+    }
+
+    private void setupTapFocusToggle() {
+        tapToFocusEnabled = prefs.isFullscreenTapToFocusEnabled();
+        updateTapFocusToggleUI();
+        if (btnTapFocusToggle != null) {
+            btnTapFocusToggle.setOnClickListener(v -> {
+                tapToFocusEnabled = !tapToFocusEnabled;
+                prefs.setFullscreenTapToFocusEnabled(tapToFocusEnabled);
+                updateTapFocusToggleUI();
+                scheduleAutoHide();
+            });
+        }
+    }
+
+    private void updateTapFocusToggleUI() {
+        if (btnTapFocusToggle == null) return;
+        btnTapFocusToggle.setIconResource(R.drawable.ic_focus_target);
+        if (tapToFocusEnabled) {
+            btnTapFocusToggle.setText(R.string.fullscreen_focus_on);
+            btnTapFocusToggle.setIconTint(android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
+            btnTapFocusToggle.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x44FFFFFF));
+            btnTapFocusToggle.setStrokeColor(android.content.res.ColorStateList.valueOf(0x66FFFFFF));
+            btnTapFocusToggle.setTextColor(0xFFFFFFFF);
+        } else {
+            btnTapFocusToggle.setText(R.string.fullscreen_focus_off);
+            btnTapFocusToggle.setIconTint(android.content.res.ColorStateList.valueOf(0xFFE0E0E0));
+            btnTapFocusToggle.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x22111111));
+            btnTapFocusToggle.setStrokeColor(android.content.res.ColorStateList.valueOf(0x55FFFFFF));
+            btnTapFocusToggle.setTextColor(0xFFE0E0E0);
+        }
+    }
+
+    private void setupSystemInsets() {
+        if (rootLayout == null) return;
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
+            androidx.core.graphics.Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            if (topBar != null && topBar.getLayoutParams() instanceof FrameLayout.LayoutParams) {
+                FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) topBar.getLayoutParams();
+                lp.topMargin = bars.top + dp(12);
+                topBar.setLayoutParams(lp);
+            }
+            if (bottomBar != null) {
+                bottomBar.setPadding(bottomBar.getPaddingLeft(), bottomBar.getPaddingTop(),
+                        bottomBar.getPaddingRight(), bars.bottom + dp(12));
+            }
+            return insets;
         });
     }
 
@@ -323,8 +390,13 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void updateTorchIcon() {
         if (btnFullscreenTorch == null) return;
-        btnFullscreenTorch.setText(isTorchOn ? "flash_on" : "flash_off");
-        btnFullscreenTorch.setTextColor(isTorchOn ? 0xFFFFEB3B : 0xFFFFFFFF);
+        btnFullscreenTorch.setIconResource(R.drawable.ic_flashlight_on);
+        btnFullscreenTorch.setIconTint(android.content.res.ColorStateList.valueOf(
+                isTorchOn ? 0xFFFFC107 : 0xFFFFFFFF));
+        btnFullscreenTorch.setStrokeColor(android.content.res.ColorStateList.valueOf(
+                isTorchOn ? 0x99FFC107 : 0x4DFFFFFF));
+        btnFullscreenTorch.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                isTorchOn ? 0x33FFC107 : 0x26FFFFFF));
     }
 
     private void registerTorchReceiver() {
@@ -391,12 +463,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void setupRecordingTiles() {
-        View tilesRoot = findViewById(R.id.includeFullscreenTiles);
-        if (tilesRoot == null) return;
-
-        tileAfToggle = tilesRoot.findViewById(R.id.tile_af_toggle);
-        tileExp = tilesRoot.findViewById(R.id.tile_exp);
-        tileZoom = tilesRoot.findViewById(R.id.tile_zoom);
+        tileAfToggle = findViewById(R.id.tile_af_toggle);
+        tileExp = findViewById(R.id.tile_exp);
+        tileZoom = findViewById(R.id.tile_zoom);
+        labelExp = findViewById(R.id.labelExp);
+        labelZoom = findViewById(R.id.labelZoom);
+        if (tileAfToggle == null || tileExp == null || tileZoom == null) return;
 
         // Apply Material Icons typeface
         Typeface materialIcons = ResourcesCompat.getFont(this, R.font.materialicons);
@@ -629,13 +701,25 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (tileExp == null) return;
         boolean modified = currentEvIndex != 0 || aeLocked;
         tileExp.setTextColor(modified ? 0xFFFF9800 : 0xFFFFFFFF);
+        if (labelExp != null) {
+            labelExp.setTextColor(modified ? 0xFFFFC107 : 0xCCFFFFFF);
+        }
     }
 
     private void updateZoomTileTint() {
         if (tileZoom == null) return;
         CameraType cam = prefs.getCameraSelection();
         float zoom = prefs.getSpecificZoomRatio(cam);
-        tileZoom.setTextColor(Math.abs(zoom - 1.0f) < 0.01f ? 0xFFFFFFFF : 0xFFFF9800);
+        boolean modified = Math.abs(zoom - 1.0f) >= 0.01f;
+        tileZoom.setTextColor(modified ? 0xFFFF9800 : 0xFFFFFFFF);
+        if (labelZoom != null) {
+            labelZoom.setTextColor(modified ? 0xFFFFC107 : 0xCCFFFFFF);
+        }
+    }
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(value * density);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

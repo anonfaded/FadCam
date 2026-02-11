@@ -1588,5 +1588,15 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="fullscreen_preview_close">Close fullscreen</string>
     <string name="fullscreen_preview_not_recording">Start recording first to use fullscreen preview</string>
     <string name="fullscreen_preview_tap_hint">Tap screen to toggle controls</string>
+    <string name="fullscreen_focus_on">Focus: ON</string>
+    <string name="fullscreen_focus_off">Focus: OFF</string>
+    <string name="fullscreen_camera_switch">Switch camera</string>
+    <string name="fullscreen_torch">Torch</string>
+    <string name="fullscreen_focus_toggle">Tap focus toggle</string>
+    <string name="fullscreen_label_switch">Switch</string>
+    <string name="fullscreen_label_torch">Torch</string>
+    <string name="fullscreen_label_af">AF</string>
+    <string name="fullscreen_label_exposure">EV</string>
+    <string name="fullscreen_label_zoom">Zoom</string>
     
 </resources>

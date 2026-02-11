@@ -6,115 +6,284 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <!-- Full-screen camera preview -->
     <TextureView
         android:id="@+id/fullscreenTextureView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Top bar: close + title only -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
-        android:background="#80000000"
-        android:gravity="start|center_vertical"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/fullscreen_dock_bg"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="8dp"
+        android:paddingTop="8dp"
         android:paddingEnd="8dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp">
+        android:paddingBottom="8dp">
 
         <ImageView
             android:id="@+id/btnClose"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="2dp"
-            android:layout_marginEnd="12dp"
-            android:padding="10dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/fullscreen_preview_close"
+            android:focusable="true"
+            android:padding="12dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_close"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@android:color/white"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="@string/back" />
+            android:tint="@android:color/white" />
 
         <TextView
             android:id="@+id/tvFullscreenTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:ellipsize="end"
+            android:gravity="center"
             android:maxLines="1"
             android:text="@string/fullscreen_preview_enter"
             android:textColor="@android:color/white"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTapFocusToggle"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:contentDescription="@string/fullscreen_focus_toggle"
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="0dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="@string/fullscreen_focus_on"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            app:backgroundTint="#33FFFFFF"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_focus_target"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconSize="18dp"
+            app:iconTint="@android:color/white"
+            app:rippleColor="#55FFFFFF"
+            app:strokeColor="#66FFFFFF"
+            app:strokeWidth="1dp" />
 
     </LinearLayout>
 
-    <!-- Bottom controls: action buttons row + recording tiles -->
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/bottomBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#80000000"
-        android:orientation="vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="14dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
 
-        <!-- Action buttons: Camera Switch · Torch -->
         <LinearLayout
+            android:id="@+id/bottomDock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/fullscreen_dock_bg"
+            android:elevation="10dp"
             android:gravity="center"
             android:orientation="horizontal"
-            android:layout_marginBottom="10dp">
+            android:paddingStart="8dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="10dp">
 
-            <!-- Camera switch -->
-            <TextView
-                android:id="@+id/btnFullscreenCamSwitch"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="16dp"
-                android:background="@drawable/fullscreen_action_btn_bg"
-                android:clickable="true"
-                android:focusable="true"
-                android:fontFamily="@font/materialicons"
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:gravity="center"
-                android:text="flip_camera_android"
-                android:textColor="@android:color/white"
-                android:textSize="24sp"
-                android:padding="4dp" />
+                android:orientation="vertical">
 
-            <!-- Torch toggle -->
-            <TextView
-                android:id="@+id/btnFullscreenTorch"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/fullscreen_action_btn_bg"
-                android:clickable="true"
-                android:focusable="true"
-                android:fontFamily="@font/materialicons"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFullscreenCamSwitch"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/fullscreen_camera_switch"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    android:minWidth="0dp"
+                    android:padding="0dp"
+                    app:backgroundTint="#26FFFFFF"
+                    app:cornerRadius="14dp"
+                    app:icon="@drawable/cam_switch"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="22dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="#55FFFFFF"
+                    app:strokeColor="#4DFFFFFF"
+                    app:strokeWidth="1dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/fullscreen_label_switch"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:gravity="center"
-                android:text="flash_off"
-                android:textColor="@android:color/white"
-                android:textSize="24sp"
-                android:padding="4dp" />
+                android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFullscreenTorch"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/fullscreen_torch"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    android:minWidth="0dp"
+                    android:padding="0dp"
+                    app:backgroundTint="#26FFFFFF"
+                    app:cornerRadius="14dp"
+                    app:icon="@drawable/ic_flashlight_on"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="22dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="#55FFFFFF"
+                    app:strokeColor="#4DFFFFFF"
+                    app:strokeWidth="1dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/fullscreen_label_torch"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tile_af_toggle"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/fullscreen_control_chip_bg"
+                    android:clickable="true"
+                    android:contentDescription="@string/af_mode_title"
+                    android:focusable="true"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="center_focus_strong"
+                    android:textColor="@android:color/white"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/fullscreen_label_af"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tile_exp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/fullscreen_control_chip_bg"
+                    android:clickable="true"
+                    android:contentDescription="@string/exposure_title"
+                    android:focusable="true"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="exposure"
+                    android:textColor="@android:color/white"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/labelExp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/fullscreen_label_exposure"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tile_zoom"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/fullscreen_control_chip_bg"
+                    android:clickable="true"
+                    android:contentDescription="@string/zoom_slider_title"
+                    android:focusable="true"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="zoom_in"
+                    android:textColor="@android:color/white"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/labelZoom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/fullscreen_label_zoom"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Recording tiles (AF · Exposure · Zoom) — single source of truth -->
-        <include
-            android:id="@+id/includeFullscreenTiles"
-            layout="@layout/home_recording_tiles_row" />
-
-    </LinearLayout>
+    </FrameLayout>
 
 </FrameLayout>

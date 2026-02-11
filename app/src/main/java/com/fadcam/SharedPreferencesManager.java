@@ -621,6 +621,22 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /** Returns whether fullscreen preview tap-to-focus is enabled. Default: true. */
+    public boolean isFullscreenTapToFocusEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_FULLSCREEN_TAP_TO_FOCUS_ENABLED,
+            true
+        );
+    }
+
+    /** Sets fullscreen preview tap-to-focus behavior. */
+    public void setFullscreenTapToFocusEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_FULLSCREEN_TAP_TO_FOCUS_ENABLED, enabled)
+            .apply();
+    }
+
     // -------------- Background playback auto-stop timer (in seconds) --------------
     /** Returns the auto-stop time in seconds. 0 = disabled. Default: 0. */
     public int getBackgroundPlaybackTimerSeconds() {

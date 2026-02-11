@@ -417,6 +417,9 @@ public abstract class Constants {
     public static final String PREF_PLAYER_SEEK_SECONDS =
         "pref_player_seek_seconds";
     public static final int DEFAULT_PLAYER_SEEK_SECONDS = 10; // default 10 seconds
+    // Fullscreen preview tap-to-focus toggle (when disabled, taps only toggle controls)
+    public static final String PREF_FULLSCREEN_TAP_TO_FOCUS_ENABLED =
+        "pref_fullscreen_tap_to_focus_enabled";
     // Player controller auto-hide timeout in seconds. Controls disappear after this many seconds of inactivity.
     // 0 = never auto-hide (controls stay visible until user toggles).
     public static final String PREF_PLAYER_CONTROLS_TIMEOUT_SECONDS =

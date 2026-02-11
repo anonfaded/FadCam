@@ -11,6 +11,16 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
+    <style name="Widget.FadCam.BottomSheetSlider" parent="Widget.Material3.Slider">
+        <item name="trackColorActive">?attr/pickerSliderActive</item>
+        <item name="trackColorInactive">?attr/pickerSliderInactive</item>
+        <item name="thumbColor">?attr/pickerSliderActive</item>
+        <item name="haloColor">?attr/pickerSliderActive</item>
+        <item name="trackHeight">4dp</item>
+        <item name="thumbRadius">10dp</item>
+        <item name="haloRadius">18dp</item>
+    </style>
+
     <style name="KoFiButtonStyle" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/kofi_button_bg</item>
         <item name="android:textColor">#222222</item>
