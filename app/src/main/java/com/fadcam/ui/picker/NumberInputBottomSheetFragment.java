@@ -59,6 +59,7 @@ public class NumberInputBottomSheetFragment extends BottomSheetDialogFragment {
 
     private int min, max, value, lowTh, highTh, defaultValue; private String title, hint, lowMsg, highMsg, resultKey; private EditText field; private TextView helper; private Button ok; private TextView descriptionView; private String descriptionText; private Button resetButton; private boolean showReset;
     private TextView calcView; private boolean enableTimerCalc;
+    private Integer previousActivityNavBarColor; private Boolean previousActivityNavContrastEnforced;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.number_input_bottom_sheet, container, false);
@@ -148,5 +149,69 @@ public class NumberInputBottomSheetFragment extends BottomSheetDialogFragment {
     else if(highTh>0 && val>highTh && !highMsg.isEmpty()){ helper.setText(highMsg); helper.setTextColor(getResources().getColor(android.R.color.holo_red_light, requireContext().getTheme())); }
     else { helper.setText(getString(R.string.number_input_ok_helper)); helper.setTextColor(getResources().getColor(android.R.color.holo_green_light, requireContext().getTheme())); }
         ok.setEnabled(true);
+    }
+
+    @Override
+    public int getTheme() {
+        return R.style.CustomBottomSheetDialogTheme;
+    }
+
+    @Override
+    public android.app.Dialog onCreateDialog(Bundle savedInstanceState) {
+        android.app.Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.setOnShowListener(d -> {
+            View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog)
+                .findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
+            }
+        });
+        if (dialog.getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            dialog.getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                dialog.getWindow().setNavigationBarContrastEnforced(false);
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                int flags = dialog.getWindow().getDecorView().getSystemUiVisibility();
+                dialog.getWindow().getDecorView().setSystemUiVisibility(
+                    flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                );
+            }
+        }
+        return dialog;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (getActivity() != null && getActivity().getWindow() != null
+                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            android.view.Window window = getActivity().getWindow();
+            previousActivityNavBarColor = window.getNavigationBarColor();
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                previousActivityNavContrastEnforced = window.isNavigationBarContrastEnforced();
+                window.setNavigationBarContrastEnforced(false);
+            }
+            window.setNavigationBarColor(android.graphics.Color.BLACK);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                int flags = window.getDecorView().getSystemUiVisibility();
+                window.getDecorView().setSystemUiVisibility(flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+            }
+        }
+    }
+
+    @Override
+    public void onDismiss(@NonNull android.content.DialogInterface dialog) {
+        if (getActivity() != null && getActivity().getWindow() != null
+                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP
+                && previousActivityNavBarColor != null) {
+            android.view.Window window = getActivity().getWindow();
+            window.setNavigationBarColor(previousActivityNavBarColor);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+                    && previousActivityNavContrastEnforced != null) {
+                window.setNavigationBarContrastEnforced(previousActivityNavContrastEnforced);
+            }
+        }
+        super.onDismiss(dialog);
     }
 }

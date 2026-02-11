@@ -85,9 +85,47 @@ public class NotificationSettingsFragment extends Fragment {
     }
 
     private void showCustomEditorSheet(){
-        com.google.android.material.bottomsheet.BottomSheetDialog dialog = new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext(), com.google.android.material.R.style.ThemeOverlay_Material3_BottomSheetDialog);
+        final Integer[] previousActivityNavBarColor = new Integer[1];
+        final Boolean[] previousActivityNavContrastEnforced = new Boolean[1];
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog = new com.google.android.material.bottomsheet.BottomSheetDialog(
+                requireContext(),
+                R.style.CustomBottomSheetDialogTheme
+        );
         View content = LayoutInflater.from(requireContext()).inflate(R.layout.bottomsheet_notification_custom, null);
         dialog.setContentView(content);
+        dialog.setOnShowListener(d -> {
+            View bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
+            }
+            if (dialog.getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                dialog.getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    dialog.getWindow().setNavigationBarContrastEnforced(false);
+                }
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    int flags = dialog.getWindow().getDecorView().getSystemUiVisibility();
+                    dialog.getWindow().getDecorView().setSystemUiVisibility(
+                            flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                    );
+                }
+            }
+            if (requireActivity().getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                android.view.Window activityWindow = requireActivity().getWindow();
+                previousActivityNavBarColor[0] = activityWindow.getNavigationBarColor();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    previousActivityNavContrastEnforced[0] = activityWindow.isNavigationBarContrastEnforced();
+                    activityWindow.setNavigationBarContrastEnforced(false);
+                }
+                activityWindow.setNavigationBarColor(android.graphics.Color.BLACK);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    int activityFlags = activityWindow.getDecorView().getSystemUiVisibility();
+                    activityWindow.getDecorView().setSystemUiVisibility(
+                            activityFlags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                    );
+                }
+            }
+        });
         android.widget.EditText inputTitle = content.findViewById(R.id.input_custom_title);
         android.widget.EditText inputText = content.findViewById(R.id.input_custom_text);
         String existingTitle = prefs.getCustomNotificationTitle();
@@ -108,6 +146,16 @@ public class NotificationSettingsFragment extends Fragment {
         View ok = content.findViewById(R.id.button_custom_ok);
         if(ok!=null){ ok.setOnClickListener(v-> dialog.dismiss()); }
         dialog.setOnDismissListener(di -> {
+            if (requireActivity().getWindow() != null
+                    && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP
+                    && previousActivityNavBarColor[0] != null) {
+                android.view.Window activityWindow = requireActivity().getWindow();
+                activityWindow.setNavigationBarColor(previousActivityNavBarColor[0]);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+                        && previousActivityNavContrastEnforced[0] != null) {
+                    activityWindow.setNavigationBarContrastEnforced(previousActivityNavContrastEnforced[0]);
+                }
+            }
             refreshValues();
             Toast.makeText(requireContext(), getString(R.string.notification_settings_saved), Toast.LENGTH_SHORT).show();
         });

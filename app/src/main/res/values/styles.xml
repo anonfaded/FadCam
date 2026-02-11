@@ -1,11 +1,14 @@
 <resources>
     <style name="CustomBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
-        <item name="background">@drawable/gradient_background</item>
+        <item name="background">@drawable/picker_bottom_sheet_gradient_bg_dynamic</item>
         <item name="backgroundTint">@null</item>
     </style>
 
     <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
     <style name="KoFiButtonStyle" parent="Widget.AppCompat.Button">

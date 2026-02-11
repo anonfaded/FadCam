@@ -80,6 +80,7 @@
         <item name="colorOnSurface">@color/amoled_text_primary</item>
         <!-- Dialog theme override -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Amoled.MaterialAlertDialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Card and surface styles -->
         <item name="cardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
         <item name="bottomNavigationStyle">@style/Theme.FadCam.AmoledBottomNavigation</item>
@@ -168,6 +169,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -246,6 +248,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Gold.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -318,6 +321,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -390,6 +394,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.ShadowAlloy.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -462,6 +467,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.PookiePink.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -534,6 +540,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar.Light</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView.Light</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SnowVeil.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Force pure white CardView backgrounds for better contrast with black text -->
         <item name="cardViewStyle">@style/Theme.FadCam.SnowVeilCardView</item>
         <!-- Improve contrast for Snow Veil theme -->
@@ -676,6 +683,7 @@
         <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <item name="android:colorBackground">@color/midnight_dusk_bg</item>
         <item name="colorSurface">@color/midnight_dusk_bg</item>
         <item name="backgroundColor">@color/midnight_dusk_bg</item>

@@ -297,6 +297,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         sliderInitial = 0;
     private float sliderStepFloat = 1f; // EV per index
     private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
+    private Integer previousActivityNavBarColor = null;
+    private Boolean previousActivityNavContrastEnforced = null;
 
     @Nullable
     @Override
@@ -1567,5 +1569,69 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 textView.setTextColor(android.graphics.Color.WHITE);
             }
         }
+    }
+
+    @Override
+    public int getTheme() {
+        return R.style.CustomBottomSheetDialogTheme;
+    }
+
+    @Override
+    public android.app.Dialog onCreateDialog(Bundle savedInstanceState) {
+        android.app.Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.setOnShowListener(d -> {
+            View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog)
+                .findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null && useGradientBg) {
+                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
+            }
+        });
+        if (dialog.getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            dialog.getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                dialog.getWindow().setNavigationBarContrastEnforced(false);
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                int flags = dialog.getWindow().getDecorView().getSystemUiVisibility();
+                dialog.getWindow().getDecorView().setSystemUiVisibility(
+                    flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                );
+            }
+        }
+        return dialog;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (getActivity() != null && getActivity().getWindow() != null
+                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            android.view.Window window = getActivity().getWindow();
+            previousActivityNavBarColor = window.getNavigationBarColor();
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                previousActivityNavContrastEnforced = window.isNavigationBarContrastEnforced();
+                window.setNavigationBarContrastEnforced(false);
+            }
+            window.setNavigationBarColor(android.graphics.Color.BLACK);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                int flags = window.getDecorView().getSystemUiVisibility();
+                window.getDecorView().setSystemUiVisibility(flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+            }
+        }
+    }
+
+    @Override
+    public void onDismiss(@NonNull android.content.DialogInterface dialog) {
+        if (getActivity() != null && getActivity().getWindow() != null
+                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP
+                && previousActivityNavBarColor != null) {
+            android.view.Window window = getActivity().getWindow();
+            window.setNavigationBarColor(previousActivityNavBarColor);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+                    && previousActivityNavContrastEnforced != null) {
+                window.setNavigationBarContrastEnforced(previousActivityNavContrastEnforced);
+            }
+        }
+        super.onDismiss(dialog);
     }
 }
