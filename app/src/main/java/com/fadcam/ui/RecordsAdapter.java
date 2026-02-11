@@ -658,7 +658,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.iconCheckContainer == null || holder.checkIcon == null) {
             return;
         }
-        holder.itemView.setAlpha((isSelectionModeActive && isCurrentlySelected) ? 0.58f : 1f);
+        float contentAlpha = (isSelectionModeActive && isCurrentlySelected) ? 0.58f : 1f;
+        if (holder.textViewRecord != null) holder.textViewRecord.setAlpha(contentAlpha);
+        if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setAlpha(contentAlpha);
+        if (holder.textViewFileSize != null) holder.textViewFileSize.setAlpha(contentAlpha);
+        if (holder.textViewFileTime != null) holder.textViewFileTime.setAlpha(contentAlpha);
+        if (holder.textViewSerialNumber != null) holder.textViewSerialNumber.setAlpha(contentAlpha);
+        if (holder.textViewStatusBadge != null) holder.textViewStatusBadge.setAlpha(contentAlpha);
+        if (holder.menuButtonContainer != null) holder.menuButtonContainer.setAlpha(contentAlpha);
         if (holder.selectionDimOverlay != null) {
             holder.selectionDimOverlay.setVisibility((isSelectionModeActive && isCurrentlySelected) ? View.VISIBLE : View.GONE);
         }

@@ -82,6 +82,7 @@ public class BatchMediaActionService extends Service {
     }
 
     private void runTask(@NonNull BatchMediaActionTask task, int startId) {
+        long startedAtMs = System.currentTimeMillis();
         int completed = 0;
         int failed = 0;
         int skipped = 0;
@@ -92,9 +93,10 @@ public class BatchMediaActionService extends Service {
                 int done = 0;
                 for (Uri inputUri : task.inputUris) {
                     done++;
+                    String eta = buildEtaText(startedAtMs, done - 1, task.inputUris.size());
                     notificationManager.updateProgress(
                             getString(R.string.records_batch_faditor_export_standard),
-                            getString(R.string.records_batch_progress_item, done, task.inputUris.size()),
+                            getString(R.string.records_batch_progress_item, done, task.inputUris.size()) + eta,
                             done - 1,
                             task.inputUris.size());
 
@@ -114,9 +116,17 @@ public class BatchMediaActionService extends Service {
                         getString(R.string.records_batch_faditor_merge),
                         getString(R.string.records_batch_starting),
                         0,
-                        1);
+                        task.inputUris.size() + 2);
 
-                MergeResult merge = mergeVideos(task.inputUris, task);
+                MergeResult merge = mergeVideos(task.inputUris, task, (copied, totalInputs) -> {
+                    String eta = buildEtaText(startedAtMs, copied, totalInputs + 2);
+                    notificationManager.updateProgress(
+                            getString(R.string.records_batch_faditor_merge),
+                            "Preparing merge " + copied + "/" + totalInputs + eta,
+                            copied,
+                            totalInputs + 2
+                    );
+                });
                 if (merge.success) completed = 1;
                 else failed = 1;
                 skipped = merge.skippedCount;
@@ -124,8 +134,8 @@ public class BatchMediaActionService extends Service {
                 notificationManager.updateProgress(
                         getString(R.string.records_batch_faditor_merge),
                         getString(R.string.records_batch_progress_counts, completed, skipped, failed),
-                        1,
-                        1);
+                        task.inputUris.size() + 2,
+                        task.inputUris.size() + 2);
             }
         } catch (Exception e) {
             Log.e(TAG, "Batch action failed", e);
@@ -151,6 +161,21 @@ public class BatchMediaActionService extends Service {
         stopForeground(STOP_FOREGROUND_REMOVE);
         notificationManager.cancelProgress();
         stopSelf(startId);
+    }
+
+    @NonNull
+    private String buildEtaText(long startedAtMs, int done, int total) {
+        if (done <= 0 || total <= 1) return "";
+        long elapsed = Math.max(1L, System.currentTimeMillis() - startedAtMs);
+        double perUnit = elapsed / (double) done;
+        long remainingMs = (long) (perUnit * Math.max(0, total - done));
+        long sec = Math.max(0, remainingMs / 1000L);
+        long min = sec / 60;
+        long remSec = sec % 60;
+        if (min > 0) {
+            return " • ETA " + min + "m " + remSec + "s";
+        }
+        return " • ETA " + remSec + "s";
     }
 
     @NonNull
@@ -196,7 +221,11 @@ public class BatchMediaActionService extends Service {
     }
 
     @NonNull
-    private MergeResult mergeVideos(@NonNull List<Uri> inputUris, @NonNull BatchMediaActionTask task) {
+    private MergeResult mergeVideos(
+            @NonNull List<Uri> inputUris,
+            @NonNull BatchMediaActionTask task,
+            @Nullable MergeProgressListener listener
+    ) {
         if (inputUris.size() < 2) {
             return new MergeResult(false, inputUris.size());
         }
@@ -217,6 +246,7 @@ public class BatchMediaActionService extends Service {
                 }
                 tempInputs.add(tmp);
                 mergePaths.add(tmp.getAbsolutePath());
+                if (listener != null) listener.onInputsCopied(mergePaths.size(), inputUris.size());
             }
 
             if (mergePaths.size() < 2) {
@@ -641,5 +671,9 @@ public class BatchMediaActionService extends Service {
             }
             return true;
         }
+    }
+
+    private interface MergeProgressListener {
+        void onInputsCopied(int copied, int totalInputs);
     }
 }

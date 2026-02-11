@@ -8,6 +8,7 @@ import androidx.documentfile.provider.DocumentFile;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -113,6 +114,18 @@ public class StorageInfoCache {
                         StatFs customStat = new StatFs(probe.getAbsolutePath());
                         bytesAvailable = customStat.getAvailableBytes();
                         bytesTotal = customStat.getTotalBytes();
+                    } else {
+                        String docId = null;
+                        try {
+                            docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+                        } catch (Exception ignored) {
+                        }
+                        File resolvedVolumePath = resolvePathFromTreeDocId(context, docId);
+                        if (resolvedVolumePath != null && resolvedVolumePath.exists()) {
+                            StatFs customStat = new StatFs(resolvedVolumePath.getAbsolutePath());
+                            bytesAvailable = customStat.getAvailableBytes();
+                            bytesTotal = customStat.getTotalBytes();
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -171,5 +184,32 @@ public class StorageInfoCache {
             Log.e(TAG, "Error checking SAF permissions", e);
         }
         return false;
+    }
+
+    private static File resolvePathFromTreeDocId(Context context, String docId) {
+        if (docId == null || !docId.contains(":")) return null;
+        String[] parts = docId.split(":", 2);
+        if (parts.length < 2) return null;
+        String volumeId = parts[0];
+        String relative = parts[1];
+
+        if ("primary".equalsIgnoreCase(volumeId)) {
+            File root = Environment.getExternalStorageDirectory();
+            return relative.isEmpty() ? root : new File(root, relative);
+        }
+
+        File[] externalDirs = context.getExternalFilesDirs(null);
+        if (externalDirs == null) return null;
+        for (File dir : externalDirs) {
+            if (dir == null) continue;
+            String path = dir.getAbsolutePath();
+            String marker = "/storage/" + volumeId + "/";
+            int idx = path.indexOf(marker);
+            if (idx >= 0) {
+                File root = new File("/storage/" + volumeId);
+                return relative.isEmpty() ? root : new File(root, relative);
+            }
+        }
+        return null;
     }
 }

@@ -591,8 +591,10 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
             int lastColonIndex = path.lastIndexOf(':');
             if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
                 String relativePath = path.substring(lastColonIndex + 1);
-                // Reconstruct a display-friendly path
-                return "/storage/emulated/0/" + relativePath;
+                String resolved = resolveRelativePathOnVolumes(relativePath);
+                if (resolved != null) {
+                    return resolved;
+                }
             }
         }
         return videoUri.toString();
@@ -641,8 +643,31 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         int lastColonIndex = path.lastIndexOf(':');
         if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
             String relativePath = path.substring(lastColonIndex + 1);
-            // Reconstruct absolute path
-            return "/storage/emulated/0/" + relativePath;
+            return resolveRelativePathOnVolumes(relativePath);
+        }
+        return null;
+    }
+
+    @Nullable
+    private String resolveRelativePathOnVolumes(@NonNull String relativePath) {
+        if (getContext() == null) return null;
+        try {
+            java.io.File[] externalDirs = requireContext().getExternalFilesDirs(null);
+            if (externalDirs != null) {
+                for (java.io.File dir : externalDirs) {
+                    if (dir == null) continue;
+                    String dirPath = dir.getAbsolutePath();
+                    int androidIdx = dirPath.indexOf("/Android/");
+                    if (androidIdx > 0) {
+                        String volumeRoot = dirPath.substring(0, androidIdx + 1);
+                        java.io.File file = new java.io.File(volumeRoot + relativePath);
+                        if (file.exists()) {
+                            return file.getAbsolutePath();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
         }
         return null;
     }
