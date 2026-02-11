@@ -45,6 +45,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
 import com.fadcam.R;
+import com.fadcam.RecordingState;
 import com.fadcam.RecordingControlIntents;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
@@ -82,12 +83,14 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private View bottomBar;
     private MaterialButton btnFullscreenTorch;
     private MaterialButton btnFullscreenCamSwitch;
+    private MaterialButton btnFullscreenPauseResume;
     private MaterialButton btnTapFocusToggle;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
     private TextView tileExp;
     private TextView tileZoom;
+    private TextView labelPauseResume;
     private TextView labelExp;
     private TextView labelZoom;
 
@@ -99,6 +102,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private CameraManager cameraManager;
     private boolean controlsVisible = true;
     private boolean isTorchOn = false;
+    private boolean isRecordingPaused = false;
     private boolean tapToFocusEnabled = true;
 
     // Camera control state — mirrors HomeFragment's fields
@@ -116,6 +120,34 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 isTorchOn = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
                 updateTorchIcon();
             }
+        }
+    };
+
+    private boolean recordingStateReceiverRegistered = false;
+    private final BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null || intent.getAction() == null) return;
+            String action = intent.getAction();
+            if (Constants.BROADCAST_ON_RECORDING_PAUSED.equals(action)
+                    || Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED.equals(action)) {
+                isRecordingPaused = true;
+            } else if (Constants.BROADCAST_ON_RECORDING_RESUMED.equals(action)
+                    || Constants.BROADCAST_ON_RECORDING_STARTED.equals(action)
+                    || Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED.equals(action)) {
+                isRecordingPaused = false;
+            } else if (Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK.equals(action)) {
+                try {
+                    RecordingState state = (RecordingState) intent.getSerializableExtra(
+                            Constants.INTENT_EXTRA_RECORDING_STATE);
+                    if (state == RecordingState.PAUSED) {
+                        isRecordingPaused = true;
+                    } else if (state == RecordingState.IN_PROGRESS || state == RecordingState.STARTING) {
+                        isRecordingPaused = false;
+                    }
+                } catch (Exception ignored) { }
+            }
+            updatePauseResumeButton();
         }
     };
 
@@ -149,8 +181,11 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupCloseButton();
         setupTorchButton();
         setupCamSwitchButton();
+        setupPauseResumeButton();
         setupSystemInsets();
         registerTorchReceiver();
+        registerRecordingStateReceiver();
+        requestRecordingStateSync();
         scheduleAutoHide();
     }
 
@@ -175,6 +210,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         super.onDestroy();
         autoHideHandler.removeCallbacks(autoHideRunnable);
         unregisterTorchReceiver();
+        unregisterRecordingStateReceiver();
         // Release local surface only — do NOT send null to service.
         // HomeFragment will immediately push its own surface when it resumes,
         // avoiding the race condition that causes "stuck preview" frames.
@@ -230,6 +266,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         bottomBar = findViewById(R.id.bottomBar);
         btnFullscreenTorch = findViewById(R.id.btnFullscreenTorch);
         btnFullscreenCamSwitch = findViewById(R.id.btnFullscreenCamSwitch);
+        btnFullscreenPauseResume = findViewById(R.id.btnFullscreenPauseResume);
         btnTapFocusToggle = findViewById(R.id.btnTapFocusToggle);
     }
 
@@ -336,14 +373,14 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (tapToFocusEnabled) {
             btnTapFocusToggle.setText(R.string.fullscreen_focus_on);
             btnTapFocusToggle.setIconTint(android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
-            btnTapFocusToggle.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x44FFFFFF));
-            btnTapFocusToggle.setStrokeColor(android.content.res.ColorStateList.valueOf(0x66FFFFFF));
+            btnTapFocusToggle.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x66101418));
+            btnTapFocusToggle.setStrokeColor(android.content.res.ColorStateList.valueOf(0x33FFFFFF));
             btnTapFocusToggle.setTextColor(0xFFFFFFFF);
         } else {
             btnTapFocusToggle.setText(R.string.fullscreen_focus_off);
             btnTapFocusToggle.setIconTint(android.content.res.ColorStateList.valueOf(0xFFE0E0E0));
-            btnTapFocusToggle.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x22111111));
-            btnTapFocusToggle.setStrokeColor(android.content.res.ColorStateList.valueOf(0x55FFFFFF));
+            btnTapFocusToggle.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0x5A0D1015));
+            btnTapFocusToggle.setStrokeColor(android.content.res.ColorStateList.valueOf(0x2AFFFFFF));
             btnTapFocusToggle.setTextColor(0xFFE0E0E0);
         }
     }
@@ -394,9 +431,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         btnFullscreenTorch.setIconTint(android.content.res.ColorStateList.valueOf(
                 isTorchOn ? 0xFFFFC107 : 0xFFFFFFFF));
         btnFullscreenTorch.setStrokeColor(android.content.res.ColorStateList.valueOf(
-                isTorchOn ? 0x99FFC107 : 0x4DFFFFFF));
+                isTorchOn ? 0x66FFC107 : 0x2AFFFFFF));
         btnFullscreenTorch.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                isTorchOn ? 0x33FFC107 : 0x26FFFFFF));
+                isTorchOn ? 0x40210F00 : 0x5A0D1015));
     }
 
     private void registerTorchReceiver() {
@@ -422,6 +459,45 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         torchReceiverRegistered = false;
     }
 
+    private void registerRecordingStateReceiver() {
+        if (recordingStateReceiverRegistered) return;
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constants.BROADCAST_ON_RECORDING_STARTED);
+        filter.addAction(Constants.BROADCAST_ON_RECORDING_RESUMED);
+        filter.addAction(Constants.BROADCAST_ON_RECORDING_PAUSED);
+        filter.addAction(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+        filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED);
+        filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(recordingStateReceiver, filter);
+            }
+            recordingStateReceiverRegistered = true;
+        } catch (Exception e) {
+            Log.e(TAG, "Error registering recording-state receiver", e);
+        }
+    }
+
+    private void unregisterRecordingStateReceiver() {
+        if (!recordingStateReceiverRegistered) return;
+        try {
+            unregisterReceiver(recordingStateReceiver);
+        } catch (Exception ignored) { }
+        recordingStateReceiverRegistered = false;
+    }
+
+    private void requestRecordingStateSync() {
+        try {
+            Intent i = new Intent(this, RecordingService.class);
+            i.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
+            startService(i);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to request recording state", e);
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Camera switch button — same logic as HomeFragment.switchCamera()
     // ─────────────────────────────────────────────────────────────────────────
@@ -429,6 +505,60 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private void setupCamSwitchButton() {
         if (btnFullscreenCamSwitch == null) return;
         btnFullscreenCamSwitch.setOnClickListener(v -> switchCamera());
+    }
+
+    private void setupPauseResumeButton() {
+        labelPauseResume = findViewById(R.id.labelPauseResume);
+        updatePauseResumeButton();
+        if (btnFullscreenPauseResume == null) return;
+        btnFullscreenPauseResume.setOnClickListener(v -> togglePauseResumeRecording());
+    }
+
+    private void togglePauseResumeRecording() {
+        Intent intent = new Intent(this, getTargetServiceClass());
+        if (isDualRecordingRunning()) {
+            intent.setAction(isRecordingPaused
+                    ? Constants.INTENT_ACTION_RESUME_DUAL_RECORDING
+                    : Constants.INTENT_ACTION_PAUSE_DUAL_RECORDING);
+        } else {
+            intent.setAction(isRecordingPaused
+                    ? Constants.INTENT_ACTION_RESUME_RECORDING
+                    : Constants.INTENT_ACTION_PAUSE_RECORDING);
+            // Root fix: on resume, pass current fullscreen preview surface so RecordingService
+            // does not null out previewSurface in setupSurfaceTexture(intent).
+            if (isRecordingPaused && textureView != null && textureView.isAvailable()) {
+                SurfaceTexture st = textureView.getSurfaceTexture();
+                if (st != null) {
+                    intent.putExtra("SURFACE", new Surface(st));
+                    intent.putExtra("SURFACE_WIDTH", textureView.getWidth());
+                    intent.putExtra("SURFACE_HEIGHT", textureView.getHeight());
+                }
+            }
+        }
+        startService(intent);
+        if (btnFullscreenPauseResume != null) {
+            btnFullscreenPauseResume.setEnabled(false);
+            btnFullscreenPauseResume.postDelayed(() -> {
+                if (btnFullscreenPauseResume != null) btnFullscreenPauseResume.setEnabled(true);
+            }, 350);
+        }
+    }
+
+    private void updatePauseResumeButton() {
+        if (btnFullscreenPauseResume == null) return;
+        int iconRes = isRecordingPaused ? R.drawable.ic_play : R.drawable.ic_pause;
+        int labelRes = isRecordingPaused ? R.string.button_resume : R.string.button_pause;
+        btnFullscreenPauseResume.setIconResource(iconRes);
+        btnFullscreenPauseResume.setIconTint(android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
+        btnFullscreenPauseResume.setContentDescription(getString(labelRes));
+        btnFullscreenPauseResume.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                isRecordingPaused ? 0x40210F00 : 0x5A0D1015));
+        btnFullscreenPauseResume.setStrokeColor(android.content.res.ColorStateList.valueOf(
+                isRecordingPaused ? 0x66FFC107 : 0x2AFFFFFF));
+        if (labelPauseResume != null) {
+            labelPauseResume.setText(labelRes);
+            labelPauseResume.setTextColor(isRecordingPaused ? 0xFFFFC107 : 0xB3FFFFFF);
+        }
     }
 
     private void switchCamera() {
@@ -702,7 +832,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         boolean modified = currentEvIndex != 0 || aeLocked;
         tileExp.setTextColor(modified ? 0xFFFF9800 : 0xFFFFFFFF);
         if (labelExp != null) {
-            labelExp.setTextColor(modified ? 0xFFFFC107 : 0xCCFFFFFF);
+            labelExp.setTextColor(modified ? 0xFFFFC107 : 0xB3FFFFFF);
         }
     }
 
@@ -713,7 +843,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         boolean modified = Math.abs(zoom - 1.0f) >= 0.01f;
         tileZoom.setTextColor(modified ? 0xFFFF9800 : 0xFFFFFFFF);
         if (labelZoom != null) {
-            labelZoom.setTextColor(modified ? 0xFFFFC107 : 0xCCFFFFFF);
+            labelZoom.setTextColor(modified ? 0xFFFFC107 : 0xB3FFFFFF);
         }
     }
 

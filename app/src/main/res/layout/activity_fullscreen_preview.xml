@@ -73,15 +73,15 @@
             android:textAllCaps="false"
             android:textColor="@android:color/white"
             android:textSize="12sp"
-            app:backgroundTint="#33FFFFFF"
+            app:backgroundTint="#66101418"
             app:cornerRadius="14dp"
             app:icon="@drawable/ic_focus_target"
             app:iconGravity="textStart"
             app:iconPadding="6dp"
             app:iconSize="18dp"
             app:iconTint="@android:color/white"
-            app:rippleColor="#55FFFFFF"
-            app:strokeColor="#66FFFFFF"
+            app:rippleColor="#33FFFFFF"
+            app:strokeColor="#33FFFFFF"
             app:strokeWidth="1dp" />
 
     </LinearLayout>
@@ -128,15 +128,15 @@
                     android:insetBottom="0dp"
                     android:minWidth="0dp"
                     android:padding="0dp"
-                    app:backgroundTint="#26FFFFFF"
+                    app:backgroundTint="#5A0D1015"
                     app:cornerRadius="14dp"
                     app:icon="@drawable/cam_switch"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     app:iconSize="22dp"
                     app:iconTint="@android:color/white"
-                    app:rippleColor="#55FFFFFF"
-                    app:strokeColor="#4DFFFFFF"
+                    app:rippleColor="#33FFFFFF"
+                    app:strokeColor="#2AFFFFFF"
                     app:strokeWidth="1dp" />
 
                 <TextView
@@ -144,7 +144,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/fullscreen_label_switch"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#B3FFFFFF"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -167,15 +167,15 @@
                     android:insetBottom="0dp"
                     android:minWidth="0dp"
                     android:padding="0dp"
-                    app:backgroundTint="#26FFFFFF"
+                    app:backgroundTint="#5A0D1015"
                     app:cornerRadius="14dp"
                     app:icon="@drawable/ic_flashlight_on"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     app:iconSize="22dp"
                     app:iconTint="@android:color/white"
-                    app:rippleColor="#55FFFFFF"
-                    app:strokeColor="#4DFFFFFF"
+                    app:rippleColor="#33FFFFFF"
+                    app:strokeColor="#2AFFFFFF"
                     app:strokeWidth="1dp" />
 
                 <TextView
@@ -183,7 +183,47 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/fullscreen_label_torch"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFullscreenPauseResume"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/button_pause"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    android:minWidth="0dp"
+                    android:padding="0dp"
+                    app:backgroundTint="#5A0D1015"
+                    app:cornerRadius="14dp"
+                    app:icon="@drawable/ic_pause"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="22dp"
+                    app:iconTint="@android:color/white"
+                    app:rippleColor="#33FFFFFF"
+                    app:strokeColor="#2AFFFFFF"
+                    app:strokeWidth="1dp" />
+
+                <TextView
+                    android:id="@+id/labelPauseResume"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/button_pause"
+                    android:textColor="#B3FFFFFF"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -214,7 +254,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/fullscreen_label_af"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#B3FFFFFF"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -246,7 +286,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/fullscreen_label_exposure"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#B3FFFFFF"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -278,7 +318,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="@string/fullscreen_label_zoom"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#B3FFFFFF"
                     android:textSize="10sp" />
             </LinearLayout>
 

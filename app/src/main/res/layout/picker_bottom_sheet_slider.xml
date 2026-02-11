@@ -150,6 +150,9 @@
                             android:paddingTop="12dp"
                             android:paddingBottom="12dp"
                             app:thumbColor="?attr/pickerSliderActive"
+                            app:tickColorActive="?attr/pickerSliderActive"
+                            app:tickColorInactive="?attr/pickerSliderInactive"
+                            app:tickVisible="false"
                             app:trackColorActive="?attr/pickerSliderActive"
                             app:trackColorInactive="?attr/pickerSliderInactive" />
 

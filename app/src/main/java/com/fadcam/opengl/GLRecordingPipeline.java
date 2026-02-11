@@ -221,6 +221,30 @@ public class GLRecordingPipeline {
     private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> rendererActions = new java.util.concurrent.ConcurrentLinkedQueue<>();
     // scheduler-----------
 
+    /**
+     * Ensures periodic watermark updates are running.
+     * Called on start/resume because the updater intentionally stops when paused.
+     */
+    private void ensureWatermarkUpdaterRunning() {
+        if (updateWatermarkRunnable == null) {
+            updateWatermarkRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (isRecording && !released) {
+                        try {
+                            updateWatermark();
+                        } catch (Exception e) {
+                            Log.w(TAG, "Watermark update failed", e);
+                        }
+                        watermarkUpdateHandler.postDelayed(this, 1000);
+                    }
+                }
+            };
+        }
+        watermarkUpdateHandler.removeCallbacks(updateWatermarkRunnable);
+        watermarkUpdateHandler.post(updateWatermarkRunnable);
+    }
+
     // Updated constructor for file path (internal storage)
     public GLRecordingPipeline(Context context, WatermarkInfoProvider watermarkInfoProvider, int videoWidth,
             int videoHeight, int videoFramerate, String outputFilePath, long maxFileSizeBytes, int segmentNumber,
@@ -668,23 +692,8 @@ public class GLRecordingPipeline {
                     }
                 }
 
-                // Start a separate, low-frequency watermark updater (once per second)
-                if (updateWatermarkRunnable == null) {
-                    updateWatermarkRunnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isRecording && !released) {
-                                try {
-                                    updateWatermark();
-                                } catch (Exception e) {
-                                    Log.w(TAG, "Watermark update failed", e);
-                                }
-                                watermarkUpdateHandler.postDelayed(this, 1000);
-                            }
-                        }
-                    };
-                }
-                watermarkUpdateHandler.post(updateWatermarkRunnable);
+                // Start/refresh low-frequency watermark updater (once per second).
+                ensureWatermarkUpdaterRunning();
 
                 // Start the render loop (which will trigger video encoder format change)
                 startRenderLoop();
@@ -1939,6 +1948,9 @@ public class GLRecordingPipeline {
 
         // Set recording flag to false to stop encoding new frames
         isRecording = false;
+        if (updateWatermarkRunnable != null) {
+            watermarkUpdateHandler.removeCallbacks(updateWatermarkRunnable);
+        }
 
         // Pause audio recording if enabled
         if (audioRecordingEnabled && audioRecord != null) {
@@ -2009,6 +2021,9 @@ public class GLRecordingPipeline {
 
         // Set recording flag to true to resume encoding frames
         isRecording = true;
+        // Resume periodic watermark updates and force an immediate refresh.
+        ensureWatermarkUpdaterRunning();
+        updateWatermark();
 
         // Force a frame render to ensure we have a valid frame after resuming
         if (glRenderer != null && handler != null) {

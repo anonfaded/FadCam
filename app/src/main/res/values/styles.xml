@@ -14,6 +14,9 @@
     <style name="Widget.FadCam.BottomSheetSlider" parent="Widget.Material3.Slider">
         <item name="trackColorActive">?attr/pickerSliderActive</item>
         <item name="trackColorInactive">?attr/pickerSliderInactive</item>
+        <item name="tickColorActive">?attr/pickerSliderActive</item>
+        <item name="tickColorInactive">?attr/pickerSliderInactive</item>
+        <item name="tickVisible">false</item>
         <item name="thumbColor">?attr/pickerSliderActive</item>
         <item name="haloColor">?attr/pickerSliderActive</item>
         <item name="trackHeight">4dp</item>
