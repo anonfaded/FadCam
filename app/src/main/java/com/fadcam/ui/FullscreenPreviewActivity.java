@@ -2,13 +2,16 @@ package com.fadcam.ui;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Canvas;
-import android.graphics.Paint;
+import android.content.IntentFilter;
 import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
@@ -16,12 +19,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.util.Range;
 import android.util.Rational;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -52,11 +57,11 @@ import java.util.List;
 /**
  * Full-screen immersive camera preview.
  * <p>
- * Camera controls (AF / Exposure / Zoom) use the <b>exact same</b>
- * {@link PickerBottomSheetFragment} pickers and {@link RecordingControlIntents}
- * as {@link HomeFragment} — no duplicated logic.
+ * Camera controls (AF / Exposure / Zoom), torch, and camera switch use the
+ * <b>exact same</b> {@link PickerBottomSheetFragment} pickers and
+ * {@link RecordingControlIntents} as {@link HomeFragment} — no duplicated logic.
  * <p>
- * Controls show/hide: tap the top or bottom 15 % of the screen, or press
+ * Controls show/hide: tap the top or bottom 15% of the screen, or press
  * the device Back button. Tapping the central area triggers tap-to-focus.
  */
 public class FullscreenPreviewActivity extends AppCompatActivity {
@@ -72,8 +77,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private TextureView textureView;
     private View topBar;
     private View bottomBar;
-    private View focusIndicator;
     private TextView btnFullscreenTorch;
+    private TextView btnFullscreenCamSwitch;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
@@ -94,9 +99,21 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private boolean aeLocked;
     private int afMode;
 
+    // ── Torch broadcast receiver ─────────────────────────────────────────────
+    private boolean torchReceiverRegistered = false;
+    private final BroadcastReceiver torchReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null || intent.getAction() == null) return;
+            if (Constants.BROADCAST_ON_TORCH_STATE_CHANGED.equals(intent.getAction())) {
+                isTorchOn = intent.getBooleanExtra(Constants.INTENT_EXTRA_TORCH_STATE, false);
+                updateTorchIcon();
+            }
+        }
+    };
+
     // ── Handlers ─────────────────────────────────────────────────────────────
     private final Handler autoHideHandler = new Handler(Looper.getMainLooper());
-    private final Handler focusHandler = new Handler(Looper.getMainLooper());
     private final Runnable autoHideRunnable = this::hideControls;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -105,6 +122,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        // Apply the user's selected theme BEFORE setContentView so bottom sheet
+        // colours, slider accents, etc. match the rest of the app.
+        applyRuntimeTheme();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fullscreen_preview);
 
@@ -114,11 +135,13 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         bindViews();
         enterImmersiveMode();
         setupTextureView();
-        setupRecordingTiles();     // exact same pattern as HomeFragment
-        registerResultListeners(); // exact same result-key listeners
+        setupRecordingTiles();
+        registerResultListeners();
         setupTouchHandling();
         setupCloseButton();
         setupTorchButton();
+        setupCamSwitchButton();
+        registerTorchReceiver();
         scheduleAutoHide();
     }
 
@@ -142,8 +165,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         autoHideHandler.removeCallbacks(autoHideRunnable);
-        focusHandler.removeCallbacksAndMessages(null);
-        // Release preview → service will stop sending frames to this surface
+        unregisterTorchReceiver();
+        // Release preview → service will stop rendering to this surface
         sendSurfaceToService(null, -1, -1);
         if (previewSurface != null) {
             previewSurface.release();
@@ -162,6 +185,31 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Theme — apply the same runtime theme as MainActivity
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void applyRuntimeTheme() {
+        SharedPreferencesManager spm = SharedPreferencesManager.getInstance(this);
+        String theme = spm.sharedPreferences.getString(
+                Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        if (theme == null) theme = Constants.DEFAULT_APP_THEME;
+
+        int styleRes;
+        switch (theme) {
+            case "Faded Night":   styleRes = R.style.Theme_FadCam_Amoled;       break;
+            case "Midnight Dusk": styleRes = R.style.Theme_FadCam_MidnightDusk; break;
+            case "Premium Gold":  styleRes = R.style.Theme_FadCam_Gold;         break;
+            case "Silent Forest": styleRes = R.style.Theme_FadCam_SilentForest; break;
+            case "Shadow Alloy":  styleRes = R.style.Theme_FadCam_ShadowAlloy;  break;
+            case "Pookie Pink":   styleRes = R.style.Theme_FadCam_PookiePink;   break;
+            case "Snow Veil":     styleRes = R.style.Theme_FadCam_SnowVeil;     break;
+            case "Crimson Bloom":
+            default:              styleRes = R.style.Theme_FadCam_Red;          break;
+        }
+        setTheme(styleRes);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Initialization
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -170,8 +218,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         textureView = findViewById(R.id.fullscreenTextureView);
         topBar = findViewById(R.id.topBar);
         bottomBar = findViewById(R.id.bottomBar);
-        focusIndicator = findViewById(R.id.focusIndicator);
         btnFullscreenTorch = findViewById(R.id.btnFullscreenTorch);
+        btnFullscreenCamSwitch = findViewById(R.id.btnFullscreenCamSwitch);
     }
 
     private void setupTextureView() {
@@ -243,25 +291,18 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private void setupTorchButton() {
         if (btnFullscreenTorch == null) return;
 
-        // Restore current torch state
+        // Restore current torch state from prefs
         isTorchOn = prefs.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
         updateTorchIcon();
 
         btnFullscreenTorch.setOnClickListener(v -> {
-            // Always send toggle to recording service (we're only shown during recording)
-            if (isDualRecordingRunning()) {
-                // Dual camera → use RecordingService (back cam torch)
-                // For dual mode the torch intent is handled by RecordingService
-            }
+            // Send toggle to recording service (already foreground during recording)
             Intent intent = new Intent(this, RecordingService.class);
             intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
             try {
-                ContextCompat.startForegroundService(this, intent);
-                // Optimistic UI update — the broadcast from service will confirm
-                isTorchOn = !isTorchOn;
-                updateTorchIcon();
+                startService(intent);
             } catch (Exception e) {
-                android.util.Log.e(TAG, "Torch toggle failed", e);
+                Log.e(TAG, "Torch toggle failed", e);
             }
         });
     }
@@ -272,9 +313,67 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         btnFullscreenTorch.setTextColor(isTorchOn ? 0xFFFFEB3B : 0xFFFFFFFF);
     }
 
+    private void registerTorchReceiver() {
+        if (torchReceiverRegistered) return;
+        IntentFilter filter = new IntentFilter(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(torchReceiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(torchReceiver, filter);
+            }
+            torchReceiverRegistered = true;
+        } catch (Exception e) {
+            Log.e(TAG, "Error registering torch receiver", e);
+        }
+    }
+
+    private void unregisterTorchReceiver() {
+        if (!torchReceiverRegistered) return;
+        try {
+            unregisterReceiver(torchReceiver);
+        } catch (Exception ignored) { }
+        torchReceiverRegistered = false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Camera switch button — same logic as HomeFragment.switchCamera()
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void setupCamSwitchButton() {
+        if (btnFullscreenCamSwitch == null) return;
+        btnFullscreenCamSwitch.setOnClickListener(v -> switchCamera());
+    }
+
+    private void switchCamera() {
+        CameraType currentType = prefs.getCameraSelection();
+
+        // Dual camera mode → swap PiP cameras
+        if (isDualRecordingRunning()) {
+            Intent intent = new Intent(this, DualCameraRecordingService.class);
+            intent.setAction(Constants.INTENT_ACTION_SWAP_DUAL_CAMERAS);
+            startService(intent);
+            Toast.makeText(this, getString(R.string.dual_cameras_swapped),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Single recording → live camera switch
+        CameraType targetType = (currentType == CameraType.BACK)
+                ? CameraType.FRONT : CameraType.BACK;
+
+        Intent switchIntent = new Intent(this, RecordingService.class);
+        switchIntent.setAction(Constants.INTENT_ACTION_SWITCH_CAMERA);
+        switchIntent.putExtra(Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH, targetType.toString());
+        startService(switchIntent);
+
+        Toast.makeText(this,
+                "Switching to " + (targetType == CameraType.FRONT ? "front" : "rear") + " camera...",
+                Toast.LENGTH_SHORT).show();
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Recording tiles — SAME logic as HomeFragment.setupRecordingTiles()
-    // Uses the same PickerBottomSheetFragment, same Constants, same intents.
     // ─────────────────────────────────────────────────────────────────────────
 
     private void setupRecordingTiles() {
@@ -315,7 +414,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         updateExpTileTint();
         updateZoomTileTint();
 
-        // ── AF click — same as HomeFragment ──
+        // ── AF click ──
         if (tileAfToggle != null) {
             tileAfToggle.setOnClickListener(v -> {
                 ArrayList<OptionItem> items = new ArrayList<>();
@@ -339,7 +438,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             });
         }
 
-        // ── Exposure click — same as HomeFragment ──
+        // ── Exposure click ──
         if (tileExp != null) {
             tileExp.setOnClickListener(v -> {
                 int min = -4, max = 4, step = 1;
@@ -365,7 +464,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             });
         }
 
-        // ── Zoom click — same as HomeFragment ──
+        // ── Zoom click ──
         if (tileZoom != null) {
             tileZoom.setOnClickListener(v -> {
                 CameraType currentCam = prefs.getCameraSelection();
@@ -419,7 +518,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 Constants.RK_AF_MODE, this, (key, result) -> {
                     String selectedId = result.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
                     if (selectedId != null) {
-                        try { afMode = Integer.parseInt(selectedId); } catch (NumberFormatException ignored) { return; }
+                        try { afMode = Integer.parseInt(selectedId); }
+                        catch (NumberFormatException ignored) { return; }
                     }
                     if (tileAfToggle != null) {
                         tileAfToggle.setText(
@@ -447,7 +547,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Camera utilities — same as HomeFragment's helpers
+    // Camera utilities
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nullable
@@ -459,7 +559,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 for (String id : cameraManager.getCameraIdList()) {
                     CameraCharacteristics c = cameraManager.getCameraCharacteristics(id);
                     Integer facing = c.get(CameraCharacteristics.LENS_FACING);
-                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) return id;
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT)
+                        return id;
                 }
             } else {
                 String selected = prefs.getSelectedBackCameraId();
@@ -467,11 +568,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 for (String id : cameraManager.getCameraIdList()) {
                     CameraCharacteristics c = cameraManager.getCameraCharacteristics(id);
                     Integer facing = c.get(CameraCharacteristics.LENS_FACING);
-                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) return id;
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK)
+                        return id;
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w(TAG, "getCameraIdForType: " + e.getMessage());
+            Log.w(TAG, "getCameraIdForType: " + e.getMessage());
         }
         return null;
     }
@@ -583,37 +685,59 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Focus indicator
+    // Focus indicator — matches HomeFragment exactly (filled red ring, animated)
     // ─────────────────────────────────────────────────────────────────────────
 
     private void showFocusIndicator(float x, float y) {
-        if (focusIndicator == null || rootLayout == null) return;
+        try {
+            if (rootLayout == null) return;
 
-        int size = (int) (64 * getResources().getDisplayMetrics().density);
-        FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(size, size);
-        p.leftMargin = (int) (x - size / 2f);
-        p.topMargin = (int) (y - size / 2f);
-        focusIndicator.setLayoutParams(p);
-        focusIndicator.setBackground(new FocusRingDrawable());
-        focusIndicator.setAlpha(1f);
-        focusIndicator.setScaleX(1.3f);
-        focusIndicator.setScaleY(1.3f);
-        focusIndicator.setVisibility(View.VISIBLE);
+            View focusView = new View(this);
+            int size = (int) (80 * getResources().getDisplayMetrics().density);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(size, size);
+            params.leftMargin = (int) (x - size / 2f);
+            params.topMargin = (int) (y - size / 2f);
 
-        focusIndicator.animate().scaleX(1f).scaleY(1f)
-                .setDuration(200).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+            GradientDrawable drawable = new GradientDrawable();
+            drawable.setShape(GradientDrawable.OVAL);
+            drawable.setStroke(8, 0xFFFF0000);   // Bright red ring
+            drawable.setColor(0x44FF0000);         // Semi-transparent red fill
+            focusView.setBackground(drawable);
+            focusView.setLayoutParams(params);
+            focusView.setAlpha(0f);
+            focusView.setElevation(20f);
 
-        focusHandler.removeCallbacksAndMessages(null);
-        focusHandler.postDelayed(() -> {
-            if (focusIndicator == null) return;
-            focusIndicator.animate().alpha(0f).setDuration(300)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator a) {
-                            focusIndicator.setVisibility(View.GONE);
-                        }
-                    }).start();
-        }, 800);
+            rootLayout.addView(focusView);
+
+            // Same animation as HomeFragment: fade in + scale pulse in → out → fade out
+            ObjectAnimator fadeIn = ObjectAnimator.ofFloat(focusView, "alpha", 0f, 1f);
+            ObjectAnimator scaleXIn = ObjectAnimator.ofFloat(focusView, "scaleX", 1.5f, 1f);
+            ObjectAnimator scaleYIn = ObjectAnimator.ofFloat(focusView, "scaleY", 1.5f, 1f);
+            ObjectAnimator scaleXOut = ObjectAnimator.ofFloat(focusView, "scaleX", 1f, 0.8f);
+            ObjectAnimator scaleYOut = ObjectAnimator.ofFloat(focusView, "scaleY", 1f, 0.8f);
+            ObjectAnimator fadeOut = ObjectAnimator.ofFloat(focusView, "alpha", 1f, 0f);
+
+            AnimatorSet animSet = new AnimatorSet();
+            animSet.play(fadeIn).with(scaleXIn).with(scaleYIn);
+            animSet.play(scaleXOut).with(scaleYOut).after(fadeIn);
+            animSet.play(fadeOut).after(scaleXOut);
+
+            fadeIn.setDuration(100);
+            scaleXIn.setDuration(200); scaleYIn.setDuration(200);
+            scaleXOut.setDuration(400); scaleYOut.setDuration(400);
+            fadeOut.setDuration(200);
+
+            animSet.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    try { rootLayout.removeView(focusView); }
+                    catch (Exception e) { Log.w(TAG, "Error removing focus indicator", e); }
+                }
+            });
+            animSet.start();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing focus indicator: " + e.getMessage(), e);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -639,6 +763,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         return isServiceRunning(DualCameraRecordingService.class);
     }
 
+    @SuppressWarnings("deprecation")
     private boolean isServiceRunning(Class<?> cls) {
         try {
             ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
@@ -648,29 +773,5 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) { }
         return false;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Focus ring drawable
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private static class FocusRingDrawable extends android.graphics.drawable.Drawable {
-        private final Paint paint;
-
-        FocusRingDrawable() {
-            paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            paint.setColor(0xFFFF1744);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(4f);
-        }
-
-        @Override public void draw(@NonNull Canvas c) {
-            float cx = getBounds().centerX(), cy = getBounds().centerY();
-            c.drawCircle(cx, cy, Math.min(cx, cy) - paint.getStrokeWidth(), paint);
-        }
-
-        @Override public void setAlpha(int a) { paint.setAlpha(a); }
-        @Override public void setColorFilter(@Nullable android.graphics.ColorFilter f) { paint.setColorFilter(f); }
-        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
     }
 }

@@ -8167,9 +8167,10 @@ public class HomeFragment extends BaseFragment {
             registerForActivityResult(
                     new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                     result -> {
-                        // Fullscreen activity finished — force-reset the TextureView so
-                        // the service's GL pipeline gets a fresh, valid surface.
-                        resetTextureView();
+                        // Fullscreen activity finished — delay briefly so its onDestroy
+                        // (which sends a null surface) completes before we push ours.
+                        new android.os.Handler(android.os.Looper.getMainLooper())
+                                .postDelayed(this::resetTextureView, 350);
                     });
 
     /**

@@ -122,6 +122,14 @@ public class GLWatermarkRenderer {
     /** MVP matrix for PiP rendering (identity for encoder, transformed for preview). */
     private final float[] pipMvpMatrix = new float[16];
 
+    // ── Dim overlay for letterbox/pillarbox background ──────────────────────
+    /** Flat-color shader program for the semi-transparent dim overlay. */
+    private int dimOverlayProgram = 0;
+    private int dimOverlayPositionHandle;
+    private int dimOverlayColorHandle;
+    /** Full-screen NDC quad vertex buffer for the dim overlay. */
+    private FloatBuffer dimOverlayVertexBuffer;
+
     // Using matrices in real-time for the first time in this app!
     // These 2x4 matrices define the vertex coordinates and texture mapping
     private static final float[] VERTICES = {
@@ -723,12 +731,17 @@ public class GLWatermarkRenderer {
             // Pass 1: Zoom-fill background (drawn at the fill-crop viewport set above)
             if (needsLetterbox) {
                 drawOESTexture(previewMvpMatrix, previewTexMatrix);
+                // Dim the background so the sharp foreground visually pops
+                drawDimOverlay(0.55f);
                 // Switch to the fit viewport for the sharp foreground
                 GLES20.glViewport(vpX, vpY, vpW, vpH);
             }
 
             // Pass 2: Sharp content at the aspect-ratio-preserving viewport
             drawOESTexture(previewMvpMatrix, previewTexMatrix);
+
+            // Watermark overlay on preview (same as encoder)
+            drawWatermark();
 
             // Draw PiP overlay on preview too (if dual camera mode is active)
             // Use identity MVP for PiP so aspect-ratio correction doesn't distort it.
@@ -803,6 +816,7 @@ public class GLWatermarkRenderer {
         setupEGL();
         setupOESShader();
         setupSimpleWatermarkShader();
+        setupDimOverlayShader();
         setupOESTexture();
 
         // Use grafika FullFrameRect for better texture rendering
@@ -1238,6 +1252,51 @@ public class GLWatermarkRenderer {
         watermarkTexCoordBuffer = ByteBuffer.allocateDirect(WATERMARK_TEXCOORDS.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         watermarkTexCoordBuffer.put(WATERMARK_TEXCOORDS).position(0);
+    }
+
+    // ── Dim overlay shader ──────────────────────────────────────────────────
+    /**
+     * Creates a minimal flat-colour program used to draw a semi-transparent
+     * black quad over the zoom-fill letterbox background so it visually recedes
+     * behind the sharp content.
+     */
+    private void setupDimOverlayShader() {
+        String vs = "attribute vec4 aPosition;\n" +
+                "void main() {\n" +
+                "  gl_Position = aPosition;\n" +
+                "}\n";
+        String fs = "precision mediump float;\n" +
+                "uniform vec4 uColor;\n" +
+                "void main() {\n" +
+                "  gl_FragColor = uColor;\n" +
+                "}\n";
+        dimOverlayProgram = createProgram(vs, fs);
+        dimOverlayPositionHandle = GLES20.glGetAttribLocation(dimOverlayProgram, "aPosition");
+        dimOverlayColorHandle = GLES20.glGetUniformLocation(dimOverlayProgram, "uColor");
+        // Full-screen NDC quad (same coords as VERTICES but in its own buffer)
+        float[] quad = { -1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f };
+        dimOverlayVertexBuffer = ByteBuffer.allocateDirect(quad.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        dimOverlayVertexBuffer.put(quad).position(0);
+    }
+
+    /**
+     * Draws a full-viewport semi-transparent black quad.
+     * Call after the zoom-fill background pass to visually dim it.
+     */
+    private void drawDimOverlay(float alpha) {
+        if (dimOverlayProgram == 0) return;
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES20.glUseProgram(dimOverlayProgram);
+        GLES20.glUniform4f(dimOverlayColorHandle, 0f, 0f, 0f, alpha);
+        GLES20.glEnableVertexAttribArray(dimOverlayPositionHandle);
+        GLES20.glVertexAttribPointer(dimOverlayPositionHandle, 2,
+                GLES20.GL_FLOAT, false, 0, dimOverlayVertexBuffer);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES20.glDisableVertexAttribArray(dimOverlayPositionHandle);
+        GLES20.glUseProgram(0);
+        GLES20.glDisable(GLES20.GL_BLEND);
     }
 
     private void drawWatermark() {
