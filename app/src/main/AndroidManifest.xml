@@ -237,6 +237,12 @@
         </activity-alias>
 
         <activity android:name=".ui.VideoPlayerActivity" android:theme="@style/Base.Theme.FadCam" />
+        <activity
+            android:name=".ui.FullscreenPreviewActivity"
+            android:theme="@style/Base.Theme.FadCam"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:screenOrientation="unspecified"
+            android:exported="false" />
         <activity android:name=".ui.WebViewActivity" />
         <activity android:name=".ui.CloudAccountActivity" 
             android:theme="@style/Base.Theme.FadCam" 

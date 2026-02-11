@@ -621,6 +621,10 @@ public class GLWatermarkRenderer {
             EGL14.eglQuerySurface(eglDisplay, previewEglSurface, EGL14.EGL_WIDTH, pvW, 0);
             EGL14.eglQuerySurface(eglDisplay, previewEglSurface, EGL14.EGL_HEIGHT, pvH, 0);
 
+            // Viewport variables — accessible to the draw calls below
+            int vpX = 0, vpY = 0, vpW = pvW[0], vpH = pvH[0];
+            boolean needsLetterbox = false;
+
             if (pvW[0] > 0 && pvH[0] > 0) {
                 // Content dimensions = encoder output (already rotation-corrected)
                 int contentW = encoderWidth > 0 ? encoderWidth : videoWidth;
@@ -629,34 +633,57 @@ public class GLWatermarkRenderer {
                 float contentAR = (float) contentW / contentH;
                 float surfaceAR = (float) pvW[0] / pvH[0];
 
-                int vpX, vpY, vpW, vpH;
                 if (Math.abs(surfaceAR - contentAR) < 0.01f) {
                     // Aspect ratios match — use full surface
-                    vpX = 0;
-                    vpY = 0;
-                    vpW = pvW[0];
-                    vpH = pvH[0];
+                    vpX = 0; vpY = 0; vpW = pvW[0]; vpH = pvH[0];
                 } else if (surfaceAR > contentAR) {
                     // Surface is wider than content → pillarbox (black bars on sides)
                     vpH = pvH[0];
                     vpW = Math.round(pvH[0] * contentAR);
                     vpX = (pvW[0] - vpW) / 2;
                     vpY = 0;
+                    needsLetterbox = true;
                 } else {
                     // Surface is taller than content → letterbox (black bars top/bottom)
                     vpW = pvW[0];
                     vpH = Math.round(pvW[0] / contentAR);
                     vpX = 0;
                     vpY = (pvH[0] - vpH) / 2;
+                    needsLetterbox = true;
                 }
 
-                // Clear full surface to black (for letterbox/pillarbox bars)
+                // Clear full surface to black (safety)
                 GLES20.glViewport(0, 0, pvW[0], pvH[0]);
                 GLES20.glClearColor(0f, 0f, 0f, 1f);
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-                // Set the aspect-ratio-preserving viewport for content rendering
-                GLES20.glViewport(vpX, vpY, vpW, vpH);
+                // ── Zoom-fill background ──
+                // Draw the camera frame scaled to FILL/CROP the entire surface.
+                // GL clips fragments outside the surface automatically, so a
+                // viewport larger than the surface is fine. This creates a zoomed-in,
+                // edge-extended background that replaces the black letterbox/pillarbox
+                // bars with actual camera content — the same technique used by YouTube,
+                // Instagram, and iOS Photos.
+                if (needsLetterbox) {
+                    int fillVpX, fillVpY, fillVpW, fillVpH;
+                    if (surfaceAR > contentAR) {
+                        // Surface wider → fill = match width, height overflows
+                        fillVpW = pvW[0];
+                        fillVpH = Math.round(pvW[0] / contentAR);
+                        fillVpX = 0;
+                        fillVpY = (pvH[0] - fillVpH) / 2;
+                    } else {
+                        // Surface taller → fill = match height, width overflows
+                        fillVpH = pvH[0];
+                        fillVpW = Math.round(pvH[0] * contentAR);
+                        fillVpX = (pvW[0] - fillVpW) / 2;
+                        fillVpY = 0;
+                    }
+                    GLES20.glViewport(fillVpX, fillVpY, fillVpW, fillVpH);
+                } else {
+                    // No letterbox — set fit viewport directly
+                    GLES20.glViewport(vpX, vpY, vpW, vpH);
+                }
             }
 
             float[] texMatrix = new float[16];
@@ -692,11 +719,21 @@ public class GLWatermarkRenderer {
             }
 
             updateMatrices();
+
+            // Pass 1: Zoom-fill background (drawn at the fill-crop viewport set above)
+            if (needsLetterbox) {
+                drawOESTexture(previewMvpMatrix, previewTexMatrix);
+                // Switch to the fit viewport for the sharp foreground
+                GLES20.glViewport(vpX, vpY, vpW, vpH);
+            }
+
+            // Pass 2: Sharp content at the aspect-ratio-preserving viewport
             drawOESTexture(previewMvpMatrix, previewTexMatrix);
 
             // Draw PiP overlay on preview too (if dual camera mode is active)
             // Use identity MVP for PiP so aspect-ratio correction doesn't distort it.
             if (pipEnabled) {
+                updatePipTexture();
                 drawPipOverlay(pipMvpMatrix); // identity, not previewMvpMatrix
             }
 
@@ -1497,19 +1534,18 @@ public class GLWatermarkRenderer {
     private void computePipGeometry() {
         if (pipConfig == null) return;
 
-        // Use post-rotation encoder dimensions.
-        // In portrait mode, the encoder is configured as e.g. 1080x1920 (H>W)
-        // but we need the dimensions of the final rendered frame which includes rotation.
-        // The renderToEncoder MVP rotates the camera feed, so the final encoded frame
-        // has the rotated dimensions. We must use those for PiP positioning.
-        int rawW = encoderWidth > 0 ? encoderWidth : videoWidth;
-        int rawH = encoderHeight > 0 ? encoderHeight : videoHeight;
+        // encoderWidth / encoderHeight are ALREADY post-rotation:
+        // initializeEncoder() swaps sensor dims for 90/270° rotation.
+        // Do NOT swap again here — that would double-apply rotation and
+        // make the PiP hugely stretched in one axis.
+        int outW = encoderWidth > 0 ? encoderWidth : videoWidth;
+        int outH = encoderHeight > 0 ? encoderHeight : videoHeight;
 
-        // Determine rotation to see if the output is effectively portrait
+        // Determine rotation for PiP camera content aspect ratio.
+        // The PiP camera feed arrives at raw sensor dimensions and gets
+        // rotated the same way as the primary camera.
         int rotationDeg = getRequiredRotation();
         boolean isRotated = (rotationDeg == 90 || rotationDeg == 270);
-        int outW = isRotated ? rawH : rawW; // post-rotation width
-        int outH = isRotated ? rawW : rawH; // post-rotation height
 
         // PiP size as fraction of output width
         float pipWidthFraction = pipConfig.getPipSize().ratio;

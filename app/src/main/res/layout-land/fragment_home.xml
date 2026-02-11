@@ -209,6 +209,9 @@
                 <!-- Hint text for long press to enable preview (shown when recording with preview disabled) -->
                 <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="20dp" android:text="Long press to enable preview" android:textColor="?attr/colorHeading" android:textSize="10sp" android:alpha="0.6" android:visibility="gone" />
 
+                <!-- Fullscreen preview button (bottom-right corner overlay) -->
+                <TextView android:id="@+id/btnFullscreenPreview" android:layout_width="36dp" android:layout_height="36dp" android:layout_gravity="bottom|end" android:layout_margin="8dp" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:fontFamily="@font/materialicons" android:gravity="center" android:text="fullscreen" android:textColor="@android:color/white" android:textSize="22sp" android:alpha="0.7" android:visibility="gone" />
+
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 

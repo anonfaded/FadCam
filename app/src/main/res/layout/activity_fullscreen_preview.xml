@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/fullscreenRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- Full-screen camera preview -->
+    <TextureView
+        android:id="@+id/fullscreenTextureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Top controls overlay (translucent) -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="#80000000"
+        android:gravity="start|center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
+
+        <!-- Close / back button -->
+        <TextView
+            android:id="@+id/btnClose"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="arrow_back"
+            android:textColor="@android:color/white"
+            android:textSize="26sp" />
+
+        <TextView
+            android:id="@+id/tvFullscreenTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/fullscreen_preview_enter"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- Torch toggle in fullscreen -->
+        <TextView
+            android:id="@+id/btnFullscreenTorch"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="flash_off"
+            android:textColor="@android:color/white"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
+    <!-- Bottom controls overlay (translucent) with AF · Exposure · Zoom tiles -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#80000000"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp">
+
+        <!-- Reuse the same recording tiles layout — single source of truth -->
+        <include
+            android:id="@+id/includeFullscreenTiles"
+            layout="@layout/home_recording_tiles_row" />
+
+    </LinearLayout>
+
+    <!-- Focus indicator view (positioned programmatically) -->
+    <View
+        android:id="@+id/focusIndicator"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:visibility="gone" />
+
+</FrameLayout>

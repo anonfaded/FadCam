@@ -208,6 +208,7 @@ public class HomeFragment extends BaseFragment {
     private boolean isPreviewEnabled = true;
 
     private View cardPreview;
+    private TextView btnFullscreenPreview;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon
 
@@ -673,6 +674,9 @@ public class HomeFragment extends BaseFragment {
             if (tvPreviewHint != null) tvPreviewHint.setVisibility(View.GONE); // Hide hint
             Log.d(TAG, "Not recording - keeping placeholder hidden");
         }
+
+        // Show fullscreen button only when preview is active and recording
+        updateFullscreenButtonVisibility();
     }
 
     private void resetTimers() {
@@ -2101,9 +2105,11 @@ public class HomeFragment extends BaseFragment {
             if (buttonCamSwitch != null) {
                 buttonCamSwitch.setEnabled(true);
             }
-            if (buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(
-                getCameraWithFlashQuietly() != null
-            ); // Enable TORCH if available
+            if (buttonTorchSwitch != null) {
+                boolean hasFlash = getCameraWithFlashQuietly() != null;
+                buttonTorchSwitch.setEnabled(hasFlash);
+                buttonTorchSwitch.setAlpha(hasFlash ? 1.0f : 0.5f);
+            }
 
             // Manage preview and timers
             updatePreviewVisibility();
@@ -2158,10 +2164,11 @@ public class HomeFragment extends BaseFragment {
             if (buttonCamSwitch != null) {
                 buttonCamSwitch.setEnabled(true);
             }
-            if (buttonTorchSwitch != null) buttonTorchSwitch.setEnabled(
-                getCameraWithFlashQuietly() != null
-            ); // Enable TORCH if available, even
-            // when paused
+            if (buttonTorchSwitch != null) {
+                boolean hasFlash = getCameraWithFlashQuietly() != null;
+                buttonTorchSwitch.setEnabled(hasFlash);
+                buttonTorchSwitch.setAlpha(hasFlash ? 1.0f : 0.5f);
+            }
 
             // Manage preview and timers
             updatePreviewVisibility();
@@ -8073,6 +8080,8 @@ public class HomeFragment extends BaseFragment {
         buttonPauseResume = view.findViewById(R.id.buttonPauseResume);
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         cardPreview = view.findViewById(R.id.cardPreview); // Assuming R.id.cardPreview exists
+        btnFullscreenPreview = view.findViewById(R.id.btnFullscreenPreview);
+        setupFullscreenButton();
         vibrator = (Vibrator) requireActivity().getSystemService(
             Context.VIBRATOR_SERVICE
         );
@@ -8126,6 +8135,51 @@ public class HomeFragment extends BaseFragment {
         if (ivBubbleBackground != null) {
             ivBubbleBackground.clearAnimation();
         }
+    }
+
+    // ─── Fullscreen Preview ──────────────────────────────────────────────────
+
+    /**
+     * Wires the fullscreen preview button: launches {@link FullscreenPreviewActivity}
+     * when tapped, and re-sends the HomeFragment surface when the user returns.
+     */
+    private void setupFullscreenButton() {
+        if (btnFullscreenPreview == null) return;
+
+        btnFullscreenPreview.setOnClickListener(v -> {
+            if (!isRecordingOrPaused()) {
+                Toast.makeText(requireContext(),
+                        getString(R.string.fullscreen_preview_not_recording),
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Launch fullscreen preview — the activity will take over the preview surface
+            Intent intent = new Intent(requireContext(), FullscreenPreviewActivity.class);
+            fullscreenLauncher.launch(intent);
+        });
+    }
+
+    /**
+     * Activity result launcher for returning from fullscreen preview.
+     * Re-sends the HomeFragment TextureView surface to the recording service.
+     */
+    private final androidx.activity.result.ActivityResultLauncher<Intent> fullscreenLauncher =
+            registerForActivityResult(
+                    new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        // Fullscreen activity finished — force-reset the TextureView so
+                        // the service's GL pipeline gets a fresh, valid surface.
+                        resetTextureView();
+                    });
+
+    /**
+     * Update fullscreen button visibility based on recording + preview state.
+     * Button is shown only when both recording and preview are active.
+     */
+    private void updateFullscreenButtonVisibility() {
+        if (btnFullscreenPreview == null) return;
+        boolean show = isPreviewEnabled && isRecordingOrPaused();
+        btnFullscreenPreview.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private boolean isRecordingOrPaused() {
