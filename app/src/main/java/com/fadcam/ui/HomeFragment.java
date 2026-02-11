@@ -288,6 +288,8 @@ public class HomeFragment extends BaseFragment {
     private BroadcastReceiver cameraResourceAvailabilityReceiver;
     private boolean isCameraResourceAvailabilityReceiverRegistered = false;
     private boolean areCameraResourcesAvailable = true; // Default to true
+    private boolean hasRequiredRecordingHardware = true;
+    private boolean isHardwareSupportToastShown = false;
 
     // buttonTorchSwitch declaration moved to line 195 (changed to protected)
 
@@ -783,8 +785,10 @@ public class HomeFragment extends BaseFragment {
             );
         }
 
-        // Set camera resources as available by default when starting
-        areCameraResourcesAvailable = true;
+        // Evaluate hardware capabilities (important for watches with limited hardware).
+        hasRequiredRecordingHardware = hasRequiredRecordingHardware();
+        areCameraResourcesAvailable = hasRequiredRecordingHardware;
+        isHardwareSupportToastShown = false;
 
         // Fetch initial state and update UI
         fetchRecordingState(); // Get current service state
@@ -827,6 +831,10 @@ public class HomeFragment extends BaseFragment {
 
         // Ensure we have the latest state
         fetchRecordingState();
+        updateStartButtonAvailability();
+        if (!hasRequiredRecordingHardware) {
+            showUnsupportedHardwareMessage();
+        }
 
         // ----- Update Check Bottom Sheet Start -----
         if (
@@ -1390,7 +1398,7 @@ public class HomeFragment extends BaseFragment {
         // Only update if we're in a state where the start button would normally be
         // enabled
         if (recordingState == RecordingState.NONE) {
-            boolean shouldEnable = areCameraResourcesAvailable;
+            boolean shouldEnable = areCameraResourcesAvailable && hasRequiredRecordingHardware;
             buttonStartStop.setEnabled(shouldEnable);
             buttonStartStop.setAlpha(shouldEnable ? 1.0f : 0.5f);
 
@@ -1402,7 +1410,7 @@ public class HomeFragment extends BaseFragment {
             if (!shouldEnable) {
                 Log.d(
                     TAG,
-                    "Start button disabled due to camera resources being released"
+                    "Start button disabled due to camera resources/hardware availability"
                 );
             } else {
                 Log.d(
@@ -1411,6 +1419,47 @@ public class HomeFragment extends BaseFragment {
                 );
             }
         }
+    }
+
+    private boolean hasRequiredRecordingHardware() {
+        if (!isAdded() || getContext() == null) {
+            return true;
+        }
+        try {
+            PackageManager pm = requireContext().getPackageManager();
+            boolean hasCamera =
+                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) ||
+                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA);
+            boolean hasMic = pm.hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
+            return hasCamera && hasMic;
+        } catch (Exception e) {
+            Log.w(
+                TAG,
+                "Unable to check required recording hardware: " + e.getMessage()
+            );
+            return true;
+        }
+    }
+
+    private boolean ensureRecordingHardwareSupported() {
+        if (!hasRequiredRecordingHardware) {
+            showUnsupportedHardwareMessage();
+            updateStartButtonAvailability();
+            return false;
+        }
+        return true;
+    }
+
+    private void showUnsupportedHardwareMessage() {
+        if (!isAdded() || getContext() == null || isHardwareSupportToastShown) {
+            return;
+        }
+        isHardwareSupportToastShown = true;
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.watch_recording_hardware_not_supported),
+            Toast.LENGTH_LONG
+        ).show();
     }
 
     /**
@@ -4746,6 +4795,10 @@ public class HomeFragment extends BaseFragment {
             Log.e(TAG, "Context is null, cannot start recording.");
             return;
         }
+        if (!ensureRecordingHardwareSupported()) {
+            Log.w(TAG, "startRecording blocked: required recording hardware missing");
+            return;
+        }
         performHapticFeedback();
         // Permission checks removed; handled by onboarding
 
@@ -4838,6 +4891,10 @@ public class HomeFragment extends BaseFragment {
     private void startDualRecording() {
         if (getContext() == null) {
             Log.e(TAG, "startDualRecording: Context null");
+            return;
+        }
+        if (!ensureRecordingHardwareSupported()) {
+            Log.w(TAG, "startDualRecording blocked: required recording hardware missing");
             return;
         }
 
@@ -4964,6 +5021,10 @@ public class HomeFragment extends BaseFragment {
      * Contains the actual recording initialization logic.
      */
     private void proceedWithRecordingStart() {
+        if (!ensureRecordingHardwareSupported()) {
+            Log.w(TAG, "proceedWithRecordingStart blocked: required recording hardware missing");
+            return;
+        }
         // Force reset recording state if service is not running
         if (!isMyServiceRunning(RecordingService.class)) {
             Log.d(TAG, "Service not running, forcing recordingState to NONE");
@@ -8477,7 +8538,7 @@ public class HomeFragment extends BaseFragment {
                         true
                     );
 
-                    areCameraResourcesAvailable = isAvailable;
+                    areCameraResourcesAvailable = isAvailable && hasRequiredRecordingHardware;
                     updateStartButtonAvailability();
 
                     Log.d(

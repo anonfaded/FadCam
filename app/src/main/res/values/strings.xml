@@ -267,6 +267,7 @@
     <string name="dual_cameras_swapped">Cameras swapped</string>
     <string name="dual_camera_error">Dual camera error: %s</string>
     <string name="dual_camera_not_supported_toast">Dual camera not supported on this device</string>
+    <string name="watch_recording_hardware_not_supported">This device does not have required camera/microphone hardware for video recording.</string>
     <string name="dual_camera_pip_settings">Dual Camera PiP Settings</string>
 
     <!-- Dual Camera Settings Fragment -->
