@@ -470,79 +470,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         // *** END RESTORED Status Badge Logic ***
 
-        // --- 5. Handle Selection Mode Visuals (picker-style check container &
-        // BACKGROUND/TEXT COLOR) ---
-        if (holder.iconCheckContainer != null && holder.checkIcon != null) {
-            if (this.isSelectionModeActive) {
-                holder.iconCheckContainer.setVisibility(View.VISIBLE);
-
-                // Tint the inner check icon to match theme toggle color
-                try {
-                    int tint = resolveThemeColor(context, R.attr.colorToggle);
-                    holder.checkIcon.setImageTintList(ColorStateList.valueOf(tint));
-                } catch (Exception e) {
-                    // Fallback to primary color
-                    holder.checkIcon.setImageTintList(
-                            ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorPrimary)));
-                }
-
-                if (isCurrentlySelected) {
-                    // Ensure bg visible and animate inner check in
-                    holder.checkIcon.setAlpha(1f);
-                    holder.checkIcon.setScaleX(1f);
-                    holder.checkIcon.setScaleY(1f);
-                    // Highlight background and adjust text color for contrast
-                    if (holder.itemView instanceof CardView && context != null) {
-                        if (isSnowVeilTheme) {
-                            ((CardView) holder.itemView).setCardBackgroundColor(
-                                    ContextCompat.getColor(context, R.color.snowveil_theme_accent));
-                            if (holder.textViewRecord != null)
-                                holder.textViewRecord.setTextColor(Color.BLACK);
-                        } else {
-                            ((CardView) holder.itemView)
-                                    .setCardBackgroundColor(resolveThemeColor(context, R.attr.colorButton));
-                            if (holder.textViewRecord != null)
-                                holder.textViewRecord.setTextColor(Color.WHITE);
-                        }
-                    }
-                } else {
-                    // ensure inner check hidden
-                    holder.checkIcon.setAlpha(0f);
-                    holder.checkIcon.setScaleX(0f);
-                    holder.checkIcon.setScaleY(0f);
-                    // Reset background and text color
-                    if (holder.itemView instanceof CardView && context != null) {
-                        if (isSnowVeilTheme) {
-                            ((CardView) holder.itemView).setCardBackgroundColor(Color.WHITE);
-                            if (holder.textViewRecord != null)
-                                holder.textViewRecord.setTextColor(Color.BLACK);
-                        } else {
-                            ((CardView) holder.itemView)
-                                    .setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
-                            if (holder.textViewRecord != null)
-                                holder.textViewRecord.setTextColor(holder.defaultTextColor);
-                        }
-                    }
-                }
-            } else { // Not in selection mode
-                holder.iconCheckContainer.setVisibility(View.GONE);
-                // Reset bg and text color
-                if (holder.itemView instanceof CardView && context != null) {
-                    if (isSnowVeilTheme) {
-                        ((CardView) holder.itemView).setCardBackgroundColor(Color.WHITE);
-                        if (holder.textViewRecord != null)
-                            holder.textViewRecord.setTextColor(Color.BLACK);
-                    } else {
-                        ((CardView) holder.itemView)
-                                .setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
-                        if (holder.textViewRecord != null)
-                            holder.textViewRecord.setTextColor(holder.defaultTextColor);
-                    }
-                }
-            }
-        } else {
-            Log.w(TAG, "iconCheckContainer or checkIcon is null in ViewHolder at pos " + position);
-        }
+        // --- 5. Handle Selection Mode Visuals (center check + dim overlay) ---
+        applySelectionVisuals(holder, isCurrentlySelected, false);
 
         // --- 6. Set Enabled State and Listeners ---
         holder.itemView.setEnabled(allowGeneralInteractions); // Click/LongClick allowed if not processing
@@ -725,6 +654,55 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    private void applySelectionVisuals(@NonNull RecordViewHolder holder, boolean isCurrentlySelected, boolean animateCheck) {
+        if (holder.iconCheckContainer == null || holder.checkIcon == null) {
+            return;
+        }
+        if (holder.selectionDimOverlay != null) {
+            holder.selectionDimOverlay.setVisibility((isSelectionModeActive && isCurrentlySelected) ? View.VISIBLE : View.GONE);
+        }
+
+        if (!isSelectionModeActive) {
+            holder.iconCheckContainer.setVisibility(View.GONE);
+            holder.checkIcon.setAlpha(0f);
+            holder.checkIcon.setScaleX(0f);
+            holder.checkIcon.setScaleY(0f);
+            return;
+        }
+
+        // Keep card colors stable in selection mode; selected state is shown by dim+center check only.
+        if (holder.itemView instanceof CardView && context != null) {
+            if (isSnowVeilTheme) {
+                ((CardView) holder.itemView).setCardBackgroundColor(Color.WHITE);
+                if (holder.textViewRecord != null) holder.textViewRecord.setTextColor(Color.BLACK);
+            } else {
+                ((CardView) holder.itemView).setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
+                if (holder.textViewRecord != null) holder.textViewRecord.setTextColor(holder.defaultTextColor);
+            }
+        }
+
+        if (isCurrentlySelected) {
+            holder.iconCheckContainer.setVisibility(View.VISIBLE);
+            if (animateCheck) {
+                animateCheckIcon(holder.checkIcon, true);
+            } else {
+                holder.checkIcon.setAlpha(1f);
+                holder.checkIcon.setScaleX(1f);
+                holder.checkIcon.setScaleY(1f);
+            }
+        } else {
+            if (animateCheck) {
+                animateCheckIcon(holder.checkIcon, false);
+                holder.checkIcon.postDelayed(() -> holder.iconCheckContainer.setVisibility(View.GONE), 170);
+            } else {
+                holder.checkIcon.setAlpha(0f);
+                holder.checkIcon.setScaleX(0f);
+                holder.checkIcon.setScaleY(0f);
+                holder.iconCheckContainer.setVisibility(View.GONE);
+            }
+        }
+    }
+
     // Update the setThumbnail method to consider scrolling state with caching
     private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
         if (holder.imageViewThumbnail == null || context == null)
@@ -852,12 +830,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
 
             if (payloads.contains("SELECTION_TOGGLE")) {
-                // Animate the inner check in/out based on current selection state
                 if (position < records.size()) {
                     VideoItem videoItem = records.get(position);
                     boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
-                    // animate using unified bounce+fade helper
-                    animateCheckIcon(holder.checkIcon, isCurrentlySelected);
+                    applySelectionVisuals(holder, isCurrentlySelected, true);
                 }
                 return;
             }
@@ -2310,6 +2286,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot; // *** ADDED: Reference for the warning dot ***
         FrameLayout menuButtonContainer; // *** ADDED: Reference to the container holding the button and dot ***
+        View selectionDimOverlay;
 
         View processingScrim;
         ProgressBar processingSpinner;
@@ -2334,6 +2311,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             menuButtonContainer = itemView.findViewById(R.id.menu_button_container); // *** Find the container ***
             textViewStatusBadge = itemView.findViewById(R.id.text_view_status_badge); // *** Find the new single badge
                                                                                       // ***
+            selectionDimOverlay = itemView.findViewById(R.id.selection_dim_overlay);
 
             processingScrim = itemView.findViewById(R.id.processing_scrim);
             processingSpinner = itemView.findViewById(R.id.processing_spinner);
@@ -2477,6 +2455,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         if (holder.iconCheckContainer != null) {
             holder.iconCheckContainer.setVisibility(View.GONE);
+        }
+        if (holder.selectionDimOverlay != null) {
+            holder.selectionDimOverlay.setVisibility(View.GONE);
         }
 
         // Step 6: Apply professional shimmer effect to the entire card

@@ -328,6 +328,11 @@ public class RecordsFragment extends BaseFragment implements
     private Chip chipFilterStream;
     private TextView filterHelperText;
     private TextView filterChecklistButton;
+    private View selectionActionsRow;
+    private TextView btnActionSelectAll;
+    private TextView btnActionBatchSave;
+    private TextView btnActionBatchFaditor;
+    private TextView btnActionBatchDelete;
     private VideoItem.Category activeFilter = VideoItem.Category.ALL;
 
     // --- Selection State ---
@@ -773,6 +778,11 @@ public class RecordsFragment extends BaseFragment implements
         chipFilterStream = view.findViewById(R.id.chip_filter_stream);
         filterHelperText = view.findViewById(R.id.filter_helper_text);
         filterChecklistButton = view.findViewById(R.id.btn_filter_checklist);
+        selectionActionsRow = view.findViewById(R.id.selection_actions_row);
+        btnActionSelectAll = view.findViewById(R.id.btn_action_select_all);
+        btnActionBatchSave = view.findViewById(R.id.btn_action_batch_save);
+        btnActionBatchFaditor = view.findViewById(R.id.btn_action_batch_faditor);
+        btnActionBatchDelete = view.findViewById(R.id.btn_action_batch_delete);
 
         // Setup menu button click listener
         if (menuButton != null) {
@@ -780,6 +790,9 @@ public class RecordsFragment extends BaseFragment implements
         }
         if (closeButton != null) {
             closeButton.setOnClickListener(v -> exitSelectionMode());
+        }
+        if (selectAllContainer != null) {
+            selectAllContainer.setVisibility(View.GONE);
         }
         if (selectAllContainer != null && selectAllCheck != null) {
             selectAllContainer.setOnClickListener(v -> {
@@ -867,6 +880,7 @@ public class RecordsFragment extends BaseFragment implements
             });
         }
         setupFilterUi();
+        setupSelectionActionsUi();
 
         originalToolbarTitle = getString(R.string.records_title);
 
@@ -1861,20 +1875,8 @@ public class RecordsFragment extends BaseFragment implements
             if (menuButton != null) {
                 menuButton.setVisibility(View.GONE);
             }
-            if (selectAllContainer != null && selectAllCheck != null) {
-                selectAllContainer.setVisibility(View.VISIBLE);
-                boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
-                int tint = allSelected ? resolveThemeColor(R.attr.colorToggle) : android.graphics.Color.WHITE;
-                selectAllCheck.setImageTintList(android.content.res.ColorStateList.valueOf(tint));
-                if (allSelected) {
-                    selectAllCheck.setScaleX(1f);
-                    selectAllCheck.setScaleY(1f);
-                    selectAllCheck.setAlpha(1f);
-                } else {
-                    selectAllCheck.setScaleX(0f);
-                    selectAllCheck.setScaleY(0f);
-                    selectAllCheck.setAlpha(0f);
-                }
+            if (selectAllContainer != null) {
+                selectAllContainer.setVisibility(View.GONE);
             }
         } else {
             titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
@@ -1893,12 +1895,11 @@ public class RecordsFragment extends BaseFragment implements
             if (closeButton != null) {
                 closeButton.setVisibility(View.GONE);
             }
-            if (selectAllContainer != null && selectAllCheck != null) {
+            if (selectAllContainer != null) {
                 selectAllContainer.setVisibility(View.GONE);
-                selectAllCheck
-                        .setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
             }
         }
+        updateSelectionActionRow();
         // Refresh the options menu (to show/hide "More Options")
         if (getActivity() != null) {
             getActivity().invalidateOptionsMenu();
@@ -1906,6 +1907,7 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private void setupFilterUi() {
+        styleFilterChips();
         if (chipFilterAll != null) {
             chipFilterAll.setOnClickListener(v -> setActiveFilter(VideoItem.Category.ALL));
         }
@@ -1933,8 +1935,34 @@ public class RecordsFragment extends BaseFragment implements
                 }
             });
         }
+        updateFilterChipLabels();
         updateFilterChipUi();
         updateFilterHelperText();
+    }
+
+    private void setupSelectionActionsUi() {
+        if (btnActionSelectAll != null) {
+            btnActionSelectAll.setOnClickListener(v -> toggleSelectAllVisibleItems());
+        }
+        if (btnActionBatchSave != null) {
+            btnActionBatchSave.setOnClickListener(v -> Toast.makeText(requireContext(),
+                    getString(R.string.records_batch_coming_soon), Toast.LENGTH_SHORT).show());
+        }
+        if (btnActionBatchFaditor != null) {
+            btnActionBatchFaditor.setOnClickListener(v -> Toast.makeText(requireContext(),
+                    getString(R.string.records_batch_coming_soon), Toast.LENGTH_SHORT).show());
+        }
+        if (btnActionBatchDelete != null) {
+            btnActionBatchDelete.setOnClickListener(v -> {
+                if (selectedUris.isEmpty()) {
+                    Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
+                confirmDeleteSelected();
+            });
+        }
+        updateSelectionActionRow();
     }
 
     private void setActiveFilter(@NonNull VideoItem.Category filter) {
@@ -1959,9 +1987,11 @@ public class RecordsFragment extends BaseFragment implements
         if (recordsAdapter != null) {
             recordsAdapter.updateRecords(videoItems);
         }
+        updateFilterChipLabels();
         updateFilterChipUi();
         updateFilterHelperText();
         updateUiVisibility();
+        updateSelectionActionRow();
     }
 
     private void updateFilterChipUi() {
@@ -1971,6 +2001,65 @@ public class RecordsFragment extends BaseFragment implements
         if (chipFilterScreen != null) chipFilterScreen.setChecked(activeFilter == VideoItem.Category.SCREEN);
         if (chipFilterFaditor != null) chipFilterFaditor.setChecked(activeFilter == VideoItem.Category.FADITOR);
         if (chipFilterStream != null) chipFilterStream.setChecked(activeFilter == VideoItem.Category.STREAM);
+    }
+
+    private void styleFilterChips() {
+        styleFilterChip(chipFilterAll);
+        styleFilterChip(chipFilterCamera);
+        styleFilterChip(chipFilterDual);
+        styleFilterChip(chipFilterScreen);
+        styleFilterChip(chipFilterFaditor);
+        styleFilterChip(chipFilterStream);
+    }
+
+    private void styleFilterChip(@Nullable Chip chip) {
+        if (chip == null || getContext() == null) return;
+        int checkedBg = resolveThemeColor(R.attr.colorButton);
+        int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
+        int stroke = resolveThemeColor(R.attr.colorToggle);
+        int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
+        int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
+        int[][] states = new int[][]{
+                new int[]{android.R.attr.state_checked},
+                new int[]{}
+        };
+        chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
+        chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
+        chip.setChipStrokeWidth(dpToPx(1));
+        chip.setEnsureMinTouchTargetSize(false);
+    }
+
+    private boolean isDarkColor(int color) {
+        double luminance = (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255;
+        return luminance < 0.55;
+    }
+
+    private float dpToPx(int dp) {
+        return dp * getResources().getDisplayMetrics().density;
+    }
+
+    private int getCategoryCount(@NonNull VideoItem.Category category) {
+        if (category == VideoItem.Category.ALL) return allLoadedItems.size();
+        int count = 0;
+        for (VideoItem item : allLoadedItems) {
+            if (item.category == category) count++;
+        }
+        return count;
+    }
+
+    private void updateFilterChipLabels() {
+        setChipLabelWithCount(chipFilterAll, R.string.records_filter_all, getCategoryCount(VideoItem.Category.ALL));
+        setChipLabelWithCount(chipFilterCamera, R.string.records_filter_camera, getCategoryCount(VideoItem.Category.CAMERA));
+        setChipLabelWithCount(chipFilterDual, R.string.records_filter_dual, getCategoryCount(VideoItem.Category.DUAL));
+        setChipLabelWithCount(chipFilterScreen, R.string.records_filter_screen, getCategoryCount(VideoItem.Category.SCREEN));
+        setChipLabelWithCount(chipFilterFaditor, R.string.records_filter_faditor, getCategoryCount(VideoItem.Category.FADITOR));
+        setChipLabelWithCount(chipFilterStream, R.string.records_filter_stream, getCategoryCount(VideoItem.Category.STREAM));
+    }
+
+    private void setChipLabelWithCount(@Nullable Chip chip, int baseLabelRes, int count) {
+        if (chip == null) return;
+        chip.setText(getString(baseLabelRes) + " " + count);
     }
 
     private void updateFilterHelperText() {
@@ -2006,6 +2095,34 @@ public class RecordsFragment extends BaseFragment implements
         }
         filterHelperText.setText(textRes);
         filterHelperText.setVisibility(View.VISIBLE);
+    }
+
+    private void updateSelectionActionRow() {
+        if (selectionActionsRow == null) return;
+        selectionActionsRow.setVisibility(isInSelectionMode ? View.VISIBLE : View.GONE);
+        if (btnActionSelectAll != null) {
+            boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+            btnActionSelectAll.setText(getString(allSelected
+                    ? R.string.records_batch_deselect_all
+                    : R.string.records_batch_select_all));
+        }
+    }
+
+    private void toggleSelectAllVisibleItems() {
+        if (!isInSelectionMode) return;
+        boolean allSelected = !videoItems.isEmpty() && selectedUris.size() == videoItems.size();
+        selectedUris.clear();
+        if (!allSelected) {
+            for (VideoItem item : videoItems) {
+                if (item != null && item.uri != null) {
+                    selectedUris.add(item.uri);
+                }
+            }
+        }
+        if (recordsAdapter != null) {
+            recordsAdapter.setSelectionModeActive(true, selectedUris);
+        }
+        updateUiForSelectionMode();
     }
     // --- Deletion Logic ---
 

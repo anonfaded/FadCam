@@ -210,6 +210,13 @@
     <string name="records_filter_helper_screen">Screen recordings (FadRec)</string>
     <string name="records_filter_helper_faditor">Edited/Exported videos (Faditor)</string>
     <string name="records_filter_helper_stream">Saved stream recordings</string>
+    <string name="records_batch_select_all">Select all</string>
+    <string name="records_batch_deselect_all">Deselect all</string>
+    <string name="records_batch_save">Save to Gallery</string>
+    <string name="records_batch_faditor">Open in Faditor</string>
+    <string name="records_batch_delete">Delete</string>
+    <string name="records_batch_coming_soon">This batch action will be added next.</string>
+    <string name="records_batch_select_items_first">Select one or more videos first.</string>
     <string name="records_hide_thumbnails_row_title">Hide</string>
     <string name="nav_home">Home</string>
     <string name="nav_records">Records</string>

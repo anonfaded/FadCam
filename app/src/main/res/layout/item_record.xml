@@ -35,6 +35,13 @@
                 android:scaleType="centerCrop"
                 tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
+            <View
+                android:id="@+id/selection_dim_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#7A000000"
+                android:visibility="gone" />
+
             <!-- Serial Number Overlay -->
             <TextView
                 android:id="@+id/text_view_serial_number"
@@ -76,6 +83,33 @@
                 android:background="#B0000000"
                 android:visibility="gone"
                 tools:visibility="visible" />
+
+            <FrameLayout
+                android:id="@+id/icon_check_container"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_gravity="center"
+                android:visibility="gone">
+
+                <View
+                    android:id="@+id/icon_check_bg"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/picker_check_background" />
+
+                <ImageView
+                    android:id="@+id/icon_check"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/avd_check_draw"
+                    app:tint="?attr/colorPrimary"
+                    android:scaleX="0"
+                    android:scaleY="0"
+                    android:alpha="0.0" />
+
+            </FrameLayout>
 
             <ProgressBar
                 android:id="@+id/processing_spinner"
@@ -204,36 +238,6 @@
                 android:src="@drawable/yellow_dot"
                 android:visibility="gone"
                 tools:visibility="visible" />
-
-        </FrameLayout>
-
-        <!-- Selection Checkmark Overlay (picker-style: bg + inner check) -->
-        <FrameLayout
-            android:id="@+id/icon_check_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <View
-                android:id="@+id/icon_check_bg"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_gravity="center"
-                android:background="@drawable/picker_check_background" />
-
-            <ImageView
-                android:id="@+id/icon_check"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:src="@drawable/avd_check_draw"
-                app:tint="?attr/colorPrimary"
-                android:scaleX="0"
-                android:scaleY="0"
-                android:alpha="0.0" />
 
         </FrameLayout>
 

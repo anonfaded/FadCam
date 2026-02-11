@@ -24,6 +24,30 @@
         <item name="haloRadius">18dp</item>
     </style>
 
+    <style name="Widget.FadCam.RecordsFilterChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipMinHeight">28dp</item>
+        <item name="android:minHeight">28dp</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+        <item name="android:textSize">11sp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="chipStrokeWidth">1dp</item>
+    </style>
+
+    <style name="RecordsActionPill" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:background">@drawable/settings_group_card_bg</item>
+        <item name="android:textColor">?attr/pickerTextPrimary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
     <style name="KoFiButtonStyle" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/kofi_button_bg</item>
         <item name="android:textColor">#222222</item>

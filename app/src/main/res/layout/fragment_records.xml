@@ -108,7 +108,7 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_all"
-                    style="@style/Widget.Material3.Chip.Filter"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
@@ -116,35 +116,35 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_camera"
-                    style="@style/Widget.Material3.Chip.Filter"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_camera" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_dual"
-                    style="@style/Widget.Material3.Chip.Filter"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_dual" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_screen"
-                    style="@style/Widget.Material3.Chip.Filter"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_screen" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_faditor"
-                    style="@style/Widget.Material3.Chip.Filter"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_faditor" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_stream"
-                    style="@style/Widget.Material3.Chip.Filter"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_stream" />
@@ -171,6 +171,8 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="2dp"
+        android:layout_marginBottom="6dp"
+        android:paddingBottom="8dp"
         android:textColor="#99FFFFFF"
         android:textSize="12sp"
         android:visibility="gone"
@@ -179,6 +181,47 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:text="Normal camera recordings" />
 
+    <HorizontalScrollView
+        android:id="@+id/selection_actions_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:scrollbars="none"
+        android:overScrollMode="never"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/btn_action_select_all"
+                style="@style/RecordsActionPill" />
+
+            <TextView
+                android:id="@+id/btn_action_batch_save"
+                style="@style/RecordsActionPill"
+                android:text="@string/records_batch_save" />
+
+            <TextView
+                android:id="@+id/btn_action_batch_faditor"
+                style="@style/RecordsActionPill"
+                android:text="@string/records_batch_faditor" />
+
+            <TextView
+                android:id="@+id/btn_action_batch_delete"
+                style="@style/RecordsActionPill"
+                android:text="@string/records_batch_delete" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
     <!-- *** START: Loading Indicator *** -->
     <ProgressBar
         android:id="@+id/loading_indicator"
@@ -186,7 +229,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
+        app:layout_constraintTop_toBottomOf="@id/selection_actions_row"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -202,7 +245,7 @@
         android:orientation="vertical"
         android:gravity="center"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
+        app:layout_constraintTop_toBottomOf="@id/selection_actions_row"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"> <!-- Initially hidden -->
@@ -230,7 +273,7 @@
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/filter_helper_text"
+        app:layout_constraintTop_toBottomOf="@id/selection_actions_row"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
