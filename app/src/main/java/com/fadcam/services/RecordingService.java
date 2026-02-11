@@ -2463,18 +2463,29 @@ public class RecordingService extends Service {
         Surface oldPreviewSurface = previewSurface; // Store old surface to check for changes
         if (intent != null) {
             previewSurface = intent.getParcelableExtra("SURFACE");
+            boolean isFullscreenTransition = intent.getBooleanExtra("IS_FULLSCREEN_TRANSITION", false);
             boolean validOldSurface = oldPreviewSurface != null && oldPreviewSurface.isValid();
             boolean validNewSurface = previewSurface != null && previewSurface.isValid();
+            
             if (glRecordingPipeline != null) {
                 if (validNewSurface) {
-                    glRecordingPipeline.setPreviewSurface(previewSurface);
+                    Log.d(TAG, "Setting preview surface to GL pipeline (immediate=" + isFullscreenTransition + ")");
+                    // Use IMMEDIATE mode for fullscreen to bypass 200ms debounce
+                    if (isFullscreenTransition) {
+                        glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
+                    } else {
+                        glRecordingPipeline.setPreviewSurface(previewSurface);
+                    }
                 } else {
                     glRecordingPipeline.setPreviewSurface(null);
                 }
             }
-            if (validOldSurface && !validNewSurface && isRecordingOrPaused()) {
+            // Only create dummy surface if truly backgrounding, not transitioning to fullscreen
+            if (validOldSurface && !validNewSurface && isRecordingOrPaused() && !isFullscreenTransition) {
                 Log.d(TAG, "Surface lost while recording - creating dummy surface to prevent recording issues");
                 createDummyBackgroundSurface();
+            } else if (isFullscreenTransition) {
+                Log.d(TAG, "Surface null due to fullscreen transition - skipping dummy surface creation");
             }
             Log.d(TAG, "Preview surface updated: " + validNewSurface);
             int width = intent.getIntExtra("SURFACE_WIDTH", -1);

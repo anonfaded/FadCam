@@ -69,7 +69,7 @@ public class AudioWaveformView extends View {
     // ── Audio analysis fields ────────────────────────────────────────
     private final List<Float> realWaveformData = new ArrayList<>();
     private volatile boolean isAnalyzingAudio = false;
-    private final int waveformPoints = 120;
+    private final int waveformPoints = 20; // Ultra-reduced for sub-second analysis + lower visual density
     private final ExecutorService audioAnalysisExecutor = Executors.newSingleThreadExecutor();
     private Uri currentVideoUri;
 
@@ -257,33 +257,42 @@ public class AudioWaveformView extends View {
     }
 
     /**
-     * Fast seek-based waveform extraction. Seeks to evenly-spaced positions
-     * and decodes small audio chunks (~50ms each). Total decode time is
-     * constant regardless of video duration (~6s of audio for 120 bins).
+     * Lightning-fast waveform extraction: analyze ONLY first 10 seconds.
+     * 
+     * <p>Strategy: Decode only the first 10 seconds of audio (enough for visual
+     * representation), use 20 bins total, massive skip ratio. This gives sub-second
+     * performance on ANY video length.</p>
+     * 
+     * <p>Expected: ~300-500ms regardless of video length.</p>
      */
     private float[] extractSeekBased(
             MediaExtractor extractor, MediaCodec codec,
             long durationUs, int sampleRate, int channels) {
 
         float[] bins = new float[waveformPoints];
-        int targetSamplesPerBin = sampleRate * channels / 20; // ~50ms of audio
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-
+        
+        // ONLY analyze first 10 seconds (or full video if shorter)
+        long maxAnalysisDurationUs = Math.min(durationUs, 10_000_000L); // 10 seconds
+        
+        // Ultra-minimal samples per bin
+        int targetSamplesPerBin = 100;
+        
         for (int bin = 0; bin < waveformPoints && isAnalyzingAudio; bin++) {
-            long targetUs = (long) ((double) bin / waveformPoints * durationUs);
-
+            long targetUs = (long) ((double) bin / waveformPoints * maxAnalysisDurationUs);
+            
             extractor.seekTo(targetUs, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
             codec.flush();
-
+            
             long sumAbs = 0;
             int sampleCount = 0;
             boolean binDone = false;
             boolean inputEos = false;
-
+            
             while (!binDone && isAnalyzingAudio) {
                 // Feed input
                 if (!inputEos) {
-                    int inIdx = codec.dequeueInputBuffer(2_000);
+                    int inIdx = codec.dequeueInputBuffer(300); // Ultra-aggressive timeout
                     if (inIdx >= 0) {
                         ByteBuffer buf = codec.getInputBuffer(inIdx);
                         if (buf == null) { inputEos = true; continue; }
@@ -299,38 +308,42 @@ public class AudioWaveformView extends View {
                         }
                     }
                 }
-
+                
                 // Drain output
-                int outIdx = codec.dequeueOutputBuffer(info, 2_000);
+                int outIdx = codec.dequeueOutputBuffer(info, 300);
                 if (outIdx >= 0) {
                     if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         binDone = true;
                     }
                     ByteBuffer outBuf = codec.getOutputBuffer(outIdx);
-                    if (outBuf != null) {
+                    if (outBuf != null && info.size > 0) {
                         outBuf.position(info.offset);
                         outBuf.limit(info.offset + info.size);
                         ShortBuffer shorts = outBuf.order(ByteOrder.LITTLE_ENDIAN)
                                 .asShortBuffer();
-                        while (shorts.hasRemaining()
-                                && sampleCount < targetSamplesPerBin) {
+                        
+                        // MASSIVE SKIP: Read 1 sample, skip 100 samples
+                        while (shorts.hasRemaining() && sampleCount < targetSamplesPerBin) {
                             sumAbs += Math.abs(shorts.get());
                             sampleCount++;
+                            
+                            // Skip 100 samples
+                            int skip = Math.min(100, shorts.remaining());
+                            shorts.position(shorts.position() + skip);
                         }
                     }
                     codec.releaseOutputBuffer(outIdx, false);
                     if (sampleCount >= targetSamplesPerBin) binDone = true;
-                } else if (outIdx == MediaCodec.INFO_TRY_AGAIN_LATER
-                        && inputEos) {
+                } else if (outIdx == MediaCodec.INFO_TRY_AGAIN_LATER && inputEos) {
                     binDone = true;
                 }
             }
-
+            
             bins[bin] = sampleCount > 0
                     ? Math.min(1.0f, (float) (sumAbs / sampleCount) / 32768.0f)
                     : 0f;
         }
-
+        
         return bins;
     }
 

@@ -1473,20 +1473,9 @@ public class HomeFragment extends BaseFragment {
             prefsListener = null;
         }
 
-        // The following lines for sending surface update on stop if recording
-        // should remain, as they are not related to receiver unregistration.
-        if (isRecording()) {
-            // isRecording() checks recordingState
-            Intent recordingIntent = new Intent(
-                getActivity(),
-                RecordingService.class
-            );
-            recordingIntent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
-            // Check if activity is still available before starting service
-            if (getActivity() != null) {
-                requireActivity().startService(recordingIntent);
-            }
-        }
+        // Surface update is handled properly at line ~2828 via updateServiceWithCurrentSurface()
+        // which correctly routes to RecordingService or DualCameraRecordingService
+        // and includes the IS_FULLSCREEN_TRANSITION flag when needed
 
         unregisterCameraResourceAvailabilityReceiver();
 
@@ -2825,7 +2814,7 @@ public class HomeFragment extends BaseFragment {
 
         if (textureViewSurface != null && !isReturningFromFullscreen) {
             Log.d(TAG, "onPause: Explicitly sending null surface to service");
-            updateServiceWithCurrentSurface(null);
+            updateServiceWithCurrentSurface(null, -1, -1, isLaunchingFullscreen);
         } else if (isReturningFromFullscreen) {
             Log.d(TAG, "onPause: Skipping null surface — returning from fullscreen, new surface incoming");
         }
@@ -8239,13 +8228,22 @@ public class HomeFragment extends BaseFragment {
     private void updateServiceWithCurrentSurface(
         @Nullable Surface surfaceToUse
     ) {
-        updateServiceWithCurrentSurface(surfaceToUse, -1, -1);
+        updateServiceWithCurrentSurface(surfaceToUse, -1, -1, false);
     }
 
     private void updateServiceWithCurrentSurface(
         @Nullable Surface surfaceToUse,
         int width,
         int height
+    ) {
+        updateServiceWithCurrentSurface(surfaceToUse, width, height, false);
+    }
+
+    private void updateServiceWithCurrentSurface(
+        @Nullable Surface surfaceToUse,
+        int width,
+        int height,
+        boolean isFullscreenTransition
     ) {
         if (!isAdded() || getContext() == null) {
             Log.w(
@@ -8267,8 +8265,16 @@ public class HomeFragment extends BaseFragment {
                     dualIntent.putExtra("SURFACE_WIDTH", width);
                     dualIntent.putExtra("SURFACE_HEIGHT", height);
                 }
+                // Mark as fullscreen transition when exiting fullscreen with valid surface
+                if (isReturningFromFullscreen) {
+                    dualIntent.putExtra("IS_FULLSCREEN_TRANSITION", true);
+                    Log.d(TAG, "Sending VALID surface with FULLSCREEN return flag to DualCam");
+                }
             } else {
                 dualIntent.putExtra("SURFACE", (Surface) null);
+                if (isFullscreenTransition) {
+                    dualIntent.putExtra("IS_FULLSCREEN_TRANSITION", true);
+                }
             }
             Context ctx = getContext();
             if (ctx != null) {
@@ -8287,6 +8293,11 @@ public class HomeFragment extends BaseFragment {
             if (width > 0 && height > 0) {
                 intent.putExtra("SURFACE_WIDTH", width);
                 intent.putExtra("SURFACE_HEIGHT", height);
+                // Mark as fullscreen transition when returning with valid surface
+                if (isReturningFromFullscreen) {
+                    intent.putExtra("IS_FULLSCREEN_TRANSITION", true);
+                    Log.d(TAG, "Sending VALID surface with FULLSCREEN return flag");
+                }
                 Log.d(
                     TAG,
                     "updateServiceWithCurrentSurface: Sending new VALID surface to RecordingService with dimensions " +
@@ -8295,6 +8306,11 @@ public class HomeFragment extends BaseFragment {
                     height
                 );
             } else {
+                // Mark as fullscreen return if coming back with valid surface but no dimensions yet
+                if (isReturningFromFullscreen) {
+                    intent.putExtra("IS_FULLSCREEN_TRANSITION", true);
+                    Log.d(TAG, "Sending VALID surface with FULLSCREEN return flag (no dimensions)");
+                }
                 Log.d(
                     TAG,
                     "updateServiceWithCurrentSurface: Sending new VALID surface to RecordingService."
@@ -8302,10 +8318,12 @@ public class HomeFragment extends BaseFragment {
             }
         } else {
             intent.putExtra("SURFACE", (Surface) null);
-            Log.d(
-                TAG,
-                "updateServiceWithCurrentSurface: Sending NULL surface to RecordingService (preview disabled or surface invalid/destroyed)."
-            );
+            if (isFullscreenTransition) {
+                intent.putExtra("IS_FULLSCREEN_TRANSITION", true);
+                Log.d(TAG, "updateServiceWithCurrentSurface: Sending NULL surface with FULLSCREEN_TRANSITION flag");
+            } else {
+                Log.d(TAG, "updateServiceWithCurrentSurface: Sending NULL surface to RecordingService (preview disabled or surface invalid/destroyed).");
+            }
         }
 
         // Use requireContext() for starting service if preferred and appropriate for

@@ -227,8 +227,18 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture st, int w, int h) {
+                android.util.Log.d("FullscreenPreview", "onSurfaceTextureAvailable: " + w + "x" + h);
                 previewSurface = new Surface(st);
                 sendSurfaceToService(previewSurface, w, h);
+                
+                // Retry after 100ms to ensure service receives surface
+                // (handles race condition where service might not be ready)
+                textureView.postDelayed(() -> {
+                    if (previewSurface != null && previewSurface.isValid()) {
+                        android.util.Log.d("FullscreenPreview", "Re-sending surface to service (retry)");
+                        sendSurfaceToService(previewSurface, w, h);
+                    }
+                }, 100);
             }
 
             @Override
@@ -767,14 +777,24 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void sendSurfaceToService(@Nullable Surface surface, int w, int h) {
         Class<?> svc = getTargetServiceClass();
+        
+        android.util.Log.d("FullscreenPreview", "sendSurfaceToService: surface=" + 
+                (surface != null && surface.isValid() ? "VALID " + w + "x" + h : "NULL") + 
+                ", service=" + svc.getSimpleName());
 
-        if (!isServiceRunning(svc)) return;
+        if (!isServiceRunning(svc)) {
+            android.util.Log.w("FullscreenPreview", "Service not running: " + svc.getSimpleName());
+            return;
+        }
 
         Intent intent = new Intent(this, svc);
         intent.setAction(Constants.INTENT_ACTION_CHANGE_SURFACE);
         if (surface != null) intent.putExtra("SURFACE", surface);
         intent.putExtra("SURFACE_WIDTH", w);
         intent.putExtra("SURFACE_HEIGHT", h);
+        // Mark as fullscreen transition for immediate surface application (bypass 200ms debounce)
+        intent.putExtra("IS_FULLSCREEN_TRANSITION", true);
+        android.util.Log.d("FullscreenPreview", "Sending surface with IS_FULLSCREEN_TRANSITION=true");
         startService(intent);
     }
 

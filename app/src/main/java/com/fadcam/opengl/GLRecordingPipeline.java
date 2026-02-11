@@ -2068,6 +2068,50 @@ public class GLRecordingPipeline {
     }
 
     /**
+     * Sets the preview surface with IMMEDIATE application (no debounce).
+     * Use this for critical transitions like fullscreen where delay causes stuck preview.
+     * 
+     * @param surface The Surface to render the preview on.
+     */
+    public void setPreviewSurfaceImmediate(Surface surface) {
+        this.previewSurface = surface;
+        Log.d(TAG, "setPreviewSurfaceImmediate: " + (surface != null && surface.isValid() ? "VALID" : "NULL"));
+        
+        if (glRenderer != null) {
+            synchronized (previewApplyLock) {
+                // Cancel any pending debounced apply
+                if (pendingPreviewApplyRunnable != null && handler != null) {
+                    try {
+                        handler.removeCallbacks(pendingPreviewApplyRunnable);
+                    } catch (Throwable ignore) {}
+                    pendingPreviewApplyRunnable = null;
+                    pendingPreviewToApply = null;
+                }
+            }
+            
+            // Apply IMMEDIATELY via rendererActions queue
+            final Surface s = surface;
+            rendererActions.offer(() -> {
+                try {
+                    if (s == null || !s.isValid()) {
+                        Log.d(TAG, "Releasing preview EGL (immediate)");
+                        glRenderer.releasePreviewEGL();
+                    } else {
+                        Log.d(TAG, "Setting preview surface to glRenderer (immediate)");
+                        glRenderer.setPreviewSurface(s);
+                        // Force a re-render by requesting next frame
+                        Log.d(TAG, "Preview surface applied immediately - forcing render");
+                    }
+                } catch (Throwable t) {
+                    Log.e(TAG, "Immediate preview apply failed", t);
+                }
+            });
+        } else {
+            Log.w(TAG, "setPreviewSurfaceImmediate called but glRenderer is null");
+        }
+    }
+
+    /**
      * Sets the preview surface for rendering the camera feed.
      * 
      * @param surface The Surface to render the preview on.

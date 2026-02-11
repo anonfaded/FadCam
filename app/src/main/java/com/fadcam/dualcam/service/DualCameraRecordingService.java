@@ -492,14 +492,22 @@ public class DualCameraRecordingService extends Service {
         Surface surface = intent.getParcelableExtra("SURFACE");
         int surfaceW = intent.getIntExtra("SURFACE_WIDTH", 0);
         int surfaceH = intent.getIntExtra("SURFACE_HEIGHT", 0);
+        boolean isFullscreenTransition = intent.getBooleanExtra("IS_FULLSCREEN_TRANSITION", false);
 
         if (recordingPipeline != null) {
-            recordingPipeline.setPreviewSurface(surface);
+            // Use IMMEDIATE mode for fullscreen to bypass debounce
+            if (isFullscreenTransition && surface != null && surface.isValid()) {
+                Log.d(TAG, "Setting preview surface IMMEDIATE (fullscreen transition)");
+                recordingPipeline.setPreviewSurfaceImmediate(surface);
+            } else {
+                recordingPipeline.setPreviewSurface(surface);
+            }
             if (surfaceW > 0 && surfaceH > 0) {
                 recordingPipeline.updateSurfaceDimensions(surfaceW, surfaceH);
             }
             Log.d(TAG, "Preview surface updated: " +
-                    (surface != null && surface.isValid() ? surfaceW + "x" + surfaceH : "null"));
+                    (surface != null && surface.isValid() ? surfaceW + "x" + surfaceH : "null") +
+                    " (immediate=" + isFullscreenTransition + ")");
         } else {
             Log.w(TAG, "handleChangeSurface: pipeline not ready, surface change ignored");
         }
