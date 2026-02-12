@@ -108,6 +108,17 @@ public class ShortcutsSettingsFragment extends Fragment {
                 getString(R.string.shortcut_take_photo),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity"),
                 ShortcutsManager.ID_SHOT);
+        wireShortcutRow(view, R.id.cell_photo_front, R.id.icon_photo_front, R.drawable.fadshot_front_shortcut,
+                getString(R.string.shortcut_take_photo_front),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity")
+                        .putExtra(com.fadcam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
+                                com.fadcam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT),
+                ShortcutsManager.ID_SHOT_FRONT);
+        wireShortcutRow(view, R.id.cell_screenshot, R.id.icon_screenshot, R.drawable.fadrec_screenshot_shortcut,
+                getString(R.string.shortcut_take_screenshot),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.ScreenShotCaptureActivity"),
+                ShortcutsManager.ID_SCREENSHOT);
 
         // Unify ripple/click: handle click on parent container only
         View widgetCell = view.findViewById(R.id.cell_widget_clock);
@@ -141,6 +152,10 @@ public class ShortcutsSettingsFragment extends Fragment {
             subtitle = root.findViewById(R.id.subtitle_torch);
         } else if (rowId == R.id.cell_photo) {
             subtitle = root.findViewById(R.id.subtitle_photo);
+        } else if (rowId == R.id.cell_photo_front) {
+            subtitle = root.findViewById(R.id.subtitle_photo_front);
+        } else if (rowId == R.id.cell_screenshot) {
+            subtitle = root.findViewById(R.id.subtitle_screenshot);
         }
         // Apply custom label/icon if present
         ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
@@ -150,23 +165,33 @@ public class ShortcutsSettingsFragment extends Fragment {
         if (subtitle != null) {
             // Show a small badge with the canonical action name (no codename/id)
             String badgeText = title; // localized label like Start/Stop/Torch
+            // Special badge text for photo shortcuts
+            if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
+                badgeText = "FadShot Back";
+            } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
+                badgeText = "FadShot Front";
+            }
             subtitle.setText(badgeText);
             subtitle.setVisibility(View.VISIBLE);
             // Apply background badge color based on shortcut
             if (ShortcutsManager.ID_START.equals(shortcutId)) {
-                subtitle.setBackgroundResource(R.drawable.badge_green);
+                subtitle.setBackgroundResource(R.drawable.badge_blue);
             } else if (ShortcutsManager.ID_START_FRONT.equals(shortcutId)) {
-                subtitle.setBackgroundResource(R.drawable.badge_amber);
+                subtitle.setBackgroundResource(R.drawable.badge_purple);
             } else if (ShortcutsManager.ID_START_CURRENT.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_green);
             } else if (ShortcutsManager.ID_START_DUAL.equals(shortcutId)) {
-                subtitle.setBackgroundResource(R.drawable.badge_amber);
+                subtitle.setBackgroundResource(R.drawable.badge_cyan);
             } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_red);
             } else if (ShortcutsManager.ID_TORCH.equals(shortcutId)) {
-                subtitle.setBackgroundResource(R.drawable.badge_amber);
+                subtitle.setBackgroundResource(R.drawable.badge_orange);
             } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
-                subtitle.setBackgroundResource(R.drawable.badge_green);
+                subtitle.setBackgroundResource(R.drawable.badge_white);
+            } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_white);
+            } else if (ShortcutsManager.ID_SCREENSHOT.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_orange);
             }
         }
         if (icon != null)
@@ -195,6 +220,10 @@ public class ShortcutsSettingsFragment extends Fragment {
             return R.id.title_stop;
         if (rowId == R.id.cell_torch)
             return R.id.title_torch;
+        if (rowId == R.id.cell_photo_front)
+            return R.id.title_photo_front;
+        if (rowId == R.id.cell_screenshot)
+            return R.id.title_screenshot;
         return R.id.title_photo;
     }
 
@@ -395,6 +424,10 @@ public class ShortcutsSettingsFragment extends Fragment {
             return getString(R.string.shortcut_purpose_stop);
         } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_photo);
+        } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_photo_front);
+        } else if (ShortcutsManager.ID_SCREENSHOT.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_screenshot);
         } else {
             return getString(R.string.shortcut_purpose_torch);
         }
@@ -448,6 +481,17 @@ public class ShortcutsSettingsFragment extends Fragment {
                 getString(R.string.shortcut_take_photo),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity"),
                 ShortcutsManager.ID_SHOT);
+        wireShortcutRow(view, R.id.cell_photo_front, R.id.icon_photo_front, R.drawable.fadshot_front_shortcut,
+                getString(R.string.shortcut_take_photo_front),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity")
+                        .putExtra(com.fadcam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
+                                com.fadcam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT),
+                ShortcutsManager.ID_SHOT_FRONT);
+        wireShortcutRow(view, R.id.cell_screenshot, R.id.icon_screenshot, R.drawable.fadrec_screenshot_shortcut,
+                getString(R.string.shortcut_take_screenshot),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.ScreenShotCaptureActivity"),
+                ShortcutsManager.ID_SCREENSHOT);
     }
 
     private void loadShortcutIconInto(ImageView imageView, String shortcutId, int defaultIconRes) {

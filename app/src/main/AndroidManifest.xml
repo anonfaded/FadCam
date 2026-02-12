@@ -283,6 +283,19 @@
         <!-- Batch media action service for Records automation flows -->
         <service android:name=".service.BatchMediaActionService" android:exported="false" android:foregroundServiceType="dataSync" />
 
+        <!-- Accessibility screenshot service for FadRec screenshot shortcut -->
+        <service
+            android:name=".service.FadRecScreenshotAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/fadrec_screenshot_accessibility_service" />
+        </service>
+
         <!-- Faditor export service for background video export -->
         <service android:name=".ui.faditor.export.ExportService" android:exported="false" android:foregroundServiceType="dataSync" />
 
@@ -297,6 +310,24 @@
         <activity android:name=".RecordingStopActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" />
         <activity
             android:name=".PhotoCaptureActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:screenOrientation="portrait"
+            android:documentLaunchMode="never"
+            android:clearTaskOnLaunch="true"
+            android:taskAffinity=""
+            android:allowTaskReparenting="false">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ScreenShotCaptureActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:noHistory="true"

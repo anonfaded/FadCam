@@ -7530,14 +7530,15 @@ public class HomeFragment extends BaseFragment {
             }
 
             if (isRecordingOrPaused()) {
+                boolean dualRunning = isMyServiceRunning(DualCameraRecordingService.class);
                 Log.d(
                     TAG,
-                    "Recording active. Sending toggle intent to RecordingService. Current isTorchOn (UI state): " +
+                    "Recording active. Sending toggle intent. dualRunning=" + dualRunning + ", isTorchOn=" +
                     isTorchOn
                 );
                 Intent serviceIntent = new Intent(
                     getContext(),
-                    RecordingService.class
+                    dualRunning ? DualCameraRecordingService.class : RecordingService.class
                 );
                 serviceIntent.setAction(
                     Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH

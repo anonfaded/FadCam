@@ -33,6 +33,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PhotoCaptureActivity extends ComponentActivity {
+    public static final String EXTRA_SHORTCUT_PHOTO_CAMERA_MODE = "shortcut_photo_camera_mode";
+    public static final String PHOTO_CAMERA_MODE_BACK = "back";
+    public static final String PHOTO_CAMERA_MODE_FRONT = "front";
     private static final int RC_CAMERA = 9007;
     private final ExecutorService cameraExecutor = Executors.newSingleThreadExecutor();
     private boolean launchedFromShortcut = false;
@@ -102,7 +105,14 @@ public class PhotoCaptureActivity extends ComponentActivity {
                         .build();
 
                 CameraSelector selector = CameraSelector.DEFAULT_BACK_CAMERA;
-                if (prefs != null && prefs.getCameraSelection() == com.fadcam.CameraType.FRONT) {
+                String shortcutMode = getIntent() != null
+                        ? getIntent().getStringExtra(EXTRA_SHORTCUT_PHOTO_CAMERA_MODE)
+                        : null;
+                if (PHOTO_CAMERA_MODE_FRONT.equals(shortcutMode)) {
+                    selector = CameraSelector.DEFAULT_FRONT_CAMERA;
+                } else if (PHOTO_CAMERA_MODE_BACK.equals(shortcutMode)) {
+                    selector = CameraSelector.DEFAULT_BACK_CAMERA;
+                } else if (prefs != null && prefs.getCameraSelection() == com.fadcam.CameraType.FRONT) {
                     selector = CameraSelector.DEFAULT_FRONT_CAMERA;
                 }
                 provider.bindToLifecycle(this, selector, imageCapture);

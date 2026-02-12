@@ -100,4 +100,32 @@
             android:targetClass="com.fadcam.PhotoCaptureActivity"
             android:targetPackage="com.fadcam" />
     </shortcut>
+
+    <shortcut
+        android:id="@+id/capture_photo_front"
+        android:enabled="true"
+        android:icon="@drawable/fadshot_front_shortcut"
+        android:shortcutShortLabel="@string/shortcut_take_photo_front"
+        android:shortcutLongLabel="@string/shortcut_take_photo_front">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.PhotoCaptureActivity"
+            android:targetPackage="com.fadcam">
+            <extra
+                android:name="shortcut_photo_camera_mode"
+                android:value="front" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:id="@+id/capture_screenshot"
+        android:enabled="true"
+        android:icon="@drawable/fadrec_screenshot_shortcut"
+        android:shortcutShortLabel="@string/shortcut_take_screenshot"
+        android:shortcutLongLabel="@string/shortcut_take_screenshot">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.ScreenShotCaptureActivity"
+            android:targetPackage="com.fadcam" />
+    </shortcut>
 </shortcuts>

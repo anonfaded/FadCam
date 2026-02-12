@@ -714,7 +714,9 @@
     <string name="shortcut_purpose_start_dual">This shortcut starts dual camera recording (PiP).</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
-    <string name="shortcut_purpose_photo">This shortcut captures a photo and saves it to FadCam/FadShot location.</string>
+    <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to FadCam/FadShot location.</string>
+    <string name="shortcut_purpose_photo_front">This shortcut captures a front camera photo and saves it to FadCam/FadShot location.</string>
+    <string name="shortcut_purpose_screenshot">This shortcut captures a screen shot and saves it to FadCam/FadShot location (Enable the Accessibility permission from Settings > Privacy > Accessibility).</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Customize</string>
     <string name="widget_customize_action_subtitle">Time, date, theme options</string>
@@ -739,7 +741,14 @@
     <string name="shortcut_start_current">Start Current</string>
     <string name="shortcut_start_dual">Start Dual</string>
     <string name="stop_recording">Stop</string>
-    <string name="shortcut_take_photo">FadShot</string>
+    <string name="shortcut_take_photo">Photo</string>
+    <string name="shortcut_take_photo_front">Selfie</string>
+    <string name="shortcut_take_screenshot">FadRec</string>
+    <string name="screenshot_capture_saved">Screenshot saved</string>
+    <string name="screenshot_capture_failed">Could not capture screenshot</string>
+    <string name="screenshot_capture_system_saved">Screenshot captured by system. Saved in system screenshots.</string>
+    <string name="screenshot_accessibility_enable_needed">Enable "FadRec Screenshot" in Accessibility to use this shortcut without recording prompt.</string>
+    <string name="screenshot_accessibility_service_desc">Captures a screenshot for the FadRec shortcut and saves it in FadCam/FadShot.</string>
     <string name="shortcuts_video_category">Video Recording</string>
     <string name="shortcuts_picture_category">Picture</string>
     <string name="preview_quick_actions_title">Preview quick actions</string>

@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
+import com.fadcam.utils.ServiceUtils;
 
 public class RecordingStopActivity extends Activity {
     private static final String TAG = "RecordingStopActivity";
@@ -15,9 +17,12 @@ public class RecordingStopActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         try {
-            // Use the same intent as the main app's stop recording
-            Intent stopIntent = new Intent(this, RecordingService.class);
-            stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
+            SharedPreferencesManager sp = SharedPreferencesManager.getInstance(this);
+            boolean dualRunning = ServiceUtils.isServiceRunning(this, DualCameraRecordingService.class)
+                    || (sp.getCameraSelection() != null && sp.getCameraSelection().isDual() && sp.isRecordingInProgress());
+            Intent stopIntent = dualRunning
+                    ? new Intent(this, DualCameraRecordingService.class).setAction(Constants.INTENT_ACTION_STOP_DUAL_RECORDING)
+                    : new Intent(this, RecordingService.class).setAction(Constants.INTENT_ACTION_STOP_RECORDING);
             
             // Start from foreground shortcut activity context to avoid FGS timeout edge cases.
             startService(stopIntent);

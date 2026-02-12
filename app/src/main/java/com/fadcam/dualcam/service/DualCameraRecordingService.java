@@ -1,6 +1,7 @@
 package com.fadcam.dualcam.service;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
@@ -1338,12 +1339,22 @@ public class DualCameraRecordingService extends Service {
 
     /** Starts the foreground notification (same channel as RecordingService). */
     private void startForegroundNotification() {
+        Intent stopIntent = new Intent(this, DualCameraRecordingService.class);
+        stopIntent.setAction(Constants.INTENT_ACTION_STOP_DUAL_RECORDING);
+        PendingIntent stopPendingIntent = PendingIntent.getService(
+                this,
+                2020,
+                stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification_icon)
                 .setContentTitle(getString(R.string.notification_video_recording))
                 .setContentText("Dual camera recording…")
                 .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW);
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .addAction(R.drawable.ic_stop, getString(R.string.stop_recording), stopPendingIntent);
 
         Notification notification = builder.build();
 

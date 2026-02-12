@@ -28,6 +28,8 @@ public class ShortcutsManager {
     public static final String ID_START_DUAL = "record_start_dual";
     public static final String ID_STOP = "record_stop";
     public static final String ID_SHOT = "capture_photo";
+    public static final String ID_SHOT_FRONT = "capture_photo_front";
+    public static final String ID_SCREENSHOT = "capture_screenshot";
 
     private final Context ctx;
     private final ShortcutsPreferences prefs;
@@ -66,7 +68,8 @@ public class ShortcutsManager {
         boolean hasCustom =
             prefs.getCustomLabel(id) != null ||
             prefs.getCustomIconPath(id) != null;
-        String pinId = hasCustom ? (id + "_custom") : id;
+        // Use a dedicated pinned id namespace to avoid launchers reusing stale static shortcut metadata.
+        String pinId = hasCustom ? (id + "_pin_custom") : (id + "_pin");
         ShortcutInfoCompat.Builder b = new ShortcutInfoCompat.Builder(
             ctx,
             pinId
@@ -202,6 +205,48 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.shortcut_start_back)
             )
         );
+        list.add(
+            buildShortcut(
+                ID_START_FRONT,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.RecordingStartActivity"
+                ).putExtra(
+                    com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                    com.fadcam.RecordingStartActivity.CAMERA_MODE_FRONT
+                ),
+                com.fadcam.R.drawable.start_front_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_start_front)
+            )
+        );
+        list.add(
+            buildShortcut(
+                ID_START_CURRENT,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.RecordingStartActivity"
+                ).putExtra(
+                    com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                    com.fadcam.RecordingStartActivity.CAMERA_MODE_CURRENT
+                ),
+                com.fadcam.R.drawable.start_current_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_start_current)
+            )
+        );
+        list.add(
+            buildShortcut(
+                ID_START_DUAL,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.RecordingStartActivity"
+                ).putExtra(
+                    com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                    com.fadcam.RecordingStartActivity.CAMERA_MODE_DUAL
+                ),
+                com.fadcam.R.drawable.start_dual_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_start_dual)
+            )
+        );
         // Stop
         list.add(
             buildShortcut(
@@ -224,6 +269,33 @@ public class ShortcutsManager {
                 ),
                 com.fadcam.R.drawable.fadshot_shortcut,
                 ctx.getString(com.fadcam.R.string.shortcut_take_photo)
+            )
+        );
+        // Photo (front)
+        list.add(
+            buildShortcut(
+                ID_SHOT_FRONT,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.PhotoCaptureActivity"
+                ).putExtra(
+                    com.fadcam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
+                    com.fadcam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT
+                ),
+                com.fadcam.R.drawable.fadshot_front_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_take_photo_front)
+            )
+        );
+        // Screenshot
+        list.add(
+            buildShortcut(
+                ID_SCREENSHOT,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.ScreenShotCaptureActivity"
+                ),
+                com.fadcam.R.drawable.screen_recorder,
+                ctx.getString(com.fadcam.R.string.shortcut_take_screenshot)
             )
         );
         ShortcutManagerCompat.setDynamicShortcuts(ctx, list);
@@ -300,6 +372,73 @@ public class ShortcutsManager {
                         ),
                         com.fadcam.R.drawable.fadshot_shortcut,
                         ctx.getString(com.fadcam.R.string.shortcut_take_photo)
+                    )
+                );
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_START_FRONT,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.RecordingStartActivity"
+                        ).putExtra(
+                            com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                            com.fadcam.RecordingStartActivity.CAMERA_MODE_FRONT
+                        ),
+                        com.fadcam.R.drawable.start_front_shortcut,
+                        ctx.getString(com.fadcam.R.string.shortcut_start_front)
+                    )
+                );
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_START_CURRENT,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.RecordingStartActivity"
+                        ).putExtra(
+                            com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                            com.fadcam.RecordingStartActivity.CAMERA_MODE_CURRENT
+                        ),
+                        com.fadcam.R.drawable.start_current_shortcut,
+                        ctx.getString(com.fadcam.R.string.shortcut_start_current)
+                    )
+                );
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_START_DUAL,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.RecordingStartActivity"
+                        ).putExtra(
+                            com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                            com.fadcam.RecordingStartActivity.CAMERA_MODE_DUAL
+                        ),
+                        com.fadcam.R.drawable.start_dual_shortcut,
+                        ctx.getString(com.fadcam.R.string.shortcut_start_dual)
+                    )
+                );
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_SHOT_FRONT,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.PhotoCaptureActivity"
+                        ).putExtra(
+                            com.fadcam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
+                            com.fadcam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT
+                        ),
+                        com.fadcam.R.drawable.fadshot_front_shortcut,
+                        ctx.getString(com.fadcam.R.string.shortcut_take_photo_front)
+                    )
+                );
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_SCREENSHOT,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.ScreenShotCaptureActivity"
+                        ),
+                        com.fadcam.R.drawable.screen_recorder,
+                        ctx.getString(com.fadcam.R.string.shortcut_take_screenshot)
                     )
                 );
 

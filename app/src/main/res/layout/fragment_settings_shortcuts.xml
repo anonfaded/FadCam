@@ -335,38 +335,114 @@
         android:padding="12dp">
 
         <LinearLayout
-            android:id="@+id/cell_photo"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="8dp">
-            <ImageView
-                android:id="@+id/icon_photo"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:src="@drawable/fadshot_shortcut" />
-            <TextView
-                android:id="@+id/title_photo"
-                android:layout_width="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal">
+            <LinearLayout
+                android:id="@+id/cell_photo"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@android:color/white"
-                android:textSize="14sp"
-                android:text="@string/shortcut_take_photo" />
-            <TextView
-                android:id="@+id/subtitle_photo"
-                android:layout_width="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="8dp">
+                <ImageView
+                    android:id="@+id/icon_photo"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/fadshot_shortcut" />
+                <TextView
+                    android:id="@+id/title_photo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:text="@string/shortcut_take_photo" />
+                <TextView
+                    android:id="@+id/subtitle_photo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_photo_front"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
-                android:textSize="12sp"
-                android:layout_marginTop="4dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:visibility="gone"/>
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="8dp">
+                <ImageView
+                    android:id="@+id/icon_photo_front"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/fadshot_front_shortcut" />
+                <TextView
+                    android:id="@+id/title_photo_front"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:text="@string/shortcut_take_photo_front" />
+                <TextView
+                    android:id="@+id/subtitle_photo_front"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_screenshot"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="8dp">
+                <ImageView
+                    android:id="@+id/icon_screenshot"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/screen_recorder" />
+                <TextView
+                    android:id="@+id/title_screenshot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:text="@string/shortcut_take_screenshot" />
+                <TextView
+                    android:id="@+id/subtitle_screenshot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/black"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:visibility="gone"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 

@@ -499,5 +499,8 @@ public abstract class Constants {
         "com.fadcam.ON_DUAL_CAMERA_ERROR";
     public static final String BROADCAST_ON_DUAL_CAMERAS_SWAPPED =
         "com.fadcam.ON_DUAL_CAMERAS_SWAPPED";
+    // Accessibility screenshot trigger action (FadRec shortcut).
+    public static final String ACTION_TRIGGER_FADREC_SCREENSHOT =
+        "com.fadcam.ACTION_TRIGGER_FADREC_SCREENSHOT";
     // ── End Dual Camera Constants ──────────────────────────────────────────
 }

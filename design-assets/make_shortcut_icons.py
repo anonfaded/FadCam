@@ -12,9 +12,14 @@ DOWNLOADS_DIR = os.path.expanduser("~/Downloads/fadcam_shortcuts_icons")
 
 ICONS = {
     "fadshot_shortcut": {
-        "png": "add_a_photo_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
+        "png": "photo_camera_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
         "color": (255, 255, 255),  # white
         "label": "PHOTO"
+    },
+    "fadshot_front_shortcut": {
+        "png": "photo_camera_front_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
+        "color": (255, 255, 255),  # white
+        "label": "SELFIE"
     },
     "start_back_shortcut": {
         "png": "video_camera_back_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
@@ -45,6 +50,11 @@ ICONS = {
         "png": "switch_camera_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
         "color": (0, 188, 212),  # cyan
         "label": "DUAL"
+    },
+    "fadrec_screenshot_shortcut": {
+        "png": "mobile_camera_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
+        "color": (241, 196, 15),  # orange/yellow
+        "label": "FADREC"
     }
 }
 
@@ -114,6 +124,6 @@ print()
 
 # Verify
 import subprocess
-subprocess.run(['ls', '-lh', 'fadshot_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png', 'start_dual_shortcut.png'])
+subprocess.run(['ls', '-lh', 'fadshot_shortcut.png', 'fadshot_front_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png', 'start_dual_shortcut.png', 'fadrec_screenshot_shortcut.png'])
 print()
-subprocess.run(['file', 'fadshot_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png', 'start_dual_shortcut.png'])
+subprocess.run(['file', 'fadshot_shortcut.png', 'fadshot_front_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png', 'start_dual_shortcut.png', 'fadrec_screenshot_shortcut.png'])

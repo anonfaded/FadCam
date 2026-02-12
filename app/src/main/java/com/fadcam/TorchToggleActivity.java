@@ -10,9 +10,11 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.utils.ServiceUtils;
 
 import java.util.Random;
 
@@ -27,9 +29,12 @@ public class TorchToggleActivity extends Activity {
             SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
             Intent intent;
 
-            // If recording is in progress, use RecordingService
+            // If recording is in progress, route to the active recording service.
             if (sharedPreferencesManager.isRecordingInProgress()) {
-                intent = new Intent(this, RecordingService.class);
+                boolean dualRunning = ServiceUtils.isServiceRunning(this, DualCameraRecordingService.class)
+                        || (sharedPreferencesManager.getCameraSelection() != null
+                        && sharedPreferencesManager.getCameraSelection().isDual());
+                intent = new Intent(this, dualRunning ? DualCameraRecordingService.class : RecordingService.class);
                 intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
             } else {
                 // If not recording, use TorchService
