@@ -2148,7 +2148,7 @@ public class RecordsFragment extends BaseFragment implements
         applyChipIcon(chipFilterScreen, R.drawable.screen_recorder);
         applyChipIcon(chipFilterFaditor, R.drawable.ic_edit_cut);
         applyChipIcon(chipFilterStream, R.drawable.ic_wifi);
-        applyChipIcon(chipFilterShot, R.drawable.ic_camera);
+        applyChipIcon(chipFilterShot, R.drawable.ic_photo);
         styleFilterChip(chipFilterAll);
         styleFilterChip(chipFilterCamera);
         styleFilterChip(chipFilterDual);

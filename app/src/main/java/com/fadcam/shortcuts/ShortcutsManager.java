@@ -23,6 +23,8 @@ public class ShortcutsManager {
 
     public static final String ID_TORCH = "torch_toggle";
     public static final String ID_START = "record_start";
+    public static final String ID_START_FRONT = "record_start_front";
+    public static final String ID_START_CURRENT = "record_start_current";
     public static final String ID_STOP = "record_stop";
     public static final String ID_SHOT = "capture_photo";
 
@@ -191,9 +193,12 @@ public class ShortcutsManager {
                 new Intent(Intent.ACTION_VIEW).setClassName(
                     ctx,
                     "com.fadcam.RecordingStartActivity"
+                ).putExtra(
+                    com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                    com.fadcam.RecordingStartActivity.CAMERA_MODE_BACK
                 ),
-                com.fadcam.R.drawable.start_shortcut,
-                ctx.getString(com.fadcam.R.string.start_recording)
+                com.fadcam.R.drawable.start_back_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_start_back)
             )
         );
         // Stop
@@ -264,9 +269,12 @@ public class ShortcutsManager {
                         new Intent(Intent.ACTION_VIEW).setClassName(
                             ctx,
                             "com.fadcam.RecordingStartActivity"
+                        ).putExtra(
+                            com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                            com.fadcam.RecordingStartActivity.CAMERA_MODE_BACK
                         ),
-                        com.fadcam.R.drawable.start_shortcut,
-                        ctx.getString(com.fadcam.R.string.start_recording)
+                        com.fadcam.R.drawable.start_back_shortcut,
+                        ctx.getString(com.fadcam.R.string.shortcut_start_back)
                     )
                 );
 

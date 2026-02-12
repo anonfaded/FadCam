@@ -68,10 +68,27 @@ public class ShortcutsSettingsFragment extends Fragment {
         } catch (Throwable ignored) {
         }
 
-        wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_shortcut,
-                getString(R.string.start_recording),
-                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStartActivity"),
+        wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_back_shortcut,
+                getString(R.string.shortcut_start_back),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_BACK),
                 ShortcutsManager.ID_START);
+        wireShortcutRow(view, R.id.cell_start_front, R.id.icon_start_front, R.drawable.start_front_shortcut,
+                getString(R.string.shortcut_start_front),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_FRONT),
+                ShortcutsManager.ID_START_FRONT);
+        wireShortcutRow(view, R.id.cell_start_current, R.id.icon_start_current, R.drawable.start_current_shortcut,
+                getString(R.string.shortcut_start_current),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_CURRENT),
+                ShortcutsManager.ID_START_CURRENT);
         wireShortcutRow(view, R.id.cell_stop, R.id.icon_stop, R.drawable.stop_shortcut,
                 getString(R.string.stop_recording),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStopActivity"),
@@ -105,6 +122,10 @@ public class ShortcutsSettingsFragment extends Fragment {
         TextView subtitle = null;
         if (rowId == R.id.cell_start) {
             subtitle = root.findViewById(R.id.subtitle_start);
+        } else if (rowId == R.id.cell_start_front) {
+            subtitle = root.findViewById(R.id.subtitle_start_front);
+        } else if (rowId == R.id.cell_start_current) {
+            subtitle = root.findViewById(R.id.subtitle_start_current);
         } else if (rowId == R.id.cell_stop) {
             subtitle = root.findViewById(R.id.subtitle_stop);
         } else if (rowId == R.id.cell_torch) {
@@ -124,6 +145,10 @@ public class ShortcutsSettingsFragment extends Fragment {
             subtitle.setVisibility(View.VISIBLE);
             // Apply background badge color based on shortcut
             if (ShortcutsManager.ID_START.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_green);
+            } else if (ShortcutsManager.ID_START_FRONT.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_amber);
+            } else if (ShortcutsManager.ID_START_CURRENT.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_green);
             } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_red);
@@ -149,6 +174,10 @@ public class ShortcutsSettingsFragment extends Fragment {
     private int titleIdFor(int rowId) {
         if (rowId == R.id.cell_start)
             return R.id.title_start;
+        if (rowId == R.id.cell_start_front)
+            return R.id.title_start_front;
+        if (rowId == R.id.cell_start_current)
+            return R.id.title_start_current;
         if (rowId == R.id.cell_stop)
             return R.id.title_stop;
         if (rowId == R.id.cell_torch)
@@ -343,6 +372,10 @@ public class ShortcutsSettingsFragment extends Fragment {
     private String getShortcutPurposeLine(String shortcutId) {
         if (ShortcutsManager.ID_START.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_start);
+        } else if (ShortcutsManager.ID_START_FRONT.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_start_front);
+        } else if (ShortcutsManager.ID_START_CURRENT.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_start_current);
         } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_stop);
         } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
@@ -357,10 +390,27 @@ public class ShortcutsSettingsFragment extends Fragment {
         if (view == null)
             return;
         // Start
-        wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_shortcut,
-                getString(R.string.start_recording),
-                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStartActivity"),
+        wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_back_shortcut,
+                getString(R.string.shortcut_start_back),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_BACK),
                 ShortcutsManager.ID_START);
+        wireShortcutRow(view, R.id.cell_start_front, R.id.icon_start_front, R.drawable.start_front_shortcut,
+                getString(R.string.shortcut_start_front),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_FRONT),
+                ShortcutsManager.ID_START_FRONT);
+        wireShortcutRow(view, R.id.cell_start_current, R.id.icon_start_current, R.drawable.start_current_shortcut,
+                getString(R.string.shortcut_start_current),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_CURRENT),
+                ShortcutsManager.ID_START_CURRENT);
         // Stop
         wireShortcutRow(view, R.id.cell_stop, R.id.icon_stop, R.drawable.stop_shortcut,
                 getString(R.string.stop_recording),

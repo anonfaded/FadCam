@@ -10,6 +10,10 @@ import com.fadcam.services.RecordingService;
 
 public class RecordingStartActivity extends Activity {
     private static final String TAG = "RecordingStartActivity";
+    public static final String EXTRA_SHORTCUT_CAMERA_MODE = "shortcut_camera_mode";
+    public static final String CAMERA_MODE_BACK = "back";
+    public static final String CAMERA_MODE_FRONT = "front";
+    public static final String CAMERA_MODE_CURRENT = "current";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +28,22 @@ public class RecordingStartActivity extends Activity {
 
                 finish();
                 return;
+            }
+
+            String mode = getIntent() != null
+                    ? getIntent().getStringExtra(EXTRA_SHORTCUT_CAMERA_MODE)
+                    : null;
+            if (mode == null) {
+                mode = CAMERA_MODE_BACK;
+            }
+            if (CAMERA_MODE_FRONT.equals(mode)) {
+                sharedPreferencesManager.sharedPreferences.edit()
+                        .putString(Constants.PREF_CAMERA_SELECTION, CameraType.FRONT.name())
+                        .apply();
+            } else if (CAMERA_MODE_BACK.equals(mode)) {
+                sharedPreferencesManager.sharedPreferences.edit()
+                        .putString(Constants.PREF_CAMERA_SELECTION, CameraType.BACK.name())
+                        .apply();
             }
 
             // Use the same intent as the main app's start recording

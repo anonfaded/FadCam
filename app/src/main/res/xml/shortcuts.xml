@@ -16,13 +16,49 @@
     <shortcut
         android:id="@+id/record_start"
         android:enabled="true"
-        android:icon="@drawable/start_shortcut"
-        android:shortcutShortLabel="@string/start_recording"
-        android:shortcutLongLabel="@string/start_recording">
+        android:icon="@drawable/start_back_shortcut"
+        android:shortcutShortLabel="@string/shortcut_start_back"
+        android:shortcutLongLabel="@string/shortcut_start_back">
         <intent
             android:action="android.intent.action.VIEW"
             android:targetClass="com.fadcam.RecordingStartActivity"
-            android:targetPackage="com.fadcam" />
+            android:targetPackage="com.fadcam">
+            <extra
+                android:name="shortcut_camera_mode"
+                android:value="back" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:id="@+id/record_start_front"
+        android:enabled="true"
+        android:icon="@drawable/start_front_shortcut"
+        android:shortcutShortLabel="@string/shortcut_start_front"
+        android:shortcutLongLabel="@string/shortcut_start_front">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.RecordingStartActivity"
+            android:targetPackage="com.fadcam">
+            <extra
+                android:name="shortcut_camera_mode"
+                android:value="front" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:id="@+id/record_start_current"
+        android:enabled="true"
+        android:icon="@drawable/start_current_shortcut"
+        android:shortcutShortLabel="@string/shortcut_start_current"
+        android:shortcutLongLabel="@string/shortcut_start_current">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.RecordingStartActivity"
+            android:targetPackage="com.fadcam">
+            <extra
+                android:name="shortcut_camera_mode"
+                android:value="current" />
+        </intent>
     </shortcut>
 
     <shortcut

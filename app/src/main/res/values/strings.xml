@@ -709,6 +709,8 @@
     <string name="shortcuts_rename_action_title">Rename</string>
     <string name="shortcuts_rename_action_subtitle">Click to rename</string>
     <string name="shortcut_purpose_start">This shortcut starts recording with the back camera.</string>
+    <string name="shortcut_purpose_start_front">This shortcut starts recording with the front camera.</string>
+    <string name="shortcut_purpose_start_current">This shortcut starts recording with the currently selected camera mode.</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
     <string name="shortcut_purpose_photo">This shortcut captures a photo and saves it to FadCam/FadShot location.</string>
@@ -731,6 +733,9 @@
     <string name="note_theme">Choose your preferred app theme</string>
     <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
     <string name="start_recording">Start</string>
+    <string name="shortcut_start_back">Start Back</string>
+    <string name="shortcut_start_front">Start Front</string>
+    <string name="shortcut_start_current">Start Current</string>
     <string name="stop_recording">Stop</string>
     <string name="shortcut_take_photo">FadShot</string>
     <string name="shortcuts_video_category">Video Recording</string>
