@@ -40,6 +40,14 @@ public class VideoItem {
         UNKNOWN
     }
 
+    public enum FaditorSubtype {
+        ALL,
+        CONVERTED,
+        MERGE,
+        OTHER,
+        UNKNOWN
+    }
+
     public final Uri uri; // The unique identifier (file:// or content://)
     public final String displayName; // Filename
     public final long size; // Size in bytes
@@ -48,6 +56,7 @@ public class VideoItem {
     public final MediaType mediaType; // video or image
     public final ShotSubtype shotSubtype; // Shot source (for image shot filtering/badging)
     public final CameraSubtype cameraSubtype; // Camera source (for camera sub-filtering)
+    public final FaditorSubtype faditorSubtype; // Faditor source (converted/merge/other)
 
     public boolean isTemporary = false;
     public boolean isNew = false;
@@ -56,12 +65,12 @@ public class VideoItem {
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
         this(uri, displayName, size, lastModified, Category.UNKNOWN, MediaType.VIDEO, ShotSubtype.UNKNOWN,
-                CameraSubtype.UNKNOWN);
+                CameraSubtype.UNKNOWN, FaditorSubtype.UNKNOWN);
     }
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified, Category category) {
         this(uri, displayName, size, lastModified, category, MediaType.VIDEO, ShotSubtype.UNKNOWN,
-                CameraSubtype.UNKNOWN);
+                CameraSubtype.UNKNOWN, FaditorSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -72,7 +81,16 @@ public class VideoItem {
         Category category,
         MediaType mediaType
     ) {
-        this(uri, displayName, size, lastModified, category, mediaType, ShotSubtype.UNKNOWN, CameraSubtype.UNKNOWN);
+        this(
+                uri,
+                displayName,
+                size,
+                lastModified,
+                category,
+                mediaType,
+                ShotSubtype.UNKNOWN,
+                CameraSubtype.UNKNOWN,
+                FaditorSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -84,7 +102,16 @@ public class VideoItem {
         MediaType mediaType,
         ShotSubtype shotSubtype
     ) {
-        this(uri, displayName, size, lastModified, category, mediaType, shotSubtype, CameraSubtype.UNKNOWN);
+        this(
+                uri,
+                displayName,
+                size,
+                lastModified,
+                category,
+                mediaType,
+                shotSubtype,
+                CameraSubtype.UNKNOWN,
+                FaditorSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -97,6 +124,29 @@ public class VideoItem {
         ShotSubtype shotSubtype,
         CameraSubtype cameraSubtype
     ) {
+        this(
+                uri,
+                displayName,
+                size,
+                lastModified,
+                category,
+                mediaType,
+                shotSubtype,
+                cameraSubtype,
+                FaditorSubtype.UNKNOWN);
+    }
+
+    public VideoItem(
+        Uri uri,
+        String displayName,
+        long size,
+        long lastModified,
+        Category category,
+        MediaType mediaType,
+        ShotSubtype shotSubtype,
+        CameraSubtype cameraSubtype,
+        FaditorSubtype faditorSubtype
+    ) {
         this.uri = uri;
         this.displayName = displayName;
         this.size = size;
@@ -105,6 +155,7 @@ public class VideoItem {
         this.mediaType = mediaType == null ? MediaType.VIDEO : mediaType;
         this.shotSubtype = shotSubtype == null ? ShotSubtype.UNKNOWN : shotSubtype;
         this.cameraSubtype = cameraSubtype == null ? CameraSubtype.UNKNOWN : cameraSubtype;
+        this.faditorSubtype = faditorSubtype == null ? FaditorSubtype.UNKNOWN : faditorSubtype;
     }
     
     /**
@@ -145,6 +196,7 @@ public class VideoItem {
                 ", mediaType=" + mediaType +
                 ", shotSubtype=" + shotSubtype +
                 ", cameraSubtype=" + cameraSubtype +
+                ", faditorSubtype=" + faditorSubtype +
                 '}';
     }
 }

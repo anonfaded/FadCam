@@ -217,6 +217,9 @@
     <string name="records_filter_camera_back">Back</string>
     <string name="records_filter_camera_front">Front</string>
     <string name="records_filter_camera_dual">Dual</string>
+    <string name="records_filter_faditor_all">All</string>
+    <string name="records_filter_faditor_converted">Converted</string>
+    <string name="records_filter_faditor_merge">Merge</string>
     <string name="records_filter_shot_all">All</string>
     <string name="records_filter_shot_back">Back</string>
     <string name="records_filter_shot_selfie">Selfie</string>
@@ -229,6 +232,9 @@
     <string name="records_filter_helper_dual">Dual camera recordings</string>
     <string name="records_filter_helper_screen">Screen recordings (FadRec)</string>
     <string name="records_filter_helper_faditor">Edited/Exported videos (Faditor)</string>
+    <string name="records_filter_helper_faditor_all">All Faditor outputs and related files.</string>
+    <string name="records_filter_helper_faditor_converted">Converted fragmented MP4 into standard seekable MP4 for external players.</string>
+    <string name="records_filter_helper_faditor_merge">Merged multiple clips into one output video.</string>
     <string name="records_filter_helper_stream">Saved stream recordings</string>
     <string name="records_filter_helper_shot_all">Captured photos and screenshots</string>
     <string name="records_filter_helper_shot_back">Captured photos with back camera</string>

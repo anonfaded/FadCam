@@ -321,7 +321,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     items.addAll(scanFileDir(
                             new File(base, Constants.RECORDING_SUBDIR_SCREEN),
                             getString(R.string.faditor_fadrec_source)));
-                    items.addAll(scanFileDir(
+                    items.addAll(scanNestedVideoDir(
                             new File(base, Constants.RECORDING_SUBDIR_FADITOR),
                             getString(R.string.faditor_fadcam_source)));
                     items.addAll(scanFileDir(
@@ -382,6 +382,28 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     }
 
     @NonNull
+    private List<RecordingItem> scanNestedVideoDir(@NonNull File rootDir, @NonNull String source) {
+        List<RecordingItem> items = new ArrayList<>();
+        if (!rootDir.exists() || !rootDir.isDirectory()) return items;
+        File[] entries = rootDir.listFiles();
+        if (entries == null) return items;
+        for (File entry : entries) {
+            if (entry == null) continue;
+            if (entry.isFile()) {
+                if (entry.getName().endsWith("." + Constants.RECORDING_FILE_EXTENSION)
+                        && !entry.getName().startsWith("temp_")) {
+                    items.add(new RecordingItem(
+                            Uri.fromFile(entry), entry.getName(), entry.length(), entry.lastModified(), source));
+                }
+                continue;
+            }
+            if (!entry.isDirectory()) continue;
+            items.addAll(scanFileDir(entry, source));
+        }
+        return items;
+    }
+
+    @NonNull
     private List<RecordingItem> scanSafDir(@NonNull Context ctx, @NonNull Uri treeUri) {
         List<RecordingItem> items = new ArrayList<>();
         try {
@@ -390,7 +412,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
             addSafCameraDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_CAMERA, getString(R.string.faditor_fadcam_source));
             addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_DUAL, getString(R.string.faditor_fadcam_source));
             addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_SCREEN, getString(R.string.faditor_fadrec_source));
-            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_FADITOR, getString(R.string.faditor_fadcam_source));
+            addSafNestedDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_FADITOR, getString(R.string.faditor_fadcam_source));
             addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_STREAM, getString(R.string.faditor_fadrec_source));
         } catch (Exception e) {
             Log.e(TAG, "Error listing SAF files", e);
@@ -420,6 +442,40 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void addSafCameraDirectoryItems(
+            @NonNull List<RecordingItem> items,
+            @NonNull DocumentFile baseDir,
+            @NonNull String directoryName,
+            @NonNull String source
+    ) {
+        DocumentFile child = RecordingStoragePaths.findOrCreateChildDirectory(baseDir, directoryName, false);
+        if (child == null || !child.isDirectory() || !child.canRead()) return;
+        for (DocumentFile doc : child.listFiles()) {
+            if (doc == null) continue;
+            if (doc.isFile()) {
+                String name = doc.getName();
+                String mime = doc.getType();
+                if (name != null && mime != null && mime.startsWith("video/")
+                        && name.endsWith(Constants.RECORDING_FILE_EXTENSION)
+                        && !name.startsWith("temp_")) {
+                    items.add(new RecordingItem(doc.getUri(), name, doc.length(), doc.lastModified(), source));
+                }
+                continue;
+            }
+            if (!doc.isDirectory() || !doc.canRead()) continue;
+            for (DocumentFile nested : doc.listFiles()) {
+                if (nested == null || !nested.isFile()) continue;
+                String name = nested.getName();
+                String mime = nested.getType();
+                if (name != null && mime != null && mime.startsWith("video/")
+                        && name.endsWith(Constants.RECORDING_FILE_EXTENSION)
+                        && !name.startsWith("temp_")) {
+                    items.add(new RecordingItem(nested.getUri(), name, nested.length(), nested.lastModified(), source));
+                }
+            }
+        }
+    }
+
+    private void addSafNestedDirectoryItems(
             @NonNull List<RecordingItem> items,
             @NonNull DocumentFile baseDir,
             @NonNull String directoryName,

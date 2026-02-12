@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +24,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public final class PhotoStorageHelper {
+    private static final String TAG = "PhotoStorageHelper";
     private static final int JPEG_QUALITY = 88;
 
     public enum ShotSource {
@@ -59,6 +61,8 @@ public final class PhotoStorageHelper {
             @NonNull ShotSource shotSource
     ) {
         String fileName = buildShotFileName(shotSource);
+        Log.d(TAG, "saveJpegBitmap: source=" + shotSource + ", fileName=" + fileName
+                + ", applyWatermark=" + applyWatermarkFromPreferences);
 
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(context);
         Bitmap prepared = prepareBitmapForSave(context, bitmap, prefs, applyWatermarkFromPreferences);
@@ -69,13 +73,18 @@ public final class PhotoStorageHelper {
 
         Uri result = null;
         if (customTreeUri != null && !customTreeUri.trim().isEmpty()) {
+            Log.d(TAG, "saveJpegBitmap: attempting SAF save. treeUri=" + customTreeUri);
             Uri safUri = saveToSaf(context, customTreeUri, fileName, prepared, shotSource);
             if (safUri != null) {
+                Log.d(TAG, "saveJpegBitmap: saved via SAF uri=" + safUri);
                 result = safUri;
+            } else {
+                Log.w(TAG, "saveJpegBitmap: SAF save failed, falling back to internal.");
             }
         }
         if (result == null) {
             result = saveToInternal(context, fileName, prepared, shotSource);
+            Log.d(TAG, "saveJpegBitmap: internal save result uri=" + result);
         }
         if (prepared != bitmap && !prepared.isRecycled()) {
             prepared.recycle();
@@ -95,15 +104,21 @@ public final class PhotoStorageHelper {
                 toStorageShotSource(shotSource),
                 true);
         if (shotDir == null) {
+            Log.e(TAG, "saveToInternal: shotDir is null for source=" + shotSource);
             return null;
         }
         File outputFile = new File(shotDir, fileName);
+        Log.d(TAG, "saveToInternal: outputPath=" + outputFile.getAbsolutePath());
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
             boolean ok = bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, fos);
-            if (!ok) return null;
+            if (!ok) {
+                Log.e(TAG, "saveToInternal: bitmap.compress returned false");
+                return null;
+            }
             fos.flush();
             return Uri.fromFile(outputFile);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Log.e(TAG, "saveToInternal: exception", e);
             return null;
         }
     }
@@ -122,20 +137,31 @@ public final class PhotoStorageHelper {
                 toStorageShotSource(shotSource),
                 true);
         if (shotDir == null || !shotDir.canWrite()) {
+            Log.e(TAG, "saveToSaf: shotDir unavailable or not writable. source=" + shotSource
+                    + ", treeUri=" + customTreeUri);
             return null;
         }
 
         DocumentFile doc = shotDir.createFile("image/jpeg", fileName);
         if (doc == null) {
+            Log.e(TAG, "saveToSaf: createFile returned null for fileName=" + fileName);
             return null;
         }
         try (OutputStream os = context.getContentResolver().openOutputStream(doc.getUri(), "w")) {
-            if (os == null) return null;
+            if (os == null) {
+                Log.e(TAG, "saveToSaf: openOutputStream returned null uri=" + doc.getUri());
+                return null;
+            }
             boolean ok = bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, os);
-            if (!ok) return null;
+            if (!ok) {
+                Log.e(TAG, "saveToSaf: bitmap.compress returned false");
+                return null;
+            }
             os.flush();
+            Log.d(TAG, "saveToSaf: saved uri=" + doc.getUri());
             return doc.getUri();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Log.e(TAG, "saveToSaf: exception", e);
             return null;
         }
     }

@@ -38,6 +38,11 @@ public final class RecordingStoragePaths {
         DUAL
     }
 
+    public enum FaditorOutputType {
+        CONVERTED,
+        MERGE
+    }
+
     private RecordingStoragePaths() {
     }
 
@@ -102,6 +107,18 @@ public final class RecordingStoragePaths {
         }
     }
 
+    @NonNull
+    public static String folderNameForFaditorOutput(@Nullable FaditorOutputType outputType) {
+        if (outputType == null) return Constants.RECORDING_SUBDIR_FADITOR_CONVERTED;
+        switch (outputType) {
+            case MERGE:
+                return Constants.RECORDING_SUBDIR_FADITOR_MERGE;
+            case CONVERTED:
+            default:
+                return Constants.RECORDING_SUBDIR_FADITOR_CONVERTED;
+        }
+    }
+
     @Nullable
     public static File getInternalBaseDir(@NonNull Context context) {
         File external = context.getExternalFilesDir(null);
@@ -149,6 +166,20 @@ public final class RecordingStoragePaths {
         if (cameraRoot == null) return null;
         String sourceFolder = folderNameForCameraSource(source);
         File sourceDir = new File(cameraRoot, sourceFolder);
+        if (!sourceDir.exists() && createIfMissing && !sourceDir.mkdirs()) return null;
+        return sourceDir;
+    }
+
+    @Nullable
+    public static File getInternalFaditorOutputDir(
+            @NonNull Context context,
+            @Nullable FaditorOutputType outputType,
+            boolean createIfMissing
+    ) {
+        File faditorRoot = getInternalCategoryDir(context, Category.FADITOR, createIfMissing);
+        if (faditorRoot == null) return null;
+        String sourceFolder = folderNameForFaditorOutput(outputType);
+        File sourceDir = new File(faditorRoot, sourceFolder);
         if (!sourceDir.exists() && createIfMissing && !sourceDir.mkdirs()) return null;
         return sourceDir;
     }
@@ -202,6 +233,18 @@ public final class RecordingStoragePaths {
         DocumentFile cameraRoot = getSafCategoryDir(context, treeUriString, Category.CAMERA, createIfMissing);
         if (cameraRoot == null) return null;
         return findOrCreateChildDirectory(cameraRoot, folderNameForCameraSource(source), createIfMissing);
+    }
+
+    @Nullable
+    public static DocumentFile getSafFaditorOutputDir(
+            @NonNull Context context,
+            @Nullable String treeUriString,
+            @Nullable FaditorOutputType outputType,
+            boolean createIfMissing
+    ) {
+        DocumentFile faditorRoot = getSafCategoryDir(context, treeUriString, Category.FADITOR, createIfMissing);
+        if (faditorRoot == null) return null;
+        return findOrCreateChildDirectory(faditorRoot, folderNameForFaditorOutput(outputType), createIfMissing);
     }
 
     @Nullable

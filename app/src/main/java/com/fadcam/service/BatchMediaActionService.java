@@ -418,11 +418,15 @@ public class BatchMediaActionService extends Service {
             }
 
             if (task.outputMode == BatchMediaActionTask.OutputMode.DEFAULT_FADITOR) {
+                RecordingStoragePaths.FaditorOutputType outputType =
+                        task.actionType == BatchMediaActionTask.ActionType.MERGE_VIDEOS
+                                ? RecordingStoragePaths.FaditorOutputType.MERGE
+                                : RecordingStoragePaths.FaditorOutputType.CONVERTED;
                 String customUri = sharedPreferencesManager.getCustomStorageUri();
-                DocumentFile safDir = RecordingStoragePaths.getSafCategoryDir(
+                DocumentFile safDir = RecordingStoragePaths.getSafFaditorOutputDir(
                         this,
                         customUri,
-                        RecordingStoragePaths.Category.FADITOR,
+                        outputType,
                         true
                 );
                 if (safDir != null && safDir.canWrite()) {
@@ -433,9 +437,9 @@ public class BatchMediaActionService extends Service {
                     }
                 }
 
-                File outDir = RecordingStoragePaths.getInternalCategoryDir(
+                File outDir = RecordingStoragePaths.getInternalFaditorOutputDir(
                         this,
-                        RecordingStoragePaths.Category.FADITOR,
+                        outputType,
                         true
                 );
                 if (outDir != null) {

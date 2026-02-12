@@ -288,6 +288,8 @@ public abstract class Constants {
     public static final String RECORDING_SUBDIR_DUAL = "Dual";
     public static final String RECORDING_SUBDIR_SCREEN = "Screen";
     public static final String RECORDING_SUBDIR_FADITOR = "Faditor";
+    public static final String RECORDING_SUBDIR_FADITOR_CONVERTED = "Converted";
+    public static final String RECORDING_SUBDIR_FADITOR_MERGE = "Merge";
     public static final String RECORDING_SUBDIR_STREAM = "Stream";
     public static final String RECORDING_SUBDIR_SHOT = "FadShot";
     public static final String RECORDING_SUBDIR_SHOT_BACK = "Back";

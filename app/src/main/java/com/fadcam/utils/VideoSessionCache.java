@@ -239,13 +239,18 @@ public class VideoSessionCache {
      * Serializable wrapper for VideoItem to enable disk caching with thumbnails
      */
     private static class SerializableVideoItem implements java.io.Serializable {
-        private static final long serialVersionUID = 3L; // Updated to remove isTemporary
+        private static final long serialVersionUID = 4L;
         
         public final String uriString;
         public final String displayName;
         public final long size;
         public final long lastModified;
         public final boolean isNew;
+        public final String category;
+        public final String mediaType;
+        public final String shotSubtype;
+        public final String cameraSubtype;
+        public final String faditorSubtype;
         public final byte[] thumbnailData; // Cached thumbnail as byte array
         
         public SerializableVideoItem(VideoItem videoItem) {
@@ -254,6 +259,11 @@ public class VideoSessionCache {
             this.size = videoItem.size;
             this.lastModified = videoItem.lastModified;
             this.isNew = videoItem.isNew;
+            this.category = videoItem.category != null ? videoItem.category.name() : null;
+            this.mediaType = videoItem.mediaType != null ? videoItem.mediaType.name() : null;
+            this.shotSubtype = videoItem.shotSubtype != null ? videoItem.shotSubtype.name() : null;
+            this.cameraSubtype = videoItem.cameraSubtype != null ? videoItem.cameraSubtype.name() : null;
+            this.faditorSubtype = videoItem.faditorSubtype != null ? videoItem.faditorSubtype.name() : null;
             this.thumbnailData = null; // Will be set separately for existing items
         }
         
@@ -263,6 +273,11 @@ public class VideoSessionCache {
             this.size = videoItem.size;
             this.lastModified = videoItem.lastModified;
             this.isNew = videoItem.isNew;
+            this.category = videoItem.category != null ? videoItem.category.name() : null;
+            this.mediaType = videoItem.mediaType != null ? videoItem.mediaType.name() : null;
+            this.shotSubtype = videoItem.shotSubtype != null ? videoItem.shotSubtype.name() : null;
+            this.cameraSubtype = videoItem.cameraSubtype != null ? videoItem.cameraSubtype.name() : null;
+            this.faditorSubtype = videoItem.faditorSubtype != null ? videoItem.faditorSubtype.name() : null;
             this.thumbnailData = thumbnailData;
         }
         
@@ -271,10 +286,68 @@ public class VideoSessionCache {
                 android.net.Uri.parse(uriString),
                 displayName,
                 size,
-                lastModified
+                lastModified,
+                parseCategory(category),
+                parseMediaType(mediaType, displayName),
+                parseShotSubtype(shotSubtype),
+                parseCameraSubtype(cameraSubtype),
+                parseFaditorSubtype(faditorSubtype)
             );
             item.isNew = isNew;
             return item;
+        }
+
+        private static VideoItem.Category parseCategory(String raw) {
+            if (raw == null) return VideoItem.Category.UNKNOWN;
+            try {
+                return VideoItem.Category.valueOf(raw);
+            } catch (Exception ignored) {
+                return VideoItem.Category.UNKNOWN;
+            }
+        }
+
+        private static VideoItem.MediaType parseMediaType(String raw, String displayName) {
+            if (raw != null) {
+                try {
+                    return VideoItem.MediaType.valueOf(raw);
+                } catch (Exception ignored) {
+                }
+            }
+            if (displayName != null) {
+                String lower = displayName.toLowerCase();
+                if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                        || lower.endsWith(".png") || lower.endsWith(".webp")) {
+                    return VideoItem.MediaType.IMAGE;
+                }
+            }
+            return VideoItem.MediaType.VIDEO;
+        }
+
+        private static VideoItem.ShotSubtype parseShotSubtype(String raw) {
+            if (raw == null) return VideoItem.ShotSubtype.UNKNOWN;
+            try {
+                return VideoItem.ShotSubtype.valueOf(raw);
+            } catch (Exception ignored) {
+                return VideoItem.ShotSubtype.UNKNOWN;
+            }
+        }
+
+        private static VideoItem.CameraSubtype parseCameraSubtype(String raw) {
+            if (raw == null) return VideoItem.CameraSubtype.UNKNOWN;
+            try {
+                return VideoItem.CameraSubtype.valueOf(raw);
+            } catch (Exception ignored) {
+                return VideoItem.CameraSubtype.UNKNOWN;
+            }
+        }
+
+        private static VideoItem.FaditorSubtype parseFaditorSubtype(String raw) {
+            if (raw == null) return VideoItem.FaditorSubtype.UNKNOWN;
+            try {
+                return VideoItem.FaditorSubtype.valueOf(raw);
+            } catch (Exception ignored) {
+                return VideoItem.FaditorSubtype.UNKNOWN;
+            }
         }
     }
     
