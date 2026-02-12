@@ -276,6 +276,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         final Uri videoUri = videoItem.uri;
         final String displayName = videoItem.displayName != null ? videoItem.displayName : "Unnamed Video";
         final String uriString = videoUri.toString();
+        final boolean isImage = videoItem.mediaType == VideoItem.MediaType.IMAGE;
 
         // --- 2. Determine Item States ---
         final boolean isCurrentlySelected = this.currentSelectedUris.contains(videoUri);
@@ -351,39 +352,43 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // Optimize time-consuming operations using lightweight caching
         if (holder.textViewFileTime != null) {
-            // Check if we already have the duration cached
-            String cachedDuration = loadedThumbnailCache.get(position);
-            if (cachedDuration != null) {
-                holder.textViewFileTime.setText(cachedDuration);
+            if (isImage) {
+                holder.textViewFileTime.setText(context.getString(R.string.media_type_photo));
             } else {
-                // Show a placeholder while loading
-                holder.textViewFileTime.setText("--:--");
+                // Check if we already have the duration cached
+                String cachedDuration = loadedThumbnailCache.get(position);
+                if (cachedDuration != null) {
+                    holder.textViewFileTime.setText(cachedDuration);
+                } else {
+                    // Show a placeholder while loading
+                    holder.textViewFileTime.setText("--:--");
 
-                // Calculate duration on background thread - this is one of the main causes of
-                // lag
-                executorService.execute(() -> {
-                    // Add a small delay for newly recorded videos to ensure file is fully written
-                    if (videoItem.isNew) {
-                        try {
-                            Thread.sleep(500); // 500ms delay for new videos
-                            Log.d(TAG, "Added delay for new video duration calculation: " + videoItem.displayName);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+                    // Calculate duration on background thread - this is one of the main causes of
+                    // lag
+                    executorService.execute(() -> {
+                        // Add a small delay for newly recorded videos to ensure file is fully written
+                        if (videoItem.isNew) {
+                            try {
+                                Thread.sleep(500); // 500ms delay for new videos
+                                Log.d(TAG, "Added delay for new video duration calculation: " + videoItem.displayName);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
                         }
-                    }
 
-                    long duration = getVideoDuration(videoUri);
-                    String formattedDuration = formatVideoDuration(duration);
-                    loadedThumbnailCache.put(position, formattedDuration);
+                        long duration = getVideoDuration(videoUri);
+                        String formattedDuration = formatVideoDuration(duration);
+                        loadedThumbnailCache.put(position, formattedDuration);
 
-                    // Update UI on main thread
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        // Make sure the view holder is still showing the same item before updating
-                        if (holder.getAdapterPosition() == position && holder.textViewFileTime != null) {
-                            holder.textViewFileTime.setText(formattedDuration);
-                        }
+                        // Update UI on main thread
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            // Make sure the view holder is still showing the same item before updating
+                            if (holder.getAdapterPosition() == position && holder.textViewFileTime != null) {
+                                holder.textViewFileTime.setText(formattedDuration);
+                            }
+                        });
                     });
-                });
+                }
             }
         }
 
@@ -400,43 +405,49 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             View progressBg = holder.itemView.findViewById(R.id.thumbnail_progress_bg);
             View progressFill = holder.itemView.findViewById(R.id.thumbnail_progress_fill);
             if (progressBg != null && progressFill != null) {
-                progressFill.setVisibility(View.GONE);
-                final String key = videoUri.toString();
-                // Try caches first
-                Long cachedSaved = savedPositionCache.get(key);
-                Long cachedDur = durationCache.get(key);
-                if (cachedSaved != null && cachedDur != null) {
-                    applyProgressToView(progressBg, progressFill, cachedSaved, cachedDur);
+                if (isImage) {
+                    progressBg.setVisibility(View.GONE);
+                    progressFill.setVisibility(View.GONE);
                 } else {
-                    // Submit one background task to compute missing values
-                    executorService.execute(() -> {
-                        try {
-                            long savedMs = cachedSaved != null ? cachedSaved
-                                    : sharedPreferencesManager.getSavedPlaybackPositionMsWithFilenameFallback(key,
-                                            getFileName(videoUri));
-                            long durationMs = cachedDur != null ? cachedDur : getVideoDuration(videoUri);
-                            // Cache results for future bindings (synchronized because LinkedHashMap isn't
-                            // thread-safe)
-                            synchronized (durationCache) {
-                                if (durationMs > 0) {
-                                    durationCache.put(key, durationMs);
-                                    // schedule persist (debounced)
-                                    mainHandler.removeCallbacks(persistDurationTask);
-                                    mainHandler.postDelayed(persistDurationTask, 2000);
+                    progressBg.setVisibility(View.VISIBLE);
+                    progressFill.setVisibility(View.GONE);
+                    final String key = videoUri.toString();
+                    // Try caches first
+                    Long cachedSaved = savedPositionCache.get(key);
+                    Long cachedDur = durationCache.get(key);
+                    if (cachedSaved != null && cachedDur != null) {
+                        applyProgressToView(progressBg, progressFill, cachedSaved, cachedDur);
+                    } else {
+                        // Submit one background task to compute missing values
+                        executorService.execute(() -> {
+                            try {
+                                long savedMs = cachedSaved != null ? cachedSaved
+                                        : sharedPreferencesManager.getSavedPlaybackPositionMsWithFilenameFallback(key,
+                                                getFileName(videoUri));
+                                long durationMs = cachedDur != null ? cachedDur : getVideoDuration(videoUri);
+                                // Cache results for future bindings (synchronized because LinkedHashMap isn't
+                                // thread-safe)
+                                synchronized (durationCache) {
+                                    if (durationMs > 0) {
+                                        durationCache.put(key, durationMs);
+                                        // schedule persist (debounced)
+                                        mainHandler.removeCallbacks(persistDurationTask);
+                                        mainHandler.postDelayed(persistDurationTask, 2000);
+                                    }
                                 }
+                                synchronized (savedPositionCache) {
+                                    if (savedMs > 0)
+                                        savedPositionCache.put(key, savedMs);
+                                }
+                                final long fSaved = savedMs;
+                                final long fDur = durationMs;
+                                mainHandler.post(() -> applyProgressToView(progressBg, progressFill, fSaved, fDur));
+                            } catch (Exception e) {
+                                Log.w(TAG, "Error computing thumbnail progress", e);
+                                mainHandler.post(() -> progressFill.setVisibility(View.GONE));
                             }
-                            synchronized (savedPositionCache) {
-                                if (savedMs > 0)
-                                    savedPositionCache.put(key, savedMs);
-                            }
-                            final long fSaved = savedMs;
-                            final long fDur = durationMs;
-                            mainHandler.post(() -> applyProgressToView(progressBg, progressFill, fSaved, fDur));
-                        } catch (Exception e) {
-                            Log.w(TAG, "Error computing thumbnail progress", e);
-                            mainHandler.post(() -> progressFill.setVisibility(View.GONE));
-                        }
-                    });
+                        });
+                    }
                 }
             }
         } catch (Exception ignored) {
@@ -456,6 +467,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.textViewStatusBadge != null && context != null) {
             if (isProcessing) {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide all badges during processing
+            } else if (isImage) {
+                holder.textViewStatusBadge.setText(context.getString(R.string.media_type_photo).toUpperCase(Locale.US));
+                holder.textViewStatusBadge
+                        .setBackground(ContextCompat.getDrawable(context, R.drawable.badge_bg_gray));
+                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
+                holder.textViewStatusBadge.setVisibility(View.VISIBLE);
             } else if (showNewBadge) {
                 // Show NEW badge
                 holder.textViewStatusBadge.setText("NEW");

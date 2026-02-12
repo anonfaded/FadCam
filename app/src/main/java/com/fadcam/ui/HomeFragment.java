@@ -209,6 +209,7 @@ public class HomeFragment extends BaseFragment {
 
     private View cardPreview;
     private TextView btnFullscreenPreview;
+    private TextView btnCaptureShotPreview;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon
 
@@ -8159,7 +8160,9 @@ public class HomeFragment extends BaseFragment {
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         cardPreview = view.findViewById(R.id.cardPreview); // Assuming R.id.cardPreview exists
         btnFullscreenPreview = view.findViewById(R.id.btnFullscreenPreview);
+        btnCaptureShotPreview = view.findViewById(R.id.btnCaptureShotPreview);
         setupFullscreenButton();
+        setupCaptureShotButton();
         vibrator = (Vibrator) requireActivity().getSystemService(
             Context.VIBRATOR_SERVICE
         );
@@ -8238,6 +8241,24 @@ public class HomeFragment extends BaseFragment {
         });
     }
 
+    private void setupCaptureShotButton() {
+        if (btnCaptureShotPreview == null) return;
+        btnCaptureShotPreview.setOnClickListener(v -> captureShotFromCurrentPreview());
+    }
+
+    private void captureShotFromCurrentPreview() {
+        if (!isRecordingOrPaused()) {
+            Toast.makeText(requireContext(), R.string.fullscreen_preview_not_recording, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(
+                requireContext(),
+                isDualRecordingActive ? DualCameraRecordingService.class : RecordingService.class
+        );
+        intent.setAction(Constants.INTENT_ACTION_CAPTURE_PHOTO);
+        requireContext().startService(intent);
+    }
+
     /**
      * Activity result launcher for returning from fullscreen preview.
      * Re-sends the HomeFragment TextureView surface to the recording service.
@@ -8275,6 +8296,9 @@ public class HomeFragment extends BaseFragment {
         if (btnFullscreenPreview == null) return;
         boolean show = isPreviewEnabled && isRecordingOrPaused();
         btnFullscreenPreview.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (btnCaptureShotPreview != null) {
+            btnCaptureShotPreview.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
     }
 
     private boolean isRecordingOrPaused() {

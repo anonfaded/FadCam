@@ -41,6 +41,7 @@ import com.fadcam.dualcam.DualCameraConfig;
 import com.fadcam.dualcam.DualCameraState;
 import com.fadcam.opengl.GLRecordingPipeline;
 import com.fadcam.opengl.WatermarkInfoProvider;
+import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
 
 import java.io.File;
@@ -239,6 +240,10 @@ public class DualCameraRecordingService extends Service {
 
             case Constants.INTENT_ACTION_SET_ZOOM_RATIO:
                 handleSetZoomRatio(intent);
+                break;
+
+            case Constants.INTENT_ACTION_CAPTURE_PHOTO:
+                handleCapturePhoto();
                 break;
 
             default:
@@ -595,6 +600,40 @@ public class DualCameraRecordingService extends Service {
         } catch (CameraAccessException e) {
             Log.e(TAG, "Tap-to-focus failed", e);
         }
+    }
+
+    private void handleCapturePhoto() {
+        if (recordingPipeline == null || (state != DualCameraState.RECORDING && state != DualCameraState.PAUSED)) {
+            mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                    R.string.photo_capture_preview_unavailable, Toast.LENGTH_SHORT).show());
+            return;
+        }
+        recordingPipeline.capturePhotoFrame(bitmap -> {
+            if (bitmap == null) {
+                mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                        R.string.photo_capture_failed, Toast.LENGTH_SHORT).show());
+                return;
+            }
+            if (backgroundHandler == null) {
+                bitmap.recycle();
+                return;
+            }
+            backgroundHandler.post(() -> {
+                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(getApplicationContext(), bitmap);
+                bitmap.recycle();
+                if (savedUri != null) {
+                    Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                    recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
+                    recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, savedUri.toString());
+                    sendBroadcast(recordingCompleteIntent);
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                            R.string.photo_capture_saved, Toast.LENGTH_SHORT).show());
+                } else {
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                            R.string.photo_capture_failed, Toast.LENGTH_SHORT).show());
+                }
+            });
+        });
     }
 
     /**

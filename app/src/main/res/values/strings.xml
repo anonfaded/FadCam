@@ -194,6 +194,11 @@
     <string name="video_menu_upload_drive">Upload to  Google Drive</string>
     <string name="video_menu_open_with">Open with...</string>
     <string name="chooser_open_with">Open with</string>
+    <string name="image_viewer_title">Photo Viewer</string>
+    <string name="media_type_photo">Photo</string>
+    <string name="photo_capture_saved">Photo saved</string>
+    <string name="photo_capture_failed">Could not capture photo</string>
+    <string name="photo_capture_preview_unavailable">Preview is not available</string>
     <string name="video_menu_upload_faddrive">Upload to FadDrive</string>
     <string name="toast_no_youtube_app">YouTube app not found</string>
     <string name="toast_no_drive_app">Google Drive app not found</string>
@@ -204,12 +209,14 @@
     <string name="records_filter_screen">Screen</string>
     <string name="records_filter_faditor">Faditor</string>
     <string name="records_filter_stream">Stream</string>
+    <string name="records_filter_shot">Shot</string>
     <string name="records_filter_checklist_desc">Toggle selection mode</string>
     <string name="records_filter_helper_camera">Normal camera recordings</string>
     <string name="records_filter_helper_dual">Dual camera recordings</string>
     <string name="records_filter_helper_screen">Screen recordings (FadRec)</string>
     <string name="records_filter_helper_faditor">Edited/Exported videos (Faditor)</string>
     <string name="records_filter_helper_stream">Saved stream recordings</string>
+    <string name="records_filter_helper_shot">Captured photos (FadShot)</string>
     <string name="records_location_format">Location: %1$s/%2$s</string>
     <string name="records_batch_select_all">Select all</string>
     <string name="records_batch_deselect_all">Deselect all</string>
@@ -488,6 +495,7 @@
     <string name="location_permission_title">Location Permission</string>
     <string name="location_permission_description">This app needs location permission to add location data to videos. Please grant the permission.</string>
     <string name="location_permission_denied">Location permission denied. Location features will be disabled.</string>
+    <string name="camera_permission_denied">Camera permission denied.</string>
     <string name="up_to_date">Up To Date</string>
     <string name="up_to_date_description">You are already using the latest version.</string>
     <string name="up_to_date_loading">Checking for updates…</string>
@@ -703,6 +711,7 @@
     <string name="shortcut_purpose_start">This shortcut starts recording with the back camera.</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
+    <string name="shortcut_purpose_photo">This shortcut captures a photo and saves it to FadShot.</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Customize</string>
     <string name="widget_customize_action_subtitle">Time, date, theme options</string>
@@ -723,6 +732,9 @@
     <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
     <string name="start_recording">Start</string>
     <string name="stop_recording">Stop</string>
+    <string name="shortcut_take_photo">FadShot</string>
+    <string name="shortcuts_video_category">Video Recording</string>
+    <string name="shortcuts_picture_category">Picture</string>
     <string name="warning_temp_file_detail">
         <![CDATA[
         <b>IMPORTANT NOTE:</b><br/>

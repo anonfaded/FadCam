@@ -80,6 +80,10 @@ public class ShortcutsSettingsFragment extends Fragment {
                 getString(R.string.torch_shortcut_short_label),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
+        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.video_camera,
+                getString(R.string.shortcut_take_photo),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity"),
+                ShortcutsManager.ID_SHOT);
 
         // Unify ripple/click: handle click on parent container only
         View widgetCell = view.findViewById(R.id.cell_widget_clock);
@@ -105,6 +109,8 @@ public class ShortcutsSettingsFragment extends Fragment {
             subtitle = root.findViewById(R.id.subtitle_stop);
         } else if (rowId == R.id.cell_torch) {
             subtitle = root.findViewById(R.id.subtitle_torch);
+        } else if (rowId == R.id.cell_photo) {
+            subtitle = root.findViewById(R.id.subtitle_photo);
         }
         // Apply custom label/icon if present
         ShortcutsPreferences sp = new ShortcutsPreferences(requireContext());
@@ -123,6 +129,8 @@ public class ShortcutsSettingsFragment extends Fragment {
                 subtitle.setBackgroundResource(R.drawable.badge_red);
             } else if (ShortcutsManager.ID_TORCH.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_amber);
+            } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_green);
             }
         }
         if (icon != null)
@@ -143,7 +151,9 @@ public class ShortcutsSettingsFragment extends Fragment {
             return R.id.title_start;
         if (rowId == R.id.cell_stop)
             return R.id.title_stop;
-        return R.id.title_torch;
+        if (rowId == R.id.cell_torch)
+            return R.id.title_torch;
+        return R.id.title_photo;
     }
 
     // Removed codename display; using concise badges instead.
@@ -335,6 +345,8 @@ public class ShortcutsSettingsFragment extends Fragment {
             return getString(R.string.shortcut_purpose_start);
         } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_stop);
+        } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_photo);
         } else {
             return getString(R.string.shortcut_purpose_torch);
         }
@@ -359,6 +371,11 @@ public class ShortcutsSettingsFragment extends Fragment {
                 getString(R.string.torch_shortcut_short_label),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
+        // Photo
+        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.video_camera,
+                getString(R.string.shortcut_take_photo),
+                new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity"),
+                ShortcutsManager.ID_SHOT);
     }
 
     private void loadShortcutIconInto(ImageView imageView, String shortcutId, int defaultIconRes) {

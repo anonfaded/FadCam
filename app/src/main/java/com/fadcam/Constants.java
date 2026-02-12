@@ -286,7 +286,10 @@ public abstract class Constants {
     public static final String RECORDING_SUBDIR_SCREEN = "Screen";
     public static final String RECORDING_SUBDIR_FADITOR = "Faditor";
     public static final String RECORDING_SUBDIR_STREAM = "Stream";
+    public static final String RECORDING_SUBDIR_SHOT = "FadShot";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
+    public static final String RECORDING_IMAGE_EXTENSION = "jpg";
+    public static final String RECORDING_FILE_PREFIX_FADSHOT = "FadShot_";
     public static final String RECORDING_FILE_PREFIX_FADITOR_STANDARD =
         "Faditor_Std_";
     public static final String RECORDING_FILE_PREFIX_FADITOR_MERGE =
@@ -311,6 +314,8 @@ public abstract class Constants {
 
     public static final String INTENT_ACTION_TOGGLE_RECORDING_TORCH =
         "com.fadcam.TOGGLE_RECORDING_TORCH";
+    public static final String INTENT_ACTION_CAPTURE_PHOTO =
+        "com.fadcam.CAPTURE_PHOTO";
     // Broadcast action sent by RecordingService when video processing is done
     public static final String ACTION_RECORDING_COMPLETE =
         "com.fadcam.RECORDING_COMPLETE";

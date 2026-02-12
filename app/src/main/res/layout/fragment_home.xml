@@ -245,6 +245,25 @@
             <!-- Fullscreen preview button (bottom-right corner overlay) -->
             <TextView android:id="@+id/btnFullscreenPreview" android:layout_width="36dp" android:layout_height="36dp" android:layout_gravity="bottom|end" android:layout_margin="8dp" android:background="@drawable/fullscreen_icon_bg" android:clickable="true" android:focusable="true" android:fontFamily="@font/materialicons" android:gravity="center" android:text="fullscreen" android:textColor="@android:color/white" android:textSize="20sp" android:visibility="gone" />
 
+            <!-- Quick shot button (next to fullscreen) -->
+            <TextView
+                android:id="@+id/btnCaptureShotPreview"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="52dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/fullscreen_icon_bg"
+                android:clickable="true"
+                android:contentDescription="@string/shortcut_take_photo"
+                android:focusable="true"
+                android:fontFamily="@font/materialicons"
+                android:gravity="center"
+                android:text="photo_camera"
+                android:textColor="@android:color/white"
+                android:textSize="19sp"
+                android:visibility="gone" />
+
         </FrameLayout>
     </androidx.cardview.widget.CardView>
 

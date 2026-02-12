@@ -54,6 +54,7 @@ import com.fadcam.Utils;
 import com.fadcam.VideoCodec;
 import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.GeotagHelper;
+import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
 
 import java.io.File;
@@ -813,6 +814,9 @@ public class RecordingService extends Service {
                 applyZoomRatio(zoomRatio);
             }
             return START_STICKY;
+        } else if (Constants.INTENT_ACTION_CAPTURE_PHOTO.equals(action)) {
+            capturePhotoFromRecording();
+            return START_STICKY;
         }
 
         else if (Constants.INTENT_ACTION_REINITIALIZE_LOCATION.equals(action)) {
@@ -860,6 +864,40 @@ public class RecordingService extends Service {
                 stopSelf();
             return START_NOT_STICKY;
         }
+    }
+
+    private void capturePhotoFromRecording() {
+        if (glRecordingPipeline == null || (recordingState != RecordingState.IN_PROGRESS && recordingState != RecordingState.PAUSED)) {
+            mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                    R.string.photo_capture_preview_unavailable, Toast.LENGTH_SHORT).show());
+            return;
+        }
+        glRecordingPipeline.capturePhotoFrame(bitmap -> {
+            if (bitmap == null) {
+                mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                        R.string.photo_capture_failed, Toast.LENGTH_SHORT).show());
+                return;
+            }
+            if (backgroundHandler == null) {
+                bitmap.recycle();
+                return;
+            }
+            backgroundHandler.post(() -> {
+                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(getApplicationContext(), bitmap);
+                bitmap.recycle();
+                if (savedUri != null) {
+                    Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                    updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
+                    updateIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, savedUri.toString());
+                    sendBroadcast(updateIntent);
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                            R.string.photo_capture_saved, Toast.LENGTH_SHORT).show());
+                } else {
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                            R.string.photo_capture_failed, Toast.LENGTH_SHORT).show());
+                }
+            });
+        });
     }
 
     @Nullable

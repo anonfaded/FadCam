@@ -22,6 +22,7 @@ public final class RecordingStoragePaths {
         SCREEN,
         FADITOR,
         STREAM,
+        SHOT,
         UNKNOWN
     }
 
@@ -41,6 +42,8 @@ public final class RecordingStoragePaths {
                 return Constants.RECORDING_SUBDIR_FADITOR;
             case STREAM:
                 return Constants.RECORDING_SUBDIR_STREAM;
+            case SHOT:
+                return Constants.RECORDING_SUBDIR_SHOT;
             case UNKNOWN:
             default:
                 return "";
@@ -55,6 +58,7 @@ public final class RecordingStoragePaths {
         if (Constants.RECORDING_SUBDIR_SCREEN.equals(folderName)) return Category.SCREEN;
         if (Constants.RECORDING_SUBDIR_FADITOR.equals(folderName)) return Category.FADITOR;
         if (Constants.RECORDING_SUBDIR_STREAM.equals(folderName)) return Category.STREAM;
+        if (Constants.RECORDING_SUBDIR_SHOT.equals(folderName)) return Category.SHOT;
         return Category.UNKNOWN;
     }
 

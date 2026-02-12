@@ -24,6 +24,7 @@ public class ShortcutsManager {
     public static final String ID_TORCH = "torch_toggle";
     public static final String ID_START = "record_start";
     public static final String ID_STOP = "record_stop";
+    public static final String ID_SHOT = "capture_photo";
 
     private final Context ctx;
     private final ShortcutsPreferences prefs;
@@ -207,6 +208,18 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.stop_recording)
             )
         );
+        // Photo
+        list.add(
+            buildShortcut(
+                ID_SHOT,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.PhotoCaptureActivity"
+                ),
+                com.fadcam.R.drawable.video_camera,
+                ctx.getString(com.fadcam.R.string.shortcut_take_photo)
+            )
+        );
         ShortcutManagerCompat.setDynamicShortcuts(ctx, list);
     }
 
@@ -266,6 +279,18 @@ public class ShortcutsManager {
                         ),
                         com.fadcam.R.drawable.stop_shortcut,
                         ctx.getString(com.fadcam.R.string.stop_recording)
+                    )
+                );
+
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_SHOT,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.PhotoCaptureActivity"
+                        ),
+                        com.fadcam.R.drawable.video_camera,
+                        ctx.getString(com.fadcam.R.string.shortcut_take_photo)
                     )
                 );
 

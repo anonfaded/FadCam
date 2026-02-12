@@ -148,6 +148,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_stream" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_filter_shot"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_shot" />
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
 

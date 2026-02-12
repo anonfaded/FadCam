@@ -1831,6 +1831,40 @@ public class GLWatermarkRenderer {
         this.encoderHeight = height;
     }
 
+    @Nullable
+    public Bitmap captureEncoderFrameBitmap() {
+        synchronized (renderLock) {
+            if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY || eglSurface == EGL14.EGL_NO_SURFACE) {
+                return null;
+            }
+            if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                return null;
+            }
+            int width = encoderWidth > 0 ? encoderWidth : videoWidth;
+            int height = encoderHeight > 0 ? encoderHeight : videoHeight;
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+
+            java.nio.IntBuffer ib = java.nio.IntBuffer.allocate(width * height);
+            GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, ib);
+
+            int[] src = ib.array();
+            int[] dst = new int[src.length];
+            for (int y = 0; y < height; y++) {
+                int srcOffset = y * width;
+                int dstOffset = (height - y - 1) * width;
+                for (int x = 0; x < width; x++) {
+                    int p = src[srcOffset + x];
+                    int r = (p >> 16) & 0xff;
+                    int b = p & 0xff;
+                    dst[dstOffset + x] = (p & 0xff00ff00) | (b << 16) | r;
+                }
+            }
+            return Bitmap.createBitmap(dst, width, height, Bitmap.Config.ARGB_8888);
+        }
+    }
+
     /**
      * Sets the exposure compensation value for the GL shader.
      * This method is thread-safe and can be called from any thread.

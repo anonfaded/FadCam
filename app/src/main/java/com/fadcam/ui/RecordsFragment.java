@@ -333,6 +333,7 @@ public class RecordsFragment extends BaseFragment implements
     private Chip chipFilterScreen;
     private Chip chipFilterFaditor;
     private Chip chipFilterStream;
+    private Chip chipFilterShot;
     private ChipGroup chipGroupRecordsFilter;
     private TextView filterHelperText;
     private TextView filterChecklistButton;
@@ -846,6 +847,7 @@ public class RecordsFragment extends BaseFragment implements
         chipFilterScreen = view.findViewById(R.id.chip_filter_screen);
         chipFilterFaditor = view.findViewById(R.id.chip_filter_faditor);
         chipFilterStream = view.findViewById(R.id.chip_filter_stream);
+        chipFilterShot = view.findViewById(R.id.chip_filter_shot);
         chipGroupRecordsFilter = view.findViewById(R.id.chip_group_records_filter);
         filterHelperText = view.findViewById(R.id.filter_helper_text);
         filterChecklistButton = view.findViewById(R.id.btn_filter_checklist);
@@ -1543,6 +1545,7 @@ public class RecordsFragment extends BaseFragment implements
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_SCREEN), VideoItem.Category.SCREEN);
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_FADITOR), VideoItem.Category.FADITOR);
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_STREAM), VideoItem.Category.STREAM);
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_SHOT), VideoItem.Category.SHOT);
 
         // Backward compatibility: include legacy root-level files under FadCam.
         scanLegacyRootInternal(items, baseDir);
@@ -1568,7 +1571,8 @@ public class RecordsFragment extends BaseFragment implements
                 continue;
             }
             String name = file.getName();
-            if (!isSupportedVideoFile(name) || name.startsWith("temp_")) {
+            VideoItem.MediaType mediaType = inferMediaTypeFromName(name);
+            if (mediaType == null || name.startsWith("temp_")) {
                 continue;
             }
             long lastModifiedMeta = file.lastModified();
@@ -1576,7 +1580,13 @@ public class RecordsFragment extends BaseFragment implements
             long finalTimestamp = lastModifiedMeta > 0
                     ? lastModifiedMeta
                     : (timestampFromFile > 0 ? timestampFromFile : System.currentTimeMillis());
-            VideoItem newItem = new VideoItem(Uri.fromFile(file), name, file.length(), finalTimestamp, category);
+            VideoItem newItem = new VideoItem(
+                    Uri.fromFile(file),
+                    name,
+                    file.length(),
+                    finalTimestamp,
+                    category,
+                    mediaType);
             newItem.isTemporary = false;
             newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
             out.add(newItem);
@@ -1593,7 +1603,8 @@ public class RecordsFragment extends BaseFragment implements
                 continue;
             }
             String name = file.getName();
-            if (!isSupportedVideoFile(name) || name.startsWith("temp_")) {
+            VideoItem.MediaType mediaType = inferMediaTypeFromName(name);
+            if (mediaType == null || name.startsWith("temp_")) {
                 continue;
             }
             VideoItem.Category inferred = inferCategoryFromLegacyName(name);
@@ -1602,7 +1613,13 @@ public class RecordsFragment extends BaseFragment implements
             long finalTimestamp = lastModifiedMeta > 0
                     ? lastModifiedMeta
                     : (timestampFromFile > 0 ? timestampFromFile : System.currentTimeMillis());
-            VideoItem item = new VideoItem(Uri.fromFile(file), name, file.length(), finalTimestamp, inferred);
+            VideoItem item = new VideoItem(
+                    Uri.fromFile(file),
+                    name,
+                    file.length(),
+                    finalTimestamp,
+                    inferred,
+                    mediaType);
             item.isTemporary = false;
             item.isNew = Utils.isVideoConsideredNew(finalTimestamp);
             out.add(item);
@@ -1637,6 +1654,7 @@ public class RecordsFragment extends BaseFragment implements
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_SCREEN, VideoItem.Category.SCREEN);
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_FADITOR, VideoItem.Category.FADITOR);
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_STREAM, VideoItem.Category.STREAM);
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_SHOT, VideoItem.Category.SHOT);
 
         // Backward compatibility: include root files and infer category by filename prefix.
         DocumentFile[] rootFiles = targetDir.listFiles();
@@ -1655,7 +1673,7 @@ public class RecordsFragment extends BaseFragment implements
             int endIndex = Math.min(i + CHUNK_SIZE, totalFiles);
             for (int j = i; j < endIndex; j++) {
                 SafCandidate candidate = bucketedFiles.get(j);
-                addSafVideoItem(safVideoItems, candidate.file, candidate.category);
+                addSafMediaItem(safVideoItems, candidate.file, candidate.category);
             }
             if (callback != null && !safVideoItems.isEmpty()) {
                 int progress = totalFiles == 0 ? 100 : Math.round(((float) endIndex / totalFiles) * 100);
@@ -1735,8 +1753,8 @@ public class RecordsFragment extends BaseFragment implements
             Log.d(TAG, "Fragment onVideoClick: Toggling selection for " + videoItem.displayName);
             toggleSelection(videoItem.uri); // Toggle the item
         } else {
-            // Mode INACTIVE: Click plays video
-            Log.d(TAG, "Fragment onVideoClick: Playing video " + videoItem.displayName);
+            // Mode INACTIVE: Click opens media
+            Log.d(TAG, "Fragment onVideoClick: Opening media " + videoItem.displayName);
             String uriString = videoItem.uri.toString();
             sharedPreferencesManager.addOpenedVideoUri(uriString);
             if (recordsAdapter != null) {
@@ -1744,14 +1762,16 @@ public class RecordsFragment extends BaseFragment implements
                 if (pos != -1)
                     recordsAdapter.notifyItemChanged(pos);
             }
-            Intent intent = new Intent(getActivity(), VideoPlayerActivity.class);
+            Intent intent = videoItem.mediaType == VideoItem.MediaType.IMAGE
+                    ? new Intent(getActivity(), ImageViewerActivity.class)
+                    : new Intent(getActivity(), VideoPlayerActivity.class);
             intent.setData(videoItem.uri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             try {
                 startActivity(intent);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start player", e);
-                Toast.makeText(getContext(), "Error opening video", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Error opening media", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -2040,6 +2060,9 @@ public class RecordsFragment extends BaseFragment implements
         if (chipFilterStream != null) {
             chipFilterStream.setOnClickListener(v -> setActiveFilter(VideoItem.Category.STREAM));
         }
+        if (chipFilterShot != null) {
+            chipFilterShot.setOnClickListener(v -> setActiveFilter(VideoItem.Category.SHOT));
+        }
         if (filterChecklistButton != null) {
             filterChecklistButton.setOnClickListener(v -> {
                 if (isInSelectionMode) {
@@ -2115,6 +2138,7 @@ public class RecordsFragment extends BaseFragment implements
         if (chipFilterScreen != null) chipFilterScreen.setChecked(activeFilter == VideoItem.Category.SCREEN);
         if (chipFilterFaditor != null) chipFilterFaditor.setChecked(activeFilter == VideoItem.Category.FADITOR);
         if (chipFilterStream != null) chipFilterStream.setChecked(activeFilter == VideoItem.Category.STREAM);
+        if (chipFilterShot != null) chipFilterShot.setChecked(activeFilter == VideoItem.Category.SHOT);
     }
 
     private void styleFilterChips() {
@@ -2124,12 +2148,14 @@ public class RecordsFragment extends BaseFragment implements
         applyChipIcon(chipFilterScreen, R.drawable.screen_recorder);
         applyChipIcon(chipFilterFaditor, R.drawable.ic_edit_cut);
         applyChipIcon(chipFilterStream, R.drawable.ic_wifi);
+        applyChipIcon(chipFilterShot, R.drawable.ic_camera);
         styleFilterChip(chipFilterAll);
         styleFilterChip(chipFilterCamera);
         styleFilterChip(chipFilterDual);
         styleFilterChip(chipFilterScreen);
         styleFilterChip(chipFilterFaditor);
         styleFilterChip(chipFilterStream);
+        styleFilterChip(chipFilterShot);
     }
 
     private void applyChipIcon(@Nullable Chip chip, int drawableRes) {
@@ -2184,6 +2210,7 @@ public class RecordsFragment extends BaseFragment implements
         int screen = getCategoryCount(VideoItem.Category.SCREEN);
         int faditor = getCategoryCount(VideoItem.Category.FADITOR);
         int stream = getCategoryCount(VideoItem.Category.STREAM);
+        int shot = getCategoryCount(VideoItem.Category.SHOT);
 
         setChipLabelWithCount(chipFilterAll, R.string.records_filter_all, all);
         setChipLabelWithCount(chipFilterCamera, R.string.records_filter_camera, camera);
@@ -2191,8 +2218,9 @@ public class RecordsFragment extends BaseFragment implements
         setChipLabelWithCount(chipFilterScreen, R.string.records_filter_screen, screen);
         setChipLabelWithCount(chipFilterFaditor, R.string.records_filter_faditor, faditor);
         setChipLabelWithCount(chipFilterStream, R.string.records_filter_stream, stream);
+        setChipLabelWithCount(chipFilterShot, R.string.records_filter_shot, shot);
 
-        reorderFilterChipsByCount(camera, dual, screen, faditor, stream);
+        reorderFilterChipsByCount(camera, dual, screen, faditor, stream, shot);
     }
 
     private void setChipLabelWithCount(@Nullable Chip chip, int baseLabelRes, int count) {
@@ -2200,7 +2228,7 @@ public class RecordsFragment extends BaseFragment implements
         chip.setText(getString(baseLabelRes) + " " + count);
     }
 
-    private void reorderFilterChipsByCount(int camera, int dual, int screen, int faditor, int stream) {
+    private void reorderFilterChipsByCount(int camera, int dual, int screen, int faditor, int stream, int shot) {
         if (chipGroupRecordsFilter == null || chipFilterAll == null) return;
         List<ChipOrderItem> ordered = new ArrayList<>();
         ordered.add(new ChipOrderItem(chipFilterCamera, camera));
@@ -2208,6 +2236,7 @@ public class RecordsFragment extends BaseFragment implements
         ordered.add(new ChipOrderItem(chipFilterScreen, screen));
         ordered.add(new ChipOrderItem(chipFilterFaditor, faditor));
         ordered.add(new ChipOrderItem(chipFilterStream, stream));
+        ordered.add(new ChipOrderItem(chipFilterShot, shot));
         Collections.sort(ordered, (a, b) -> Integer.compare(b.count, a.count));
 
         chipGroupRecordsFilter.removeAllViews();
@@ -2232,6 +2261,8 @@ public class RecordsFragment extends BaseFragment implements
                 return R.id.chip_filter_faditor;
             case STREAM:
                 return R.id.chip_filter_stream;
+            case SHOT:
+                return R.id.chip_filter_shot;
             case UNKNOWN:
             case ALL:
             default:
@@ -2259,7 +2290,13 @@ public class RecordsFragment extends BaseFragment implements
             if (category == null || category == VideoItem.Category.UNKNOWN) {
                 category = inferCategoryForVideoItem(item);
             }
-            VideoItem copy = new VideoItem(item.uri, item.displayName, item.size, item.lastModified, category);
+            VideoItem copy = new VideoItem(
+                    item.uri,
+                    item.displayName,
+                    item.size,
+                    item.lastModified,
+                    category,
+                    item.mediaType);
             copy.isTemporary = item.isTemporary;
             copy.isNew = item.isNew;
             copy.isProcessingUri = item.isProcessingUri;
@@ -2291,6 +2328,10 @@ public class RecordsFragment extends BaseFragment implements
                 || uri.contains("%2F" + Constants.RECORDING_SUBDIR_STREAM + "%2F")) {
             return VideoItem.Category.STREAM;
         }
+        if (uri.contains("/" + Constants.RECORDING_SUBDIR_SHOT + "/")
+                || uri.contains("%2F" + Constants.RECORDING_SUBDIR_SHOT + "%2F")) {
+            return VideoItem.Category.SHOT;
+        }
         return inferCategoryFromLegacyName(item.displayName);
     }
 
@@ -2317,6 +2358,9 @@ public class RecordsFragment extends BaseFragment implements
                 break;
             case STREAM:
                 textRes = R.string.records_filter_helper_stream;
+                break;
+            case SHOT:
+                textRes = R.string.records_filter_helper_shot;
                 break;
             case UNKNOWN:
             case ALL:
@@ -2363,6 +2407,8 @@ public class RecordsFragment extends BaseFragment implements
                 return Constants.RECORDING_SUBDIR_FADITOR;
             case STREAM:
                 return Constants.RECORDING_SUBDIR_STREAM;
+            case SHOT:
+                return Constants.RECORDING_SUBDIR_SHOT;
             case ALL:
             case UNKNOWN:
             default:
@@ -3816,10 +3862,21 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private boolean isSupportedVideoFile(@Nullable String fileName) {
-        if (fileName == null) return false;
+        return inferMediaTypeFromName(fileName) == VideoItem.MediaType.VIDEO;
+    }
+
+    @Nullable
+    private VideoItem.MediaType inferMediaTypeFromName(@Nullable String fileName) {
+        if (fileName == null) return null;
         String lower = fileName.toLowerCase();
         String expectedExt = "." + Constants.RECORDING_FILE_EXTENSION.toLowerCase();
-        return lower.endsWith(expectedExt);
+        if (lower.endsWith(expectedExt)) {
+            return VideoItem.MediaType.VIDEO;
+        }
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")) {
+            return VideoItem.MediaType.IMAGE;
+        }
+        return null;
     }
 
     private VideoItem.Category inferCategoryFromLegacyName(@Nullable String fileName) {
@@ -3829,6 +3886,7 @@ public class RecordsFragment extends BaseFragment implements
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADREC)) return VideoItem.Category.SCREEN;
         if (fileName.startsWith("Faditor_")) return VideoItem.Category.FADITOR;
         if (fileName.startsWith("Stream_")) return VideoItem.Category.STREAM;
+        if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADSHOT)) return VideoItem.Category.SHOT;
         return VideoItem.Category.UNKNOWN;
     }
 
@@ -3853,22 +3911,24 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    private void addSafVideoItem(
+    private void addSafMediaItem(
             @NonNull List<VideoItem> out,
             @NonNull DocumentFile docFile,
             @NonNull VideoItem.Category explicitCategory
     ) {
         String fileName = docFile.getName();
-        if (!isSupportedVideoFile(fileName)) {
+        VideoItem.MediaType mediaType = inferMediaTypeFromName(fileName);
+        if (mediaType == null) {
             return;
         }
-        if (fileName != null && fileName.startsWith("temp_")) {
+        if (fileName != null && fileName.startsWith("temp_") && mediaType == VideoItem.MediaType.VIDEO) {
             VideoItem tempVideoItem = new VideoItem(
                     docFile.getUri(),
                     fileName,
                     docFile.length(),
                     docFile.lastModified(),
-                    VideoItem.Category.UNKNOWN);
+                    VideoItem.Category.UNKNOWN,
+                    VideoItem.MediaType.VIDEO);
             tempVideoItem.isTemporary = true;
             tempVideoItem.isNew = false;
             if (currentlyProcessingUris.contains(docFile.getUri())) {
@@ -3887,7 +3947,8 @@ public class RecordsFragment extends BaseFragment implements
                 fileName,
                 docFile.length(),
                 lastModified,
-                category);
+                category,
+                mediaType);
         item.isTemporary = false;
         item.isNew = Utils.isVideoConsideredNew(lastModified);
         out.add(item);

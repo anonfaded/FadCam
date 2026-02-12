@@ -221,6 +221,29 @@ public class GLRecordingPipeline {
     private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> rendererActions = new java.util.concurrent.ConcurrentLinkedQueue<>();
     // scheduler-----------
 
+    public interface PhotoCaptureCallback {
+        void onCaptured(@Nullable android.graphics.Bitmap bitmap);
+    }
+
+    public void capturePhotoFrame(@Nullable PhotoCaptureCallback callback) {
+        if (handler == null || glRenderer == null || !isRecording) {
+            if (callback != null) callback.onCaptured(null);
+            return;
+        }
+        rendererActions.offer(() -> {
+            android.graphics.Bitmap bitmap = null;
+            try {
+                bitmap = glRenderer.captureEncoderFrameBitmap();
+            } catch (Exception e) {
+                Log.w(TAG, "capturePhotoFrame failed", e);
+            }
+            if (callback != null) {
+                callback.onCaptured(bitmap);
+            }
+        });
+        handler.post(renderRunnable);
+    }
+
     /**
      * Ensures periodic watermark updates are running.
      * Called on start/resume because the updater intentionally stops when paused.

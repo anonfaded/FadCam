@@ -84,6 +84,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private MaterialButton btnFullscreenTorch;
     private MaterialButton btnFullscreenCamSwitch;
     private MaterialButton btnFullscreenPauseResume;
+    private MaterialButton btnFullscreenCaptureShot;
     private MaterialButton btnTapFocusToggle;
 
     // Recording-tile views (from included layout)
@@ -182,6 +183,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupTorchButton();
         setupCamSwitchButton();
         setupPauseResumeButton();
+        setupCaptureShotButton();
         setupSystemInsets();
         registerTorchReceiver();
         registerRecordingStateReceiver();
@@ -267,7 +269,18 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         btnFullscreenTorch = findViewById(R.id.btnFullscreenTorch);
         btnFullscreenCamSwitch = findViewById(R.id.btnFullscreenCamSwitch);
         btnFullscreenPauseResume = findViewById(R.id.btnFullscreenPauseResume);
+        btnFullscreenCaptureShot = findViewById(R.id.btnFullscreenCaptureShot);
         btnTapFocusToggle = findViewById(R.id.btnTapFocusToggle);
+    }
+
+    private void setupCaptureShotButton() {
+        if (btnFullscreenCaptureShot == null) return;
+        btnFullscreenCaptureShot.setOnClickListener(v -> {
+            Intent intent = new Intent(this, getTargetServiceClass());
+            intent.setAction(Constants.INTENT_ACTION_CAPTURE_PHOTO);
+            startService(intent);
+            scheduleAutoHide();
+        });
     }
 
     private void setupTextureView() {
@@ -883,6 +896,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         controlsVisible = true;
         animateBar(topBar, true);
         animateBar(bottomBar, true);
+        animateBar(btnFullscreenCaptureShot, true);
     }
 
     private void hideControls() {
@@ -890,6 +904,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         autoHideHandler.removeCallbacks(autoHideRunnable);
         animateBar(topBar, false);
         animateBar(bottomBar, false);
+        animateBar(btnFullscreenCaptureShot, false);
     }
 
     private void scheduleAutoHide() {
