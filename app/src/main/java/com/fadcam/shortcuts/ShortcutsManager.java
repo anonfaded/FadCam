@@ -25,6 +25,7 @@ public class ShortcutsManager {
     public static final String ID_START = "record_start";
     public static final String ID_START_FRONT = "record_start_front";
     public static final String ID_START_CURRENT = "record_start_current";
+    public static final String ID_START_DUAL = "record_start_dual";
     public static final String ID_STOP = "record_stop";
     public static final String ID_SHOT = "capture_photo";
 

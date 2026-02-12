@@ -62,6 +62,22 @@
     </shortcut>
 
     <shortcut
+        android:id="@+id/record_start_dual"
+        android:enabled="true"
+        android:icon="@drawable/start_dual_shortcut"
+        android:shortcutShortLabel="@string/shortcut_start_dual"
+        android:shortcutLongLabel="@string/shortcut_start_dual">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.RecordingStartActivity"
+            android:targetPackage="com.fadcam">
+            <extra
+                android:name="shortcut_camera_mode"
+                android:value="dual" />
+        </intent>
+    </shortcut>
+
+    <shortcut
         android:id="@+id/record_stop"
         android:enabled="true"
         android:icon="@drawable/stop_shortcut"

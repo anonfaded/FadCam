@@ -6,6 +6,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+import androidx.core.content.ContextCompat;
+import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
 
 public class RecordingStartActivity extends Activity {
@@ -14,6 +16,7 @@ public class RecordingStartActivity extends Activity {
     public static final String CAMERA_MODE_BACK = "back";
     public static final String CAMERA_MODE_FRONT = "front";
     public static final String CAMERA_MODE_CURRENT = "current";
+    public static final String CAMERA_MODE_DUAL = "dual";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,16 +47,29 @@ public class RecordingStartActivity extends Activity {
                 sharedPreferencesManager.sharedPreferences.edit()
                         .putString(Constants.PREF_CAMERA_SELECTION, CameraType.BACK.name())
                         .apply();
+            } else if (CAMERA_MODE_DUAL.equals(mode)) {
+                sharedPreferencesManager.sharedPreferences.edit()
+                        .putString(Constants.PREF_CAMERA_SELECTION, CameraType.DUAL_PIP.name())
+                        .apply();
             }
 
-            // Use the same intent as the main app's start recording
-            Intent startIntent = new Intent(this, RecordingService.class);
-            startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(startIntent);
+            if (CAMERA_MODE_DUAL.equals(mode)) {
+                Intent startDualIntent = new Intent(this, DualCameraRecordingService.class);
+                startDualIntent.setAction(Constants.INTENT_ACTION_START_DUAL_RECORDING);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ContextCompat.startForegroundService(this, startDualIntent);
+                } else {
+                    startService(startDualIntent);
+                }
             } else {
-                startService(startIntent);
+                // Use the same intent as the main app's start recording
+                Intent startIntent = new Intent(this, RecordingService.class);
+                startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ContextCompat.startForegroundService(this, startIntent);
+                } else {
+                    startService(startIntent);
+                }
             }
 
         } catch (Exception e) {

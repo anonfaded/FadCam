@@ -40,6 +40,11 @@ ICONS = {
         "png": "flashlight_on_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
         "color": (241, 196, 15),  # orange/yellow
         "label": "TORCH"
+    },
+    "start_dual_shortcut": {
+        "png": "switch_camera_110dp_E3E3E3_FILL0_wght400_GRAD0_opsz48.png",
+        "color": (0, 188, 212),  # cyan
+        "label": "DUAL"
     }
 }
 
@@ -109,6 +114,6 @@ print()
 
 # Verify
 import subprocess
-subprocess.run(['ls', '-lh', 'fadshot_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png'])
+subprocess.run(['ls', '-lh', 'fadshot_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png', 'start_dual_shortcut.png'])
 print()
-subprocess.run(['file', 'fadshot_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png'])
+subprocess.run(['file', 'fadshot_shortcut.png', 'start_back_shortcut.png', 'start_front_shortcut.png', 'start_current_shortcut.png', 'stop_shortcut.png', 'flashlight_shortcut.png', 'start_dual_shortcut.png'])

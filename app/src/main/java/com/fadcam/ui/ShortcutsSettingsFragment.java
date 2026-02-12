@@ -89,6 +89,13 @@ public class ShortcutsSettingsFragment extends Fragment {
                         .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
                                 com.fadcam.RecordingStartActivity.CAMERA_MODE_CURRENT),
                 ShortcutsManager.ID_START_CURRENT);
+        wireShortcutRow(view, R.id.cell_start_dual, R.id.icon_start_dual, R.drawable.start_dual_shortcut,
+                getString(R.string.shortcut_start_dual),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_DUAL),
+                ShortcutsManager.ID_START_DUAL);
         wireShortcutRow(view, R.id.cell_stop, R.id.icon_stop, R.drawable.stop_shortcut,
                 getString(R.string.stop_recording),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.RecordingStopActivity"),
@@ -126,6 +133,8 @@ public class ShortcutsSettingsFragment extends Fragment {
             subtitle = root.findViewById(R.id.subtitle_start_front);
         } else if (rowId == R.id.cell_start_current) {
             subtitle = root.findViewById(R.id.subtitle_start_current);
+        } else if (rowId == R.id.cell_start_dual) {
+            subtitle = root.findViewById(R.id.subtitle_start_dual);
         } else if (rowId == R.id.cell_stop) {
             subtitle = root.findViewById(R.id.subtitle_stop);
         } else if (rowId == R.id.cell_torch) {
@@ -150,6 +159,8 @@ public class ShortcutsSettingsFragment extends Fragment {
                 subtitle.setBackgroundResource(R.drawable.badge_amber);
             } else if (ShortcutsManager.ID_START_CURRENT.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_green);
+            } else if (ShortcutsManager.ID_START_DUAL.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_amber);
             } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_red);
             } else if (ShortcutsManager.ID_TORCH.equals(shortcutId)) {
@@ -178,6 +189,8 @@ public class ShortcutsSettingsFragment extends Fragment {
             return R.id.title_start_front;
         if (rowId == R.id.cell_start_current)
             return R.id.title_start_current;
+        if (rowId == R.id.cell_start_dual)
+            return R.id.title_start_dual;
         if (rowId == R.id.cell_stop)
             return R.id.title_stop;
         if (rowId == R.id.cell_torch)
@@ -376,6 +389,8 @@ public class ShortcutsSettingsFragment extends Fragment {
             return getString(R.string.shortcut_purpose_start_front);
         } else if (ShortcutsManager.ID_START_CURRENT.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_start_current);
+        } else if (ShortcutsManager.ID_START_DUAL.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_start_dual);
         } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_stop);
         } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
@@ -411,6 +426,13 @@ public class ShortcutsSettingsFragment extends Fragment {
                         .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
                                 com.fadcam.RecordingStartActivity.CAMERA_MODE_CURRENT),
                 ShortcutsManager.ID_START_CURRENT);
+        wireShortcutRow(view, R.id.cell_start_dual, R.id.icon_start_dual, R.drawable.start_dual_shortcut,
+                getString(R.string.shortcut_start_dual),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingStartActivity")
+                        .putExtra(com.fadcam.RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE,
+                                com.fadcam.RecordingStartActivity.CAMERA_MODE_DUAL),
+                ShortcutsManager.ID_START_DUAL);
         // Stop
         wireShortcutRow(view, R.id.cell_stop, R.id.icon_stop, R.drawable.stop_shortcut,
                 getString(R.string.stop_recording),
