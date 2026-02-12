@@ -40,7 +40,7 @@
     <shortcut
         android:id="@+id/capture_photo"
         android:enabled="true"
-        android:icon="@drawable/video_camera"
+        android:icon="@drawable/fadshot_shortcut"
         android:shortcutShortLabel="@string/shortcut_take_photo"
         android:shortcutLongLabel="@string/shortcut_take_photo">
         <intent

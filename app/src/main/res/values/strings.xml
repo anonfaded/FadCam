@@ -711,7 +711,7 @@
     <string name="shortcut_purpose_start">This shortcut starts recording with the back camera.</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
-    <string name="shortcut_purpose_photo">This shortcut captures a photo and saves it to FadShot.</string>
+    <string name="shortcut_purpose_photo">This shortcut captures a photo and saves it to FadCam/FadShot location.</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Customize</string>
     <string name="widget_customize_action_subtitle">Time, date, theme options</string>
@@ -735,6 +735,10 @@
     <string name="shortcut_take_photo">FadShot</string>
     <string name="shortcuts_video_category">Video Recording</string>
     <string name="shortcuts_picture_category">Picture</string>
+    <string name="preview_quick_actions_title">Preview quick actions</string>
+    <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
+    <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
+    <string name="preview_quick_actions_state_recording_only">Visible only while recording</string>
     <string name="warning_temp_file_detail">
         <![CDATA[
         <b>IMPORTANT NOTE:</b><br/>

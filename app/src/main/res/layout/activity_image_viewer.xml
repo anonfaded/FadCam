@@ -18,7 +18,7 @@
         app:title="@string/image_viewer_title"
         app:titleTextColor="@android:color/white" />
 
-    <ImageView
+    <com.fadcam.ui.ZoomableImageView
         android:id="@+id/imageViewerImage"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -31,4 +31,3 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

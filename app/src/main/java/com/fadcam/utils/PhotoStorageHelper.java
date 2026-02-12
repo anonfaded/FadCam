@@ -1,6 +1,11 @@
 package com.fadcam.utils;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -18,6 +23,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public final class PhotoStorageHelper {
+    private static final int JPEG_QUALITY = 88;
 
     private PhotoStorageHelper() {
     }
@@ -25,7 +31,16 @@ public final class PhotoStorageHelper {
     @Nullable
     public static Uri saveJpegBitmap(
             @NonNull Context context,
-            @NonNull android.graphics.Bitmap bitmap
+            @NonNull Bitmap bitmap
+    ) {
+        return saveJpegBitmap(context, bitmap, false);
+    }
+
+    @Nullable
+    public static Uri saveJpegBitmap(
+            @NonNull Context context,
+            @NonNull Bitmap bitmap,
+            boolean applyWatermarkFromPreferences
     ) {
         String fileName = Constants.RECORDING_FILE_PREFIX_FADSHOT
                 + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date())
@@ -33,22 +48,33 @@ public final class PhotoStorageHelper {
                 + Constants.RECORDING_IMAGE_EXTENSION;
 
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(context);
+        Bitmap prepared = prepareBitmapForSave(context, bitmap, prefs, applyWatermarkFromPreferences);
+        if (prepared == null) {
+            return null;
+        }
         String customTreeUri = prefs != null ? prefs.getCustomStorageUri() : null;
 
+        Uri result = null;
         if (customTreeUri != null && !customTreeUri.trim().isEmpty()) {
-            Uri safUri = saveToSaf(context, customTreeUri, fileName, bitmap);
+            Uri safUri = saveToSaf(context, customTreeUri, fileName, prepared);
             if (safUri != null) {
-                return safUri;
+                result = safUri;
             }
         }
-        return saveToInternal(context, fileName, bitmap);
+        if (result == null) {
+            result = saveToInternal(context, fileName, prepared);
+        }
+        if (prepared != bitmap && !prepared.isRecycled()) {
+            prepared.recycle();
+        }
+        return result;
     }
 
     @Nullable
     private static Uri saveToInternal(
             @NonNull Context context,
             @NonNull String fileName,
-            @NonNull android.graphics.Bitmap bitmap
+            @NonNull Bitmap bitmap
     ) {
         File shotDir = RecordingStoragePaths.getInternalCategoryDir(
                 context,
@@ -60,7 +86,7 @@ public final class PhotoStorageHelper {
         }
         File outputFile = new File(shotDir, fileName);
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            boolean ok = bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, fos);
+            boolean ok = bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, fos);
             if (!ok) return null;
             fos.flush();
             return Uri.fromFile(outputFile);
@@ -74,7 +100,7 @@ public final class PhotoStorageHelper {
             @NonNull Context context,
             @NonNull String customTreeUri,
             @NonNull String fileName,
-            @NonNull android.graphics.Bitmap bitmap
+            @NonNull Bitmap bitmap
     ) {
         DocumentFile shotDir = RecordingStoragePaths.getSafCategoryDir(
                 context,
@@ -92,7 +118,7 @@ public final class PhotoStorageHelper {
         }
         try (OutputStream os = context.getContentResolver().openOutputStream(doc.getUri(), "w")) {
             if (os == null) return null;
-            boolean ok = bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, os);
+            boolean ok = bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, os);
             if (!ok) return null;
             os.flush();
             return doc.getUri();
@@ -100,5 +126,78 @@ public final class PhotoStorageHelper {
             return null;
         }
     }
-}
 
+    @Nullable
+    private static Bitmap prepareBitmapForSave(
+            @NonNull Context context,
+            @NonNull Bitmap source,
+            @Nullable SharedPreferencesManager prefs,
+            boolean applyWatermarkFromPreferences
+    ) {
+        Bitmap working = source;
+        if (applyWatermarkFromPreferences) {
+            String watermarkText = buildWatermarkText(prefs);
+            if (!watermarkText.isEmpty()) {
+                Bitmap watermarked = applyWatermark(context, working, watermarkText);
+                if (watermarked != null) {
+                    if (working != source && !working.isRecycled()) {
+                        working.recycle();
+                    }
+                    working = watermarked;
+                }
+            }
+        }
+        return working;
+    }
+
+    private static String buildWatermarkText(@Nullable SharedPreferencesManager prefs) {
+        if (prefs == null) {
+            return "";
+        }
+        String option = prefs.getWatermarkOption();
+        if ("no_watermark".equals(option)) {
+            return "";
+        }
+        String timestamp = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH).format(new Date());
+        String custom = prefs.getWatermarkCustomText();
+        String customLine = (custom != null && !custom.trim().isEmpty()) ? ("\n" + custom.trim()) : "";
+        if ("timestamp".equals(option)) {
+            return timestamp + customLine;
+        }
+        return "Captured by FadCam - " + timestamp + customLine;
+    }
+
+    @Nullable
+    private static Bitmap applyWatermark(@NonNull Context context, @NonNull Bitmap source, @NonNull String text) {
+        try {
+            Bitmap result = source.copy(Bitmap.Config.ARGB_8888, true);
+            Canvas canvas = new Canvas(result);
+            float textSize = Math.max(18f, Math.min(24f, result.getWidth() * 0.006f));
+
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(textSize);
+            paint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
+            paint.setFakeBoldText(true);
+            try {
+                Typeface ubuntu = Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf");
+                paint.setTypeface(ubuntu);
+            } catch (Exception ignored) {
+                paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
+            }
+
+            int padding = Math.max(14, Math.round(result.getWidth() * 0.012f));
+            String[] lines = text.split("\n");
+            Paint.FontMetrics fm = paint.getFontMetrics();
+            float lineHeight = (fm.descent - fm.ascent) + 4f;
+            float y = padding - fm.ascent;
+            for (String line : lines) {
+                canvas.drawText(line, padding, y, paint);
+                y += lineHeight;
+            }
+            return result;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+}

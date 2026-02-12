@@ -80,7 +80,7 @@ public class ShortcutsSettingsFragment extends Fragment {
                 getString(R.string.torch_shortcut_short_label),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
-        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.video_camera,
+        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.fadshot_shortcut,
                 getString(R.string.shortcut_take_photo),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity"),
                 ShortcutsManager.ID_SHOT);
@@ -372,7 +372,7 @@ public class ShortcutsSettingsFragment extends Fragment {
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
         // Photo
-        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.video_camera,
+        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.fadshot_shortcut,
                 getString(R.string.shortcut_take_photo),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.fadcam.PhotoCaptureActivity"),
                 ShortcutsManager.ID_SHOT);

@@ -210,6 +210,7 @@ public class HomeFragment extends BaseFragment {
     private View cardPreview;
     private TextView btnFullscreenPreview;
     private TextView btnCaptureShotPreview;
+    private boolean isLaunchingPhotoCapture = false;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon
 
@@ -1597,6 +1598,7 @@ public class HomeFragment extends BaseFragment {
 
         // Start bubble rotation animation when visible (battery optimization)
         startBubbleRotation();
+        isLaunchingPhotoCapture = false;
     }
 
     // Inside HomeFragment.java
@@ -2860,7 +2862,9 @@ public class HomeFragment extends BaseFragment {
         Log.d(TAG, "HomeFragment paused.");
 
         // Stop bubble rotation animation to save battery
-        stopBubbleRotation();
+        if (!isLaunchingPhotoCapture) {
+            stopBubbleRotation();
+        }
 
         if (textureViewSurface != null && !isReturningFromFullscreen) {
             Log.d(TAG, "onPause: Explicitly sending null surface to service");
@@ -3607,11 +3611,11 @@ public class HomeFragment extends BaseFragment {
                 this,
                 (requestKey, bundle) -> {
                     if (bundle == null) return;
+                    if (bundle.containsKey("preview_quick_actions_always_visible")) {
+                        updateFullscreenButtonVisibility();
+                    }
                     if (!bundle.containsKey("preview_enabled")) return;
-                    boolean enabled = bundle.getBoolean(
-                        "preview_enabled",
-                        true
-                    );
+                    boolean enabled = bundle.getBoolean("preview_enabled", true);
 
                     // Remember previous state so we can perform any additional actions when enabling
                     boolean wasEnabled = isPreviewEnabled;
@@ -8202,6 +8206,9 @@ public class HomeFragment extends BaseFragment {
      */
     private void startBubbleRotation() {
         if (ivBubbleBackground != null) {
+            if (ivBubbleBackground.getAnimation() != null) {
+                return;
+            }
             android.view.animation.Animation rotateAnimation = 
                 android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.rotate_slow_left);
             ivBubbleBackground.startAnimation(rotateAnimation);
@@ -8248,7 +8255,15 @@ public class HomeFragment extends BaseFragment {
 
     private void captureShotFromCurrentPreview() {
         if (!isRecordingOrPaused()) {
-            Toast.makeText(requireContext(), R.string.fullscreen_preview_not_recording, Toast.LENGTH_SHORT).show();
+            try {
+                isLaunchingPhotoCapture = true;
+                Intent shotIntent = new Intent(requireContext(), com.fadcam.PhotoCaptureActivity.class);
+                shotIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                startActivity(shotIntent);
+            } catch (Exception e) {
+                isLaunchingPhotoCapture = false;
+                Toast.makeText(requireContext(), R.string.photo_capture_failed, Toast.LENGTH_SHORT).show();
+            }
             return;
         }
         Intent intent = new Intent(
@@ -8295,6 +8310,12 @@ public class HomeFragment extends BaseFragment {
     private void updateFullscreenButtonVisibility() {
         if (btnFullscreenPreview == null) return;
         boolean show = isPreviewEnabled && isRecordingOrPaused();
+        try {
+            if (sharedPreferencesManager != null && sharedPreferencesManager.isPreviewQuickActionsAlwaysVisible()) {
+                show = true;
+            }
+        } catch (Exception ignored) {
+        }
         btnFullscreenPreview.setVisibility(show ? View.VISIBLE : View.GONE);
         if (btnCaptureShotPreview != null) {
             btnCaptureShotPreview.setVisibility(show ? View.VISIBLE : View.GONE);

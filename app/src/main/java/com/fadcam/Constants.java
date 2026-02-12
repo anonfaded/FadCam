@@ -454,6 +454,9 @@ public abstract class Constants {
     // Fullscreen preview tap-to-focus toggle (when disabled, taps only toggle controls)
     public static final String PREF_FULLSCREEN_TAP_TO_FOCUS_ENABLED =
         "pref_fullscreen_tap_to_focus_enabled";
+    // Show preview quick actions (FadShot + Fullscreen) even when recording is not active.
+    public static final String PREF_PREVIEW_QUICK_ACTIONS_ALWAYS_VISIBLE =
+        "pref_preview_quick_actions_always_visible";
     // Player controller auto-hide timeout in seconds. Controls disappear after this many seconds of inactivity.
     // 0 = never auto-hide (controls stay visible until user toggles).
     public static final String PREF_PLAYER_CONTROLS_TIMEOUT_SECONDS =

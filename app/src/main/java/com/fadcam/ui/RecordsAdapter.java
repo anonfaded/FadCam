@@ -353,8 +353,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Optimize time-consuming operations using lightweight caching
         if (holder.textViewFileTime != null) {
             if (isImage) {
-                holder.textViewFileTime.setText(context.getString(R.string.media_type_photo));
+                holder.textViewFileTime.setText("");
+                holder.textViewFileTime.setVisibility(View.GONE);
             } else {
+                holder.textViewFileTime.setVisibility(View.VISIBLE);
                 // Check if we already have the duration cached
                 String cachedDuration = loadedThumbnailCache.get(position);
                 if (cachedDuration != null) {
@@ -986,6 +988,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     private void showVideoActionsSheet(RecordViewHolder holder, VideoItem videoItem) {
         Context ctx = holder.itemView.getContext();
+        boolean isImage = videoItem != null && videoItem.mediaType == VideoItem.MediaType.IMAGE;
         if (!(ctx instanceof FragmentActivity)) {
             // Fallback to popup if we don't have a FragmentActivity context
             PopupMenu popup = setupPopupMenu(holder, videoItem);
@@ -1016,19 +1019,25 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         items.add(OptionItem.withLigature("action_rename", ctx.getString(R.string.video_menu_rename),
                 "drive_file_rename_outline"));
         items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
-        items.add(OptionItem.withLigature("action_upload_youtube", ctx.getString(R.string.video_menu_upload_youtube),
-                "play_circle"));
-        items.add(OptionItem.withLigature("action_upload_drive", ctx.getString(R.string.video_menu_upload_drive),
-                "cloud_upload"));
-        items.add(OptionItem.withLigature("action_open_with", ctx.getString(R.string.video_menu_open_with),
-                "open_in_new"));
+        if (!isImage) {
+            items.add(OptionItem.withLigature("action_upload_youtube", ctx.getString(R.string.video_menu_upload_youtube),
+                    "play_circle"));
+            items.add(OptionItem.withLigature("action_upload_drive", ctx.getString(R.string.video_menu_upload_drive),
+                    "cloud_upload"));
+            items.add(OptionItem.withLigature("action_open_with", ctx.getString(R.string.video_menu_open_with),
+                    "open_in_new"));
+        }
         // New: Upload to FadDrive (coming soon) — badge only, no helper line
-        items.add(OptionItem.withLigatureBadge("action_upload_faddrive",
-                ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
-                ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+        if (!isImage) {
+            items.add(OptionItem.withLigatureBadge("action_upload_faddrive",
+                    ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
+                    ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+        }
         // Edit with Faditor Mini
-        items.add(OptionItem.withLigature("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
-                "content_cut"));
+        if (!isImage) {
+            items.add(OptionItem.withLigature("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
+                    "content_cut"));
+        }
         items.add(OptionItem.withLigature("action_delete", ctx.getString(R.string.video_menu_del), "delete"));
 
         String resultKey = "video_actions:"
@@ -1174,6 +1183,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     private PopupMenu setupPopupMenu(RecordViewHolder holder, VideoItem videoItem) {
         Context context = holder.itemView.getContext();
+        boolean isImage = videoItem != null && videoItem.mediaType == VideoItem.MediaType.IMAGE;
         int popupMenuStyle = 0;
         // Dynamically select the correct style for the current theme
         SharedPreferencesManager spm = SharedPreferencesManager.getInstance(context);
@@ -1189,6 +1199,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 ? new PopupMenu(context, holder.menuButtonContainer, 0, 0, popupMenuStyle)
                 : new PopupMenu(context, holder.menuButtonContainer);
         popup.getMenuInflater().inflate(R.menu.video_item_menu, popup.getMenu());
+        if (isImage) {
+            popup.getMenu().removeItem(R.id.action_edit_faditorx);
+            popup.getMenu().removeItem(R.id.action_upload_youtube);
+            popup.getMenu().removeItem(R.id.action_upload_drive);
+        }
 
         // Set text color for all menu items
         int colorMenuText;

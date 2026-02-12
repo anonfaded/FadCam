@@ -637,6 +637,22 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /** Returns whether home preview quick action icons stay visible while idle. Default: true. */
+    public boolean isPreviewQuickActionsAlwaysVisible() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_PREVIEW_QUICK_ACTIONS_ALWAYS_VISIBLE,
+            true
+        );
+    }
+
+    /** Sets whether home preview quick action icons stay visible while idle. */
+    public void setPreviewQuickActionsAlwaysVisible(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_PREVIEW_QUICK_ACTIONS_ALWAYS_VISIBLE, enabled)
+            .apply();
+    }
+
     // -------------- Background playback auto-stop timer (in seconds) --------------
     /** Returns the auto-stop time in seconds. 0 = disabled. Default: 0. */
     public int getBackgroundPlaybackTimerSeconds() {

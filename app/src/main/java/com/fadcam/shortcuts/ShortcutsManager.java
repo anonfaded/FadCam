@@ -216,7 +216,7 @@ public class ShortcutsManager {
                     ctx,
                     "com.fadcam.PhotoCaptureActivity"
                 ),
-                com.fadcam.R.drawable.video_camera,
+                com.fadcam.R.drawable.fadshot_shortcut,
                 ctx.getString(com.fadcam.R.string.shortcut_take_photo)
             )
         );
@@ -289,7 +289,7 @@ public class ShortcutsManager {
                             ctx,
                             "com.fadcam.PhotoCaptureActivity"
                         ),
-                        com.fadcam.R.drawable.video_camera,
+                        com.fadcam.R.drawable.fadshot_shortcut,
                         ctx.getString(com.fadcam.R.string.shortcut_take_photo)
                     )
                 );

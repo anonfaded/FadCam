@@ -180,6 +180,35 @@ public class HomeSidebarFragment extends DialogFragment {
                     );
                 }
             }
+
+            View quickActionsRow = view.findViewById(R.id.row_preview_quick_actions_toggle);
+            if (quickActionsRow != null) {
+                TextView tvSub = quickActionsRow.findViewById(R.id.tv_preview_quick_actions_sub);
+                SwitchCompat sw = quickActionsRow.findViewById(R.id.switch_preview_quick_actions_toggle);
+                if (sw != null) {
+                    boolean current = sp.isPreviewQuickActionsAlwaysVisible();
+                    sw.setChecked(current);
+                    if (tvSub != null) {
+                        tvSub.setText(current
+                            ? getString(R.string.preview_quick_actions_state_always)
+                            : getString(R.string.preview_quick_actions_state_recording_only));
+                    }
+                    sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        sp.setPreviewQuickActionsAlwaysVisible(isChecked);
+                        if (tvSub != null) {
+                            tvSub.setText(isChecked
+                                ? getString(R.string.preview_quick_actions_state_always)
+                                : getString(R.string.preview_quick_actions_state_recording_only));
+                        }
+                        try {
+                            Bundle b = new Bundle();
+                            b.putBoolean("preview_quick_actions_always_visible", isChecked);
+                            getParentFragmentManager().setFragmentResult(resultKey, b);
+                        } catch (Exception ignored) {}
+                    });
+                    quickActionsRow.setOnClickListener(v -> sw.setChecked(!sw.isChecked()));
+                }
+            }
         } catch (Exception e) {
             android.util.Log.w(
                 "HomeSidebar",

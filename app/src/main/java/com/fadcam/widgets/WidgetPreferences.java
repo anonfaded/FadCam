@@ -84,7 +84,7 @@ public class WidgetPreferences {
     }
     
     public boolean showBranding() {
-        return prefs.getBoolean(KEY_SHOW_BRANDING, false);
+        return prefs.getBoolean(KEY_SHOW_BRANDING, true);
     }
     
     public void setBranding(boolean show) {
