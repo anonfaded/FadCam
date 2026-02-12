@@ -25,6 +25,12 @@ import java.util.Locale;
 public final class PhotoStorageHelper {
     private static final int JPEG_QUALITY = 88;
 
+    public enum ShotSource {
+        BACK,
+        SELFIE,
+        FADREC
+    }
+
     private PhotoStorageHelper() {
     }
 
@@ -33,7 +39,7 @@ public final class PhotoStorageHelper {
             @NonNull Context context,
             @NonNull Bitmap bitmap
     ) {
-        return saveJpegBitmap(context, bitmap, false);
+        return saveJpegBitmap(context, bitmap, false, ShotSource.BACK);
     }
 
     @Nullable
@@ -42,10 +48,17 @@ public final class PhotoStorageHelper {
             @NonNull Bitmap bitmap,
             boolean applyWatermarkFromPreferences
     ) {
-        String fileName = Constants.RECORDING_FILE_PREFIX_FADSHOT
-                + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date())
-                + "."
-                + Constants.RECORDING_IMAGE_EXTENSION;
+        return saveJpegBitmap(context, bitmap, applyWatermarkFromPreferences, ShotSource.BACK);
+    }
+
+    @Nullable
+    public static Uri saveJpegBitmap(
+            @NonNull Context context,
+            @NonNull Bitmap bitmap,
+            boolean applyWatermarkFromPreferences,
+            @NonNull ShotSource shotSource
+    ) {
+        String fileName = buildShotFileName(shotSource);
 
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(context);
         Bitmap prepared = prepareBitmapForSave(context, bitmap, prefs, applyWatermarkFromPreferences);
@@ -56,13 +69,13 @@ public final class PhotoStorageHelper {
 
         Uri result = null;
         if (customTreeUri != null && !customTreeUri.trim().isEmpty()) {
-            Uri safUri = saveToSaf(context, customTreeUri, fileName, prepared);
+            Uri safUri = saveToSaf(context, customTreeUri, fileName, prepared, shotSource);
             if (safUri != null) {
                 result = safUri;
             }
         }
         if (result == null) {
-            result = saveToInternal(context, fileName, prepared);
+            result = saveToInternal(context, fileName, prepared, shotSource);
         }
         if (prepared != bitmap && !prepared.isRecycled()) {
             prepared.recycle();
@@ -74,13 +87,13 @@ public final class PhotoStorageHelper {
     private static Uri saveToInternal(
             @NonNull Context context,
             @NonNull String fileName,
-            @NonNull Bitmap bitmap
+            @NonNull Bitmap bitmap,
+            @NonNull ShotSource shotSource
     ) {
-        File shotDir = RecordingStoragePaths.getInternalCategoryDir(
+        File shotDir = RecordingStoragePaths.getInternalShotSourceDir(
                 context,
-                RecordingStoragePaths.Category.SHOT,
-                true
-        );
+                toStorageShotSource(shotSource),
+                true);
         if (shotDir == null) {
             return null;
         }
@@ -100,14 +113,14 @@ public final class PhotoStorageHelper {
             @NonNull Context context,
             @NonNull String customTreeUri,
             @NonNull String fileName,
-            @NonNull Bitmap bitmap
+            @NonNull Bitmap bitmap,
+            @NonNull ShotSource shotSource
     ) {
-        DocumentFile shotDir = RecordingStoragePaths.getSafCategoryDir(
+        DocumentFile shotDir = RecordingStoragePaths.getSafShotSourceDir(
                 context,
                 customTreeUri,
-                RecordingStoragePaths.Category.SHOT,
-                true
-        );
+                toStorageShotSource(shotSource),
+                true);
         if (shotDir == null || !shotDir.canWrite()) {
             return null;
         }
@@ -124,6 +137,42 @@ public final class PhotoStorageHelper {
             return doc.getUri();
         } catch (Exception ignored) {
             return null;
+        }
+    }
+
+    @NonNull
+    private static String buildShotFileName(@NonNull ShotSource shotSource) {
+        return Constants.RECORDING_FILE_PREFIX_FADSHOT
+                + shotSourceLabel(shotSource)
+                + "_"
+                + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date())
+                + "."
+                + Constants.RECORDING_IMAGE_EXTENSION;
+    }
+
+    @NonNull
+    private static String shotSourceLabel(@NonNull ShotSource shotSource) {
+        switch (shotSource) {
+            case SELFIE:
+                return "Selfie";
+            case FADREC:
+                return "FadRec";
+            case BACK:
+            default:
+                return "Back";
+        }
+    }
+
+    @NonNull
+    private static RecordingStoragePaths.ShotSource toStorageShotSource(@NonNull ShotSource shotSource) {
+        switch (shotSource) {
+            case SELFIE:
+                return RecordingStoragePaths.ShotSource.SELFIE;
+            case FADREC:
+                return RecordingStoragePaths.ShotSource.FADREC;
+            case BACK:
+            default:
+                return RecordingStoragePaths.ShotSource.BACK;
         }
     }
 

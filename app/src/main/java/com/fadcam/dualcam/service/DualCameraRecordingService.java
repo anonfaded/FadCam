@@ -620,7 +620,11 @@ public class DualCameraRecordingService extends Service {
                 return;
             }
             backgroundHandler.post(() -> {
-                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(getApplicationContext(), bitmap);
+                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(
+                        getApplicationContext(),
+                        bitmap,
+                        false,
+                        PhotoStorageHelper.ShotSource.BACK);
                 bitmap.recycle();
                 if (savedUri != null) {
                     Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);

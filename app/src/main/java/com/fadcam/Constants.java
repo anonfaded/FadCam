@@ -287,6 +287,9 @@ public abstract class Constants {
     public static final String RECORDING_SUBDIR_FADITOR = "Faditor";
     public static final String RECORDING_SUBDIR_STREAM = "Stream";
     public static final String RECORDING_SUBDIR_SHOT = "FadShot";
+    public static final String RECORDING_SUBDIR_SHOT_BACK = "Back";
+    public static final String RECORDING_SUBDIR_SHOT_SELFIE = "Selfie";
+    public static final String RECORDING_SUBDIR_SHOT_FADREC = "FadRec";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
     public static final String RECORDING_IMAGE_EXTENSION = "jpg";
     public static final String RECORDING_FILE_PREFIX_FADSHOT = "FadShot_";

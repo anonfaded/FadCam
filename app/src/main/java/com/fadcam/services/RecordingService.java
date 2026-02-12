@@ -883,7 +883,17 @@ public class RecordingService extends Service {
                 return;
             }
             backgroundHandler.post(() -> {
-                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(getApplicationContext(), bitmap);
+                CameraType selected = sharedPreferencesManager != null
+                        ? sharedPreferencesManager.getCameraSelection()
+                        : CameraType.BACK;
+                PhotoStorageHelper.ShotSource shotSource = selected == CameraType.FRONT
+                        ? PhotoStorageHelper.ShotSource.SELFIE
+                        : PhotoStorageHelper.ShotSource.BACK;
+                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(
+                        getApplicationContext(),
+                        bitmap,
+                        false,
+                        shotSource);
                 bitmap.recycle();
                 if (savedUri != null) {
                     Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);

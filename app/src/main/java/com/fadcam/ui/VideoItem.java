@@ -24,12 +24,21 @@ public class VideoItem {
         UNKNOWN
     }
 
+    public enum ShotSubtype {
+        ALL,
+        BACK,
+        SELFIE,
+        FADREC,
+        UNKNOWN
+    }
+
     public final Uri uri; // The unique identifier (file:// or content://)
     public final String displayName; // Filename
     public final long size; // Size in bytes
     public final long lastModified; // Timestamp
     public final Category category; // Folder-derived source category
     public final MediaType mediaType; // video or image
+    public final ShotSubtype shotSubtype; // Shot source (for image shot filtering/badging)
 
     public boolean isTemporary = false;
     public boolean isNew = false;
@@ -37,11 +46,11 @@ public class VideoItem {
     public boolean isSkeleton = false; // Flag for skeleton loading
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
-        this(uri, displayName, size, lastModified, Category.UNKNOWN, MediaType.VIDEO);
+        this(uri, displayName, size, lastModified, Category.UNKNOWN, MediaType.VIDEO, ShotSubtype.UNKNOWN);
     }
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified, Category category) {
-        this(uri, displayName, size, lastModified, category, MediaType.VIDEO);
+        this(uri, displayName, size, lastModified, category, MediaType.VIDEO, ShotSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -52,12 +61,25 @@ public class VideoItem {
         Category category,
         MediaType mediaType
     ) {
+        this(uri, displayName, size, lastModified, category, mediaType, ShotSubtype.UNKNOWN);
+    }
+
+    public VideoItem(
+        Uri uri,
+        String displayName,
+        long size,
+        long lastModified,
+        Category category,
+        MediaType mediaType,
+        ShotSubtype shotSubtype
+    ) {
         this.uri = uri;
         this.displayName = displayName;
         this.size = size;
         this.lastModified = lastModified;
         this.category = category == null ? Category.UNKNOWN : category;
         this.mediaType = mediaType == null ? MediaType.VIDEO : mediaType;
+        this.shotSubtype = shotSubtype == null ? ShotSubtype.UNKNOWN : shotSubtype;
     }
     
     /**
@@ -96,6 +118,7 @@ public class VideoItem {
                 ", lastModified=" + lastModified +
                 ", category=" + category +
                 ", mediaType=" + mediaType +
+                ", shotSubtype=" + shotSubtype +
                 '}';
     }
 }

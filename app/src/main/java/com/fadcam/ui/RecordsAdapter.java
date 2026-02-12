@@ -470,7 +470,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (isProcessing) {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide all badges during processing
             } else if (isImage) {
-                holder.textViewStatusBadge.setText(context.getString(R.string.media_type_photo).toUpperCase(Locale.US));
+                int badgeRes = getImageBadgeLabelRes(videoItem);
+                holder.textViewStatusBadge.setText(context.getString(badgeRes).toUpperCase(Locale.US));
                 holder.textViewStatusBadge
                         .setBackground(ContextCompat.getDrawable(context, R.drawable.badge_bg_gray));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
@@ -559,6 +560,23 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
     } // End onBindViewHolder
+
+    private int getImageBadgeLabelRes(@NonNull VideoItem videoItem) {
+        VideoItem.ShotSubtype subtype = videoItem.shotSubtype == null
+                ? VideoItem.ShotSubtype.UNKNOWN
+                : videoItem.shotSubtype;
+        switch (subtype) {
+            case SELFIE:
+                return R.string.media_type_photo_selfie;
+            case FADREC:
+                return R.string.media_type_photo_fadrec;
+            case BACK:
+            case UNKNOWN:
+            case ALL:
+            default:
+                return R.string.media_type_photo_back;
+        }
+    }
 
     @Override
     public int getItemCount() {

@@ -118,7 +118,11 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
                 showToast(R.string.screenshot_capture_failed);
                 return;
             }
-            Uri savedUri = PhotoStorageHelper.saveJpegBitmap(getApplicationContext(), copyBitmap, false);
+            Uri savedUri = PhotoStorageHelper.saveJpegBitmap(
+                    getApplicationContext(),
+                    copyBitmap,
+                    false,
+                    PhotoStorageHelper.ShotSource.FADREC);
             if (savedUri != null) {
                 Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                 updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);

@@ -108,14 +108,18 @@ public class PhotoCaptureActivity extends ComponentActivity {
                 String shortcutMode = getIntent() != null
                         ? getIntent().getStringExtra(EXTRA_SHORTCUT_PHOTO_CAMERA_MODE)
                         : null;
+                PhotoStorageHelper.ShotSource shotSource = PhotoStorageHelper.ShotSource.BACK;
                 if (PHOTO_CAMERA_MODE_FRONT.equals(shortcutMode)) {
                     selector = CameraSelector.DEFAULT_FRONT_CAMERA;
+                    shotSource = PhotoStorageHelper.ShotSource.SELFIE;
                 } else if (PHOTO_CAMERA_MODE_BACK.equals(shortcutMode)) {
                     selector = CameraSelector.DEFAULT_BACK_CAMERA;
                 } else if (prefs != null && prefs.getCameraSelection() == com.fadcam.CameraType.FRONT) {
                     selector = CameraSelector.DEFAULT_FRONT_CAMERA;
+                    shotSource = PhotoStorageHelper.ShotSource.SELFIE;
                 }
                 provider.bindToLifecycle(this, selector, imageCapture);
+                final PhotoStorageHelper.ShotSource finalShotSource = shotSource;
 
                 File temp = File.createTempFile("fadshot_", ".jpg", getCacheDir());
                 ImageCapture.OutputFileOptions opts = new ImageCapture.OutputFileOptions.Builder(temp).build();
@@ -125,7 +129,11 @@ public class PhotoCaptureActivity extends ComponentActivity {
                         Bitmap bitmap = decodeAndOrientBitmap(temp, prefs);
                         Uri saved = null;
                         if (bitmap != null) {
-                            saved = PhotoStorageHelper.saveJpegBitmap(getApplicationContext(), bitmap, true);
+                            saved = PhotoStorageHelper.saveJpegBitmap(
+                                    getApplicationContext(),
+                                    bitmap,
+                                    true,
+                                    finalShotSource);
                             bitmap.recycle();
                         }
                         //noinspection ResultOfMethodCallIgnored

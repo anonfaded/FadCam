@@ -196,6 +196,9 @@
     <string name="chooser_open_with">Open with</string>
     <string name="image_viewer_title">Photo Viewer</string>
     <string name="media_type_photo">Photo</string>
+    <string name="media_type_photo_back">Back</string>
+    <string name="media_type_photo_selfie">Selfie</string>
+    <string name="media_type_photo_fadrec">FadRec</string>
     <string name="photo_capture_saved">Photo saved</string>
     <string name="photo_capture_failed">Could not capture photo</string>
     <string name="photo_capture_preview_unavailable">Preview is not available</string>
@@ -210,6 +213,10 @@
     <string name="records_filter_faditor">Faditor</string>
     <string name="records_filter_stream">Stream</string>
     <string name="records_filter_shot">Shot</string>
+    <string name="records_filter_shot_all">All</string>
+    <string name="records_filter_shot_back">Back</string>
+    <string name="records_filter_shot_selfie">Selfie</string>
+    <string name="records_filter_shot_fadrec">FadRec</string>
     <string name="records_filter_checklist_desc">Toggle selection mode</string>
     <string name="records_filter_helper_camera">Normal camera recordings</string>
     <string name="records_filter_helper_dual">Dual camera recordings</string>
