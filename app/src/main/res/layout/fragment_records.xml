@@ -122,13 +122,6 @@
                     android:text="@string/records_filter_camera" />
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_filter_dual"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/records_filter_dual" />
-
-                <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_screen"
                     style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
@@ -172,10 +165,11 @@
     </LinearLayout>
 
     <HorizontalScrollView
-        android:id="@+id/records_shot_filter_row"
+        android:id="@+id/records_camera_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
+        android:fillViewport="true"
         android:scrollbars="none"
         android:overScrollMode="never"
         android:paddingStart="12dp"
@@ -186,43 +180,110 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_shot_filter"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleSelection="true"
-            app:selectionRequired="true"
-            app:singleLine="true">
+            android:gravity="center_horizontal">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_shot_all"
-                style="@style/Widget.FadCam.RecordsFilterChip"
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_camera_filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/records_filter_shot_all" />
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:singleLine="true">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_shot_back"
-                style="@style/Widget.FadCam.RecordsFilterChip"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_camera_all"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/records_filter_camera_all" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_camera_back"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_camera_back" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_camera_front"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_camera_front" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_camera_dual"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_camera_dual" />
+            </com.google.android.material.chip.ChipGroup>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <HorizontalScrollView
+        android:id="@+id/records_shot_filter_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:overScrollMode="never"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        app:layout_constraintTop_toBottomOf="@id/records_camera_filter_row"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_shot_filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/records_filter_shot_back" />
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:singleLine="true">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_shot_selfie"
-                style="@style/Widget.FadCam.RecordsFilterChip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/records_filter_shot_selfie" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_shot_all"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/records_filter_shot_all" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_shot_fadrec"
-                style="@style/Widget.FadCam.RecordsFilterChip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/records_filter_shot_fadrec" />
-        </com.google.android.material.chip.ChipGroup>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_shot_back"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_shot_back" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_shot_selfie"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_shot_selfie" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_shot_fadrec"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_filter_shot_fadrec" />
+            </com.google.android.material.chip.ChipGroup>
+        </LinearLayout>
     </HorizontalScrollView>
 
     <TextView

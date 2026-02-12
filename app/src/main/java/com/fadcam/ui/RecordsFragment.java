@@ -329,12 +329,17 @@ public class RecordsFragment extends BaseFragment implements
     private CharSequence originalToolbarTitle;
     private Chip chipFilterAll;
     private Chip chipFilterCamera;
-    private Chip chipFilterDual;
     private Chip chipFilterScreen;
     private Chip chipFilterFaditor;
     private Chip chipFilterStream;
     private Chip chipFilterShot;
     private ChipGroup chipGroupRecordsFilter;
+    private View cameraFilterRow;
+    private ChipGroup chipGroupCameraFilter;
+    private Chip chipCameraAll;
+    private Chip chipCameraBack;
+    private Chip chipCameraFront;
+    private Chip chipCameraDual;
     private View shotFilterRow;
     private ChipGroup chipGroupShotFilter;
     private Chip chipShotAll;
@@ -349,6 +354,7 @@ public class RecordsFragment extends BaseFragment implements
     private TextView btnActionBatchFaditor;
     private TextView btnActionBatchDelete;
     private VideoItem.Category activeFilter = VideoItem.Category.ALL;
+    private VideoItem.CameraSubtype activeCameraSubtype = VideoItem.CameraSubtype.ALL;
     private VideoItem.ShotSubtype activeShotSubtype = VideoItem.ShotSubtype.ALL;
     private ActivityResultLauncher<Uri> customExportTreePickerLauncher;
     private List<Uri> pendingCustomExportUris = new ArrayList<>();
@@ -850,12 +856,17 @@ public class RecordsFragment extends BaseFragment implements
         selectAllCheck = view.findViewById(R.id.action_select_all_check);
         chipFilterAll = view.findViewById(R.id.chip_filter_all);
         chipFilterCamera = view.findViewById(R.id.chip_filter_camera);
-        chipFilterDual = view.findViewById(R.id.chip_filter_dual);
         chipFilterScreen = view.findViewById(R.id.chip_filter_screen);
         chipFilterFaditor = view.findViewById(R.id.chip_filter_faditor);
         chipFilterStream = view.findViewById(R.id.chip_filter_stream);
         chipFilterShot = view.findViewById(R.id.chip_filter_shot);
         chipGroupRecordsFilter = view.findViewById(R.id.chip_group_records_filter);
+        cameraFilterRow = view.findViewById(R.id.records_camera_filter_row);
+        chipGroupCameraFilter = view.findViewById(R.id.chip_group_camera_filter);
+        chipCameraAll = view.findViewById(R.id.chip_camera_all);
+        chipCameraBack = view.findViewById(R.id.chip_camera_back);
+        chipCameraFront = view.findViewById(R.id.chip_camera_front);
+        chipCameraDual = view.findViewById(R.id.chip_camera_dual);
         shotFilterRow = view.findViewById(R.id.records_shot_filter_row);
         chipGroupShotFilter = view.findViewById(R.id.chip_group_shot_filter);
         chipShotAll = view.findViewById(R.id.chip_shot_all);
@@ -1511,9 +1522,10 @@ public class RecordsFragment extends BaseFragment implements
         final DocumentFile file;
         final VideoItem.Category category;
         final VideoItem.ShotSubtype shotSubtype;
+        final VideoItem.CameraSubtype cameraSubtype;
 
         SafCandidate(@NonNull DocumentFile file, @NonNull VideoItem.Category category) {
-            this(file, category, VideoItem.ShotSubtype.UNKNOWN);
+            this(file, category, VideoItem.ShotSubtype.UNKNOWN, VideoItem.CameraSubtype.UNKNOWN);
         }
 
         SafCandidate(
@@ -1521,9 +1533,19 @@ public class RecordsFragment extends BaseFragment implements
                 @NonNull VideoItem.Category category,
                 @NonNull VideoItem.ShotSubtype shotSubtype
         ) {
+            this(file, category, shotSubtype, VideoItem.CameraSubtype.UNKNOWN);
+        }
+
+        SafCandidate(
+                @NonNull DocumentFile file,
+                @NonNull VideoItem.Category category,
+                @NonNull VideoItem.ShotSubtype shotSubtype,
+                @NonNull VideoItem.CameraSubtype cameraSubtype
+        ) {
             this.file = file;
             this.category = category;
             this.shotSubtype = shotSubtype;
+            this.cameraSubtype = cameraSubtype;
         }
     }
 
@@ -1564,7 +1586,8 @@ public class RecordsFragment extends BaseFragment implements
 
         // Preferred folder-based categorization.
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_CAMERA), VideoItem.Category.CAMERA);
-        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_DUAL), VideoItem.Category.DUAL);
+        // Legacy dual root folder support (mapped under CAMERA category)
+        scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_DUAL), VideoItem.Category.CAMERA);
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_SCREEN), VideoItem.Category.SCREEN);
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_FADITOR), VideoItem.Category.FADITOR);
         scanCategoryDirectoryInternal(items, new File(baseDir, Constants.RECORDING_SUBDIR_STREAM), VideoItem.Category.STREAM);
@@ -1589,12 +1612,52 @@ public class RecordsFragment extends BaseFragment implements
             scanShotDirectoryInternal(out, directory);
             return;
         }
+        if (category == VideoItem.Category.CAMERA) {
+            scanCameraDirectoryInternal(out, directory);
+            return;
+        }
         File[] files = directory.listFiles();
         if (files == null) return;
         for (File file : files) {
             if (!file.isFile()) continue;
-            VideoItem item = buildVideoItemFromInternalFile(file, category, VideoItem.ShotSubtype.UNKNOWN);
+            VideoItem item = buildVideoItemFromInternalFile(
+                    file,
+                    category,
+                    VideoItem.ShotSubtype.UNKNOWN,
+                    VideoItem.CameraSubtype.UNKNOWN);
             if (item != null) out.add(item);
+        }
+    }
+
+    private void scanCameraDirectoryInternal(@NonNull List<VideoItem> out, @NonNull File cameraRoot) {
+        File[] children = cameraRoot.listFiles();
+        if (children == null) return;
+
+        for (File child : children) {
+            if (child == null) continue;
+            if (child.isFile()) {
+                VideoItem item = buildVideoItemFromInternalFile(
+                        child,
+                        VideoItem.Category.CAMERA,
+                        VideoItem.ShotSubtype.UNKNOWN,
+                        inferCameraSubtypeFromName(child.getName()));
+                if (item != null) out.add(item);
+                continue;
+            }
+            if (!child.isDirectory()) continue;
+            VideoItem.CameraSubtype subtype = inferCameraSubtypeFromFolder(child.getName());
+            File[] nested = child.listFiles();
+            if (nested == null) continue;
+            for (File nestedFile : nested) {
+                if (nestedFile != null && nestedFile.isFile()) {
+                    VideoItem item = buildVideoItemFromInternalFile(
+                            nestedFile,
+                            VideoItem.Category.CAMERA,
+                            VideoItem.ShotSubtype.UNKNOWN,
+                            subtype);
+                    if (item != null) out.add(item);
+                }
+            }
         }
     }
 
@@ -1608,7 +1671,8 @@ public class RecordsFragment extends BaseFragment implements
                 VideoItem item = buildVideoItemFromInternalFile(
                         child,
                         VideoItem.Category.SHOT,
-                        inferShotSubtypeFromName(child.getName()));
+                        inferShotSubtypeFromName(child.getName()),
+                        VideoItem.CameraSubtype.UNKNOWN);
                 if (item != null) out.add(item);
                 continue;
             }
@@ -1621,7 +1685,8 @@ public class RecordsFragment extends BaseFragment implements
                     VideoItem item = buildVideoItemFromInternalFile(
                             nestedFile,
                             VideoItem.Category.SHOT,
-                            subtype);
+                            subtype,
+                            VideoItem.CameraSubtype.UNKNOWN);
                     if (item != null) out.add(item);
                 }
             }
@@ -1632,7 +1697,8 @@ public class RecordsFragment extends BaseFragment implements
     private VideoItem buildVideoItemFromInternalFile(
             @NonNull File file,
             @NonNull VideoItem.Category category,
-            @NonNull VideoItem.ShotSubtype explicitShotSubtype
+            @NonNull VideoItem.ShotSubtype explicitShotSubtype,
+            @NonNull VideoItem.CameraSubtype explicitCameraSubtype
     ) {
         String name = file.getName();
         VideoItem.MediaType mediaType = inferMediaTypeFromName(name);
@@ -1647,6 +1713,9 @@ public class RecordsFragment extends BaseFragment implements
         VideoItem.ShotSubtype shotSubtype = category == VideoItem.Category.SHOT
                 ? resolveShotSubtype(explicitShotSubtype, name)
                 : VideoItem.ShotSubtype.UNKNOWN;
+        VideoItem.CameraSubtype cameraSubtype = category == VideoItem.Category.CAMERA
+                ? resolveCameraSubtype(explicitCameraSubtype, name)
+                : VideoItem.CameraSubtype.UNKNOWN;
         VideoItem newItem = new VideoItem(
                 Uri.fromFile(file),
                 name,
@@ -1654,7 +1723,8 @@ public class RecordsFragment extends BaseFragment implements
                 finalTimestamp,
                 category,
                 mediaType,
-                shotSubtype);
+                shotSubtype,
+                cameraSubtype);
         newItem.isTemporary = false;
         newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
         return newItem;
@@ -1689,7 +1759,10 @@ public class RecordsFragment extends BaseFragment implements
                     mediaType,
                     inferred == VideoItem.Category.SHOT
                             ? resolveShotSubtype(VideoItem.ShotSubtype.UNKNOWN, name)
-                            : VideoItem.ShotSubtype.UNKNOWN);
+                            : VideoItem.ShotSubtype.UNKNOWN,
+                    inferred == VideoItem.Category.CAMERA
+                            ? resolveCameraSubtype(VideoItem.CameraSubtype.UNKNOWN, name)
+                            : VideoItem.CameraSubtype.UNKNOWN);
             item.isTemporary = false;
             item.isNew = Utils.isVideoConsideredNew(finalTimestamp);
             out.add(item);
@@ -1720,7 +1793,8 @@ public class RecordsFragment extends BaseFragment implements
 
         List<SafCandidate> bucketedFiles = new ArrayList<>();
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_CAMERA, VideoItem.Category.CAMERA);
-        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_DUAL, VideoItem.Category.DUAL);
+        // Legacy dual root folder support (mapped under CAMERA category)
+        addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_DUAL, VideoItem.Category.CAMERA);
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_SCREEN, VideoItem.Category.SCREEN);
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_FADITOR, VideoItem.Category.FADITOR);
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_STREAM, VideoItem.Category.STREAM);
@@ -1743,7 +1817,12 @@ public class RecordsFragment extends BaseFragment implements
             int endIndex = Math.min(i + CHUNK_SIZE, totalFiles);
             for (int j = i; j < endIndex; j++) {
                 SafCandidate candidate = bucketedFiles.get(j);
-                addSafMediaItem(safVideoItems, candidate.file, candidate.category, candidate.shotSubtype);
+                addSafMediaItem(
+                        safVideoItems,
+                        candidate.file,
+                        candidate.category,
+                        candidate.shotSubtype,
+                        candidate.cameraSubtype);
             }
             if (callback != null && !safVideoItems.isEmpty()) {
                 int progress = totalFiles == 0 ? 100 : Math.round(((float) endIndex / totalFiles) * 100);
@@ -2118,9 +2197,6 @@ public class RecordsFragment extends BaseFragment implements
         if (chipFilterCamera != null) {
             chipFilterCamera.setOnClickListener(v -> setActiveFilter(VideoItem.Category.CAMERA));
         }
-        if (chipFilterDual != null) {
-            chipFilterDual.setOnClickListener(v -> setActiveFilter(VideoItem.Category.DUAL));
-        }
         if (chipFilterScreen != null) {
             chipFilterScreen.setOnClickListener(v -> setActiveFilter(VideoItem.Category.SCREEN));
         }
@@ -2132,6 +2208,18 @@ public class RecordsFragment extends BaseFragment implements
         }
         if (chipFilterShot != null) {
             chipFilterShot.setOnClickListener(v -> setActiveFilter(VideoItem.Category.SHOT));
+        }
+        if (chipCameraAll != null) {
+            chipCameraAll.setOnClickListener(v -> setActiveCameraSubtype(VideoItem.CameraSubtype.ALL));
+        }
+        if (chipCameraBack != null) {
+            chipCameraBack.setOnClickListener(v -> setActiveCameraSubtype(VideoItem.CameraSubtype.BACK));
+        }
+        if (chipCameraFront != null) {
+            chipCameraFront.setOnClickListener(v -> setActiveCameraSubtype(VideoItem.CameraSubtype.FRONT));
+        }
+        if (chipCameraDual != null) {
+            chipCameraDual.setOnClickListener(v -> setActiveCameraSubtype(VideoItem.CameraSubtype.DUAL));
         }
         if (chipShotAll != null) {
             chipShotAll.setOnClickListener(v -> setActiveShotSubtype(VideoItem.ShotSubtype.ALL));
@@ -2156,6 +2244,9 @@ public class RecordsFragment extends BaseFragment implements
         }
         updateFilterChipLabels();
         updateFilterChipUi();
+        updateCameraFilterRowVisibility();
+        updateCameraFilterChipLabels();
+        updateCameraFilterChipUi();
         updateShotFilterRowVisibility();
         updateShotFilterChipLabels();
         updateShotFilterChipUi();
@@ -2190,10 +2281,22 @@ public class RecordsFragment extends BaseFragment implements
     private void setActiveFilter(@NonNull VideoItem.Category filter) {
         if (activeFilter == filter) return;
         activeFilter = filter;
+        if (activeFilter != VideoItem.Category.CAMERA) {
+            activeCameraSubtype = VideoItem.CameraSubtype.ALL;
+        }
         if (activeFilter != VideoItem.Category.SHOT) {
             activeShotSubtype = VideoItem.ShotSubtype.ALL;
         }
         // Prevent hidden selections when the visible set changes.
+        if (isInSelectionMode) {
+            exitSelectionMode();
+        }
+        applyActiveFilterToUi();
+    }
+
+    private void setActiveCameraSubtype(@NonNull VideoItem.CameraSubtype cameraSubtype) {
+        if (activeCameraSubtype == cameraSubtype) return;
+        activeCameraSubtype = cameraSubtype;
         if (isInSelectionMode) {
             exitSelectionMode();
         }
@@ -2213,6 +2316,9 @@ public class RecordsFragment extends BaseFragment implements
         List<VideoItem> filteredItems = new ArrayList<>();
         for (VideoItem item : allLoadedItems) {
             if (activeFilter == VideoItem.Category.ALL || item.category == activeFilter) {
+                if (activeFilter == VideoItem.Category.CAMERA && !matchesCameraSubtype(item, activeCameraSubtype)) {
+                    continue;
+                }
                 if (activeFilter == VideoItem.Category.SHOT && !matchesShotSubtype(item, activeShotSubtype)) {
                     continue;
                 }
@@ -2226,6 +2332,9 @@ public class RecordsFragment extends BaseFragment implements
         }
         updateFilterChipLabels();
         updateFilterChipUi();
+        updateCameraFilterRowVisibility();
+        updateCameraFilterChipLabels();
+        updateCameraFilterChipUi();
         updateShotFilterRowVisibility();
         updateShotFilterChipLabels();
         updateShotFilterChipUi();
@@ -2237,11 +2346,34 @@ public class RecordsFragment extends BaseFragment implements
     private void updateFilterChipUi() {
         if (chipFilterAll != null) chipFilterAll.setChecked(activeFilter == VideoItem.Category.ALL);
         if (chipFilterCamera != null) chipFilterCamera.setChecked(activeFilter == VideoItem.Category.CAMERA);
-        if (chipFilterDual != null) chipFilterDual.setChecked(activeFilter == VideoItem.Category.DUAL);
         if (chipFilterScreen != null) chipFilterScreen.setChecked(activeFilter == VideoItem.Category.SCREEN);
         if (chipFilterFaditor != null) chipFilterFaditor.setChecked(activeFilter == VideoItem.Category.FADITOR);
         if (chipFilterStream != null) chipFilterStream.setChecked(activeFilter == VideoItem.Category.STREAM);
         if (chipFilterShot != null) chipFilterShot.setChecked(activeFilter == VideoItem.Category.SHOT);
+    }
+
+    private void updateCameraFilterRowVisibility() {
+        if (cameraFilterRow == null) return;
+        cameraFilterRow.setVisibility(activeFilter == VideoItem.Category.CAMERA ? View.VISIBLE : View.GONE);
+    }
+
+    private void updateCameraFilterChipUi() {
+        if (chipCameraAll != null) chipCameraAll.setChecked(activeCameraSubtype == VideoItem.CameraSubtype.ALL);
+        if (chipCameraBack != null) chipCameraBack.setChecked(activeCameraSubtype == VideoItem.CameraSubtype.BACK);
+        if (chipCameraFront != null) chipCameraFront.setChecked(activeCameraSubtype == VideoItem.CameraSubtype.FRONT);
+        if (chipCameraDual != null) chipCameraDual.setChecked(activeCameraSubtype == VideoItem.CameraSubtype.DUAL);
+    }
+
+    private boolean matchesCameraSubtype(@NonNull VideoItem item, @NonNull VideoItem.CameraSubtype filterSubtype) {
+        if (item.category != VideoItem.Category.CAMERA && item.category != VideoItem.Category.DUAL) return false;
+        if (filterSubtype == VideoItem.CameraSubtype.ALL) return true;
+        VideoItem.CameraSubtype itemSubtype = item.cameraSubtype == null
+                ? VideoItem.CameraSubtype.UNKNOWN
+                : item.cameraSubtype;
+        if (itemSubtype == VideoItem.CameraSubtype.UNKNOWN) {
+            itemSubtype = VideoItem.CameraSubtype.BACK;
+        }
+        return itemSubtype == filterSubtype;
     }
 
     private void updateShotFilterRowVisibility() {
@@ -2271,18 +2403,28 @@ public class RecordsFragment extends BaseFragment implements
     private void styleFilterChips() {
         applyChipIcon(chipFilterAll, R.drawable.ic_list);
         applyChipIcon(chipFilterCamera, R.drawable.ic_camera);
-        applyChipIcon(chipFilterDual, R.drawable.ic_cam_switch);
         applyChipIcon(chipFilterScreen, R.drawable.screen_recorder);
         applyChipIcon(chipFilterFaditor, R.drawable.ic_edit_cut);
         applyChipIcon(chipFilterStream, R.drawable.ic_wifi);
         applyChipIcon(chipFilterShot, R.drawable.ic_photo);
+        applyChipIcon(chipCameraAll, R.drawable.ic_list);
+        applyChipIcon(chipCameraBack, R.drawable.ic_camera);
+        applyChipIcon(chipCameraFront, R.drawable.ic_vid_cam);
+        applyChipIcon(chipCameraDual, R.drawable.ic_cam_switch);
+        applyChipIcon(chipShotAll, R.drawable.ic_list);
+        applyChipIcon(chipShotBack, R.drawable.ic_camera);
+        applyChipIcon(chipShotSelfie, R.drawable.ic_photo);
+        applyChipIcon(chipShotFadrec, R.drawable.screen_recorder);
         styleFilterChip(chipFilterAll);
         styleFilterChip(chipFilterCamera);
-        styleFilterChip(chipFilterDual);
         styleFilterChip(chipFilterScreen);
         styleFilterChip(chipFilterFaditor);
         styleFilterChip(chipFilterStream);
         styleFilterChip(chipFilterShot);
+        styleFilterChip(chipCameraAll);
+        styleFilterChip(chipCameraBack);
+        styleFilterChip(chipCameraFront);
+        styleFilterChip(chipCameraDual);
         styleFilterChip(chipShotAll);
         styleFilterChip(chipShotBack);
         styleFilterChip(chipShotSelfie);
@@ -2329,7 +2471,13 @@ public class RecordsFragment extends BaseFragment implements
         if (category == VideoItem.Category.ALL) return allLoadedItems.size();
         int count = 0;
         for (VideoItem item : allLoadedItems) {
-            if (item.category == category) count++;
+            if (category == VideoItem.Category.CAMERA) {
+                if (item.category == VideoItem.Category.CAMERA || item.category == VideoItem.Category.DUAL) {
+                    count++;
+                }
+            } else if (item.category == category) {
+                count++;
+            }
         }
         return count;
     }
@@ -2337,7 +2485,6 @@ public class RecordsFragment extends BaseFragment implements
     private void updateFilterChipLabels() {
         int all = getCategoryCount(VideoItem.Category.ALL);
         int camera = getCategoryCount(VideoItem.Category.CAMERA);
-        int dual = getCategoryCount(VideoItem.Category.DUAL);
         int screen = getCategoryCount(VideoItem.Category.SCREEN);
         int faditor = getCategoryCount(VideoItem.Category.FADITOR);
         int stream = getCategoryCount(VideoItem.Category.STREAM);
@@ -2345,13 +2492,24 @@ public class RecordsFragment extends BaseFragment implements
 
         setChipLabelWithCount(chipFilterAll, R.string.records_filter_all, all);
         setChipLabelWithCount(chipFilterCamera, R.string.records_filter_camera, camera);
-        setChipLabelWithCount(chipFilterDual, R.string.records_filter_dual, dual);
         setChipLabelWithCount(chipFilterScreen, R.string.records_filter_screen, screen);
         setChipLabelWithCount(chipFilterFaditor, R.string.records_filter_faditor, faditor);
         setChipLabelWithCount(chipFilterStream, R.string.records_filter_stream, stream);
         setChipLabelWithCount(chipFilterShot, R.string.records_filter_shot, shot);
 
-        reorderFilterChipsByCount(camera, dual, screen, faditor, stream, shot);
+        reorderFilterChipsByCount(camera, screen, faditor, stream, shot);
+    }
+
+    private void updateCameraFilterChipLabels() {
+        int all = getCameraSubtypeCount(VideoItem.CameraSubtype.ALL);
+        int back = getCameraSubtypeCount(VideoItem.CameraSubtype.BACK);
+        int front = getCameraSubtypeCount(VideoItem.CameraSubtype.FRONT);
+        int dual = getCameraSubtypeCount(VideoItem.CameraSubtype.DUAL);
+
+        setChipLabelWithCount(chipCameraAll, R.string.records_filter_camera_all, all);
+        setChipLabelWithCount(chipCameraBack, R.string.records_filter_camera_back, back);
+        setChipLabelWithCount(chipCameraFront, R.string.records_filter_camera_front, front);
+        setChipLabelWithCount(chipCameraDual, R.string.records_filter_camera_dual, dual);
     }
 
     private void updateShotFilterChipLabels() {
@@ -2382,11 +2540,21 @@ public class RecordsFragment extends BaseFragment implements
         return count;
     }
 
-    private void reorderFilterChipsByCount(int camera, int dual, int screen, int faditor, int stream, int shot) {
+    private int getCameraSubtypeCount(@NonNull VideoItem.CameraSubtype subtype) {
+        int count = 0;
+        for (VideoItem item : allLoadedItems) {
+            if (item.category != VideoItem.Category.CAMERA && item.category != VideoItem.Category.DUAL) continue;
+            if (matchesCameraSubtype(item, subtype)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void reorderFilterChipsByCount(int camera, int screen, int faditor, int stream, int shot) {
         if (chipGroupRecordsFilter == null || chipFilterAll == null) return;
         List<ChipOrderItem> ordered = new ArrayList<>();
         ordered.add(new ChipOrderItem(chipFilterCamera, camera));
-        ordered.add(new ChipOrderItem(chipFilterDual, dual));
         ordered.add(new ChipOrderItem(chipFilterScreen, screen));
         ordered.add(new ChipOrderItem(chipFilterFaditor, faditor));
         ordered.add(new ChipOrderItem(chipFilterStream, stream));
@@ -2407,8 +2575,6 @@ public class RecordsFragment extends BaseFragment implements
         switch (filter) {
             case CAMERA:
                 return R.id.chip_filter_camera;
-            case DUAL:
-                return R.id.chip_filter_dual;
             case SCREEN:
                 return R.id.chip_filter_screen;
             case FADITOR:
@@ -2450,6 +2616,13 @@ public class RecordsFragment extends BaseFragment implements
             } else {
                 shotSubtype = VideoItem.ShotSubtype.UNKNOWN;
             }
+            VideoItem.CameraSubtype cameraSubtype = item.cameraSubtype;
+            if (category == VideoItem.Category.CAMERA || category == VideoItem.Category.DUAL) {
+                cameraSubtype = resolveCameraSubtypeFromItem(item);
+                category = VideoItem.Category.CAMERA;
+            } else {
+                cameraSubtype = VideoItem.CameraSubtype.UNKNOWN;
+            }
             VideoItem copy = new VideoItem(
                     item.uri,
                     item.displayName,
@@ -2457,7 +2630,8 @@ public class RecordsFragment extends BaseFragment implements
                     item.lastModified,
                     category,
                     item.mediaType,
-                    shotSubtype);
+                    shotSubtype,
+                    cameraSubtype);
             copy.isTemporary = item.isTemporary;
             copy.isNew = item.isNew;
             copy.isProcessingUri = item.isProcessingUri;
@@ -2475,7 +2649,7 @@ public class RecordsFragment extends BaseFragment implements
         }
         if (uri.contains("/" + Constants.RECORDING_SUBDIR_DUAL + "/")
                 || uri.contains("%2F" + Constants.RECORDING_SUBDIR_DUAL + "%2F")) {
-            return VideoItem.Category.DUAL;
+            return VideoItem.Category.CAMERA;
         }
         if (uri.contains("/" + Constants.RECORDING_SUBDIR_SCREEN + "/")
                 || uri.contains("%2F" + Constants.RECORDING_SUBDIR_SCREEN + "%2F")) {
@@ -2503,25 +2677,52 @@ public class RecordsFragment extends BaseFragment implements
             filterHelperText.setText("");
             return;
         }
-        int textRes;
+        String helper;
         switch (activeFilter) {
             case CAMERA:
-                textRes = R.string.records_filter_helper_camera;
-                break;
-            case DUAL:
-                textRes = R.string.records_filter_helper_dual;
+                switch (activeCameraSubtype) {
+                    case BACK:
+                        helper = getString(R.string.records_filter_helper_camera_back);
+                        break;
+                    case FRONT:
+                        helper = getString(R.string.records_filter_helper_camera_front);
+                        break;
+                    case DUAL:
+                        helper = getString(R.string.records_filter_helper_camera_dual);
+                        break;
+                    case UNKNOWN:
+                    case ALL:
+                    default:
+                        helper = getString(R.string.records_filter_helper_camera_all);
+                        break;
+                }
                 break;
             case SCREEN:
-                textRes = R.string.records_filter_helper_screen;
+                helper = getString(R.string.records_filter_helper_screen);
                 break;
             case FADITOR:
-                textRes = R.string.records_filter_helper_faditor;
+                helper = getString(R.string.records_filter_helper_faditor);
                 break;
             case STREAM:
-                textRes = R.string.records_filter_helper_stream;
+                helper = getString(R.string.records_filter_helper_stream);
                 break;
             case SHOT:
-                textRes = R.string.records_filter_helper_shot;
+                switch (activeShotSubtype) {
+                    case BACK:
+                        helper = getString(R.string.records_filter_helper_shot_back);
+                        break;
+                    case SELFIE:
+                        helper = getString(R.string.records_filter_helper_shot_selfie);
+                        break;
+                    case FADREC:
+                        helper = getString(R.string.records_filter_helper_shot_fadrec);
+                        break;
+                    case UNKNOWN:
+                    case ALL:
+                    default:
+                        helper = getString(R.string.records_filter_helper_shot_all);
+                        break;
+                }
                 break;
             case UNKNOWN:
             case ALL:
@@ -2530,8 +2731,7 @@ public class RecordsFragment extends BaseFragment implements
                 filterHelperText.setText("");
                 return;
         }
-        String helper = getString(textRes)
-                + " • "
+        helper = helper + " • "
                 + getString(R.string.records_location_format, getStorageLocationLabel(), getCategoryFolderLabel(activeFilter));
         filterHelperText.setText(helper);
         filterHelperText.setVisibility(View.VISIBLE);
@@ -2559,9 +2759,16 @@ public class RecordsFragment extends BaseFragment implements
     private String getCategoryFolderLabel(@NonNull VideoItem.Category category) {
         switch (category) {
             case CAMERA:
+                if (activeCameraSubtype == VideoItem.CameraSubtype.BACK) {
+                    return Constants.RECORDING_SUBDIR_CAMERA + "/" + Constants.RECORDING_SUBDIR_CAMERA_BACK;
+                }
+                if (activeCameraSubtype == VideoItem.CameraSubtype.FRONT) {
+                    return Constants.RECORDING_SUBDIR_CAMERA + "/" + Constants.RECORDING_SUBDIR_CAMERA_FRONT;
+                }
+                if (activeCameraSubtype == VideoItem.CameraSubtype.DUAL) {
+                    return Constants.RECORDING_SUBDIR_CAMERA + "/" + Constants.RECORDING_SUBDIR_CAMERA_DUAL;
+                }
                 return Constants.RECORDING_SUBDIR_CAMERA;
-            case DUAL:
-                return Constants.RECORDING_SUBDIR_DUAL;
             case SCREEN:
                 return Constants.RECORDING_SUBDIR_SCREEN;
             case FADITOR:
@@ -4125,10 +4332,82 @@ public class RecordsFragment extends BaseFragment implements
         return VideoItem.ShotSubtype.UNKNOWN;
     }
 
+    @NonNull
+    private VideoItem.CameraSubtype inferCameraSubtypeFromFolder(@Nullable String folderName) {
+        if (folderName == null) return VideoItem.CameraSubtype.UNKNOWN;
+        if (Constants.RECORDING_SUBDIR_CAMERA_FRONT.equalsIgnoreCase(folderName)) {
+            return VideoItem.CameraSubtype.FRONT;
+        }
+        if (Constants.RECORDING_SUBDIR_CAMERA_DUAL.equalsIgnoreCase(folderName)) {
+            return VideoItem.CameraSubtype.DUAL;
+        }
+        if (Constants.RECORDING_SUBDIR_CAMERA_BACK.equalsIgnoreCase(folderName)) {
+            return VideoItem.CameraSubtype.BACK;
+        }
+        return VideoItem.CameraSubtype.UNKNOWN;
+    }
+
+    @NonNull
+    private VideoItem.CameraSubtype inferCameraSubtypeFromName(@Nullable String fileName) {
+        if (fileName == null) return VideoItem.CameraSubtype.UNKNOWN;
+        if (fileName.startsWith("DualCam_")) {
+            return VideoItem.CameraSubtype.DUAL;
+        }
+        return VideoItem.CameraSubtype.UNKNOWN;
+    }
+
+    @NonNull
+    private VideoItem.CameraSubtype resolveCameraSubtype(
+            @NonNull VideoItem.CameraSubtype explicitSubtype,
+            @Nullable String fileName
+    ) {
+        if (explicitSubtype != VideoItem.CameraSubtype.UNKNOWN) {
+            return explicitSubtype;
+        }
+        VideoItem.CameraSubtype byName = inferCameraSubtypeFromName(fileName);
+        if (byName != VideoItem.CameraSubtype.UNKNOWN) {
+            return byName;
+        }
+        return VideoItem.CameraSubtype.BACK;
+    }
+
+    @NonNull
+    private VideoItem.CameraSubtype resolveCameraSubtypeFromItem(@NonNull VideoItem item) {
+        if (item.cameraSubtype != null && item.cameraSubtype != VideoItem.CameraSubtype.UNKNOWN) {
+            return item.cameraSubtype;
+        }
+        VideoItem.CameraSubtype byUri = inferCameraSubtypeFromUri(item.uri);
+        if (byUri != VideoItem.CameraSubtype.UNKNOWN) {
+            return byUri;
+        }
+        return resolveCameraSubtype(VideoItem.CameraSubtype.UNKNOWN, item.displayName);
+    }
+
+    @NonNull
+    private VideoItem.CameraSubtype inferCameraSubtypeFromUri(@Nullable Uri uri) {
+        if (uri == null) return VideoItem.CameraSubtype.UNKNOWN;
+        String value = uri.toString();
+        if (value.contains("/" + Constants.RECORDING_SUBDIR_CAMERA + "/" + Constants.RECORDING_SUBDIR_CAMERA_FRONT + "/")
+                || value.contains("%2F" + Constants.RECORDING_SUBDIR_CAMERA + "%2F" + Constants.RECORDING_SUBDIR_CAMERA_FRONT + "%2F")) {
+            return VideoItem.CameraSubtype.FRONT;
+        }
+        if (value.contains("/" + Constants.RECORDING_SUBDIR_CAMERA + "/" + Constants.RECORDING_SUBDIR_CAMERA_DUAL + "/")
+                || value.contains("%2F" + Constants.RECORDING_SUBDIR_CAMERA + "%2F" + Constants.RECORDING_SUBDIR_CAMERA_DUAL + "%2F")
+                || value.contains("/" + Constants.RECORDING_SUBDIR_DUAL + "/")
+                || value.contains("%2F" + Constants.RECORDING_SUBDIR_DUAL + "%2F")) {
+            return VideoItem.CameraSubtype.DUAL;
+        }
+        if (value.contains("/" + Constants.RECORDING_SUBDIR_CAMERA + "/" + Constants.RECORDING_SUBDIR_CAMERA_BACK + "/")
+                || value.contains("%2F" + Constants.RECORDING_SUBDIR_CAMERA + "%2F" + Constants.RECORDING_SUBDIR_CAMERA_BACK + "%2F")) {
+            return VideoItem.CameraSubtype.BACK;
+        }
+        return VideoItem.CameraSubtype.UNKNOWN;
+    }
+
     private VideoItem.Category inferCategoryFromLegacyName(@Nullable String fileName) {
         if (fileName == null) return VideoItem.Category.UNKNOWN;
         if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) return VideoItem.Category.CAMERA;
-        if (fileName.startsWith("DualCam_")) return VideoItem.Category.DUAL;
+        if (fileName.startsWith("DualCam_")) return VideoItem.Category.CAMERA;
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADREC)) return VideoItem.Category.SCREEN;
         if (fileName.startsWith("Faditor_")) return VideoItem.Category.FADITOR;
         if (fileName.startsWith("Stream_")) return VideoItem.Category.STREAM;
@@ -4146,6 +4425,10 @@ public class RecordsFragment extends BaseFragment implements
         if (childDir == null || !childDir.isDirectory() || !childDir.canRead()) {
             return;
         }
+        if (category == VideoItem.Category.CAMERA) {
+            addSafCameraFiles(out, childDir);
+            return;
+        }
         if (category == VideoItem.Category.SHOT) {
             addSafShotFiles(out, childDir);
             return;
@@ -4157,6 +4440,35 @@ public class RecordsFragment extends BaseFragment implements
         for (DocumentFile file : files) {
             if (file != null && file.isFile()) {
                 out.add(new SafCandidate(file, category));
+            }
+        }
+    }
+
+    private void addSafCameraFiles(@NonNull List<SafCandidate> out, @NonNull DocumentFile cameraRoot) {
+        DocumentFile[] entries = cameraRoot.listFiles();
+        if (entries == null) return;
+        for (DocumentFile entry : entries) {
+            if (entry == null) continue;
+            if (entry.isFile()) {
+                out.add(new SafCandidate(
+                        entry,
+                        VideoItem.Category.CAMERA,
+                        VideoItem.ShotSubtype.UNKNOWN,
+                        inferCameraSubtypeFromName(entry.getName())));
+                continue;
+            }
+            if (!entry.isDirectory()) continue;
+            VideoItem.CameraSubtype subtype = inferCameraSubtypeFromFolder(entry.getName());
+            DocumentFile[] nested = entry.listFiles();
+            if (nested == null) continue;
+            for (DocumentFile nestedFile : nested) {
+                if (nestedFile != null && nestedFile.isFile()) {
+                    out.add(new SafCandidate(
+                            nestedFile,
+                            VideoItem.Category.CAMERA,
+                            VideoItem.ShotSubtype.UNKNOWN,
+                            subtype));
+                }
             }
         }
     }
@@ -4186,7 +4498,8 @@ public class RecordsFragment extends BaseFragment implements
             @NonNull List<VideoItem> out,
             @NonNull DocumentFile docFile,
             @NonNull VideoItem.Category explicitCategory,
-            @NonNull VideoItem.ShotSubtype explicitShotSubtype
+            @NonNull VideoItem.ShotSubtype explicitShotSubtype,
+            @NonNull VideoItem.CameraSubtype explicitCameraSubtype
     ) {
         String fileName = docFile.getName();
         VideoItem.MediaType mediaType = inferMediaTypeFromName(fileName);
@@ -4201,7 +4514,8 @@ public class RecordsFragment extends BaseFragment implements
                     docFile.lastModified(),
                     VideoItem.Category.UNKNOWN,
                     VideoItem.MediaType.VIDEO,
-                    VideoItem.ShotSubtype.UNKNOWN);
+                    VideoItem.ShotSubtype.UNKNOWN,
+                    VideoItem.CameraSubtype.UNKNOWN);
             tempVideoItem.isTemporary = true;
             tempVideoItem.isNew = false;
             if (currentlyProcessingUris.contains(docFile.getUri())) {
@@ -4218,6 +4532,9 @@ public class RecordsFragment extends BaseFragment implements
         VideoItem.ShotSubtype shotSubtype = category == VideoItem.Category.SHOT
                 ? resolveShotSubtype(explicitShotSubtype, fileName)
                 : VideoItem.ShotSubtype.UNKNOWN;
+        VideoItem.CameraSubtype cameraSubtype = category == VideoItem.Category.CAMERA
+                ? resolveCameraSubtype(explicitCameraSubtype, fileName)
+                : VideoItem.CameraSubtype.UNKNOWN;
         VideoItem item = new VideoItem(
                 docFile.getUri(),
                 fileName,
@@ -4225,7 +4542,8 @@ public class RecordsFragment extends BaseFragment implements
                 lastModified,
                 category,
                 mediaType,
-                shotSubtype);
+                shotSubtype,
+                cameraSubtype);
         item.isTemporary = false;
         item.isNew = Utils.isVideoConsideredNew(lastModified);
         out.add(item);

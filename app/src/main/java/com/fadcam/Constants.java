@@ -282,6 +282,9 @@ public abstract class Constants {
 
     public static final String RECORDING_DIRECTORY = "FadCam";
     public static final String RECORDING_SUBDIR_CAMERA = "Camera";
+    public static final String RECORDING_SUBDIR_CAMERA_BACK = "Back";
+    public static final String RECORDING_SUBDIR_CAMERA_FRONT = "Front";
+    public static final String RECORDING_SUBDIR_CAMERA_DUAL = "Dual";
     public static final String RECORDING_SUBDIR_DUAL = "Dual";
     public static final String RECORDING_SUBDIR_SCREEN = "Screen";
     public static final String RECORDING_SUBDIR_FADITOR = "Faditor";

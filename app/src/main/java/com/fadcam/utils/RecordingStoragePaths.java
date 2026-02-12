@@ -32,6 +32,12 @@ public final class RecordingStoragePaths {
         FADREC
     }
 
+    public enum CameraSource {
+        BACK,
+        FRONT,
+        DUAL
+    }
+
     private RecordingStoragePaths() {
     }
 
@@ -82,6 +88,20 @@ public final class RecordingStoragePaths {
         }
     }
 
+    @NonNull
+    public static String folderNameForCameraSource(@Nullable CameraSource source) {
+        if (source == null) return Constants.RECORDING_SUBDIR_CAMERA_BACK;
+        switch (source) {
+            case FRONT:
+                return Constants.RECORDING_SUBDIR_CAMERA_FRONT;
+            case DUAL:
+                return Constants.RECORDING_SUBDIR_CAMERA_DUAL;
+            case BACK:
+            default:
+                return Constants.RECORDING_SUBDIR_CAMERA_BACK;
+        }
+    }
+
     @Nullable
     public static File getInternalBaseDir(@NonNull Context context) {
         File external = context.getExternalFilesDir(null);
@@ -115,6 +135,20 @@ public final class RecordingStoragePaths {
         if (shotRoot == null) return null;
         String sourceFolder = folderNameForShotSource(source);
         File sourceDir = new File(shotRoot, sourceFolder);
+        if (!sourceDir.exists() && createIfMissing && !sourceDir.mkdirs()) return null;
+        return sourceDir;
+    }
+
+    @Nullable
+    public static File getInternalCameraSourceDir(
+            @NonNull Context context,
+            @Nullable CameraSource source,
+            boolean createIfMissing
+    ) {
+        File cameraRoot = getInternalCategoryDir(context, Category.CAMERA, createIfMissing);
+        if (cameraRoot == null) return null;
+        String sourceFolder = folderNameForCameraSource(source);
+        File sourceDir = new File(cameraRoot, sourceFolder);
         if (!sourceDir.exists() && createIfMissing && !sourceDir.mkdirs()) return null;
         return sourceDir;
     }
@@ -156,6 +190,18 @@ public final class RecordingStoragePaths {
         DocumentFile shotRoot = getSafCategoryDir(context, treeUriString, Category.SHOT, createIfMissing);
         if (shotRoot == null) return null;
         return findOrCreateChildDirectory(shotRoot, folderNameForShotSource(source), createIfMissing);
+    }
+
+    @Nullable
+    public static DocumentFile getSafCameraSourceDir(
+            @NonNull Context context,
+            @Nullable String treeUriString,
+            @Nullable CameraSource source,
+            boolean createIfMissing
+    ) {
+        DocumentFile cameraRoot = getSafCategoryDir(context, treeUriString, Category.CAMERA, createIfMissing);
+        if (cameraRoot == null) return null;
+        return findOrCreateChildDirectory(cameraRoot, folderNameForCameraSource(source), createIfMissing);
     }
 
     @Nullable

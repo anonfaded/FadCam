@@ -164,6 +164,8 @@ public class RecordingService extends Service {
     private Integer runtimeExposureCompensation = null;
     private Boolean runtimeAeLock = null;
     private Integer runtimeAfMode = null;
+    // Locks per-session output folder so split segments don't jump folders during camera switches.
+    private RecordingStoragePaths.CameraSource recordingSessionCameraSource = RecordingStoragePaths.CameraSource.BACK;
 
     // --- Lifecycle Methods ---
     @Override
@@ -635,6 +637,11 @@ public class RecordingService extends Service {
                 // Update the UI and Service state atomically
                 recordingState = RecordingState.STARTING;
                 sharedPreferencesManager.setRecordingInProgress(true);
+                CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+                recordingSessionCameraSource = selectedType == CameraType.FRONT
+                        ? RecordingStoragePaths.CameraSource.FRONT
+                        : RecordingStoragePaths.CameraSource.BACK;
+                Log.d(TAG, "Recording session camera source resolved to: " + recordingSessionCameraSource);
 
                 // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
@@ -3070,6 +3077,27 @@ public class RecordingService extends Service {
                 "proceedWithRolloverAfterOldSessionClosed: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
     }
 
+    @Nullable
+    private File resolveInternalRecordingVideoDir(boolean isStreamAndSave) {
+        if (isStreamAndSave) {
+            return RecordingStoragePaths.getInternalCategoryDir(this, RecordingStoragePaths.Category.STREAM, true);
+        }
+        return RecordingStoragePaths.getInternalCameraSourceDir(this, recordingSessionCameraSource, true);
+    }
+
+    @Nullable
+    private DocumentFile resolveSafRecordingVideoDir(@Nullable String customUriString, boolean isStreamAndSave) {
+        if (customUriString == null || customUriString.isEmpty()) return null;
+        if (isStreamAndSave) {
+            return RecordingStoragePaths.getSafCategoryDir(
+                    this,
+                    customUriString,
+                    RecordingStoragePaths.Category.STREAM,
+                    true);
+        }
+        return RecordingStoragePaths.getSafCameraSourceDir(this, customUriString, recordingSessionCameraSource, true);
+    }
+
     private File createNextSegmentOutputFile(int nextSegmentNumber) {
         String storageMode = sharedPreferencesManager.getStorageMode();
         
@@ -3079,9 +3107,6 @@ public class RecordingService extends Service {
             com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
         boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
-        RecordingStoragePaths.Category category = isStreamAndSave
-                ? RecordingStoragePaths.Category.STREAM
-                : RecordingStoragePaths.Category.CAMERA;
         
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/DocumentFile mode
@@ -3090,8 +3115,7 @@ public class RecordingService extends Service {
                 Log.e(TAG, "createNextSegmentOutputFile: Custom storage selected but URI is null");
                 return null;
             }
-            DocumentFile pickedDir = RecordingStoragePaths.getSafCategoryDir(
-                    this, customUriString, category, true);
+            DocumentFile pickedDir = resolveSafRecordingVideoDir(customUriString, isStreamAndSave);
             if (pickedDir == null || !pickedDir.canWrite()) {
                 Log.e(TAG, "createNextSegmentOutputFile: Cannot write to selected custom directory");
                 return null;
@@ -3129,9 +3153,9 @@ public class RecordingService extends Service {
                     + Constants.RECORDING_FILE_EXTENSION;
 
             // Use the same directory as the first segment (app's external files directory)
-            File videoDir = RecordingStoragePaths.getInternalCategoryDir(this, category, true);
+            File videoDir = resolveInternalRecordingVideoDir(isStreamAndSave);
             if (videoDir == null) {
-                Log.e(TAG, "Cannot create recording directory for category: " + category);
+                Log.e(TAG, "Cannot create recording directory for split segment");
                 Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
                 return null;
             }
@@ -3770,15 +3794,11 @@ public class RecordingService extends Service {
             com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
         boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
-        RecordingStoragePaths.Category category = isStreamAndSave
-                ? RecordingStoragePaths.Category.STREAM
-                : RecordingStoragePaths.Category.CAMERA;
-        
         String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                 + Constants.RECORDING_FILE_EXTENSION;
-        File videoDir = RecordingStoragePaths.getInternalCategoryDir(this, category, true);
+        File videoDir = resolveInternalRecordingVideoDir(isStreamAndSave);
         if (videoDir == null) {
-            Log.e(TAG, "Cannot create internal recording directory for category: " + category);
+            Log.e(TAG, "Cannot create internal recording directory for active session");
             Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
             return null;
         }
@@ -3806,11 +3826,8 @@ public class RecordingService extends Service {
                         com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
                 boolean isStreamAndSave = isStreamingActive
                         && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
-                RecordingStoragePaths.Category category = isStreamAndSave
-                        ? RecordingStoragePaths.Category.STREAM
-                        : RecordingStoragePaths.Category.CAMERA;
-                androidx.documentfile.provider.DocumentFile pickedDir = RecordingStoragePaths.getSafCategoryDir(
-                        RecordingService.this, customUriString, category, true);
+                androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
+                        customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     Log.e(TAG, "Segment rollover: Cannot write to selected custom directory");
                     stopRecording();
@@ -4024,11 +4041,8 @@ public class RecordingService extends Service {
                     com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
                 boolean isStreamAndSave = isStreamingActive
                         && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
-                RecordingStoragePaths.Category category = isStreamAndSave
-                        ? RecordingStoragePaths.Category.STREAM
-                        : RecordingStoragePaths.Category.CAMERA;
-                androidx.documentfile.provider.DocumentFile pickedDir = RecordingStoragePaths.getSafCategoryDir(
-                        this, customUriString, category, true);
+                androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
+                        customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     Log.e(TAG, "Cannot write to selected custom directory");
                     Toast.makeText(this, "Cannot write to selected custom directory", Toast.LENGTH_LONG).show();

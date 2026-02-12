@@ -1303,8 +1303,11 @@ public class DualCameraRecordingService extends Service {
                     return null;
                 }
 
-                DocumentFile treeDoc = RecordingStoragePaths.getSafCategoryDir(
-                        this, treeUriString, RecordingStoragePaths.Category.DUAL, true);
+                DocumentFile treeDoc = RecordingStoragePaths.getSafCameraSourceDir(
+                        this,
+                        treeUriString,
+                        RecordingStoragePaths.CameraSource.DUAL,
+                        true);
                 if (treeDoc == null || !treeDoc.exists() || !treeDoc.canWrite()) {
                     Log.e(TAG, "Cannot write to custom storage location");
                     return null;
@@ -1328,8 +1331,8 @@ public class DualCameraRecordingService extends Service {
             }
         } else {
             // Internal mode — write directly to recording directory
-            File videoDir = RecordingStoragePaths.getInternalCategoryDir(
-                    this, RecordingStoragePaths.Category.DUAL, true);
+            File videoDir = RecordingStoragePaths.getInternalCameraSourceDir(
+                    this, RecordingStoragePaths.CameraSource.DUAL, true);
             if (videoDir == null) {
                 Log.e(TAG, "Cannot create recording directory for dual camera");
                 return null;

@@ -32,6 +32,14 @@ public class VideoItem {
         UNKNOWN
     }
 
+    public enum CameraSubtype {
+        ALL,
+        BACK,
+        FRONT,
+        DUAL,
+        UNKNOWN
+    }
+
     public final Uri uri; // The unique identifier (file:// or content://)
     public final String displayName; // Filename
     public final long size; // Size in bytes
@@ -39,6 +47,7 @@ public class VideoItem {
     public final Category category; // Folder-derived source category
     public final MediaType mediaType; // video or image
     public final ShotSubtype shotSubtype; // Shot source (for image shot filtering/badging)
+    public final CameraSubtype cameraSubtype; // Camera source (for camera sub-filtering)
 
     public boolean isTemporary = false;
     public boolean isNew = false;
@@ -46,11 +55,13 @@ public class VideoItem {
     public boolean isSkeleton = false; // Flag for skeleton loading
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
-        this(uri, displayName, size, lastModified, Category.UNKNOWN, MediaType.VIDEO, ShotSubtype.UNKNOWN);
+        this(uri, displayName, size, lastModified, Category.UNKNOWN, MediaType.VIDEO, ShotSubtype.UNKNOWN,
+                CameraSubtype.UNKNOWN);
     }
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified, Category category) {
-        this(uri, displayName, size, lastModified, category, MediaType.VIDEO, ShotSubtype.UNKNOWN);
+        this(uri, displayName, size, lastModified, category, MediaType.VIDEO, ShotSubtype.UNKNOWN,
+                CameraSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -61,7 +72,7 @@ public class VideoItem {
         Category category,
         MediaType mediaType
     ) {
-        this(uri, displayName, size, lastModified, category, mediaType, ShotSubtype.UNKNOWN);
+        this(uri, displayName, size, lastModified, category, mediaType, ShotSubtype.UNKNOWN, CameraSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -73,6 +84,19 @@ public class VideoItem {
         MediaType mediaType,
         ShotSubtype shotSubtype
     ) {
+        this(uri, displayName, size, lastModified, category, mediaType, shotSubtype, CameraSubtype.UNKNOWN);
+    }
+
+    public VideoItem(
+        Uri uri,
+        String displayName,
+        long size,
+        long lastModified,
+        Category category,
+        MediaType mediaType,
+        ShotSubtype shotSubtype,
+        CameraSubtype cameraSubtype
+    ) {
         this.uri = uri;
         this.displayName = displayName;
         this.size = size;
@@ -80,6 +104,7 @@ public class VideoItem {
         this.category = category == null ? Category.UNKNOWN : category;
         this.mediaType = mediaType == null ? MediaType.VIDEO : mediaType;
         this.shotSubtype = shotSubtype == null ? ShotSubtype.UNKNOWN : shotSubtype;
+        this.cameraSubtype = cameraSubtype == null ? CameraSubtype.UNKNOWN : cameraSubtype;
     }
     
     /**
@@ -119,6 +144,7 @@ public class VideoItem {
                 ", category=" + category +
                 ", mediaType=" + mediaType +
                 ", shotSubtype=" + shotSubtype +
+                ", cameraSubtype=" + cameraSubtype +
                 '}';
     }
 }
