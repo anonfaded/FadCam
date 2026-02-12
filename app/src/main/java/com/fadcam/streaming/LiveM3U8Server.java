@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import com.fadcam.streaming.model.ClientEvent;
 import com.fadcam.streaming.model.ClientMetrics;
 import com.fadcam.streaming.model.StreamQuality;
+import com.fadcam.utils.ServiceStartPolicy;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -501,24 +502,31 @@ import fi.iki.elonen.NanoHTTPD;
             // Use same logic as TorchToggleActivity
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
             android.content.Intent intent;
+            boolean recordingServiceIntent;
             
             if (spManager.isRecordingInProgress()) {
                 // Recording active: send to RecordingService
                 intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
                 Log.d(TAG, "Recording active - routing torch toggle to RecordingService");
+                recordingServiceIntent = true;
             } else {
                 // Not recording: send to TorchService for idle torch control
                 intent = new android.content.Intent(context, com.fadcam.services.TorchService.class);
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_TORCH);
                 Log.d(TAG, "Not recording - routing torch toggle to TorchService");
+                recordingServiceIntent = false;
             }
             
-            // Start the appropriate service
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(intent);
+            // RecordingService control actions should never use foreground start.
+            if (recordingServiceIntent) {
+                ServiceStartPolicy.startRecordingAction(context, intent);
             } else {
-                context.startService(intent);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent);
+                } else {
+                    context.startService(intent);
+                }
             }
             
             Log.i(TAG, "✅ Torch toggle intent sent. New state: " + newState);
@@ -671,12 +679,8 @@ import fi.iki.elonen.NanoHTTPD;
                 Log.d(TAG, "Recording not in progress - sending START_RECORDING intent");
             }
             
-            // Start the service
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(intent);
-            } else {
-                context.startService(intent);
-            }
+            // Start/stop action dispatch via unified policy.
+            ServiceStartPolicy.startRecordingAction(context, intent);
             
             String action = isRecording ? "stop" : "start";
             String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s}", 
@@ -1606,4 +1610,3 @@ import fi.iki.elonen.NanoHTTPD;
         return finalCleaned.trim();
     }
 }
-

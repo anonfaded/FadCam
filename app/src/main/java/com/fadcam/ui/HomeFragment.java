@@ -85,6 +85,7 @@ import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.utils.DebouncedRunnable;
 import com.fadcam.utils.DeviceHelper;
+import com.fadcam.utils.ServiceStartPolicy;
 import com.fadcam.utils.StorageInfoCache;
 import com.fadcam.utils.VideoStatsCache;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -4846,7 +4847,7 @@ public class HomeFragment extends BaseFragment {
             queryIntent.setAction(
                 Constants.BROADCAST_ON_RECORDING_STATE_REQUEST
             );
-            ContextCompat.startForegroundService(getContext(), queryIntent);
+            ServiceStartPolicy.startRecordingAction(requireContext(), queryIntent);
             // UI should update based on the broadcast from the service
             return; // Don't try to start again if it might be running
         }
@@ -4880,7 +4881,7 @@ public class HomeFragment extends BaseFragment {
             serviceIntent.putExtra("SURFACE", (Surface) null); // Explicitly pass null
         }
 
-        ContextCompat.startForegroundService(getContext(), serviceIntent);
+        ServiceStartPolicy.startRecordingAction(requireContext(), serviceIntent);
         // UI state changes will be handled by broadcast receivers
         // setUIForRecordingActive(); // Move UI update to onRecordingStarted broadcast
         // receiver
@@ -4918,7 +4919,7 @@ public class HomeFragment extends BaseFragment {
 
         Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
         intent.setAction(Constants.INTENT_ACTION_START_DUAL_RECORDING);
-        ContextCompat.startForegroundService(getContext(), intent);
+        ServiceStartPolicy.startRecordingAction(requireContext(), intent);
 
         Log.d(TAG, "startDualRecording: DualCameraRecordingService start initiated.");
     }
@@ -5050,7 +5051,7 @@ public class HomeFragment extends BaseFragment {
             queryIntent.setAction(
                 Constants.BROADCAST_ON_RECORDING_STATE_REQUEST
             );
-            ContextCompat.startForegroundService(getContext(), queryIntent);
+            ServiceStartPolicy.startRecordingAction(requireContext(), queryIntent);
             // UI should update based on the broadcast from the service
             return; // Don't try to start again if it might be running
         }
@@ -5084,7 +5085,7 @@ public class HomeFragment extends BaseFragment {
             serviceIntent.putExtra("SURFACE", (Surface) null); // Explicitly pass null
         }
 
-        ContextCompat.startForegroundService(getContext(), serviceIntent);
+        ServiceStartPolicy.startRecordingAction(requireContext(), serviceIntent);
         // UI state changes will be handled by broadcast receivers
         // setUIForRecordingActive(); // Move UI update to onRecordingStarted broadcast
         // receiver
@@ -7544,10 +7545,7 @@ public class HomeFragment extends BaseFragment {
                     Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH
                 );
                 try {
-                    ContextCompat.startForegroundService(
-                        getContext(),
-                        serviceIntent
-                    );
+                    ServiceStartPolicy.startRecordingAction(requireContext(), serviceIntent);
                 } catch (Exception e) {
                     Log.e(
                         TAG,

@@ -1117,6 +1117,7 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG, "lifecycle onResume: activeFilter=" + activeFilter + ", loadedItems=" + allLoadedItems.size());
         Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
 
         // Check if an external event (e.g. Faditor export) requested a refresh
@@ -1202,6 +1203,9 @@ public class RecordsFragment extends BaseFragment implements
      */
     public void onFragmentBecameVisible() {
         Log.d(TAG, "onFragmentBecameVisible: Fragment is now visible to user");
+        boolean shouldLoadData = (videoItems == null || videoItems.isEmpty()) && !isLoading;
+        Log.d(TAG, "visibility_event: shouldLoadData=" + shouldLoadData + ", currentCount="
+                + (videoItems == null ? 0 : videoItems.size()));
 
         // Check if we need to load data for the first time
         if ((videoItems == null || videoItems.isEmpty()) && !isLoading) {
@@ -4213,6 +4217,8 @@ public class RecordsFragment extends BaseFragment implements
      */
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
+        Log.d(TAG, "loadRecordsList: start, storageMode=" + sharedPreferencesManager.getStorageMode()
+                + ", activeFilter=" + activeFilter);
         Log.i(TAG, "loadRecordsList: Starting optimized progressive loading");
 
         // -----------

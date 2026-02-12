@@ -708,6 +708,7 @@ public class RecordingService extends Service {
                 return START_STICKY;
             }
         } else if (Constants.INTENT_ACTION_STOP_RECORDING.equals(action)) {
+            Log.i(TAG, "dispatch stop_action_received via onStartCommand");
             stopRecording();
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_PAUSE_RECORDING.equals(action)) {

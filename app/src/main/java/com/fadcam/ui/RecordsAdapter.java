@@ -43,6 +43,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.utils.ShimmerEffectHelper;
+import com.fadcam.utils.RuntimeCompat;
 import com.fadcam.Constants;
 import com.fadcam.R;
 // Ensure VideoItem import is correct
@@ -85,6 +86,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Keep the cache for thumbnails but optimize it
     private final SparseArray<String> loadedThumbnailCache = new SparseArray<>();
     private static final int THUMBNAIL_SIZE = 200; // Standard size for all thumbnails
+    private static final int SAFE_THUMBNAIL_SIZE = 140;
+    private static final int SAFE_SCROLL_THUMBNAIL_SIZE = 80;
     private Set<Uri> currentlyProcessingUris = new HashSet<>(); // Track processing URIs within adapter instance (passed
                                                                 // from fragment)
     // Bounded LRU caches to avoid unbounded memory usage
@@ -118,6 +121,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     private final SharedPreferencesManager sharedPreferencesManager;
     private final RecordActionListener actionListener; // Add the listener interface
     private final Context context;
+    private final boolean safeMediaProbeMode;
     private List<VideoItem> records; // Now holds VideoItem objects
     private final OnVideoClickListener clickListener;
     private final OnVideoLongClickListener longClickListener;
@@ -147,6 +151,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             RecordActionListener actionListener) {
 
         this.context = Objects.requireNonNull(context, "Context cannot be null for RecordsAdapter");
+        this.safeMediaProbeMode = RuntimeCompat.shouldUseSafeMediaProbe(this.context);
         this.records = new ArrayList<>(records); // Use a mutable copy
         this.executorService = Objects.requireNonNull(executorService, "ExecutorService cannot be null");
         this.sharedPreferencesManager = Objects.requireNonNull(sharedPreferencesManager,
@@ -212,6 +217,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     new android.content.IntentFilter("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED"));
         } catch (Exception ignored) {
         }
+        Log.i(TAG, "init safe_media_probe=" + safeMediaProbeMode
+                + ", sdk=" + Build.VERSION.SDK_INT
+                + ", watch=" + RuntimeCompat.isWatchDevice(this.context)
+                + ", lowRam=" + RuntimeCompat.isLowRamDevice(this.context));
     }
 
 
@@ -364,10 +373,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 } else {
                     // Show a placeholder while loading
                     holder.textViewFileTime.setText("--:--");
-
-                    // Calculate duration on background thread - this is one of the main causes of
-                    // lag
-                    executorService.execute(() -> {
+                    if (!(safeMediaProbeMode && isScrolling)) {
+                        // Calculate duration on background thread - this is one of the main causes of
+                        // lag
+                        executorService.execute(() -> {
                         // Add a small delay for newly recorded videos to ensure file is fully written
                         if (videoItem.isNew) {
                             try {
@@ -389,7 +398,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                                 holder.textViewFileTime.setText(formattedDuration);
                             }
                         });
-                    });
+                        });
+                    }
                 }
             }
         }
@@ -420,6 +430,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     if (cachedSaved != null && cachedDur != null) {
                         applyProgressToView(progressBg, progressFill, cachedSaved, cachedDur);
                     } else {
+                        if (safeMediaProbeMode && isScrolling) {
+                            progressFill.setVisibility(View.GONE);
+                            return;
+                        }
                         // Submit one background task to compute missing values
                         executorService.execute(() -> {
                             try {
@@ -790,7 +804,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
         // Lower resolution during scrolling for performance
-        int thumbnailSize = isScrolling ? 100 : THUMBNAIL_SIZE;
+        int thumbnailSize;
+        if (safeMediaProbeMode) {
+            thumbnailSize = isScrolling ? SAFE_SCROLL_THUMBNAIL_SIZE : SAFE_THUMBNAIL_SIZE;
+        } else {
+            thumbnailSize = isScrolling ? 100 : THUMBNAIL_SIZE;
+        }
 
         // Create optimized request options with different strategies based on scrolling
         RequestOptions options = new RequestOptions()
@@ -2178,6 +2197,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             return 0;
         }
         
+        if (safeMediaProbeMode) {
+            Log.d(TAG, "probe_mode=safe_mmr uri=" + videoUri);
+            return getVideoDurationWithMmr(videoUri, "safe_mmr");
+        }
+
+        Log.d(TAG, "probe_mode=ffprobe uri=" + videoUri);
         // Get file path for FFprobe - try multiple approaches for content:// URIs
         String filePath = getFFprobePathForUri(videoUri);
         
@@ -2197,7 +2222,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                         return durationMs;
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Log.e(TAG, "Error getting duration from FFprobe for path: " + filePath, e);
             }
         }
@@ -2223,12 +2248,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                         pfd.close();
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Log.w(TAG, "FFprobe FD-based duration failed for: " + videoUri, e);
             }
         }
-        
-        // Fallback: Use MediaMetadataRetriever (proper Android API for content:// URIs)
+
+        return getVideoDurationWithMmr(videoUri, "ffprobe_fallback_mmr");
+    }
+
+    private long getVideoDurationWithMmr(@NonNull Uri videoUri, @NonNull String source) {
         android.media.MediaMetadataRetriever retriever = null;
         try {
             retriever = new android.media.MediaMetadataRetriever();
@@ -2236,11 +2264,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             String durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 long durationMs = Long.parseLong(durationStr);
-                Log.d(TAG, "Duration from MediaMetadataRetriever fallback: " + durationMs + "ms");
+                Log.d(TAG, "duration_source=" + source + " durationMs=" + durationMs + " uri=" + videoUri);
                 return durationMs;
             }
-        } catch (Exception e) {
-            Log.w(TAG, "MediaMetadataRetriever fallback failed for URI: " + videoUri, e);
+        } catch (Throwable e) {
+            Log.w(TAG, "duration_source=" + source + " failed uri=" + videoUri, e);
         } finally {
             if (retriever != null) {
                 try {
@@ -2250,7 +2278,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
             }
         }
-        
         return 0;
     }
     
