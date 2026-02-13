@@ -23,9 +23,10 @@ Ship a production-ready, open-source, scalable motion-triggered recording system
 
 ### 1) Product/Spec Lock
 - [ ] Freeze trigger modes: `Any Motion` and `Person Confirmed`.
-- [ ] Freeze default timings: debounce, cooldown, post-roll, pre-roll.
+- [x] Freeze default timings: debounce, cooldown, post-roll, pre-roll.
 - [ ] Freeze device-tier defaults (watch/low-end/mid/high).
 - [ ] Freeze user-facing copy for Motion Lab rows/helpers.
+- [x] Add explicit default values in Motion Lab helper copy.
 
 ### 2) Preferences + Interfaces
 - [x] Add Motion Lab preference keys in `app/src/main/java/com/fadcam/Constants.java`.
@@ -89,12 +90,19 @@ Ship a production-ready, open-source, scalable motion-triggered recording system
   - [x] Post-roll
   - [x] Pre-roll seconds
   - [x] Low-FPS fallback toggle + target FPS
+  - [x] Auto torch on motion toggle (pause=off, resume=on)
 - [x] Add explanatory helper text per setting.
+- [x] Add live debug card with state/score/threshold/action/person.
+- [x] Add live analyzer-frame preview in debug card.
+- [x] Add `Copy Debug Snapshot` action.
+- [x] Make Analysis FPS configurable with numeric input (1-15).
 
 ### 4) Diagnostics + Telemetry (local)
 - [x] Add structured logs: motion score, threshold crosses, state transitions.
+- [x] Add smoothed score + hysteresis threshold logs.
 - [x] Add debug counters: trigger count, suppress count, clip count.
 - [x] Add compact diagnostics summary for bug reports.
+- [x] Add throttled debug broadcast payload for live settings screen.
 
 ### 5) Sprint 2 Validation
 - [ ] False positive test (static scene with lighting changes).

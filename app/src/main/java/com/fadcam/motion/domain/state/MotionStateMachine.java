@@ -7,6 +7,7 @@ import com.fadcam.motion.domain.policy.MotionPolicy;
 public class MotionStateMachine {
     private static final long DEFAULT_MIN_CLIP_MS = 2500L;
     private static final long DEFAULT_COOLDOWN_MS = 1500L;
+    private static final long DEFAULT_PENDING_LOSS_GRACE_MS = 450L;
 
     public enum TransitionAction {
         NONE,
@@ -17,6 +18,7 @@ public class MotionStateMachine {
     private final MotionPolicy policy;
     private MotionSessionState state = MotionSessionState.IDLE;
     private long pendingSinceMs = -1L;
+    private long pendingLastTriggeredAtMs = -1L;
     private long postRollUntilMs = -1L;
     private long recordingStartedAtMs = -1L;
     private long cooldownUntilMs = -1L;
@@ -30,7 +32,7 @@ public class MotionStateMachine {
     }
 
     public TransitionAction onSignal(MotionSettings settings, MotionSignal signal) {
-        boolean triggered = policy.isTriggerSatisfied(settings, signal);
+        boolean triggered = policy.isTriggerSatisfied(settings, signal, state);
         switch (state) {
             case IDLE:
                 if (cooldownUntilMs > 0 && signal.getTimestampMs() < cooldownUntilMs) {
@@ -39,11 +41,17 @@ public class MotionStateMachine {
                 if (triggered) {
                     state = MotionSessionState.PENDING;
                     pendingSinceMs = signal.getTimestampMs();
+                    pendingLastTriggeredAtMs = signal.getTimestampMs();
                 }
                 return TransitionAction.NONE;
 
             case PENDING:
-                if (!triggered) {
+                if (triggered) {
+                    pendingLastTriggeredAtMs = signal.getTimestampMs();
+                } else if (pendingLastTriggeredAtMs > 0
+                        && signal.getTimestampMs() - pendingLastTriggeredAtMs <= DEFAULT_PENDING_LOSS_GRACE_MS) {
+                    return TransitionAction.NONE;
+                } else {
                     resetToIdle();
                     return TransitionAction.NONE;
                 }
@@ -88,6 +96,7 @@ public class MotionStateMachine {
     public void resetToIdle() {
         state = MotionSessionState.IDLE;
         pendingSinceMs = -1L;
+        pendingLastTriggeredAtMs = -1L;
         postRollUntilMs = -1L;
         recordingStartedAtMs = -1L;
     }

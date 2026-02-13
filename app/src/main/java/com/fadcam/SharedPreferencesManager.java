@@ -1801,7 +1801,7 @@ public class SharedPreferencesManager {
     }
 
     public String getMotionTriggerMode() {
-        return sharedPreferences.getString(Constants.PREF_MOTION_TRIGGER_MODE, "person_confirmed");
+        return sharedPreferences.getString(Constants.PREF_MOTION_TRIGGER_MODE, "any_motion");
     }
 
     public void setMotionTriggerMode(String mode) {
@@ -1809,7 +1809,7 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionSensitivity() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_SENSITIVITY, 60);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_SENSITIVITY, 72);
     }
 
     public void setMotionSensitivity(int value) {
@@ -1817,8 +1817,8 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionAnalysisFps() {
-        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 3);
-        return fps <= 0 ? 3 : fps;
+        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 5);
+        return fps <= 0 ? 5 : fps;
     }
 
     public void setMotionAnalysisFps(int fps) {
@@ -1826,7 +1826,7 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionDebounceMs() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_DEBOUNCE_MS, 700);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_DEBOUNCE_MS, 250);
     }
 
     public void setMotionDebounceMs(int debounceMs) {
@@ -1834,7 +1834,7 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionPostRollMs() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_POST_ROLL_MS, 12000);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_POST_ROLL_MS, 8000);
     }
 
     public void setMotionPostRollMs(int postRollMs) {
@@ -1872,6 +1872,14 @@ public class SharedPreferencesManager {
 
     public void setMotionZonesJson(String zonesJson) {
         sharedPreferences.edit().putString(Constants.PREF_MOTION_ZONES_JSON, zonesJson == null ? "{}" : zonesJson).apply();
+    }
+
+    public boolean isMotionAutoTorchEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_MOTION_AUTO_TORCH_ENABLED, false);
+    }
+
+    public void setMotionAutoTorchEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_AUTO_TORCH_ENABLED, enabled).apply();
     }
     // -------------- Motion Lab (Advanced) Preferences End --------------
 

@@ -14,4 +14,5 @@ public interface MotionSettingsRepository {
     void setPreRollSeconds(int seconds);
     void setLowFpsFallbackEnabled(boolean enabled);
     void setLowFpsTarget(int fps);
+    void setAutoTorchEnabled(boolean enabled);
 }

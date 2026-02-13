@@ -121,6 +121,22 @@ public abstract class Constants {
         "com.fadcam.ON_TORCH_STATE_CHANGED";
     public static final String BROADCAST_ON_TORCH_STATE_REQUEST =
         "ON_TORCH_STATE_REQUEST";
+    public static final String BROADCAST_MOTION_LAB_DEBUG =
+        "com.fadcam.MOTION_LAB_DEBUG";
+    public static final String EXTRA_MOTION_DEBUG_SCORE = "motion_debug_score";
+    public static final String EXTRA_MOTION_DEBUG_RAW_SCORE =
+        "motion_debug_raw_score";
+    public static final String EXTRA_MOTION_DEBUG_START_THRESHOLD =
+        "motion_debug_start_threshold";
+    public static final String EXTRA_MOTION_DEBUG_STOP_THRESHOLD =
+        "motion_debug_stop_threshold";
+    public static final String EXTRA_MOTION_DEBUG_STATE = "motion_debug_state";
+    public static final String EXTRA_MOTION_DEBUG_ACTION = "motion_debug_action";
+    public static final String EXTRA_MOTION_DEBUG_PERSON_CONF =
+        "motion_debug_person_conf";
+    public static final String EXTRA_MOTION_DEBUG_PERSON = "motion_debug_person";
+    public static final String EXTRA_MOTION_DEBUG_FRAME_JPEG =
+        "motion_debug_frame_jpeg";
     public static final String BROADCAST_CAMERA_ERROR = "CAMERA_ACCESS_ERROR";
 
     public static final String INTENT_ACTION_STOP_RECORDING =
@@ -482,6 +498,7 @@ public abstract class Constants {
         "pref_motion_low_fps_fallback_enabled";
     public static final String PREF_MOTION_LOW_FPS_TARGET = "pref_motion_low_fps_target"; // 1/2/5
     public static final String PREF_MOTION_ZONES_JSON = "pref_motion_zones_json";
+    public static final String PREF_MOTION_AUTO_TORCH_ENABLED = "pref_motion_auto_torch_enabled";
 
     // ── Dual Camera (PiP) Constants ────────────────────────────────────────
     public static final String PREF_DUAL_CAMERA_ENABLED = "dual_camera_enabled";

@@ -12,6 +12,7 @@ public class MotionLabViewState {
     public final int preRollSeconds;
     public final boolean lowFpsFallbackEnabled;
     public final int lowFpsTarget;
+    public final boolean autoTorchEnabled;
 
     public MotionLabViewState(
         boolean enabled,
@@ -22,7 +23,8 @@ public class MotionLabViewState {
         int postRollMs,
         int preRollSeconds,
         boolean lowFpsFallbackEnabled,
-        int lowFpsTarget
+        int lowFpsTarget,
+        boolean autoTorchEnabled
     ) {
         this.enabled = enabled;
         this.triggerMode = triggerMode;
@@ -33,5 +35,6 @@ public class MotionLabViewState {
         this.preRollSeconds = preRollSeconds;
         this.lowFpsFallbackEnabled = lowFpsFallbackEnabled;
         this.lowFpsTarget = lowFpsTarget;
+        this.autoTorchEnabled = autoTorchEnabled;
     }
 }

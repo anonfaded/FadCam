@@ -23,7 +23,8 @@ public class SharedPrefsMotionSettingsRepository implements MotionSettingsReposi
             prefs.getMotionPostRollMs(),
             prefs.getMotionPreRollSeconds(),
             prefs.isMotionLowFpsFallbackEnabled(),
-            prefs.getMotionLowFpsTarget()
+            prefs.getMotionLowFpsTarget(),
+            prefs.isMotionAutoTorchEnabled()
         );
     }
 
@@ -70,5 +71,10 @@ public class SharedPrefsMotionSettingsRepository implements MotionSettingsReposi
     @Override
     public void setLowFpsTarget(int fps) {
         prefs.setMotionLowFpsTarget(fps);
+    }
+
+    @Override
+    public void setAutoTorchEnabled(boolean enabled) {
+        prefs.setMotionAutoTorchEnabled(enabled);
     }
 }

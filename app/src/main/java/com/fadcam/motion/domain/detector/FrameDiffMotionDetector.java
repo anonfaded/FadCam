@@ -6,10 +6,10 @@ import java.nio.ByteBuffer;
 
 public class FrameDiffMotionDetector implements MotionDetector {
 
-    private static final int SAMPLE_GRID_W = 64;
-    private static final int SAMPLE_GRID_H = 36;
-    private static final int PIXEL_DELTA_THRESHOLD = 18;
-    private static final float MIN_CHANGED_AREA_RATIO = 0.015f;
+    private static final int SAMPLE_GRID_W = 96;
+    private static final int SAMPLE_GRID_H = 54;
+    private static final int PIXEL_DELTA_THRESHOLD = 10;
+    private static final float MIN_CHANGED_AREA_RATIO = 0.005f;
     private byte[] previous;
 
     @Override

@@ -65,6 +65,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -189,6 +190,8 @@ public class RecordingService extends Service {
     private long motionFramesAnalyzed = 0L;
     private long motionTriggerActionCount = 0L;
     private long motionSuppressedSignalCount = 0L;
+    private float motionScoreEma = Float.NaN;
+    private long motionLastDebugBroadcastMs = 0L;
 
     // --- Lifecycle Methods ---
     @Override
@@ -1556,6 +1559,8 @@ public class RecordingService extends Service {
         motionFramesAnalyzed = 0L;
         motionTriggerActionCount = 0L;
         motionSuppressedSignalCount = 0L;
+        motionScoreEma = Float.NaN;
+        motionLastDebugBroadcastMs = 0L;
         motionStateMachine = motionLabEnabledForSession
                 ? new com.fadcam.motion.domain.state.MotionStateMachine(motionPolicy)
                 : null;
@@ -1604,8 +1609,8 @@ public class RecordingService extends Service {
             Size selected = sharedPreferencesManager != null
                     ? sharedPreferencesManager.getCameraResolution()
                     : Constants.DEFAULT_VIDEO_RESOLUTION;
-            int width = Math.max(96, Math.min(motionSafeMode ? 192 : 320, selected.getWidth() / (motionSafeMode ? 6 : 4)));
-            int height = Math.max(54, Math.min(motionSafeMode ? 108 : 180, selected.getHeight() / (motionSafeMode ? 6 : 4)));
+            int width = Math.max(96, Math.min(motionSafeMode ? 192 : 480, selected.getWidth() / (motionSafeMode ? 6 : 3)));
+            int height = Math.max(54, Math.min(motionSafeMode ? 108 : 270, selected.getHeight() / (motionSafeMode ? 6 : 3)));
             boolean recreate = motionAnalysisReader == null
                     || motionAnalysisReader.getWidth() != width
                     || motionAnalysisReader.getHeight() != height;
@@ -1645,7 +1650,14 @@ public class RecordingService extends Service {
 
     private void processMotionFrame(Image image, long nowMs) {
         motionFramesAnalyzed++;
-        float motionScore = motionDetector.detectScore(image);
+        float rawMotionScore = motionDetector.detectScore(image);
+        if (Float.isNaN(motionScoreEma)) {
+            motionScoreEma = rawMotionScore;
+        } else {
+            // Moderate smoothing to reduce threshold-edge flapping while keeping responsiveness.
+            motionScoreEma = 0.45f * rawMotionScore + 0.55f * motionScoreEma;
+        }
+        float motionScore = motionScoreEma;
         boolean personDetectedRaw = personDetector.isAvailable() && personDetector.detectPerson(image);
         if (personDetectedRaw) {
             motionConsecutivePersonHits++;
@@ -1654,6 +1666,10 @@ public class RecordingService extends Service {
         }
         int requiredHits = motionSafeMode ? 3 : 2;
         boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
+        if (personDetectedRaw && personDetector.getLastConfidence() >= 0.55f) {
+            // Person presence is a strong signal in CCTV use-cases; boost score to reduce missed starts.
+            motionScore = Math.min(1f, motionScore + 0.10f);
+        }
         com.fadcam.motion.domain.state.MotionSessionState stateBefore =
                 motionStateMachine != null ? motionStateMachine.getState() : null;
         if (motionStateMachine != null && sharedPreferencesManager != null) {
@@ -1678,7 +1694,8 @@ public class RecordingService extends Service {
                     sharedPreferencesManager.getMotionPostRollMs(),
                     sharedPreferencesManager.getMotionPreRollSeconds(),
                     sharedPreferencesManager.isMotionLowFpsFallbackEnabled(),
-                    sharedPreferencesManager.getMotionLowFpsTarget());
+                    sharedPreferencesManager.getMotionLowFpsTarget(),
+                    sharedPreferencesManager.isMotionAutoTorchEnabled());
             com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action =
                     motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
                             nowMs,
@@ -1693,6 +1710,11 @@ public class RecordingService extends Service {
             if (stateBefore != motionStateMachine.getState() ||
                     action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
                 Log.d(TAG, "MotionLab: score=" + String.format(Locale.US, "%.3f", motionScore)
+                        + ", raw=" + String.format(Locale.US, "%.3f", rawMotionScore)
+                        + ", thresholds(start/stop)="
+                        + String.format(Locale.US, "%.3f", motionPolicy.startThresholdFromSensitivity(settings.getSensitivity()))
+                        + "/"
+                        + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
                         + ", personRaw=" + personDetectedRaw
                         + ", personConf=" + String.format(Locale.US, "%.3f", personDetector.getLastConfidence())
                         + ", personHits=" + motionConsecutivePersonHits + "/" + requiredHits
@@ -1703,6 +1725,7 @@ public class RecordingService extends Service {
                         + ", actions=" + motionTriggerActionCount
                         + ", suppressed=" + motionSuppressedSignalCount + "}");
             }
+            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personDetector.getLastConfidence(), stateBefore, image);
         }
     }
 
@@ -1723,6 +1746,9 @@ public class RecordingService extends Service {
                     Intent resumeIntent = new Intent(getApplicationContext(), RecordingService.class);
                     resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
                     ServiceStartPolicy.startRecordingAction(getApplicationContext(), resumeIntent);
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(true);
+                    }
                 }
                 return;
             }
@@ -1734,9 +1760,120 @@ public class RecordingService extends Service {
                     Intent pauseIntent = new Intent(getApplicationContext(), RecordingService.class);
                     pauseIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
                     ServiceStartPolicy.startRecordingAction(getApplicationContext(), pauseIntent);
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(false);
+                    }
                 }
             }
         });
+    }
+
+    private void setMotionTorchState(boolean shouldBeOn) {
+        if (recordingState != RecordingState.IN_PROGRESS && recordingState != RecordingState.PAUSED) {
+            return;
+        }
+        if (isRecordingTorchEnabled == shouldBeOn) {
+            return;
+        }
+        Log.d(TAG, "MotionLab torch auto-control: target=" + shouldBeOn + ", current=" + isRecordingTorchEnabled);
+        toggleRecordingTorch();
+    }
+
+    private void maybeBroadcastMotionDebug(
+            float rawScore,
+            float smoothedScore,
+            com.fadcam.motion.domain.model.MotionSettings settings,
+            com.fadcam.motion.domain.state.MotionSessionState currentState,
+            com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action,
+            boolean personDetected,
+            float personConfidence,
+            com.fadcam.motion.domain.state.MotionSessionState previousState,
+            Image frameImage
+    ) {
+        long now = SystemClock.elapsedRealtime();
+        boolean significant = previousState != currentState
+                || (action != null && action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
+        if (!significant && (now - motionLastDebugBroadcastMs) < 400L) {
+            return;
+        }
+        motionLastDebugBroadcastMs = now;
+
+        Intent debugIntent = new Intent(Constants.BROADCAST_MOTION_LAB_DEBUG);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_RAW_SCORE, rawScore);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_SCORE, smoothedScore);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_START_THRESHOLD,
+                motionPolicy.startThresholdFromSensitivity(settings.getSensitivity())
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_STOP_THRESHOLD,
+                motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity())
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_STATE,
+                currentState == null ? "UNKNOWN" : currentState.name()
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_ACTION,
+                action == null ? "NONE" : action.name()
+        );
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, personDetected);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, personConfidence);
+        byte[] frameJpeg = buildMotionDebugFrameJpeg(frameImage);
+        if (frameJpeg != null && frameJpeg.length > 0) {
+            debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);
+        }
+        sendBroadcast(debugIntent);
+    }
+
+    @Nullable
+    private byte[] buildMotionDebugFrameJpeg(@Nullable Image image) {
+        if (image == null) {
+            return null;
+        }
+        try {
+            Image.Plane[] planes = image.getPlanes();
+            if (planes == null || planes.length == 0) {
+                return null;
+            }
+            int width = image.getWidth();
+            int height = image.getHeight();
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+            int targetWidth = 160;
+            int targetHeight = Math.max(1, (int) Math.round((targetWidth * (height / (float) width))));
+
+            java.nio.ByteBuffer yBuffer = planes[0].getBuffer();
+            int rowStride = planes[0].getRowStride();
+            byte[] yData = new byte[yBuffer.remaining()];
+            yBuffer.get(yData);
+
+            int[] pixels = new int[targetWidth * targetHeight];
+            for (int y = 0; y < targetHeight; y++) {
+                int srcY = Math.min(height - 1, y * height / targetHeight);
+                int srcRowOffset = srcY * rowStride;
+                for (int x = 0; x < targetWidth; x++) {
+                    int srcX = Math.min(width - 1, x * width / targetWidth);
+                    int lum = yData[srcRowOffset + srcX] & 0xFF;
+                    pixels[(y * targetWidth) + x] = 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+                }
+            }
+
+            android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
+                    targetWidth,
+                    targetHeight,
+                    android.graphics.Bitmap.Config.ARGB_8888
+            );
+            bitmap.setPixels(pixels, 0, targetWidth, 0, 0, targetWidth, targetHeight);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 65, outputStream);
+            bitmap.recycle();
+            return outputStream.toByteArray();
+        } catch (Throwable t) {
+            Log.w(TAG, "MotionLab debug frame encode failed", t);
+            return null;
+        }
     }
 
     private void releaseMotionAnalysisReader() {
@@ -4016,6 +4153,9 @@ public class RecordingService extends Service {
                     Log.i(TAG, "MotionLab armed: entering paused state until trigger");
                     motionAutoPaused = true;
                     pauseRecording();
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(false);
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start recording", e);

@@ -1,10 +1,20 @@
 package com.fadcam.ui;
 
+import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +23,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Constants;
 import com.fadcam.motion.data.SharedPrefsMotionSettingsRepository;
 import com.fadcam.motion.domain.model.MotionTriggerMode;
 import com.fadcam.motion.presentation.MotionLabViewModel;
@@ -37,8 +48,27 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valuePostRoll;
     private TextView valuePreRoll;
     private TextView valueLowFpsTarget;
+    private TextView valueDebugState;
+    private TextView valueDebugScore;
+    private TextView valueDebugThreshold;
+    private TextView valueDebugAction;
+    private TextView valueDebugPerson;
+    private ImageView imageDebugFrame;
+    private View buttonDebugCopy;
     private SwitchMaterial switchMotionEnabled;
     private SwitchMaterial switchLowFpsFallback;
+    private SwitchMaterial switchMotionAutoTorch;
+    private String latestDebugSnapshot = "";
+    private boolean motionDebugReceiverRegistered = false;
+    private final BroadcastReceiver motionDebugReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!Constants.BROADCAST_MOTION_LAB_DEBUG.equals(intent.getAction())) {
+                return;
+            }
+            updateDebugValues(intent);
+        }
+    };
 
     @Nullable
     @Override
@@ -73,8 +103,16 @@ public class MotionLabSettingsFragment extends Fragment {
         valuePostRoll = view.findViewById(R.id.value_motion_post_roll);
         valuePreRoll = view.findViewById(R.id.value_motion_pre_roll);
         valueLowFpsTarget = view.findViewById(R.id.value_motion_low_fps_target);
+        valueDebugState = view.findViewById(R.id.value_motion_debug_state);
+        valueDebugScore = view.findViewById(R.id.value_motion_debug_score);
+        valueDebugThreshold = view.findViewById(R.id.value_motion_debug_threshold);
+        valueDebugAction = view.findViewById(R.id.value_motion_debug_action);
+        valueDebugPerson = view.findViewById(R.id.value_motion_debug_person);
+        imageDebugFrame = view.findViewById(R.id.image_motion_debug_frame);
+        buttonDebugCopy = view.findViewById(R.id.button_motion_debug_copy);
         switchMotionEnabled = view.findViewById(R.id.switch_motion_enabled);
         switchLowFpsFallback = view.findViewById(R.id.switch_motion_low_fps_fallback);
+        switchMotionAutoTorch = view.findViewById(R.id.switch_motion_auto_torch);
     }
 
     private void setupClickListeners(@NonNull View view) {
@@ -85,6 +123,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
         switchMotionEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onEnabledChanged(isChecked));
         switchLowFpsFallback.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onLowFpsFallbackChanged(isChecked));
+        switchMotionAutoTorch.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onAutoTorchChanged(isChecked));
 
         view.findViewById(R.id.row_motion_trigger_mode).setOnClickListener(v -> showTriggerModePicker());
         view.findViewById(R.id.row_motion_sensitivity).setOnClickListener(v -> showSensitivityInput());
@@ -93,6 +132,9 @@ public class MotionLabSettingsFragment extends Fragment {
         view.findViewById(R.id.row_motion_post_roll).setOnClickListener(v -> showPostRollInput());
         view.findViewById(R.id.row_motion_pre_roll).setOnClickListener(v -> showPreRollInput());
         view.findViewById(R.id.row_motion_low_fps_target).setOnClickListener(v -> showLowFpsTargetPicker());
+        if (buttonDebugCopy != null) {
+            buttonDebugCopy.setOnClickListener(v -> copyDebugSnapshot());
+        }
     }
 
     private void observeState() {
@@ -107,6 +149,10 @@ public class MotionLabSettingsFragment extends Fragment {
         switchLowFpsFallback.setOnCheckedChangeListener(null);
         switchLowFpsFallback.setChecked(state.lowFpsFallbackEnabled);
         switchLowFpsFallback.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onLowFpsFallbackChanged(isChecked));
+
+        switchMotionAutoTorch.setOnCheckedChangeListener(null);
+        switchMotionAutoTorch.setChecked(state.autoTorchEnabled);
+        switchMotionAutoTorch.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onAutoTorchChanged(isChecked));
 
         valueMotionStatus.setText(state.enabled
             ? getString(R.string.motion_lab_status_enabled)
@@ -152,30 +198,17 @@ public class MotionLabSettingsFragment extends Fragment {
     }
 
     private void showAnalysisFpsPicker() {
-        final String resultKey = "rk_motion_analysis_fps";
-        ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("2", "2 fps", getString(R.string.motion_lab_analysis_2_desc)));
-        items.add(new OptionItem("3", "3 fps", getString(R.string.motion_lab_analysis_3_desc)));
-        items.add(new OptionItem("5", "5 fps", getString(R.string.motion_lab_analysis_5_desc)));
-
         MotionLabViewState current = viewModel.getState().getValue();
-        String selected = current == null ? "3" : String.valueOf(current.analysisFps);
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
-            getString(R.string.motion_lab_analysis_fps), items, selected, resultKey,
-            getString(R.string.motion_lab_analysis_helper)
+        int initial = current == null ? 5 : current.analysisFps;
+        showNumericInput(
+            "rk_motion_analysis_fps",
+            getString(R.string.motion_lab_analysis_fps),
+            1,
+            15,
+            initial,
+            getString(R.string.motion_lab_analysis_helper),
+            value -> viewModel.onAnalysisFpsChanged(value)
         );
-
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
-            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            try {
-                if (id != null) {
-                    viewModel.onAnalysisFpsChanged(Integer.parseInt(id));
-                }
-            } catch (NumberFormatException ignored) {
-            }
-        });
-
-        sheet.show(getParentFragmentManager(), "motion_analysis_fps_picker");
     }
 
     private void showLowFpsTargetPicker() {
@@ -212,7 +245,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showSensitivityInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 60 : current.sensitivity;
+        int initial = current == null ? 72 : current.sensitivity;
         showNumericInput(
             "rk_motion_sensitivity",
             getString(R.string.motion_lab_sensitivity),
@@ -226,7 +259,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showDebounceInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 700 : current.debounceMs;
+        int initial = current == null ? 250 : current.debounceMs;
         showNumericInput(
             "rk_motion_debounce",
             getString(R.string.motion_lab_debounce),
@@ -240,7 +273,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showPostRollInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initialSeconds = current == null ? 12 : current.postRollMs / 1000;
+        int initialSeconds = current == null ? 8 : current.postRollMs / 1000;
         showNumericInput(
             "rk_motion_post_roll",
             getString(R.string.motion_lab_post_roll),
@@ -275,31 +308,151 @@ public class MotionLabSettingsFragment extends Fragment {
         String helper,
         IntConsumer consumer
     ) {
-        NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
-            title,
-            min,
-            max,
-            initial,
-            getString(R.string.universal_enter_number),
-            min,
-            max,
-            helper,
-            helper,
-            resultKey
-        );
+        final String pickerResultKey = resultKey + "_picker";
+        final String inputResultKey = resultKey + "_input";
 
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
-            int value = bundle.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER, initial);
-            consumer.accept(value);
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem(
+            "set_value",
+            getString(R.string.motion_lab_set_value_row_title),
+            getString(R.string.motion_lab_set_value_row_subtitle, initial, min, max),
+            null,
+            null,
+            R.drawable.ic_arrow_right
+        ));
+
+        PickerBottomSheetFragment pickerSheet = PickerBottomSheetFragment.newInstance(
+            title,
+            items,
+            null,
+            pickerResultKey,
+            helper
+        );
+        if (pickerSheet.getArguments() != null) {
+            pickerSheet.getArguments().putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+
+        getParentFragmentManager().setFragmentResultListener(pickerResultKey, this, (key, bundle) -> {
+            String selected = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (!"set_value".equals(selected)) {
+                return;
+            }
+            NumberInputBottomSheetFragment inputSheet = NumberInputBottomSheetFragment.newInstance(
+                title,
+                min,
+                max,
+                initial,
+                getString(R.string.universal_enter_number),
+                min,
+                max,
+                helper,
+                helper,
+                inputResultKey
+            );
+            getParentFragmentManager().setFragmentResultListener(inputResultKey, this, (inputKey, inputBundle) -> {
+                int value = inputBundle.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER, initial);
+                consumer.accept(value);
+            });
+            inputSheet.show(getParentFragmentManager(), inputResultKey + "_sheet");
         });
 
-        sheet.show(getParentFragmentManager(), resultKey + "_sheet");
+        pickerSheet.show(getParentFragmentManager(), pickerResultKey + "_sheet");
     }
 
     private void handleBack() {
         if (getActivity() != null) {
             OverlayNavUtil.dismiss(requireActivity());
         }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        registerMotionDebugReceiverIfNeeded();
+    }
+
+    @Override
+    public void onStop() {
+        unregisterMotionDebugReceiverIfNeeded();
+        super.onStop();
+    }
+
+    private void registerMotionDebugReceiverIfNeeded() {
+        if (motionDebugReceiverRegistered || getContext() == null) {
+            return;
+        }
+        IntentFilter filter = new IntentFilter(Constants.BROADCAST_MOTION_LAB_DEBUG);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(
+                    motionDebugReceiver,
+                    filter,
+                    Context.RECEIVER_NOT_EXPORTED
+                );
+            } else {
+                requireContext().registerReceiver(motionDebugReceiver, filter);
+            }
+            motionDebugReceiverRegistered = true;
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void unregisterMotionDebugReceiverIfNeeded() {
+        if (!motionDebugReceiverRegistered || getContext() == null) {
+            return;
+        }
+        try {
+            requireContext().unregisterReceiver(motionDebugReceiver);
+        } catch (Exception ignored) {
+        } finally {
+            motionDebugReceiverRegistered = false;
+        }
+    }
+
+    private void updateDebugValues(@NonNull Intent intent) {
+        String state = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_STATE);
+        String action = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_ACTION);
+        float score = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_SCORE, 0f);
+        float raw = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_RAW_SCORE, 0f);
+        float startThreshold = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_START_THRESHOLD, 0f);
+        float stopThreshold = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_STOP_THRESHOLD, 0f);
+        float personConf = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, 0f);
+        boolean person = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, false);
+
+        valueDebugState.setText(state == null ? "-" : state);
+        valueDebugScore.setText(getString(R.string.motion_lab_debug_score_value, raw, score));
+        valueDebugThreshold.setText(getString(R.string.motion_lab_debug_threshold_value, startThreshold, stopThreshold));
+        valueDebugAction.setText(action == null ? "-" : action);
+        valueDebugPerson.setText(getString(R.string.motion_lab_debug_person_value, person ? "YES" : "NO", personConf));
+
+        latestDebugSnapshot = "state=" + (state == null ? "-" : state)
+            + ", action=" + (action == null ? "-" : action)
+            + ", raw=" + String.format(java.util.Locale.US, "%.3f", raw)
+            + ", smoothed=" + String.format(java.util.Locale.US, "%.3f", score)
+            + ", startThreshold=" + String.format(java.util.Locale.US, "%.3f", startThreshold)
+            + ", stopThreshold=" + String.format(java.util.Locale.US, "%.3f", stopThreshold)
+            + ", person=" + (person ? "YES" : "NO")
+            + ", personConf=" + String.format(java.util.Locale.US, "%.3f", personConf);
+
+        byte[] frameJpeg = intent.getByteArrayExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG);
+        if (frameJpeg != null && frameJpeg.length > 0 && imageDebugFrame != null) {
+            imageDebugFrame.setImageBitmap(BitmapFactory.decodeByteArray(frameJpeg, 0, frameJpeg.length));
+        }
+    }
+
+    private void copyDebugSnapshot() {
+        if (!isAdded()) {
+            return;
+        }
+        String snapshot = latestDebugSnapshot == null || latestDebugSnapshot.isEmpty()
+            ? getString(R.string.motion_lab_debug_no_snapshot)
+            : latestDebugSnapshot;
+        ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            return;
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText("Motion Lab Debug", snapshot));
+        Toast.makeText(requireContext(), getString(R.string.motion_lab_debug_copy_done), Toast.LENGTH_SHORT).show();
     }
 
     private interface IntConsumer {
