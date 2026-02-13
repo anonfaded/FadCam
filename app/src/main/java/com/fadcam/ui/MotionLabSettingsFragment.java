@@ -11,14 +11,12 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.ImageView;
-import android.widget.ScrollView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,7 +34,6 @@ import com.fadcam.motion.presentation.MotionLabViewState;
 import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.ArrayList;
@@ -200,7 +197,7 @@ public class MotionLabSettingsFragment extends Fragment {
             "rk_motion_analysis_fps",
             getString(R.string.motion_lab_analysis_fps),
             1,
-            15,
+            120,
             initial,
             getString(R.string.motion_lab_analysis_helper),
             value -> viewModel.onAnalysisFpsChanged(value)
@@ -227,8 +224,8 @@ public class MotionLabSettingsFragment extends Fragment {
         showNumericInput(
             "rk_motion_debounce",
             getString(R.string.motion_lab_debounce),
-            100,
-            3000,
+            0,
+            60000,
             initial,
             getString(R.string.motion_lab_debounce_hint),
             value -> viewModel.onDebounceMsChanged(value)
@@ -241,8 +238,8 @@ public class MotionLabSettingsFragment extends Fragment {
         showNumericInput(
             "rk_motion_post_roll",
             getString(R.string.motion_lab_post_roll),
-            1,
-            180,
+            0,
+            3600,
             initialSeconds,
             getString(R.string.motion_lab_post_roll_hint),
             value -> viewModel.onPostRollMsChanged(value * 1000)
@@ -256,7 +253,7 @@ public class MotionLabSettingsFragment extends Fragment {
             "rk_motion_pre_roll",
             getString(R.string.motion_lab_pre_roll),
             0,
-            15,
+            120,
             initial,
             getString(R.string.motion_lab_pre_roll_hint),
             value -> viewModel.onPreRollSecondsChanged(value)
@@ -279,7 +276,7 @@ public class MotionLabSettingsFragment extends Fragment {
         items.add(new OptionItem(
             "set_value",
             getString(R.string.motion_lab_set_value_row_title),
-            getString(R.string.motion_lab_set_value_row_subtitle, initial, min, max),
+            getString(R.string.motion_lab_set_value_row_subtitle, initial),
             null,
             null,
             R.drawable.ic_arrow_right
@@ -467,28 +464,11 @@ public class MotionLabSettingsFragment extends Fragment {
     }
 
     private void showMotionLabInfoBottomSheet() {
-        if (!isAdded()) {
+        if (!isAdded() || getParentFragmentManager().isStateSaved()) {
             return;
         }
-        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
-        ScrollView scroll = new ScrollView(requireContext());
-        int p = (int) (20 * requireContext().getResources().getDisplayMetrics().density);
-        LinearLayout container = new LinearLayout(requireContext());
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setPadding(p, p, p, p);
-        TextView title = new TextView(requireContext());
-        title.setText(getString(R.string.motion_lab_info_title));
-        title.setTextSize(18f);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        TextView body = new TextView(requireContext());
-        body.setText(getString(R.string.motion_lab_info_body));
-        body.setTextSize(14f);
-        body.setPadding(0, (int) (10 * requireContext().getResources().getDisplayMetrics().density), 0, 0);
-        container.addView(title);
-        container.addView(body);
-        scroll.addView(container);
-        dialog.setContentView(scroll);
-        dialog.show();
+        MotionLabInfoBottomSheetFragment.newInstance()
+            .show(getParentFragmentManager(), "motion_lab_info_sheet");
     }
 
     private void copyDebugSnapshot() {
@@ -502,7 +482,7 @@ public class MotionLabSettingsFragment extends Fragment {
         if (clipboard == null) {
             return;
         }
-        clipboard.setPrimaryClip(ClipData.newPlainText("Motion Lab Debug", snapshot));
+        clipboard.setPrimaryClip(ClipData.newPlainText("Motion monitor snapshot", snapshot));
         Toast.makeText(requireContext(), getString(R.string.motion_lab_debug_copy_done), Toast.LENGTH_SHORT).show();
     }
 
