@@ -9,71 +9,194 @@
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="12dp"
         android:background="?attr/colorTopBar"
-        app:layout_constraintTop_toTopOf="parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
             android:id="@+id/back_button"
             android:layout_width="24dp"
             android:layout_height="24dp"
+            android:contentDescription="Back"
             android:padding="2dp"
             android:src="@drawable/ic_close"
-            android:contentDescription="Back"
-            android:tint="@android:color/white"/>
+            android:tint="@android:color/white" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/motion_lab_title"
-            android:textSize="20sp"
-            android:textStyle="bold"
             android:layout_marginStart="12dp"
+            android:text="@string/motion_lab_title"
+            android:textAlignment="viewStart"
             android:textColor="@android:color/white"
-            android:textAlignment="viewStart"/>
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/info_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@string/motion_lab_info_cd"
+            android:padding="2dp"
+            android:src="@drawable/ic_info"
+            android:tint="@android:color/white" />
     </LinearLayout>
 
     <ScrollView
         android:id="@+id/content_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="16dp"
-            android:paddingEnd="16dp"
             android:paddingTop="16dp"
+            android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
-            <TextView
+            <LinearLayout
+                android:id="@+id/group_card_motion_debug"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/motion_lab_intro"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="13sp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:paddingBottom="10dp"/>
+                android:layout_marginBottom="12dp"
+                android:background="#101010"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_title"
+                    android:textColor="#9EF7A8"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/value_motion_debug_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_state_placeholder"
+                    android:textColor="#7CFF8A"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/value_motion_debug_score"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_score_placeholder"
+                    android:textColor="#7CFF8A"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/value_motion_debug_threshold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_threshold_placeholder"
+                    android:textColor="#7CFF8A"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/value_motion_debug_action"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_action_placeholder"
+                    android:textColor="#7CFF8A"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/value_motion_debug_person"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_person_placeholder"
+                    android:textColor="#7CFF8A"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/value_motion_debug_metrics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="monospace"
+                    android:text="@string/motion_lab_debug_metrics_placeholder"
+                    android:textColor="#7CFF8A"
+                    android:textSize="12sp" />
+
+                <ImageView
+                    android:id="@+id/image_motion_debug_frame"
+                    android:layout_width="match_parent"
+                    android:layout_height="160dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#000000"
+                    android:contentDescription="@string/motion_lab_debug_frame"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_photo" />
+
+                <LinearLayout
+                    android:id="@+id/button_motion_debug_copy"
+                    style="@style/SettingsGroupRow"
+                    android:layout_marginTop="8dp"
+                    android:background="#161616">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="12dp"
+                        android:src="@drawable/ic_content_copy"
+                        android:tint="#67E8F9" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:text="@string/motion_lab_debug_copy_snapshot"
+                        android:textColor="#67E8F9"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="#67E8F9" />
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/group_card_motion_lab"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
+                android:orientation="vertical"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp">
 
@@ -88,7 +211,7 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_focus_target"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -100,9 +223,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/motion_lab_enable"
-                            android:textStyle="bold"
+                            android:textColor="?attr/colorHeading"
                             android:textSize="15sp"
-                            android:textColor="?attr/colorHeading"/>
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/value_motion_status"
@@ -110,13 +233,13 @@
                             android:layout_height="wrap_content"
                             android:text="@string/motion_lab_status_disabled"
                             android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp"/>
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switch_motion_enabled"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -124,32 +247,36 @@
                 <LinearLayout
                     android:id="@+id/row_motion_trigger_mode"
                     style="@style/SettingsGroupRow">
+
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_settings_24"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/motion_lab_trigger_mode"
-                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/value_motion_trigger_mode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
+                        android:textSize="13sp" />
+
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -157,32 +284,36 @@
                 <LinearLayout
                     android:id="@+id/row_motion_sensitivity"
                     style="@style/SettingsGroupRow">
+
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_focus_target"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/motion_lab_sensitivity"
-                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/value_motion_sensitivity"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
+                        android:textSize="13sp" />
+
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -190,32 +321,36 @@
                 <LinearLayout
                     android:id="@+id/row_motion_analysis_fps"
                     style="@style/SettingsGroupRow">
+
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_speed_24"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/motion_lab_analysis_fps"
-                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/value_motion_analysis_fps"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
+                        android:textSize="13sp" />
+
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -223,32 +358,36 @@
                 <LinearLayout
                     android:id="@+id/row_motion_debounce"
                     style="@style/SettingsGroupRow">
+
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_settings"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/motion_lab_debounce"
-                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/value_motion_debounce"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
+                        android:textSize="13sp" />
+
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -256,32 +395,36 @@
                 <LinearLayout
                     android:id="@+id/row_motion_post_roll"
                     style="@style/SettingsGroupRow">
+
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_settings"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/motion_lab_post_roll"
-                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/value_motion_post_roll"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
+                        android:textSize="13sp" />
+
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -289,32 +432,36 @@
                 <LinearLayout
                     android:id="@+id/row_motion_pre_roll"
                     style="@style/SettingsGroupRow">
+
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_settings"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
+
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/motion_lab_pre_roll"
-                        android:textStyle="bold"
+                        android:textColor="?attr/colorHeading"
                         android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/value_motion_pre_roll"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
                         android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
+                        android:textSize="13sp" />
+
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -330,7 +477,7 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_flashlight_on"
-                        android:tint="@android:color/darker_gray"/>
+                        android:tint="@android:color/darker_gray" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -342,9 +489,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/motion_lab_auto_torch"
-                            android:textStyle="bold"
+                            android:textColor="?attr/colorHeading"
                             android:textSize="15sp"
-                            android:textColor="?attr/colorHeading"/>
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/value_motion_auto_torch_desc"
@@ -352,90 +499,13 @@
                             android:layout_height="wrap_content"
                             android:text="@string/motion_lab_auto_torch_helper"
                             android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp"/>
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switch_motion_auto_torch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
-                    android:id="@+id/row_motion_low_fps_fallback"
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_speed_24"
-                        android:tint="@android:color/darker_gray"/>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/motion_lab_low_fps_fallback"
-                            android:textStyle="bold"
-                            android:textSize="15sp"
-                            android:textColor="?attr/colorHeading"/>
-
-                        <TextView
-                            android:id="@+id/value_motion_low_fps_desc"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/motion_lab_low_fps_helper"
-                            android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp"/>
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_motion_low_fps_fallback"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
-                    android:id="@+id/row_motion_low_fps_target"
-                    style="@style/SettingsGroupRow">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_speed_24"
-                        android:tint="@android:color/darker_gray"/>
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/motion_lab_low_fps_target"
-                        android:textStyle="bold"
-                        android:textSize="15sp"
-                        android:textColor="?attr/colorHeading"/>
-                    <TextView
-                        android:id="@+id/value_motion_low_fps_target"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp"
-                        android:layout_marginEnd="10dp"/>
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray"/>
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -443,120 +513,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:text="@string/motion_lab_footer"
                 android:textColor="@android:color/darker_gray"
-                android:textSize="12sp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"/>
-
-            <LinearLayout
-                android:id="@+id/group_card_motion_debug"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="vertical"
-                android:background="@drawable/settings_group_card_bg"
-                android:padding="14dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/motion_lab_debug_title"
-                    android:textStyle="bold"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorHeading" />
-
-                <TextView
-                    android:id="@+id/value_motion_debug_state"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/motion_lab_debug_state_placeholder"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/value_motion_debug_score"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/motion_lab_debug_score_placeholder"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/value_motion_debug_threshold"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/motion_lab_debug_threshold_placeholder"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/value_motion_debug_action"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/motion_lab_debug_action_placeholder"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/value_motion_debug_person"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/motion_lab_debug_person_placeholder"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <TextView
-                    android:id="@+id/value_motion_debug_metrics"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/motion_lab_debug_metrics_placeholder"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray" />
-
-                <ImageView
-                    android:id="@+id/image_motion_debug_frame"
-                    android:layout_width="match_parent"
-                    android:layout_height="160dp"
-                    android:layout_marginTop="10dp"
-                    android:contentDescription="@string/motion_lab_debug_frame"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_photo" />
-
-                <LinearLayout
-                    android:id="@+id/button_motion_debug_copy"
-                    style="@style/SettingsGroupRow"
-                    android:layout_marginTop="8dp">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_content_copy"
-                        android:tint="@android:color/darker_gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/motion_lab_debug_copy_snapshot"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray" />
-                </LinearLayout>
-            </LinearLayout>
+                android:textSize="12sp" />
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

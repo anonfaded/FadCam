@@ -1809,7 +1809,7 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionSensitivity() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_SENSITIVITY, 72);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_SENSITIVITY, 80);
     }
 
     public void setMotionSensitivity(int value) {
@@ -1817,8 +1817,8 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionAnalysisFps() {
-        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 5);
-        return fps <= 0 ? 5 : fps;
+        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 8);
+        return fps <= 0 ? 8 : fps;
     }
 
     public void setMotionAnalysisFps(int fps) {
@@ -1826,7 +1826,7 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionDebounceMs() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_DEBOUNCE_MS, 250);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_DEBOUNCE_MS, 220);
     }
 
     public void setMotionDebounceMs(int debounceMs) {
@@ -1834,7 +1834,7 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionPostRollMs() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_POST_ROLL_MS, 8000);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_POST_ROLL_MS, 10000);
     }
 
     public void setMotionPostRollMs(int postRollMs) {
@@ -1842,28 +1842,11 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionPreRollSeconds() {
-        return sharedPreferences.getInt(Constants.PREF_MOTION_PRE_ROLL_SECONDS, 3);
+        return sharedPreferences.getInt(Constants.PREF_MOTION_PRE_ROLL_SECONDS, 2);
     }
 
     public void setMotionPreRollSeconds(int seconds) {
         sharedPreferences.edit().putInt(Constants.PREF_MOTION_PRE_ROLL_SECONDS, Math.max(0, seconds)).apply();
-    }
-
-    public boolean isMotionLowFpsFallbackEnabled() {
-        return sharedPreferences.getBoolean(Constants.PREF_MOTION_LOW_FPS_FALLBACK_ENABLED, false);
-    }
-
-    public void setMotionLowFpsFallbackEnabled(boolean enabled) {
-        sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_LOW_FPS_FALLBACK_ENABLED, enabled).apply();
-    }
-
-    public int getMotionLowFpsTarget() {
-        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_LOW_FPS_TARGET, 1);
-        return fps <= 0 ? 1 : fps;
-    }
-
-    public void setMotionLowFpsTarget(int fps) {
-        sharedPreferences.edit().putInt(Constants.PREF_MOTION_LOW_FPS_TARGET, Math.max(1, fps)).apply();
     }
 
     public String getMotionZonesJson() {

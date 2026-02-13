@@ -506,9 +506,6 @@ public abstract class Constants {
     public static final String PREF_MOTION_DEBOUNCE_MS = "pref_motion_debounce_ms";
     public static final String PREF_MOTION_POST_ROLL_MS = "pref_motion_post_roll_ms";
     public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";
-    public static final String PREF_MOTION_LOW_FPS_FALLBACK_ENABLED =
-        "pref_motion_low_fps_fallback_enabled";
-    public static final String PREF_MOTION_LOW_FPS_TARGET = "pref_motion_low_fps_target"; // 1/2/5
     public static final String PREF_MOTION_ZONES_JSON = "pref_motion_zones_json";
     public static final String PREF_MOTION_AUTO_TORCH_ENABLED = "pref_motion_auto_torch_enabled";
 

@@ -8,8 +8,6 @@ public class MotionSettings {
     private final int debounceMs;
     private final int postRollMs;
     private final int preRollSeconds;
-    private final boolean lowFpsFallbackEnabled;
-    private final int lowFpsTarget;
     private final boolean autoTorchEnabled;
 
     public MotionSettings(
@@ -20,8 +18,6 @@ public class MotionSettings {
         int debounceMs,
         int postRollMs,
         int preRollSeconds,
-        boolean lowFpsFallbackEnabled,
-        int lowFpsTarget,
         boolean autoTorchEnabled
     ) {
         this.enabled = enabled;
@@ -31,8 +27,6 @@ public class MotionSettings {
         this.debounceMs = debounceMs;
         this.postRollMs = postRollMs;
         this.preRollSeconds = preRollSeconds;
-        this.lowFpsFallbackEnabled = lowFpsFallbackEnabled;
-        this.lowFpsTarget = lowFpsTarget;
         this.autoTorchEnabled = autoTorchEnabled;
     }
 
@@ -62,14 +56,6 @@ public class MotionSettings {
 
     public int getPreRollSeconds() {
         return preRollSeconds;
-    }
-
-    public boolean isLowFpsFallbackEnabled() {
-        return lowFpsFallbackEnabled;
-    }
-
-    public int getLowFpsTarget() {
-        return lowFpsTarget;
     }
 
     public boolean isAutoTorchEnabled() {

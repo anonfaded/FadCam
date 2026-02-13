@@ -32,8 +32,6 @@ public class MotionLabViewModel extends ViewModel {
             s.getDebounceMs(),
             s.getPostRollMs(),
             s.getPreRollSeconds(),
-            s.isLowFpsFallbackEnabled(),
-            s.getLowFpsTarget(),
             s.isAutoTorchEnabled()
         ));
     }
@@ -70,16 +68,6 @@ public class MotionLabViewModel extends ViewModel {
 
     public void onPreRollSecondsChanged(int seconds) {
         repository.setPreRollSeconds(seconds);
-        load();
-    }
-
-    public void onLowFpsFallbackChanged(boolean enabled) {
-        repository.setLowFpsFallbackEnabled(enabled);
-        load();
-    }
-
-    public void onLowFpsTargetChanged(int fps) {
-        repository.setLowFpsTarget(fps);
         load();
     }
 

@@ -7,12 +7,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +36,7 @@ import com.fadcam.motion.presentation.MotionLabViewState;
 import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.ArrayList;
@@ -47,7 +52,6 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueDebounce;
     private TextView valuePostRoll;
     private TextView valuePreRoll;
-    private TextView valueLowFpsTarget;
     private TextView valueDebugState;
     private TextView valueDebugScore;
     private TextView valueDebugThreshold;
@@ -57,7 +61,6 @@ public class MotionLabSettingsFragment extends Fragment {
     private ImageView imageDebugFrame;
     private View buttonDebugCopy;
     private SwitchMaterial switchMotionEnabled;
-    private SwitchMaterial switchLowFpsFallback;
     private SwitchMaterial switchMotionAutoTorch;
     private String latestDebugSnapshot = "";
     private boolean motionDebugReceiverRegistered = false;
@@ -103,7 +106,6 @@ public class MotionLabSettingsFragment extends Fragment {
         valueDebounce = view.findViewById(R.id.value_motion_debounce);
         valuePostRoll = view.findViewById(R.id.value_motion_post_roll);
         valuePreRoll = view.findViewById(R.id.value_motion_pre_roll);
-        valueLowFpsTarget = view.findViewById(R.id.value_motion_low_fps_target);
         valueDebugState = view.findViewById(R.id.value_motion_debug_state);
         valueDebugScore = view.findViewById(R.id.value_motion_debug_score);
         valueDebugThreshold = view.findViewById(R.id.value_motion_debug_threshold);
@@ -113,7 +115,6 @@ public class MotionLabSettingsFragment extends Fragment {
         imageDebugFrame = view.findViewById(R.id.image_motion_debug_frame);
         buttonDebugCopy = view.findViewById(R.id.button_motion_debug_copy);
         switchMotionEnabled = view.findViewById(R.id.switch_motion_enabled);
-        switchLowFpsFallback = view.findViewById(R.id.switch_motion_low_fps_fallback);
         switchMotionAutoTorch = view.findViewById(R.id.switch_motion_auto_torch);
     }
 
@@ -124,7 +125,6 @@ public class MotionLabSettingsFragment extends Fragment {
         }
 
         switchMotionEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onEnabledChanged(isChecked));
-        switchLowFpsFallback.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onLowFpsFallbackChanged(isChecked));
         switchMotionAutoTorch.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onAutoTorchChanged(isChecked));
 
         view.findViewById(R.id.row_motion_trigger_mode).setOnClickListener(v -> showTriggerModePicker());
@@ -133,7 +133,10 @@ public class MotionLabSettingsFragment extends Fragment {
         view.findViewById(R.id.row_motion_debounce).setOnClickListener(v -> showDebounceInput());
         view.findViewById(R.id.row_motion_post_roll).setOnClickListener(v -> showPostRollInput());
         view.findViewById(R.id.row_motion_pre_roll).setOnClickListener(v -> showPreRollInput());
-        view.findViewById(R.id.row_motion_low_fps_target).setOnClickListener(v -> showLowFpsTargetPicker());
+        View info = view.findViewById(R.id.info_button);
+        if (info != null) {
+            info.setOnClickListener(v -> showMotionLabInfoBottomSheet());
+        }
         if (buttonDebugCopy != null) {
             buttonDebugCopy.setOnClickListener(v -> copyDebugSnapshot());
         }
@@ -147,10 +150,6 @@ public class MotionLabSettingsFragment extends Fragment {
         switchMotionEnabled.setOnCheckedChangeListener(null);
         switchMotionEnabled.setChecked(state.enabled);
         switchMotionEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onEnabledChanged(isChecked));
-
-        switchLowFpsFallback.setOnCheckedChangeListener(null);
-        switchLowFpsFallback.setChecked(state.lowFpsFallbackEnabled);
-        switchLowFpsFallback.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onLowFpsFallbackChanged(isChecked));
 
         switchMotionAutoTorch.setOnCheckedChangeListener(null);
         switchMotionAutoTorch.setChecked(state.autoTorchEnabled);
@@ -167,11 +166,6 @@ public class MotionLabSettingsFragment extends Fragment {
         valueDebounce.setText(getString(R.string.motion_lab_ms_value, state.debounceMs));
         valuePostRoll.setText(getString(R.string.motion_lab_seconds_value, state.postRollMs / 1000));
         valuePreRoll.setText(getString(R.string.motion_lab_seconds_value, state.preRollSeconds));
-        valueLowFpsTarget.setText(getString(R.string.motion_lab_fps_value, state.lowFpsTarget));
-
-        View targetRow = requireView().findViewById(R.id.row_motion_low_fps_target);
-        targetRow.setAlpha(state.lowFpsFallbackEnabled ? 1f : 0.5f);
-        targetRow.setEnabled(state.lowFpsFallbackEnabled);
     }
 
     private void showTriggerModePicker() {
@@ -201,7 +195,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showAnalysisFpsPicker() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 5 : current.analysisFps;
+        int initial = current == null ? 8 : current.analysisFps;
         showNumericInput(
             "rk_motion_analysis_fps",
             getString(R.string.motion_lab_analysis_fps),
@@ -213,41 +207,9 @@ public class MotionLabSettingsFragment extends Fragment {
         );
     }
 
-    private void showLowFpsTargetPicker() {
-        MotionLabViewState currentState = viewModel.getState().getValue();
-        if (currentState != null && !currentState.lowFpsFallbackEnabled) {
-            return;
-        }
-
-        final String resultKey = "rk_motion_low_fps_target";
-        ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("1", "1 fps", getString(R.string.motion_lab_low_fps_1_desc)));
-        items.add(new OptionItem("2", "2 fps", getString(R.string.motion_lab_low_fps_2_desc)));
-        items.add(new OptionItem("5", "5 fps", getString(R.string.motion_lab_low_fps_5_desc)));
-
-        MotionLabViewState current = viewModel.getState().getValue();
-        String selected = current == null ? "1" : String.valueOf(current.lowFpsTarget);
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
-            getString(R.string.motion_lab_low_fps_target), items, selected, resultKey,
-            getString(R.string.motion_lab_low_fps_target_helper)
-        );
-
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
-            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            try {
-                if (id != null) {
-                    viewModel.onLowFpsTargetChanged(Integer.parseInt(id));
-                }
-            } catch (NumberFormatException ignored) {
-            }
-        });
-
-        sheet.show(getParentFragmentManager(), "motion_low_fps_target_picker");
-    }
-
     private void showSensitivityInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 72 : current.sensitivity;
+        int initial = current == null ? 80 : current.sensitivity;
         showNumericInput(
             "rk_motion_sensitivity",
             getString(R.string.motion_lab_sensitivity),
@@ -261,7 +223,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showDebounceInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 250 : current.debounceMs;
+        int initial = current == null ? 220 : current.debounceMs;
         showNumericInput(
             "rk_motion_debounce",
             getString(R.string.motion_lab_debounce),
@@ -275,7 +237,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showPostRollInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initialSeconds = current == null ? 8 : current.postRollMs / 1000;
+        int initialSeconds = current == null ? 10 : current.postRollMs / 1000;
         showNumericInput(
             "rk_motion_post_roll",
             getString(R.string.motion_lab_post_roll),
@@ -289,7 +251,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showPreRollInput() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 3 : current.preRollSeconds;
+        int initial = current == null ? 2 : current.preRollSeconds;
         showNumericInput(
             "rk_motion_pre_roll",
             getString(R.string.motion_lab_pre_roll),
@@ -441,6 +403,7 @@ public class MotionLabSettingsFragment extends Fragment {
             maxDelta,
             globalSuppressed ? "YES" : "NO"
         ));
+        applyDebugTerminalColors(state, action, score, person, personConf);
 
         latestDebugSnapshot = "state=" + (state == null ? "-" : state)
             + ", action=" + (action == null ? "-" : action)
@@ -461,6 +424,71 @@ public class MotionLabSettingsFragment extends Fragment {
         if (frameJpeg != null && frameJpeg.length > 0 && imageDebugFrame != null) {
             imageDebugFrame.setImageBitmap(BitmapFactory.decodeByteArray(frameJpeg, 0, frameJpeg.length));
         }
+    }
+
+    private void applyDebugTerminalColors(String state, String action, float score, boolean person, float personConf) {
+        int green = Color.parseColor("#7CFF8A");
+        int cyan = Color.parseColor("#67E8F9");
+        int amber = Color.parseColor("#FBBF24");
+        int red = Color.parseColor("#F87171");
+        int bright = Color.parseColor("#B2FF59");
+
+        TextView[] views = new TextView[]{
+            valueDebugState, valueDebugScore, valueDebugThreshold, valueDebugAction, valueDebugPerson, valueDebugMetrics
+        };
+        for (TextView tv : views) {
+            if (tv != null) {
+                tv.setTypeface(Typeface.MONOSPACE);
+                tv.setTextColor(green);
+            }
+        }
+        if (valueDebugState != null) {
+            if ("RECORDING".equals(state)) {
+                valueDebugState.setTextColor(bright);
+            } else if ("POST_ROLL".equals(state)) {
+                valueDebugState.setTextColor(amber);
+            } else {
+                valueDebugState.setTextColor(cyan);
+            }
+        }
+        if (valueDebugAction != null) {
+            if ("START_RECORDING".equals(action)) {
+                valueDebugAction.setTextColor(bright);
+            } else if ("STOP_RECORDING".equals(action)) {
+                valueDebugAction.setTextColor(red);
+            }
+        }
+        if (valueDebugScore != null && score >= 0.22f) {
+            valueDebugScore.setTextColor(bright);
+        }
+        if (valueDebugPerson != null && person && personConf >= 0.65f) {
+            valueDebugPerson.setTextColor(cyan);
+        }
+    }
+
+    private void showMotionLabInfoBottomSheet() {
+        if (!isAdded()) {
+            return;
+        }
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        ScrollView scroll = new ScrollView(requireContext());
+        int p = (int) (20 * requireContext().getResources().getDisplayMetrics().density);
+        LinearLayout container = new LinearLayout(requireContext());
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(p, p, p, p);
+        TextView title = new TextView(requireContext());
+        title.setText(getString(R.string.motion_lab_info_title));
+        title.setTextSize(18f);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView body = new TextView(requireContext());
+        body.setText(getString(R.string.motion_lab_info_body));
+        body.setTextSize(14f);
+        body.setPadding(0, (int) (10 * requireContext().getResources().getDisplayMetrics().density), 0, 0);
+        container.addView(title);
+        container.addView(body);
+        scroll.addView(container);
+        dialog.setContentView(scroll);
+        dialog.show();
     }
 
     private void copyDebugSnapshot() {

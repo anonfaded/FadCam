@@ -1745,8 +1745,6 @@ public class RecordingService extends Service {
                     sharedPreferencesManager.getMotionDebounceMs(),
                     sharedPreferencesManager.getMotionPostRollMs(),
                     sharedPreferencesManager.getMotionPreRollSeconds(),
-                    sharedPreferencesManager.isMotionLowFpsFallbackEnabled(),
-                    sharedPreferencesManager.getMotionLowFpsTarget(),
                     sharedPreferencesManager.isMotionAutoTorchEnabled());
             float startThreshold = motionPolicy.startThresholdFromSensitivity(settings.getSensitivity());
             com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action =
