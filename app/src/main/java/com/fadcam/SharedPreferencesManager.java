@@ -1791,6 +1791,81 @@ public class SharedPreferencesManager {
         Log.d("SharedPrefs", "Recording mode changed to: " + mode);
     }
 
+    // -------------- Motion Lab (Advanced) Preferences Start --------------
+    public boolean isMotionModeEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_MOTION_MODE_ENABLED, false);
+    }
+
+    public void setMotionModeEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_MODE_ENABLED, enabled).apply();
+    }
+
+    public String getMotionTriggerMode() {
+        return sharedPreferences.getString(Constants.PREF_MOTION_TRIGGER_MODE, "any_motion");
+    }
+
+    public void setMotionTriggerMode(String mode) {
+        sharedPreferences.edit().putString(Constants.PREF_MOTION_TRIGGER_MODE, mode).apply();
+    }
+
+    public int getMotionSensitivity() {
+        return sharedPreferences.getInt(Constants.PREF_MOTION_SENSITIVITY, 80);
+    }
+
+    public void setMotionSensitivity(int value) {
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_SENSITIVITY, Math.max(0, Math.min(100, value))).apply();
+    }
+
+    public int getMotionAnalysisFps() {
+        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 8);
+        return fps <= 0 ? 8 : fps;
+    }
+
+    public void setMotionAnalysisFps(int fps) {
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_ANALYSIS_FPS, Math.max(1, fps)).apply();
+    }
+
+    public int getMotionDebounceMs() {
+        return sharedPreferences.getInt(Constants.PREF_MOTION_DEBOUNCE_MS, 220);
+    }
+
+    public void setMotionDebounceMs(int debounceMs) {
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_DEBOUNCE_MS, Math.max(0, debounceMs)).apply();
+    }
+
+    public int getMotionPostRollMs() {
+        return sharedPreferences.getInt(Constants.PREF_MOTION_POST_ROLL_MS, 10000);
+    }
+
+    public void setMotionPostRollMs(int postRollMs) {
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_POST_ROLL_MS, Math.max(0, postRollMs)).apply();
+    }
+
+    public int getMotionPreRollSeconds() {
+        return sharedPreferences.getInt(Constants.PREF_MOTION_PRE_ROLL_SECONDS, 2);
+    }
+
+    public void setMotionPreRollSeconds(int seconds) {
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_PRE_ROLL_SECONDS, Math.max(0, seconds)).apply();
+    }
+
+    public String getMotionZonesJson() {
+        return sharedPreferences.getString(Constants.PREF_MOTION_ZONES_JSON, "{}");
+    }
+
+    public void setMotionZonesJson(String zonesJson) {
+        sharedPreferences.edit().putString(Constants.PREF_MOTION_ZONES_JSON, zonesJson == null ? "{}" : zonesJson).apply();
+    }
+
+    public boolean isMotionAutoTorchEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_MOTION_AUTO_TORCH_ENABLED, false);
+    }
+
+    public void setMotionAutoTorchEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_AUTO_TORCH_ENABLED, enabled).apply();
+    }
+    // -------------- Motion Lab (Advanced) Preferences End --------------
+
     /**
      * Gets whether floating controls (assistive touch) is enabled for FadRec.
      * @return true if floating controls enabled, false otherwise

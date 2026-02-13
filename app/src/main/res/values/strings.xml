@@ -1294,6 +1294,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_notifications_subtitle">Recording &amp; preset</string>
     <string name="settings_security_title">Security</string>
+    <string name="settings_advanced_subtitle">Motion Lab and power-user controls</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
@@ -1704,5 +1705,59 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="fullscreen_label_af">AF</string>
     <string name="fullscreen_label_exposure">EV</string>
     <string name="fullscreen_label_zoom">Zoom</string>
-    
+
+    <!-- Motion Lab -->
+    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_row_subtitle">Smart event recording for CCTV-style use</string>
+    <string name="motion_lab_enable">Enable Motion Recording</string>
+    <string name="motion_lab_enable_sensor">Enable Motion Sensor</string>
+    <string name="motion_lab_status_enabled">Active (records only when needed)</string>
+    <string name="motion_lab_status_disabled">Disabled</string>
+    <string name="motion_lab_trigger_mode">Trigger Mode</string>
+    <string name="motion_lab_trigger_mode_helper">Choose what should start recording. If you are unsure, keep Any Motion.</string>
+    <string name="motion_lab_trigger_any_motion">Any Motion</string>
+    <string name="motion_lab_trigger_any_motion_desc">Starts when movement is detected, like a normal CCTV motion camera.</string>
+    <string name="motion_lab_trigger_person_confirmed">Person Confirmed</string>
+    <string name="motion_lab_trigger_person_confirmed_desc">Starts only when movement looks like a person. Helps reduce false alerts from fan/shadows.</string>
+    <string name="motion_lab_sensitivity">Sensitivity</string>
+    <string name="motion_lab_sensitivity_hint">Think of this like a motion \"hearing\" knob. Higher reacts to smaller movement (like a hand near the edge). Lower ignores tiny movement. Keep the default 80 for most rooms.</string>
+    <string name="motion_lab_analysis_fps">Analysis FPS</string>
+    <string name="motion_lab_analysis_helper">How often the sensor checks the scene each second. More checks react faster, but use more battery and heat the phone more. Keep default 8 fps for most use cases. Very high values are not recommended on long sessions.</string>
+    <string name="motion_lab_analysis_2_desc">Power saving, slower response.</string>
+    <string name="motion_lab_analysis_3_desc">Balanced default.</string>
+    <string name="motion_lab_analysis_5_desc">Faster response, more CPU.</string>
+    <string name="motion_lab_debounce">Debounce</string>
+    <string name="motion_lab_debounce_hint">A short confirmation delay before start. Like waiting a split second to confirm movement is real, not noise. Lower starts faster, higher avoids accidental triggers. Keep default 220 ms for most rooms. Very high values can miss quick events.</string>
+    <string name="motion_lab_post_roll">Post-roll</string>
+    <string name="motion_lab_post_roll_hint">How long recording continues after movement stops. Example: if someone walks out of the room, this keeps recording a little longer so the ending is not cut off. Keep default 10 s for most rooms. Very long values can use more battery and storage.</string>
+    <string name="motion_lab_pre_roll">Pre-roll</string>
+    <string name="motion_lab_pre_roll_hint">How many seconds before the trigger we try to include. Example: if someone appears suddenly, pre-roll helps keep the moment right before entry. Keep default 2 s for most rooms. Higher values use more memory.</string>
+    <string name="motion_lab_set_value_row_title">Set value</string>
+    <string name="motion_lab_set_value_row_subtitle">Current value: %1$d</string>
+    <string name="motion_lab_auto_torch">Auto Torch on Motion</string>
+    <string name="motion_lab_auto_torch_helper">Turns flashlight ON when recording starts from motion, and OFF when recording pauses. Useful for dark rooms.</string>
+    <string name="motion_lab_debug_title">Live Motion Monitor</string>
+    <string name="motion_lab_debug_state_placeholder">State: -</string>
+    <string name="motion_lab_debug_score_placeholder">Score raw/smoothed: -</string>
+    <string name="motion_lab_debug_threshold_placeholder">Threshold start/stop: -</string>
+    <string name="motion_lab_debug_action_placeholder">Last action: -</string>
+    <string name="motion_lab_debug_person_placeholder">Person: -</string>
+    <string name="motion_lab_debug_metrics_placeholder">Area/Strong/Mean/BG/Max/Global: -</string>
+    <string name="motion_lab_debug_frame">Live analyzer frame preview</string>
+    <string name="motion_lab_debug_copy_snapshot">Copy monitor snapshot</string>
+    <string name="motion_lab_debug_copy_done">Motion snapshot copied</string>
+    <string name="motion_lab_debug_no_snapshot">No motion snapshot is available yet.</string>
+    <string name="motion_lab_debug_score_value">Score raw/smoothed: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_threshold_value">Threshold start/stop: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_person_value">Person: %1$s (%2$.3f)</string>
+    <string name="motion_lab_debug_metrics_value">Area %1$.3f, Strong %2$.3f, Mean %3$.3f, BG %4$.3f, Max %5$.3f, Global %6$s</string>
+    <string name="motion_lab_info_cd">Motion Lab info</string>
+    <string name="motion_lab_info_title">Auto Record on Motion</string>
+    <string name="motion_lab_info_body">This is FadCam\'s Auto Record on Motion feature.\n\nHow it works in simple words:\n- Your camera stays active and analyzes frames on-device in real time.\n- The on-device machine learning model and motion logic look for movement.\n- When valid motion is detected, recording starts/resumes.\n- Recording keeps going while motion continues.\n- After motion stops, Post-roll keeps recording for your selected extra seconds.\n- Then recording pauses and waits for the next motion event.\n\nWhen recording is paused, the app is still analyzing frames in memory, but it is not writing new video data until motion is detected again.\n\nHow to use (most users):\n- Keep all options at default values.\n- Turn ON Motion Sensor on this screen.\n- Go to Home tab and start recording normally.\n- Motion-based auto record will run automatically.\n\nEasy test from far distance:\n- Turn ON Auto Torch on this screen.\n- Start recording from Home tab.\n- Place the phone tilted on a table or shelf facing the room.\n- Leave the room, then enter and walk in.\n- Torch turning ON helps you instantly notice from far away that recording started.\n- Recording will continue for your selected Post-roll duration after motion stops.\n\nTip: This feature runs continuously, so very high advanced values can increase heat and can reduce device health over time. For long sessions, keep defaults unless you have a specific reason.</string>
+    <string name="motion_lab_percent_value">%1$d%%</string>
+    <string name="motion_lab_fps_value">%1$d fps</string>
+    <string name="motion_lab_ms_value">%1$d ms</string>
+    <string name="motion_lab_seconds_value">%1$d s</string>
+    <string name="motion_lab_footer">Customize the controls above only if you need special behavior. For most setups, defaults are the safest and most reliable choice.</string>
+
 </resources>

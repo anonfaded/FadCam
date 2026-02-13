@@ -56,6 +56,8 @@ import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.GeotagHelper;
 import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
+import com.fadcam.utils.RuntimeCompat;
+import com.fadcam.utils.ServiceStartPolicy;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,6 +65,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +106,8 @@ import android.util.Range;
 import android.graphics.Rect;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.CameraMetadata;
+import android.media.Image;
+import android.media.ImageReader;
 
 public class RecordingService extends Service {
 
@@ -166,6 +171,30 @@ public class RecordingService extends Service {
     private Integer runtimeAfMode = null;
     // Locks per-session output folder so split segments don't jump folders during camera switches.
     private RecordingStoragePaths.CameraSource recordingSessionCameraSource = RecordingStoragePaths.CameraSource.BACK;
+    // Motion Lab (advanced, opt-in): sidecar analysis path. No control-flow impact unless explicitly wired later.
+    private boolean motionLabEnabledForSession = false;
+    private ImageReader motionAnalysisReader;
+    private long motionAnalysisIntervalMs = 333L; // ~3fps default
+    private long lastMotionAnalysisTimestampMs = 0L;
+    private com.fadcam.motion.domain.detector.MotionDetector motionDetector =
+            new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
+    private com.fadcam.motion.domain.detector.PersonDetector personDetector =
+            new com.fadcam.motion.domain.detector.NoOpPersonDetector();
+    private com.fadcam.motion.domain.policy.MotionPolicy motionPolicy =
+            new com.fadcam.motion.domain.policy.MotionPolicy();
+    private com.fadcam.motion.domain.state.MotionStateMachine motionStateMachine;
+    private boolean motionAutoPaused = false;
+    private boolean motionSafeMode = false;
+    private boolean motionPersonModeFallbackLogged = false;
+    private int motionConsecutivePersonHits = 0;
+    private long motionFramesAnalyzed = 0L;
+    private long motionTriggerActionCount = 0L;
+    private long motionSuppressedSignalCount = 0L;
+    private float motionScoreEma = Float.NaN;
+    private long motionLastDebugBroadcastMs = 0L;
+    private long motionLastTelemetryLogMs = 0L;
+    private long motionPersonLikelyUntilMs = 0L;
+    private boolean motionOpenCvActive = false;
 
     // --- Lifecycle Methods ---
     @Override
@@ -214,6 +243,24 @@ public class RecordingService extends Service {
         android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
         Log.d(TAG, "WakeLock initialized in Service.");
+
+        // Optional detector: if the model asset is present we enable person confirmation.
+        try {
+            personDetector = new com.fadcam.motion.domain.detector.TflitePersonDetector(getApplicationContext(), 0.60f);
+            Log.d(TAG, "Person detector available: " + personDetector.isAvailable());
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to init TFLite person detector; using no-op detector", t);
+            personDetector = new com.fadcam.motion.domain.detector.NoOpPersonDetector();
+        }
+        try {
+            motionDetector = new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
+            motionOpenCvActive = true;
+            Log.i(TAG, "Motion detector backend: OpenCV MOG2");
+        } catch (Throwable t) {
+            motionDetector = new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
+            motionOpenCvActive = false;
+            Log.w(TAG, "OpenCV backend unavailable; falling back to FrameDiffMotionDetector", t);
+        }
 
         // Broadcast initial camera resource availability
         broadcastCameraResourceAvailability(true);
@@ -642,6 +689,7 @@ public class RecordingService extends Service {
                         ? RecordingStoragePaths.CameraSource.FRONT
                         : RecordingStoragePaths.CameraSource.BACK;
                 Log.d(TAG, "Recording session camera source resolved to: " + recordingSessionCameraSource);
+                configureMotionLabForSession();
 
                 // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
@@ -1032,6 +1080,14 @@ public class RecordingService extends Service {
             }
             isStopping = false; // Reset stopping flag if we're already stopped
             return;
+        }
+
+        if (motionLabEnabledForSession) {
+            Log.i(TAG, "MotionLab summary: frames=" + motionFramesAnalyzed
+                    + ", actions=" + motionTriggerActionCount
+                    + ", suppressed=" + motionSuppressedSignalCount
+                    + ", safeMode=" + motionSafeMode
+                    + ", personDetectorAvailable=" + personDetector.isAvailable());
         }
 
         // First update the state to prevent any new operations
@@ -1467,6 +1523,7 @@ public class RecordingService extends Service {
 
         // Release dummy background surface first
         releaseDummyBackgroundSurface();
+        releaseMotionAnalysisReader();
 
         isStopping = true;
         try {
@@ -1502,6 +1559,527 @@ public class RecordingService extends Service {
         // -----
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
+    }
+
+    private void configureMotionLabForSession() {
+        motionLabEnabledForSession = sharedPreferencesManager != null && sharedPreferencesManager.isMotionModeEnabled();
+        lastMotionAnalysisTimestampMs = 0L;
+        motionAutoPaused = false;
+        motionSafeMode = RuntimeCompat.shouldUseSafeMotionAnalysis(getApplicationContext());
+        motionPersonModeFallbackLogged = false;
+        motionConsecutivePersonHits = 0;
+        motionFramesAnalyzed = 0L;
+        motionTriggerActionCount = 0L;
+        motionSuppressedSignalCount = 0L;
+        motionScoreEma = Float.NaN;
+        motionLastDebugBroadcastMs = 0L;
+        motionLastTelemetryLogMs = 0L;
+        motionPersonLikelyUntilMs = 0L;
+        motionStateMachine = motionLabEnabledForSession
+                ? new com.fadcam.motion.domain.state.MotionStateMachine(motionPolicy)
+                : null;
+        if (!motionLabEnabledForSession) {
+            releaseMotionAnalysisReader();
+        }
+        Log.d(TAG, "Motion Lab session enabled: " + motionLabEnabledForSession + ", safeMode=" + motionSafeMode
+                + ", detector=" + (motionOpenCvActive ? "opencv_mog2" : "frame_diff"));
+    }
+
+    private void maybeAttachMotionAnalysisSurface(List<Surface> surfaces, int targetFrameRate) {
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        // Keep combination safe for first rollout.
+        if (targetFrameRate >= 60) {
+            disableMotionLabForSession("unsupported_high_fps_" + targetFrameRate);
+            return;
+        }
+        Surface surface = getOrCreateMotionAnalysisSurface();
+        if (surface != null) {
+            surfaces.add(surface);
+            Log.d(TAG, "Motion analysis surface attached to camera session");
+        } else {
+            disableMotionLabForSession("analysis_surface_unavailable");
+        }
+    }
+
+    private void disableMotionLabForSession(String reason) {
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        motionLabEnabledForSession = false;
+        motionStateMachine = null;
+        motionAutoPaused = false;
+        releaseMotionAnalysisReader();
+        Log.w(TAG, "Motion Lab disabled for current session. reason=" + reason + "; continuing normal recording flow");
+    }
+
+    private Surface getOrCreateMotionAnalysisSurface() {
+        try {
+            int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
+            if (motionOpenCvActive && !motionSafeMode) {
+                // Favor responsiveness for distant/small motion detection.
+                analysisFps = Math.max(8, analysisFps);
+            }
+            if (motionSafeMode) {
+                analysisFps = Math.min(2, analysisFps);
+            }
+            motionAnalysisIntervalMs = Math.max(100L, 1000L / Math.max(1, analysisFps));
+            Size selected = sharedPreferencesManager != null
+                    ? sharedPreferencesManager.getCameraResolution()
+                    : Constants.DEFAULT_VIDEO_RESOLUTION;
+            int divisor = motionSafeMode ? 6 : (motionOpenCvActive ? 1 : 2);
+            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 960 : 640);
+            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 540 : 360);
+            int width = Math.max(96, Math.min(maxWidth, selected.getWidth() / divisor));
+            int height = Math.max(54, Math.min(maxHeight, selected.getHeight() / divisor));
+            boolean recreate = motionAnalysisReader == null
+                    || motionAnalysisReader.getWidth() != width
+                    || motionAnalysisReader.getHeight() != height;
+            if (recreate) {
+                releaseMotionAnalysisReader();
+                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
+                motionAnalysisReader.setOnImageAvailableListener(reader -> {
+                    Image image = null;
+                    try {
+                        image = reader.acquireLatestImage();
+                        if (image == null) {
+                            return;
+                        }
+                        long now = SystemClock.elapsedRealtime();
+                        if (now - lastMotionAnalysisTimestampMs < motionAnalysisIntervalMs) {
+                            return;
+                        }
+                        lastMotionAnalysisTimestampMs = now;
+                        processMotionFrame(image, now);
+                    } catch (Throwable t) {
+                        Log.w(TAG, "Motion analysis frame processing failed", t);
+                    } finally {
+                        if (image != null) {
+                            image.close();
+                        }
+                    }
+                }, backgroundHandler);
+                Log.d(TAG, "Created motion analysis reader: " + width + "x" + height + " @" + analysisFps + "fps");
+            }
+            return motionAnalysisReader.getSurface();
+        } catch (Throwable t) {
+            Log.e(TAG, "Unable to create motion analysis surface", t);
+            releaseMotionAnalysisReader();
+            return null;
+        }
+    }
+
+    private void processMotionFrame(Image image, long nowMs) {
+        motionFramesAnalyzed++;
+        float rawMotionScore = motionDetector.detectScore(image);
+        // OpenCV MOG2 outputs are intentionally conservative; normalize to policy scale.
+        if (motionOpenCvActive) {
+            rawMotionScore = Math.min(1f, rawMotionScore * 1.35f);
+        }
+        if (Float.isNaN(motionScoreEma)) {
+            motionScoreEma = rawMotionScore;
+        } else {
+            // Rise fast to avoid missed starts; decay slower to avoid threshold chatter.
+            float riseAlpha = 0.72f;
+            float fallAlpha = 0.34f;
+            float alpha = rawMotionScore >= motionScoreEma ? riseAlpha : fallAlpha;
+            motionScoreEma = (alpha * rawMotionScore) + ((1f - alpha) * motionScoreEma);
+        }
+        float motionScore = motionScoreEma;
+        boolean personDetectedRaw = personDetector.isAvailable() && personDetector.detectPerson(image);
+        if (personDetectedRaw) {
+            motionConsecutivePersonHits++;
+        } else {
+            motionConsecutivePersonHits = Math.max(0, motionConsecutivePersonHits - 1);
+        }
+        int requiredHits = motionSafeMode ? 3 : 2;
+        boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
+        float personConfidence = personDetector.getLastConfidence();
+        if (personDetectedRaw && personConfidence >= 0.62f) {
+            motionPersonLikelyUntilMs = nowMs + 2500L;
+        }
+        // Keep person-confirmed signal stable across single-frame classifier misses.
+        if (!personDetected && motionConsecutivePersonHits >= requiredHits && personConfidence >= 0.55f) {
+            personDetected = true;
+        }
+        boolean personLikely = personDetected
+                || (personDetectedRaw && personConfidence >= 0.70f)
+                || nowMs <= motionPersonLikelyUntilMs;
+        float debugChangedArea = 0f;
+        float debugStrongArea = 0f;
+        float debugMeanDelta = 0f;
+        float debugBackgroundDelta = 0f;
+        float debugMaxDelta = 0f;
+        boolean debugGlobalSuppressed = false;
+        if (motionDetector instanceof com.fadcam.motion.domain.detector.MotionDebugInfoProvider) {
+            com.fadcam.motion.domain.detector.MotionDebugInfoProvider detector =
+                    (com.fadcam.motion.domain.detector.MotionDebugInfoProvider) motionDetector;
+            debugChangedArea = detector.getLastChangedAreaRatio();
+            debugStrongArea = detector.getLastStrongAreaRatio();
+            debugMeanDelta = detector.getLastMeanDelta();
+            debugBackgroundDelta = detector.getLastBackgroundDelta();
+            debugMaxDelta = detector.getLastMaxDelta();
+            debugGlobalSuppressed = detector.isLastGlobalMotionSuppressed();
+        }
+        com.fadcam.motion.domain.state.MotionSessionState stateBefore =
+                motionStateMachine != null ? motionStateMachine.getState() : null;
+        if (motionStateMachine != null && sharedPreferencesManager != null) {
+            com.fadcam.motion.domain.model.MotionTriggerMode configuredTriggerMode =
+                    com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(
+                            sharedPreferencesManager.getMotionTriggerMode());
+            com.fadcam.motion.domain.model.MotionTriggerMode effectiveTriggerMode = configuredTriggerMode;
+            if (configuredTriggerMode == com.fadcam.motion.domain.model.MotionTriggerMode.PERSON_CONFIRMED
+                    && !personDetector.isAvailable()) {
+                effectiveTriggerMode = com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION;
+                if (!motionPersonModeFallbackLogged) {
+                    motionPersonModeFallbackLogged = true;
+                    Log.w(TAG, "MotionLab person-confirmed mode requested but model unavailable; falling back to any-motion");
+                }
+            }
+            com.fadcam.motion.domain.model.MotionSettings settings = new com.fadcam.motion.domain.model.MotionSettings(
+                    sharedPreferencesManager.isMotionModeEnabled(),
+                    effectiveTriggerMode,
+                    sharedPreferencesManager.getMotionSensitivity(),
+                    sharedPreferencesManager.getMotionAnalysisFps(),
+                    sharedPreferencesManager.getMotionDebounceMs(),
+                    sharedPreferencesManager.getMotionPostRollMs(),
+                    sharedPreferencesManager.getMotionPreRollSeconds(),
+                    sharedPreferencesManager.isMotionAutoTorchEnabled());
+            float startThreshold = motionPolicy.startThresholdFromSensitivity(settings.getSensitivity());
+            com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action =
+                    motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            motionScore,
+                            personDetected));
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && personLikely
+                    && personConfidence >= 0.70f
+                    && debugChangedArea >= 0.008f
+                    && debugMeanDelta >= 0.005f
+                    && debugStrongArea >= 0.008f) {
+                // Dedicated far-subject lane: small distant motion often has tiny changed area.
+                float farAssistFloor = Math.max(
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.02f,
+                        startThreshold * 0.88f
+                );
+                float farAssistScore = Math.max(motionScore, Math.min(1f, farAssistFloor));
+                if (farAssistScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            farAssistScore,
+                            true));
+                    motionScore = farAssistScore;
+                }
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && motionOpenCvActive
+                    && debugChangedArea >= 0.004f
+                    && debugChangedArea <= 0.085f
+                    && debugMeanDelta >= 0.007f
+                    && (debugStrongArea >= 0.018f || debugMaxDelta >= 0.58f)
+                    && rawMotionScore >= 0.06f) {
+                // Edge-entry lane: catches partial face / hand / corner movement bursts.
+                float edgeAssistFloor = Math.max(
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.03f,
+                        startThreshold * 0.90f
+                );
+                float edgeAssistScore = Math.max(motionScore, Math.min(1f, edgeAssistFloor));
+                if (edgeAssistScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            edgeAssistScore,
+                            personLikely));
+                    motionScore = edgeAssistScore;
+                }
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && motionOpenCvActive
+                    && personLikely
+                    && personConfidence >= 0.66f
+                    && debugMeanDelta >= 0.008f
+                    && debugMaxDelta >= 0.48f
+                    && (debugChangedArea >= 0.003f || debugStrongArea >= 0.010f)) {
+                // Micro-entry lane: partial face/hand at edge should start quickly.
+                float microEntryFloor = Math.max(
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.045f,
+                        startThreshold * 0.94f
+                );
+                float microEntryScore = Math.max(motionScore, Math.min(1f, microEntryFloor));
+                if (microEntryScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            microEntryScore,
+                            true));
+                    motionScore = microEntryScore;
+                }
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && debugChangedArea >= 0.05f
+                    && debugMeanDelta >= 0.010f
+                    && debugStrongArea >= 0.020f
+                    && personLikely) {
+                // Assist far/low-contrast motion so starts are not missed when person is confirmed.
+                float assistedFloor = Math.max(startThreshold * 0.84f,
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.015f);
+                float assistedScore = Math.max(motionScore, Math.min(1f, assistedFloor));
+                if (assistedScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            assistedScore,
+                            personLikely));
+                    motionScore = assistedScore;
+                }
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && stateBefore == com.fadcam.motion.domain.state.MotionSessionState.IDLE
+                    && personDetectedRaw
+                    && personConfidence >= (debugGlobalSuppressed ? 0.78f : 0.60f)
+                    && (!debugGlobalSuppressed || debugChangedArea < 0.45f)) {
+                float boostedScore = Math.max(
+                        motionScore,
+                        startThreshold + (debugGlobalSuppressed ? 0.08f : 0.03f)
+                );
+                action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                        nowMs,
+                        Math.min(1f, boostedScore),
+                        true
+                ));
+                if (action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+                    motionScore = boostedScore;
+                    personDetected = true;
+                }
+            }
+            applyMotionTransitionAction(action);
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionScore > 0f
+                    && stateBefore == com.fadcam.motion.domain.state.MotionSessionState.IDLE) {
+                motionSuppressedSignalCount++;
+            }
+            if (stateBefore != motionStateMachine.getState() ||
+                    action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+                Log.d(TAG, "MotionLab: score=" + String.format(Locale.US, "%.3f", motionScore)
+                        + ", raw=" + String.format(Locale.US, "%.3f", rawMotionScore)
+                        + ", thresholds(start/stop)="
+                        + String.format(Locale.US, "%.3f", startThreshold)
+                        + "/"
+                        + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
+                        + ", personRaw=" + personDetectedRaw
+                        + ", personConf=" + String.format(Locale.US, "%.3f", personConfidence)
+                        + ", area=" + String.format(Locale.US, "%.3f", debugChangedArea)
+                        + ", strong=" + String.format(Locale.US, "%.3f", debugStrongArea)
+                        + ", meanDelta=" + String.format(Locale.US, "%.3f", debugMeanDelta)
+                        + ", bgDelta=" + String.format(Locale.US, "%.3f", debugBackgroundDelta)
+                        + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
+                        + ", globalSuppressed=" + debugGlobalSuppressed
+                        + ", personHits=" + motionConsecutivePersonHits + "/" + requiredHits
+                        + ", person=" + personDetected
+                        + ", state=" + motionStateMachine.getState()
+                        + ", action=" + action
+                        + ", counters={frames=" + motionFramesAnalyzed
+                        + ", actions=" + motionTriggerActionCount
+                        + ", suppressed=" + motionSuppressedSignalCount + "}");
+            }
+            if ((nowMs - motionLastTelemetryLogMs) >= 1000L) {
+                motionLastTelemetryLogMs = nowMs;
+                Log.d(TAG, "MotionLab Live: state=" + motionStateMachine.getState()
+                        + ", action=" + action
+                        + ", backend=" + (motionOpenCvActive ? "opencv_mog2" : "frame_diff")
+                        + ", raw=" + String.format(Locale.US, "%.3f", rawMotionScore)
+                        + ", smoothed=" + String.format(Locale.US, "%.3f", motionScore)
+                        + ", startThreshold=" + String.format(Locale.US, "%.3f", startThreshold)
+                        + ", stopThreshold=" + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
+                        + ", person=" + personDetected
+                        + ", personConf=" + String.format(Locale.US, "%.3f", personConfidence)
+                        + ", area=" + String.format(Locale.US, "%.3f", debugChangedArea)
+                        + ", strong=" + String.format(Locale.US, "%.3f", debugStrongArea)
+                        + ", meanDelta=" + String.format(Locale.US, "%.3f", debugMeanDelta)
+                        + ", bgDelta=" + String.format(Locale.US, "%.3f", debugBackgroundDelta)
+                        + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
+                        + ", globalSuppressed=" + debugGlobalSuppressed);
+            }
+            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, image, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
+        }
+    }
+
+    private void applyMotionTransitionAction(com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action) {
+        if (!motionLabEnabledForSession || action == null || action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+            return;
+        }
+        // Run control actions on main thread to stay consistent with service state updates.
+        mainHandler.post(() -> {
+            if (!motionLabEnabledForSession) {
+                return;
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
+                if (recordingState == RecordingState.PAUSED && motionAutoPaused) {
+                    Log.i(TAG, "MotionLab action START_RECORDING -> resuming recording");
+                    motionTriggerActionCount++;
+                    motionAutoPaused = false;
+                    Intent resumeIntent = new Intent(getApplicationContext(), RecordingService.class);
+                    resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+                    ServiceStartPolicy.startRecordingAction(getApplicationContext(), resumeIntent);
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(true);
+                    }
+                }
+                return;
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
+                if (recordingState == RecordingState.IN_PROGRESS) {
+                    Log.i(TAG, "MotionLab action STOP_RECORDING -> pausing recording");
+                    motionTriggerActionCount++;
+                    motionAutoPaused = true;
+                    Intent pauseIntent = new Intent(getApplicationContext(), RecordingService.class);
+                    pauseIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
+                    ServiceStartPolicy.startRecordingAction(getApplicationContext(), pauseIntent);
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(false);
+                    }
+                }
+            }
+        });
+    }
+
+    private void setMotionTorchState(boolean shouldBeOn) {
+        if (recordingState != RecordingState.IN_PROGRESS && recordingState != RecordingState.PAUSED) {
+            return;
+        }
+        if (isRecordingTorchEnabled == shouldBeOn) {
+            return;
+        }
+        Log.d(TAG, "MotionLab torch auto-control: target=" + shouldBeOn + ", current=" + isRecordingTorchEnabled);
+        toggleRecordingTorch();
+    }
+
+    private void maybeBroadcastMotionDebug(
+            float rawScore,
+            float smoothedScore,
+            com.fadcam.motion.domain.model.MotionSettings settings,
+            com.fadcam.motion.domain.state.MotionSessionState currentState,
+            com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action,
+            boolean personDetected,
+            float personConfidence,
+            com.fadcam.motion.domain.state.MotionSessionState previousState,
+            Image frameImage,
+            float changedAreaRatio,
+            float strongAreaRatio,
+            float meanDelta,
+            float backgroundDelta,
+            float maxDelta,
+            boolean globalSuppressed
+    ) {
+        long now = SystemClock.elapsedRealtime();
+        boolean significant = previousState != currentState
+                || (action != null && action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
+        if (!significant && (now - motionLastDebugBroadcastMs) < 400L) {
+            return;
+        }
+        motionLastDebugBroadcastMs = now;
+
+        Intent debugIntent = new Intent(Constants.BROADCAST_MOTION_LAB_DEBUG);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_RAW_SCORE, rawScore);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_SCORE, smoothedScore);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_START_THRESHOLD,
+                motionPolicy.startThresholdFromSensitivity(settings.getSensitivity())
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_STOP_THRESHOLD,
+                motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity())
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_STATE,
+                currentState == null ? "UNKNOWN" : currentState.name()
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_ACTION,
+                action == null ? "NONE" : action.name()
+        );
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, personDetected);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, personConfidence);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CHANGED_AREA, changedAreaRatio);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_STRONG_AREA, strongAreaRatio);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MEAN_DELTA, meanDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BG_DELTA, backgroundDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, maxDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, globalSuppressed);
+        byte[] frameJpeg = buildMotionDebugFrameJpeg(frameImage);
+        if (frameJpeg != null && frameJpeg.length > 0) {
+            debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);
+        }
+        sendBroadcast(debugIntent);
+    }
+
+    @Nullable
+    private byte[] buildMotionDebugFrameJpeg(@Nullable Image image) {
+        if (image == null) {
+            return null;
+        }
+        try {
+            Image.Plane[] planes = image.getPlanes();
+            if (planes == null || planes.length == 0) {
+                return null;
+            }
+            int width = image.getWidth();
+            int height = image.getHeight();
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+            int targetWidth = 160;
+            int targetHeight = Math.max(1, (int) Math.round((targetWidth * (height / (float) width))));
+
+            java.nio.ByteBuffer yBuffer = planes[0].getBuffer();
+            int rowStride = planes[0].getRowStride();
+            byte[] yData = new byte[yBuffer.remaining()];
+            yBuffer.get(yData);
+
+            int[] pixels = new int[targetWidth * targetHeight];
+            for (int y = 0; y < targetHeight; y++) {
+                int srcY = Math.min(height - 1, y * height / targetHeight);
+                int srcRowOffset = srcY * rowStride;
+                for (int x = 0; x < targetWidth; x++) {
+                    int srcX = Math.min(width - 1, x * width / targetWidth);
+                    int lum = yData[srcRowOffset + srcX] & 0xFF;
+                    pixels[(y * targetWidth) + x] = 0xFF000000 | (lum << 16) | (lum << 8) | lum;
+                }
+            }
+
+            android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
+                    targetWidth,
+                    targetHeight,
+                    android.graphics.Bitmap.Config.ARGB_8888
+            );
+            bitmap.setPixels(pixels, 0, targetWidth, 0, 0, targetWidth, targetHeight);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 65, outputStream);
+            bitmap.recycle();
+            return outputStream.toByteArray();
+        } catch (Throwable t) {
+            Log.w(TAG, "MotionLab debug frame encode failed", t);
+            return null;
+        }
+    }
+
+    private void releaseMotionAnalysisReader() {
+        if (motionAnalysisReader != null) {
+            try {
+                motionAnalysisReader.setOnImageAvailableListener(null, null);
+                motionAnalysisReader.close();
+            } catch (Exception e) {
+                Log.w(TAG, "Failed releasing motion analysis reader", e);
+            } finally {
+                motionAnalysisReader = null;
+            }
+        }
     }
 
     /**
@@ -2146,6 +2724,7 @@ public class RecordingService extends Service {
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
             Size selected = sharedPreferencesManager.getCameraResolution();
+            maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
 
             if (isHighFrameRate && characteristics != null) {
                 showFrameRateToast(targetFrameRate);
@@ -2220,6 +2799,7 @@ public class RecordingService extends Service {
                 Log.d(TAG, "[STREAMING] Capping camera FPS from " + targetFrameRate + " to " + streamFpsCap + " (streaming preset)");
                 targetFrameRate = streamFpsCap;
             }
+            maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
 
             // Log device info once for debugging
             DeviceHelper.logDeviceInfo();
@@ -3761,6 +4341,15 @@ public class RecordingService extends Service {
                         Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
                     }
                 }
+                if (motionLabEnabledForSession) {
+                    // In Motion Lab, arm in paused state first and let motion transitions resume recording.
+                    Log.i(TAG, "MotionLab armed: entering paused state until trigger");
+                    motionAutoPaused = true;
+                    pauseRecording();
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(false);
+                    }
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start recording", e);
                 stopRecording();
@@ -4136,8 +4725,13 @@ public class RecordingService extends Service {
 
             // Notify RemoteStreamManager that recording started
             try {
-                com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
-                Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: " + currentSegmentFile.getAbsolutePath());
+                if (currentSegmentFile != null) {
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                    Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: "
+                            + currentSegmentFile.getAbsolutePath());
+                } else {
+                    Log.w(TAG, "Skipping RemoteStreamManager start notification: currentSegmentFile is null");
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
             }

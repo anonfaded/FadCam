@@ -16,6 +16,7 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 appcompat = "1.7.1"
 lifecycleRuntime = "2.10.0"
+lifecycleViewModel = "2.10.0"
 lottie = "6.7.1"
 material = "1.13.0"
 activity = "1.12.1"
@@ -26,6 +27,8 @@ osmdroidAndroid = "6.1.20"
 smartExceptionJava = "0.2.1"
 swiperefreshlayout = "1.2.0"
 viewpager2 = "1.1.0"
+tensorflowLite = "2.14.0"
+opencvAndroid = "4.10.0"
 
 [libraries]
 appintro-v631 = { module = "com.github.AppIntro:AppIntro", version.ref = "appintroVersion" }
@@ -48,6 +51,8 @@ espresso-core = { group = "androidx.test.espresso", name = "espresso-core", vers
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleRuntime" }
 lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", version.ref = "lifecycleRuntime" }
+lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "lifecycleViewModel" }
+lifecycle-livedata = { module = "androidx.lifecycle:lifecycle-livedata", version.ref = "lifecycleViewModel" }
 localbroadcastmanager = { module = "androidx.localbroadcastmanager:localbroadcastmanager", version.ref = "localbroadcastmanager" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
@@ -71,6 +76,8 @@ media3-session = { module = "androidx.media3:media3-session", version.ref = "med
 media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
 nanohttpd-core = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
+tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
+opencv-android = { module = "org.opencv:opencv", version.ref = "opencvAndroid" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

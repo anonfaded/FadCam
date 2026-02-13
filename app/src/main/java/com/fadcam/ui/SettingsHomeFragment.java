@@ -37,6 +37,7 @@ public class SettingsHomeFragment extends Fragment {
         R.id.group_storage,
         R.id.group_notifications,
         R.id.group_security,
+        R.id.group_advanced,
         R.id.group_widgets,
         R.id.group_about,
         R.id.group_review,
@@ -51,6 +52,7 @@ public class SettingsHomeFragment extends Fragment {
         "Storage",
         "Notifications",
         "Security",
+        "Advanced",
         "Widgets",
         "App",
         "Review",
@@ -88,6 +90,11 @@ public class SettingsHomeFragment extends Fragment {
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new SecuritySettingsFragment()));
+                }
+            } else if(ids[i] == R.id.group_advanced){
+                LinearLayout row = root.findViewById(ids[i]);
+                if (row != null) {
+                    row.setOnClickListener(v -> openSubFragment(new AdvancedSettingsFragment()));
                 }
             } else if(ids[i] == R.id.group_widgets){
                 LinearLayout row = root.findViewById(ids[i]);

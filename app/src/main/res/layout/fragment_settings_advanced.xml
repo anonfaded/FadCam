@@ -39,7 +39,7 @@
             android:textAlignment="viewStart"/>
     </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/content_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -65,9 +65,8 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp">
 
-            <!-- Debug Logging (compact) -->
             <LinearLayout
-                android:id="@+id/row_debug_logging"
+                android:id="@+id/row_motion_lab"
                 style="@style/SettingsGroupRow"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
@@ -75,47 +74,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_debug"
-                    android:tint="@android:color/darker_gray"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Debug Logging"
-                    android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:textColor="?attr/colorHeading"
-                    android:textAlignment="viewStart"/>
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-                <TextView
-                    android:id="@+id/value_debug_logging"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Toggle"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="13sp"
-                    android:textAlignment="viewEnd"/>
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switch_debug_logging"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
-            </LinearLayout> <!-- end group_card_advanced -->
-
-            <!-- Debug Log Tools row -->
-            <LinearLayout
-                android:id="@+id/row_debug_log_tools"
-                style="@style/SettingsGroupRow"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_marginTop="8dp">
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_info"
+                    android:src="@drawable/ic_focus_target"
                     android:tint="@android:color/darker_gray"/>
                 <LinearLayout
                     android:layout_width="0dp"
@@ -125,7 +84,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/debug_log_tools_title"
+                        android:text="@string/motion_lab_title"
                         android:textStyle="bold"
                         android:textSize="15sp"
                         android:textColor="?attr/colorHeading"
@@ -133,7 +92,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/debug_log_tools_subtitle"
+                        android:text="@string/motion_lab_row_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"
                         android:textAlignment="viewStart"/>
@@ -144,7 +103,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
-            <!-- Removed dev experiment toggle group (new pickers flag) to keep single layout path -->
+            </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
