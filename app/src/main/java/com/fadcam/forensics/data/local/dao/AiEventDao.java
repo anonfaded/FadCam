@@ -29,7 +29,7 @@ public interface AiEventDao {
             "INNER JOIN media_asset m ON m.media_uid = e.media_uid " +
             "WHERE (:eventType IS NULL OR e.event_type = :eventType) " +
             "AND e.confidence >= :minConfidence " +
-            "AND m.last_seen_at >= :sinceEpochMs " +
+            "AND e.detected_at_epoch_ms >= :sinceEpochMs " +
             "ORDER BY e.detected_at_epoch_ms DESC " +
             "LIMIT :limitCount")
     List<AiEventWithMedia> getTimeline(String eventType, float minConfidence, long sinceEpochMs, int limitCount);

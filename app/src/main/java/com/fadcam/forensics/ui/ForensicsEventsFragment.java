@@ -1,8 +1,10 @@
 package com.fadcam.forensics.ui;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +23,7 @@ import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.ui.VideoPlayerActivity;
 import com.google.android.material.chip.Chip;
 
+import android.graphics.Color;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,13 +49,14 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        view.findViewById(R.id.back_button).setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
+        view.findViewById(R.id.back_button).setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
 
         recycler = view.findViewById(R.id.recycler_events);
         empty = view.findViewById(R.id.text_empty);
         chipAll = view.findViewById(R.id.chip_event_all);
         chipPerson = view.findViewById(R.id.chip_event_person);
         chipHighConf = view.findViewById(R.id.chip_event_high_conf);
+        styleAndIconChips();
 
         adapter = new ForensicsEventsAdapter(this);
         recycler.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -71,6 +75,59 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chipHighConf.setOnCheckedChangeListener((buttonView, isChecked) -> loadEvents());
 
         loadEvents();
+    }
+
+    private void styleAndIconChips() {
+        styleChip(chipAll);
+        styleChip(chipPerson);
+        styleChip(chipHighConf);
+        applyChipIcon(chipAll, R.drawable.ic_list);
+        applyChipIcon(chipPerson, R.drawable.ic_broadcast_on_personal_24);
+        applyChipIcon(chipHighConf, R.drawable.ic_focus_target);
+    }
+
+    private void applyChipIcon(@Nullable Chip chip, int drawableRes) {
+        if (chip == null) return;
+        chip.setChipIconResource(drawableRes);
+        chip.setChipIconVisible(true);
+        chip.setIconStartPadding(dpToPx(2));
+        chip.setChipIconSize(dpToPx(16));
+    }
+
+    private void styleChip(@Nullable Chip chip) {
+        if (chip == null || getContext() == null) return;
+        int checkedBg = resolveThemeColor(R.attr.colorButton);
+        int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
+        int stroke = resolveThemeColor(R.attr.colorToggle);
+        int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
+        int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
+        int[][] states = new int[][]{
+            new int[]{android.R.attr.state_checked},
+            new int[]{}
+        };
+        chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
+        chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipIconTint(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
+        chip.setChipStrokeWidth(dpToPx(1));
+        chip.setEnsureMinTouchTargetSize(false);
+    }
+
+    private int resolveThemeColor(int attr) {
+        TypedValue typedValue = new TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+
+    private boolean isDarkColor(int color) {
+        double luminance = (0.299 * Color.red(color)
+            + 0.587 * Color.green(color)
+            + 0.114 * Color.blue(color)) / 255d;
+        return luminance < 0.55d;
+    }
+
+    private float dpToPx(int dp) {
+        return dp * getResources().getDisplayMetrics().density;
     }
 
     private void loadEvents() {

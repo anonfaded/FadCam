@@ -1988,6 +1988,14 @@ public class RecordingService extends Service {
             timelineMs = Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime);
         }
 
+        Log.d(TAG, "DF transition: action=" + action
+                + ", mediaUri=" + activeMediaUri
+                + ", timelineMs=" + timelineMs
+                + ", person=" + motionLastPersonDetected
+                + ", personConf=" + String.format(Locale.US, "%.3f", motionLastPersonConfidence)
+                + ", score=" + String.format(Locale.US, "%.3f", motionLastScore)
+                + ", area=" + String.format(Locale.US, "%.3f", motionLastChangedArea)
+                + ", strong=" + String.format(Locale.US, "%.3f", motionLastStrongArea));
         if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
             digitalForensicsEventRecorder.onMotionStart(
                     activeMediaUri,
@@ -2004,7 +2012,13 @@ public class RecordingService extends Service {
     }
 
     private String getCurrentRecordingMediaUri() {
+        if (currentSegmentUriString != null && !currentSegmentUriString.isEmpty()) {
+            return currentSegmentUriString;
+        }
         if (currentSegmentPath != null && !currentSegmentPath.isEmpty()) {
+            if (currentSegmentPath.startsWith("content://")) {
+                return currentSegmentPath;
+            }
             return Uri.fromFile(new File(currentSegmentPath)).toString();
         }
         if (currentSegmentFile != null) {
@@ -4436,6 +4450,7 @@ public class RecordingService extends Service {
     // Track current segment file for streaming
     private File currentSegmentFile;
     private String currentSegmentPath;
+    private String currentSegmentUriString;
     
     // Add this helper method for OpenGL pipeline direct output
     private File getFinalOutputFile() {
@@ -4499,6 +4514,9 @@ public class RecordingService extends Service {
                     return;
                 }
                 Uri safUri = videoFile.getUri();
+                currentSegmentUriString = safUri.toString();
+                currentSegmentPath = safUri.toString();
+                currentSegmentFile = null;
                 try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w")) {
                     if (pfd == null) {
                         Log.e(TAG, "Segment rollover: Failed to open ParcelFileDescriptor for SAF URI");
@@ -4541,6 +4559,7 @@ public class RecordingService extends Service {
                 // Track this as current segment
                 currentSegmentFile = nextFile;
                 currentSegmentPath = nextFile.getAbsolutePath();
+                currentSegmentUriString = Uri.fromFile(nextFile).toString();
                 
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
@@ -4722,6 +4741,9 @@ public class RecordingService extends Service {
                     return;
                 }
                 Uri safUri = videoFile.getUri();
+                currentSegmentUriString = safUri.toString();
+                currentSegmentPath = safUri.toString();
+                currentSegmentFile = null;
                 // -----
                 safRecordingPfd = getContentResolver().openFileDescriptor(safUri, "w");
                 if (safRecordingPfd == null) {
@@ -4784,6 +4806,7 @@ public class RecordingService extends Service {
                 // Track initial segment file for streaming
                 currentSegmentFile = outputFile;
                 currentSegmentPath = outputFile.getAbsolutePath();
+                currentSegmentUriString = Uri.fromFile(outputFile).toString();
                 
                 Log.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
                     " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);

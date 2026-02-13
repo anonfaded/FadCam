@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,7 +41,7 @@ public class ForensicsInsightsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        view.findViewById(R.id.back_button).setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
+        view.findViewById(R.id.back_button).setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
         summary = view.findViewById(R.id.text_summary);
         heatmap = view.findViewById(R.id.image_heatmap);
         loadInsights();
@@ -70,12 +71,15 @@ public class ForensicsInsightsFragment extends Fragment {
     }
 
     private Bitmap renderHeatmap(List<AiEventEntity> rows, int width, int height) {
+        int canvasColor = resolveThemeColor(R.attr.colorDialog);
+        int gridColor = adjustAlpha(resolveThemeColor(R.attr.colorToggle), 80);
+        int hotColor = resolveThemeColor(R.attr.colorButton);
         Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
-        canvas.drawColor(Color.parseColor("#111111"));
+        canvas.drawColor(canvasColor);
 
         Paint grid = new Paint(Paint.ANTI_ALIAS_FLAG);
-        grid.setColor(Color.parseColor("#222222"));
+        grid.setColor(gridColor);
         grid.setStrokeWidth(1f);
         for (int i = 1; i < 6; i++) {
             float x = (width / 6f) * i;
@@ -85,7 +89,7 @@ public class ForensicsInsightsFragment extends Fragment {
         }
 
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        p.setColor(Color.parseColor("#FF3B30"));
+        p.setColor(hotColor);
         for (AiEventEntity e : rows) {
             float[] bbox = parseBbox(e.bboxNorm);
             float cx = bbox[0];
@@ -93,7 +97,7 @@ public class ForensicsInsightsFragment extends Fragment {
             float radius = Math.max(8f, bbox[2] * width * 0.5f);
             float x = cx * width;
             float y = cy * height;
-            p.setAlpha(Math.min(220, 70 + (e.priority * 40)));
+            p.setAlpha(Math.min(220, 70 + (Math.max(0, e.priority) * 40)));
             canvas.drawCircle(x, y, radius, p);
         }
         return bmp;
@@ -117,5 +121,15 @@ public class ForensicsInsightsFragment extends Fragment {
 
     private float clamp01(float v) {
         return Math.max(0f, Math.min(1f, v));
+    }
+
+    private int resolveThemeColor(int attr) {
+        TypedValue typedValue = new TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+
+    private int adjustAlpha(int color, int alpha) {
+        return Color.argb(Math.max(0, Math.min(255, alpha)), Color.red(color), Color.green(color), Color.blue(color));
     }
 }

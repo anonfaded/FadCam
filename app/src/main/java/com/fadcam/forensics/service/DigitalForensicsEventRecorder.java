@@ -29,6 +29,7 @@ public class DigitalForensicsEventRecorder {
     private final Object lock = new Object();
     private String activeMediaUid;
     private String activeUri;
+    private String activeEventType = "MOTION";
     private long activeStartMs = -1L;
     private float activeMaxConfidence = 0f;
     private float activeMaxScore = 0f;
@@ -45,13 +46,15 @@ public class DigitalForensicsEventRecorder {
 
     public void onMotionStart(String mediaUri, long timelineMs, boolean personLikely, float personConfidence,
                               float motionScore, float changedArea, float strongArea) {
-        if (!shouldRecord(personLikely)) {
+        if (!shouldRecord()) {
+            Log.d(TAG, "DF skip start: digital forensics disabled or all event classes off");
             return;
         }
         if (mediaUri == null || mediaUri.isEmpty()) {
+            Log.w(TAG, "DF skip start: mediaUri is empty");
             return;
         }
-        ioExecutor.submit(() -> handleStart(mediaUri, timelineMs, personConfidence, motionScore, changedArea, strongArea));
+        ioExecutor.submit(() -> handleStart(mediaUri, timelineMs, personLikely, personConfidence, motionScore, changedArea, strongArea));
     }
 
     public void onMotionStop(long timelineMs) {
@@ -65,42 +68,50 @@ public class DigitalForensicsEventRecorder {
         ioExecutor.submit(() -> handleStop(timelineMs));
     }
 
-    private boolean shouldRecord(boolean personLikely) {
+    private boolean shouldRecord() {
         if (!prefs.isDigitalForensicsEnabled()) {
             return false;
         }
-        // Baseline pipeline currently emits person-oriented motion events.
-        if (!prefs.isDfEventPersonEnabled()) {
-            return false;
-        }
-        // If model is uncertain, allow event only when person class is enabled and there is motion trigger.
-        return personLikely || prefs.isDfEventPersonEnabled();
+        return prefs.isDfEventPersonEnabled()
+                || prefs.isDfEventVehicleEnabled()
+                || prefs.isDfEventPetEnabled()
+                || prefs.isDfDangerousObjectEnabled();
     }
 
-    private void handleStart(String mediaUri, long timelineMs, float personConfidence, float motionScore,
+    private void handleStart(String mediaUri, long timelineMs, boolean personLikely, float personConfidence, float motionScore,
                              float changedArea, float strongArea) {
         synchronized (lock) {
+            final String eventType = personLikely ? "PERSON" : "MOTION";
             if (activeMediaUid != null) {
                 if (mediaUri.equals(activeUri)) {
                     activeMaxConfidence = Math.max(activeMaxConfidence, personConfidence);
                     activeMaxScore = Math.max(activeMaxScore, motionScore);
+                    if ("PERSON".equals(eventType)) {
+                        activeEventType = "PERSON";
+                    }
                     return;
                 }
                 // Segment/media switched while event was active.
                 persistEventLocked(Math.max(activeStartMs, timelineMs));
             }
 
-            String mediaUid = ensureMediaAsset(mediaUri, timelineMs);
+            String mediaUid = ensureMediaAsset(mediaUri);
             if (mediaUid == null) {
                 return;
             }
             activeMediaUid = mediaUid;
             activeUri = mediaUri;
+            activeEventType = eventType;
             activeStartMs = Math.max(0L, timelineMs);
             activeMaxConfidence = personConfidence;
             activeMaxScore = motionScore;
             activeChangedArea = Math.max(0f, changedArea);
             activeStrongArea = Math.max(0f, strongArea);
+            Log.d(TAG, "DF start: type=" + eventType
+                    + ", mediaUri=" + mediaUri
+                    + ", timelineMs=" + activeStartMs
+                    + ", personConf=" + personConfidence
+                    + ", score=" + motionScore);
         }
     }
 
@@ -118,7 +129,7 @@ public class DigitalForensicsEventRecorder {
         AiEventEntity event = new AiEventEntity();
         event.eventUid = UUID.randomUUID().toString();
         event.mediaUid = activeMediaUid;
-        event.eventType = "PERSON";
+        event.eventType = activeEventType != null ? activeEventType : "MOTION";
         event.startMs = activeStartMs;
         event.endMs = endMs;
         event.confidence = activeMaxConfidence;
@@ -128,9 +139,16 @@ public class DigitalForensicsEventRecorder {
         event.thumbnailRef = activeUri + "#t=" + (activeStartMs / 1000f);
         event.detectedAtEpochMs = System.currentTimeMillis();
         aiEventDao.upsert(event);
+        Log.d(TAG, "DF persisted event: eventUid=" + event.eventUid
+                + ", type=" + event.eventType
+                + ", startMs=" + event.startMs
+                + ", endMs=" + event.endMs
+                + ", confidence=" + event.confidence
+                + ", mediaUid=" + event.mediaUid);
 
         activeMediaUid = null;
         activeUri = null;
+        activeEventType = "MOTION";
         activeStartMs = -1L;
         activeMaxConfidence = 0f;
         activeMaxScore = 0f;
@@ -163,10 +181,13 @@ public class DigitalForensicsEventRecorder {
         return cx + "," + cy + "," + side + "," + side;
     }
 
-    private String ensureMediaAsset(String mediaUri, long now) {
+    private String ensureMediaAsset(String mediaUri) {
+        long nowEpoch = System.currentTimeMillis();
         try {
             MediaAssetEntity existing = mediaAssetDao.findByCurrentUri(mediaUri);
             if (existing != null) {
+                existing.lastSeenAt = nowEpoch;
+                mediaAssetDao.upsert(existing);
                 return existing.mediaUid;
             }
 
@@ -180,10 +201,11 @@ public class DigitalForensicsEventRecorder {
             asset.codecInfo = null;
             asset.exactFingerprint = null;
             asset.visualFingerprint = null;
-            asset.firstSeenAt = now;
-            asset.lastSeenAt = now;
+            asset.firstSeenAt = nowEpoch;
+            asset.lastSeenAt = nowEpoch;
             asset.linkStatus = "NEW";
             mediaAssetDao.upsert(asset);
+            Log.d(TAG, "DF media asset upserted: mediaUid=" + asset.mediaUid + ", uri=" + mediaUri);
             return asset.mediaUid;
         } catch (Exception e) {
             Log.w(TAG, "ensureMediaAsset failed for uri=" + mediaUri, e);
