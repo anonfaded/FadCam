@@ -44,12 +44,16 @@ Ship a production-ready, open-source, scalable motion-triggered recording system
 - [x] Add safe-mode profile path for watch/API<=29/low-RAM devices.
 
 ### 4) Stage-1 Motion Detector (OpenCV)
-- [x] Implement frame-difference/background subtraction on Y plane.
+- [x] Implement frame-difference/background subtraction on Y plane (custom Java detector).
 - [x] Add thresholding + minimum area filtering.
 - [x] Add optional zones/masks data model (`PREF_MOTION_ZONES_JSON`).
 - [x] Add hybrid frame-diff + background-model scoring.
 - [x] Add global camera-motion suppression heuristic.
 - [x] Add detailed detector metrics (`area/strong/mean/bg/max`) for debug UI.
+- [x] Integrate OpenCV MOG2 backend as runtime-selectable backend with fallback.
+- [x] Fix `PENDING` trigger-hold behavior to use hysteresis threshold (prevents missed starts).
+- [x] Add OpenCV score calibration + asymmetric EMA (faster start, stable stop).
+- [x] Tune distant-motion sensitivity (weaker fg threshold, subtle-motion retention, stronger edge boosts).
 
 ### 5) State Machine Wiring
 - [x] Implement `IDLE -> PENDING -> RECORDING -> POST_ROLL` transitions.
@@ -60,6 +64,7 @@ Ship a production-ready, open-source, scalable motion-triggered recording system
 - [ ] Verify no regressions in normal manual recording.
 - [ ] Verify service stability during repeated motion events.
 - [x] Verify compile: `./gradlew :app:compileDefaultDebugJavaWithJavac -x lint`.
+- [ ] Re-test missed-start scenario with live logs after latest trigger-hold fix.
 
 **Owner:** [ ]
 **ETA:** [ ]
@@ -155,7 +160,7 @@ Ship a production-ready, open-source, scalable motion-triggered recording system
 ---
 
 ## Dependencies (Open Source Only)
-- [ ] OpenCV Android SDK (BSD-3-Clause)
+- [x] OpenCV Android SDK (BSD-3-Clause)
 - [x] TensorFlow Lite runtime (Apache-2.0)
 - [x] Open-source INT8 detection model with vetted license
 

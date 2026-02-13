@@ -7,7 +7,7 @@ import com.fadcam.motion.domain.policy.MotionPolicy;
 public class MotionStateMachine {
     private static final long DEFAULT_MIN_CLIP_MS = 2500L;
     private static final long DEFAULT_COOLDOWN_MS = 1500L;
-    private static final long DEFAULT_PENDING_LOSS_GRACE_MS = 450L;
+    private static final long DEFAULT_PENDING_LOSS_GRACE_MS = 1000L;
 
     public enum TransitionAction {
         NONE,

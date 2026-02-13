@@ -8,9 +8,15 @@ import com.fadcam.motion.domain.state.MotionSessionState;
 public class MotionPolicy {
 
     public boolean isTriggerSatisfied(MotionSettings settings, MotionSignal signal, MotionSessionState state) {
-        float requiredScore = (state == MotionSessionState.RECORDING || state == MotionSessionState.POST_ROLL)
-                ? stopThresholdFromSensitivity(settings.getSensitivity())
-                : startThresholdFromSensitivity(settings.getSensitivity());
+        float requiredScore;
+        if (state == MotionSessionState.RECORDING
+                || state == MotionSessionState.POST_ROLL
+                || state == MotionSessionState.PENDING) {
+            // While arming/holding, use stop threshold so short dips do not cancel a valid trigger.
+            requiredScore = stopThresholdFromSensitivity(settings.getSensitivity());
+        } else {
+            requiredScore = startThresholdFromSensitivity(settings.getSensitivity());
+        }
         if (signal.getMotionScore() < requiredScore) {
             return false;
         }
@@ -24,7 +30,8 @@ public class MotionPolicy {
     }
 
     public float stopThresholdFromSensitivity(int sensitivity) {
-        // Hysteresis: use a lower threshold to stay in RECORDING and reduce flapping.
-        return Math.max(0.05f, startThresholdFromSensitivity(sensitivity) - 0.14f);
+        // Hysteresis: keep some separation from start threshold, but not so low that
+        // quiet-scene noise keeps sessions stuck in RECORDING.
+        return Math.max(0.12f, startThresholdFromSensitivity(sensitivity) - 0.05f);
     }
 }

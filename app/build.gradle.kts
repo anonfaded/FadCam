@@ -195,6 +195,8 @@ android {
     packaging {
         jniLibs {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
+            // OpenCV and ffmpeg-kit both bundle libc++_shared.so. Keep one copy.
+            pickFirsts += listOf("**/libc++_shared.so")
             // Enable 16KB page size alignment for Android 15 compatibility
             useLegacyPackaging = false
         }
@@ -259,6 +261,7 @@ dependencies {
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp)
     implementation(libs.tensorflow.lite)
+    implementation(libs.opencv.android)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
     implementation(libs.swiperefreshlayout)

@@ -4,7 +4,7 @@ import android.media.Image;
 
 import java.nio.ByteBuffer;
 
-public class FrameDiffMotionDetector implements MotionDetector {
+public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoProvider {
 
     private static final int SAMPLE_GRID_W = 160;
     private static final int SAMPLE_GRID_H = 90;
@@ -13,8 +13,15 @@ public class FrameDiffMotionDetector implements MotionDetector {
     private static final int BACKGROUND_FREEZE_DELTA = 22;
     private static final float BACKGROUND_LEARNING_RATE = 0.03f;
     private static final float MIN_CHANGED_AREA_RATIO = 0.0012f;
+    private static final float MIN_ACTIVE_AREA_RATIO = 0.02f;
+    private static final float MIN_ACTIVE_MEAN_DELTA = 0.015f;
+    private static final float MIN_ACTIVE_BG_DELTA = 0.012f;
+    private static final float STRONG_SPIKE_AREA_RATIO = 0.04f;
     private static final float GLOBAL_MOTION_RATIO_THRESHOLD = 0.72f;
-    private static final float GLOBAL_MOTION_MEAN_THRESHOLD = 0.16f;
+    private static final float GLOBAL_MOTION_MEAN_THRESHOLD = 0.10f;
+    private static final float GLOBAL_MOTION_HARD_AREA_THRESHOLD = 0.85f;
+    private static final float GLOBAL_MOTION_STRONG_AREA_THRESHOLD = 0.45f;
+    private static final float GLOBAL_ADAPT_LEARNING_RATE = 0.22f;
     private byte[] previous;
     private float[] background;
 
@@ -102,6 +109,23 @@ public class FrameDiffMotionDetector implements MotionDetector {
 
         long sum = 0L;
         long sumBg = 0L;
+        long sumCur = 0L;
+        long sumPrev = 0L;
+        long sumBgLevel = 0L;
+        for (int i = 0; i < current.length; i++) {
+            int cur = current[i] & 0xFF;
+            int prev = previous[i] & 0xFF;
+            int bg = Math.round(background[i]);
+            sumCur += cur;
+            sumPrev += prev;
+            sumBgLevel += bg;
+        }
+        float meanCur = sumCur / (float) current.length;
+        float meanPrev = sumPrev / (float) current.length;
+        float meanBg = sumBgLevel / (float) current.length;
+        float globalShiftPrev = meanCur - meanPrev;
+        float globalShiftBg = meanCur - meanBg;
+
         int changedPixels = 0;
         int strongPixels = 0;
         int maxDelta = 0;
@@ -110,8 +134,10 @@ public class FrameDiffMotionDetector implements MotionDetector {
             int prev = previous[i] & 0xFF;
             int bg = Math.round(background[i]);
 
-            int frameDelta = Math.abs(cur - prev);
-            int bgDelta = Math.abs(cur - bg);
+            int frameDelta = Math.abs(Math.round((cur - prev) - globalShiftPrev));
+            int bgDelta = Math.abs(Math.round((cur - bg) - globalShiftBg));
+            frameDelta = Math.min(255, frameDelta);
+            bgDelta = Math.min(255, bgDelta);
             int delta = Math.max(frameDelta, bgDelta);
             sum += delta;
             sumBg += bgDelta;
@@ -149,17 +175,35 @@ public class FrameDiffMotionDetector implements MotionDetector {
             return 0f;
         }
 
+        // Reject low-area low-energy noise floor so recording can pause correctly in quiet scenes.
+        if (changedAreaRatio < MIN_ACTIVE_AREA_RATIO
+                && meanDelta < MIN_ACTIVE_MEAN_DELTA
+                && meanBgDelta < MIN_ACTIVE_BG_DELTA) {
+            lastGlobalMotionSuppressed = false;
+            return 0f;
+        }
+
         float ratioWeight = Math.min(1f, changedAreaRatio * 2.2f);
         float score = (meanDelta * 0.45f) + (meanBgDelta * 0.35f) + (maxDeltaNorm * 0.20f);
         score *= ratioWeight;
 
-        if (strongPixels >= 3 && maxDeltaNorm >= 0.22f) {
+        if (strongAreaRatio >= STRONG_SPIKE_AREA_RATIO && maxDeltaNorm >= 0.22f) {
             score = Math.max(score, 0.08f + (maxDeltaNorm * 0.25f));
         }
 
-        boolean globalMotionLikely = changedAreaRatio >= GLOBAL_MOTION_RATIO_THRESHOLD
-            && meanDelta >= GLOBAL_MOTION_MEAN_THRESHOLD;
+        boolean globalMotionLikely =
+            changedAreaRatio >= GLOBAL_MOTION_HARD_AREA_THRESHOLD
+                || strongAreaRatio >= GLOBAL_MOTION_STRONG_AREA_THRESHOLD
+                || (changedAreaRatio >= GLOBAL_MOTION_RATIO_THRESHOLD
+                    && meanDelta >= GLOBAL_MOTION_MEAN_THRESHOLD);
         if (globalMotionLikely) {
+            // Fast background convergence on global-frame disturbances so detector
+            // recovers instead of staying "active" for long periods.
+            for (int i = 0; i < current.length; i++) {
+                int cur = current[i] & 0xFF;
+                background[i] = (background[i] * (1f - GLOBAL_ADAPT_LEARNING_RATE))
+                    + (cur * GLOBAL_ADAPT_LEARNING_RATE);
+            }
             lastGlobalMotionSuppressed = true;
             // Treat near-full-frame motion (camera shake/tilt) as non-event motion signal.
             return 0f;
