@@ -470,6 +470,18 @@ public abstract class Constants {
     public static final String PREF_PLAYER_CONTROLS_TIMEOUT_SECONDS =
         "pref_player_controls_timeout_seconds";
     public static final int DEFAULT_PLAYER_CONTROLS_TIMEOUT_SECONDS = 5; // default 5 seconds
+    // Motion Lab (advanced) preferences
+    public static final String PREF_MOTION_MODE_ENABLED = "pref_motion_mode_enabled";
+    public static final String PREF_MOTION_TRIGGER_MODE = "pref_motion_trigger_mode"; // any_motion|person_confirmed
+    public static final String PREF_MOTION_SENSITIVITY = "pref_motion_sensitivity"; // 0-100
+    public static final String PREF_MOTION_ANALYSIS_FPS = "pref_motion_analysis_fps"; // 2/3/5
+    public static final String PREF_MOTION_DEBOUNCE_MS = "pref_motion_debounce_ms";
+    public static final String PREF_MOTION_POST_ROLL_MS = "pref_motion_post_roll_ms";
+    public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";
+    public static final String PREF_MOTION_LOW_FPS_FALLBACK_ENABLED =
+        "pref_motion_low_fps_fallback_enabled";
+    public static final String PREF_MOTION_LOW_FPS_TARGET = "pref_motion_low_fps_target"; // 1/2/5
+    public static final String PREF_MOTION_ZONES_JSON = "pref_motion_zones_json";
 
     // ── Dual Camera (PiP) Constants ────────────────────────────────────────
     public static final String PREF_DUAL_CAMERA_ENABLED = "dual_camera_enabled";

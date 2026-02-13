@@ -56,6 +56,8 @@ import com.fadcam.ui.LocationHelper;
 import com.fadcam.ui.GeotagHelper;
 import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
+import com.fadcam.utils.RuntimeCompat;
+import com.fadcam.utils.ServiceStartPolicy;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -103,6 +105,8 @@ import android.util.Range;
 import android.graphics.Rect;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.CameraMetadata;
+import android.media.Image;
+import android.media.ImageReader;
 
 public class RecordingService extends Service {
 
@@ -166,6 +170,25 @@ public class RecordingService extends Service {
     private Integer runtimeAfMode = null;
     // Locks per-session output folder so split segments don't jump folders during camera switches.
     private RecordingStoragePaths.CameraSource recordingSessionCameraSource = RecordingStoragePaths.CameraSource.BACK;
+    // Motion Lab (advanced, opt-in): sidecar analysis path. No control-flow impact unless explicitly wired later.
+    private boolean motionLabEnabledForSession = false;
+    private ImageReader motionAnalysisReader;
+    private long motionAnalysisIntervalMs = 333L; // ~3fps default
+    private long lastMotionAnalysisTimestampMs = 0L;
+    private com.fadcam.motion.domain.detector.MotionDetector motionDetector =
+            new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
+    private com.fadcam.motion.domain.detector.PersonDetector personDetector =
+            new com.fadcam.motion.domain.detector.NoOpPersonDetector();
+    private com.fadcam.motion.domain.policy.MotionPolicy motionPolicy =
+            new com.fadcam.motion.domain.policy.MotionPolicy();
+    private com.fadcam.motion.domain.state.MotionStateMachine motionStateMachine;
+    private boolean motionAutoPaused = false;
+    private boolean motionSafeMode = false;
+    private boolean motionPersonModeFallbackLogged = false;
+    private int motionConsecutivePersonHits = 0;
+    private long motionFramesAnalyzed = 0L;
+    private long motionTriggerActionCount = 0L;
+    private long motionSuppressedSignalCount = 0L;
 
     // --- Lifecycle Methods ---
     @Override
@@ -214,6 +237,15 @@ public class RecordingService extends Service {
         android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
         Log.d(TAG, "WakeLock initialized in Service.");
+
+        // Optional detector: if the model asset is present we enable person confirmation.
+        try {
+            personDetector = new com.fadcam.motion.domain.detector.TflitePersonDetector(getApplicationContext(), 0.60f);
+            Log.d(TAG, "Person detector available: " + personDetector.isAvailable());
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to init TFLite person detector; using no-op detector", t);
+            personDetector = new com.fadcam.motion.domain.detector.NoOpPersonDetector();
+        }
 
         // Broadcast initial camera resource availability
         broadcastCameraResourceAvailability(true);
@@ -642,6 +674,7 @@ public class RecordingService extends Service {
                         ? RecordingStoragePaths.CameraSource.FRONT
                         : RecordingStoragePaths.CameraSource.BACK;
                 Log.d(TAG, "Recording session camera source resolved to: " + recordingSessionCameraSource);
+                configureMotionLabForSession();
 
                 // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
@@ -1032,6 +1065,14 @@ public class RecordingService extends Service {
             }
             isStopping = false; // Reset stopping flag if we're already stopped
             return;
+        }
+
+        if (motionLabEnabledForSession) {
+            Log.i(TAG, "MotionLab summary: frames=" + motionFramesAnalyzed
+                    + ", actions=" + motionTriggerActionCount
+                    + ", suppressed=" + motionSuppressedSignalCount
+                    + ", safeMode=" + motionSafeMode
+                    + ", personDetectorAvailable=" + personDetector.isAvailable());
         }
 
         // First update the state to prevent any new operations
@@ -1467,6 +1508,7 @@ public class RecordingService extends Service {
 
         // Release dummy background surface first
         releaseDummyBackgroundSurface();
+        releaseMotionAnalysisReader();
 
         isStopping = true;
         try {
@@ -1502,6 +1544,212 @@ public class RecordingService extends Service {
         // -----
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
+    }
+
+    private void configureMotionLabForSession() {
+        motionLabEnabledForSession = sharedPreferencesManager != null && sharedPreferencesManager.isMotionModeEnabled();
+        lastMotionAnalysisTimestampMs = 0L;
+        motionAutoPaused = false;
+        motionSafeMode = RuntimeCompat.shouldUseSafeMotionAnalysis(getApplicationContext());
+        motionPersonModeFallbackLogged = false;
+        motionConsecutivePersonHits = 0;
+        motionFramesAnalyzed = 0L;
+        motionTriggerActionCount = 0L;
+        motionSuppressedSignalCount = 0L;
+        motionStateMachine = motionLabEnabledForSession
+                ? new com.fadcam.motion.domain.state.MotionStateMachine(motionPolicy)
+                : null;
+        if (!motionLabEnabledForSession) {
+            releaseMotionAnalysisReader();
+        }
+        Log.d(TAG, "Motion Lab session enabled: " + motionLabEnabledForSession + ", safeMode=" + motionSafeMode);
+    }
+
+    private void maybeAttachMotionAnalysisSurface(List<Surface> surfaces, int targetFrameRate) {
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        // Keep combination safe for first rollout.
+        if (targetFrameRate >= 60) {
+            disableMotionLabForSession("unsupported_high_fps_" + targetFrameRate);
+            return;
+        }
+        Surface surface = getOrCreateMotionAnalysisSurface();
+        if (surface != null) {
+            surfaces.add(surface);
+            Log.d(TAG, "Motion analysis surface attached to camera session");
+        } else {
+            disableMotionLabForSession("analysis_surface_unavailable");
+        }
+    }
+
+    private void disableMotionLabForSession(String reason) {
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        motionLabEnabledForSession = false;
+        motionStateMachine = null;
+        motionAutoPaused = false;
+        releaseMotionAnalysisReader();
+        Log.w(TAG, "Motion Lab disabled for current session. reason=" + reason + "; continuing normal recording flow");
+    }
+
+    private Surface getOrCreateMotionAnalysisSurface() {
+        try {
+            int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
+            if (motionSafeMode) {
+                analysisFps = Math.min(2, analysisFps);
+            }
+            motionAnalysisIntervalMs = Math.max(100L, 1000L / Math.max(1, analysisFps));
+            Size selected = sharedPreferencesManager != null
+                    ? sharedPreferencesManager.getCameraResolution()
+                    : Constants.DEFAULT_VIDEO_RESOLUTION;
+            int width = Math.max(96, Math.min(motionSafeMode ? 192 : 320, selected.getWidth() / (motionSafeMode ? 6 : 4)));
+            int height = Math.max(54, Math.min(motionSafeMode ? 108 : 180, selected.getHeight() / (motionSafeMode ? 6 : 4)));
+            boolean recreate = motionAnalysisReader == null
+                    || motionAnalysisReader.getWidth() != width
+                    || motionAnalysisReader.getHeight() != height;
+            if (recreate) {
+                releaseMotionAnalysisReader();
+                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
+                motionAnalysisReader.setOnImageAvailableListener(reader -> {
+                    Image image = null;
+                    try {
+                        image = reader.acquireLatestImage();
+                        if (image == null) {
+                            return;
+                        }
+                        long now = SystemClock.elapsedRealtime();
+                        if (now - lastMotionAnalysisTimestampMs < motionAnalysisIntervalMs) {
+                            return;
+                        }
+                        lastMotionAnalysisTimestampMs = now;
+                        processMotionFrame(image, now);
+                    } catch (Throwable t) {
+                        Log.w(TAG, "Motion analysis frame processing failed", t);
+                    } finally {
+                        if (image != null) {
+                            image.close();
+                        }
+                    }
+                }, backgroundHandler);
+                Log.d(TAG, "Created motion analysis reader: " + width + "x" + height + " @" + analysisFps + "fps");
+            }
+            return motionAnalysisReader.getSurface();
+        } catch (Throwable t) {
+            Log.e(TAG, "Unable to create motion analysis surface", t);
+            releaseMotionAnalysisReader();
+            return null;
+        }
+    }
+
+    private void processMotionFrame(Image image, long nowMs) {
+        motionFramesAnalyzed++;
+        float motionScore = motionDetector.detectScore(image);
+        boolean personDetectedRaw = personDetector.isAvailable() && personDetector.detectPerson(image);
+        if (personDetectedRaw) {
+            motionConsecutivePersonHits++;
+        } else {
+            motionConsecutivePersonHits = 0;
+        }
+        int requiredHits = motionSafeMode ? 3 : 2;
+        boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
+        com.fadcam.motion.domain.state.MotionSessionState stateBefore =
+                motionStateMachine != null ? motionStateMachine.getState() : null;
+        if (motionStateMachine != null && sharedPreferencesManager != null) {
+            com.fadcam.motion.domain.model.MotionTriggerMode configuredTriggerMode =
+                    com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(
+                            sharedPreferencesManager.getMotionTriggerMode());
+            com.fadcam.motion.domain.model.MotionTriggerMode effectiveTriggerMode = configuredTriggerMode;
+            if (configuredTriggerMode == com.fadcam.motion.domain.model.MotionTriggerMode.PERSON_CONFIRMED
+                    && !personDetector.isAvailable()) {
+                effectiveTriggerMode = com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION;
+                if (!motionPersonModeFallbackLogged) {
+                    motionPersonModeFallbackLogged = true;
+                    Log.w(TAG, "MotionLab person-confirmed mode requested but model unavailable; falling back to any-motion");
+                }
+            }
+            com.fadcam.motion.domain.model.MotionSettings settings = new com.fadcam.motion.domain.model.MotionSettings(
+                    sharedPreferencesManager.isMotionModeEnabled(),
+                    effectiveTriggerMode,
+                    sharedPreferencesManager.getMotionSensitivity(),
+                    sharedPreferencesManager.getMotionAnalysisFps(),
+                    sharedPreferencesManager.getMotionDebounceMs(),
+                    sharedPreferencesManager.getMotionPostRollMs(),
+                    sharedPreferencesManager.getMotionPreRollSeconds(),
+                    sharedPreferencesManager.isMotionLowFpsFallbackEnabled(),
+                    sharedPreferencesManager.getMotionLowFpsTarget());
+            com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action =
+                    motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            motionScore,
+                            personDetected));
+            applyMotionTransitionAction(action);
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionScore > 0f
+                    && stateBefore == com.fadcam.motion.domain.state.MotionSessionState.IDLE) {
+                motionSuppressedSignalCount++;
+            }
+            if (stateBefore != motionStateMachine.getState() ||
+                    action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+                Log.d(TAG, "MotionLab: score=" + String.format(Locale.US, "%.3f", motionScore)
+                        + ", personRaw=" + personDetectedRaw
+                        + ", personConf=" + String.format(Locale.US, "%.3f", personDetector.getLastConfidence())
+                        + ", personHits=" + motionConsecutivePersonHits + "/" + requiredHits
+                        + ", person=" + personDetected
+                        + ", state=" + motionStateMachine.getState()
+                        + ", action=" + action
+                        + ", counters={frames=" + motionFramesAnalyzed
+                        + ", actions=" + motionTriggerActionCount
+                        + ", suppressed=" + motionSuppressedSignalCount + "}");
+            }
+        }
+    }
+
+    private void applyMotionTransitionAction(com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action) {
+        if (!motionLabEnabledForSession || action == null || action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+            return;
+        }
+        // Run control actions on main thread to stay consistent with service state updates.
+        mainHandler.post(() -> {
+            if (!motionLabEnabledForSession) {
+                return;
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
+                if (recordingState == RecordingState.PAUSED && motionAutoPaused) {
+                    Log.i(TAG, "MotionLab action START_RECORDING -> resuming recording");
+                    motionTriggerActionCount++;
+                    motionAutoPaused = false;
+                    Intent resumeIntent = new Intent(getApplicationContext(), RecordingService.class);
+                    resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+                    ServiceStartPolicy.startRecordingAction(getApplicationContext(), resumeIntent);
+                }
+                return;
+            }
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
+                if (recordingState == RecordingState.IN_PROGRESS) {
+                    Log.i(TAG, "MotionLab action STOP_RECORDING -> pausing recording");
+                    motionTriggerActionCount++;
+                    motionAutoPaused = true;
+                    Intent pauseIntent = new Intent(getApplicationContext(), RecordingService.class);
+                    pauseIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
+                    ServiceStartPolicy.startRecordingAction(getApplicationContext(), pauseIntent);
+                }
+            }
+        });
+    }
+
+    private void releaseMotionAnalysisReader() {
+        if (motionAnalysisReader != null) {
+            try {
+                motionAnalysisReader.setOnImageAvailableListener(null, null);
+                motionAnalysisReader.close();
+            } catch (Exception e) {
+                Log.w(TAG, "Failed releasing motion analysis reader", e);
+            } finally {
+                motionAnalysisReader = null;
+            }
+        }
     }
 
     /**
@@ -2146,6 +2394,7 @@ public class RecordingService extends Service {
             boolean isHighFrameRate = targetFrameRate >= 60;
             boolean useHighSpeedSession = false;
             Size selected = sharedPreferencesManager.getCameraResolution();
+            maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
 
             if (isHighFrameRate && characteristics != null) {
                 showFrameRateToast(targetFrameRate);
@@ -2220,6 +2469,7 @@ public class RecordingService extends Service {
                 Log.d(TAG, "[STREAMING] Capping camera FPS from " + targetFrameRate + " to " + streamFpsCap + " (streaming preset)");
                 targetFrameRate = streamFpsCap;
             }
+            maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
 
             // Log device info once for debugging
             DeviceHelper.logDeviceInfo();
@@ -3761,6 +4011,12 @@ public class RecordingService extends Service {
                         Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
                     }
                 }
+                if (motionLabEnabledForSession) {
+                    // In Motion Lab, arm in paused state first and let motion transitions resume recording.
+                    Log.i(TAG, "MotionLab armed: entering paused state until trigger");
+                    motionAutoPaused = true;
+                    pauseRecording();
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start recording", e);
                 stopRecording();
@@ -4136,8 +4392,13 @@ public class RecordingService extends Service {
 
             // Notify RemoteStreamManager that recording started
             try {
-                com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
-                Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: " + currentSegmentFile.getAbsolutePath());
+                if (currentSegmentFile != null) {
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                    Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: "
+                            + currentSegmentFile.getAbsolutePath());
+                } else {
+                    Log.w(TAG, "Skipping RemoteStreamManager start notification: currentSegmentFile is null");
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
             }

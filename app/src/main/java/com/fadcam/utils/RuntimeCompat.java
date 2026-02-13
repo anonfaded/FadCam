@@ -34,5 +34,8 @@ public final class RuntimeCompat {
     public static boolean shouldUseSafeMediaProbe(@NonNull Context context) {
         return isWatchDevice(context) || Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q || isLowRamDevice(context);
     }
-}
 
+    public static boolean shouldUseSafeMotionAnalysis(@NonNull Context context) {
+        return isWatchDevice(context) || Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q || isLowRamDevice(context);
+    }
+}

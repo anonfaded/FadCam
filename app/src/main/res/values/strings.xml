@@ -1294,6 +1294,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_notifications_subtitle">Recording &amp; preset</string>
     <string name="settings_security_title">Security</string>
+    <string name="settings_advanced_subtitle">Motion Lab and power-user controls</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
@@ -1704,5 +1705,44 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="fullscreen_label_af">AF</string>
     <string name="fullscreen_label_exposure">EV</string>
     <string name="fullscreen_label_zoom">Zoom</string>
-    
+
+    <!-- Motion Lab -->
+    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_row_subtitle">Event recording with advanced motion tuning</string>
+    <string name="motion_lab_intro">Power-user mode for CCTV-style event clips. Use Any Motion for broad triggering or Person Confirmed for higher precision.</string>
+    <string name="motion_lab_enable">Enable Motion Recording</string>
+    <string name="motion_lab_status_enabled">Active (event-based)</string>
+    <string name="motion_lab_status_disabled">Disabled</string>
+    <string name="motion_lab_trigger_mode">Trigger Mode</string>
+    <string name="motion_lab_trigger_mode_helper">Select how events are triggered before recording starts.</string>
+    <string name="motion_lab_trigger_any_motion">Any Motion</string>
+    <string name="motion_lab_trigger_any_motion_desc">Triggers on movement score only.</string>
+    <string name="motion_lab_trigger_person_confirmed">Person Confirmed</string>
+    <string name="motion_lab_trigger_person_confirmed_desc">Requires motion plus person confirmation.</string>
+    <string name="motion_lab_sensitivity">Sensitivity</string>
+    <string name="motion_lab_sensitivity_hint">Lower values reduce sensitivity; higher values detect smaller motion.</string>
+    <string name="motion_lab_analysis_fps">Analysis FPS</string>
+    <string name="motion_lab_analysis_helper">Higher analysis FPS reacts faster but uses more CPU/battery.</string>
+    <string name="motion_lab_analysis_2_desc">Power saving, slower response.</string>
+    <string name="motion_lab_analysis_3_desc">Balanced default.</string>
+    <string name="motion_lab_analysis_5_desc">Faster response, more CPU.</string>
+    <string name="motion_lab_debounce">Debounce</string>
+    <string name="motion_lab_debounce_hint">Minimum stable motion time before recording starts.</string>
+    <string name="motion_lab_post_roll">Post-roll</string>
+    <string name="motion_lab_post_roll_hint">Keeps recording after motion ends.</string>
+    <string name="motion_lab_pre_roll">Pre-roll</string>
+    <string name="motion_lab_pre_roll_hint">Best-effort seconds to include before trigger.</string>
+    <string name="motion_lab_low_fps_fallback">Low-FPS Fallback</string>
+    <string name="motion_lab_low_fps_helper">Manual fallback when event mode is unstable on a device.</string>
+    <string name="motion_lab_low_fps_target">Fallback Target FPS</string>
+    <string name="motion_lab_low_fps_target_helper">Use the lowest stable value your device supports.</string>
+    <string name="motion_lab_low_fps_1_desc">Smallest output, highest compression efficiency.</string>
+    <string name="motion_lab_low_fps_2_desc">Balanced reliability and size.</string>
+    <string name="motion_lab_low_fps_5_desc">Smoother timeline, larger files.</string>
+    <string name="motion_lab_percent_value">%1$d%%</string>
+    <string name="motion_lab_fps_value">%1$d fps</string>
+    <string name="motion_lab_ms_value">%1$d ms</string>
+    <string name="motion_lab_seconds_value">%1$d s</string>
+    <string name="motion_lab_footer">For production use, keep this feature enabled only when needed and test thresholds in your real environment.</string>
+
 </resources>
