@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 public class ForensicsEventsFragment extends Fragment implements ForensicsEventsAdapter.Listener {
 
     public static final String EXTRA_OPEN_AT_MS = "com.fadcam.extra.OPEN_AT_MS";
+    public static final String EXTRA_OPEN_PAUSED = "com.fadcam.extra.OPEN_PAUSED";
 
     private RecyclerView recycler;
     private TextView empty;
@@ -84,6 +85,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         applyChipIcon(chipAll, R.drawable.ic_list);
         applyChipIcon(chipPerson, R.drawable.ic_broadcast_on_personal_24);
         applyChipIcon(chipHighConf, R.drawable.ic_focus_target);
+        chipHighConf.setCheckedIconVisible(false);
     }
 
     private void applyChipIcon(@Nullable Chip chip, int drawableRes) {
@@ -157,6 +159,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         Intent intent = new Intent(requireContext(), VideoPlayerActivity.class);
         intent.setData(Uri.parse(row.mediaUri));
         intent.putExtra(EXTRA_OPEN_AT_MS, row.startMs);
+        intent.putExtra(EXTRA_OPEN_PAUSED, true);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(intent);
     }

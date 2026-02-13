@@ -1884,7 +1884,7 @@ public class SharedPreferencesManager {
     }
 
     public boolean isDfEventVehicleEnabled() {
-        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_VEHICLE, true);
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_VEHICLE, false);
     }
 
     public void setDfEventVehicleEnabled(boolean enabled) {
@@ -1892,7 +1892,7 @@ public class SharedPreferencesManager {
     }
 
     public boolean isDfEventPetEnabled() {
-        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PET, true);
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PET, false);
     }
 
     public void setDfEventPetEnabled(boolean enabled) {

@@ -95,7 +95,7 @@ A video should retain linked forensic/event data after:
 - [x] Enable Digital Forensics
 - [x] Event classes (Person / Vehicle / Pet)
 - [x] Dangerous object tags toggle (opt-in)
-- [x] Show AI overlay in live preview
+- [ ] Show AI overlay in live preview (UI toggle is present, renderer overlay pipeline pending)
 - [x] Daily summary
 - [x] Heatmap insights
 - [x] Discord alerts (Coming Soon placeholder)
@@ -132,15 +132,16 @@ A video should retain linked forensic/event data after:
 ## Phase 3 - Events UX
 - [x] Add Events view in Records context
 - [x] Add filters (type, date, confidence)
-- [x] Tap event -> seek exact timestamp
+- [x] Tap event -> seek exact timestamp and open paused (no autoplay)
 - [x] Show link quality badge (Exact/Probable)
+- [x] Show proof frame thumbnail for each event row
 
 **Deliverable:** Searchable evidence timeline experience.
 
 ## Phase 4 - Insights + Overlay
 - [x] Add daily summary cards
 - [x] Add heatmap from bbox centers
-- [x] Add optional live overlay rendering (auto labels baseline)
+- [ ] Add optional live overlay rendering (auto labels baseline)
 - [x] Ensure overlay-off mode has minimal overhead
 
 **Deliverable:** Intelligence layer without manual drawing workflow.
@@ -158,7 +159,7 @@ A video should retain linked forensic/event data after:
 - [ ] Rename/move keeps data linked automatically
 - [ ] Paste-back relinks via exact/probable match
 - [ ] No false hijack of unrelated videos
-- [ ] Events open correct video timestamps
+- [x] Events open correct video timestamps
 - [ ] Motion Lab remains independent from Digital Forensics toggles
 - [ ] Mid-range realtime performance remains acceptable
 

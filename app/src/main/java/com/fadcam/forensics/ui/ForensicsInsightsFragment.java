@@ -94,10 +94,10 @@ public class ForensicsInsightsFragment extends Fragment {
             float[] bbox = parseBbox(e.bboxNorm);
             float cx = bbox[0];
             float cy = bbox[1];
-            float radius = Math.max(8f, bbox[2] * width * 0.5f);
+            float radius = Math.max(5f, Math.min(14f, 4f + (bbox[2] * 12f) + (Math.max(0, e.priority) * 1.5f)));
             float x = cx * width;
             float y = cy * height;
-            p.setAlpha(Math.min(220, 70 + (Math.max(0, e.priority) * 40)));
+            p.setAlpha(Math.min(170, 55 + (Math.max(0, e.priority) * 30)));
             canvas.drawCircle(x, y, radius, p);
         }
         return bmp;

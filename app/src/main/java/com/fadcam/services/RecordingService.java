@@ -202,7 +202,10 @@ public class RecordingService extends Service {
     private float motionLastScore = 0f;
     private float motionLastChangedArea = 0f;
     private float motionLastStrongArea = 0f;
+    private float motionLastCenterX = 0.5f;
+    private float motionLastCenterY = 0.5f;
     private boolean motionLastGlobalSuppressed = false;
+    private long motionLastForensicsHeartbeatMs = 0L;
 
     // --- Lifecycle Methods ---
     @Override
@@ -1732,6 +1735,8 @@ public class RecordingService extends Service {
         float debugMeanDelta = 0f;
         float debugBackgroundDelta = 0f;
         float debugMaxDelta = 0f;
+        float debugCenterX = 0.5f;
+        float debugCenterY = 0.5f;
         boolean debugGlobalSuppressed = false;
         if (motionDetector instanceof com.fadcam.motion.domain.detector.MotionDebugInfoProvider) {
             com.fadcam.motion.domain.detector.MotionDebugInfoProvider detector =
@@ -1741,6 +1746,8 @@ public class RecordingService extends Service {
             debugMeanDelta = detector.getLastMeanDelta();
             debugBackgroundDelta = detector.getLastBackgroundDelta();
             debugMaxDelta = detector.getLastMaxDelta();
+            debugCenterX = detector.getLastMotionCenterX();
+            debugCenterY = detector.getLastMotionCenterY();
             debugGlobalSuppressed = detector.isLastGlobalMotionSuppressed();
         }
         com.fadcam.motion.domain.state.MotionSessionState stateBefore =
@@ -1885,6 +1892,8 @@ public class RecordingService extends Service {
             motionLastScore = motionScore;
             motionLastChangedArea = debugChangedArea;
             motionLastStrongArea = debugStrongArea;
+            motionLastCenterX = debugCenterX;
+            motionLastCenterY = debugCenterY;
             motionLastGlobalSuppressed = debugGlobalSuppressed;
             if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
                     && motionScore > 0f
@@ -1934,6 +1943,26 @@ public class RecordingService extends Service {
                         + ", globalSuppressed=" + debugGlobalSuppressed);
             }
             maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, image, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
+
+            if (digitalForensicsEventRecorder != null
+                    && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && (nowMs - motionLastForensicsHeartbeatMs) >= 900L) {
+                motionLastForensicsHeartbeatMs = nowMs;
+                long timelineMs = recordingStartTime > 0L
+                        ? Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime)
+                        : 0L;
+                digitalForensicsEventRecorder.onMotionStart(
+                        getCurrentRecordingMediaUri(),
+                        timelineMs,
+                        personLikely,
+                        personConfidence,
+                        motionScore,
+                        debugChangedArea,
+                        debugStrongArea,
+                        debugCenterX,
+                        debugCenterY
+                );
+            }
         }
     }
 
@@ -2004,7 +2033,9 @@ public class RecordingService extends Service {
                     motionLastPersonConfidence,
                     motionLastScore,
                     motionLastChangedArea,
-                    motionLastStrongArea
+                    motionLastStrongArea,
+                    motionLastCenterX,
+                    motionLastCenterY
             );
         } else if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
             digitalForensicsEventRecorder.onMotionStop(timelineMs);
@@ -4625,24 +4656,16 @@ public class RecordingService extends Service {
                     String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
                     String customText = sharedPreferencesManager.getWatermarkCustomText();
                     String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-                    String aiOverlay = "";
-                    if (sharedPreferencesManager != null
-                            && sharedPreferencesManager.isDfOverlayEnabled()
-                            && motionLabEnabledForSession) {
-                        aiOverlay = "\nAI: " + (motionLastPersonDetected ? "PERSON" : "MOTION")
-                                + " conf " + String.format(Locale.US, "%.2f", motionLastPersonConfidence)
-                                + " score " + String.format(Locale.US, "%.2f", motionLastScore);
-                    }
                     
                     switch (watermarkOption) {
                         case "timestamp_fadcam":
-                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine + aiOverlay;
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                         case "timestamp":
-                            return getCurrentTimestamp() + locationText + customTextLine + aiOverlay;
+                            return getCurrentTimestamp() + locationText + customTextLine;
                         case "no_watermark":
-                            return aiOverlay;
+                            return "";
                         default:
-                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine + aiOverlay;
+                            return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                     }
                 }
             };

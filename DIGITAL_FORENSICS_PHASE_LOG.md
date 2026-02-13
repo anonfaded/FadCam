@@ -1,7 +1,7 @@
 # Digital Forensics Phase Log
 
 ## Current Status
-- Active phase: **Phase 1 (DB & Identity Foundation)**
+- Active phase: **Phase 3.5 (Event UX polish + reliability fixes)**
 - Last updated: 2026-02-13
 
 ## Phase 0 - UX Shell + Navigation
@@ -72,17 +72,30 @@
 ### Completed
 - [x] Added Events Timeline screen (`ForensicsEventsFragment`) with list rendering
 - [x] Added filters (event type + high confidence, with recent-window filter)
-- [x] Added click-to-open video at event timestamp (seek extra)
+- [x] Added click-to-open video at event timestamp (seek extra) and open paused to preserve context
 - [x] Added link quality badge rendering in timeline rows
 - [x] Added Records sidebar entry to open Events Timeline
+- [x] Added per-event proof thumbnail extraction in list rows
+- [x] Removed conflicting checked icon on High-confidence chip
 
 ## Phase 4 - Insights + Overlay
 ### Completed
 - [x] Added Activity Insights screen (`ForensicsInsightsFragment`)
 - [x] Added daily summary counts for last 24h
 - [x] Added heatmap rendering from event bbox centers
-- [x] Added optional live AI overlay labels in watermark path when overlay toggle is enabled
-- [x] Overlay-off path remains minimal (no label append work when disabled)
+- [x] Tuned heatmap dot radius/opacity and added legend text for readability
+- [x] Removed AI event label injection from video watermark text
+
+### Pending
+- [ ] Live preview bounding-box overlay renderer (toggle exists, render pipeline not yet implemented)
+- [ ] Vehicle/Pet/Dangerous event capture models (settings rows are present, runtime model integration pending)
+
+## Phase 3.5 - Reliability Fixes (new)
+### Completed
+- [x] Added motion centroid extraction in both detectors (`OpenCvMog2MotionDetector`, `FrameDiffMotionDetector`)
+- [x] Propagated centroid debug data through `RecordingService` into forensics events
+- [x] Added forensics heartbeat updates while recording, so long events can be promoted from MOTION -> PERSON
+- [x] Tightened forensics capture gating to active detector support (person/motion path)
 
 ## Phase 5 - Hardening
 ### Completed

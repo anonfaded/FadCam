@@ -1,8 +1,13 @@
 package com.fadcam.forensics.ui;
 
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,6 +19,8 @@ import com.fadcam.forensics.data.local.model.AiEventWithMedia;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEventsAdapter.Holder> {
 
@@ -23,6 +30,8 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
 
     private final Listener listener;
     private final List<AiEventWithMedia> rows = new ArrayList<>();
+    private final ExecutorService thumbExecutor = Executors.newSingleThreadExecutor();
+    private final LruCache<String, Bitmap> thumbCache = new LruCache<>(48);
 
     public ForensicsEventsAdapter(Listener listener) {
         this.listener = listener;
@@ -53,10 +62,10 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
 
         holder.title.setText(title);
         holder.subtitle.setText(String.format(Locale.US,
-                "%s • %ds-%ds • conf %.2f",
+                "%s • %s-%s • conf %.2f",
                 mediaName,
-                startSec,
-                endSec,
+                formatTime(startSec),
+                formatTime(endSec),
                 row.confidence));
 
         String badgeText = "EXACT";
@@ -64,12 +73,60 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
             badgeText = row.linkStatus;
         }
         holder.badge.setText(badgeText);
+        bindProofImage(holder, row, startSec);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onEventClicked(row);
             }
         });
+    }
+
+    private void bindProofImage(@NonNull Holder holder, AiEventWithMedia row, long startSec) {
+        holder.proof.setImageResource(R.drawable.ic_photo);
+        if (row == null || row.mediaUri == null || row.mediaUri.isEmpty()) {
+            return;
+        }
+        final String key = row.mediaUri + "#" + startSec;
+        holder.proof.setTag(key);
+        Bitmap cached = thumbCache.get(key);
+        if (cached != null) {
+            holder.proof.setImageBitmap(cached);
+            return;
+        }
+        thumbExecutor.execute(() -> {
+            Bitmap frame = extractFrame(holder.itemView.getContext(), row.mediaUri, startSec * 1_000_000L);
+            if (frame != null) {
+                thumbCache.put(key, frame);
+                holder.itemView.post(() -> {
+                    Object currentTag = holder.proof.getTag();
+                    if (key.equals(currentTag)) {
+                        holder.proof.setImageBitmap(frame);
+                    }
+                });
+            }
+        });
+    }
+
+    private Bitmap extractFrame(android.content.Context context, String uriString, long timeUs) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(context, Uri.parse(uriString));
+            return retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            try {
+                retriever.release();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private String formatTime(long seconds) {
+        long mins = seconds / 60L;
+        long secs = seconds % 60L;
+        return String.format(Locale.US, "%d:%02d", mins, secs);
     }
 
     @Override
@@ -81,12 +138,14 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         final TextView title;
         final TextView subtitle;
         final TextView badge;
+        final ImageView proof;
 
         Holder(@NonNull View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.text_title);
             subtitle = itemView.findViewById(R.id.text_subtitle);
             badge = itemView.findViewById(R.id.text_badge);
+            proof = itemView.findViewById(R.id.image_proof);
         }
     }
 }

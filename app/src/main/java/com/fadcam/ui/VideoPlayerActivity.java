@@ -51,6 +51,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         "com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED";
     private static final String EXTRA_URI = "extra_uri";
     private static final String EXTRA_POSITION_MS = "extra_position_ms";
+    private boolean openPausedFromForensics = false;
     private ImageButton backButton;
     private ImageButton infoButton;
     private ImageButton settingsButton; // For playback speed
@@ -236,6 +237,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
             final long requestedSeekMs = getIntent().getLongExtra(
                 com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_AT_MS,
                 -1L
+            );
+            openPausedFromForensics = getIntent().getBooleanExtra(
+                com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_PAUSED,
+                false
             );
 
         if (videoUri != null) {
@@ -1240,8 +1245,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     player.seekTo(savedMs);
                 }
             } catch (Exception ignored) {}
-            Log.d(TAG, "Calling player.play() after initialization");
-            player.play();
+            if (openPausedFromForensics) {
+                Log.d(TAG, "Forensics open: keep paused after seek");
+                player.pause();
+            } else {
+                Log.d(TAG, "Calling player.play() after initialization");
+                player.play();
+            }
             // Listen for seeks so we can save immediately and notify adapters
             try {
                 player.addListener(

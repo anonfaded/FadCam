@@ -15,24 +15,23 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.ui.ForensicsEventsFragment;
 import com.fadcam.forensics.ui.ForensicsInsightsFragment;
-import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
 
-/**
- * DigitalForensicsSettingsFragment
- * Phase 0 shell for Digital Forensics advanced controls.
- */
+import java.util.ArrayList;
+
 public class DigitalForensicsSettingsFragment extends Fragment {
 
     private SharedPreferencesManager prefs;
-    private SwitchMaterial switchEnabled;
-    private SwitchMaterial switchPerson;
-    private SwitchMaterial switchVehicle;
-    private SwitchMaterial switchPet;
-    private SwitchMaterial switchDangerous;
-    private SwitchMaterial switchOverlay;
-    private SwitchMaterial switchDailySummary;
-    private SwitchMaterial switchHeatmap;
+
     private TextView valueStatus;
+    private TextView valuePerson;
+    private TextView valueVehicle;
+    private TextView valuePet;
+    private TextView valueDangerous;
+    private TextView valueOverlay;
+    private TextView valueDaily;
+    private TextView valueHeatmap;
 
     @Nullable
     @Override
@@ -48,79 +47,127 @@ public class DigitalForensicsSettingsFragment extends Fragment {
 
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
-            back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
+            back.setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
         }
 
-        switchEnabled = view.findViewById(R.id.switch_df_enabled);
-        switchPerson = view.findViewById(R.id.switch_df_event_person);
-        switchVehicle = view.findViewById(R.id.switch_df_event_vehicle);
-        switchPet = view.findViewById(R.id.switch_df_event_pet);
-        switchDangerous = view.findViewById(R.id.switch_df_event_dangerous_object);
-        switchOverlay = view.findViewById(R.id.switch_df_overlay);
-        switchDailySummary = view.findViewById(R.id.switch_df_daily_summary);
-        switchHeatmap = view.findViewById(R.id.switch_df_heatmap);
         valueStatus = view.findViewById(R.id.value_df_status);
+        valuePerson = view.findViewById(R.id.value_df_event_person);
+        valueVehicle = view.findViewById(R.id.value_df_event_vehicle);
+        valuePet = view.findViewById(R.id.value_df_event_pet);
+        valueDangerous = view.findViewById(R.id.value_df_event_dangerous);
+        valueOverlay = view.findViewById(R.id.value_df_overlay);
+        valueDaily = view.findViewById(R.id.value_df_daily_summary);
+        valueHeatmap = view.findViewById(R.id.value_df_heatmap);
 
         bindCurrentValues();
         wireListeners(view);
     }
 
     private void bindCurrentValues() {
-        switchEnabled.setOnCheckedChangeListener(null);
-        switchPerson.setOnCheckedChangeListener(null);
-        switchVehicle.setOnCheckedChangeListener(null);
-        switchPet.setOnCheckedChangeListener(null);
-        switchDangerous.setOnCheckedChangeListener(null);
-        switchOverlay.setOnCheckedChangeListener(null);
-        switchDailySummary.setOnCheckedChangeListener(null);
-        switchHeatmap.setOnCheckedChangeListener(null);
-
-        boolean enabled = prefs.isDigitalForensicsEnabled();
-        switchEnabled.setChecked(enabled);
-        switchPerson.setChecked(prefs.isDfEventPersonEnabled());
-        switchVehicle.setChecked(prefs.isDfEventVehicleEnabled());
-        switchPet.setChecked(prefs.isDfEventPetEnabled());
-        switchDangerous.setChecked(prefs.isDfDangerousObjectEnabled());
-        switchOverlay.setChecked(prefs.isDfOverlayEnabled());
-        switchDailySummary.setChecked(prefs.isDfDailySummaryEnabled());
-        switchHeatmap.setChecked(prefs.isDfHeatmapEnabled());
-        valueStatus.setText(enabled
-            ? getString(R.string.digital_forensics_status_enabled)
+        valueStatus.setText(prefs.isDigitalForensicsEnabled()
+            ? getString(R.string.digital_forensics_status_enabled_short)
             : getString(R.string.digital_forensics_status_disabled));
+        valuePerson.setText(enabledLabel(prefs.isDfEventPersonEnabled()));
+        valueVehicle.setText(enabledLabel(prefs.isDfEventVehicleEnabled()));
+        valuePet.setText(enabledLabel(prefs.isDfEventPetEnabled()));
+        valueDangerous.setText(enabledLabel(prefs.isDfDangerousObjectEnabled()));
+        valueOverlay.setText(enabledLabel(prefs.isDfOverlayEnabled()));
+        valueDaily.setText(enabledLabel(prefs.isDfDailySummaryEnabled()));
+        valueHeatmap.setText(enabledLabel(prefs.isDfHeatmapEnabled()));
+    }
 
-        float alpha = enabled ? 1f : 0.45f;
-        switchPerson.setAlpha(alpha);
-        switchVehicle.setAlpha(alpha);
-        switchPet.setAlpha(alpha);
-        switchDangerous.setAlpha(alpha);
-        switchOverlay.setAlpha(alpha);
-        switchDailySummary.setAlpha(alpha);
-        switchHeatmap.setAlpha(alpha);
-        switchPerson.setEnabled(enabled);
-        switchVehicle.setEnabled(enabled);
-        switchPet.setEnabled(enabled);
-        switchDangerous.setEnabled(enabled);
-        switchOverlay.setEnabled(enabled);
-        switchDailySummary.setEnabled(enabled);
-        switchHeatmap.setEnabled(enabled);
+    private String enabledLabel(boolean enabled) {
+        return enabled
+            ? getString(R.string.digital_forensics_status_enabled_short)
+            : getString(R.string.digital_forensics_status_disabled);
     }
 
     private void wireListeners(@NonNull View view) {
-        switchEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs.setDigitalForensicsEnabled(isChecked);
-            bindCurrentValues();
-        });
-        switchPerson.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfEventPersonEnabled(isChecked));
-        switchVehicle.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfEventVehicleEnabled(isChecked));
-        switchPet.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfEventPetEnabled(isChecked));
-        switchDangerous.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfDangerousObjectEnabled(isChecked));
-        switchOverlay.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfOverlayEnabled(isChecked));
-        switchDailySummary.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfDailySummaryEnabled(isChecked));
-        switchHeatmap.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfHeatmapEnabled(isChecked));
+        view.findViewById(R.id.row_df_enabled).setOnClickListener(v -> showTogglePicker(
+            "rk_df_enabled",
+            getString(R.string.digital_forensics_enable),
+            getString(R.string.digital_forensics_enable_helper),
+            prefs.isDigitalForensicsEnabled(),
+            value -> {
+                prefs.setDigitalForensicsEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_event_person).setOnClickListener(v -> showTogglePicker(
+            "rk_df_person",
+            getString(R.string.digital_forensics_event_person),
+            getString(R.string.digital_forensics_person_helper),
+            prefs.isDfEventPersonEnabled(),
+            value -> {
+                prefs.setDfEventPersonEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_event_vehicle).setOnClickListener(v -> showTogglePicker(
+            "rk_df_vehicle",
+            getString(R.string.digital_forensics_event_vehicle),
+            getString(R.string.digital_forensics_vehicle_helper),
+            prefs.isDfEventVehicleEnabled(),
+            value -> {
+                prefs.setDfEventVehicleEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_event_pet).setOnClickListener(v -> showTogglePicker(
+            "rk_df_pet",
+            getString(R.string.digital_forensics_event_pet),
+            getString(R.string.digital_forensics_pet_helper),
+            prefs.isDfEventPetEnabled(),
+            value -> {
+                prefs.setDfEventPetEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_event_dangerous_object).setOnClickListener(v -> showTogglePicker(
+            "rk_df_dangerous",
+            getString(R.string.digital_forensics_event_dangerous_object),
+            getString(R.string.digital_forensics_dangerous_helper),
+            prefs.isDfDangerousObjectEnabled(),
+            value -> {
+                prefs.setDfDangerousObjectEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_overlay).setOnClickListener(v -> showTogglePicker(
+            "rk_df_overlay",
+            getString(R.string.digital_forensics_overlay),
+            getString(R.string.digital_forensics_overlay_helper),
+            prefs.isDfOverlayEnabled(),
+            value -> {
+                prefs.setDfOverlayEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_daily_summary).setOnClickListener(v -> showTogglePicker(
+            "rk_df_daily",
+            getString(R.string.digital_forensics_daily_summary),
+            getString(R.string.digital_forensics_daily_helper),
+            prefs.isDfDailySummaryEnabled(),
+            value -> {
+                prefs.setDfDailySummaryEnabled(value);
+                bindCurrentValues();
+            }
+        ));
+        view.findViewById(R.id.row_df_heatmap).setOnClickListener(v -> showTogglePicker(
+            "rk_df_heatmap",
+            getString(R.string.digital_forensics_heatmap),
+            getString(R.string.digital_forensics_heatmap_helper),
+            prefs.isDfHeatmapEnabled(),
+            value -> {
+                prefs.setDfHeatmapEnabled(value);
+                bindCurrentValues();
+            }
+        ));
 
-        View rowDiscord = view.findViewById(R.id.row_df_discord_coming_soon);
         View rowEvents = view.findViewById(R.id.row_df_open_events);
         View rowInsights = view.findViewById(R.id.row_df_open_insights);
+        View rowDiscord = view.findViewById(R.id.row_df_discord_coming_soon);
+
         if (rowEvents != null) {
             rowEvents.setOnClickListener(v -> OverlayNavUtil.show(
                 requireActivity(),
@@ -142,5 +189,29 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 Toast.LENGTH_SHORT
             ).show());
         }
+    }
+
+    private void showTogglePicker(String resultKey, String title, String helper,
+                                  boolean currentValue, ToggleConsumer consumer) {
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem("enabled", getString(R.string.universal_enabled), getString(R.string.digital_forensics_picker_enabled_desc)));
+        items.add(new OptionItem("disabled", getString(R.string.universal_disabled), getString(R.string.digital_forensics_picker_disabled_desc)));
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+            title,
+            items,
+            currentValue ? "enabled" : "disabled",
+            resultKey,
+            helper
+        );
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            consumer.accept("enabled".equals(id));
+        });
+        sheet.show(getParentFragmentManager(), resultKey + "_sheet");
+    }
+
+    private interface ToggleConsumer {
+        void accept(boolean value);
     }
 }

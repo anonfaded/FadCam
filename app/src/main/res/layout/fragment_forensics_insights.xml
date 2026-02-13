@@ -102,6 +102,14 @@
                     android:layout_marginTop="8dp"
                     android:contentDescription="@string/forensics_heatmap_cd"
                     android:scaleType="fitXY" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/forensics_heatmap_legend"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

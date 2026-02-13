@@ -7,6 +7,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 
@@ -39,6 +40,8 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
     private float lastMeanDelta = 0f;
     private float lastBackgroundDelta = 0f;
     private float lastMaxDelta = 0f;
+    private float lastMotionCenterX = 0.5f;
+    private float lastMotionCenterY = 0.5f;
     private boolean lastGlobalMotionSuppressed = false;
 
     public OpenCvMog2MotionDetector() {
@@ -105,6 +108,16 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
         int changedPixels = org.opencv.core.Core.countNonZero(fgMask);
         lastChangedAreaRatio = changedPixels / (float) current.length;
         lastBackgroundDelta = (float) org.opencv.core.Core.mean(fgMask).val[0] / 255f;
+        if (changedPixels > 0) {
+            Moments m = Imgproc.moments(fgMask, true);
+            if (m.m00 > 0d) {
+                lastMotionCenterX = clamp01((float) (m.m10 / m.m00) / SAMPLE_W);
+                lastMotionCenterY = clamp01((float) (m.m01 / m.m00) / SAMPLE_H);
+            }
+        } else {
+            lastMotionCenterX = 0.5f;
+            lastMotionCenterY = 0.5f;
+        }
 
         float activeEnergy = (lastMeanDelta * 0.65f) + (lastBackgroundDelta * 0.35f);
         if (lastChangedAreaRatio < MIN_ACTIVE_AREA_RATIO && lastMeanDelta < MIN_ACTIVE_MEAN_DELTA) {
@@ -175,13 +188,29 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
         return lastGlobalMotionSuppressed;
     }
 
+    @Override
+    public float getLastMotionCenterX() {
+        return lastMotionCenterX;
+    }
+
+    @Override
+    public float getLastMotionCenterY() {
+        return lastMotionCenterY;
+    }
+
     private void resetDebug() {
         lastChangedAreaRatio = 0f;
         lastStrongAreaRatio = 0f;
         lastMeanDelta = 0f;
         lastBackgroundDelta = 0f;
         lastMaxDelta = 0f;
+        lastMotionCenterX = 0.5f;
+        lastMotionCenterY = 0.5f;
         lastGlobalMotionSuppressed = false;
+    }
+
+    private static float clamp01(float value) {
+        return Math.max(0f, Math.min(1f, value));
     }
 
     private static void sampleLuma(ByteBuffer buffer, int width, int height, int rowStride, int pixelStride, byte[] out) {

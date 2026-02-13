@@ -66,15 +66,14 @@
                 android:paddingBottom="4dp">
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_enabled"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_debug"
+                        android:src="@drawable/ic_focus_target"
                         android:tint="@android:color/darker_gray" />
 
                     <LinearLayout
@@ -100,47 +99,60 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_enabled"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_event_person"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_notifications"
+                        android:src="@drawable/ic_broadcast_on_personal_24"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_event_person"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_event_person"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_event_person"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_event_person"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_event_vehicle"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -149,27 +161,40 @@
                         android:src="@drawable/ic_records"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_event_vehicle"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_event_vehicle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_event_vehicle"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_event_vehicle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_event_pet"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -178,27 +203,40 @@
                         android:src="@drawable/ic_theme"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_event_pet"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_event_pet"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_event_pet"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_event_pet"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_event_dangerous_object"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -207,27 +245,40 @@
                         android:src="@drawable/ic_error"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_event_dangerous_object"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_event_dangerous_object"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_event_dangerous_object"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_event_dangerous"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_overlay"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -236,27 +287,40 @@
                         android:src="@drawable/ic_camera"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_overlay"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_overlay"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_overlay"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_overlay"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_daily_summary"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -265,27 +329,40 @@
                         android:src="@drawable/ic_sort_amount_down"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_daily_summary"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_daily_summary"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_daily_summary"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_daily_summary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
+                    android:id="@+id/row_df_heatmap"
+                    style="@style/SettingsGroupRow">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -294,19 +371,33 @@
                         android:src="@drawable/ic_grid"
                         android:tint="@android:color/darker_gray" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/digital_forensics_heatmap"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_df_heatmap"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/digital_forensics_heatmap"
+                            android:textColor="?attr/colorHeading"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/value_df_heatmap"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -327,6 +418,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical">
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -334,6 +426,7 @@
                             android:textColor="?attr/colorHeading"
                             android:textSize="15sp"
                             android:textStyle="bold" />
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -367,6 +460,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical">
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -374,6 +468,7 @@
                             android:textColor="?attr/colorHeading"
                             android:textSize="15sp"
                             android:textStyle="bold" />
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -399,7 +494,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_discord"
+                        android:src="@drawable/ic_notifications"
                         android:tint="@android:color/darker_gray" />
 
                     <LinearLayout
@@ -427,14 +522,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/badge_bg_gray"
+                        android:background="@drawable/new_badge_background"
                         android:paddingStart="8dp"
                         android:paddingTop="3dp"
                         android:paddingEnd="8dp"
                         android:paddingBottom="3dp"
                         android:text="@string/digital_forensics_coming_soon_short"
                         android:textColor="@android:color/white"
-                        android:textSize="11sp"
+                        android:textSize="10sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
@@ -442,9 +537,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
+                android:layout_marginTop="12dp"
                 android:text="@string/digital_forensics_helper"
                 android:textColor="@android:color/darker_gray"
                 android:textSize="12sp" />
