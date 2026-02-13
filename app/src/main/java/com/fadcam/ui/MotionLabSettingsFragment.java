@@ -53,6 +53,7 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueDebugThreshold;
     private TextView valueDebugAction;
     private TextView valueDebugPerson;
+    private TextView valueDebugMetrics;
     private ImageView imageDebugFrame;
     private View buttonDebugCopy;
     private SwitchMaterial switchMotionEnabled;
@@ -108,6 +109,7 @@ public class MotionLabSettingsFragment extends Fragment {
         valueDebugThreshold = view.findViewById(R.id.value_motion_debug_threshold);
         valueDebugAction = view.findViewById(R.id.value_motion_debug_action);
         valueDebugPerson = view.findViewById(R.id.value_motion_debug_person);
+        valueDebugMetrics = view.findViewById(R.id.value_motion_debug_metrics);
         imageDebugFrame = view.findViewById(R.id.image_motion_debug_frame);
         buttonDebugCopy = view.findViewById(R.id.button_motion_debug_copy);
         switchMotionEnabled = view.findViewById(R.id.switch_motion_enabled);
@@ -417,6 +419,12 @@ public class MotionLabSettingsFragment extends Fragment {
         float startThreshold = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_START_THRESHOLD, 0f);
         float stopThreshold = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_STOP_THRESHOLD, 0f);
         float personConf = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, 0f);
+        float changedArea = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CHANGED_AREA, 0f);
+        float strongArea = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_STRONG_AREA, 0f);
+        float meanDelta = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_MEAN_DELTA, 0f);
+        float bgDelta = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_BG_DELTA, 0f);
+        float maxDelta = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, 0f);
+        boolean globalSuppressed = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, false);
         boolean person = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, false);
 
         valueDebugState.setText(state == null ? "-" : state);
@@ -424,6 +432,15 @@ public class MotionLabSettingsFragment extends Fragment {
         valueDebugThreshold.setText(getString(R.string.motion_lab_debug_threshold_value, startThreshold, stopThreshold));
         valueDebugAction.setText(action == null ? "-" : action);
         valueDebugPerson.setText(getString(R.string.motion_lab_debug_person_value, person ? "YES" : "NO", personConf));
+        valueDebugMetrics.setText(getString(
+            R.string.motion_lab_debug_metrics_value,
+            changedArea,
+            strongArea,
+            meanDelta,
+            bgDelta,
+            maxDelta,
+            globalSuppressed ? "YES" : "NO"
+        ));
 
         latestDebugSnapshot = "state=" + (state == null ? "-" : state)
             + ", action=" + (action == null ? "-" : action)
@@ -432,7 +449,13 @@ public class MotionLabSettingsFragment extends Fragment {
             + ", startThreshold=" + String.format(java.util.Locale.US, "%.3f", startThreshold)
             + ", stopThreshold=" + String.format(java.util.Locale.US, "%.3f", stopThreshold)
             + ", person=" + (person ? "YES" : "NO")
-            + ", personConf=" + String.format(java.util.Locale.US, "%.3f", personConf);
+            + ", personConf=" + String.format(java.util.Locale.US, "%.3f", personConf)
+            + ", area=" + String.format(java.util.Locale.US, "%.3f", changedArea)
+            + ", strong=" + String.format(java.util.Locale.US, "%.3f", strongArea)
+            + ", meanDelta=" + String.format(java.util.Locale.US, "%.3f", meanDelta)
+            + ", bgDelta=" + String.format(java.util.Locale.US, "%.3f", bgDelta)
+            + ", maxDelta=" + String.format(java.util.Locale.US, "%.3f", maxDelta)
+            + ", globalSuppressed=" + (globalSuppressed ? "YES" : "NO");
 
         byte[] frameJpeg = intent.getByteArrayExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG);
         if (frameJpeg != null && frameJpeg.length > 0 && imageDebugFrame != null) {

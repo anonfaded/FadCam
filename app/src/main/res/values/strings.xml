@@ -1746,6 +1746,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_debug_threshold_placeholder">Threshold start/stop: -</string>
     <string name="motion_lab_debug_action_placeholder">Last action: -</string>
     <string name="motion_lab_debug_person_placeholder">Person: -</string>
+    <string name="motion_lab_debug_metrics_placeholder">Area/Strong/Mean/BG/Max/Global: -</string>
     <string name="motion_lab_debug_frame">Live analyzer frame preview</string>
     <string name="motion_lab_debug_copy_snapshot">Copy debug snapshot</string>
     <string name="motion_lab_debug_copy_done">Debug snapshot copied</string>
@@ -1753,6 +1754,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_debug_score_value">Score raw/smoothed: %1$.3f / %2$.3f</string>
     <string name="motion_lab_debug_threshold_value">Threshold start/stop: %1$.3f / %2$.3f</string>
     <string name="motion_lab_debug_person_value">Person: %1$s (%2$.3f)</string>
+    <string name="motion_lab_debug_metrics_value">Area %1$.3f, Strong %2$.3f, Mean %3$.3f, BG %4$.3f, Max %5$.3f, Global %6$s</string>
     <string name="motion_lab_low_fps_1_desc">Smallest output, highest compression efficiency.</string>
     <string name="motion_lab_low_fps_2_desc">Balanced reliability and size.</string>
     <string name="motion_lab_low_fps_5_desc">Smoother timeline, larger files.</string>

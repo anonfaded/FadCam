@@ -6,11 +6,48 @@ import java.nio.ByteBuffer;
 
 public class FrameDiffMotionDetector implements MotionDetector {
 
-    private static final int SAMPLE_GRID_W = 96;
-    private static final int SAMPLE_GRID_H = 54;
-    private static final int PIXEL_DELTA_THRESHOLD = 10;
-    private static final float MIN_CHANGED_AREA_RATIO = 0.005f;
+    private static final int SAMPLE_GRID_W = 160;
+    private static final int SAMPLE_GRID_H = 90;
+    private static final int PIXEL_DELTA_THRESHOLD = 8;
+    private static final int STRONG_PIXEL_DELTA_THRESHOLD = 18;
+    private static final int BACKGROUND_FREEZE_DELTA = 22;
+    private static final float BACKGROUND_LEARNING_RATE = 0.03f;
+    private static final float MIN_CHANGED_AREA_RATIO = 0.0012f;
+    private static final float GLOBAL_MOTION_RATIO_THRESHOLD = 0.72f;
+    private static final float GLOBAL_MOTION_MEAN_THRESHOLD = 0.16f;
     private byte[] previous;
+    private float[] background;
+
+    private volatile float lastChangedAreaRatio = 0f;
+    private volatile float lastMeanDelta = 0f;
+    private volatile float lastBackgroundDelta = 0f;
+    private volatile float lastMaxDelta = 0f;
+    private volatile float lastStrongAreaRatio = 0f;
+    private volatile boolean lastGlobalMotionSuppressed = false;
+
+    public float getLastChangedAreaRatio() {
+        return lastChangedAreaRatio;
+    }
+
+    public float getLastMeanDelta() {
+        return lastMeanDelta;
+    }
+
+    public float getLastBackgroundDelta() {
+        return lastBackgroundDelta;
+    }
+
+    public float getLastMaxDelta() {
+        return lastMaxDelta;
+    }
+
+    public float getLastStrongAreaRatio() {
+        return lastStrongAreaRatio;
+    }
+
+    public boolean isLastGlobalMotionSuppressed() {
+        return lastGlobalMotionSuppressed;
+    }
 
     @Override
     public float detectScore(Image image) {
@@ -50,30 +87,84 @@ public class FrameDiffMotionDetector implements MotionDetector {
 
         if (previous == null || previous.length != current.length) {
             previous = current;
+            background = new float[current.length];
+            for (int i = 0; i < current.length; i++) {
+                background[i] = current[i] & 0xFF;
+            }
+            lastChangedAreaRatio = 0f;
+            lastMeanDelta = 0f;
+            lastBackgroundDelta = 0f;
+            lastMaxDelta = 0f;
+            lastStrongAreaRatio = 0f;
+            lastGlobalMotionSuppressed = false;
             return 0f;
         }
 
         long sum = 0L;
+        long sumBg = 0L;
         int changedPixels = 0;
+        int strongPixels = 0;
+        int maxDelta = 0;
         for (int i = 0; i < current.length; i++) {
-            int a = current[i] & 0xFF;
-            int b = previous[i] & 0xFF;
-            int delta = Math.abs(a - b);
+            int cur = current[i] & 0xFF;
+            int prev = previous[i] & 0xFF;
+            int bg = Math.round(background[i]);
+
+            int frameDelta = Math.abs(cur - prev);
+            int bgDelta = Math.abs(cur - bg);
+            int delta = Math.max(frameDelta, bgDelta);
             sum += delta;
+            sumBg += bgDelta;
+            if (delta > maxDelta) {
+                maxDelta = delta;
+            }
             if (delta >= PIXEL_DELTA_THRESHOLD) {
                 changedPixels++;
+            }
+            if (delta >= STRONG_PIXEL_DELTA_THRESHOLD) {
+                strongPixels++;
+            }
+
+            if (bgDelta <= BACKGROUND_FREEZE_DELTA) {
+                background[i] = (background[i] * (1f - BACKGROUND_LEARNING_RATE))
+                    + (cur * BACKGROUND_LEARNING_RATE);
             }
         }
         previous = current;
 
         float changedAreaRatio = changedPixels / (float) current.length;
-        if (changedAreaRatio < MIN_CHANGED_AREA_RATIO) {
+        float strongAreaRatio = strongPixels / (float) current.length;
+        float meanDelta = (sum / (float) current.length) / 255f;
+        float meanBgDelta = (sumBg / (float) current.length) / 255f;
+        float maxDeltaNorm = maxDelta / 255f;
+
+        lastChangedAreaRatio = changedAreaRatio;
+        lastStrongAreaRatio = strongAreaRatio;
+        lastMeanDelta = meanDelta;
+        lastBackgroundDelta = meanBgDelta;
+        lastMaxDelta = maxDeltaNorm;
+
+        if (changedAreaRatio < MIN_CHANGED_AREA_RATIO && strongPixels < 3) {
+            lastGlobalMotionSuppressed = false;
             return 0f;
         }
 
-        // Normalize to 0..1
-        float meanDelta = (sum / (float) current.length) / 255f;
-        float weighted = meanDelta * (0.6f + (changedAreaRatio * 1.5f));
-        return Math.min(1f, weighted);
+        float ratioWeight = Math.min(1f, changedAreaRatio * 2.2f);
+        float score = (meanDelta * 0.45f) + (meanBgDelta * 0.35f) + (maxDeltaNorm * 0.20f);
+        score *= ratioWeight;
+
+        if (strongPixels >= 3 && maxDeltaNorm >= 0.22f) {
+            score = Math.max(score, 0.08f + (maxDeltaNorm * 0.25f));
+        }
+
+        boolean globalMotionLikely = changedAreaRatio >= GLOBAL_MOTION_RATIO_THRESHOLD
+            && meanDelta >= GLOBAL_MOTION_MEAN_THRESHOLD;
+        if (globalMotionLikely) {
+            lastGlobalMotionSuppressed = true;
+            // Treat near-full-frame motion (camera shake/tilt) as non-event motion signal.
+            return 0f;
+        }
+        lastGlobalMotionSuppressed = false;
+        return Math.min(1f, Math.max(0f, score));
     }
 }

@@ -47,6 +47,9 @@ Ship a production-ready, open-source, scalable motion-triggered recording system
 - [x] Implement frame-difference/background subtraction on Y plane.
 - [x] Add thresholding + minimum area filtering.
 - [x] Add optional zones/masks data model (`PREF_MOTION_ZONES_JSON`).
+- [x] Add hybrid frame-diff + background-model scoring.
+- [x] Add global camera-motion suppression heuristic.
+- [x] Add detailed detector metrics (`area/strong/mean/bg/max`) for debug UI.
 
 ### 5) State Machine Wiring
 - [x] Implement `IDLE -> PENDING -> RECORDING -> POST_ROLL` transitions.

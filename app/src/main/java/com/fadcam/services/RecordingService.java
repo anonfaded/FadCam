@@ -1609,8 +1609,8 @@ public class RecordingService extends Service {
             Size selected = sharedPreferencesManager != null
                     ? sharedPreferencesManager.getCameraResolution()
                     : Constants.DEFAULT_VIDEO_RESOLUTION;
-            int width = Math.max(96, Math.min(motionSafeMode ? 192 : 480, selected.getWidth() / (motionSafeMode ? 6 : 3)));
-            int height = Math.max(54, Math.min(motionSafeMode ? 108 : 270, selected.getHeight() / (motionSafeMode ? 6 : 3)));
+            int width = Math.max(96, Math.min(motionSafeMode ? 192 : 640, selected.getWidth() / (motionSafeMode ? 6 : 2)));
+            int height = Math.max(54, Math.min(motionSafeMode ? 108 : 360, selected.getHeight() / (motionSafeMode ? 6 : 2)));
             boolean recreate = motionAnalysisReader == null
                     || motionAnalysisReader.getWidth() != width
                     || motionAnalysisReader.getHeight() != height;
@@ -1666,9 +1666,21 @@ public class RecordingService extends Service {
         }
         int requiredHits = motionSafeMode ? 3 : 2;
         boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
-        if (personDetectedRaw && personDetector.getLastConfidence() >= 0.55f) {
-            // Person presence is a strong signal in CCTV use-cases; boost score to reduce missed starts.
-            motionScore = Math.min(1f, motionScore + 0.10f);
+        float debugChangedArea = 0f;
+        float debugStrongArea = 0f;
+        float debugMeanDelta = 0f;
+        float debugBackgroundDelta = 0f;
+        float debugMaxDelta = 0f;
+        boolean debugGlobalSuppressed = false;
+        if (motionDetector instanceof com.fadcam.motion.domain.detector.FrameDiffMotionDetector) {
+            com.fadcam.motion.domain.detector.FrameDiffMotionDetector detector =
+                    (com.fadcam.motion.domain.detector.FrameDiffMotionDetector) motionDetector;
+            debugChangedArea = detector.getLastChangedAreaRatio();
+            debugStrongArea = detector.getLastStrongAreaRatio();
+            debugMeanDelta = detector.getLastMeanDelta();
+            debugBackgroundDelta = detector.getLastBackgroundDelta();
+            debugMaxDelta = detector.getLastMaxDelta();
+            debugGlobalSuppressed = detector.isLastGlobalMotionSuppressed();
         }
         com.fadcam.motion.domain.state.MotionSessionState stateBefore =
                 motionStateMachine != null ? motionStateMachine.getState() : null;
@@ -1701,6 +1713,26 @@ public class RecordingService extends Service {
                             nowMs,
                             motionScore,
                             personDetected));
+            float personConfidence = personDetector.getLastConfidence();
+            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && stateBefore == com.fadcam.motion.domain.state.MotionSessionState.IDLE
+                    && personDetectedRaw
+                    && personConfidence >= 0.60f
+                    && !debugGlobalSuppressed) {
+                float boostedScore = Math.max(
+                        motionScore,
+                        motionPolicy.startThresholdFromSensitivity(settings.getSensitivity()) + 0.03f
+                );
+                action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
+                        nowMs,
+                        Math.min(1f, boostedScore),
+                        true
+                ));
+                if (action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+                    motionScore = boostedScore;
+                    personDetected = true;
+                }
+            }
             applyMotionTransitionAction(action);
             if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
                     && motionScore > 0f
@@ -1716,7 +1748,13 @@ public class RecordingService extends Service {
                         + "/"
                         + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
                         + ", personRaw=" + personDetectedRaw
-                        + ", personConf=" + String.format(Locale.US, "%.3f", personDetector.getLastConfidence())
+                        + ", personConf=" + String.format(Locale.US, "%.3f", personConfidence)
+                        + ", area=" + String.format(Locale.US, "%.3f", debugChangedArea)
+                        + ", strong=" + String.format(Locale.US, "%.3f", debugStrongArea)
+                        + ", meanDelta=" + String.format(Locale.US, "%.3f", debugMeanDelta)
+                        + ", bgDelta=" + String.format(Locale.US, "%.3f", debugBackgroundDelta)
+                        + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
+                        + ", globalSuppressed=" + debugGlobalSuppressed
                         + ", personHits=" + motionConsecutivePersonHits + "/" + requiredHits
                         + ", person=" + personDetected
                         + ", state=" + motionStateMachine.getState()
@@ -1725,7 +1763,7 @@ public class RecordingService extends Service {
                         + ", actions=" + motionTriggerActionCount
                         + ", suppressed=" + motionSuppressedSignalCount + "}");
             }
-            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personDetector.getLastConfidence(), stateBefore, image);
+            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, image, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
         }
     }
 
@@ -1788,7 +1826,13 @@ public class RecordingService extends Service {
             boolean personDetected,
             float personConfidence,
             com.fadcam.motion.domain.state.MotionSessionState previousState,
-            Image frameImage
+            Image frameImage,
+            float changedAreaRatio,
+            float strongAreaRatio,
+            float meanDelta,
+            float backgroundDelta,
+            float maxDelta,
+            boolean globalSuppressed
     ) {
         long now = SystemClock.elapsedRealtime();
         boolean significant = previousState != currentState
@@ -1819,6 +1863,12 @@ public class RecordingService extends Service {
         );
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, personDetected);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, personConfidence);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CHANGED_AREA, changedAreaRatio);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_STRONG_AREA, strongAreaRatio);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MEAN_DELTA, meanDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BG_DELTA, backgroundDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, maxDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, globalSuppressed);
         byte[] frameJpeg = buildMotionDebugFrameJpeg(frameImage);
         if (frameJpeg != null && frameJpeg.length > 0) {
             debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);

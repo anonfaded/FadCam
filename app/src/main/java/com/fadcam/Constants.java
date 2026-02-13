@@ -137,6 +137,18 @@ public abstract class Constants {
     public static final String EXTRA_MOTION_DEBUG_PERSON = "motion_debug_person";
     public static final String EXTRA_MOTION_DEBUG_FRAME_JPEG =
         "motion_debug_frame_jpeg";
+    public static final String EXTRA_MOTION_DEBUG_CHANGED_AREA =
+        "motion_debug_changed_area";
+    public static final String EXTRA_MOTION_DEBUG_STRONG_AREA =
+        "motion_debug_strong_area";
+    public static final String EXTRA_MOTION_DEBUG_MEAN_DELTA =
+        "motion_debug_mean_delta";
+    public static final String EXTRA_MOTION_DEBUG_BG_DELTA =
+        "motion_debug_bg_delta";
+    public static final String EXTRA_MOTION_DEBUG_MAX_DELTA =
+        "motion_debug_max_delta";
+    public static final String EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED =
+        "motion_debug_global_suppressed";
     public static final String BROADCAST_CAMERA_ERROR = "CAMERA_ACCESS_ERROR";
 
     public static final String INTENT_ACTION_STOP_RECORDING =

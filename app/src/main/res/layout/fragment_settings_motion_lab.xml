@@ -511,6 +511,15 @@
                     android:textSize="12sp"
                     android:textColor="@android:color/darker_gray" />
 
+                <TextView
+                    android:id="@+id/value_motion_debug_metrics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/motion_lab_debug_metrics_placeholder"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/darker_gray" />
+
                 <ImageView
                     android:id="@+id/image_motion_debug_frame"
                     android:layout_width="match_parent"
