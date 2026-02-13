@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="?android:attr/colorBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp">
+
+        <ImageView
+            android:id="@+id/back_button"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="?attr/colorHeading"
+            android:contentDescription="@string/universal_back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="@string/forensics_insights_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorHeading" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:background="@drawable/settings_group_card_bg"
+        android:textColor="?attr/colorHeading"
+        android:textSize="13sp" />
+
+    <ImageView
+        android:id="@+id/image_heatmap"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_marginTop="12dp"
+        android:scaleType="fitXY"
+        android:background="@drawable/settings_group_card_bg"
+        android:contentDescription="@string/forensics_heatmap_cd" />
+</LinearLayout>

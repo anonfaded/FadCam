@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.forensics.ui.ForensicsEventsFragment;
+import com.fadcam.forensics.ui.ForensicsInsightsFragment;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 /**
@@ -117,6 +119,22 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         switchHeatmap.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.setDfHeatmapEnabled(isChecked));
 
         View rowDiscord = view.findViewById(R.id.row_df_discord_coming_soon);
+        View rowEvents = view.findViewById(R.id.row_df_open_events);
+        View rowInsights = view.findViewById(R.id.row_df_open_insights);
+        if (rowEvents != null) {
+            rowEvents.setOnClickListener(v -> OverlayNavUtil.show(
+                requireActivity(),
+                new ForensicsEventsFragment(),
+                "ForensicsEventsFragment"
+            ));
+        }
+        if (rowInsights != null) {
+            rowInsights.setOnClickListener(v -> OverlayNavUtil.show(
+                requireActivity(),
+                new ForensicsInsightsFragment(),
+                "ForensicsInsightsFragment"
+            ));
+        }
         if (rowDiscord != null) {
             rowDiscord.setOnClickListener(v -> Toast.makeText(
                 requireContext(),
@@ -126,4 +144,3 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         }
     }
 }
-

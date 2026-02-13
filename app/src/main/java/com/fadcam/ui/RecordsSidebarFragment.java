@@ -107,6 +107,16 @@ public class RecordsSidebarFragment extends DialogFragment {
             });
         }
 
+        View eventsRow = view.findViewById(R.id.row_events_timeline);
+        if (eventsRow != null) {
+            eventsRow.setOnClickListener(v -> {
+                Bundle b = new Bundle();
+                b.putString("action", "open_forensics_events");
+                getParentFragmentManager().setFragmentResult(resultKey, b);
+                dismiss();
+            });
+        }
+
         // View mode row - open a picker instead of direct toggle for consistency with other rows
         View viewModeRow = view.findViewById(R.id.row_view_mode);
         TextView viewModeSub = view.findViewById(R.id.row_view_mode_subtitle);

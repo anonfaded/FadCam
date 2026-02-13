@@ -1312,6 +1312,15 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_coming_soon_short">Coming Soon</string>
     <string name="digital_forensics_discord_coming_soon_toast">Discord alerts will be added in a future update.</string>
     <string name="digital_forensics_helper">Digital Forensics is separate from Motion Lab. Use this section for event intelligence and persistent video-data linkage settings.</string>
+    <string name="forensics_events_title">Events Timeline</string>
+    <string name="forensics_events_subtitle">Filter detections and jump to exact moments.</string>
+    <string name="forensics_events_empty">No events found for the selected filters.</string>
+    <string name="forensics_filter_all">All</string>
+    <string name="forensics_filter_person">Person</string>
+    <string name="forensics_filter_high_conf">High confidence only</string>
+    <string name="forensics_insights_title">Activity Insights</string>
+    <string name="forensics_insights_subtitle">Daily summary and movement heatmap.</string>
+    <string name="forensics_heatmap_cd">Activity heatmap</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>

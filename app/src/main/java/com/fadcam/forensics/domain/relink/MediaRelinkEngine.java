@@ -23,6 +23,10 @@ public class MediaRelinkEngine {
         if (profile == null) {
             return RelinkMatchResult.fresh();
         }
+        if ((profile.exactFingerprint == null || profile.exactFingerprint.isEmpty())
+                && (profile.visualFingerprint == null || profile.visualFingerprint.isEmpty())) {
+            return RelinkMatchResult.fresh();
+        }
 
         if (profile.exactFingerprint != null && !profile.exactFingerprint.isEmpty()) {
             MediaAssetEntity exact = mediaAssetDao.findExactMatch(profile.exactFingerprint);

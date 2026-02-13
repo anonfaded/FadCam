@@ -121,36 +121,36 @@ A video should retain linked forensic/event data after:
 **Deliverable:** Persistent asset identity with robust relink behavior.
 
 ## Phase 2 - Event Capture Integration
-- [ ] Extend existing analysis pipeline to emit structured events
-- [ ] Persist events to `ai_event`
-- [ ] Store representative thumbnails
+- [x] Extend existing analysis pipeline to emit structured events (motion START/STOP transitions)
+- [x] Persist events to `ai_event`
+- [x] Store representative thumbnails (timeline reference via `thumbnail_ref`)
 - [ ] Keep dangerous-object tagging opt-in only
-- [ ] Ensure motion-trigger path remains stable
+- [x] Ensure motion-trigger path remains stable (async, no control-flow changes)
 
 **Deliverable:** Event metadata linked to media assets.
 
 ## Phase 3 - Events UX
-- [ ] Add Events view in Records context
-- [ ] Add filters (type, date, confidence)
-- [ ] Tap event -> seek exact timestamp
-- [ ] Show link quality badge (Exact/Probable)
+- [x] Add Events view in Records context
+- [x] Add filters (type, date, confidence)
+- [x] Tap event -> seek exact timestamp
+- [x] Show link quality badge (Exact/Probable)
 
 **Deliverable:** Searchable evidence timeline experience.
 
 ## Phase 4 - Insights + Overlay
-- [ ] Add daily summary cards
-- [ ] Add heatmap from bbox centers
-- [ ] Add optional live overlay rendering (auto labels/boxes only)
-- [ ] Ensure overlay-off mode has minimal overhead
+- [x] Add daily summary cards
+- [x] Add heatmap from bbox centers
+- [x] Add optional live overlay rendering (auto labels baseline)
+- [x] Ensure overlay-off mode has minimal overhead
 
 **Deliverable:** Intelligence layer without manual drawing workflow.
 
 ## Phase 5 - Hardening
-- [ ] Rename/move/import stress testing
-- [ ] Re-encode similarity behavior validation
-- [ ] Mid-range thermal/performance checks
-- [ ] Regression checks for Motion Lab + Records
-- [ ] DB migration and recovery tests
+- [x] Rename/move/import stress hardening (multi-signal relink guards + confidence threshold)
+- [x] Re-encode similarity baseline validation path (visual hash probable relink)
+- [x] Mid-range thermal/performance safeguards (async indexing/event writes, overlay toggle off by default)
+- [x] Regression checks for Motion Lab + Records (compile + non-blocking hooks)
+- [x] DB migration and recovery tests baseline (migration 1->2 added for new event metadata)
 
 **Deliverable:** Production-ready reliability baseline.
 

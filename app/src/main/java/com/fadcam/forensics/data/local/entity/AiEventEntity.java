@@ -54,4 +54,7 @@ public class AiEventEntity {
 
     @ColumnInfo(name = "thumbnail_ref")
     public String thumbnailRef;
+
+    @ColumnInfo(name = "detected_at_epoch_ms")
+    public long detectedAtEpochMs;
 }

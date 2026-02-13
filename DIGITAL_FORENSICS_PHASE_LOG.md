@@ -51,9 +51,45 @@
 - Current visual fingerprint is a lightweight baseline; future phases can improve robustness for heavy re-encodes.
 
 ### Next (Phase 2 prep)
-- [ ] Emit structured AI events into `ai_event` from analysis pipeline
-- [ ] Add thumbnail references for events
+- [x] Emit structured AI events into `ai_event` from analysis pipeline (Motion START/STOP)
+- [x] Add thumbnail references for events (timeline reference string)
 - [ ] Add event retention policy and cleanup strategy
+
+## Phase 2 - Event Capture Integration
+### Completed (baseline implementation)
+- [x] Added `DigitalForensicsEventRecorder` async writer
+- [x] Hooked Motion Lab transition actions to event recorder in `RecordingService`
+- [x] Persisted PERSON-class events with confidence/priority to `ai_event`
+- [x] Ensured media linkage by creating/finding `media_asset` rows before event write
+- [x] Added flush on service stop to avoid dangling active events
+
+### Findings
+- Baseline events are transition-based (session segments of detected motion), not per-frame spam.
+- Event writes run off main thread and did not alter motion recording control logic.
+- `thumbnail_ref` currently stores timeline reference (`uri#t=...`) as lightweight placeholder.
+
+## Phase 3 - Events UX
+### Completed
+- [x] Added Events Timeline screen (`ForensicsEventsFragment`) with list rendering
+- [x] Added filters (event type + high confidence, with recent-window filter)
+- [x] Added click-to-open video at event timestamp (seek extra)
+- [x] Added link quality badge rendering in timeline rows
+- [x] Added Records sidebar entry to open Events Timeline
+
+## Phase 4 - Insights + Overlay
+### Completed
+- [x] Added Activity Insights screen (`ForensicsInsightsFragment`)
+- [x] Added daily summary counts for last 24h
+- [x] Added heatmap rendering from event bbox centers
+- [x] Added optional live AI overlay labels in watermark path when overlay toggle is enabled
+- [x] Overlay-off path remains minimal (no label append work when disabled)
+
+## Phase 5 - Hardening
+### Completed
+- [x] Added DB migration `1 -> 2` for event metadata evolution (`detected_at_epoch_ms`)
+- [x] Added relink guard to avoid weak probable matching without usable fingerprints
+- [x] Kept heavy work async (indexing + event writes) to preserve recording pipeline responsiveness
+- [x] Re-verified compile after all phase integrations
 
 ## Notes
 - Keep all heavy compute asynchronous.

@@ -232,7 +232,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         // *** FIX: Get the video URI using getData() ***
         Uri videoUri = getIntent().getData();
-        this.currentVideoUri = videoUri; // Store for later use
+            this.currentVideoUri = videoUri; // Store for later use
+            final long requestedSeekMs = getIntent().getLongExtra(
+                com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_AT_MS,
+                -1L
+            );
 
         if (videoUri != null) {
             Log.i(TAG, "Received video URI: " + videoUri.toString());
@@ -249,6 +253,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 }
             }
             initializePlayer(videoUri); // Pass the Uri directly
+            if (requestedSeekMs >= 0L && player != null) {
+                player.seekTo(requestedSeekMs);
+            }
             setupCustomSettingsAction();
             setupQuickSpeedSettings();
             setupResetZoomButton();
