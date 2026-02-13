@@ -508,6 +508,15 @@ public abstract class Constants {
     public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";
     public static final String PREF_MOTION_ZONES_JSON = "pref_motion_zones_json";
     public static final String PREF_MOTION_AUTO_TORCH_ENABLED = "pref_motion_auto_torch_enabled";
+    // Digital Forensics (advanced) preferences
+    public static final String PREF_DF_ENABLED = "pref_df_enabled";
+    public static final String PREF_DF_EVENT_PERSON = "pref_df_event_person";
+    public static final String PREF_DF_EVENT_VEHICLE = "pref_df_event_vehicle";
+    public static final String PREF_DF_EVENT_PET = "pref_df_event_pet";
+    public static final String PREF_DF_EVENT_DANGEROUS_OBJECT = "pref_df_event_dangerous_object";
+    public static final String PREF_DF_OVERLAY_ENABLED = "pref_df_overlay_enabled";
+    public static final String PREF_DF_DAILY_SUMMARY_ENABLED = "pref_df_daily_summary_enabled";
+    public static final String PREF_DF_HEATMAP_ENABLED = "pref_df_heatmap_enabled";
 
     // ── Dual Camera (PiP) Constants ────────────────────────────────────────
     public static final String PREF_DUAL_CAMERA_ENABLED = "dual_camera_enabled";

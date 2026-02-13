@@ -29,6 +29,7 @@ swiperefreshlayout = "1.2.0"
 viewpager2 = "1.1.0"
 tensorflowLite = "2.14.0"
 opencvAndroid = "4.10.0"
+room = "2.7.2"
 
 [libraries]
 appintro-v631 = { module = "com.github.AppIntro:AppIntro", version.ref = "appintroVersion" }
@@ -78,6 +79,8 @@ media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media
 nanohttpd-core = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
 opencv-android = { module = "org.opencv:opencv", version.ref = "opencvAndroid" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

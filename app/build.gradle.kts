@@ -273,6 +273,7 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation(libs.documentfile)
     implementation(libs.localbroadcastmanager)
+    implementation(libs.room.runtime)
     
     // Media3 for fragmented MP4 muxing (patched for live streaming via composite build)
     implementation(libs.media3.muxer)
@@ -286,6 +287,7 @@ dependencies {
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
 
     annotationProcessor(libs.compiler)
+    annotationProcessor(libs.room.compiler)
 
     implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
     implementation(libs.smart.exception.java)

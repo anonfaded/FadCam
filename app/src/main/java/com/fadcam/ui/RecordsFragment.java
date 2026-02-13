@@ -61,6 +61,7 @@ import com.fadcam.Utils;
 import com.fadcam.utils.RecordingStoragePaths;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.forensics.service.DigitalForensicsIndexCoordinator;
 // Import the new VideoItem class
 // Ensure adapter import is correct
 import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
@@ -4315,6 +4316,9 @@ public class RecordsFragment extends BaseFragment implements
                 // Update cache for next time with persistence
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems, requireContext());
                 com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size(), sharedPreferencesManager);
+
+                // Phase 1: non-blocking digital forensics asset indexing/relink pass.
+                DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(uniqueItems);
 
                 // -----------
 

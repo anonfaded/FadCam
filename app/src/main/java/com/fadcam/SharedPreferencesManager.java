@@ -1866,6 +1866,72 @@ public class SharedPreferencesManager {
     }
     // -------------- Motion Lab (Advanced) Preferences End --------------
 
+    // -------------- Digital Forensics (Advanced) Preferences Start --------------
+    public boolean isDigitalForensicsEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_ENABLED, false);
+    }
+
+    public void setDigitalForensicsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfEventPersonEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PERSON, true);
+    }
+
+    public void setDfEventPersonEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_PERSON, enabled).apply();
+    }
+
+    public boolean isDfEventVehicleEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_VEHICLE, true);
+    }
+
+    public void setDfEventVehicleEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_VEHICLE, enabled).apply();
+    }
+
+    public boolean isDfEventPetEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PET, true);
+    }
+
+    public void setDfEventPetEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_PET, enabled).apply();
+    }
+
+    public boolean isDfDangerousObjectEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_DANGEROUS_OBJECT, false);
+    }
+
+    public void setDfDangerousObjectEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_DANGEROUS_OBJECT, enabled).apply();
+    }
+
+    public boolean isDfOverlayEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_OVERLAY_ENABLED, false);
+    }
+
+    public void setDfOverlayEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_OVERLAY_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfDailySummaryEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_DAILY_SUMMARY_ENABLED, false);
+    }
+
+    public void setDfDailySummaryEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_DAILY_SUMMARY_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfHeatmapEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_HEATMAP_ENABLED, false);
+    }
+
+    public void setDfHeatmapEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_HEATMAP_ENABLED, enabled).apply();
+    }
+    // -------------- Digital Forensics (Advanced) Preferences End --------------
+
     /**
      * Gets whether floating controls (assistive touch) is enabled for FadRec.
      * @return true if floating controls enabled, false otherwise
