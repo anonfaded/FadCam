@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
@@ -32,6 +33,7 @@ public class GLWatermarkRenderer {
     private static final String TAG = "GLWatermarkRenderer";
     private static final int WATERMARK_BITMAP_WIDTH = 2400;
     private static final int WATERMARK_BITMAP_HEIGHT = 160;
+    private static final String DF_OVERLAY_PREFIX = "__DF_OVERLAY__:";
 
     private EGLDisplay eglDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext eglContext = EGL14.EGL_NO_CONTEXT;
@@ -542,7 +544,7 @@ public class GLWatermarkRenderer {
                     drawPipOverlay(pipMvpMatrix); // identity, not recordingMvpMatrix
                 }
 
-                drawWatermark();
+                drawWatermark(false);
 
                 // Swap buffers to complete the frame
                 if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
@@ -740,8 +742,8 @@ public class GLWatermarkRenderer {
             // Pass 2: Sharp content at the aspect-ratio-preserving viewport
             drawOESTexture(previewMvpMatrix, previewTexMatrix);
 
-            // Watermark overlay on preview (same as encoder)
-            drawWatermark();
+            // Watermark overlay on preview.
+            drawWatermark(true);
 
             // Draw PiP overlay on preview too (if dual camera mode is active)
             // Use identity MVP for PiP so aspect-ratio correction doesn't distort it.
@@ -936,8 +938,14 @@ public class GLWatermarkRenderer {
         }
         String text = watermarkText;
         int padding = 32;
-        // Use a fixed bitmap width for all watermark options
-        dynamicBitmapWidth = 800;
+        boolean isForensicsOverlay = text != null && text.startsWith(DF_OVERLAY_PREFIX);
+        if (isForensicsOverlay) {
+            dynamicBitmapWidth = Math.max(640, videoWidth > 0 ? videoWidth : 1280);
+            dynamicBitmapHeight = Math.max(360, videoHeight > 0 ? videoHeight : 720);
+        } else {
+            // Use a fixed bitmap width for regular watermark options
+            dynamicBitmapWidth = 800;
+        }
         android.text.TextPaint textPaint = new android.text.TextPaint(watermarkPaint);
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
@@ -945,20 +953,24 @@ public class GLWatermarkRenderer {
         }
         Canvas canvas = new Canvas(watermarkBitmap);
         canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
-        int maxWidth = dynamicBitmapWidth - padding;
-        android.text.StaticLayout staticLayout = new android.text.StaticLayout(
-                text, textPaint, maxWidth, android.text.Layout.Alignment.ALIGN_NORMAL, 1.0f, 0f, false);
-        int textHeight = staticLayout.getHeight();
-        int rectHeight = textHeight + 8; // 4px top/bottom padding
-        if (rectHeight > dynamicBitmapHeight)
-            rectHeight = dynamicBitmapHeight;
-        // Draw text at top left with padding
-        canvas.save();
-        float textX = padding / 2f;
-        float textY = 4; // 4px top padding
-        canvas.translate(textX, textY);
-        staticLayout.draw(canvas);
-        canvas.restore();
+        if (isForensicsOverlay) {
+            drawForensicsOverlay(canvas, text.substring(DF_OVERLAY_PREFIX.length()));
+        } else {
+            int maxWidth = dynamicBitmapWidth - padding;
+            android.text.StaticLayout staticLayout = new android.text.StaticLayout(
+                    text, textPaint, maxWidth, android.text.Layout.Alignment.ALIGN_NORMAL, 1.0f, 0f, false);
+            int textHeight = staticLayout.getHeight();
+            int rectHeight = textHeight + 8; // 4px top/bottom padding
+            if (rectHeight > dynamicBitmapHeight)
+                rectHeight = dynamicBitmapHeight;
+            // Draw text at top left with padding
+            canvas.save();
+            float textX = padding / 2f;
+            float textY = 4; // 4px top padding
+            canvas.translate(textX, textY);
+            staticLayout.draw(canvas);
+            canvas.restore();
+        }
         // Flip the bitmap vertically before uploading to OpenGL
         android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
         flipMatrix.preScale(1.0f, -1.0f);
@@ -970,7 +982,10 @@ public class GLWatermarkRenderer {
         // Use orientation from SharedPreferencesManager
         float ndcWidth, ndcHeight;
         float bitmapAspect = (float) dynamicBitmapWidth / (float) dynamicBitmapHeight;
-        if (isPortrait) {
+        if (isForensicsOverlay) {
+            ndcWidth = 2.0f;
+            ndcHeight = 2.0f;
+        } else if (isPortrait) {
             // Portrait: use previously working logic (scale by width)
             float targetFractionOfWidth = 0.8f;
             ndcWidth = targetFractionOfWidth * 2.0f;
@@ -987,6 +1002,91 @@ public class GLWatermarkRenderer {
         watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4).order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         watermarkRectBuffer.put(rectVerts).position(0);
+    }
+
+    private void drawForensicsOverlay(Canvas canvas, String payload) {
+        if (payload == null || payload.isEmpty()) {
+            return;
+        }
+        // payload format: LABEL|cx|cy|w|h
+        String[] parts = payload.split("\\|");
+        if (parts.length < 5) {
+            return;
+        }
+        String label = parts[0];
+        float cx;
+        float cy;
+        float boxW;
+        float boxH;
+        try {
+            cx = clamp01(Float.parseFloat(parts[1]));
+            cy = clamp01(Float.parseFloat(parts[2]));
+            boxW = clamp01(Float.parseFloat(parts[3]));
+            boxH = clamp01(Float.parseFloat(parts[4]));
+        } catch (Exception ignored) {
+            return;
+        }
+
+        float left = (cx - (boxW / 2f)) * dynamicBitmapWidth;
+        float top = (cy - (boxH / 2f)) * dynamicBitmapHeight;
+        float right = (cx + (boxW / 2f)) * dynamicBitmapWidth;
+        float bottom = (cy + (boxH / 2f)) * dynamicBitmapHeight;
+        RectF rect = new RectF(
+                Math.max(0f, left),
+                Math.max(0f, top),
+                Math.min(dynamicBitmapWidth, right),
+                Math.min(dynamicBitmapHeight, bottom)
+        );
+
+        Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(Math.max(2f, dynamicBitmapWidth * 0.0022f));
+        stroke.setColor(colorForLabel(label));
+        float corner = Math.max(8f, dynamicBitmapWidth * 0.010f);
+        canvas.drawRoundRect(rect, corner, corner, stroke);
+
+        Paint labelBg = new Paint(Paint.ANTI_ALIAS_FLAG);
+        labelBg.setStyle(Paint.Style.FILL);
+        labelBg.setColor(Color.argb(180, 0, 0, 0));
+        Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        labelPaint.setColor(Color.WHITE);
+        labelPaint.setTextSize(Math.max(16f, dynamicBitmapWidth * 0.016f));
+        try {
+            labelPaint.setTypeface(android.graphics.Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf"));
+        } catch (Exception ignored) {
+            labelPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF,
+                    android.graphics.Typeface.BOLD));
+        }
+        labelPaint.setFakeBoldText(true);
+        labelPaint.setLetterSpacing(0.02f);
+
+        float textWidth = labelPaint.measureText(label);
+        float labelPaddingX = Math.max(8f, dynamicBitmapWidth * 0.0055f);
+        float labelPaddingY = Math.max(5f, dynamicBitmapHeight * 0.006f);
+        float labelHeight = (labelPaint.getTextSize() + (labelPaddingY * 2f));
+        float labelLeft = Math.max(0f, rect.left);
+        float labelTop = Math.max(0f, rect.top - labelHeight - 5f);
+        RectF labelRect = new RectF(labelLeft, labelTop, labelLeft + textWidth + (labelPaddingX * 2f), labelTop + labelHeight);
+        canvas.drawRoundRect(labelRect, Math.max(6f, dynamicBitmapWidth * 0.007f), Math.max(6f, dynamicBitmapWidth * 0.007f), labelBg);
+        float baseline = labelRect.top + labelPaddingY - labelPaint.ascent();
+        canvas.drawText(label, labelRect.left + labelPaddingX, baseline, labelPaint);
+    }
+
+    private int colorForLabel(String label) {
+        if ("PERSON".equalsIgnoreCase(label)) {
+            return Color.parseColor("#33D17A");
+        }
+        if ("VEHICLE".equalsIgnoreCase(label)) {
+            return Color.parseColor("#29B6F6");
+        }
+        if ("PET".equalsIgnoreCase(label)) {
+            return Color.parseColor("#BA68C8");
+        }
+        return Color.parseColor("#FFB74D");
+    }
+
+    private float clamp01(float value) {
+        return Math.max(0f, Math.min(1f, value));
     }
 
     public Surface getCameraInputSurface() {
@@ -1299,9 +1399,13 @@ public class GLWatermarkRenderer {
         GLES20.glDisable(GLES20.GL_BLEND);
     }
 
-    private void drawWatermark() {
+    private void drawWatermark(boolean includeForensicsOverlay) {
         if (watermarkText == null || watermarkText.isEmpty()) {
             // Do not draw any watermark if text is empty (no watermark option)
+            return;
+        }
+        if (!includeForensicsOverlay && watermarkText.startsWith(DF_OVERLAY_PREFIX)) {
+            // AI overlay should only appear in preview, never in saved recording.
             return;
         }
         GLES20.glEnable(GLES20.GL_BLEND);

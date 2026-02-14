@@ -54,5 +54,20 @@
             android:textColor="@android:color/white"
             android:textSize="10sp"
             android:textStyle="bold" />
+
+        <HorizontalScrollView
+            android:id="@+id/person_frames_strip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/person_frames_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
     </LinearLayout>
 </LinearLayout>

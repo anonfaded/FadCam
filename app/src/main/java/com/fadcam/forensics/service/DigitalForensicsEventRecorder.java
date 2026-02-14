@@ -1,6 +1,8 @@
 package com.fadcam.forensics.service;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.util.Log;
 
 import com.fadcam.SharedPreferencesManager;
@@ -9,6 +11,9 @@ import com.fadcam.forensics.data.local.dao.AiEventDao;
 import com.fadcam.forensics.data.local.dao.MediaAssetDao;
 import com.fadcam.forensics.data.local.entity.AiEventEntity;
 import com.fadcam.forensics.data.local.entity.MediaAssetEntity;
+import com.fadcam.forensics.domain.fingerprint.ExactFingerprintGenerator;
+import com.fadcam.forensics.domain.fingerprint.ForensicsMetadataUtils;
+import com.fadcam.forensics.domain.fingerprint.VisualFingerprintGenerator;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +27,7 @@ public class DigitalForensicsEventRecorder {
     private static final String TAG = "ForensicsEventRecorder";
 
     private final SharedPreferencesManager prefs;
+    private final Context appContext;
     private final MediaAssetDao mediaAssetDao;
     private final AiEventDao aiEventDao;
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
@@ -37,18 +43,21 @@ public class DigitalForensicsEventRecorder {
     private float activeStrongArea = 0f;
     private float activeCenterX = 0.5f;
     private float activeCenterY = 0.5f;
+    private float activeBoxWidth = 0.10f;
+    private float activeBoxHeight = 0.10f;
 
     public DigitalForensicsEventRecorder(Context context) {
         Context appContext = context.getApplicationContext();
+        this.appContext = appContext;
         this.prefs = SharedPreferencesManager.getInstance(appContext);
         ForensicsDatabase db = ForensicsDatabase.getInstance(appContext);
         this.mediaAssetDao = db.mediaAssetDao();
         this.aiEventDao = db.aiEventDao();
     }
 
-    public void onMotionStart(String mediaUri, long timelineMs, boolean personLikely, float personConfidence,
+    public void onMotionStart(String mediaUri, long timelineMs, String eventType, float confidence,
                               float motionScore, float changedArea, float strongArea,
-                              float centerX, float centerY) {
+                              float centerX, float centerY, float boxWidth, float boxHeight) {
         if (!shouldRecord()) {
             Log.d(TAG, "DF skip start: digital forensics disabled or all event classes off");
             return;
@@ -57,7 +66,7 @@ public class DigitalForensicsEventRecorder {
             Log.w(TAG, "DF skip start: mediaUri is empty");
             return;
         }
-        ioExecutor.submit(() -> handleStart(mediaUri, timelineMs, personLikely, personConfidence, motionScore, changedArea, strongArea, centerX, centerY));
+        ioExecutor.submit(() -> handleStart(mediaUri, timelineMs, eventType, confidence, motionScore, changedArea, strongArea, centerX, centerY, boxWidth, boxHeight));
     }
 
     public void onMotionStop(long timelineMs) {
@@ -72,30 +81,32 @@ public class DigitalForensicsEventRecorder {
     }
 
     private boolean shouldRecord() {
-        if (!prefs.isDigitalForensicsEnabled()) {
-            return false;
-        }
-        // Current runtime detector support is motion + person; vehicle/pet/dangerous
-        // tags are settings-level placeholders until dedicated models are integrated.
-        return prefs.isDfEventPersonEnabled();
+        return prefs.isDigitalForensicsEnabled();
     }
 
-    private void handleStart(String mediaUri, long timelineMs, boolean personLikely, float personConfidence, float motionScore,
-                             float changedArea, float strongArea, float centerX, float centerY) {
+    private void handleStart(String mediaUri, long timelineMs, String eventTypeRaw, float confidence, float motionScore,
+                             float changedArea, float strongArea, float centerX, float centerY,
+                             float boxWidth, float boxHeight) {
         synchronized (lock) {
-            final boolean personCandidate = personLikely || personConfidence >= 0.58f;
-            final String eventType = personCandidate ? "PERSON" : "MOTION";
+            final String eventType = normalizeEventType(eventTypeRaw);
+            if (!isEventTypeEnabled(eventType)) {
+                return;
+            }
             if (activeMediaUid != null) {
                 if (mediaUri.equals(activeUri)) {
-                    activeMaxConfidence = Math.max(activeMaxConfidence, personConfidence);
+                    activeMaxConfidence = Math.max(activeMaxConfidence, confidence);
                     activeMaxScore = Math.max(activeMaxScore, motionScore);
                     activeChangedArea = Math.max(activeChangedArea, Math.max(0f, changedArea));
                     activeStrongArea = Math.max(activeStrongArea, Math.max(0f, strongArea));
                     activeCenterX = clamp01(centerX);
                     activeCenterY = clamp01(centerY);
-                    if ("PERSON".equals(eventType)) {
-                        activeEventType = "PERSON";
-                        Log.d(TAG, "DF promote: active event upgraded to PERSON, conf=" + personConfidence);
+                    activeBoxWidth = clampBox(boxWidth);
+                    activeBoxHeight = clampBox(boxHeight);
+                    if (eventPriority(eventType) >= eventPriority(activeEventType)) {
+                        if (!eventType.equals(activeEventType)) {
+                            Log.d(TAG, "DF promote: active event upgraded to " + eventType + ", conf=" + confidence);
+                        }
+                        activeEventType = eventType;
                     }
                     return;
                 }
@@ -111,16 +122,18 @@ public class DigitalForensicsEventRecorder {
             activeUri = mediaUri;
             activeEventType = eventType;
             activeStartMs = Math.max(0L, timelineMs);
-            activeMaxConfidence = personConfidence;
+            activeMaxConfidence = confidence;
             activeMaxScore = motionScore;
             activeChangedArea = Math.max(0f, changedArea);
             activeStrongArea = Math.max(0f, strongArea);
             activeCenterX = clamp01(centerX);
             activeCenterY = clamp01(centerY);
+            activeBoxWidth = clampBox(boxWidth);
+            activeBoxHeight = clampBox(boxHeight);
             Log.d(TAG, "DF start: type=" + eventType
                     + ", mediaUri=" + mediaUri
                     + ", timelineMs=" + activeStartMs
-                    + ", personConf=" + personConfidence
+                    + ", conf=" + confidence
                     + ", score=" + motionScore);
         }
     }
@@ -136,6 +149,7 @@ public class DigitalForensicsEventRecorder {
 
     private void persistEventLocked(long endMsRaw) {
         long endMs = Math.max(activeStartMs, endMsRaw);
+        enrichActiveAssetIfNeeded(activeMediaUid, activeUri);
         AiEventEntity event = new AiEventEntity();
         event.eventUid = UUID.randomUUID().toString();
         event.mediaUid = activeMediaUid;
@@ -143,7 +157,7 @@ public class DigitalForensicsEventRecorder {
         event.startMs = activeStartMs;
         event.endMs = endMs;
         event.confidence = activeMaxConfidence;
-        event.bboxNorm = toSyntheticBbox(activeChangedArea, activeStrongArea, activeCenterX, activeCenterY);
+        event.bboxNorm = toBbox(activeCenterX, activeCenterY, activeBoxWidth, activeBoxHeight, activeChangedArea, activeStrongArea);
         event.trackId = null;
         event.priority = toPriority(activeMaxConfidence, activeMaxScore);
         event.thumbnailRef = activeUri + "#t=" + (activeStartMs / 1000f);
@@ -166,6 +180,8 @@ public class DigitalForensicsEventRecorder {
         activeStrongArea = 0f;
         activeCenterX = 0.5f;
         activeCenterY = 0.5f;
+        activeBoxWidth = 0.10f;
+        activeBoxHeight = 0.10f;
     }
 
     private int toPriority(float confidence, float score) {
@@ -182,15 +198,14 @@ public class DigitalForensicsEventRecorder {
         return 0;
     }
 
-    private String toSyntheticBbox(float changedArea, float strongArea, float centerX, float centerY) {
+    private String toBbox(float centerX, float centerY, float boxW, float boxH, float changedArea, float strongArea) {
         float area = Math.max(changedArea, strongArea);
-        if (area <= 0f) {
-            return "0.5,0.5,0.08,0.08";
-        }
-        float side = (float) Math.sqrt(Math.min(0.18f, Math.max(0.02f, area * 0.35f)));
+        float fallbackSide = (float) Math.sqrt(Math.min(0.18f, Math.max(0.02f, area * 0.35f)));
+        float width = boxW > 0.001f ? boxW : fallbackSide;
+        float height = boxH > 0.001f ? boxH : fallbackSide;
         float cx = clamp01(centerX);
         float cy = clamp01(centerY);
-        return cx + "," + cy + "," + side + "," + side;
+        return cx + "," + cy + "," + clampBox(width) + "," + clampBox(height);
     }
 
     private String ensureMediaAsset(String mediaUri) {
@@ -198,6 +213,9 @@ public class DigitalForensicsEventRecorder {
         try {
             MediaAssetEntity existing = mediaAssetDao.findByCurrentUri(mediaUri);
             if (existing != null) {
+                if (existing.displayName == null || existing.displayName.isEmpty() || existing.displayName.startsWith("content://")) {
+                    existing.displayName = deriveDisplayName(mediaUri);
+                }
                 existing.lastSeenAt = nowEpoch;
                 mediaAssetDao.upsert(existing);
                 return existing.mediaUid;
@@ -206,7 +224,7 @@ public class DigitalForensicsEventRecorder {
             MediaAssetEntity asset = new MediaAssetEntity();
             asset.mediaUid = UUID.randomUUID().toString();
             asset.currentUri = mediaUri;
-            asset.displayName = mediaUri;
+            asset.displayName = deriveDisplayName(mediaUri);
             asset.categorySubtype = "UNKNOWN/UNKNOWN";
             asset.sizeBytes = 0L;
             asset.durationMs = 0L;
@@ -216,6 +234,7 @@ public class DigitalForensicsEventRecorder {
             asset.firstSeenAt = nowEpoch;
             asset.lastSeenAt = nowEpoch;
             asset.linkStatus = "NEW";
+            enrichAssetMetadata(asset, mediaUri);
             mediaAssetDao.upsert(asset);
             Log.d(TAG, "DF media asset upserted: mediaUid=" + asset.mediaUid + ", uri=" + mediaUri);
             return asset.mediaUid;
@@ -227,5 +246,131 @@ public class DigitalForensicsEventRecorder {
 
     private float clamp01(float value) {
         return Math.max(0f, Math.min(1f, value));
+    }
+
+    private float clampBox(float value) {
+        return Math.max(0.02f, Math.min(0.90f, value));
+    }
+
+    private String normalizeEventType(String raw) {
+        if (raw == null) {
+            return "OBJECT";
+        }
+        String normalized = raw.trim().toUpperCase();
+        switch (normalized) {
+            case "PERSON":
+            case "VEHICLE":
+            case "PET":
+            case "OBJECT":
+                return normalized;
+            default:
+                return "OBJECT";
+        }
+    }
+
+    private boolean isEventTypeEnabled(String eventType) {
+        return "PERSON".equals(eventType)
+                || "VEHICLE".equals(eventType)
+                || "PET".equals(eventType)
+                || "OBJECT".equals(eventType);
+    }
+
+    private int eventPriority(String eventType) {
+        switch (eventType) {
+            case "PERSON":
+                return 4;
+            case "VEHICLE":
+                return 3;
+            case "PET":
+                return 2;
+            default:
+                return 1;
+        }
+    }
+
+    private void enrichActiveAssetIfNeeded(String mediaUid, String mediaUri) {
+        if (mediaUid == null || mediaUid.isEmpty() || mediaUri == null || mediaUri.isEmpty()) {
+            return;
+        }
+        try {
+            MediaAssetEntity asset = mediaAssetDao.findByMediaUid(mediaUid);
+            if (asset == null) {
+                return;
+            }
+            boolean needsFingerprint = asset.exactFingerprint == null || asset.exactFingerprint.isEmpty()
+                    || asset.visualFingerprint == null || asset.visualFingerprint.isEmpty();
+            boolean needsDisplayName = asset.displayName == null || asset.displayName.isEmpty() || asset.displayName.startsWith("content://");
+            if (!needsFingerprint && !needsDisplayName) {
+                return;
+            }
+            if (needsDisplayName) {
+                asset.displayName = deriveDisplayName(mediaUri);
+            }
+            enrichAssetMetadata(asset, mediaUri);
+            mediaAssetDao.upsert(asset);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to enrich active media asset for uid=" + mediaUid, e);
+        }
+    }
+
+    private void enrichAssetMetadata(MediaAssetEntity asset, String mediaUri) {
+        try {
+            Uri uri = Uri.parse(mediaUri);
+            if (asset.durationMs <= 0L) {
+                asset.durationMs = ForensicsMetadataUtils.extractDurationMs(appContext, uri);
+            }
+            if (asset.codecInfo == null || asset.codecInfo.isEmpty()) {
+                asset.codecInfo = ForensicsMetadataUtils.extractCodecInfo(appContext, uri);
+            }
+            if (asset.sizeBytes <= 0L) {
+                long size = extractSizeBytes(uri);
+                if (size > 0L) {
+                    asset.sizeBytes = size;
+                }
+            }
+            if (asset.exactFingerprint == null || asset.exactFingerprint.isEmpty()) {
+                asset.exactFingerprint = ExactFingerprintGenerator.compute(appContext.getContentResolver(), uri, asset.sizeBytes);
+            }
+            if (asset.visualFingerprint == null || asset.visualFingerprint.isEmpty()) {
+                asset.visualFingerprint = VisualFingerprintGenerator.compute(appContext, uri);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Metadata enrichment skipped for uri=" + mediaUri, e);
+        }
+    }
+
+    private String deriveDisplayName(String mediaUri) {
+        try {
+            String decoded = Uri.decode(mediaUri);
+            int slash = decoded.lastIndexOf('/');
+            String tail = slash >= 0 ? decoded.substring(slash + 1) : decoded;
+            int colon = tail.lastIndexOf(':');
+            if (colon >= 0 && colon < tail.length() - 1) {
+                tail = tail.substring(colon + 1);
+            }
+            return (tail == null || tail.isEmpty()) ? mediaUri : tail;
+        } catch (Exception ignored) {
+            return mediaUri;
+        }
+    }
+
+    private long extractSizeBytes(Uri uri) {
+        Cursor cursor = null;
+        try {
+            cursor = appContext.getContentResolver().query(uri, new String[] { android.provider.OpenableColumns.SIZE },
+                    null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int index = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE);
+                if (index >= 0) {
+                    return cursor.getLong(index);
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return 0L;
     }
 }

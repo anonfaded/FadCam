@@ -1,8 +1,26 @@
 # Digital Forensics Phase Log
 
 ## Current Status
-- Active phase: **Phase 3.5 (Event UX polish + reliability fixes)**
+- Active phase: **Phase 5 (Hard cutover + detector unification)**
 - Last updated: 2026-02-13
+
+## Hard Cutover - Single EfficientDet (2026-02-13)
+### Completed
+- [x] Added `EfficientDetLite1Detector` as unified detector path
+- [x] Rewired `RecordingService` to use EfficientDet only
+- [x] Removed legacy classes: `PersonDetector`, `NoOpPersonDetector`, `TflitePersonDetector`
+- [x] Removed legacy model asset: `assets/models/person_detector.tflite`
+- [x] Unified event typing from detector outputs (`PERSON`, `VEHICLE`, `PET`, `OBJECT`)
+- [x] Removed per-class event toggles from Digital Forensics settings UI (always-on multi-class detection)
+- [x] Removed Motion Lab trigger mode selector from UI (single trigger mode path)
+- [x] Updated forensics event recorder to persist detector bbox directly
+- [x] Updated preview overlay payload to use detector bbox + orientation + front-camera mirroring
+- [x] Kept AI overlay preview-only (not encoded in recording path)
+
+### Findings
+- Single-model architecture now powers MotionLab person confirmation and Digital Forensics event classes.
+- Overlay geometry no longer relies on synthetic area-based square boxes.
+- Any detector initialization failure now hard-stops service startup (no legacy fallback path).
 
 ## Phase 0 - UX Shell + Navigation
 ### Completed

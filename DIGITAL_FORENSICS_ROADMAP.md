@@ -10,6 +10,12 @@ Add a new Advanced subsection named **Digital Forensics** (separate from Motion 
 
 This roadmap is modular, realtime-oriented, and privacy-first.
 
+## Architecture Decision (Locked 2026-02-13)
+- [x] Single detector source of truth: **EfficientDet-Lite1**
+- [x] Legacy person-only detector removed
+- [x] No detector fallback paths to legacy models
+- [x] Preview overlay only (never burned into encoded video)
+
 ## Product Positioning
 - Keep **Advanced** section unchanged.
 - Add a new feature card: **Digital Forensics**.
@@ -95,7 +101,7 @@ A video should retain linked forensic/event data after:
 - [x] Enable Digital Forensics
 - [x] Event classes (Person / Vehicle / Pet)
 - [x] Dangerous object tags toggle (opt-in)
-- [ ] Show AI overlay in live preview (UI toggle is present, renderer overlay pipeline pending)
+- [x] Show AI overlay in live preview
 - [x] Daily summary
 - [x] Heatmap insights
 - [x] Discord alerts (Coming Soon placeholder)
@@ -124,7 +130,7 @@ A video should retain linked forensic/event data after:
 - [x] Extend existing analysis pipeline to emit structured events (motion START/STOP transitions)
 - [x] Persist events to `ai_event`
 - [x] Store representative thumbnails (timeline reference via `thumbnail_ref`)
-- [ ] Keep dangerous-object tagging opt-in only
+- [x] Keep dangerous-object tagging opt-in only
 - [x] Ensure motion-trigger path remains stable (async, no control-flow changes)
 
 **Deliverable:** Event metadata linked to media assets.
@@ -141,7 +147,7 @@ A video should retain linked forensic/event data after:
 ## Phase 4 - Insights + Overlay
 - [x] Add daily summary cards
 - [x] Add heatmap from bbox centers
-- [ ] Add optional live overlay rendering (auto labels baseline)
+- [x] Add optional live overlay rendering (auto labels baseline)
 - [x] Ensure overlay-off mode has minimal overhead
 
 **Deliverable:** Intelligence layer without manual drawing workflow.

@@ -55,6 +55,7 @@ public class ForensicsInsightsFragment extends Fragment {
             int people = db.aiEventDao().countByTypeSince("PERSON", since);
             int vehicle = db.aiEventDao().countByTypeSince("VEHICLE", since);
             int pet = db.aiEventDao().countByTypeSince("PET", since);
+            int object = db.aiEventDao().countByTypeSince("OBJECT", since);
             List<AiEventEntity> heatRows = db.aiEventDao().getRecentForHeatmap(since, 500);
             Bitmap map = renderHeatmap(heatRows, 900, 420);
 
@@ -63,8 +64,8 @@ public class ForensicsInsightsFragment extends Fragment {
             }
             requireActivity().runOnUiThread(() -> {
                 summary.setText(String.format(Locale.US,
-                        "Last 24h\n• Total events: %d\n• Person: %d\n• Vehicle: %d\n• Pet: %d",
-                        total, people, vehicle, pet));
+                        "Last 24h\n• Total events: %d\n• Person: %d\n• Vehicle: %d\n• Pet: %d\n• Object: %d",
+                        total, people, vehicle, pet, object));
                 heatmap.setImageBitmap(map);
             });
         });

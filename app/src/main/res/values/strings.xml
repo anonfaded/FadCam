@@ -1312,7 +1312,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_coming_soon">Planned for a future update.</string>
     <string name="digital_forensics_coming_soon_short">Coming Soon</string>
     <string name="digital_forensics_discord_coming_soon_toast">Discord alerts will be added in a future update.</string>
-    <string name="digital_forensics_helper">Digital Forensics saves smart evidence data for each recording. Keep defaults if you are new, then only change options when needed.</string>
+    <string name="digital_forensics_helper">Digital Forensics automatically detects people, vehicles, pets, and objects together. Just enable it, then customize overlay and insights options below.</string>
     <string name="digital_forensics_enable_helper">Think of this as your smart evidence sensor. When enabled, FadCam keeps a timeline of detected activity so you can jump to important moments later.</string>
     <string name="digital_forensics_person_helper">Records events when a person is detected in motion sessions. Best option for home room monitoring and entry-point logs.</string>
     <string name="digital_forensics_vehicle_helper">Vehicle tagging needs a dedicated model and is still being expanded. You can keep this off until model support lands.</string>
@@ -1323,6 +1323,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_heatmap_helper">Builds a movement map from detected positions. Brighter zones mean repeated activity in that area of the camera view.</string>
     <string name="digital_forensics_picker_enabled_desc">Turn this option on.</string>
     <string name="digital_forensics_picker_disabled_desc">Turn this option off.</string>
+    <string name="digital_forensics_picker_switch_label">Enable this option</string>
     <string name="universal_enabled">Enabled</string>
     <string name="universal_disabled">Disabled</string>
     <string name="forensics_events_title">Events Timeline</string>
@@ -1330,6 +1331,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_events_empty">No events found for the selected filters.</string>
     <string name="forensics_filter_all">All</string>
     <string name="forensics_filter_person">Person</string>
+    <string name="forensics_filter_vehicle">Vehicle</string>
+    <string name="forensics_filter_pet">Pet</string>
+    <string name="forensics_filter_object">Object</string>
     <string name="forensics_filter_high_conf">High confidence only</string>
     <string name="forensics_insights_title">Activity Insights</string>
     <string name="forensics_insights_subtitle">Daily summary and movement heatmap.</string>

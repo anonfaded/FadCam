@@ -88,6 +88,33 @@
                         android:text="@string/forensics_filter_person" />
 
                     <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_event_vehicle"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:checkable="true"
+                        android:text="@string/forensics_filter_vehicle" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_event_pet"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:checkable="true"
+                        android:text="@string/forensics_filter_pet" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_event_object"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:checkable="true"
+                        android:text="@string/forensics_filter_object" />
+
+                    <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_high_conf"
                         style="@style/Widget.MaterialComponents.Chip.Filter"
                         android:layout_width="wrap_content"

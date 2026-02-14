@@ -179,14 +179,12 @@ public class RecordingService extends Service {
     private long lastMotionAnalysisTimestampMs = 0L;
     private com.fadcam.motion.domain.detector.MotionDetector motionDetector =
             new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
-    private com.fadcam.motion.domain.detector.PersonDetector personDetector =
-            new com.fadcam.motion.domain.detector.NoOpPersonDetector();
+    private com.fadcam.motion.domain.detector.EfficientDetLite1Detector efficientDetDetector;
     private com.fadcam.motion.domain.policy.MotionPolicy motionPolicy =
             new com.fadcam.motion.domain.policy.MotionPolicy();
     private com.fadcam.motion.domain.state.MotionStateMachine motionStateMachine;
     private boolean motionAutoPaused = false;
     private boolean motionSafeMode = false;
-    private boolean motionPersonModeFallbackLogged = false;
     private int motionConsecutivePersonHits = 0;
     private long motionFramesAnalyzed = 0L;
     private long motionTriggerActionCount = 0L;
@@ -204,6 +202,10 @@ public class RecordingService extends Service {
     private float motionLastStrongArea = 0f;
     private float motionLastCenterX = 0.5f;
     private float motionLastCenterY = 0.5f;
+    private float motionLastBoxWidth = 0.16f;
+    private float motionLastBoxHeight = 0.16f;
+    private String motionLastEventType = null;
+    private float motionLastDetectionConfidence = 0f;
     private boolean motionLastGlobalSuppressed = false;
     private long motionLastForensicsHeartbeatMs = 0L;
 
@@ -255,13 +257,16 @@ public class RecordingService extends Service {
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
         Log.d(TAG, "WakeLock initialized in Service.");
 
-        // Optional detector: if the model asset is present we enable person confirmation.
         try {
-            personDetector = new com.fadcam.motion.domain.detector.TflitePersonDetector(getApplicationContext(), 0.60f);
-            Log.d(TAG, "Person detector available: " + personDetector.isAvailable());
+            efficientDetDetector = new com.fadcam.motion.domain.detector.EfficientDetLite1Detector(getApplicationContext());
+            if (!efficientDetDetector.isAvailable()) {
+                throw new IllegalStateException("EfficientDet-Lite1 is unavailable");
+            }
+            Log.i(TAG, "EfficientDet detector available: true");
         } catch (Throwable t) {
-            Log.w(TAG, "Failed to init TFLite person detector; using no-op detector", t);
-            personDetector = new com.fadcam.motion.domain.detector.NoOpPersonDetector();
+            Log.e(TAG, "Failed to initialize mandatory EfficientDet-Lite1 detector", t);
+            stopSelf();
+            return;
         }
         try {
             motionDetector = new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
@@ -1104,7 +1109,7 @@ public class RecordingService extends Service {
                     + ", actions=" + motionTriggerActionCount
                     + ", suppressed=" + motionSuppressedSignalCount
                     + ", safeMode=" + motionSafeMode
-                    + ", personDetectorAvailable=" + personDetector.isAvailable());
+                    + ", detectorAvailable=" + (efficientDetDetector != null && efficientDetDetector.isAvailable()));
         }
         if (digitalForensicsEventRecorder != null) {
             long timelineMs = 0L;
@@ -1590,7 +1595,6 @@ public class RecordingService extends Service {
         lastMotionAnalysisTimestampMs = 0L;
         motionAutoPaused = false;
         motionSafeMode = RuntimeCompat.shouldUseSafeMotionAnalysis(getApplicationContext());
-        motionPersonModeFallbackLogged = false;
         motionConsecutivePersonHits = 0;
         motionFramesAnalyzed = 0L;
         motionTriggerActionCount = 0L;
@@ -1711,7 +1715,12 @@ public class RecordingService extends Service {
             motionScoreEma = (alpha * rawMotionScore) + ((1f - alpha) * motionScoreEma);
         }
         float motionScore = motionScoreEma;
-        boolean personDetectedRaw = personDetector.isAvailable() && personDetector.detectPerson(image);
+        List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.Detection> detections =
+                efficientDetDetector != null ? efficientDetDetector.detect(image) : java.util.Collections.emptyList();
+        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.Detection primaryDetection =
+                efficientDetDetector != null ? efficientDetDetector.choosePrimary(detections) : null;
+        float personConfidence = efficientDetDetector != null ? efficientDetDetector.bestPersonConfidence(detections) : 0f;
+        boolean personDetectedRaw = efficientDetDetector != null && efficientDetDetector.hasPerson(detections);
         if (personDetectedRaw) {
             motionConsecutivePersonHits++;
         } else {
@@ -1719,7 +1728,6 @@ public class RecordingService extends Service {
         }
         int requiredHits = motionSafeMode ? 3 : 2;
         boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
-        float personConfidence = personDetector.getLastConfidence();
         if (personDetectedRaw && personConfidence >= 0.62f) {
             motionPersonLikelyUntilMs = nowMs + 2500L;
         }
@@ -1753,21 +1761,9 @@ public class RecordingService extends Service {
         com.fadcam.motion.domain.state.MotionSessionState stateBefore =
                 motionStateMachine != null ? motionStateMachine.getState() : null;
         if (motionStateMachine != null && sharedPreferencesManager != null) {
-            com.fadcam.motion.domain.model.MotionTriggerMode configuredTriggerMode =
-                    com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(
-                            sharedPreferencesManager.getMotionTriggerMode());
-            com.fadcam.motion.domain.model.MotionTriggerMode effectiveTriggerMode = configuredTriggerMode;
-            if (configuredTriggerMode == com.fadcam.motion.domain.model.MotionTriggerMode.PERSON_CONFIRMED
-                    && !personDetector.isAvailable()) {
-                effectiveTriggerMode = com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION;
-                if (!motionPersonModeFallbackLogged) {
-                    motionPersonModeFallbackLogged = true;
-                    Log.w(TAG, "MotionLab person-confirmed mode requested but model unavailable; falling back to any-motion");
-                }
-            }
             com.fadcam.motion.domain.model.MotionSettings settings = new com.fadcam.motion.domain.model.MotionSettings(
                     sharedPreferencesManager.isMotionModeEnabled(),
-                    effectiveTriggerMode,
+                    com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION,
                     sharedPreferencesManager.getMotionSensitivity(),
                     sharedPreferencesManager.getMotionAnalysisFps(),
                     sharedPreferencesManager.getMotionDebounceMs(),
@@ -1892,8 +1888,17 @@ public class RecordingService extends Service {
             motionLastScore = motionScore;
             motionLastChangedArea = debugChangedArea;
             motionLastStrongArea = debugStrongArea;
-            motionLastCenterX = debugCenterX;
-            motionLastCenterY = debugCenterY;
+            if (primaryDetection != null) {
+                motionLastCenterX = primaryDetection.centerX;
+                motionLastCenterY = primaryDetection.centerY;
+                motionLastBoxWidth = primaryDetection.width;
+                motionLastBoxHeight = primaryDetection.height;
+                motionLastEventType = primaryDetection.eventType;
+                motionLastDetectionConfidence = primaryDetection.confidence;
+            } else {
+                motionLastEventType = null;
+                motionLastDetectionConfidence = 0f;
+            }
             motionLastGlobalSuppressed = debugGlobalSuppressed;
             if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
                     && motionScore > 0f
@@ -1946,6 +1951,8 @@ public class RecordingService extends Service {
 
             if (digitalForensicsEventRecorder != null
                     && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && motionLastEventType != null
+                    && !motionLastEventType.isEmpty()
                     && (nowMs - motionLastForensicsHeartbeatMs) >= 900L) {
                 motionLastForensicsHeartbeatMs = nowMs;
                 long timelineMs = recordingStartTime > 0L
@@ -1954,13 +1961,15 @@ public class RecordingService extends Service {
                 digitalForensicsEventRecorder.onMotionStart(
                         getCurrentRecordingMediaUri(),
                         timelineMs,
-                        personLikely,
-                        personConfidence,
+                        motionLastEventType,
+                        motionLastDetectionConfidence,
                         motionScore,
                         debugChangedArea,
                         debugStrongArea,
-                        debugCenterX,
-                        debugCenterY
+                        motionLastCenterX,
+                        motionLastCenterY,
+                        motionLastBoxWidth,
+                        motionLastBoxHeight
                 );
             }
         }
@@ -2020,22 +2029,28 @@ public class RecordingService extends Service {
         Log.d(TAG, "DF transition: action=" + action
                 + ", mediaUri=" + activeMediaUri
                 + ", timelineMs=" + timelineMs
-                + ", person=" + motionLastPersonDetected
+                + ", eventType=" + motionLastEventType
                 + ", personConf=" + String.format(Locale.US, "%.3f", motionLastPersonConfidence)
+                + ", detectConf=" + String.format(Locale.US, "%.3f", motionLastDetectionConfidence)
                 + ", score=" + String.format(Locale.US, "%.3f", motionLastScore)
                 + ", area=" + String.format(Locale.US, "%.3f", motionLastChangedArea)
                 + ", strong=" + String.format(Locale.US, "%.3f", motionLastStrongArea));
         if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
+            if (motionLastEventType == null || motionLastEventType.isEmpty()) {
+                return;
+            }
             digitalForensicsEventRecorder.onMotionStart(
                     activeMediaUri,
                     timelineMs,
-                    motionLastPersonDetected,
-                    motionLastPersonConfidence,
+                    motionLastEventType,
+                    motionLastDetectionConfidence,
                     motionLastScore,
                     motionLastChangedArea,
                     motionLastStrongArea,
                     motionLastCenterX,
-                    motionLastCenterY
+                    motionLastCenterY,
+                    motionLastBoxWidth,
+                    motionLastBoxHeight
             );
         } else if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
             digitalForensicsEventRecorder.onMotionStop(timelineMs);
@@ -2056,6 +2071,60 @@ public class RecordingService extends Service {
             return Uri.fromFile(currentSegmentFile).toString();
         }
         return null;
+    }
+
+    @Nullable
+    private String buildForensicsOverlayPayload() {
+        if (sharedPreferencesManager == null || !sharedPreferencesManager.isDfOverlayEnabled()) {
+            return null;
+        }
+        if (!motionLabEnabledForSession) {
+            return null;
+        }
+        // Avoid noisy overlay when there is no meaningful motion signal.
+        if (motionLastScore < 0.12f && !motionLastPersonDetected) {
+            return null;
+        }
+        if (motionLastEventType == null || motionLastEventType.isEmpty()) {
+            return null;
+        }
+        String label = motionLastEventType;
+        float cx = clamp01(motionLastCenterX);
+        float cy = clamp01(motionLastCenterY);
+        float boxW = clampBox(motionLastBoxWidth);
+        float boxH = clampBox(motionLastBoxHeight);
+
+        // Analysis reader is landscape while user preview is often portrait.
+        // Rotate to match the portrait display transform used by preview pipeline.
+        if ("portrait".equalsIgnoreCase(sharedPreferencesManager.getVideoOrientation())) {
+            float rotatedX = 1f - cy;
+            float rotatedY = cx;
+            float rotatedW = boxH;
+            float rotatedH = boxW;
+            cx = clamp01(rotatedX);
+            cy = clamp01(rotatedY);
+            boxW = clampBox(rotatedW);
+            boxH = clampBox(rotatedH);
+        }
+
+        // Front camera preview is mirrored.
+        if (recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT) {
+            cx = 1f - cx;
+        }
+
+        return "__DF_OVERLAY__:" + label + "|"
+                + String.format(Locale.US, "%.4f", cx) + "|"
+                + String.format(Locale.US, "%.4f", cy) + "|"
+                + String.format(Locale.US, "%.4f", boxW) + "|"
+                + String.format(Locale.US, "%.4f", boxH);
+    }
+
+    private float clamp01(float value) {
+        return Math.max(0f, Math.min(1f, value));
+    }
+
+    private float clampBox(float value) {
+        return Math.max(0.02f, Math.min(0.90f, value));
     }
 
     private void setMotionTorchState(boolean shouldBeOn) {
@@ -4652,6 +4721,10 @@ public class RecordingService extends Service {
             watermarkInfoProvider = new WatermarkInfoProvider() {
                 @Override
                 public String getWatermarkText() {
+                    String dfOverlayPayload = buildForensicsOverlayPayload();
+                    if (dfOverlayPayload != null) {
+                        return dfOverlayPayload;
+                    }
                     String watermarkOption = sharedPreferencesManager.getWatermarkOption();
                     String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
                     String customText = sharedPreferencesManager.getWatermarkCustomText();

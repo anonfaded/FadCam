@@ -25,10 +25,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     private SharedPreferencesManager prefs;
 
     private TextView valueStatus;
-    private TextView valuePerson;
-    private TextView valueVehicle;
-    private TextView valuePet;
-    private TextView valueDangerous;
     private TextView valueOverlay;
     private TextView valueDaily;
     private TextView valueHeatmap;
@@ -51,10 +47,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         }
 
         valueStatus = view.findViewById(R.id.value_df_status);
-        valuePerson = view.findViewById(R.id.value_df_event_person);
-        valueVehicle = view.findViewById(R.id.value_df_event_vehicle);
-        valuePet = view.findViewById(R.id.value_df_event_pet);
-        valueDangerous = view.findViewById(R.id.value_df_event_dangerous);
         valueOverlay = view.findViewById(R.id.value_df_overlay);
         valueDaily = view.findViewById(R.id.value_df_daily_summary);
         valueHeatmap = view.findViewById(R.id.value_df_heatmap);
@@ -64,13 +56,14 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     }
 
     private void bindCurrentValues() {
+        // Event classes are now always detected together by default.
+        prefs.setDfEventPersonEnabled(true);
+        prefs.setDfEventVehicleEnabled(true);
+        prefs.setDfEventPetEnabled(true);
+        prefs.setDfDangerousObjectEnabled(true);
         valueStatus.setText(prefs.isDigitalForensicsEnabled()
             ? getString(R.string.digital_forensics_status_enabled_short)
             : getString(R.string.digital_forensics_status_disabled));
-        valuePerson.setText(enabledLabel(prefs.isDfEventPersonEnabled()));
-        valueVehicle.setText(enabledLabel(prefs.isDfEventVehicleEnabled()));
-        valuePet.setText(enabledLabel(prefs.isDfEventPetEnabled()));
-        valueDangerous.setText(enabledLabel(prefs.isDfDangerousObjectEnabled()));
         valueOverlay.setText(enabledLabel(prefs.isDfOverlayEnabled()));
         valueDaily.setText(enabledLabel(prefs.isDfDailySummaryEnabled()));
         valueHeatmap.setText(enabledLabel(prefs.isDfHeatmapEnabled()));
@@ -90,46 +83,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
             prefs.isDigitalForensicsEnabled(),
             value -> {
                 prefs.setDigitalForensicsEnabled(value);
-                bindCurrentValues();
-            }
-        ));
-        view.findViewById(R.id.row_df_event_person).setOnClickListener(v -> showTogglePicker(
-            "rk_df_person",
-            getString(R.string.digital_forensics_event_person),
-            getString(R.string.digital_forensics_person_helper),
-            prefs.isDfEventPersonEnabled(),
-            value -> {
-                prefs.setDfEventPersonEnabled(value);
-                bindCurrentValues();
-            }
-        ));
-        view.findViewById(R.id.row_df_event_vehicle).setOnClickListener(v -> showTogglePicker(
-            "rk_df_vehicle",
-            getString(R.string.digital_forensics_event_vehicle),
-            getString(R.string.digital_forensics_vehicle_helper),
-            prefs.isDfEventVehicleEnabled(),
-            value -> {
-                prefs.setDfEventVehicleEnabled(value);
-                bindCurrentValues();
-            }
-        ));
-        view.findViewById(R.id.row_df_event_pet).setOnClickListener(v -> showTogglePicker(
-            "rk_df_pet",
-            getString(R.string.digital_forensics_event_pet),
-            getString(R.string.digital_forensics_pet_helper),
-            prefs.isDfEventPetEnabled(),
-            value -> {
-                prefs.setDfEventPetEnabled(value);
-                bindCurrentValues();
-            }
-        ));
-        view.findViewById(R.id.row_df_event_dangerous_object).setOnClickListener(v -> showTogglePicker(
-            "rk_df_dangerous",
-            getString(R.string.digital_forensics_event_dangerous_object),
-            getString(R.string.digital_forensics_dangerous_helper),
-            prefs.isDfDangerousObjectEnabled(),
-            value -> {
-                prefs.setDfDangerousObjectEnabled(value);
                 bindCurrentValues();
             }
         ));
@@ -194,19 +147,18 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     private void showTogglePicker(String resultKey, String title, String helper,
                                   boolean currentValue, ToggleConsumer consumer) {
         ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("enabled", getString(R.string.universal_enabled), getString(R.string.digital_forensics_picker_enabled_desc)));
-        items.add(new OptionItem("disabled", getString(R.string.universal_disabled), getString(R.string.digital_forensics_picker_disabled_desc)));
-
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitch(
             title,
             items,
-            currentValue ? "enabled" : "disabled",
+            "",
             resultKey,
-            helper
+            helper,
+            getString(R.string.digital_forensics_picker_switch_label),
+            currentValue
         );
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
-            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            consumer.accept("enabled".equals(id));
+            boolean enabled = bundle.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, currentValue);
+            consumer.accept(enabled);
         });
         sheet.show(getParentFragmentManager(), resultKey + "_sheet");
     }
