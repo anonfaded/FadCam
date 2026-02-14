@@ -20,6 +20,8 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.data.local.model.AiEventWithMedia;
 
 import java.util.ArrayList;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -66,15 +68,17 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         String mediaName = deriveDisplayName(row);
         long startSec = Math.max(0L, row.startMs / 1000L);
         long endSec = Math.max(startSec, row.endMs / 1000L);
+        String detectedAt = formatDetectedAt(row.detectedAtEpochMs);
 
         holder.title.setText(title);
         holder.subtitle.setText(String.format(Locale.US,
-                "%s • %s • %s-%s • conf %.2f",
+                "%s • %s • %s-%s • conf %.2f • %s",
                 mediaName,
                 row.eventType,
                 formatTime(startSec),
                 formatTime(endSec),
-                row.confidence));
+                row.confidence,
+                detectedAt));
 
         boolean seen = isEventSeen(holder.itemView, row.eventUid);
         if (!seen && isRecent(row)) {
@@ -127,10 +131,12 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
     private void bindPersonFrameStrip(@NonNull Holder holder, AiEventWithMedia row) {
         if (row.mediaUri == null || row.mediaUri.isEmpty()) {
             holder.frameStrip.setVisibility(View.GONE);
+            holder.frameHint.setVisibility(View.GONE);
             holder.framesContainer.removeAllViews();
             return;
         }
         holder.frameStrip.setVisibility(View.VISIBLE);
+        holder.frameHint.setVisibility(View.VISIBLE);
         holder.framesContainer.removeAllViews();
 
         long start = Math.max(0L, row.startMs);
@@ -220,6 +226,14 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         return String.format(Locale.US, "%d:%02d", mins, secs);
     }
 
+    private String formatDetectedAt(long epochMs) {
+        if (epochMs <= 0L) {
+            return "Unknown time";
+        }
+        DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault());
+        return formatter.format(new Date(epochMs));
+    }
+
     private String deriveDisplayName(@NonNull AiEventWithMedia row) {
         String candidate = row.mediaDisplayName;
         if (candidate != null && !candidate.isEmpty()
@@ -277,6 +291,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         final TextView badge;
         final ImageView proof;
         final View frameStrip;
+        final TextView frameHint;
         final LinearLayout framesContainer;
 
         Holder(@NonNull View itemView) {
@@ -286,6 +301,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
             badge = itemView.findViewById(R.id.text_badge);
             proof = itemView.findViewById(R.id.image_proof);
             frameStrip = itemView.findViewById(R.id.person_frames_strip);
+            frameHint = itemView.findViewById(R.id.text_frame_hint);
             framesContainer = itemView.findViewById(R.id.person_frames_container);
         }
     }

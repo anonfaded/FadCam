@@ -29,6 +29,7 @@ public class EfficientDetLite1Detector {
     private static final float MIN_BOX_SIDE = 0.012f;
 
     private final ObjectDetector detector;
+    private long lastInferenceWarnMs = 0L;
 
     public static final class DetectionResult {
         public final int classId;
@@ -140,7 +141,11 @@ public class EfficientDetLite1Detector {
                 ));
             }
         } catch (Throwable t) {
-            Log.w(TAG, "EfficientDet task inference failed", t);
+            long now = android.os.SystemClock.elapsedRealtime();
+            if ((now - lastInferenceWarnMs) > 5000L) {
+                lastInferenceWarnMs = now;
+                Log.w(TAG, "EfficientDet inference skipped for one frame: " + t.getClass().getSimpleName());
+            }
         }
         return out;
     }

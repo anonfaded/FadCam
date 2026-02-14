@@ -1041,6 +1041,19 @@ public class GLWatermarkRenderer {
         if (payload == null || payload.isEmpty()) {
             return;
         }
+        String[] entries = payload.split(";");
+        for (String entry : entries) {
+            if (entry == null || entry.trim().isEmpty()) {
+                continue;
+            }
+            drawForensicsOverlayEntry(canvas, entry.trim());
+        }
+    }
+
+    private void drawForensicsOverlayEntry(Canvas canvas, String payload) {
+        if (payload == null || payload.isEmpty()) {
+            return;
+        }
         int overlayWidth = Math.max(1, canvas.getWidth());
         int overlayHeight = Math.max(1, canvas.getHeight());
         // payload format: LABEL|CONF|cx|cy|w|h|TYPE

@@ -5,8 +5,6 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-import androidx.room.migration.Migration;
-import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.fadcam.forensics.data.local.dao.AiEventDao;
 import com.fadcam.forensics.data.local.dao.IntegrityLinkLogDao;
@@ -24,26 +22,13 @@ import com.fadcam.forensics.data.local.entity.SyncQueueEntity;
         IntegrityLinkLogEntity.class,
         SyncQueueEntity.class
     },
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 public abstract class ForensicsDatabase extends RoomDatabase {
 
     private static final String DB_NAME = "digital_forensics.db";
     private static volatile ForensicsDatabase instance;
-    private static final Migration MIGRATION_1_2 = new Migration(1, 2) {
-        @Override
-        public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE ai_event ADD COLUMN detected_at_epoch_ms INTEGER NOT NULL DEFAULT 0");
-        }
-    };
-    private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
-        @Override
-        public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE ai_event ADD COLUMN class_name TEXT");
-            database.execSQL("UPDATE ai_event SET class_name = LOWER(event_type) WHERE class_name IS NULL OR class_name = ''");
-        }
-    };
 
     public abstract MediaAssetDao mediaAssetDao();
 
@@ -62,7 +47,7 @@ public abstract class ForensicsDatabase extends RoomDatabase {
                             ForensicsDatabase.class,
                             DB_NAME
                         )
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                        .fallbackToDestructiveMigration()
                         .build();
                 }
             }

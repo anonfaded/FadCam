@@ -27,10 +27,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ForensicsInsightsFragment extends Fragment {
+    private static final String ARG_EMBEDDED = "arg_embedded";
 
     private TextView summary;
     private ImageView heatmap;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private boolean embeddedMode;
+
+    public static ForensicsInsightsFragment newEmbeddedInstance() {
+        ForensicsInsightsFragment fragment = new ForensicsInsightsFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_EMBEDDED, true);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -41,10 +51,30 @@ public class ForensicsInsightsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        view.findViewById(R.id.back_button).setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
+        embeddedMode = getArguments() != null && getArguments().getBoolean(ARG_EMBEDDED, false);
+        View header = view.findViewById(R.id.header_bar);
+        if (header != null && embeddedMode) {
+            header.setVisibility(View.GONE);
+        }
+        View backButton = view.findViewById(R.id.back_button);
+        if (backButton != null) {
+            if (embeddedMode) {
+                backButton.setVisibility(View.GONE);
+            } else {
+                backButton.setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
+            }
+        }
         summary = view.findViewById(R.id.text_summary);
         heatmap = view.findViewById(R.id.image_heatmap);
         loadInsights();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (isAdded()) {
+            loadInsights();
+        }
     }
 
     private void loadInsights() {

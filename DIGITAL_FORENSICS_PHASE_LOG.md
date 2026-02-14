@@ -1,8 +1,25 @@
 # Digital Forensics Phase Log
 
 ## Current Status
-- Active phase: **Phase 5 (Hard cutover + detector unification)**
+- Active phase: **Lab Tab Consolidation + hardening**
 - Last updated: 2026-02-14
+
+## Lab Tab / Forensic Intelligence Migration (2026-02-14)
+### Completed
+- [x] Added bottom navigation 6th item (`Lab`)
+- [x] Added tab-root fragment: `ForensicIntelligenceFragment`
+- [x] Added top title: `Forensic Intelligence`
+- [x] Embedded Events + Insights as first-class Lab sections via internal tabs
+- [x] Updated main pager wiring (`ViewPagerAdapter` item count `6`, position `5` mapped to Lab)
+- [x] Updated `MainActivity` nav selection/page sync for `navigation_lab`
+- [x] Removed Settings-side Events/Insights rows from Digital Forensics settings screen
+- [x] Standardized timeline subtitle to include explicit local date/time from DB (`detected_at_epoch_ms`)
+- [x] Added persistent frame-strip scroll hint in event cards
+- [x] Updated forensics DB policy to latest clean schema path (`version=4`, destructive reset allowed)
+
+### Notes
+- Date/time persistence already existed in schema (`ai_event.detected_at_epoch_ms`, media/link timestamps); this phase focused on consistent UI exposure and canonical Lab access path.
+- Settings remains control-only; browsing and intelligence review now lives in Lab.
 
 ## Hard Cutover - Single EfficientDet (2026-02-13)
 ### Completed

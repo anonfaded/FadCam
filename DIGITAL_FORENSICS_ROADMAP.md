@@ -10,6 +10,15 @@ Add a new Advanced subsection named **Digital Forensics** (separate from Motion 
 
 This roadmap is modular, realtime-oriented, and privacy-first.
 
+## Lab Tab Consolidation (Locked 2026-02-14)
+- [x] Add 6th bottom-nav item: `Lab`
+- [x] Add dedicated tab-root surface titled **Forensic Intelligence**
+- [x] Move forensic browsing into Lab (Events + Insights sections)
+- [x] Remove Events/Insights navigation rows from Digital Forensics settings (settings now control-only)
+- [x] Keep single source-of-truth flow: detector -> recorder -> Room DB -> Lab UI
+- [x] Bump forensics DB schema and use latest clean destructive reset policy for this refactor
+- [x] Keep English-first strings for new UI labels in this phase
+
 ## Architecture Decision (Locked 2026-02-13)
 - [x] Single detector source of truth: **EfficientDet-Lite1**
 - [x] Legacy person-only detector removed

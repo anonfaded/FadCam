@@ -35,6 +35,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
 
     public static final String EXTRA_OPEN_AT_MS = "com.fadcam.extra.OPEN_AT_MS";
     public static final String EXTRA_OPEN_PAUSED = "com.fadcam.extra.OPEN_PAUSED";
+    private static final String ARG_EMBEDDED = "arg_embedded";
 
     private RecyclerView recycler;
     private TextView empty;
@@ -50,6 +51,15 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     private String selectedSubtype;
     private ForensicsEventsAdapter adapter;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private boolean embeddedMode;
+
+    public static ForensicsEventsFragment newEmbeddedInstance() {
+        ForensicsEventsFragment fragment = new ForensicsEventsFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_EMBEDDED, true);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -60,7 +70,19 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        view.findViewById(R.id.back_button).setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
+        embeddedMode = getArguments() != null && getArguments().getBoolean(ARG_EMBEDDED, false);
+        View header = view.findViewById(R.id.header_bar);
+        if (header != null && embeddedMode) {
+            header.setVisibility(View.GONE);
+        }
+        View backButton = view.findViewById(R.id.back_button);
+        if (backButton != null) {
+            if (embeddedMode) {
+                backButton.setVisibility(View.GONE);
+            } else {
+                backButton.setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
+            }
+        }
 
         recycler = view.findViewById(R.id.recycler_events);
         empty = view.findViewById(R.id.text_empty);
@@ -95,6 +117,14 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         }
 
         loadEvents();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (isAdded()) {
+            loadEvents();
+        }
     }
 
     private void styleAndIconChips() {

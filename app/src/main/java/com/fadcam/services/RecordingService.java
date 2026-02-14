@@ -209,6 +209,7 @@ public class RecordingService extends Service {
     private float motionLastDetectionConfidence = 0f;
     private boolean motionLastGlobalSuppressed = false;
     private long motionLastForensicsHeartbeatMs = 0L;
+    private String motionLastOverlayPayload = null;
 
     // --- Lifecycle Methods ---
     @Override
@@ -1667,7 +1668,7 @@ public class RecordingService extends Service {
                     || motionAnalysisReader.getHeight() != height;
             if (recreate) {
                 releaseMotionAnalysisReader();
-                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
+                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 1);
                 motionAnalysisReader.setOnImageAvailableListener(reader -> {
                     Image image = null;
                     try {
@@ -1902,6 +1903,7 @@ public class RecordingService extends Service {
                 motionLastClassName = null;
                 motionLastDetectionConfidence = 0f;
             }
+            motionLastOverlayPayload = buildOverlayPayloadFromDetections(detections);
             motionLastGlobalSuppressed = debugGlobalSuppressed;
             if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
                     && motionScore > 0f
@@ -1932,7 +1934,7 @@ public class RecordingService extends Service {
                         + ", actions=" + motionTriggerActionCount
                         + ", suppressed=" + motionSuppressedSignalCount + "}");
             }
-            if ((nowMs - motionLastTelemetryLogMs) >= 1000L) {
+            if ((nowMs - motionLastTelemetryLogMs) >= 3500L) {
                 motionLastTelemetryLogMs = nowMs;
                 Log.d(TAG, "MotionLab Live: state=" + motionStateMachine.getState()
                         + ", action=" + action
@@ -2030,25 +2032,22 @@ public class RecordingService extends Service {
             timelineMs = Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime);
         }
 
-        Log.d(TAG, "DF transition: action=" + action
-                + ", mediaUri=" + activeMediaUri
-                + ", timelineMs=" + timelineMs
-                + ", eventType=" + motionLastEventType
-                + ", personConf=" + String.format(Locale.US, "%.3f", motionLastPersonConfidence)
-                + ", detectConf=" + String.format(Locale.US, "%.3f", motionLastDetectionConfidence)
-                + ", score=" + String.format(Locale.US, "%.3f", motionLastScore)
-                + ", area=" + String.format(Locale.US, "%.3f", motionLastChangedArea)
-                + ", strong=" + String.format(Locale.US, "%.3f", motionLastStrongArea));
         if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
-            if (motionLastEventType == null || motionLastEventType.isEmpty()) {
-                return;
-            }
+            String eventType = (motionLastEventType == null || motionLastEventType.isEmpty())
+                    ? "OBJECT"
+                    : motionLastEventType;
+            String className = (motionLastClassName == null || motionLastClassName.isEmpty())
+                    ? "motion"
+                    : motionLastClassName;
+            float confidence = motionLastDetectionConfidence > 0f
+                    ? motionLastDetectionConfidence
+                    : Math.max(0f, Math.min(1f, motionLastScore));
             digitalForensicsEventRecorder.onMotionStart(
                     activeMediaUri,
                     timelineMs,
-                    motionLastEventType,
-                    motionLastClassName,
-                    motionLastDetectionConfidence,
+                    eventType,
+                    className,
+                    confidence,
                     motionLastScore,
                     motionLastChangedArea,
                     motionLastStrongArea,
@@ -2086,21 +2085,27 @@ public class RecordingService extends Service {
         if (!motionLabEnabledForSession) {
             return null;
         }
-        // Avoid noisy overlay when there is no meaningful motion signal.
-        if (motionLastScore < 0.12f && !motionLastPersonDetected) {
+        String payload = motionLastOverlayPayload;
+        if ((payload == null || payload.isEmpty()) && motionLastEventType != null && !motionLastEventType.isEmpty()) {
+            String label = motionLastClassName != null && !motionLastClassName.trim().isEmpty()
+                    ? motionLastClassName.trim().toLowerCase(Locale.US)
+                    : motionLastEventType.toLowerCase(Locale.US);
+            float cx = clamp01(motionLastCenterX);
+            float cy = clamp01(motionLastCenterY);
+            float boxW = clampBox(motionLastBoxWidth);
+            float boxH = clampBox(motionLastBoxHeight);
+            float conf = Math.max(0f, Math.min(1f, motionLastDetectionConfidence));
+            payload = label + "|"
+                    + String.format(Locale.US, "%.4f", conf) + "|"
+                    + String.format(Locale.US, "%.4f", cx) + "|"
+                    + String.format(Locale.US, "%.4f", cy) + "|"
+                    + String.format(Locale.US, "%.4f", boxW) + "|"
+                    + String.format(Locale.US, "%.4f", boxH) + "|"
+                    + motionLastEventType.toUpperCase(Locale.US);
+        }
+        if (payload == null || payload.isEmpty()) {
             return null;
         }
-        if (motionLastEventType == null || motionLastEventType.isEmpty()) {
-            return null;
-        }
-        String label = motionLastClassName != null && !motionLastClassName.trim().isEmpty()
-                ? motionLastClassName.trim().toLowerCase(Locale.US)
-                : motionLastEventType.toLowerCase(Locale.US);
-        float cx = clamp01(motionLastCenterX);
-        float cy = clamp01(motionLastCenterY);
-        float boxW = clampBox(motionLastBoxWidth);
-        float boxH = clampBox(motionLastBoxHeight);
-        float conf = Math.max(0f, Math.min(1f, motionLastDetectionConfidence));
 
         String watermarkText = buildBaseWatermarkText();
         if (watermarkText == null) {
@@ -2108,14 +2113,40 @@ public class RecordingService extends Service {
         }
         watermarkText = watermarkText.replace("\n", " ").replace("\r", " ").replace("||wm||", " ");
 
-        return "__DF_OVERLAY__:" + label + "|"
-                + String.format(Locale.US, "%.4f", conf) + "|"
-                + String.format(Locale.US, "%.4f", cx) + "|"
-                + String.format(Locale.US, "%.4f", cy) + "|"
-                + String.format(Locale.US, "%.4f", boxW) + "|"
-                + String.format(Locale.US, "%.4f", boxH) + "|"
-                + motionLastEventType.toUpperCase(Locale.US)
+        return "__DF_OVERLAY__:" + payload
                 + "||wm||" + watermarkText;
+    }
+
+    @Nullable
+    private String buildOverlayPayloadFromDetections(
+            @Nullable List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections
+    ) {
+        if (detections == null || detections.isEmpty()) {
+            return null;
+        }
+        StringBuilder out = new StringBuilder();
+        int emitted = 0;
+        for (com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult detection : detections) {
+            if (detection == null || detection.confidence < 0.45f) {
+                continue;
+            }
+            if (emitted >= 6) {
+                break;
+            }
+            if (out.length() > 0) {
+                out.append(';');
+            }
+            String label = detection.className == null ? "object" : detection.className.trim().toLowerCase(Locale.US);
+            out.append(label).append('|')
+                    .append(String.format(Locale.US, "%.4f", Math.max(0f, Math.min(1f, detection.confidence)))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clamp01(detection.centerX))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clamp01(detection.centerY))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clampBox(detection.width))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clampBox(detection.height))).append('|')
+                    .append(detection.coarseType == null ? "OBJECT" : detection.coarseType.toUpperCase(Locale.US));
+            emitted++;
+        }
+        return out.length() == 0 ? null : out.toString();
     }
 
     private String buildBaseWatermarkText() {
@@ -2177,7 +2208,7 @@ public class RecordingService extends Service {
         long now = SystemClock.elapsedRealtime();
         boolean significant = previousState != currentState
                 || (action != null && action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
-        if (!significant && (now - motionLastDebugBroadcastMs) < 400L) {
+        if (!significant && (now - motionLastDebugBroadcastMs) < 900L) {
             return;
         }
         motionLastDebugBroadcastMs = now;
@@ -2269,8 +2300,10 @@ public class RecordingService extends Service {
             bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 65, outputStream);
             bitmap.recycle();
             return outputStream.toByteArray();
+        } catch (IllegalStateException ignored) {
+            return null;
         } catch (Throwable t) {
-            Log.w(TAG, "MotionLab debug frame encode failed", t);
+            Log.v(TAG, "MotionLab debug frame skipped");
             return null;
         }
     }

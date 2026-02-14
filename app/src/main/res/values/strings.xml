@@ -285,6 +285,7 @@
     <string name="nav_about">About</string>
     <string name="nav_remote">Remote</string>
     <string name="nav_faditor_mini">Faditor Mini</string>
+    <string name="nav_lab">Lab</string>
     <string name="button_settings_readme">Read Me</string>
     <string name="setting_cam_title">Camera Selection</string>
     <string name="note_cam_sele">Select camera \n(Default: Back)</string>
@@ -1296,6 +1297,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="settings_security_title">Security</string>
     <string name="settings_advanced_subtitle">Motion Lab and power-user controls</string>
     <string name="digital_forensics_title">Digital Forensics</string>
+    <string name="forensic_intelligence_title">Forensic Intelligence</string>
     <string name="digital_forensics_row_subtitle">Evidence timeline, identity relink, and smart insights</string>
     <string name="digital_forensics_enable">Enable Digital Forensics</string>
     <string name="digital_forensics_status_enabled">Enabled (collecting forensic event metadata)</string>
@@ -1312,7 +1314,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_coming_soon">Planned for a future update.</string>
     <string name="digital_forensics_coming_soon_short">Coming Soon</string>
     <string name="digital_forensics_discord_coming_soon_toast">Discord alerts will be added in a future update.</string>
-    <string name="digital_forensics_helper">Digital Forensics automatically detects people, vehicles, pets, and objects together. Just enable it, then customize overlay and insights options below.</string>
+    <string name="digital_forensics_helper">Digital Forensics automatically detects people, vehicles, pets, and objects together. Enable it here, then use the Lab tab to browse events and insights.</string>
     <string name="digital_forensics_enable_helper">Think of this as your smart evidence sensor. When enabled, FadCam keeps a timeline of detected activity so you can jump to important moments later.</string>
     <string name="digital_forensics_person_helper">Records events when a person is detected in motion sessions. Best option for home room monitoring and entry-point logs.</string>
     <string name="digital_forensics_vehicle_helper">Vehicle tagging needs a dedicated model and is still being expanded. You can keep this off until model support lands.</string>
@@ -1341,6 +1343,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_heatmap_cd">Activity heatmap</string>
     <string name="forensics_heatmap_legend">Brighter spots mean repeated movement. Dim spots mean less activity.</string>
     <string name="forensics_event_proof_frame">Event proof frame</string>
+    <string name="forensics_frames_hint">Swipe frames to preview moments</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>

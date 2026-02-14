@@ -136,11 +136,6 @@ public class DigitalForensicsEventRecorder {
             activeCenterY = clamp01(centerY);
             activeBoxWidth = clampBox(boxWidth);
             activeBoxHeight = clampBox(boxHeight);
-            Log.d(TAG, "DF start: type=" + eventType
-                    + ", mediaUri=" + mediaUri
-                    + ", timelineMs=" + activeStartMs
-                    + ", conf=" + confidence
-                    + ", score=" + motionScore);
         }
     }
 
@@ -244,7 +239,6 @@ public class DigitalForensicsEventRecorder {
             asset.linkStatus = "NEW";
             enrichAssetMetadata(asset, mediaUri);
             mediaAssetDao.upsert(asset);
-            Log.d(TAG, "DF media asset upserted: mediaUid=" + asset.mediaUid + ", uri=" + mediaUri);
             return asset.mediaUid;
         } catch (Exception e) {
             Log.w(TAG, "ensureMediaAsset failed for uri=" + mediaUri, e);

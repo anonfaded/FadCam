@@ -13,8 +13,6 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
-import com.fadcam.forensics.ui.ForensicsEventsFragment;
-import com.fadcam.forensics.ui.ForensicsInsightsFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 
@@ -92,24 +90,8 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 bindCurrentValues();
             }
         ));
-        View rowEvents = view.findViewById(R.id.row_df_open_events);
-        View rowInsights = view.findViewById(R.id.row_df_open_insights);
         View rowDiscord = view.findViewById(R.id.row_df_discord_coming_soon);
 
-        if (rowEvents != null) {
-            rowEvents.setOnClickListener(v -> OverlayNavUtil.show(
-                requireActivity(),
-                new ForensicsEventsFragment(),
-                "ForensicsEventsFragment"
-            ));
-        }
-        if (rowInsights != null) {
-            rowInsights.setOnClickListener(v -> OverlayNavUtil.show(
-                requireActivity(),
-                new ForensicsInsightsFragment(),
-                "ForensicsInsightsFragment"
-            ));
-        }
         if (rowDiscord != null) {
             rowDiscord.setOnClickListener(v -> Toast.makeText(
                 requireContext(),
