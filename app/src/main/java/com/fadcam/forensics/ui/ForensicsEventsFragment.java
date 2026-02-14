@@ -9,6 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.LinearLayout;
+import android.widget.HorizontalScrollView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +26,7 @@ import com.fadcam.ui.VideoPlayerActivity;
 import com.google.android.material.chip.Chip;
 
 import android.graphics.Color;
+import android.text.TextUtils;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +44,10 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     private Chip chipPet;
     private Chip chipObject;
     private Chip chipHighConf;
+    private Chip chipSubtypeAll;
+    private LinearLayout subtypeContainer;
+    private HorizontalScrollView subtypeScroll;
+    private String selectedSubtype;
     private ForensicsEventsAdapter adapter;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -63,6 +70,9 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chipPet = view.findViewById(R.id.chip_event_pet);
         chipObject = view.findViewById(R.id.chip_event_object);
         chipHighConf = view.findViewById(R.id.chip_event_high_conf);
+        chipSubtypeAll = view.findViewById(R.id.chip_subtype_all);
+        subtypeContainer = view.findViewById(R.id.chips_subtype_container);
+        subtypeScroll = view.findViewById(R.id.subtype_chip_scroll);
         styleAndIconChips();
 
         adapter = new ForensicsEventsAdapter(this);
@@ -75,6 +85,14 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chipPet.setOnClickListener(v -> selectEventTypeChip(chipPet));
         chipObject.setOnClickListener(v -> selectEventTypeChip(chipObject));
         chipHighConf.setOnCheckedChangeListener((buttonView, isChecked) -> loadEvents());
+        if (chipSubtypeAll != null) {
+            chipSubtypeAll.setOnClickListener(v -> {
+                selectedSubtype = null;
+                chipSubtypeAll.setChecked(true);
+                syncSubtypeSelection();
+                loadEvents();
+            });
+        }
 
         loadEvents();
     }
@@ -93,6 +111,11 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         applyChipIcon(chipObject, R.drawable.ic_grid);
         applyChipIcon(chipHighConf, R.drawable.ic_focus_target);
         chipHighConf.setCheckedIconVisible(false);
+        styleChip(chipSubtypeAll);
+        applyChipIcon(chipSubtypeAll, R.drawable.ic_list);
+        if (chipSubtypeAll != null) {
+            chipSubtypeAll.setCheckedIconVisible(false);
+        }
     }
 
     private void selectEventTypeChip(@NonNull Chip selected) {
@@ -101,6 +124,11 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chipVehicle.setChecked(selected == chipVehicle);
         chipPet.setChecked(selected == chipPet);
         chipObject.setChecked(selected == chipObject);
+        selectedSubtype = null;
+        if (chipSubtypeAll != null) {
+            chipSubtypeAll.setChecked(true);
+        }
+        syncSubtypeSelection();
         loadEvents();
     }
 
@@ -150,12 +178,16 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
 
     private void loadEvents() {
         final String eventType = resolveSelectedEventType();
+        final boolean objectMode = "OBJECT".equals(eventType);
+        final String className = (objectMode && !TextUtils.isEmpty(selectedSubtype)) ? selectedSubtype : null;
         final float minConf = (chipHighConf != null && chipHighConf.isChecked()) ? 0.75f : 0f;
         final long since = System.currentTimeMillis() - (7L * 24L * 60L * 60L * 1000L);
         executor.execute(() -> {
-            List<AiEventWithMedia> rows = ForensicsDatabase.getInstance(requireContext())
-                    .aiEventDao()
-                    .getTimeline(eventType, minConf, since, 400);
+            ForensicsDatabase db = ForensicsDatabase.getInstance(requireContext());
+            List<AiEventWithMedia> rows = db.aiEventDao().getTimeline(eventType, className, minConf, since, 400);
+            List<String> dynamicSubtypes = objectMode
+                    ? db.aiEventDao().getTopClassNames(since, "OBJECT", 10)
+                    : null;
             if (!isAdded()) {
                 return;
             }
@@ -163,8 +195,73 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                 adapter.submit(rows);
                 boolean hasRows = rows != null && !rows.isEmpty();
                 empty.setVisibility(hasRows ? View.GONE : View.VISIBLE);
+                renderSubtypeChips(dynamicSubtypes, objectMode);
             });
         });
+    }
+
+    private void renderSubtypeChips(@Nullable List<String> subtypes, boolean objectMode) {
+        if (subtypeContainer == null || chipSubtypeAll == null) {
+            return;
+        }
+        if (subtypeScroll != null) {
+            subtypeScroll.setVisibility(objectMode ? View.VISIBLE : View.GONE);
+        }
+        if (!objectMode) {
+            selectedSubtype = null;
+            return;
+        }
+        subtypeContainer.removeAllViews();
+        subtypeContainer.addView(chipSubtypeAll);
+        chipSubtypeAll.setChecked(TextUtils.isEmpty(selectedSubtype));
+        if (subtypes == null || subtypes.isEmpty()) {
+            return;
+        }
+        for (String subtype : subtypes) {
+            if (TextUtils.isEmpty(subtype)) {
+                continue;
+            }
+            final String value = subtype.trim().toLowerCase();
+            Chip chip = new Chip(requireContext(), null, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice);
+            chip.setCheckable(true);
+            chip.setText(value);
+            chip.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            ));
+            ((LinearLayout.LayoutParams) chip.getLayoutParams()).setMarginStart((int) dpToPx(8));
+            styleChip(chip);
+            applyChipIcon(chip, R.drawable.ic_grid);
+            chip.setCheckedIconVisible(false);
+            chip.setOnClickListener(v -> {
+                selectedSubtype = value;
+                syncSubtypeSelection();
+                loadEvents();
+            });
+            chip.setChecked(value.equals(selectedSubtype));
+            subtypeContainer.addView(chip);
+        }
+        syncSubtypeSelection();
+    }
+
+    private void syncSubtypeSelection() {
+        if (subtypeContainer == null) {
+            return;
+        }
+        int count = subtypeContainer.getChildCount();
+        for (int i = 0; i < count; i++) {
+            View child = subtypeContainer.getChildAt(i);
+            if (!(child instanceof Chip)) {
+                continue;
+            }
+            Chip chip = (Chip) child;
+            if (chip == chipSubtypeAll) {
+                chip.setChecked(TextUtils.isEmpty(selectedSubtype));
+            } else {
+                String subtype = chip.getText() == null ? null : chip.getText().toString().toLowerCase();
+                chip.setChecked(!TextUtils.isEmpty(selectedSubtype) && selectedSubtype.equals(subtype));
+            }
+        }
     }
 
     @Nullable

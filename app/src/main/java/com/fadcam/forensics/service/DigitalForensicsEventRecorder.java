@@ -35,7 +35,8 @@ public class DigitalForensicsEventRecorder {
     private final Object lock = new Object();
     private String activeMediaUid;
     private String activeUri;
-    private String activeEventType = "MOTION";
+    private String activeEventType = "OBJECT";
+    private String activeClassName = "object";
     private long activeStartMs = -1L;
     private float activeMaxConfidence = 0f;
     private float activeMaxScore = 0f;
@@ -55,7 +56,7 @@ public class DigitalForensicsEventRecorder {
         this.aiEventDao = db.aiEventDao();
     }
 
-    public void onMotionStart(String mediaUri, long timelineMs, String eventType, float confidence,
+    public void onMotionStart(String mediaUri, long timelineMs, String eventType, String className, float confidence,
                               float motionScore, float changedArea, float strongArea,
                               float centerX, float centerY, float boxWidth, float boxHeight) {
         if (!shouldRecord()) {
@@ -66,7 +67,7 @@ public class DigitalForensicsEventRecorder {
             Log.w(TAG, "DF skip start: mediaUri is empty");
             return;
         }
-        ioExecutor.submit(() -> handleStart(mediaUri, timelineMs, eventType, confidence, motionScore, changedArea, strongArea, centerX, centerY, boxWidth, boxHeight));
+        ioExecutor.submit(() -> handleStart(mediaUri, timelineMs, eventType, className, confidence, motionScore, changedArea, strongArea, centerX, centerY, boxWidth, boxHeight));
     }
 
     public void onMotionStop(long timelineMs) {
@@ -84,11 +85,12 @@ public class DigitalForensicsEventRecorder {
         return prefs.isDigitalForensicsEnabled();
     }
 
-    private void handleStart(String mediaUri, long timelineMs, String eventTypeRaw, float confidence, float motionScore,
+    private void handleStart(String mediaUri, long timelineMs, String eventTypeRaw, String classNameRaw, float confidence, float motionScore,
                              float changedArea, float strongArea, float centerX, float centerY,
                              float boxWidth, float boxHeight) {
         synchronized (lock) {
             final String eventType = normalizeEventType(eventTypeRaw);
+            final String className = normalizeClassName(classNameRaw);
             if (!isEventTypeEnabled(eventType)) {
                 return;
             }
@@ -107,6 +109,9 @@ public class DigitalForensicsEventRecorder {
                             Log.d(TAG, "DF promote: active event upgraded to " + eventType + ", conf=" + confidence);
                         }
                         activeEventType = eventType;
+                        activeClassName = className;
+                    } else if (confidence >= activeMaxConfidence) {
+                        activeClassName = className;
                     }
                     return;
                 }
@@ -121,6 +126,7 @@ public class DigitalForensicsEventRecorder {
             activeMediaUid = mediaUid;
             activeUri = mediaUri;
             activeEventType = eventType;
+            activeClassName = className;
             activeStartMs = Math.max(0L, timelineMs);
             activeMaxConfidence = confidence;
             activeMaxScore = motionScore;
@@ -153,7 +159,8 @@ public class DigitalForensicsEventRecorder {
         AiEventEntity event = new AiEventEntity();
         event.eventUid = UUID.randomUUID().toString();
         event.mediaUid = activeMediaUid;
-        event.eventType = activeEventType != null ? activeEventType : "MOTION";
+        event.eventType = activeEventType != null ? activeEventType : "OBJECT";
+        event.className = activeClassName != null ? activeClassName : "object";
         event.startMs = activeStartMs;
         event.endMs = endMs;
         event.confidence = activeMaxConfidence;
@@ -172,7 +179,8 @@ public class DigitalForensicsEventRecorder {
 
         activeMediaUid = null;
         activeUri = null;
-        activeEventType = "MOTION";
+        activeEventType = "OBJECT";
+        activeClassName = "object";
         activeStartMs = -1L;
         activeMaxConfidence = 0f;
         activeMaxScore = 0f;
@@ -266,6 +274,14 @@ public class DigitalForensicsEventRecorder {
             default:
                 return "OBJECT";
         }
+    }
+
+    private String normalizeClassName(String raw) {
+        if (raw == null) {
+            return "object";
+        }
+        String normalized = raw.trim().toLowerCase();
+        return normalized.isEmpty() ? "object" : normalized;
     }
 
     private boolean isEventTypeEnabled(String eventType) {

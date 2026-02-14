@@ -123,6 +123,30 @@
                         android:text="@string/forensics_filter_high_conf" />
                 </LinearLayout>
             </HorizontalScrollView>
+
+            <HorizontalScrollView
+                android:id="@+id/subtype_chip_scroll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/chips_subtype_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_subtype_all"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="true"
+                        android:text="@string/forensics_filter_all_subtypes" />
+                </LinearLayout>
+            </HorizontalScrollView>
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView

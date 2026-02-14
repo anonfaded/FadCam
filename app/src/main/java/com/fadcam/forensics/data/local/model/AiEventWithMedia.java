@@ -4,6 +4,7 @@ public class AiEventWithMedia {
     public String eventUid;
     public String mediaUid;
     public String eventType;
+    public String className;
     public long startMs;
     public long endMs;
     public float confidence;

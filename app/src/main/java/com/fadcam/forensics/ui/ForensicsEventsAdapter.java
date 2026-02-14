@@ -59,15 +59,19 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
     @Override
     public void onBindViewHolder(@NonNull Holder holder, int position) {
         AiEventWithMedia row = rows.get(position);
-        String title = row.eventType + " event";
+        String classLabel = (row.className != null && !row.className.trim().isEmpty())
+                ? row.className.trim().toUpperCase(Locale.US)
+                : row.eventType;
+        String title = classLabel + " event";
         String mediaName = deriveDisplayName(row);
         long startSec = Math.max(0L, row.startMs / 1000L);
         long endSec = Math.max(startSec, row.endMs / 1000L);
 
         holder.title.setText(title);
         holder.subtitle.setText(String.format(Locale.US,
-                "%s • %s-%s • conf %.2f",
+                "%s • %s • %s-%s • conf %.2f",
                 mediaName,
+                row.eventType,
                 formatTime(startSec),
                 formatTime(endSec),
                 row.confidence));
@@ -121,7 +125,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
     }
 
     private void bindPersonFrameStrip(@NonNull Holder holder, AiEventWithMedia row) {
-        if (!"PERSON".equalsIgnoreCase(row.eventType) || row.mediaUri == null || row.mediaUri.isEmpty()) {
+        if (row.mediaUri == null || row.mediaUri.isEmpty()) {
             holder.frameStrip.setVisibility(View.GONE);
             holder.framesContainer.removeAllViews();
             return;

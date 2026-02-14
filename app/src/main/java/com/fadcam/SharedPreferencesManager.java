@@ -1817,8 +1817,8 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionAnalysisFps() {
-        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 8);
-        return fps <= 0 ? 8 : fps;
+        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 6);
+        return fps <= 0 ? 6 : fps;
     }
 
     public void setMotionAnalysisFps(int fps) {

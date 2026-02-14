@@ -160,7 +160,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void showAnalysisFpsPicker() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 8 : current.analysisFps;
+        int initial = current == null ? 6 : current.analysisFps;
         showNumericInput(
             "rk_motion_analysis_fps",
             getString(R.string.motion_lab_analysis_fps),
@@ -353,12 +353,24 @@ public class MotionLabSettingsFragment extends Fragment {
         float maxDelta = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, 0f);
         boolean globalSuppressed = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, false);
         boolean person = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, false);
+        String className = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_NAME);
+        float classConf = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_CONF, 0f);
+        String eventType = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_EVENT_TYPE);
+        if (className == null || className.trim().isEmpty()) {
+            className = eventType == null || eventType.trim().isEmpty() ? "-" : eventType.trim().toLowerCase();
+        }
 
         valueDebugState.setText(state == null ? "-" : state);
         valueDebugScore.setText(getString(R.string.motion_lab_debug_score_value, raw, score));
         valueDebugThreshold.setText(getString(R.string.motion_lab_debug_threshold_value, startThreshold, stopThreshold));
         valueDebugAction.setText(action == null ? "-" : action);
-        valueDebugPerson.setText(getString(R.string.motion_lab_debug_person_value, person ? "YES" : "NO", personConf));
+        valueDebugPerson.setText(getString(
+            R.string.motion_lab_debug_person_value,
+            className,
+            classConf,
+            person ? "YES" : "NO",
+            personConf
+        ));
         valueDebugMetrics.setText(getString(
             R.string.motion_lab_debug_metrics_value,
             changedArea,
@@ -376,6 +388,8 @@ public class MotionLabSettingsFragment extends Fragment {
             + ", smoothed=" + String.format(java.util.Locale.US, "%.3f", score)
             + ", startThreshold=" + String.format(java.util.Locale.US, "%.3f", startThreshold)
             + ", stopThreshold=" + String.format(java.util.Locale.US, "%.3f", stopThreshold)
+            + ", class=" + className
+            + ", classConf=" + String.format(java.util.Locale.US, "%.3f", classConf)
             + ", person=" + (person ? "YES" : "NO")
             + ", personConf=" + String.format(java.util.Locale.US, "%.3f", personConf)
             + ", area=" + String.format(java.util.Locale.US, "%.3f", changedArea)

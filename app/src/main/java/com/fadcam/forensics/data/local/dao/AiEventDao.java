@@ -20,7 +20,7 @@ public interface AiEventDao {
     List<AiEventEntity> getByMediaUid(String mediaUid);
 
     @Query("SELECT " +
-            "e.event_uid AS eventUid, e.media_uid AS mediaUid, e.event_type AS eventType, " +
+            "e.event_uid AS eventUid, e.media_uid AS mediaUid, e.event_type AS eventType, e.class_name AS className, " +
             "e.start_ms AS startMs, e.end_ms AS endMs, e.confidence AS confidence, " +
             "e.bbox_norm AS bboxNorm, e.priority AS priority, e.thumbnail_ref AS thumbnailRef, " +
             "e.detected_at_epoch_ms AS detectedAtEpochMs, " +
@@ -28,11 +28,12 @@ public interface AiEventDao {
             "FROM ai_event e " +
             "INNER JOIN media_asset m ON m.media_uid = e.media_uid " +
             "WHERE (:eventType IS NULL OR e.event_type = :eventType) " +
+            "AND (:className IS NULL OR e.class_name = :className) " +
             "AND e.confidence >= :minConfidence " +
             "AND e.detected_at_epoch_ms >= :sinceEpochMs " +
             "ORDER BY e.detected_at_epoch_ms DESC " +
             "LIMIT :limitCount")
-    List<AiEventWithMedia> getTimeline(String eventType, float minConfidence, long sinceEpochMs, int limitCount);
+    List<AiEventWithMedia> getTimeline(String eventType, String className, float minConfidence, long sinceEpochMs, int limitCount);
 
     @Query("SELECT COUNT(*) FROM ai_event WHERE detected_at_epoch_ms >= :sinceEpochMs")
     int countSince(long sinceEpochMs);
@@ -42,4 +43,13 @@ public interface AiEventDao {
 
     @Query("SELECT * FROM ai_event WHERE detected_at_epoch_ms >= :sinceEpochMs ORDER BY detected_at_epoch_ms DESC LIMIT :limitCount")
     List<AiEventEntity> getRecentForHeatmap(long sinceEpochMs, int limitCount);
+
+    @Query("SELECT class_name FROM ai_event " +
+            "WHERE detected_at_epoch_ms >= :sinceEpochMs " +
+            "AND (:eventType IS NULL OR event_type = :eventType) " +
+            "AND class_name IS NOT NULL AND class_name != '' " +
+            "GROUP BY class_name " +
+            "ORDER BY COUNT(*) DESC, MAX(detected_at_epoch_ms) DESC " +
+            "LIMIT :limitCount")
+    List<String> getTopClassNames(long sinceEpochMs, String eventType, int limitCount);
 }

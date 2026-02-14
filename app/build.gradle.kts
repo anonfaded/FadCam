@@ -261,6 +261,7 @@ dependencies {
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp)
     implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.task.vision)
     implementation(libs.opencv.android)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)

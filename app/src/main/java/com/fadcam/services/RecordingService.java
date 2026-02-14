@@ -205,6 +205,7 @@ public class RecordingService extends Service {
     private float motionLastBoxWidth = 0.16f;
     private float motionLastBoxHeight = 0.16f;
     private String motionLastEventType = null;
+    private String motionLastClassName = null;
     private float motionLastDetectionConfidence = 0f;
     private boolean motionLastGlobalSuppressed = false;
     private long motionLastForensicsHeartbeatMs = 0L;
@@ -1646,8 +1647,8 @@ public class RecordingService extends Service {
         try {
             int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
             if (motionOpenCvActive && !motionSafeMode) {
-                // Favor responsiveness for distant/small motion detection.
-                analysisFps = Math.max(8, analysisFps);
+                // EfficientDet is heavier than person-only inference; keep analysis in a reliable thermal range.
+                analysisFps = Math.max(4, Math.min(10, analysisFps));
             }
             if (motionSafeMode) {
                 analysisFps = Math.min(2, analysisFps);
@@ -1715,9 +1716,9 @@ public class RecordingService extends Service {
             motionScoreEma = (alpha * rawMotionScore) + ((1f - alpha) * motionScoreEma);
         }
         float motionScore = motionScoreEma;
-        List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.Detection> detections =
+        List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections =
                 efficientDetDetector != null ? efficientDetDetector.detect(image) : java.util.Collections.emptyList();
-        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.Detection primaryDetection =
+        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult primaryDetection =
                 efficientDetDetector != null ? efficientDetDetector.choosePrimary(detections) : null;
         float personConfidence = efficientDetDetector != null ? efficientDetDetector.bestPersonConfidence(detections) : 0f;
         boolean personDetectedRaw = efficientDetDetector != null && efficientDetDetector.hasPerson(detections);
@@ -1893,10 +1894,12 @@ public class RecordingService extends Service {
                 motionLastCenterY = primaryDetection.centerY;
                 motionLastBoxWidth = primaryDetection.width;
                 motionLastBoxHeight = primaryDetection.height;
-                motionLastEventType = primaryDetection.eventType;
+                motionLastEventType = primaryDetection.coarseType;
+                motionLastClassName = primaryDetection.className;
                 motionLastDetectionConfidence = primaryDetection.confidence;
             } else {
                 motionLastEventType = null;
+                motionLastClassName = null;
                 motionLastDetectionConfidence = 0f;
             }
             motionLastGlobalSuppressed = debugGlobalSuppressed;
@@ -1962,6 +1965,7 @@ public class RecordingService extends Service {
                         getCurrentRecordingMediaUri(),
                         timelineMs,
                         motionLastEventType,
+                        motionLastClassName,
                         motionLastDetectionConfidence,
                         motionScore,
                         debugChangedArea,
@@ -2043,6 +2047,7 @@ public class RecordingService extends Service {
                     activeMediaUri,
                     timelineMs,
                     motionLastEventType,
+                    motionLastClassName,
                     motionLastDetectionConfidence,
                     motionLastScore,
                     motionLastChangedArea,
@@ -2088,35 +2093,49 @@ public class RecordingService extends Service {
         if (motionLastEventType == null || motionLastEventType.isEmpty()) {
             return null;
         }
-        String label = motionLastEventType;
+        String label = motionLastClassName != null && !motionLastClassName.trim().isEmpty()
+                ? motionLastClassName.trim().toLowerCase(Locale.US)
+                : motionLastEventType.toLowerCase(Locale.US);
         float cx = clamp01(motionLastCenterX);
         float cy = clamp01(motionLastCenterY);
         float boxW = clampBox(motionLastBoxWidth);
         float boxH = clampBox(motionLastBoxHeight);
+        float conf = Math.max(0f, Math.min(1f, motionLastDetectionConfidence));
 
-        // Analysis reader is landscape while user preview is often portrait.
-        // Rotate to match the portrait display transform used by preview pipeline.
-        if ("portrait".equalsIgnoreCase(sharedPreferencesManager.getVideoOrientation())) {
-            float rotatedX = 1f - cy;
-            float rotatedY = cx;
-            float rotatedW = boxH;
-            float rotatedH = boxW;
-            cx = clamp01(rotatedX);
-            cy = clamp01(rotatedY);
-            boxW = clampBox(rotatedW);
-            boxH = clampBox(rotatedH);
+        String watermarkText = buildBaseWatermarkText();
+        if (watermarkText == null) {
+            watermarkText = "";
         }
-
-        // Front camera preview is mirrored.
-        if (recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT) {
-            cx = 1f - cx;
-        }
+        watermarkText = watermarkText.replace("\n", " ").replace("\r", " ").replace("||wm||", " ");
 
         return "__DF_OVERLAY__:" + label + "|"
+                + String.format(Locale.US, "%.4f", conf) + "|"
                 + String.format(Locale.US, "%.4f", cx) + "|"
                 + String.format(Locale.US, "%.4f", cy) + "|"
                 + String.format(Locale.US, "%.4f", boxW) + "|"
-                + String.format(Locale.US, "%.4f", boxH);
+                + String.format(Locale.US, "%.4f", boxH) + "|"
+                + motionLastEventType.toUpperCase(Locale.US)
+                + "||wm||" + watermarkText;
+    }
+
+    private String buildBaseWatermarkText() {
+        if (sharedPreferencesManager == null) {
+            return "";
+        }
+        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+        String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
+        String customText = sharedPreferencesManager.getWatermarkCustomText();
+        String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+        switch (watermarkOption) {
+            case "timestamp_fadcam":
+                return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+            case "timestamp":
+                return getCurrentTimestamp() + locationText + customTextLine;
+            case "no_watermark":
+                return "";
+            default:
+                return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+        }
     }
 
     private float clamp01(float value) {
@@ -2184,6 +2203,15 @@ public class RecordingService extends Service {
         );
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, personDetected);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, personConfidence);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_CLASS_NAME,
+                motionLastClassName == null ? "" : motionLastClassName
+        );
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_CONF, motionLastDetectionConfidence);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_EVENT_TYPE,
+                motionLastEventType == null ? "" : motionLastEventType
+        );
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CHANGED_AREA, changedAreaRatio);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_STRONG_AREA, strongAreaRatio);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MEAN_DELTA, meanDelta);

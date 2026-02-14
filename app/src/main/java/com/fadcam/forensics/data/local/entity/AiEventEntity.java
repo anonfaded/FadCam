@@ -34,6 +34,9 @@ public class AiEventEntity {
     @ColumnInfo(name = "event_type")
     public String eventType;
 
+    @ColumnInfo(name = "class_name")
+    public String className;
+
     @ColumnInfo(name = "start_ms")
     public long startMs;
 

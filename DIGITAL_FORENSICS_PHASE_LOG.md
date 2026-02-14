@@ -2,7 +2,7 @@
 
 ## Current Status
 - Active phase: **Phase 5 (Hard cutover + detector unification)**
-- Last updated: 2026-02-13
+- Last updated: 2026-02-14
 
 ## Hard Cutover - Single EfficientDet (2026-02-13)
 ### Completed
@@ -16,6 +16,12 @@
 - [x] Updated forensics event recorder to persist detector bbox directly
 - [x] Updated preview overlay payload to use detector bbox + orientation + front-camera mirroring
 - [x] Kept AI overlay preview-only (not encoded in recording path)
+- [x] Added RGB YUV_420_888 preprocessing for EfficientDet input (replaces grayscale-only feed)
+- [x] Switched inference runtime to TFLite Task Vision ObjectDetector (uses model metadata labels; removed manual labels file path)
+- [x] Added exact class-name + confidence overlay labels (`<class> <percent>%`)
+- [x] Added independent watermark + overlay rendering so both stay visible in preview
+- [x] Added dynamic subtype chips in Events Timeline (from stored class names)
+- [x] Removed Daily Summary / Heatmap toggles from DF settings (always-on behavior)
 
 ### Findings
 - Single-model architecture now powers MotionLab person confirmation and Digital Forensics event classes.
@@ -105,8 +111,7 @@
 - [x] Removed AI event label injection from video watermark text
 
 ### Pending
-- [ ] Live preview bounding-box overlay renderer (toggle exists, render pipeline not yet implemented)
-- [ ] Vehicle/Pet/Dangerous event capture models (settings rows are present, runtime model integration pending)
+- [ ] Validate class balance with real-world scenes and tune confidence thresholds for low-light false positives
 
 ## Phase 3.5 - Reliability Fixes (new)
 ### Completed

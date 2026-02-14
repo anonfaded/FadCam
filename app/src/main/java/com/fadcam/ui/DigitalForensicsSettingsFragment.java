@@ -26,8 +26,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
 
     private TextView valueStatus;
     private TextView valueOverlay;
-    private TextView valueDaily;
-    private TextView valueHeatmap;
 
     @Nullable
     @Override
@@ -48,8 +46,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
 
         valueStatus = view.findViewById(R.id.value_df_status);
         valueOverlay = view.findViewById(R.id.value_df_overlay);
-        valueDaily = view.findViewById(R.id.value_df_daily_summary);
-        valueHeatmap = view.findViewById(R.id.value_df_heatmap);
 
         bindCurrentValues();
         wireListeners(view);
@@ -61,12 +57,12 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         prefs.setDfEventVehicleEnabled(true);
         prefs.setDfEventPetEnabled(true);
         prefs.setDfDangerousObjectEnabled(true);
+        prefs.setDfDailySummaryEnabled(true);
+        prefs.setDfHeatmapEnabled(true);
         valueStatus.setText(prefs.isDigitalForensicsEnabled()
             ? getString(R.string.digital_forensics_status_enabled_short)
             : getString(R.string.digital_forensics_status_disabled));
         valueOverlay.setText(enabledLabel(prefs.isDfOverlayEnabled()));
-        valueDaily.setText(enabledLabel(prefs.isDfDailySummaryEnabled()));
-        valueHeatmap.setText(enabledLabel(prefs.isDfHeatmapEnabled()));
     }
 
     private String enabledLabel(boolean enabled) {
@@ -96,27 +92,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 bindCurrentValues();
             }
         ));
-        view.findViewById(R.id.row_df_daily_summary).setOnClickListener(v -> showTogglePicker(
-            "rk_df_daily",
-            getString(R.string.digital_forensics_daily_summary),
-            getString(R.string.digital_forensics_daily_helper),
-            prefs.isDfDailySummaryEnabled(),
-            value -> {
-                prefs.setDfDailySummaryEnabled(value);
-                bindCurrentValues();
-            }
-        ));
-        view.findViewById(R.id.row_df_heatmap).setOnClickListener(v -> showTogglePicker(
-            "rk_df_heatmap",
-            getString(R.string.digital_forensics_heatmap),
-            getString(R.string.digital_forensics_heatmap_helper),
-            prefs.isDfHeatmapEnabled(),
-            value -> {
-                prefs.setDfHeatmapEnabled(value);
-                bindCurrentValues();
-            }
-        ));
-
         View rowEvents = view.findViewById(R.id.row_df_open_events);
         View rowInsights = view.findViewById(R.id.row_df_open_insights);
         View rowDiscord = view.findViewById(R.id.row_df_discord_coming_soon);

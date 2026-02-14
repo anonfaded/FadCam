@@ -135,6 +135,12 @@ public abstract class Constants {
     public static final String EXTRA_MOTION_DEBUG_PERSON_CONF =
         "motion_debug_person_conf";
     public static final String EXTRA_MOTION_DEBUG_PERSON = "motion_debug_person";
+    public static final String EXTRA_MOTION_DEBUG_CLASS_NAME =
+        "motion_debug_class_name";
+    public static final String EXTRA_MOTION_DEBUG_CLASS_CONF =
+        "motion_debug_class_conf";
+    public static final String EXTRA_MOTION_DEBUG_EVENT_TYPE =
+        "motion_debug_event_type";
     public static final String EXTRA_MOTION_DEBUG_FRAME_JPEG =
         "motion_debug_frame_jpeg";
     public static final String EXTRA_MOTION_DEBUG_CHANGED_AREA =

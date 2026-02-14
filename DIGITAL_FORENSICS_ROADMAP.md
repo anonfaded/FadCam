@@ -15,6 +15,7 @@ This roadmap is modular, realtime-oriented, and privacy-first.
 - [x] Legacy person-only detector removed
 - [x] No detector fallback paths to legacy models
 - [x] Preview overlay only (never burned into encoded video)
+- [x] Detector runtime uses **TFLite Task Vision API** (metadata-driven labels/output parsing, no manual label file)
 
 ## Product Positioning
 - Keep **Advanced** section unchanged.
@@ -102,8 +103,8 @@ A video should retain linked forensic/event data after:
 - [x] Event classes (Person / Vehicle / Pet)
 - [x] Dangerous object tags toggle (opt-in)
 - [x] Show AI overlay in live preview
-- [x] Daily summary
-- [x] Heatmap insights
+- [x] Daily summary (always-on analytics)
+- [x] Heatmap insights (always-on analytics)
 - [x] Discord alerts (Coming Soon placeholder)
 
 ## Phase-by-Phase Execution
