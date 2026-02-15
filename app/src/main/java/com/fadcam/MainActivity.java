@@ -1517,4 +1517,41 @@ public class MainActivity extends AppCompatActivity {
     public int getCurrentFragmentPosition() {
         return currentFragmentPosition;
     }
+
+    /**
+     * Force recreate the fragment at the specified position.
+     * Used for mode switching (FadCam <-> FadRec) where the fragment class changes
+     * but the position stays the same.
+     * @param position Tab position to recreate
+     */
+    public void forceRecreateFragment(int position) {
+        Log.d("FragmentNav", "forceRecreateFragment: Forcing recreation of fragment at position " + position);
+        
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        String tag = FRAGMENT_TAG_PREFIX + position;
+        Fragment existingFragment = fm.findFragmentByTag(tag);
+        
+        if (existingFragment != null) {
+            // Remove the existing fragment
+            androidx.fragment.app.FragmentTransaction removeTx = fm.beginTransaction();
+            removeTx.remove(existingFragment);
+            removeTx.commitNow();
+            Log.d("FragmentNav", "forceRecreateFragment: Removed existing fragment: " + existingFragment.getClass().getSimpleName());
+        }
+        
+        // Create and add the new fragment
+        Fragment newFragment = createFragmentForPosition(position);
+        androidx.fragment.app.FragmentTransaction addTx = fm.beginTransaction();
+        addTx.add(R.id.fragment_container, newFragment, tag);
+        
+        // Apply visibility state: only show if it's the current position
+        if (position == currentFragmentPosition) {
+            addTx.show(newFragment);
+        } else {
+            addTx.hide(newFragment);
+        }
+        
+        addTx.commitNow();
+        Log.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
+    }
 }

@@ -214,6 +214,7 @@ public class HomeFragment extends BaseFragment {
     private boolean isLaunchingPhotoCapture = false;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon
+    private android.view.animation.Animation bubbleRotationAnimation; // Animation instance to preserve state across tab switches
 
     private CardView cardClock;
     private TextView tvClock, tvDateEnglish, tvDateArabic;
@@ -7457,6 +7458,12 @@ public class HomeFragment extends BaseFragment {
 
     @Override
     public void onDestroyView() {
+        // Clean up bubble rotation animation
+        if (ivBubbleBackground != null) {
+            ivBubbleBackground.clearAnimation();
+            bubbleRotationAnimation = null;
+        }
+        
         super.onDestroyView();
         TorchService.setHomeFragment(null);
 
@@ -8219,26 +8226,61 @@ public class HomeFragment extends BaseFragment {
     /**
      * Starts a continuous slow rotation animation on the bubble background shape.
      * Creates a modern, dynamic visual effect behind the camera icon.
+     * Preserves animation state across tab switches to avoid resetting to initial position.
      */
     private void startBubbleRotation() {
-        if (ivBubbleBackground != null) {
-            if (ivBubbleBackground.getAnimation() != null) {
-                return;
-            }
-            android.view.animation.Animation rotateAnimation = 
-                android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.rotate_slow_left);
-            ivBubbleBackground.startAnimation(rotateAnimation);
-            Log.d(TAG, "Started bubble background rotation animation");
+        if (ivBubbleBackground == null) {
+            return;
         }
+        
+        // If animation already exists and is running, resume it (API 26+) or just return
+        if (bubbleRotationAnimation != null) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                // Resume the animation from where it was paused using reflection
+                try {
+                    java.lang.reflect.Method isPausedMethod = android.view.animation.Animation.class.getMethod("isPaused");
+                    java.lang.reflect.Method resumeMethod = android.view.animation.Animation.class.getMethod("resume");
+                    if ((boolean) isPausedMethod.invoke(bubbleRotationAnimation)) {
+                        resumeMethod.invoke(bubbleRotationAnimation);
+                        Log.d(TAG, "Resumed bubble background rotation animation");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to resume animation via reflection", e);
+                }
+            }
+            return; // Animation already set, don't recreate
+        }
+        
+        // First time: create and start the animation
+        bubbleRotationAnimation = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.rotate_slow_left);
+        ivBubbleBackground.startAnimation(bubbleRotationAnimation);
+        Log.d(TAG, "Started bubble background rotation animation");
     }
 
     /**
-     * Stops the bubble rotation animation (for cleanup on pause/destroy).
+     * Pauses the bubble rotation animation (for battery optimization when fragment is hidden).
+     * Preserves the current rotation position instead of resetting to 0°.
      */
     private void stopBubbleRotation() {
-        if (ivBubbleBackground != null) {
-            ivBubbleBackground.clearAnimation();
+        if (ivBubbleBackground == null || bubbleRotationAnimation == null) {
+            return;
         }
+        
+        // Pause the animation to preserve current rotation (API 26+) using reflection
+        // For older APIs, we just leave it running (minimal CPU usage for a simple rotation)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                java.lang.reflect.Method isPausedMethod = android.view.animation.Animation.class.getMethod("isPaused");
+                java.lang.reflect.Method pauseMethod = android.view.animation.Animation.class.getMethod("pause");
+                if (!(boolean) isPausedMethod.invoke(bubbleRotationAnimation)) {
+                    pauseMethod.invoke(bubbleRotationAnimation);
+                    Log.d(TAG, "Paused bubble background rotation animation");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to pause animation via reflection", e);
+            }
+        }
+        // For API < 26: animation keeps running even when hidden (negligible performance impact)
     }
 
     // ─── Fullscreen Preview ──────────────────────────────────────────────────
