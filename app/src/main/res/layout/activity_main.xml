@@ -15,14 +15,14 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Floating dock navigation - overlays content at bottom -->
-    <!-- Gradient scrim overlay - extends beyond nav container -->
+    <!-- Gradient scrim overlay - minimal above navbar -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="60dp"
         android:layout_gravity="bottom"
         android:layout_marginStart="-8dp"
         android:layout_marginEnd="-8dp"
-        android:layout_marginBottom="-100dp"
+        android:layout_marginBottom="-50dp"
         android:foreground="@drawable/dock_gradient_scrim"
         android:clickable="false"
         android:focusable="false"

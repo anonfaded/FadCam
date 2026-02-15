@@ -18,7 +18,7 @@
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
-        android:background="?attr/colorTopBar">
+        android:background="@drawable/header_bar_rounded_bg">
 
         <TextView
             android:id="@+id/title_text"
