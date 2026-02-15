@@ -32,15 +32,61 @@
             android:tint="@android:color/white"
             android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/text_lab_title"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/forensic_intelligence_title"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_lab_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/forensic_intelligence_title"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/lab_header_stats_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_photo"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_lab_stat_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="10dp"
+                    android:src="@drawable/ic_storage"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_lab_stat_size"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
 
         <FrameLayout
             android:id="@+id/lab_header_action_slot"

@@ -93,6 +93,37 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray" />
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                app:dividerColor="#404040" />
+
+            <LinearLayout
+                android:id="@+id/row_lab_info"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_info"
+                    android:tint="@android:color/darker_gray" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/forensics_info_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

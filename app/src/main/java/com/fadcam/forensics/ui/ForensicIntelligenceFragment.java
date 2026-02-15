@@ -23,6 +23,8 @@ public class ForensicIntelligenceFragment extends Fragment {
     private android.view.View selectAllContainer;
     private android.widget.ImageView selectAllBg;
     private android.widget.ImageView selectAllCheck;
+    private android.widget.TextView statCountView;
+    private android.widget.TextView statSizeView;
 
     @Nullable
     @Override
@@ -45,6 +47,8 @@ public class ForensicIntelligenceFragment extends Fragment {
         selectAllContainer = view.findViewById(R.id.button_lab_select_all_container);
         selectAllBg = view.findViewById(R.id.button_lab_select_all_bg);
         selectAllCheck = view.findViewById(R.id.button_lab_select_all_check);
+        statCountView = view.findViewById(R.id.text_lab_stat_count);
+        statSizeView = view.findViewById(R.id.text_lab_stat_size);
 
         if (menuButton != null) {
             menuButton.setOnClickListener(v -> {
@@ -75,6 +79,12 @@ public class ForensicIntelligenceFragment extends Fragment {
                 case "open_export":
                     OverlayNavUtil.show(requireActivity(), new ForensicsExportCenterFragment(), "forensics_export");
                     break;
+                case "open_info":
+                    ForensicsGalleryFragment gallery = findGallery();
+                    if (gallery != null) {
+                        gallery.showInfoBottomPicker();
+                    }
+                    break;
                 default:
                     break;
             }
@@ -83,8 +93,22 @@ public class ForensicIntelligenceFragment extends Fragment {
 
     private void showGallery() {
         ForensicsGalleryFragment gallery = ForensicsGalleryFragment.newEmbeddedInstance();
-        gallery.setHostSelectionUi((active, selectedCount, allSelected) ->
-                requireActivity().runOnUiThread(() -> updateHeaderForSelection(active, selectedCount, allSelected)));
+        gallery.setHostSelectionUi(new ForensicsGalleryFragment.HostSelectionUi() {
+            @Override
+            public void onSelectionStateChanged(boolean active, int selectedCount, boolean allSelected) {
+                requireActivity().runOnUiThread(() -> updateHeaderForSelection(active, selectedCount, allSelected));
+            }
+
+            @Override
+            public void onSummaryChanged(int totalCount, long totalBytes) {
+                requireActivity().runOnUiThread(() -> {
+                    if (statCountView != null) statCountView.setText(String.valueOf(totalCount));
+                    if (statSizeView != null) {
+                        statSizeView.setText(android.text.format.Formatter.formatShortFileSize(requireContext(), Math.max(0L, totalBytes)));
+                    }
+                });
+            }
+        });
         getChildFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         getChildFragmentManager().beginTransaction()
                 .replace(R.id.forensics_content_container, gallery, TAG_GALLERY)

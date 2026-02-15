@@ -58,6 +58,7 @@ public class LabSidebarFragment extends DialogFragment {
         }
 
         bindAction(view, R.id.row_lab_export, resultKey, "open_export");
+        bindAction(view, R.id.row_lab_info, resultKey, "open_info");
     }
 
     private void bindAction(@NonNull View root, int rowId, @NonNull String resultKey, @NonNull String action) {

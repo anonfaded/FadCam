@@ -331,6 +331,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     }
 
     private void applyTrashFilter() {
+        updateFilterLabels();
         trashItems.clear();
         for (TrashItem item : allTrashItems) {
             if (item == null) continue;
@@ -353,6 +354,18 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         updateFilterSelection();
         updateActionButtonsState();
         checkEmptyState();
+    }
+
+    private void updateFilterLabels() {
+        int total = allTrashItems.size();
+        int evidence = 0;
+        for (TrashItem item : allTrashItems) {
+            if (item != null && item.isForensicsEvidence()) evidence++;
+        }
+        int videos = Math.max(0, total - evidence);
+        if (chipAll != null) chipAll.setText(getString(R.string.forensics_filter_with_count, getString(R.string.forensics_filter_all), total));
+        if (chipVideos != null) chipVideos.setText(getString(R.string.forensics_filter_with_count, getString(R.string.nav_records), videos));
+        if (chipEvidence != null) chipEvidence.setText(getString(R.string.forensics_filter_with_count, getString(R.string.forensics_gallery_title), evidence));
     }
 
     private void updateFilterSelection() {

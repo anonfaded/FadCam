@@ -1377,6 +1377,17 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     </plurals>
     <string name="forensics_delete_selected_title">Delete %1$d selected evidence item(s)?</string>
     <string name="forensics_delete_selected_helper">Selected evidence will be moved to Trash and can be restored from Recently Deleted.</string>
+    <string name="forensics_filter_with_count">%1$s (%2$d)</string>
+    <string name="forensics_grid_option">Grid Layout</string>
+    <string name="forensics_grid_helper">Pick how many columns to show in gallery.</string>
+    <string name="forensics_grid_2">2 columns</string>
+    <string name="forensics_grid_3">3 columns</string>
+    <string name="forensics_grid_4">4 columns</string>
+    <string name="forensics_info_title">Evidence Info</string>
+    <string name="forensics_info_helper">Evidence appears here as soon as snapshots are captured during recording.</string>
+    <string name="forensics_info_line_1">Source video actions are available only while original video link exists.</string>
+    <string name="forensics_info_line_2">If video is altered or removed, snapshots remain available as standalone evidence.</string>
+    <string name="forensics_info_line_3">Use Export Center to bundle snapshots and metadata into an archive.</string>
     <string name="forensics_gallery_sort_event_type">Event type</string>
     <string name="forensics_export_title">Export Center</string>
     <string name="forensics_gallery_empty">No evidence snapshots for current filters.</string>

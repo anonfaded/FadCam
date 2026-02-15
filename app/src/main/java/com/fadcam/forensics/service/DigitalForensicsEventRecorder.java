@@ -35,7 +35,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.RectF;
 
 /**
  * Real-time forensics event writer: multi-event, snapshot-first, no stop-only dependency.
@@ -44,7 +47,7 @@ public class DigitalForensicsEventRecorder {
 
     private static final String TAG = "ForensicsEventRecorder";
     private static final long EVENT_STALE_GAP_MS = 1800L;
-    private static final long SNAPSHOT_MIN_INTERVAL_MS = 1600L;
+    private static final long SNAPSHOT_MIN_INTERVAL_MS = 900L;
 
     private final SharedPreferencesManager prefs;
     private final Context appContext;
@@ -175,7 +178,15 @@ public class DigitalForensicsEventRecorder {
         for (EfficientDetLite1Detector.DetectionResult detection : detections) {
             String eventType = normalizeEventType(detection.coarseType);
             String className = normalizeClassName(detection.className);
-            String key = buildActiveKey(mediaUid, eventType, className);
+            String key = buildActiveKey(
+                    mediaUid,
+                    eventType,
+                    className,
+                    detection.centerX,
+                    detection.centerY,
+                    detection.width,
+                    detection.height
+            );
             ActiveEvent event = activeEvents.get(key);
             if (event == null) {
                 event = new ActiveEvent();
@@ -203,11 +214,12 @@ public class DigitalForensicsEventRecorder {
 
             if (snapshotJpeg != null && snapshotJpeg.length > 0
                     && (event.lastSnapshotMs < 0 || (timelineMs - event.lastSnapshotMs) >= SNAPSHOT_MIN_INTERVAL_MS)) {
-                byte[] detectionSnapshot = buildDetectionSnapshot(snapshotJpeg, detection, frontCamera);
-                String imageUri = persistSnapshotFile(mediaUid, event.eventUid, timelineMs, detectionSnapshot);
+                byte[] detectionSnapshot = buildDetectionSnapshot(snapshotJpeg, detection, frontCamera, timelineMs, nowEpoch);
+                String snapshotUid = UUID.randomUUID().toString();
+                String imageUri = persistSnapshotFile(mediaUid, event.eventUid, snapshotUid, timelineMs, detectionSnapshot);
                 if (imageUri != null && detectionSnapshot != null) {
                     AiEventSnapshotEntity snapshot = new AiEventSnapshotEntity();
-                    snapshot.snapshotUid = UUID.randomUUID().toString();
+                    snapshot.snapshotUid = snapshotUid;
                     snapshot.eventUid = event.eventUid;
                     snapshot.mediaUid = mediaUid;
                     snapshot.capturedEpochMs = nowEpoch;
@@ -280,7 +292,7 @@ public class DigitalForensicsEventRecorder {
     }
 
     @Nullable
-    private String persistSnapshotFile(String mediaUid, String eventUid, long timelineMs, @Nullable byte[] jpeg) {
+    private String persistSnapshotFile(String mediaUid, String eventUid, String snapshotUid, long timelineMs, @Nullable byte[] jpeg) {
         if (jpeg == null || jpeg.length == 0) {
             return null;
         }
@@ -297,7 +309,7 @@ public class DigitalForensicsEventRecorder {
                 Log.e(TAG, "Snapshot persistence failed: cannot create dir " + dir.getAbsolutePath());
                 return null;
             }
-            File out = new File(dir, eventUid + "_" + timelineMs + ".jpg");
+            File out = new File(dir, eventUid + "_" + timelineMs + "_" + snapshotUid + ".jpg");
             try (FileOutputStream fos = new FileOutputStream(out, false)) {
                 fos.write(jpeg);
                 fos.flush();
@@ -327,8 +339,12 @@ public class DigitalForensicsEventRecorder {
         }
     }
 
-    private String buildActiveKey(String mediaUid, String eventType, String className) {
-        return mediaUid + "|" + eventType + "|" + className;
+    private String buildActiveKey(String mediaUid, String eventType, String className, float centerX, float centerY, float width, float height) {
+        int bucketX = Math.max(0, Math.min(15, Math.round(clamp01(centerX) * 15f)));
+        int bucketY = Math.max(0, Math.min(15, Math.round(clamp01(centerY) * 15f)));
+        int bucketW = Math.max(0, Math.min(12, Math.round(clampBox(width) * 12f)));
+        int bucketH = Math.max(0, Math.min(12, Math.round(clampBox(height) * 12f)));
+        return mediaUid + "|" + eventType + "|" + className + "|" + bucketX + "|" + bucketY + "|" + bucketW + "|" + bucketH;
     }
 
     private String ensureMediaAsset(String mediaUri) {
@@ -386,7 +402,9 @@ public class DigitalForensicsEventRecorder {
     private byte[] buildDetectionSnapshot(
             @NonNull byte[] fullJpeg,
             @NonNull EfficientDetLite1Detector.DetectionResult detection,
-            boolean frontCamera
+            boolean frontCamera,
+            long timelineMs,
+            long captureEpochMs
     ) {
         try {
             Bitmap full = BitmapFactory.decodeByteArray(fullJpeg, 0, fullJpeg.length);
@@ -408,12 +426,45 @@ public class DigitalForensicsEventRecorder {
                 matrix.postRotate(90f);
                 finalBitmap = Bitmap.createBitmap(cropped, 0, 0, cropped.getWidth(), cropped.getHeight(), matrix, true);
             }
+            drawSnapshotWatermark(finalBitmap, timelineMs, captureEpochMs);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             finalBitmap.compress(Bitmap.CompressFormat.JPEG, 84, out);
             return out.toByteArray();
         } catch (Throwable t) {
             return fullJpeg;
         }
+    }
+
+    private void drawSnapshotWatermark(@NonNull Bitmap bitmap, long timelineMs, long captureEpochMs) {
+        try {
+            Canvas canvas = new Canvas(bitmap);
+            String stamp = formatWatermark(captureEpochMs, timelineMs);
+            float density = appContext.getResources().getDisplayMetrics().density;
+            Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            textPaint.setColor(android.graphics.Color.WHITE);
+            textPaint.setTextSize(11f * density);
+            textPaint.setFakeBoldText(true);
+            float textWidth = textPaint.measureText(stamp);
+            Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            bgPaint.setColor(0x99000000);
+            float pad = 4f * density;
+            float left = 6f * density;
+            float bottom = bitmap.getHeight() - (6f * density);
+            float top = bottom - (16f * density);
+            RectF rect = new RectF(left, top, left + textWidth + (pad * 2f), bottom);
+            canvas.drawRoundRect(rect, 6f * density, 6f * density, bgPaint);
+            canvas.drawText(stamp, rect.left + pad, rect.bottom - (4f * density), textPaint);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @NonNull
+    private String formatWatermark(long captureEpochMs, long timelineMs) {
+        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(Math.max(0L, captureEpochMs)));
+        long sec = Math.max(0L, timelineMs / 1000L);
+        long min = sec / 60L;
+        long rem = sec % 60L;
+        return date + "  t=" + min + ":" + String.format(Locale.US, "%02d", rem);
     }
 
     private String normalizeClassName(String raw) {
