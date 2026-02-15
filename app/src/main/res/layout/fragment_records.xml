@@ -488,6 +488,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingTop="8dp"
+            android:paddingBottom="76dp"
             android:visibility="gone"/> <!-- Initially hidden -->
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

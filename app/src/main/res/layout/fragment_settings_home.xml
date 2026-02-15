@@ -39,7 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:clipToPadding="false"
-        android:paddingBottom="32dp">
+        android:paddingBottom="76dp">
 
         <LinearLayout
             android:layout_width="match_parent"
