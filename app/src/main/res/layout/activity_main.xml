@@ -6,25 +6,48 @@
     android:layout_height="match_parent"
     android:background="?android:colorBackground">
 
+    <!-- ViewPager fills entire screen -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/nav_container"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Container for bottom navigation -->
+    <!--Gradient scrim overlay that dims content behind the floating dock -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:foreground="@drawable/dock_gradient_scrim"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Floating dock navigation - overlays content at bottom -->
     <FrameLayout
         android:id="@+id/nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="16dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_gravity="bottom"
+            android:background="@drawable/bottom_nav_floating_dock_bg"
+            android:elevation="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            app:itemIconSize="24dp"
+            app:itemIconTint="@android:color/white"
+            app:itemTextColor="@android:color/white"
+            app:labelVisibilityMode="selected"
             app:menu="@menu/bottom_nav_menu" />
     </FrameLayout>
 

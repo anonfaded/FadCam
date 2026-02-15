@@ -25,12 +25,19 @@
     </style>
 
     <style name="Widget.FadCam.RecordsFilterChip" parent="Widget.Material3.Chip.Filter">
-        <item name="chipMinHeight">28dp</item>
-        <item name="android:minHeight">28dp</item>
+        <item name="chipMinHeight">32dp</item>
+        <item name="android:minHeight">32dp</item>
         <item name="ensureMinTouchTargetSize">false</item>
-        <item name="android:textSize">11sp</item>
+        <item name="android:textSize">12sp</item>
         <item name="checkedIconVisible">false</item>
-        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipCornerRadius">16dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="chipBackgroundColor">@drawable/chip_floating_bg</item>
+        <item name="android:elevation">2dp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
     <style name="RecordsActionPill" parent="">

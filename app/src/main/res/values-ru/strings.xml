@@ -204,7 +204,7 @@
     <string name="nav_settings">Настройки</string>
     <string name="nav_about">О программе</string>
     <string name="nav_remote">Удалённый</string>
-    <string name="nav_faditor_mini">Faditor Mini</string>
+    <string name="nav_faditor_mini">Faditor</string>
     <string name="button_settings_readme">Прочитать</string>
     <string name="setting_cam_title">Выбор камеры</string>
     <string name="note_cam_sele">Выберите камеру \n(По умолчанию: Задняя)</string>
