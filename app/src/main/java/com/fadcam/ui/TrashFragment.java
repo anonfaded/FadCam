@@ -25,6 +25,7 @@ import com.fadcam.model.TrashItem;
 import com.fadcam.utils.TrashManager;
 import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.json.JSONObject;
 import java.util.ArrayList;
@@ -58,6 +59,7 @@ import android.os.Looper;
 import android.graphics.PorterDuff;
 import android.widget.RadioButton;
 import java.lang.reflect.Field;
+import android.util.TypedValue;
 // Picker bottom sheet imports
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
@@ -67,6 +69,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private static final String TAG = "TrashFragment";
     private RecyclerView recyclerViewTrashItems;
     private TrashAdapter trashAdapter;
+    private List<TrashItem> allTrashItems = new ArrayList<>();
     private List<TrashItem> trashItems = new ArrayList<>();
     private Button buttonRestoreSelected;
     private Button buttonDeleteSelectedPermanently;
@@ -84,6 +87,16 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private ImageView selectAllCheck;
     private ImageView selectAllBg;
     private ImageView settingsIcon;
+    private Chip chipAll;
+    private Chip chipVideos;
+    private Chip chipEvidence;
+    private TrashFilter activeFilter = TrashFilter.ALL;
+
+    private enum TrashFilter {
+        ALL,
+        VIDEOS,
+        EVIDENCE
+    }
 
     private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
     private boolean isUnlocked = false;
@@ -162,6 +175,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
         emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
         tvAutoDeleteInfo = view.findViewById(R.id.tvAutoDeleteInfo);
+        chipAll = view.findViewById(R.id.chip_trash_all);
+        chipVideos = view.findViewById(R.id.chip_trash_videos);
+        chipEvidence = view.findViewById(R.id.chip_trash_evidence);
     selectAllContainer = view.findViewById(R.id.action_select_all_container);
     selectAllCheck = view.findViewById(R.id.action_select_all_check);
     selectAllBg = view.findViewById(R.id.action_select_all_bg);
@@ -211,6 +227,26 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     if (selectAllContainer != null) selectAllContainer.setVisibility(View.GONE);
     if (selectAllBg != null) selectAllBg.setVisibility(View.INVISIBLE);
     if (selectAllCheck != null) selectAllCheck.setVisibility(View.INVISIBLE);
+        if (chipAll != null) {
+            chipAll.setOnClickListener(v -> {
+                activeFilter = TrashFilter.ALL;
+                applyTrashFilter();
+            });
+        }
+        if (chipVideos != null) {
+            chipVideos.setOnClickListener(v -> {
+                activeFilter = TrashFilter.VIDEOS;
+                applyTrashFilter();
+            });
+        }
+        if (chipEvidence != null) {
+            chipEvidence.setOnClickListener(v -> {
+                activeFilter = TrashFilter.EVIDENCE;
+                applyTrashFilter();
+            });
+        }
+        styleFilterChips();
+        updateFilterSelection();
 
     setupRecyclerView();
     setupButtonListeners();
@@ -289,13 +325,100 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (getContext() == null)
             return;
         List<TrashItem> loadedItems = TrashManager.loadTrashMetadata(getContext());
+        allTrashItems.clear();
+        allTrashItems.addAll(loadedItems);
+        applyTrashFilter();
+    }
+
+    private void applyTrashFilter() {
         trashItems.clear();
-        trashItems.addAll(loadedItems);
+        for (TrashItem item : allTrashItems) {
+            if (item == null) continue;
+            if (activeFilter == TrashFilter.ALL) {
+                trashItems.add(item);
+            } else if (activeFilter == TrashFilter.EVIDENCE) {
+                if (item.isForensicsEvidence()) {
+                    trashItems.add(item);
+                }
+            } else {
+                if (!item.isForensicsEvidence()) {
+                    trashItems.add(item);
+                }
+            }
+        }
         if (trashAdapter != null) {
+            trashAdapter.clearSelections();
             trashAdapter.notifyDataSetChanged();
         }
+        updateFilterSelection();
         updateActionButtonsState();
         checkEmptyState();
+    }
+
+    private void updateFilterSelection() {
+        if (chipAll != null) {
+            chipAll.setChecked(activeFilter == TrashFilter.ALL);
+        }
+        if (chipVideos != null) {
+            chipVideos.setChecked(activeFilter == TrashFilter.VIDEOS);
+        }
+        if (chipEvidence != null) {
+            chipEvidence.setChecked(activeFilter == TrashFilter.EVIDENCE);
+        }
+    }
+
+    private void styleFilterChips() {
+        applyChipIcon(chipAll, R.drawable.ic_list);
+        applyChipIcon(chipVideos, R.drawable.ic_chip_videocam);
+        applyChipIcon(chipEvidence, R.drawable.ic_photo);
+        styleFilterChip(chipAll);
+        styleFilterChip(chipVideos);
+        styleFilterChip(chipEvidence);
+    }
+
+    private void applyChipIcon(@Nullable Chip chip, int drawableRes) {
+        if (chip == null) return;
+        chip.setChipIconResource(drawableRes);
+        chip.setChipIconVisible(true);
+        chip.setCheckedIconVisible(false);
+        chip.setIconStartPadding(dpToPx(2));
+        chip.setChipIconSize(dpToPx(16));
+    }
+
+    private void styleFilterChip(@Nullable Chip chip) {
+        if (chip == null || getContext() == null) return;
+        int checkedBg = resolveThemeColor(R.attr.colorButton);
+        int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
+        int stroke = resolveThemeColor(R.attr.colorToggle);
+        int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
+        int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
+        int[][] states = new int[][]{
+                new int[]{android.R.attr.state_checked},
+                new int[]{}
+        };
+        chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
+        chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipIconTint(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
+        chip.setChipStrokeWidth(dpToPx(1));
+        chip.setEnsureMinTouchTargetSize(false);
+    }
+
+    private int resolveThemeColor(int attr) {
+        TypedValue typedValue = new TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+
+    private boolean isDarkColor(int color) {
+        double luminance = (0.299 * Color.red(color)
+                + 0.587 * Color.green(color)
+                + 0.114 * Color.blue(color)) / 255d;
+        return luminance < 0.55d;
+    }
+
+    private float dpToPx(int dp) {
+        return dp * getResources().getDisplayMetrics().density;
     }
 
     private void updateActionButtonsState() {

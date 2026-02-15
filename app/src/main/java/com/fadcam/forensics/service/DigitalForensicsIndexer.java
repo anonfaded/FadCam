@@ -10,12 +10,7 @@ import com.fadcam.forensics.data.local.dao.IntegrityLinkLogDao;
 import com.fadcam.forensics.data.local.dao.MediaAssetDao;
 import com.fadcam.forensics.data.local.entity.IntegrityLinkLogEntity;
 import com.fadcam.forensics.data.local.entity.MediaAssetEntity;
-import com.fadcam.forensics.domain.fingerprint.ExactFingerprintGenerator;
 import com.fadcam.forensics.domain.fingerprint.ForensicsMetadataUtils;
-import com.fadcam.forensics.domain.fingerprint.VisualFingerprintGenerator;
-import com.fadcam.forensics.domain.model.MediaFingerprintProfile;
-import com.fadcam.forensics.domain.model.RelinkMatchResult;
-import com.fadcam.forensics.domain.relink.MediaRelinkEngine;
 import com.fadcam.ui.VideoItem;
 
 import java.util.List;
@@ -29,7 +24,6 @@ public class DigitalForensicsIndexer {
     private final SharedPreferencesManager prefs;
     private final MediaAssetDao mediaAssetDao;
     private final IntegrityLinkLogDao linkLogDao;
-    private final MediaRelinkEngine relinkEngine;
 
     public DigitalForensicsIndexer(Context context) {
         this.appContext = context.getApplicationContext();
@@ -37,7 +31,6 @@ public class DigitalForensicsIndexer {
         ForensicsDatabase db = ForensicsDatabase.getInstance(appContext);
         this.mediaAssetDao = db.mediaAssetDao();
         this.linkLogDao = db.integrityLinkLogDao();
-        this.relinkEngine = new MediaRelinkEngine(mediaAssetDao);
     }
 
     public void index(List<VideoItem> videoItems) {
@@ -64,8 +57,6 @@ public class DigitalForensicsIndexer {
 
         long durationMs = ForensicsMetadataUtils.extractDurationMs(appContext, item.uri);
         String codecInfo = ForensicsMetadataUtils.extractCodecInfo(appContext, item.uri);
-        String exact = ExactFingerprintGenerator.compute(appContext.getContentResolver(), item.uri, item.size);
-        String visual = VisualFingerprintGenerator.compute(appContext, item.uri);
 
         if (existingByUri != null) {
             mediaAssetDao.updateLinkAndMetadata(
@@ -75,18 +66,14 @@ public class DigitalForensicsIndexer {
                 item.size,
                 durationMs,
                 codecInfo,
-                exact,
-                visual,
                 now,
                 existingByUri.linkStatus == null ? "EXACT" : existingByUri.linkStatus
             );
             return;
         }
 
-        MediaFingerprintProfile profile = new MediaFingerprintProfile(exact, visual, item.size, durationMs);
-        RelinkMatchResult match = relinkEngine.match(profile);
-
-        if (match.status == RelinkMatchResult.Status.EXACT || match.status == RelinkMatchResult.Status.PROBABLE) {
+        MediaAssetEntity match = findProbableMatch(item, durationMs);
+        if (match != null) {
             mediaAssetDao.updateLinkAndMetadata(
                 match.mediaUid,
                 uriString,
@@ -94,12 +81,10 @@ public class DigitalForensicsIndexer {
                 item.size,
                 durationMs,
                 codecInfo,
-                exact,
-                visual,
                 now,
-                match.status == RelinkMatchResult.Status.EXACT ? "EXACT" : "PROBABLE"
+                "PROBABLE"
             );
-            logLink(match.mediaUid, match.status == RelinkMatchResult.Status.EXACT ? "LINKED_EXACT" : "LINKED_PROBABLE", match.score, now);
+            logLink(match.mediaUid, "LINKED_PROBABLE", 0.90f, now);
             return;
         }
 
@@ -111,12 +96,47 @@ public class DigitalForensicsIndexer {
         fresh.sizeBytes = item.size;
         fresh.durationMs = durationMs;
         fresh.codecInfo = codecInfo;
-        fresh.exactFingerprint = exact;
-        fresh.visualFingerprint = visual;
+        fresh.exactFingerprint = null;
+        fresh.visualFingerprint = null;
         fresh.firstSeenAt = now;
         fresh.lastSeenAt = now;
         fresh.linkStatus = "NEW";
         mediaAssetDao.upsert(fresh);
+    }
+
+    private MediaAssetEntity findProbableMatch(VideoItem item, long durationMs) {
+        long sizeTolerance = 1_500_000L;
+        long durationToleranceMs = 2_500L;
+        long minSize = Math.max(0L, item.size - sizeTolerance);
+        long maxSize = item.size + sizeTolerance;
+        long minDuration = Math.max(0L, durationMs - durationToleranceMs);
+        long maxDuration = durationMs + durationToleranceMs;
+        List<MediaAssetEntity> candidates = mediaAssetDao.findProbableCandidates(minSize, maxSize, minDuration, maxDuration);
+        MediaAssetEntity best = null;
+        float bestScore = 0f;
+        for (MediaAssetEntity candidate : candidates) {
+            float sizeScore = ratioScore(item.size, candidate.sizeBytes);
+            float durationScore = ratioScore(durationMs, candidate.durationMs);
+            float nameScore = displayNameScore(item.displayName, candidate.displayName);
+            float score = (sizeScore * 0.45f) + (durationScore * 0.45f) + (nameScore * 0.10f);
+            if (score > bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return bestScore >= 0.92f ? best : null;
+    }
+
+    private float ratioScore(long a, long b) {
+        if (a <= 0L || b <= 0L) return 0f;
+        long min = Math.min(a, b);
+        long max = Math.max(a, b);
+        return min / (float) max;
+    }
+
+    private float displayNameScore(String current, String candidate) {
+        if (current == null || candidate == null) return 0f;
+        return current.equalsIgnoreCase(candidate) ? 1f : 0f;
     }
 
     private void logLink(String mediaUid, String action, float score, long now) {

@@ -1,10 +1,9 @@
 package com.fadcam.forensics.ui;
 
-import android.graphics.Bitmap;
-import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -123,29 +122,8 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
                 }
                 if (bestSnapshotUri != null && !bestSnapshotUri.isEmpty()) {
                     bindImageFromUri(holder.proof, bestSnapshotUri);
-                    return;
                 }
-                bindProofFromMedia(holder, row, startMs);
             });
-        });
-    }
-
-    private void bindProofFromMedia(@NonNull Holder holder, AiEventWithMedia row, long startMs) {
-        if (row.mediaUri == null || row.mediaUri.isEmpty()) {
-            return;
-        }
-        final String key = row.mediaUri + "#" + startMs;
-        holder.proof.setTag(key);
-        thumbExecutor.execute(() -> {
-            Bitmap frame = extractFrame(holder.itemView.getContext(), row.mediaUri, startMs * 1_000L);
-            if (frame != null) {
-                holder.itemView.post(() -> {
-                    Object currentTag = holder.proof.getTag();
-                    if (key.equals(currentTag)) {
-                        holder.proof.setImageBitmap(frame);
-                    }
-                });
-            }
         });
     }
 
@@ -176,19 +154,8 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
                 }
                 holder.framesContainer.removeAllViews();
                 if (snapshots == null || snapshots.isEmpty()) {
-                    if (row.mediaUri == null || row.mediaUri.isEmpty()) {
-                        holder.frameStrip.setVisibility(View.GONE);
-                        holder.frameHint.setVisibility(View.GONE);
-                        return;
-                    }
-                    long start = Math.max(0L, row.startMs);
-                    long span = Math.max(1000L, row.endMs - row.startMs);
-                    int points = 6;
-                    for (int i = 0; i < points; i++) {
-                        long at = start + ((span * i) / Math.max(1, points - 1));
-                        addFrameThumb(holder, row, at, null);
-                    }
-                    holder.frameHint.setText(R.string.forensics_frames_hint_fallback);
+                    holder.frameStrip.setVisibility(View.GONE);
+                    holder.frameHint.setVisibility(View.GONE);
                     return;
                 }
                 List<AiEventSnapshotEntity> sampled = sampleSnapshots(snapshots, 12);
@@ -243,19 +210,6 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         image.setTag(key);
         if (snapshotImageUri != null && !snapshotImageUri.isEmpty()) {
             bindImageFromUri(image, snapshotImageUri);
-        } else {
-            thumbExecutor.execute(() -> {
-                Bitmap frame;
-                frame = extractFrame(context, row.mediaUri, frameMs * 1_000L);
-                if (frame != null) {
-                    holder.itemView.post(() -> {
-                        Object currentTag = image.getTag();
-                        if (key.equals(currentTag)) {
-                            image.setImageBitmap(frame);
-                        }
-                    });
-                }
-            });
         }
 
         wrap.setOnClickListener(v -> {
@@ -265,21 +219,6 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
             }
         });
         holder.framesContainer.addView(wrap);
-    }
-
-    private Bitmap extractFrame(android.content.Context context, String uriString, long timeUs) {
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        try {
-            retriever.setDataSource(context, Uri.parse(uriString));
-            return retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST);
-        } catch (Exception ignored) {
-            return null;
-        } finally {
-            try {
-                retriever.release();
-            } catch (Exception ignored) {
-            }
-        }
     }
 
     private String formatTime(long seconds) {
@@ -365,6 +304,13 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
             frameStrip = itemView.findViewById(R.id.person_frames_strip);
             frameHint = itemView.findViewById(R.id.text_frame_hint);
             framesContainer = itemView.findViewById(R.id.person_frames_container);
+            frameStrip.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN
+                        || event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                }
+                return false;
+            });
         }
     }
 }

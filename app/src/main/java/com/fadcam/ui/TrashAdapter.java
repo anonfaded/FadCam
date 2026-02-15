@@ -198,7 +198,8 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             tvOriginalName.setText(item.getOriginalDisplayName());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
             tvDateTrashed.setText("Trashed: " + sdf.format(new Date(item.getDateTrashed())));
-            tvOriginalLocation.setText("Original: " + (item.isFromSaf() ? "SAF Storage" : "Internal Storage"));
+            String kind = item.isForensicsEvidence() ? "Evidence" : "Video";
+            tvOriginalLocation.setText("Original: " + kind + " • " + (item.isFromSaf() ? "SAF Storage" : "Internal Storage"));
 
             if (tvRemainingTime != null && sharedPreferencesManager != null && context != null) {
                 int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
@@ -288,6 +289,10 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             itemView.setOnClickListener(v -> {
                 if (selectedItems.isEmpty()) {
                     if (interactionListener != null) {
+                        if (item.isForensicsEvidence()) {
+                            toggleSelection(item);
+                            return;
+                        }
                         File trashDirectory = TrashManager.getTrashDirectory(context);
                         if (trashDirectory != null && item.getTrashFileName() != null) {
                             File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());

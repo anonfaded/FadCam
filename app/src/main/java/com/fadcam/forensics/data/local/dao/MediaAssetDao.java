@@ -21,13 +21,10 @@ public interface MediaAssetDao {
     @Query("SELECT * FROM media_asset WHERE media_uid = :mediaUid LIMIT 1")
     MediaAssetEntity findByMediaUid(String mediaUid);
 
-    @Query("SELECT * FROM media_asset WHERE exact_fingerprint = :exactFingerprint LIMIT 1")
-    MediaAssetEntity findExactMatch(String exactFingerprint);
-
     @Query("SELECT * FROM media_asset WHERE size_bytes BETWEEN :minSize AND :maxSize AND duration_ms BETWEEN :minDurationMs AND :maxDurationMs ORDER BY last_seen_at DESC LIMIT 200")
     List<MediaAssetEntity> findProbableCandidates(long minSize, long maxSize, long minDurationMs, long maxDurationMs);
 
-    @Query("UPDATE media_asset SET current_uri = :currentUri, display_name = :displayName, size_bytes = :sizeBytes, duration_ms = :durationMs, codec_info = :codecInfo, exact_fingerprint = :exactFingerprint, visual_fingerprint = :visualFingerprint, last_seen_at = :lastSeenAt, link_status = :linkStatus WHERE media_uid = :mediaUid")
+    @Query("UPDATE media_asset SET current_uri = :currentUri, display_name = :displayName, size_bytes = :sizeBytes, duration_ms = :durationMs, codec_info = :codecInfo, last_seen_at = :lastSeenAt, link_status = :linkStatus WHERE media_uid = :mediaUid")
     void updateLinkAndMetadata(
         String mediaUid,
         String currentUri,
@@ -35,8 +32,6 @@ public interface MediaAssetDao {
         long sizeBytes,
         long durationMs,
         String codecInfo,
-        String exactFingerprint,
-        String visualFingerprint,
         long lastSeenAt,
         String linkStatus
     );

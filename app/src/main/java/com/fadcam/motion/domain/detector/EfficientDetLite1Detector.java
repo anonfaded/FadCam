@@ -25,10 +25,10 @@ public class EfficientDetLite1Detector {
     private static final String MODEL_PATH = "models/efficientdet_lite1.tflite";
 
     // Hard-cut single policy block (no compat thresholds).
-    private static final float MIN_CONFIDENCE = 0.30f;
-    private static final float MIN_PERSON_CONFIDENCE = 0.32f;
-    private static final float MIN_BOX_SIDE = 0.008f;
-    private static final int MAX_RESULTS = 25;
+    private static final float MIN_CONFIDENCE = 0.20f;
+    private static final float MIN_PERSON_CONFIDENCE = 0.24f;
+    private static final float MIN_BOX_SIDE = 0.003f;
+    private static final int MAX_RESULTS = 40;
 
     private final ObjectDetector detector;
     private long lastInferenceWarnMs = 0L;

@@ -57,7 +57,6 @@ public class LabSidebarFragment extends DialogFragment {
             close.setOnClickListener(v -> dismiss());
         }
 
-        bindAction(view, R.id.row_lab_gallery, resultKey, "open_gallery");
         bindAction(view, R.id.row_lab_export, resultKey, "open_export");
     }
 

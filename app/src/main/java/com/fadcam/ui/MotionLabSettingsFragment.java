@@ -297,11 +297,15 @@ public class MotionLabSettingsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        SharedPreferencesManager.getInstance(requireContext()).setMotionDebugUiActive(true);
         registerMotionDebugReceiverIfNeeded();
     }
 
     @Override
     public void onStop() {
+        if (isAdded()) {
+            SharedPreferencesManager.getInstance(requireContext()).setMotionDebugUiActive(false);
+        }
         unregisterMotionDebugReceiverIfNeeded();
         super.onStop();
     }

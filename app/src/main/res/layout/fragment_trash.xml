@@ -79,7 +79,48 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Select All moved to header (picker-style check) - stays hidden until selection mode -->
+    <HorizontalScrollView
+        android:id="@+id/trash_filter_scroll"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.chip.ChipGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_trash_all"
+                style="@style/Widget.FadCam.RecordsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/forensics_filter_all" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_trash_videos"
+                style="@style/Widget.FadCam.RecordsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nav_records" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_trash_evidence"
+                style="@style/Widget.FadCam.RecordsFilterChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/forensics_gallery_title" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_trash_items"
@@ -87,7 +128,7 @@
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintTop_toBottomOf="@id/trash_filter_scroll"
         app:layout_constraintBottom_toTopOf="@id/trash_actions_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -101,7 +142,7 @@
         android:orientation="vertical"
         android:gravity="center"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintTop_toBottomOf="@id/trash_filter_scroll"
         app:layout_constraintBottom_toTopOf="@id/trash_actions_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">

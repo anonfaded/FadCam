@@ -8,6 +8,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -55,6 +56,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     private Chip chipSubtypeAll;
     private LinearLayout subtypeContainer;
     private HorizontalScrollView subtypeScroll;
+    private HorizontalScrollView eventChipScroll;
     private String selectedSubtype;
     private ForensicsEventsAdapter adapter;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -107,6 +109,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chipSubtypeAll = view.findViewById(R.id.chip_subtype_all);
         subtypeContainer = view.findViewById(R.id.chips_subtype_container);
         subtypeScroll = view.findViewById(R.id.subtype_chip_scroll);
+        eventChipScroll = view.findViewById(R.id.event_chip_scroll);
         styleAndIconChips();
 
         adapter = new ForensicsEventsAdapter(this);
@@ -137,8 +140,25 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                 loadEvents();
             });
         }
+        installHorizontalSwipeGuards();
 
         loadEvents();
+    }
+
+    private void installHorizontalSwipeGuards() {
+        View.OnTouchListener guard = (v, event) -> {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN
+                    || event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+            }
+            return false;
+        };
+        if (eventChipScroll != null) {
+            eventChipScroll.setOnTouchListener(guard);
+        }
+        if (subtypeScroll != null) {
+            subtypeScroll.setOnTouchListener(guard);
+        }
     }
 
     @Override
@@ -209,10 +229,6 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
         chip.setChipStrokeWidth(dpToPx(1));
         chip.setEnsureMinTouchTargetSize(false);
-        chip.setMinHeight((int) dpToPx(32));
-        chip.setMinimumHeight((int) dpToPx(32));
-        chip.setChipStartPadding(dpToPx(10));
-        chip.setChipEndPadding(dpToPx(10));
     }
 
     private int resolveThemeColor(int attr) {
@@ -250,6 +266,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                     sortOrder,
                     400
             );
+            reconcileMediaState(rows, db);
             List<String> dynamicSubtypes = objectMode
                     ? db.aiEventDao().getTopClassNames(since, "OBJECT", 10)
                     : null;
@@ -264,6 +281,43 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                 refreshSortUi();
             });
         });
+    }
+
+    private void reconcileMediaState(@Nullable List<AiEventWithMedia> rows, @NonNull ForensicsDatabase db) {
+        if (rows == null || rows.isEmpty()) {
+            return;
+        }
+        for (AiEventWithMedia row : rows) {
+            boolean missing = isMediaMissing(row.mediaUri);
+            if (row.mediaMissing != missing && row.mediaUid != null && !row.mediaUid.isEmpty()) {
+                row.mediaMissing = missing;
+                try {
+                    db.aiEventDao().updateMediaMissingByMediaUid(row.mediaUid, missing);
+                } catch (Exception ignored) {
+                }
+            } else {
+                row.mediaMissing = missing;
+            }
+        }
+    }
+
+    private boolean isMediaMissing(@Nullable String mediaUri) {
+        if (mediaUri == null || mediaUri.isEmpty()) {
+            return true;
+        }
+        try {
+            Uri uri = Uri.parse(mediaUri);
+            if ("file".equalsIgnoreCase(uri.getScheme())) {
+                String path = uri.getPath();
+                return path == null || !new java.io.File(path).exists();
+            }
+            try (android.content.res.AssetFileDescriptor afd =
+                         requireContext().getContentResolver().openAssetFileDescriptor(uri, "r")) {
+                return afd == null;
+            }
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     private void showSortMenu(View anchor) {

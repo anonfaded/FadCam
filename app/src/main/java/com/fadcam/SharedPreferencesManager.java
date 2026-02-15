@@ -1864,6 +1864,14 @@ public class SharedPreferencesManager {
     public void setMotionAutoTorchEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_AUTO_TORCH_ENABLED, enabled).apply();
     }
+
+    public boolean isMotionDebugUiActive() {
+        return sharedPreferences.getBoolean(Constants.PREF_MOTION_DEBUG_UI_ACTIVE, false);
+    }
+
+    public void setMotionDebugUiActive(boolean active) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_DEBUG_UI_ACTIVE, active).apply();
+    }
     // -------------- Motion Lab (Advanced) Preferences End --------------
 
     // -------------- Digital Forensics (Advanced) Preferences Start --------------
@@ -1884,7 +1892,7 @@ public class SharedPreferencesManager {
     }
 
     public boolean isDfEventVehicleEnabled() {
-        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_VEHICLE, false);
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_VEHICLE, true);
     }
 
     public void setDfEventVehicleEnabled(boolean enabled) {
@@ -1892,7 +1900,7 @@ public class SharedPreferencesManager {
     }
 
     public boolean isDfEventPetEnabled() {
-        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PET, false);
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PET, true);
     }
 
     public void setDfEventPetEnabled(boolean enabled) {
@@ -1900,7 +1908,7 @@ public class SharedPreferencesManager {
     }
 
     public boolean isDfDangerousObjectEnabled() {
-        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_DANGEROUS_OBJECT, false);
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_DANGEROUS_OBJECT, true);
     }
 
     public void setDfDangerousObjectEnabled(boolean enabled) {

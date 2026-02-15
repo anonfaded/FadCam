@@ -7,16 +7,77 @@
     android:orientation="vertical"
     android:padding="6dp">
 
-    <ImageView
-        android:id="@+id/image_gallery_snapshot"
+    <TextView
+        android:id="@+id/text_gallery_month_header"
         android:layout_width="match_parent"
-        android:layout_height="116dp"
-        android:adjustViewBounds="true"
-        android:background="@drawable/motion_lab_frame_bg"
-        android:clipToOutline="true"
-        android:contentDescription="@string/forensics_event_proof_frame"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_photo" />
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:textColor="?attr/colorHeading"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="116dp">
+
+        <ImageView
+            android:id="@+id/image_gallery_snapshot"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:background="@drawable/motion_lab_frame_bg"
+            android:clipToOutline="true"
+            android:contentDescription="@string/forensics_event_proof_frame"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_photo" />
+
+        <TextView
+            android:id="@+id/text_gallery_index"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="4dp"
+            android:background="@drawable/serial_number_bg"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="1dp"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/selection_dim_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#B5000000"
+            android:visibility="gone" />
+
+        <FrameLayout
+            android:id="@+id/icon_check_container"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_gravity="center"
+            android:visibility="gone">
+
+            <View
+                android:id="@+id/icon_check_bg"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:background="@drawable/picker_check_background" />
+
+            <ImageView
+                android:id="@+id/icon_check"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:alpha="0.0"
+                android:scaleX="0"
+                android:scaleY="0"
+                android:src="@drawable/avd_check_draw"
+                android:tint="?attr/colorPrimary" />
+        </FrameLayout>
+    </FrameLayout>
 
     <TextView
         android:id="@+id/text_gallery_title"

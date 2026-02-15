@@ -427,6 +427,8 @@ public abstract class Constants {
     // Trash Feature Constants
     public static final String TRASH_DIRECTORY_NAME = "Trash";
     public static final String TRASH_METADATA_FILENAME = "trash_metadata.json";
+    public static final String TRASH_SUBDIR_VIDEO_RECORDINGS = "VideoRecordings";
+    public static final String TRASH_SUBDIR_FORENSICS_EVIDENCE = "ForensicsEvidence";
 
     // Request codes
     public static final int REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF = 1001; // Added request code
@@ -514,6 +516,7 @@ public abstract class Constants {
     public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";
     public static final String PREF_MOTION_ZONES_JSON = "pref_motion_zones_json";
     public static final String PREF_MOTION_AUTO_TORCH_ENABLED = "pref_motion_auto_torch_enabled";
+    public static final String PREF_MOTION_DEBUG_UI_ACTIVE = "pref_motion_debug_ui_active";
     // Digital Forensics (advanced) preferences
     public static final String PREF_DF_ENABLED = "pref_df_enabled";
     public static final String PREF_DF_EVENT_PERSON = "pref_df_event_person";

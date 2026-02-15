@@ -1,6 +1,10 @@
 package com.fadcam.ui;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,8 +29,20 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     private TextView valueEvidence;
     private TextView valueCaptureScope;
     private TextView valueOverlay;
+    private TextView valueWiredStatus;
     private View motionLabBanner;
     private View rowCaptureScope;
+    private View previewBox;
+    private TextView previewLabel;
+    private final Handler previewHandler = new Handler(Looper.getMainLooper());
+    private int previewStep = 0;
+    private final Runnable previewLoop = new Runnable() {
+        @Override
+        public void run() {
+            animatePreviewStep();
+            previewHandler.postDelayed(this, 1200L);
+        }
+    };
 
     @Nullable
     @Override
@@ -49,17 +65,28 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         valueEvidence = view.findViewById(R.id.value_df_evidence);
         valueCaptureScope = view.findViewById(R.id.value_df_capture_scope);
         valueOverlay = view.findViewById(R.id.value_df_overlay);
+        valueWiredStatus = view.findViewById(R.id.value_df_wired_status);
         motionLabBanner = view.findViewById(R.id.motion_lab_dependency_banner);
         rowCaptureScope = view.findViewById(R.id.row_df_capture_scope);
+        previewBox = view.findViewById(R.id.forensics_preview_bbox);
+        previewLabel = view.findViewById(R.id.forensics_preview_label);
 
         bindCurrentValues();
         wireListeners(view);
+        startPreviewLoop();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         bindCurrentValues();
+        startPreviewLoop();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPreviewLoop();
     }
 
     private void bindCurrentValues() {
@@ -75,6 +102,27 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         boolean motionLabEnabled = prefs.isMotionModeEnabled();
         if (motionLabBanner != null) {
             motionLabBanner.setVisibility(motionLabEnabled ? View.GONE : View.VISIBLE);
+        }
+        if (valueWiredStatus != null) {
+            if (!motionLabEnabled) {
+                valueWiredStatus.setText(R.string.digital_forensics_wired_status_inactive);
+            } else {
+                int sensitivity = prefs.getMotionSensitivity();
+                int fps = prefs.getMotionAnalysisFps();
+                int debounceMs = prefs.getMotionDebounceMs();
+                int postRollS = Math.max(0, prefs.getMotionPostRollMs() / 1000);
+                com.fadcam.motion.domain.policy.MotionPolicy policy = new com.fadcam.motion.domain.policy.MotionPolicy();
+                float startThreshold = policy.startThresholdFromSensitivity(sensitivity);
+                float stopThreshold = policy.stopThresholdFromSensitivity(sensitivity);
+                valueWiredStatus.setText(getString(
+                        R.string.digital_forensics_wired_status_active,
+                        startThreshold,
+                        stopThreshold,
+                        fps,
+                        debounceMs,
+                        postRollS
+                ));
+            }
         }
     }
 
@@ -171,6 +219,73 @@ public class DigitalForensicsSettingsFragment extends Fragment {
             consumer.accept(enabled);
         });
         sheet.show(getParentFragmentManager(), resultKey + "_sheet");
+    }
+
+    private void startPreviewLoop() {
+        stopPreviewLoop();
+        previewHandler.post(previewLoop);
+    }
+
+    private void stopPreviewLoop() {
+        previewHandler.removeCallbacks(previewLoop);
+    }
+
+    private void animatePreviewStep() {
+        if (previewBox == null || previewLabel == null) {
+            return;
+        }
+        final float x;
+        final float y;
+        final float scale;
+        final String label;
+        final int color;
+        switch (previewStep % 3) {
+            case 1:
+                x = dp(120);
+                y = dp(24);
+                scale = 0.86f;
+                label = "PERSON 92%";
+                color = 0xFF29B6F6;
+                break;
+            case 2:
+                x = dp(60);
+                y = dp(78);
+                scale = 0.96f;
+                label = "VEHICLE 87%";
+                color = 0xFFFFB300;
+                break;
+            default:
+                x = dp(20);
+                y = dp(36);
+                scale = 1.0f;
+                label = "PET 89%";
+                color = 0xFF4CAF50;
+                break;
+        }
+        previewStep++;
+        previewLabel.setText(label);
+        previewLabel.setBackgroundTintList(ColorStateList.valueOf(color));
+        if (previewBox.getBackground() instanceof GradientDrawable) {
+            ((GradientDrawable) previewBox.getBackground()).setStroke((int) dp(2), color);
+        }
+        previewBox.animate()
+                .translationX(x)
+                .translationY(y)
+                .scaleX(scale)
+                .scaleY(scale)
+                .setDuration(460L)
+                .start();
+        previewLabel.animate()
+                .translationX(x)
+                .translationY(y - dp(22))
+                .alpha(0.25f)
+                .setDuration(150L)
+                .withEndAction(() -> previewLabel.animate().alpha(1f).setDuration(220L).start())
+                .start();
+    }
+
+    private float dp(int value) {
+        return value * requireContext().getResources().getDisplayMetrics().density;
     }
 
     private interface ToggleConsumer {

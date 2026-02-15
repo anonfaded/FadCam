@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
@@ -15,13 +16,12 @@ import com.fadcam.forensics.data.local.dao.MediaAssetDao;
 import com.fadcam.forensics.data.local.entity.AiEventEntity;
 import com.fadcam.forensics.data.local.entity.AiEventSnapshotEntity;
 import com.fadcam.forensics.data.local.entity.MediaAssetEntity;
-import com.fadcam.forensics.domain.fingerprint.ExactFingerprintGenerator;
 import com.fadcam.forensics.domain.fingerprint.ForensicsMetadataUtils;
-import com.fadcam.forensics.domain.fingerprint.VisualFingerprintGenerator;
 import com.fadcam.motion.domain.detector.EfficientDetLite1Detector;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,6 +33,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 
 /**
  * Real-time forensics event writer: multi-event, snapshot-first, no stop-only dependency.
@@ -41,7 +44,7 @@ public class DigitalForensicsEventRecorder {
 
     private static final String TAG = "ForensicsEventRecorder";
     private static final long EVENT_STALE_GAP_MS = 1800L;
-    private static final long SNAPSHOT_MIN_INTERVAL_MS = 1200L;
+    private static final long SNAPSHOT_MIN_INTERVAL_MS = 1600L;
 
     private final SharedPreferencesManager prefs;
     private final Context appContext;
@@ -51,6 +54,12 @@ public class DigitalForensicsEventRecorder {
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
     private final Map<String, ActiveEvent> activeEvents = new HashMap<>();
     private volatile boolean snapshotRootLogged;
+    private long snapshotPersistCount;
+    private long filteredByScopeCount;
+    private long filteredByCategoryCount;
+    private long filteredByAntiFaceCount;
+    private long filterSeenCount;
+    private long lastFilterLogMs;
 
     private static final class ActiveEvent {
         String eventUid;
@@ -85,7 +94,8 @@ public class DigitalForensicsEventRecorder {
             String mediaUri,
             long timelineMs,
             @Nullable List<EfficientDetLite1Detector.DetectionResult> detections,
-            @Nullable byte[] snapshotJpeg
+            @Nullable byte[] snapshotJpeg,
+            boolean frontCamera
     ) {
         if (!prefs.isDigitalForensicsEnabled() || !prefs.isDfEvidenceCollectionEnabled()) {
             return;
@@ -94,25 +104,49 @@ public class DigitalForensicsEventRecorder {
             return;
         }
         String captureScope = prefs.getDfCaptureScope();
+        float frameBestPerson = 0f;
+        for (EfficientDetLite1Detector.DetectionResult detection : detections) {
+            if (detection == null) {
+                continue;
+            }
+            if ("PERSON".equals(normalizeEventType(detection.coarseType))) {
+                frameBestPerson = Math.max(frameBestPerson, detection.confidence);
+            }
+        }
         List<EfficientDetLite1Detector.DetectionResult> stable = new ArrayList<>();
         for (EfficientDetLite1Detector.DetectionResult detection : detections) {
+            filterSeenCount++;
             if (detection == null || detection.confidence < 0.28f) {
                 continue;
             }
-            String coarse = detection.coarseType == null ? "" : detection.coarseType.toUpperCase(Locale.US);
-            boolean isPerson = "PERSON".equals(coarse);
+            String eventType = normalizeEventType(detection.coarseType);
+            boolean isPerson = "PERSON".equals(eventType);
+
+            if (!isEventTypeEnabled(eventType)) {
+                filteredByCategoryCount++;
+                continue;
+            }
+
             if ("people".equals(captureScope) && !isPerson) {
+                filteredByScopeCount++;
                 continue;
             }
             if ("objects".equals(captureScope) && isPerson) {
+                filteredByScopeCount++;
+                continue;
+            }
+            if ("objects".equals(captureScope)
+                    && shouldSuppressLikelyFacePet(eventType, detection, frameBestPerson)) {
+                filteredByAntiFaceCount++;
                 continue;
             }
             stable.add(detection);
         }
+        maybeLogFilterStats();
         if (stable.isEmpty()) {
             return;
         }
-        ioExecutor.submit(() -> handleDetections(mediaUri, Math.max(0L, timelineMs), stable, snapshotJpeg));
+        ioExecutor.submit(() -> handleDetections(mediaUri, Math.max(0L, timelineMs), stable, snapshotJpeg, frontCamera));
     }
 
     public void onMotionStop(long timelineMs) {
@@ -127,7 +161,8 @@ public class DigitalForensicsEventRecorder {
             String mediaUri,
             long timelineMs,
             List<EfficientDetLite1Detector.DetectionResult> detections,
-            @Nullable byte[] snapshotJpeg
+            @Nullable byte[] snapshotJpeg,
+            boolean frontCamera
     ) {
         String mediaUid = ensureMediaAsset(mediaUri);
         if (mediaUid == null) {
@@ -168,8 +203,9 @@ public class DigitalForensicsEventRecorder {
 
             if (snapshotJpeg != null && snapshotJpeg.length > 0
                     && (event.lastSnapshotMs < 0 || (timelineMs - event.lastSnapshotMs) >= SNAPSHOT_MIN_INTERVAL_MS)) {
-                String imageUri = persistSnapshotFile(mediaUid, event.eventUid, timelineMs, snapshotJpeg);
-                if (imageUri != null) {
+                byte[] detectionSnapshot = buildDetectionSnapshot(snapshotJpeg, detection, frontCamera);
+                String imageUri = persistSnapshotFile(mediaUid, event.eventUid, timelineMs, detectionSnapshot);
+                if (imageUri != null && detectionSnapshot != null) {
                     AiEventSnapshotEntity snapshot = new AiEventSnapshotEntity();
                     snapshot.snapshotUid = UUID.randomUUID().toString();
                     snapshot.eventUid = event.eventUid;
@@ -181,8 +217,9 @@ public class DigitalForensicsEventRecorder {
                     snapshot.confidence = detection.confidence;
                     snapshot.bboxNorm = toBbox(event.centerX, event.centerY, event.boxWidth, event.boxHeight);
                     snapshot.imageUri = imageUri;
-                    snapshot.sha256 = sha256(snapshotJpeg);
+                    snapshot.sha256 = sha256(detectionSnapshot);
                     snapshotDao.upsert(snapshot);
+                    snapshotPersistCount++;
                 }
                 event.lastSnapshotMs = timelineMs;
             }
@@ -243,7 +280,10 @@ public class DigitalForensicsEventRecorder {
     }
 
     @Nullable
-    private String persistSnapshotFile(String mediaUid, String eventUid, long timelineMs, byte[] jpeg) {
+    private String persistSnapshotFile(String mediaUid, String eventUid, long timelineMs, @Nullable byte[] jpeg) {
+        if (jpeg == null || jpeg.length == 0) {
+            return null;
+        }
         try {
             File externalRoot = appContext.getExternalFilesDir(null);
             if (externalRoot == null) {
@@ -342,6 +382,40 @@ public class DigitalForensicsEventRecorder {
         }
     }
 
+    @Nullable
+    private byte[] buildDetectionSnapshot(
+            @NonNull byte[] fullJpeg,
+            @NonNull EfficientDetLite1Detector.DetectionResult detection,
+            boolean frontCamera
+    ) {
+        try {
+            Bitmap full = BitmapFactory.decodeByteArray(fullJpeg, 0, fullJpeg.length);
+            if (full == null) {
+                return fullJpeg;
+            }
+            int width = full.getWidth();
+            int height = full.getHeight();
+            int left = Math.max(0, Math.round((detection.centerX - (detection.width * 0.5f)) * width));
+            int top = Math.max(0, Math.round((detection.centerY - (detection.height * 0.5f)) * height));
+            int right = Math.min(width, Math.round((detection.centerX + (detection.width * 0.5f)) * width));
+            int bottom = Math.min(height, Math.round((detection.centerY + (detection.height * 0.5f)) * height));
+            int cropW = Math.max(1, right - left);
+            int cropH = Math.max(1, bottom - top);
+            Bitmap cropped = Bitmap.createBitmap(full, left, top, cropW, cropH);
+            Bitmap finalBitmap = cropped;
+            if (frontCamera) {
+                Matrix matrix = new Matrix();
+                matrix.postRotate(90f);
+                finalBitmap = Bitmap.createBitmap(cropped, 0, 0, cropped.getWidth(), cropped.getHeight(), matrix, true);
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 84, out);
+            return out.toByteArray();
+        } catch (Throwable t) {
+            return fullJpeg;
+        }
+    }
+
     private String normalizeClassName(String raw) {
         if (raw == null) {
             return "object";
@@ -356,6 +430,51 @@ public class DigitalForensicsEventRecorder {
 
     private float clampBox(float value) {
         return Math.max(0.02f, Math.min(0.90f, value));
+    }
+
+    private boolean isEventTypeEnabled(@NonNull String eventType) {
+        switch (eventType) {
+            case "PERSON":
+                return prefs.isDfEventPersonEnabled();
+            case "VEHICLE":
+                return prefs.isDfEventVehicleEnabled();
+            case "PET":
+                return prefs.isDfEventPetEnabled();
+            case "OBJECT":
+            default:
+                return prefs.isDfDangerousObjectEnabled();
+        }
+    }
+
+    private boolean shouldSuppressLikelyFacePet(
+            @NonNull String eventType,
+            @NonNull EfficientDetLite1Detector.DetectionResult detection,
+            float frameBestPerson
+    ) {
+        if (!"PET".equals(eventType)) {
+            return false;
+        }
+        if (frameBestPerson < 0.30f) {
+            return false;
+        }
+        if (detection.confidence >= 0.90f) {
+            return false;
+        }
+        String label = detection.className == null ? "" : detection.className.toLowerCase(Locale.US);
+        return "cat".equals(label) || "dog".equals(label) || "bird".equals(label);
+    }
+
+    private void maybeLogFilterStats() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if ((now - lastFilterLogMs) < 10000L) {
+            return;
+        }
+        lastFilterLogMs = now;
+        Log.i(TAG, "ForensicsFilter stats: seen=" + filterSeenCount
+                + ", scopeDrop=" + filteredByScopeCount
+                + ", categoryDrop=" + filteredByCategoryCount
+                + ", antiFaceDrop=" + filteredByAntiFaceCount
+                + ", snapshots=" + snapshotPersistCount);
     }
 
     private void enrichAssetMetadata(MediaAssetEntity asset, String mediaUri) {
@@ -373,12 +492,9 @@ public class DigitalForensicsEventRecorder {
                     asset.sizeBytes = size;
                 }
             }
-            if (asset.exactFingerprint == null || asset.exactFingerprint.isEmpty()) {
-                asset.exactFingerprint = ExactFingerprintGenerator.compute(appContext.getContentResolver(), uri, asset.sizeBytes);
-            }
-            if (asset.visualFingerprint == null || asset.visualFingerprint.isEmpty()) {
-                asset.visualFingerprint = VisualFingerprintGenerator.compute(appContext, uri);
-            }
+            // Skip heavy fingerprint generation in live recording path to reduce
+            // capture stutter and GC pressure. Evidence snapshots remain the
+            // canonical artifacts for forensics workflows.
         } catch (Exception e) {
             Log.w(TAG, "Metadata enrichment skipped for uri=" + mediaUri, e);
         }

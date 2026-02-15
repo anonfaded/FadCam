@@ -115,6 +115,7 @@ public class RecordingService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "RecordingServiceChannel";
     private static final String TAG = "RecordingService"; // Use standard Log TAG
+    private static final long FORENSICS_HEARTBEAT_INTERVAL_MS = 1600L;
     private static volatile boolean isCameraResourceReleasing = false;
     
     private long lastStartAttemptTime = 0;
@@ -210,6 +211,11 @@ public class RecordingService extends Service {
     private boolean motionLastGlobalSuppressed = false;
     private long motionLastForensicsHeartbeatMs = 0L;
     private String motionLastOverlayPayload = null;
+    private long motionJpegAttemptCount = 0L;
+    private long motionJpegSuccessCount = 0L;
+    private long motionJpegSkipCount = 0L;
+    private long motionJpegEncodeTotalMs = 0L;
+    private long motionLastPerfLogMs = 0L;
 
     // --- Lifecycle Methods ---
     @Override
@@ -1605,11 +1611,35 @@ public class RecordingService extends Service {
         motionLastDebugBroadcastMs = 0L;
         motionLastTelemetryLogMs = 0L;
         motionPersonLikelyUntilMs = 0L;
+        motionLastForensicsHeartbeatMs = 0L;
+        motionJpegAttemptCount = 0L;
+        motionJpegSuccessCount = 0L;
+        motionJpegSkipCount = 0L;
+        motionJpegEncodeTotalMs = 0L;
+        motionLastPerfLogMs = 0L;
         motionStateMachine = motionLabEnabledForSession
                 ? new com.fadcam.motion.domain.state.MotionStateMachine(motionPolicy)
                 : null;
         if (!motionLabEnabledForSession) {
             releaseMotionAnalysisReader();
+        }
+        if (sharedPreferencesManager != null) {
+            int sensitivity = sharedPreferencesManager.getMotionSensitivity();
+            int fps = sharedPreferencesManager.getMotionAnalysisFps();
+            int debounce = sharedPreferencesManager.getMotionDebounceMs();
+            int postRoll = sharedPreferencesManager.getMotionPostRollMs();
+            String scope = sharedPreferencesManager.getDfCaptureScope();
+            float start = motionPolicy.startThresholdFromSensitivity(sensitivity);
+            float stop = motionPolicy.stopThresholdFromSensitivity(sensitivity);
+            Log.i(TAG, "Forensics capability: motionEnabled=" + motionLabEnabledForSession
+                    + ", dfEnabled=" + sharedPreferencesManager.isDigitalForensicsEnabled()
+                    + ", evidence=" + sharedPreferencesManager.isDfEvidenceCollectionEnabled()
+                    + ", scope=" + scope
+                    + ", sensitivity=" + sensitivity
+                    + ", analysisFps=" + fps
+                    + ", debounceMs=" + debounce
+                    + ", postRollMs=" + postRoll
+                    + ", thresholds=" + String.format(Locale.US, "%.3f/%.3f", start, stop));
         }
         Log.d(TAG, "Motion Lab session enabled: " + motionLabEnabledForSession + ", safeMode=" + motionSafeMode
                 + ", detector=" + (motionOpenCvActive ? "opencv_mog2" : "frame_diff"));
@@ -1648,8 +1678,8 @@ public class RecordingService extends Service {
         try {
             int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
             if (motionOpenCvActive && !motionSafeMode) {
-                // EfficientDet is heavier than person-only inference; keep analysis in a reliable thermal range.
-                analysisFps = Math.max(4, Math.min(10, analysisFps));
+                // Keep detector responsive while limiting CPU spikes.
+                analysisFps = Math.max(3, Math.min(6, analysisFps));
             }
             if (motionSafeMode) {
                 analysisFps = Math.min(2, analysisFps);
@@ -1659,8 +1689,8 @@ public class RecordingService extends Service {
                     ? sharedPreferencesManager.getCameraResolution()
                     : Constants.DEFAULT_VIDEO_RESOLUTION;
             int divisor = motionSafeMode ? 6 : (motionOpenCvActive ? 1 : 2);
-            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 960 : 640);
-            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 540 : 360);
+            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 1280 : 640);
+            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 720 : 360);
             int width = Math.max(96, Math.min(maxWidth, selected.getWidth() / divisor));
             int height = Math.max(54, Math.min(maxHeight, selected.getHeight() / divisor));
             boolean recreate = motionAnalysisReader == null
@@ -1962,12 +1992,34 @@ public class RecordingService extends Service {
                         + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
                         + ", globalSuppressed=" + debugGlobalSuppressed);
             }
-            byte[] frameJpeg = buildMotionDebugFrameJpeg(framePacket);
+            boolean forensicsCaptureEnabled = sharedPreferencesManager != null
+                    && sharedPreferencesManager.isDigitalForensicsEnabled()
+                    && sharedPreferencesManager.isDfEvidenceCollectionEnabled();
+            boolean shouldEmitForensicsSnapshot = digitalForensicsEventRecorder != null
+                    && forensicsCaptureEnabled
+                    && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.RECORDING
+                    && (nowMs - motionLastForensicsHeartbeatMs) >= FORENSICS_HEARTBEAT_INTERVAL_MS;
+            boolean shouldEmitDebugFrame = (nowMs - motionLastDebugBroadcastMs) >= 900L
+                    || stateBefore != motionStateMachine.getState()
+                    || (action != null && action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
+            boolean shouldEncodeJpeg = shouldEncodeFrameJpeg(shouldEmitForensicsSnapshot, shouldEmitDebugFrame);
+            byte[] frameJpeg = null;
+            if (shouldEncodeJpeg) {
+                motionJpegAttemptCount++;
+                long encodeStart = SystemClock.elapsedRealtime();
+                frameJpeg = buildMotionDebugFrameJpeg(framePacket);
+                motionJpegEncodeTotalMs += Math.max(0L, SystemClock.elapsedRealtime() - encodeStart);
+                if (frameJpeg != null && frameJpeg.length > 0) {
+                    motionJpegSuccessCount++;
+                } else {
+                    motionJpegSkipCount++;
+                }
+            } else {
+                motionJpegSkipCount++;
+            }
             maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, frameJpeg, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
 
-            if (digitalForensicsEventRecorder != null
-                    && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && (nowMs - motionLastForensicsHeartbeatMs) >= 900L) {
+            if (shouldEmitForensicsSnapshot) {
                 motionLastForensicsHeartbeatMs = nowMs;
                 long timelineMs = recordingStartTime > 0L
                         ? Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime)
@@ -1976,9 +2028,17 @@ public class RecordingService extends Service {
                         getCurrentRecordingMediaUri(),
                         timelineMs,
                         detections,
-                        frameJpeg
+                        frameJpeg,
+                        recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT
                 );
+                if ((nowMs - motionLastTelemetryLogMs) >= 10000L) {
+                    Log.i(TAG, "Forensics heartbeat: detections=" + detections.size()
+                            + ", personConf=" + String.format(Locale.US, "%.2f", personConfidence)
+                            + ", frame=" + (framePacket != null ? framePacket.width + "x" + framePacket.height : "none")
+                            + ", front=" + (recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT));
+                }
             }
+            maybeLogForensicsPerf(nowMs);
         }
     }
 
@@ -2254,6 +2314,33 @@ public class RecordingService extends Service {
             Log.v(TAG, "MotionLab debug frame skipped");
             return null;
         }
+    }
+
+    private boolean shouldEncodeFrameJpeg(boolean shouldEmitForensicsSnapshot, boolean shouldEmitDebugFrame) {
+        if (shouldEmitForensicsSnapshot) {
+            return true;
+        }
+        if (!shouldEmitDebugFrame) {
+            return false;
+        }
+        return sharedPreferencesManager != null && sharedPreferencesManager.isMotionDebugUiActive();
+    }
+
+    private void maybeLogForensicsPerf(long nowMs) {
+        if ((nowMs - motionLastPerfLogMs) < 10000L) {
+            return;
+        }
+        motionLastPerfLogMs = nowMs;
+        long avgEncodeMs = motionJpegSuccessCount <= 0
+                ? 0L
+                : (motionJpegEncodeTotalMs / Math.max(1L, motionJpegSuccessCount));
+        Log.i(TAG, "ForensicsPerf: frames=" + motionFramesAnalyzed
+                + ", jpegAttempt=" + motionJpegAttemptCount
+                + ", jpegOk=" + motionJpegSuccessCount
+                + ", jpegSkip=" + motionJpegSkipCount
+                + ", avgEncodeMs=" + avgEncodeMs
+                + ", actions=" + motionTriggerActionCount
+                + ", suppressed=" + motionSuppressedSignalCount);
     }
 
     @Nullable

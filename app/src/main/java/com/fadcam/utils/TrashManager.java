@@ -157,6 +157,16 @@ public class TrashManager {
      * @return True if the video was successfully moved to trash, false otherwise.
      */
     public static boolean moveToTrash(Context context, Uri videoUri, String originalDisplayName, boolean isSafSource) {
+        return moveToTrash(context, videoUri, originalDisplayName, isSafSource, Constants.TRASH_SUBDIR_VIDEO_RECORDINGS);
+    }
+
+    public static boolean moveToTrash(
+            Context context,
+            Uri videoUri,
+            String originalDisplayName,
+            boolean isSafSource,
+            String subDirectory
+    ) {
         if (context == null || videoUri == null || originalDisplayName == null) {
             Log.e(TAG, "moveToTrash: Invalid arguments (context, URI, or displayName is null).");
             return false;
@@ -168,8 +178,13 @@ public class TrashManager {
             return false;
         }
 
-        String targetTrashFileName = getUniqueTrashFileName(trashDir, originalDisplayName);
+        String targetTrashFileName = getUniqueTrashFileName(trashDir, originalDisplayName, subDirectory);
         File targetTrashFile = new File(trashDir, targetTrashFileName);
+        File targetParent = targetTrashFile.getParentFile();
+        if (targetParent != null && !targetParent.exists() && !targetParent.mkdirs()) {
+            Log.e(TAG, "moveToTrash: Failed to create target parent folder " + targetParent.getAbsolutePath());
+            return false;
+        }
 
         boolean success = false;
         Log.i(TAG, "Attempting to move to trash: '" + originalDisplayName + "' -> '" + targetTrashFile.getAbsolutePath()
@@ -293,10 +308,19 @@ public class TrashManager {
      * needed.
      * e.g., video.mp4, video (1).mp4, video (2).mp4
      */
-    private static String getUniqueTrashFileName(File trashDir, String originalDisplayName) {
-        File potentialFile = new File(trashDir, originalDisplayName);
+    private static String getUniqueTrashFileName(File trashDir, String originalDisplayName, String subDirectory) {
+        String normalizedSubdir = (subDirectory == null || subDirectory.trim().isEmpty())
+                ? Constants.TRASH_SUBDIR_VIDEO_RECORDINGS
+                : subDirectory.trim();
+        File scopedDir = new File(trashDir, normalizedSubdir);
+        if (!scopedDir.exists() && !scopedDir.mkdirs()) {
+            Log.w(TAG, "getUniqueTrashFileName: Could not create scoped dir, falling back to root: " + scopedDir.getAbsolutePath());
+            scopedDir = trashDir;
+            normalizedSubdir = "";
+        }
+        File potentialFile = new File(scopedDir, originalDisplayName);
         if (!potentialFile.exists()) {
-            return originalDisplayName;
+            return normalizedSubdir.isEmpty() ? originalDisplayName : (normalizedSubdir + "/" + originalDisplayName);
         }
 
         String nameWithoutExtension;
@@ -312,17 +336,18 @@ public class TrashManager {
         int count = 1;
         while (true) {
             String newName = nameWithoutExtension + " (" + count + ")" + extension;
-            potentialFile = new File(trashDir, newName);
+            potentialFile = new File(scopedDir, newName);
             if (!potentialFile.exists()) {
                 Log.d(TAG, "getUniqueTrashFileName: Generated unique name '" + newName + "' for original '"
                         + originalDisplayName + "'");
-                return newName;
+                return normalizedSubdir.isEmpty() ? newName : (normalizedSubdir + "/" + newName);
             }
             count++;
             if (count > 1000) { // Safety break to prevent infinite loop with extreme cases
                 Log.e(TAG, "getUniqueTrashFileName: Exceeded 1000 attempts to find unique name for "
                         + originalDisplayName + ". Using UUID based name.");
-                return java.util.UUID.randomUUID().toString() + extension;
+                String generated = java.util.UUID.randomUUID().toString() + extension;
+                return normalizedSubdir.isEmpty() ? generated : (normalizedSubdir + "/" + generated);
             }
         }
     }
@@ -417,13 +442,9 @@ public class TrashManager {
         File[] files = trashDir.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file.isFile()) { // Only delete files, not subdirectories (though none are expected)
-                    if (file.delete()) {
-                        Log.i(TAG, "emptyAllTrash: Deleted file: " + file.getName());
-                    } else {
-                        Log.e(TAG, "emptyAllTrash: Failed to delete file: " + file.getName());
-                        allFilesDeleted = false; // Mark failure if any file isn't deleted
-                    }
+                if (!deleteRecursively(file)) {
+                    Log.e(TAG, "emptyAllTrash: Failed to delete path: " + file.getAbsolutePath());
+                    allFilesDeleted = false;
                 }
             }
         }
@@ -444,6 +465,23 @@ public class TrashManager {
         }
         return true; // Return true if metadata cleared, even if some files failed to delete (they
                      // are now orphaned)
+    }
+
+    private static boolean deleteRecursively(File file) {
+        if (file == null || !file.exists()) {
+            return true;
+        }
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    if (!deleteRecursively(child)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return file.delete();
     }
 
     /**

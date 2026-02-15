@@ -22,6 +22,6 @@
         android:title="@string/nav_settings" />
     <item
         android:id="@+id/navigation_lab"
-        android:icon="@drawable/ic_experiment"
+        android:icon="@drawable/biotech_24px"
         android:title="@string/nav_lab" />
 </menu>

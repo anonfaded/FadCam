@@ -16,6 +16,9 @@ public interface AiEventSnapshotDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(AiEventSnapshotEntity entity);
 
+    @Query("DELETE FROM ai_event_snapshot WHERE snapshot_uid = :snapshotUid")
+    void deleteBySnapshotUid(String snapshotUid);
+
     @Query("SELECT * FROM ai_event_snapshot WHERE event_uid = :eventUid ORDER BY timeline_ms ASC LIMIT :limitCount")
     List<AiEventSnapshotEntity> getByEventUid(String eventUid, int limitCount);
 
@@ -28,13 +31,13 @@ public interface AiEventSnapshotDao {
             "s.class_name AS className, s.confidence AS confidence, s.bbox_norm AS bboxNorm, " +
             "s.image_uri AS imageUri, s.sha256 AS sha256, " +
             "m.current_uri AS mediaUri, m.display_name AS mediaDisplayName, m.link_status AS linkStatus, m.last_seen_at AS mediaLastSeenAt, " +
-            "e.media_missing AS mediaMissing " +
+            "COALESCE(e.media_missing, 0) AS mediaMissing " +
             "FROM ai_event_snapshot s " +
-            "INNER JOIN media_asset m ON m.media_uid = s.media_uid " +
-            "INNER JOIN ai_event e ON e.event_uid = s.event_uid " +
+            "LEFT JOIN media_asset m ON m.media_uid = s.media_uid " +
+            "LEFT JOIN ai_event e ON e.event_uid = s.event_uid " +
             "WHERE (:eventType IS NULL OR s.event_type = :eventType) " +
             "AND s.confidence >= :minConfidence " +
-            "AND (:mediaState IS NULL OR (:mediaState = 'MISSING' AND e.media_missing = 1) OR (:mediaState = 'AVAILABLE' AND e.media_missing = 0)) " +
+            "AND (:mediaState IS NULL OR (:mediaState = 'MISSING' AND COALESCE(e.media_missing, 0) = 1) OR (:mediaState = 'AVAILABLE' AND COALESCE(e.media_missing, 0) = 0)) " +
             "AND s.captured_epoch_ms >= :sinceEpochMs " +
             "ORDER BY s.captured_epoch_ms DESC " +
             "LIMIT :limitCount")

@@ -2,20 +2,26 @@ package com.fadcam.forensics.ui;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.text.format.Formatter;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.R;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
 import com.fadcam.forensics.data.local.model.ForensicsSnapshotWithMedia;
+import com.fadcam.ui.OverlayNavUtil;
 import com.google.android.material.button.MaterialButton;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
@@ -28,35 +34,112 @@ public class ForensicsExportCenterFragment extends Fragment {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private MaterialButton exportButton;
+    private MaterialButton pathButton;
     private TextView status;
+    private TextView pathText;
+    private TextView statsText;
+    @Nullable
+    private Uri targetExportUri;
+    @Nullable
+    private List<ForensicsSnapshotWithMedia> cachedRows;
+
+    private final ActivityResultLauncher<String> createDocumentLauncher =
+            registerForActivityResult(new ActivityResultContracts.CreateDocument("application/zip"), uri -> {
+                if (!isAdded()) {
+                    return;
+                }
+                targetExportUri = uri;
+                if (pathText != null) {
+                    pathText.setText(uri == null
+                            ? getString(R.string.forensics_export_no_path)
+                            : getString(R.string.forensics_export_selected_path, uri.toString()));
+                }
+                if (exportButton != null) {
+                    exportButton.setEnabled(uri != null);
+                }
+            });
 
     public ForensicsExportCenterFragment() {
         super(R.layout.fragment_forensics_export_center);
     }
 
     @Override
-    public void onViewCreated(@NonNull android.view.View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        View back = view.findViewById(R.id.back_button);
+        if (back != null) {
+            back.setOnClickListener(v -> OverlayNavUtil.popLevel(requireActivity()));
+        }
+
+        pathButton = view.findViewById(R.id.button_pick_export_path);
         exportButton = view.findViewById(R.id.button_export_forensics);
         status = view.findViewById(R.id.text_export_status);
+        pathText = view.findViewById(R.id.text_export_path);
+        statsText = view.findViewById(R.id.text_export_stats);
+        if (pathButton != null) {
+            pathButton.setOnClickListener(v -> {
+                String name = "forensics_export_" + System.currentTimeMillis() + ".zip";
+                createDocumentLauncher.launch(name);
+            });
+        }
         if (exportButton != null) {
             exportButton.setOnClickListener(v -> startExport());
+            exportButton.setEnabled(false);
         }
+        refreshStats();
+    }
+
+    private void refreshStats() {
+        executor.execute(() -> {
+            List<ForensicsSnapshotWithMedia> rows = ForensicsDatabase.getInstance(requireContext())
+                    .aiEventSnapshotDao()
+                    .getGallerySnapshots(null, 0f, null, 0L, 20000);
+            cachedRows = rows;
+            long total = 0L;
+            if (rows != null) {
+                for (ForensicsSnapshotWithMedia row : rows) {
+                    total += resolveSize(row.imageUri);
+                }
+            }
+            final int count = rows == null ? 0 : rows.size();
+            final long bytes = total;
+            if (!isAdded()) {
+                return;
+            }
+            requireActivity().runOnUiThread(() -> {
+                if (statsText != null) {
+                    statsText.setText(getString(
+                            R.string.forensics_export_stats,
+                            count,
+                            Formatter.formatFileSize(requireContext(), bytes)));
+                }
+            });
+        });
     }
 
     private void startExport() {
+        if (targetExportUri == null) {
+            Toast.makeText(requireContext(), R.string.forensics_export_pick_path_first, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (exportButton != null) {
             exportButton.setEnabled(false);
+        }
+        if (pathButton != null) {
+            pathButton.setEnabled(false);
         }
         if (status != null) {
             status.setText(R.string.forensics_export_running);
         }
         executor.execute(() -> {
             try {
-                List<ForensicsSnapshotWithMedia> rows = ForensicsDatabase.getInstance(requireContext())
-                        .aiEventSnapshotDao()
-                        .getGallerySnapshots(null, 0f, null, 0L, 20000);
-                File outFile = writeExportZip(rows);
+                List<ForensicsSnapshotWithMedia> rows = cachedRows;
+                if (rows == null) {
+                    rows = ForensicsDatabase.getInstance(requireContext())
+                            .aiEventSnapshotDao()
+                            .getGallerySnapshots(null, 0f, null, 0L, 20000);
+                }
+                writeExportZip(targetExportUri, rows);
                 if (!isAdded()) {
                     return;
                 }
@@ -64,10 +147,13 @@ public class ForensicsExportCenterFragment extends Fragment {
                     if (exportButton != null) {
                         exportButton.setEnabled(true);
                     }
-                    if (status != null) {
-                        status.setText(getString(R.string.forensics_export_done, outFile.getAbsolutePath()));
+                    if (pathButton != null) {
+                        pathButton.setEnabled(true);
                     }
-                    Toast.makeText(requireContext(), getString(R.string.forensics_export_done, outFile.getAbsolutePath()), Toast.LENGTH_LONG).show();
+                    if (status != null) {
+                        status.setText(getString(R.string.forensics_export_done, targetExportUri.toString()));
+                    }
+                    Toast.makeText(requireContext(), getString(R.string.forensics_export_done, targetExportUri.toString()), Toast.LENGTH_LONG).show();
                 });
             } catch (Exception e) {
                 if (!isAdded()) {
@@ -77,6 +163,9 @@ public class ForensicsExportCenterFragment extends Fragment {
                     if (exportButton != null) {
                         exportButton.setEnabled(true);
                     }
+                    if (pathButton != null) {
+                        pathButton.setEnabled(true);
+                    }
                     if (status != null) {
                         status.setText(e.getMessage() == null ? "Export failed" : e.getMessage());
                     }
@@ -85,27 +174,20 @@ public class ForensicsExportCenterFragment extends Fragment {
         });
     }
 
-    @NonNull
-    private File writeExportZip(@Nullable List<ForensicsSnapshotWithMedia> rows) throws Exception {
-        File base = requireContext().getExternalFilesDir(null);
-        if (base == null) {
-            throw new IllegalStateException("External files directory is unavailable");
-        }
-        File exportDir = new File(base, "FadCam/Forensics/Exports");
-        if (!exportDir.exists() && !exportDir.mkdirs()) {
-            throw new IllegalStateException("Unable to create export directory");
-        }
-        String filename = "forensics_export_" + System.currentTimeMillis() + ".zip";
-        File output = new File(exportDir, filename);
-        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(output))) {
+    private void writeExportZip(@NonNull Uri exportUri, @Nullable List<ForensicsSnapshotWithMedia> rows) throws Exception {
+        try (OutputStream out = requireContext().getContentResolver().openOutputStream(exportUri, "w")) {
+            if (out == null) {
+                throw new IllegalStateException("Unable to open selected export path");
+            }
+            try (ZipOutputStream zos = new ZipOutputStream(out)) {
             writeManifest(zos, rows);
             if (rows != null) {
                 for (ForensicsSnapshotWithMedia row : rows) {
                     addSnapshotToZip(zos, row);
                 }
             }
+            }
         }
-        return output;
     }
 
     private void writeManifest(@NonNull ZipOutputStream zos, @Nullable List<ForensicsSnapshotWithMedia> rows) throws Exception {
@@ -139,7 +221,7 @@ public class ForensicsExportCenterFragment extends Fragment {
     }
 
     private void addSnapshotToZip(@NonNull ZipOutputStream zos, @NonNull ForensicsSnapshotWithMedia row) throws Exception {
-        if (row.imageUri == null || row.imageUri.isEmpty()) {
+        if (TextUtils.isEmpty(row.imageUri)) {
             return;
         }
         String ext = ".jpg";
@@ -183,5 +265,25 @@ public class ForensicsExportCenterFragment extends Fragment {
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r");
+    }
+
+    private long resolveSize(@Nullable String uriString) {
+        if (TextUtils.isEmpty(uriString)) {
+            return 0L;
+        }
+        try {
+            Uri uri = Uri.parse(uriString);
+            if ("file".equalsIgnoreCase(uri.getScheme())) {
+                File file = new File(uri.getPath());
+                return file.exists() ? file.length() : 0L;
+            }
+            try (android.content.res.AssetFileDescriptor afd = requireContext().getContentResolver().openAssetFileDescriptor(uri, "r")) {
+                if (afd != null && afd.getLength() > 0L) {
+                    return afd.getLength();
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return 0L;
     }
 }

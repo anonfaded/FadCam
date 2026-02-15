@@ -60,9 +60,11 @@
             android:orientation="horizontal">
 
             <HorizontalScrollView
+                android:id="@+id/event_chip_scroll"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:overScrollMode="never"
                 android:scrollbars="none">
 
                 <LinearLayout
@@ -72,54 +74,54 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_all"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:checkable="true"
                         android:checked="true"
                         android:text="@string/forensics_filter_all" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_person"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_person" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_vehicle"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_vehicle" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_pet"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_pet" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_object"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_object" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_high_conf"
-                        style="@style/Widget.MaterialComponents.Chip.Filter"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="@string/forensics_filter_high_conf" />
                 </LinearLayout>
@@ -167,6 +169,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
+            android:overScrollMode="never"
             android:scrollbars="none">
 
             <LinearLayout
@@ -177,9 +180,9 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_subtype_all"
-                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    style="@style/Widget.FadCam.RecordsFilterChip"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
                     android:checkable="true"
                     android:checked="true"
                     android:text="@string/forensics_filter_all_subtypes" />

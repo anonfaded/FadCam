@@ -504,6 +504,12 @@ public class MainActivity extends AppCompatActivity {
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
+                // Records/Lab have dense horizontal gesture surfaces (chips/frame strip/gallery),
+                // so disable pager swipe there to prevent accidental tab switches.
+                try {
+                    viewPager.setUserInputEnabled(position != 1 && position != 5);
+                } catch (Throwable ignored) {
+                }
                 switch (position) {
                     case 0:
                         bottomNavigationView.setSelectedItemId(R.id.navigation_home);

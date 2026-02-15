@@ -1327,6 +1327,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_scope_objects_helper">Store only non-person detections (vehicles, pets, objects).</string>
     <string name="digital_forensics_scope_picker_helper">Choose what should be persisted as evidence. This affects database rows and saved proof frames.</string>
     <string name="digital_forensics_motion_lab_dependency">Motion Lab is currently disabled. Forensics recording depends on Motion Lab analysis. Enable Motion Lab first to capture forensic events.</string>
+    <string name="digital_forensics_wired_status_title">Motion Lab Wiring Status</string>
+    <string name="digital_forensics_wired_status_active">Uses Motion Lab sensitivity/FPS/debounce/post-roll: Active (start %1$.2f, stop %2$.2f, %3$dfps, %4$dms, %5$ds)</string>
+    <string name="digital_forensics_wired_status_inactive">Uses Motion Lab sensitivity/FPS/debounce/post-roll: Inactive (Motion Lab disabled)</string>
     <string name="digital_forensics_person_helper">Records events when a person is detected in motion sessions. Best option for home room monitoring and entry-point logs.</string>
     <string name="digital_forensics_vehicle_helper">Vehicle tagging needs a dedicated model and is still being expanded. You can keep this off until model support lands.</string>
     <string name="digital_forensics_pet_helper">Pet tagging needs a dedicated model and is still being expanded. Turn on only if you are testing early support.</string>
@@ -1366,6 +1369,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_sort_label">Sort: %1$s</string>
     <string name="forensics_source_label">Source: %1$s</string>
     <string name="forensics_gallery_title">Evidence Gallery</string>
+    <string name="forensics_gallery_selected_count">%1$d selected</string>
+    <string name="forensics_gallery_deleted_toast">%1$d moved to trash • %2$d removed</string>
+    <plurals name="forensics_gallery_selected_count_plural">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="forensics_delete_selected_title">Delete %1$d selected evidence item(s)?</string>
+    <string name="forensics_delete_selected_helper">Selected evidence will be moved to Trash and can be restored from Recently Deleted.</string>
     <string name="forensics_gallery_sort_event_type">Event type</string>
     <string name="forensics_export_title">Export Center</string>
     <string name="forensics_gallery_empty">No evidence snapshots for current filters.</string>
@@ -1375,6 +1386,22 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_export_done">Evidence export saved to: %1$s</string>
     <string name="forensics_export_running">Building evidence export…</string>
     <string name="forensics_gallery_source_missing">Video missing: snapshot-only evidence is available.</string>
+    <string name="forensics_gallery_stats">Items: %1$d • Snapshot storage: %2$s</string>
+    <string name="forensics_export_stats">Ready to export: %1$d snapshots • %2$s</string>
+    <string name="forensics_export_pick_path">Choose export destination</string>
+    <string name="forensics_export_pick_path_first">Choose export destination first.</string>
+    <string name="forensics_export_no_path">No export destination selected yet.</string>
+    <string name="forensics_export_selected_path">Destination: %1$s</string>
+    <string name="forensics_open_source_video">Open source video</string>
+    <string name="forensics_evidence_details">Evidence details</string>
+    <string name="forensics_unknown_time">Unknown time</string>
+    <string name="forensics_not_available">Not available</string>
+    <string name="forensics_unknown_source">Unknown source</string>
+    <string name="forensics_timeline_label">Timeline position</string>
+    <string name="forensics_copy_done">Evidence details copied</string>
+    <string name="digital_forensics_preview_title">Live Detection Preview</string>
+    <string name="digital_forensics_preview_subtitle">Simulated overlay preview so users understand labels, confidence, and evidence framing.</string>
+    <string name="digital_forensics_preview_default">PERSON 92%</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
