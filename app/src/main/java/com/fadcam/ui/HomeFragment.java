@@ -716,7 +716,7 @@ public class HomeFragment extends BaseFragment {
 
         Log.init(requireContext());
 
-        Log.d(TAG, "HomeFragment created.");
+        Log.d(TAG, "[FragmentLifecycle] onCreate: HomeFragment being created, savedInstanceState=" + (savedInstanceState == null ? "null" : "exists"));
 
         // Request essential permissions on every launch
         // requestEssentialPermissions(); // <-- Disabled, handled in onboarding only
@@ -1539,11 +1539,27 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "HomeFragment resumed.");
+        Log.d(TAG, "[FragmentLifecycle] onResume: Fragment resuming, isAdded=" + isAdded() + ", isVisible=" + isVisible() + ", isHidden=" + isHidden());
         if (!isAdded() || getContext() == null || getActivity() == null) {
-            Log.e(TAG, "onResume: Not attached!");
+            Log.e(TAG, "[FragmentLifecycle] onResume: Not attached!");
             return;
         }
+        
+        // With hide/show navigation, onResume is called for ALL fragments when app returns
+        // from background. Only perform heavy ops if this fragment is actually visible.
+        if (isHidden()) {
+            Log.d(TAG, "onResume: Fragment is hidden, skipping heavy operations");
+            return;
+        }
+        
+        performResumeOperations();
+    }
+
+    /**
+     * Shared logic for resuming fragment operations.
+     * Called from both onResume (when visible) and onHiddenChanged(false).
+     */
+    private void performResumeOperations() {
         if (sharedPreferencesManager == null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(
                 requireContext()
@@ -2979,10 +2995,14 @@ public class HomeFragment extends BaseFragment {
         @Nullable ViewGroup container,
         @Nullable Bundle savedInstanceState
     ) {
+        Log.d(TAG, "[FragmentLifecycle] onCreateView: Inflating layout, container=" + (container == null ? "null" : "exists"));
+        
         // Debug recording time issue
         debugRecordingTimeVariables();
 
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        Log.d(TAG, "[FragmentLifecycle] onCreateView: Layout inflated successfully");
+        return view;
     }
 
     /**
@@ -3102,7 +3122,7 @@ public class HomeFragment extends BaseFragment {
         @Nullable Bundle savedInstanceState
     ) {
         super.onViewCreated(view, savedInstanceState);
-        com.fadcam.Log.i(TAG, "onViewCreated: method entered");
+        com.fadcam.Log.i(TAG, "[FragmentLifecycle] onViewCreated: Starting view setup, view is attached: " + view.isAttachedToWindow());
 
         // Initialize SharedPreferencesManager
         sharedPreferencesManager = SharedPreferencesManager.getInstance(
@@ -8113,11 +8133,8 @@ public class HomeFragment extends BaseFragment {
                 try {
                     if (getActivity() instanceof com.fadcam.MainActivity) {
                         com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
-                        // Switch both ViewPager2 page and BottomNavigation selection
-                        androidx.viewpager2.widget.ViewPager2 pager = act.findViewById(R.id.view_pager);
-                        if (pager != null) pager.setCurrentItem(1, true); // Records is index 1
-                        com.google.android.material.bottomnavigation.BottomNavigationView bnv = act.findViewById(R.id.bottom_navigation);
-                        if (bnv != null) bnv.setSelectedItemId(R.id.navigation_records);
+                        // Switch to Records tab (index 1)
+                        act.switchFragment(1, true);
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to navigate to Records from Stats card", e);
@@ -8763,35 +8780,39 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        Log.d(
-            TAG,
-            "onHiddenChanged: Fragment " + (hidden ? "hidden" : "shown")
-        );
+        Log.d(TAG, "onHiddenChanged: Fragment " + (hidden ? "hidden" : "shown") + ", isResumed=" + isResumed());
+        
+        if (!isAdded() || getContext() == null || getActivity() == null) {
+            return;
+        }
+        
         if (!hidden) {
+            // Tab switched back — resume all operations
+            if (isResumed()) {
+                performResumeOperations();
+            }
+            
+            // Camera surface handling
             if (
                 isPreviewEnabled &&
                 isRecordingOrPaused() &&
                 textureViewSurface != null &&
                 textureViewSurface.isValid()
             ) {
-                Log.d(
-                    TAG,
-                    "onHiddenChanged: Preview enabled, sending valid surface to service"
-                );
+                Log.d(TAG, "onHiddenChanged: Preview enabled, sending valid surface to service");
                 updateServiceWithCurrentSurface(textureViewSurface);
             } else if (!isPreviewEnabled || !isRecordingOrPaused()) {
-                Log.d(
-                    TAG,
-                    "onHiddenChanged: Preview disabled or not recording, sending null surface"
-                );
+                Log.d(TAG, "onHiddenChanged: Preview disabled or not recording, sending null surface");
                 updateServiceWithCurrentSurface(null);
             }
         } else {
+            // Tab switched away — pause heavy operations
+            if (!isLaunchingPhotoCapture) {
+                stopBubbleRotation();
+            }
+            
             if (isRecordingOrPaused()) {
-                Log.d(
-                    TAG,
-                    "onHiddenChanged: Fragment hidden while recording, sending null surface"
-                );
+                Log.d(TAG, "onHiddenChanged: Fragment hidden while recording, sending null surface");
                 updateServiceWithCurrentSurface(null);
             }
         }

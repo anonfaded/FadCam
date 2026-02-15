@@ -123,23 +123,16 @@ public class HomeFragmentHelper {
                 return;
             }
 
-            // Find the ViewPager
-            ViewPager2 viewPager = activity.findViewById(R.id.view_pager);
-            if (viewPager == null) {
-                Log.w(TAG, "ViewPager not found");
-                return;
-            }
-
-            // Get current position
-            int currentPosition = viewPager.getCurrentItem();
-            
-            // Force adapter to recreate fragments by setting adapter again
-            FragmentStateAdapter adapter = (FragmentStateAdapter) viewPager.getAdapter();
-            if (adapter != null) {
-                viewPager.setAdapter(adapter);
-                // Navigate back to home tab to show the new fragment
-                viewPager.setCurrentItem(currentPosition, false);
+            // Use MainActivity to get current position and recreate the fragment
+            if (activity instanceof com.fadcam.MainActivity) {
+                com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) activity;
+                int currentPosition = mainActivity.getCurrentFragmentPosition();
+                
+                // Recreate the current fragment by switching to it again
+                mainActivity.switchFragment(currentPosition, false);
                 Log.d(TAG, "Home fragment recreated for mode switch");
+            } else {
+                Log.w(TAG, "Activity is not MainActivity");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error recreating home fragment", e);

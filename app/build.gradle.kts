@@ -31,8 +31,8 @@ android {
         applicationId = "com.fadcam"
         minSdk = 24
         targetSdk = 36
-        versionCode = 31
-        versionName = "3.0.1"
+        versionCode = 32
+        versionName = "3.1.0"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15

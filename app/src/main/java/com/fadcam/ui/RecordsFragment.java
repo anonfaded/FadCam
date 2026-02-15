@@ -1057,15 +1057,20 @@ public class RecordsFragment extends BaseFragment implements
 
             // -------------- CRITICAL FIX: Only load when fragment is actually visible
             // -----------
-            androidx.viewpager2.widget.ViewPager2 viewPager2 = getActivity() != null
-                    ? getActivity().findViewById(R.id.view_pager)
-                    : null;
-            boolean isCurrentlyVisible = viewPager2 != null && viewPager2.getCurrentItem() == 1 && isVisible();
+            boolean isCurrentlyVisible = false;
+            if (getActivity() instanceof com.fadcam.MainActivity) {
+                com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
+                isCurrentlyVisible = mainActivity.getCurrentFragmentPosition() == 1 && isVisible();
+            }
 
             if (!isCurrentlyVisible) {
+                int currentPos = -1;
+                if (getActivity() instanceof com.fadcam.MainActivity) {
+                    currentPos = ((com.fadcam.MainActivity) getActivity()).getCurrentFragmentPosition();
+                }
                 Log.d(TAG,
-                        "onViewCreated: Fragment not currently visible, deferring load until user navigates here. ViewPager position: "
-                                + (viewPager2 != null ? viewPager2.getCurrentItem() : "null"));
+                        "onViewCreated: Fragment not currently visible, deferring load until user navigates here. Fragment position: "
+                                + currentPos);
                 return; // Don't load anything yet
             }
 
@@ -1132,11 +1137,11 @@ public class RecordsFragment extends BaseFragment implements
         }
 
         // Always update toolbar/menu and AppLock state
-        androidx.viewpager2.widget.ViewPager2 viewPager = getActivity() != null
-                ? getActivity().findViewById(R.id.view_pager)
-                : null;
-        if (viewPager != null && viewPager.getCurrentItem() == 1 && isVisible()) {
-            checkAppLock();
+        if (getActivity() instanceof com.fadcam.MainActivity) {
+            com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
+            if (mainActivity.getCurrentFragmentPosition() == 1 && isVisible()) {
+                checkAppLock();
+            }
         }
         // Update title text
         if (titleText != null) {
@@ -1161,14 +1166,17 @@ public class RecordsFragment extends BaseFragment implements
 
         // -------------- CRITICAL FIX: Only load when fragment is actually visible to
         // user -----------
-        androidx.viewpager2.widget.ViewPager2 viewPager2 = getActivity() != null
-                ? getActivity().findViewById(R.id.view_pager)
-                : null;
-        boolean isCurrentlyVisible = viewPager2 != null && viewPager2.getCurrentItem() == 1 && isVisible();
+        boolean isCurrentlyVisible = false;
+        int currentPos = -1;
+        if (getActivity() instanceof com.fadcam.MainActivity) {
+            com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
+            currentPos = mainActivity.getCurrentFragmentPosition();
+            isCurrentlyVisible = currentPos == 1 && isVisible();
+        }
 
         if (!isCurrentlyVisible) {
-            Log.d(TAG, "onResume: Fragment not currently visible to user, skipping load. ViewPager position: "
-                    + (viewPager2 != null ? viewPager2.getCurrentItem() : "null") + ", isVisible: " + isVisible());
+            Log.d(TAG, "onResume: Fragment not currently visible to user, skipping load. Fragment position: "
+                    + currentPos + ", isVisible: " + isVisible());
             return;
         }
 
@@ -1195,6 +1203,52 @@ public class RecordsFragment extends BaseFragment implements
         // Records tab -----
         requireActivity().invalidateOptionsMenu();
         // Records tab -----
+    }
+
+    /**
+     * Handle visibility changes from hide/show navigation.
+     * With hide/show, onResume is NOT called on tab switches — only onHiddenChanged is.
+     * This ensures data refresh and UI updates happen when the tab becomes visible.
+     */
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        Log.d(TAG, "onHiddenChanged: hidden=" + hidden + ", isResumed=" + isResumed());
+        
+        if (!hidden && isResumed() && isAdded() && getContext() != null) {
+            Log.d(TAG, "onHiddenChanged: Fragment shown, checking for data refresh");
+            
+            // Check pending refresh (e.g., Faditor export)
+            if (sPendingRefresh) {
+                sPendingRefresh = false;
+                Log.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating cache");
+                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                if (recordsAdapter != null) {
+                    recordsAdapter.clearCaches();
+                }
+            }
+            
+            // Update AppLock state
+            checkAppLock();
+            
+            // Update title
+            if (titleText != null) {
+                titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+            }
+            
+            // Check if data needs refreshing
+            boolean hasData = recordsAdapter != null && recordsAdapter.getItemCount() > 0 && !videoItems.isEmpty();
+            boolean hasValidCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid() ||
+                    com.fadcam.utils.VideoSessionCache.hasCachedData(sharedPreferencesManager);
+            
+            if (hasData && hasValidCache && !isLoading) {
+                Log.d(TAG, "onHiddenChanged: Data valid, updating UI visibility only");
+                updateUiVisibility();
+            } else if (!isLoading) {
+                Log.i(TAG, "onHiddenChanged: Need to refresh data");
+                loadRecordsList();
+            }
+        }
     }
 
     /**

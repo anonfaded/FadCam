@@ -40,15 +40,16 @@ public abstract class BaseFragment extends Fragment {
                 if (!onBackPressed()) {
                     // If fragment doesn't handle it, navigate to home tab if not already there
                     try {
-                        ViewPager2 viewPager = requireActivity().findViewById(R.id.view_pager);
-                        if (viewPager != null && viewPager.getCurrentItem() != 0) {
-                            viewPager.setCurrentItem(0, true);
-                        } else {
-                            // If we're already on the home tab or viewPager not found, 
-                            // disable this callback and let the system handle it
-                            setEnabled(false);
-                            // Use the dispatcher directly instead of the deprecated method
-                            requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                        if (requireActivity() instanceof com.fadcam.MainActivity) {
+                            com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) requireActivity();
+                            if (mainActivity.getCurrentFragmentPosition() != 0) {
+                                mainActivity.switchFragment(0, true);
+                            } else {
+                                // If we're already on the home tab, disable this callback and let the system handle it
+                                setEnabled(false);
+                                // Use the dispatcher directly instead of the deprecated method
+                                requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                            }
                         }
                     } catch (Exception e) {
                         // If anything goes wrong, disable this callback and let the system handle it

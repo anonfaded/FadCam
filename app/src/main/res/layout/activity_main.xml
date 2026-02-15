@@ -6,9 +6,9 @@
     android:layout_height="match_parent"
     android:background="?android:colorBackground">
 
-    <!-- ViewPager fills entire screen -->
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/view_pager"
+    <!-- Fragment container for tab content -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"
