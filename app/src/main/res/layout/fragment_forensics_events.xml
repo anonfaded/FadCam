@@ -57,20 +57,33 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:paddingBottom="4dp">
 
-            <HorizontalScrollView
-                android:id="@+id/event_chip_scroll"
+            <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:overScrollMode="never"
-                android:scrollbars="none">
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="?attr/colorTopBar">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
+                <HorizontalScrollView
+                    android:id="@+id/event_chip_scroll"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleLine="true"
+                        app:chipSpacingHorizontal="6dp">
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_all"
@@ -86,7 +99,6 @@
                         style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_person" />
 
@@ -95,7 +107,6 @@
                         style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_vehicle" />
 
@@ -104,7 +115,6 @@
                         style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_pet" />
 
@@ -113,7 +123,6 @@
                         style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:checkable="true"
                         android:text="@string/forensics_filter_object" />
 
@@ -122,10 +131,10 @@
                         style="@style/Widget.FadCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
                         android:text="@string/forensics_filter_high_conf" />
-                </LinearLayout>
-            </HorizontalScrollView>
+                </com.google.android.material.chip.ChipGroup>
+                </HorizontalScrollView>
+            </androidx.cardview.widget.CardView>
 
             <ImageView
                 android:id="@+id/button_sort_events"
@@ -164,30 +173,43 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <HorizontalScrollView
+        <androidx.cardview.widget.CardView
             android:id="@+id/subtype_chip_scroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:overScrollMode="never"
-            android:scrollbars="none">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
 
-            <LinearLayout
-                android:id="@+id/chips_subtype_container"
-                android:layout_width="wrap_content"
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:overScrollMode="never"
+                android:scrollbars="none"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_subtype_all"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chips_subtype_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:checked="true"
-                    android:text="@string/forensics_filter_all_subtypes" />
-            </LinearLayout>
-        </HorizontalScrollView>
+                    app:singleLine="true"
+                    app:chipSpacingHorizontal="6dp">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_subtype_all"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="true"
+                        android:text="@string/forensics_filter_all_subtypes" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_events"

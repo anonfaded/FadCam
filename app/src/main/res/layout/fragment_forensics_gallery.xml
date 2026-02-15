@@ -58,22 +58,35 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:paddingBottom="4dp">
 
-            <HorizontalScrollView
-                android:id="@+id/chip_scroll_gallery"
+            <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:overScrollMode="never"
-                android:scrollbars="none">
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="?attr/colorTopBar">
 
-                <com.google.android.material.chip.ChipGroup
-                    android:layout_width="wrap_content"
+                <HorizontalScrollView
+                    android:id="@+id/chip_scroll_gallery"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:selectionRequired="true"
-                    app:singleLine="true"
-                    app:singleSelection="true">
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:selectionRequired="true"
+                        app:singleLine="true"
+                        app:singleSelection="true"
+                        app:chipSpacingHorizontal="6dp">
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_gallery_all"
@@ -112,6 +125,7 @@
                         android:text="@string/forensics_filter_object" />
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
+            </androidx.cardview.widget.CardView>
 
             <ImageView
                 android:id="@+id/button_gallery_sort"
@@ -203,7 +217,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="76dp"
         android:textColor="@android:color/white"
         android:text="@string/records_batch_fab_label"
         android:visibility="gone"
@@ -219,7 +233,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="76dp"
         android:visibility="gone"
         android:contentDescription="@string/scroll_to_top"
         android:rotation="-90"

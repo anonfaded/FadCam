@@ -31,6 +31,7 @@
         <item name="android:textSize">11sp</item>
         <item name="checkedIconVisible">false</item>
         <item name="chipStrokeWidth">0dp</item>
+        <item name="chipStrokeColor">@android:color/transparent</item>
         <item name="chipCornerRadius">14dp</item>
         <item name="android:paddingStart">10dp</item>
         <item name="android:paddingEnd">10dp</item>

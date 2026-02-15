@@ -15,6 +15,19 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Floating dock navigation - overlays content at bottom -->
+    <!-- Gradient scrim overlay - extends beyond nav container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="-8dp"
+        android:layout_marginEnd="-8dp"
+        android:layout_marginBottom="-100dp"
+        android:foreground="@drawable/dock_gradient_scrim"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
     <FrameLayout
         android:id="@+id/nav_container"
         android:layout_width="match_parent"
@@ -26,21 +39,11 @@
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Gradient scrim below and around dock -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="160dp"
-            android:layout_gravity="bottom"
-            android:layout_marginBottom="-80dp"
-            android:foreground="@drawable/dock_gradient_scrim"
-            android:clickable="false"
-            android:focusable="false" />
-
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_gravity="bottom"
-            app:cardCornerRadius="26dp"
+            app:cardCornerRadius="24dp"
             app:cardElevation="12dp"
             app:cardBackgroundColor="?attr/colorTopBar">
 

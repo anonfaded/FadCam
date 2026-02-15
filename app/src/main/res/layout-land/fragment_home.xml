@@ -234,7 +234,7 @@
         </androidx.cardview.widget.CardView>
 
         <!-- Main Action Buttons -->
-        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:layout_marginBottom="0dp" android:gravity="center" android:orientation="horizontal">
+        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:layout_marginBottom="68dp" android:gravity="center" android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="48dp" android:layout_height="41dp" android:layout_marginEnd="4dp" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="@android:color/transparent" app:backgroundTint="@android:color/transparent" android:enabled="false" app:cornerRadius="15dp" />
 

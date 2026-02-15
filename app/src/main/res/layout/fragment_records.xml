@@ -92,18 +92,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <HorizontalScrollView
+        <androidx.cardview.widget.CardView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:scrollbars="none"
-            android:overScrollMode="never"
-            android:background="@drawable/bottom_nav_floating_dock_bg"
-            android:elevation="4dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_records_filter"
@@ -158,6 +163,7 @@
                     android:text="@string/records_filter_shot" />
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
 
         <TextView
             android:id="@+id/btn_filter_checklist"
@@ -188,17 +194,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <HorizontalScrollView
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:overScrollMode="never"
-            android:background="@drawable/bottom_nav_floating_dock_bg"
-            android:elevation="4dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_camera_filter"
@@ -239,6 +250,7 @@
                     android:text="@string/records_filter_camera_dual" />
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
     </LinearLayout>
 
     <HorizontalScrollView
@@ -487,7 +499,9 @@
         android:id="@+id/fab_delete_selected"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="76dp"
         android:visibility="gone"
         android:contentDescription="@string/records_batch_actions_title"
         android:text="@string/records_batch_fab_label"
@@ -504,7 +518,9 @@
         style="?attr/floatingActionButtonSmallStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="76dp"
         android:visibility="gone"
         app:useCompatPadding="true"
         app:backgroundTint="@color/gray_button_filled"

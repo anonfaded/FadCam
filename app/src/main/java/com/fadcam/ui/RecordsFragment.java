@@ -2474,12 +2474,78 @@ public class RecordsFragment extends BaseFragment implements
 
     private void updateCameraFilterRowVisibility() {
         if (cameraFilterRow == null) return;
-        cameraFilterRow.setVisibility(activeFilter == VideoItem.Category.CAMERA ? View.VISIBLE : View.GONE);
+        
+        boolean shouldShow = activeFilter == VideoItem.Category.CAMERA;
+        boolean isCurrentlyVisible = cameraFilterRow.getVisibility() == View.VISIBLE;
+        
+        if (shouldShow && !isCurrentlyVisible) {
+            // Show with fluid amoeba-like animation
+            cameraFilterRow.setVisibility(View.VISIBLE);
+            cameraFilterRow.setAlpha(0f);
+            cameraFilterRow.setScaleY(0.3f);
+            cameraFilterRow.setTranslationY(-20f);
+            
+            cameraFilterRow.animate()
+                .alpha(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(400)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.5f))
+                .start();
+        } else if (!shouldShow && isCurrentlyVisible) {
+            // Hide with smooth collapse animation - completes fully before hiding
+            cameraFilterRow.animate()
+                .alpha(0f)
+                .scaleY(0f)
+                .translationY(-30f)
+                .setDuration(250)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> {
+                    cameraFilterRow.setVisibility(View.GONE);
+                    // Reset for next animation
+                    cameraFilterRow.setScaleY(0.3f);
+                    cameraFilterRow.setTranslationY(-20f);
+                })
+                .start();
+        }
     }
 
     private void updateFaditorFilterRowVisibility() {
         if (faditorFilterRow == null) return;
-        faditorFilterRow.setVisibility(activeFilter == VideoItem.Category.FADITOR ? View.VISIBLE : View.GONE);
+        
+        boolean shouldShow = activeFilter == VideoItem.Category.FADITOR;
+        boolean isCurrentlyVisible = faditorFilterRow.getVisibility() == View.VISIBLE;
+        
+        if (shouldShow && !isCurrentlyVisible) {
+            // Show with fluid amoeba-like animation
+            faditorFilterRow.setVisibility(View.VISIBLE);
+            faditorFilterRow.setAlpha(0f);
+            faditorFilterRow.setScaleY(0.3f);
+            faditorFilterRow.setTranslationY(-20f);
+            
+            faditorFilterRow.animate()
+                .alpha(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(400)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.5f))
+                .start();
+        } else if (!shouldShow && isCurrentlyVisible) {
+            // Hide with smooth collapse animation - completes fully before hiding
+            faditorFilterRow.animate()
+                .alpha(0f)
+                .scaleY(0f)
+                .translationY(-30f)
+                .setDuration(250)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> {
+                    faditorFilterRow.setVisibility(View.GONE);
+                    // Reset for next animation
+                    faditorFilterRow.setScaleY(0.3f);
+                    faditorFilterRow.setTranslationY(-20f);
+                })
+                .start();
+        }
     }
 
     private void updateCameraFilterChipUi() {
@@ -2522,7 +2588,40 @@ public class RecordsFragment extends BaseFragment implements
 
     private void updateShotFilterRowVisibility() {
         if (shotFilterRow == null) return;
-        shotFilterRow.setVisibility(activeFilter == VideoItem.Category.SHOT ? View.VISIBLE : View.GONE);
+        
+        boolean shouldShow = activeFilter == VideoItem.Category.SHOT;
+        boolean isCurrentlyVisible = shotFilterRow.getVisibility() == View.VISIBLE;
+        
+        if (shouldShow && !isCurrentlyVisible) {
+            // Show with fluid amoeba-like animation
+            shotFilterRow.setVisibility(View.VISIBLE);
+            shotFilterRow.setAlpha(0f);
+            shotFilterRow.setScaleY(0.3f);
+            shotFilterRow.setTranslationY(-20f);
+            
+            shotFilterRow.animate()
+                .alpha(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(400)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.5f))
+                .start();
+        } else if (!shouldShow && isCurrentlyVisible) {
+            // Hide with smooth collapse animation - completes fully before hiding
+            shotFilterRow.animate()
+                .alpha(0f)
+                .scaleY(0f)
+                .translationY(-30f)
+                .setDuration(250)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> {
+                    shotFilterRow.setVisibility(View.GONE);
+                    // Reset for next animation
+                    shotFilterRow.setScaleY(0.3f);
+                    shotFilterRow.setTranslationY(-20f);
+                })
+                .start();
+        }
     }
 
     private void updateShotFilterChipUi() {
