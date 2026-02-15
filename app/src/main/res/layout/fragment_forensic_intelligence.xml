@@ -74,7 +74,7 @@
                     android:layout_width="12dp"
                     android:layout_height="12dp"
                     android:layout_marginStart="10dp"
-                    android:src="@drawable/ic_storage"
+                    android:src="@drawable/database_24px"
                     android:tint="#CCFFFFFF" />
 
                 <TextView

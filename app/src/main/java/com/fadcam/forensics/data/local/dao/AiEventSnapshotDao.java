@@ -19,6 +19,12 @@ public interface AiEventSnapshotDao {
     @Query("DELETE FROM ai_event_snapshot WHERE snapshot_uid = :snapshotUid")
     void deleteBySnapshotUid(String snapshotUid);
 
+    @Query("SELECT COUNT(*) FROM ai_event_snapshot")
+    long countAllSnapshots();
+
+    @Query("SELECT COUNT(*) FROM ai_event_snapshot WHERE media_uid = :mediaUid")
+    long countByMediaUid(String mediaUid);
+
     @Query("SELECT * FROM ai_event_snapshot WHERE event_uid = :eventUid ORDER BY timeline_ms ASC LIMIT :limitCount")
     List<AiEventSnapshotEntity> getByEventUid(String eventUid, int limitCount);
 

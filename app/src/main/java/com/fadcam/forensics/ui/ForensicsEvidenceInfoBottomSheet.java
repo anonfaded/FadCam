@@ -3,6 +3,7 @@ package com.fadcam.forensics.ui;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -68,7 +69,7 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.bottomsheet_video_info, container, false);
+        return inflater.inflate(R.layout.bottomsheet_forensics_evidence_info, container, false);
     }
 
     @Override
@@ -88,6 +89,7 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
         }
         setupRows(view);
         setupCopy(view);
+        setupOpenSource(view);
     }
 
     private void setupRows(@NonNull View root) {
@@ -153,6 +155,32 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
                 clipboard.setPrimaryClip(ClipData.newPlainText("forensics_evidence", buildCopyText()));
                 Toast.makeText(requireContext(), R.string.forensics_copy_done, Toast.LENGTH_SHORT).show();
             });
+        }
+    }
+
+    private void setupOpenSource(@NonNull View root) {
+        View row = root.findViewById(R.id.open_video_action_row);
+        TextView subtitle = root.findViewById(R.id.open_video_subtitle);
+        Bundle args = getArguments();
+        String sourceUri = args != null ? args.getString(ARG_SOURCE_URI) : null;
+        boolean available = !TextUtils.isEmpty(sourceUri);
+        if (subtitle != null) {
+            subtitle.setText(available ? getString(R.string.forensics_video_linked) : getString(R.string.forensics_not_available));
+        }
+        if (row != null) {
+            row.setEnabled(available);
+            row.setAlpha(available ? 1f : 0.55f);
+            row.setOnClickListener(available ? v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.parse(sourceUri), "video/*");
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(intent);
+                    dismiss();
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), R.string.forensics_not_available, Toast.LENGTH_SHORT).show();
+                }
+            } : null);
         }
     }
 

@@ -101,7 +101,7 @@ public class DigitalForensicsIndexer {
         fresh.firstSeenAt = now;
         fresh.lastSeenAt = now;
         fresh.linkStatus = "NEW";
-        mediaAssetDao.upsert(fresh);
+        mediaAssetDao.insertIgnore(fresh);
     }
 
     private MediaAssetEntity findProbableMatch(VideoItem item, long durationMs) {

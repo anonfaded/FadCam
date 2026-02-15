@@ -33,8 +33,8 @@
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
         android:textAlignment="viewStart"
-        android:maxLines="1"
-        android:ellipsize="end"
+        android:maxLines="2"
+        android:ellipsize="none"
         tools:text="File Name" />
 
     <!-- Value Column -->
@@ -47,7 +47,7 @@
         android:textColor="?attr/pickerTextSecondary"
         android:textAlignment="viewStart"
         android:layout_marginStart="16dp"
-        android:maxLines="4"
+        android:maxLines="8"
         android:ellipsize="none"
         android:lineSpacingExtra="2dp"
         tools:text="FadCam_20250828_213415.mp4" />

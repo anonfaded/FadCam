@@ -33,12 +33,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.RectF;
+import android.graphics.Color;
+import android.graphics.Typeface;
 
 /**
  * Real-time forensics event writer: multi-event, snapshot-first, no stop-only dependency.
@@ -63,6 +65,7 @@ public class DigitalForensicsEventRecorder {
     private long filteredByAntiFaceCount;
     private long filterSeenCount;
     private long lastFilterLogMs;
+    private final Map<String, Long> lastMediaSnapshotCount = new ConcurrentHashMap<>();
 
     private static final class ActiveEvent {
         String eventUid;
@@ -232,6 +235,21 @@ public class DigitalForensicsEventRecorder {
                     snapshot.sha256 = sha256(detectionSnapshot);
                     snapshotDao.upsert(snapshot);
                     snapshotPersistCount++;
+                    long mediaCount = snapshotDao.countByMediaUid(mediaUid);
+                    long totalCount = snapshotDao.countAllSnapshots();
+                    long prev = lastMediaSnapshotCount.containsKey(mediaUid) ? lastMediaSnapshotCount.get(mediaUid) : 0L;
+                    if (mediaCount < prev) {
+                        Log.e(TAG, "ForensicsPersist regression: mediaUid=" + mediaUid
+                                + ", previousMediaSnapshots=" + prev
+                                + ", currentMediaSnapshots=" + mediaCount
+                                + ", totalSnapshots=" + totalCount
+                                + ", lastSnapshotUid=" + snapshotUid);
+                    }
+                    lastMediaSnapshotCount.put(mediaUid, mediaCount);
+                    Log.i(TAG, "ForensicsPersist: mediaUid=" + mediaUid
+                            + ", mediaSnapshots=" + mediaCount
+                            + ", totalSnapshots=" + totalCount
+                            + ", lastSnapshotUid=" + snapshotUid);
                 }
                 event.lastSnapshotMs = timelineMs;
             }
@@ -277,7 +295,10 @@ public class DigitalForensicsEventRecorder {
         event.mediaMissing = false;
         event.alertState = "PENDING";
         event.alertChannel = null;
-        aiEventDao.upsert(event);
+        long inserted = aiEventDao.insertIgnore(event);
+        if (inserted == -1L) {
+            aiEventDao.update(event);
+        }
     }
 
     private int toPriority(float confidence) {
@@ -356,7 +377,7 @@ public class DigitalForensicsEventRecorder {
                     existing.displayName = deriveDisplayName(mediaUri);
                 }
                 existing.lastSeenAt = nowEpoch;
-                mediaAssetDao.upsert(existing);
+                mediaAssetDao.update(existing);
                 return existing.mediaUid;
             }
 
@@ -374,7 +395,10 @@ public class DigitalForensicsEventRecorder {
             asset.lastSeenAt = nowEpoch;
             asset.linkStatus = "NEW";
             enrichAssetMetadata(asset, mediaUri);
-            mediaAssetDao.upsert(asset);
+            long inserted = mediaAssetDao.insertIgnore(asset);
+            if (inserted == -1L) {
+                mediaAssetDao.update(asset);
+            }
             return asset.mediaUid;
         } catch (Exception e) {
             Log.w(TAG, "ensureMediaAsset failed for uri=" + mediaUri, e);
@@ -439,32 +463,38 @@ public class DigitalForensicsEventRecorder {
         try {
             Canvas canvas = new Canvas(bitmap);
             String stamp = formatWatermark(captureEpochMs, timelineMs);
-            float density = appContext.getResources().getDisplayMetrics().density;
-            Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            textPaint.setColor(android.graphics.Color.WHITE);
-            textPaint.setTextSize(11f * density);
-            textPaint.setFakeBoldText(true);
-            float textWidth = textPaint.measureText(stamp);
-            Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            bgPaint.setColor(0x99000000);
-            float pad = 4f * density;
-            float left = 6f * density;
-            float bottom = bitmap.getHeight() - (6f * density);
-            float top = bottom - (16f * density);
-            RectF rect = new RectF(left, top, left + textWidth + (pad * 2f), bottom);
-            canvas.drawRoundRect(rect, 6f * density, 6f * density, bgPaint);
-            canvas.drawText(stamp, rect.left + pad, rect.bottom - (4f * density), textPaint);
+            float textSize = Math.max(18f, Math.min(24f, bitmap.getWidth() * 0.006f));
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(textSize);
+            paint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
+            paint.setFakeBoldText(true);
+            try {
+                Typeface ubuntu = Typeface.createFromAsset(appContext.getAssets(), "ubuntu_regular.ttf");
+                paint.setTypeface(ubuntu);
+            } catch (Exception ignored) {
+                paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
+            }
+
+            int padding = Math.max(14, Math.round(bitmap.getWidth() * 0.012f));
+            String[] lines = stamp.split("\n");
+            Paint.FontMetrics fm = paint.getFontMetrics();
+            float lineHeight = (fm.descent - fm.ascent) + 4f;
+            float y = padding - fm.ascent;
+            for (String line : lines) {
+                canvas.drawText(line, padding, y, paint);
+                y += lineHeight;
+            }
         } catch (Throwable ignored) {
         }
     }
 
     @NonNull
     private String formatWatermark(long captureEpochMs, long timelineMs) {
-        String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(Math.max(0L, captureEpochMs)));
-        long sec = Math.max(0L, timelineMs / 1000L);
-        long min = sec / 60L;
-        long rem = sec % 60L;
-        return date + "  t=" + min + ":" + String.format(Locale.US, "%02d", rem);
+        String date = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH).format(new Date(Math.max(0L, captureEpochMs)));
+        String custom = prefs.getWatermarkCustomText();
+        String customLine = (custom != null && !custom.trim().isEmpty()) ? ("\n" + custom.trim()) : "";
+        return "Captured by FadCam - " + date + customLine;
     }
 
     private String normalizeClassName(String raw) {

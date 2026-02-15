@@ -2249,11 +2249,17 @@ public class RecordsFragment extends BaseFragment implements
                 .setDuration(220)
                 .setInterpolator(new android.view.animation.DecelerateInterpolator())
                 .start();
+        fabDeleteSelected.postDelayed(() -> {
+            if (fabDeleteSelected != null && fabDeleteSelected.getVisibility() == View.VISIBLE) {
+                fabDeleteSelected.shrink();
+            }
+        }, 1300L);
     }
 
     private void hideBatchFabAnimated() {
         if (fabDeleteSelected == null) return;
         if (fabDeleteSelected.getVisibility() != View.VISIBLE) return;
+        fabDeleteSelected.extend();
         fabDeleteSelected.animate()
                 .alpha(0f)
                 .scaleX(0.9f)
@@ -2679,7 +2685,7 @@ public class RecordsFragment extends BaseFragment implements
 
     private void setChipLabelWithCount(@Nullable Chip chip, int baseLabelRes, int count) {
         if (chip == null) return;
-        chip.setText(getString(baseLabelRes) + " " + count);
+        chip.setText(getString(baseLabelRes) + " (" + count + ")");
     }
 
     private int getShotSubtypeCount(@NonNull VideoItem.ShotSubtype subtype) {

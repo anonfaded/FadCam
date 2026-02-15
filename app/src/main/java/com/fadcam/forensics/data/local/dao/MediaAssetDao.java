@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.fadcam.forensics.data.local.entity.MediaAssetEntity;
 
@@ -12,8 +13,11 @@ import java.util.List;
 @Dao
 public interface MediaAssetDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void upsert(MediaAssetEntity entity);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insertIgnore(MediaAssetEntity entity);
+
+    @Update
+    int update(MediaAssetEntity entity);
 
     @Query("SELECT * FROM media_asset WHERE current_uri = :currentUri LIMIT 1")
     MediaAssetEntity findByCurrentUri(String currentUri);

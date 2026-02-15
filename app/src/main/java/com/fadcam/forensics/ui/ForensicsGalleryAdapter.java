@@ -15,9 +15,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.fadcam.R;
+import com.fadcam.Utils;
 import com.fadcam.forensics.data.local.model.ForensicsSnapshotWithMedia;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -68,7 +68,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     private boolean selectionMode;
 
     public ForensicsGalleryAdapter() {
-        setHasStableIds(true);
+        setHasStableIds(false);
     }
 
     public void setListener(@Nullable Listener listener) {
@@ -174,16 +174,6 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return entries.get(position).type;
     }
 
-    @Override
-    public long getItemId(int position) {
-        Entry entry = entries.get(position);
-        if (entry instanceof HeaderEntry) {
-            return ("header_" + ((HeaderEntry) entry).monthKey).hashCode();
-        }
-        ForensicsSnapshotWithMedia row = ((ItemEntry) entry).row;
-        return snapshotId(row).hashCode();
-    }
-
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -208,10 +198,6 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
 
     private void bindMonthHeader(@NonNull MonthHolder holder, @NonNull HeaderEntry header) {
         holder.title.setText(header.monthKey);
-        if (!selectionMode) {
-            holder.selectContainer.setVisibility(View.GONE);
-            return;
-        }
         holder.selectContainer.setVisibility(View.VISIBLE);
         boolean allInMonthSelected = true;
         List<ForensicsSnapshotWithMedia> monthRows = rowsForMonth(header.monthKey);
@@ -221,13 +207,15 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 break;
             }
         }
-        holder.selectBg.setVisibility(View.VISIBLE);
-        holder.selectCheck.setVisibility(allInMonthSelected ? View.VISIBLE : View.INVISIBLE);
-        holder.selectContainer.setOnClickListener(v -> {
+        holder.selectBg.setVisibility(selectionMode ? View.VISIBLE : View.INVISIBLE);
+        holder.selectCheck.setVisibility(selectionMode && allInMonthSelected ? View.VISIBLE : View.INVISIBLE);
+        holder.selectContainer.setAlpha(selectionMode ? 1f : 0f);
+        holder.selectContainer.setEnabled(selectionMode);
+        holder.selectContainer.setOnClickListener(selectionMode ? v -> {
             if (listener != null) {
                 listener.onMonthSelectionRequested(header.monthKey);
             }
-        });
+        } : null);
     }
 
     private void bindItem(@NonNull ItemHolder holder, @NonNull ItemEntry entry, int position) {
@@ -241,14 +229,16 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         holder.title.setText(classLabel + " • " + formatTimelineMs(row.timelineMs));
         String sourceLabel = mediaMissing ? "snapshot-only" : "video-linked";
         String sizeLabel = Formatter.formatShortFileSize(holder.itemView.getContext(), Math.max(0L, resolveImageSize(row.imageUri)));
+        String timeAgo = Utils.formatTimeAgo(row.capturedEpochMs);
         holder.meta.setText(String.format(
                 Locale.US,
-                "%s • conf %.2f • %s • %s",
-                formatDate(row.capturedEpochMs),
+                "%s • conf %.2f • %s",
+                (timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo,
                 row.confidence,
-                sourceLabel,
-                sizeLabel
+                sourceLabel
         ));
+        holder.overlaySize.setText(sizeLabel);
+        holder.overlayTime.setText((timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo);
         holder.index.setText(String.valueOf(itemNumberForPosition(position)));
 
         holder.selectionDimOverlay.setVisibility(selected ? View.VISIBLE : View.GONE);
@@ -354,7 +344,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         if (row.snapshotUid != null && !row.snapshotUid.isEmpty()) {
             return row.snapshotUid;
         }
-        return safe(row.imageUri) + "|" + row.timelineMs;
+        return safe(row.imageUri) + "|" + row.timelineMs + "|" + row.capturedEpochMs + "|" + safe(row.eventUid);
     }
 
     private boolean isMediaMissing(@Nullable String mediaUri) {
@@ -391,12 +381,6 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return new SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(new Date(epochMs));
     }
 
-    private String formatDate(long epochMs) {
-        if (epochMs <= 0L) return "Unknown";
-        DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.getDefault());
-        return formatter.format(new Date(epochMs));
-    }
-
     private String formatTimelineMs(long ms) {
         long totalSec = Math.max(0L, ms / 1000L);
         long mins = totalSec / 60L;
@@ -431,6 +415,8 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         final TextView title;
         final TextView meta;
         final TextView index;
+        final TextView overlaySize;
+        final TextView overlayTime;
 
         ItemHolder(@NonNull View itemView) {
             super(itemView);
@@ -441,6 +427,8 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             title = itemView.findViewById(R.id.text_gallery_title);
             meta = itemView.findViewById(R.id.text_gallery_meta);
             index = itemView.findViewById(R.id.text_gallery_index);
+            overlaySize = itemView.findViewById(R.id.text_gallery_overlay_size);
+            overlayTime = itemView.findViewById(R.id.text_gallery_overlay_time);
         }
     }
 

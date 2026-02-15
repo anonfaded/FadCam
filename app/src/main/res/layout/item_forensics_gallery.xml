@@ -40,6 +40,34 @@
             android:background="#B5000000"
             android:visibility="gone" />
 
+        <LinearLayout
+            android:id="@+id/file_info_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="6dp"
+            android:background="@drawable/file_size_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="2dp">
+
+            <TextView
+                android:id="@+id/text_gallery_overlay_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textColor="@android:color/white"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/text_gallery_overlay_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
         <FrameLayout
             android:id="@+id/icon_check_container"
             android:layout_width="42dp"
@@ -72,9 +100,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:minLines="1"
+        android:maxLines="3"
+        android:minLines="2"
         android:textColor="?attr/colorHeading"
         android:textSize="12sp"
         android:textStyle="bold" />
@@ -83,8 +110,7 @@
         android:id="@+id/text_gallery_meta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="2"
+        android:maxLines="3"
         android:minLines="2"
         android:textColor="@android:color/darker_gray"
         android:textSize="10sp" />

@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.animation.ObjectAnimator;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,6 +36,7 @@ import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.utils.TrashManager;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,6 +68,7 @@ public class ForensicsGalleryFragment extends Fragment {
     private TextView statCount;
     private TextView statSize;
     private ExtendedFloatingActionButton batchFab;
+    private FloatingActionButton scrollFab;
     private HorizontalScrollView chipScroll;
     private Chip chipAll;
     private Chip chipPerson;
@@ -78,6 +81,12 @@ public class ForensicsGalleryFragment extends Fragment {
     private String selectedType = null;
     private boolean embeddedMode;
     private boolean allSelectedState;
+    private final android.os.Handler uiHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    @Nullable
+    private Runnable batchFabShrinkRunnable;
+    private boolean isScrollingDown;
+    @Nullable
+    private ObjectAnimator scrollFabRotationAnimator;
     @Nullable
     private HostSelectionUi hostSelectionUi;
 
@@ -110,6 +119,7 @@ public class ForensicsGalleryFragment extends Fragment {
         statCount = view.findViewById(R.id.text_gallery_stat_count);
         statSize = view.findViewById(R.id.text_gallery_stat_size);
         batchFab = view.findViewById(R.id.fab_gallery_batch);
+        scrollFab = view.findViewById(R.id.fab_gallery_scroll_navigation);
         chipScroll = view.findViewById(R.id.chip_scroll_gallery);
         chipAll = view.findViewById(R.id.chip_gallery_all);
         chipPerson = view.findViewById(R.id.chip_gallery_person);
@@ -167,6 +177,19 @@ public class ForensicsGalleryFragment extends Fragment {
             }
         });
         recycler.setAdapter(adapter);
+        recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy > 0) {
+                    isScrollingDown = true;
+                } else if (dy < 0) {
+                    isScrollingDown = false;
+                }
+                updateNavigationFab();
+                showNavigationFab();
+            }
+        });
 
         adapter.setListener(new ForensicsGalleryAdapter.Listener() {
             @Override
@@ -213,6 +236,9 @@ public class ForensicsGalleryFragment extends Fragment {
         if (batchFab != null) {
             batchFab.setOnClickListener(v -> showBatchActions());
         }
+        if (scrollFab != null) {
+            scrollFab.setOnClickListener(v -> handleNavigationFabClick());
+        }
 
         renderSelectionState(0);
         loadData();
@@ -238,19 +264,11 @@ public class ForensicsGalleryFragment extends Fragment {
     }
 
     public void showInfoBottomPicker() {
-        ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("ok", getString(R.string.forensics_info_line_1), null, null, R.drawable.ic_info));
-        items.add(new OptionItem("ok2", getString(R.string.forensics_info_line_2), null, null, R.drawable.ic_photo));
-        items.add(new OptionItem("ok3", getString(R.string.forensics_info_line_3), null, null, R.drawable.ic_share));
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
-                getString(R.string.forensics_info_title),
-                items,
-                "ok",
-                INFO_PICKER_RESULT,
-                getString(R.string.forensics_info_helper),
-                true
-        );
-        sheet.show(getParentFragmentManager(), INFO_PICKER_RESULT + "_sheet");
+        if (!isAdded() || getParentFragmentManager().isStateSaved()) {
+            return;
+        }
+        ForensicsGalleryInfoBottomSheetFragment.newInstance()
+                .show(getParentFragmentManager(), INFO_PICKER_RESULT + "_sheet");
     }
 
     private void showBatchActions() {
@@ -302,8 +320,21 @@ public class ForensicsGalleryFragment extends Fragment {
                             .setDuration(220)
                             .setInterpolator(new DecelerateInterpolator())
                             .start();
+                    if (batchFabShrinkRunnable != null) {
+                        uiHandler.removeCallbacks(batchFabShrinkRunnable);
+                    }
+                    batchFabShrinkRunnable = () -> {
+                        if (batchFab != null && batchFab.getVisibility() == View.VISIBLE) {
+                            batchFab.shrink();
+                        }
+                    };
+                    uiHandler.postDelayed(batchFabShrinkRunnable, 1300L);
                 }
             } else if (batchFab.getVisibility() == View.VISIBLE) {
+                if (batchFabShrinkRunnable != null) {
+                    uiHandler.removeCallbacks(batchFabShrinkRunnable);
+                }
+                batchFab.extend();
                 batchFab.animate()
                         .alpha(0f)
                         .scaleX(0.9f)
@@ -357,6 +388,7 @@ public class ForensicsGalleryFragment extends Fragment {
         empty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
         renderChipCounts(allRows);
         renderStats(filtered);
+        updateNavigationFab();
     }
 
     private void renderChipCounts(@NonNull List<ForensicsSnapshotWithMedia> rows) {
@@ -470,14 +502,12 @@ public class ForensicsGalleryFragment extends Fragment {
 
     private void showSortMenu(View anchor) {
         ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("sort_newest", getString(R.string.forensics_sort_newest), null, null, R.drawable.ic_sort_amount_down));
-        items.add(new OptionItem("sort_oldest", getString(R.string.sort_oldest_first), null, null, R.drawable.ic_sort_amount_up));
+        items.add(new OptionItem("sort_newest", getString(R.string.forensics_sort_newest), null, null, R.drawable.ic_arrow_down));
+        items.add(new OptionItem("sort_oldest", getString(R.string.sort_oldest_first), null, null, R.drawable.ic_arrow_up));
         items.add(new OptionItem("sort_confidence", getString(R.string.forensics_sort_confidence), null, null, R.drawable.ic_focus_target));
-        items.add(new OptionItem("sort_event", getString(R.string.forensics_gallery_sort_event_type), null, null, R.drawable.ic_grid));
         String selectedId = "sort_newest";
         if ("oldest".equals(selectedSort)) selectedId = "sort_oldest";
         if ("confidence".equals(selectedSort)) selectedId = "sort_confidence";
-        if ("event".equals(selectedSort)) selectedId = "sort_event";
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
                 getString(R.string.sort_by),
                 items,
@@ -491,7 +521,6 @@ public class ForensicsGalleryFragment extends Fragment {
             switch (picked) {
                 case "sort_oldest": selectedSort = "oldest"; break;
                 case "sort_confidence": selectedSort = "confidence"; break;
-                case "sort_event": selectedSort = "event"; break;
                 default: selectedSort = "newest"; break;
             }
             applyFiltersAndRender();
@@ -544,14 +573,6 @@ public class ForensicsGalleryFragment extends Fragment {
                 break;
             case "oldest":
                 Collections.sort(rows, Comparator.comparingLong(a -> a.capturedEpochMs));
-                break;
-            case "event":
-                Collections.sort(rows, (a, b) -> {
-                    String aa = a.eventType == null ? "" : a.eventType;
-                    String bb = b.eventType == null ? "" : b.eventType;
-                    int cmp = aa.compareTo(bb);
-                    return cmp != 0 ? cmp : Long.compare(b.capturedEpochMs, a.capturedEpochMs);
-                });
                 break;
             default:
                 Collections.sort(rows, (a, b) -> Long.compare(b.capturedEpochMs, a.capturedEpochMs));
@@ -626,5 +647,57 @@ public class ForensicsGalleryFragment extends Fragment {
 
     private int dpToPxInt(int dp) {
         return Math.round(dpToPx(dp));
+    }
+
+    private void updateNavigationFab() {
+        if (scrollFab == null || recycler == null) return;
+        RecyclerView.LayoutManager lm = recycler.getLayoutManager();
+        if (lm == null) return;
+        int total = lm.getItemCount();
+        if (total <= 8) {
+            scrollFab.setVisibility(View.GONE);
+            return;
+        }
+        scrollFab.setVisibility(View.VISIBLE);
+        float targetRotation = isScrollingDown ? 90f : -90f;
+        String cd = getString(isScrollingDown ? R.string.scroll_to_bottom : R.string.scroll_to_top);
+        if (scrollFabRotationAnimator != null && scrollFabRotationAnimator.isRunning()) {
+            scrollFabRotationAnimator.cancel();
+        }
+        float current = scrollFab.getRotation();
+        if (Math.abs(current - targetRotation) > 1f) {
+            scrollFabRotationAnimator = ObjectAnimator.ofFloat(scrollFab, "rotation", current, targetRotation);
+            scrollFabRotationAnimator.setDuration(280);
+            scrollFabRotationAnimator.setInterpolator(new android.view.animation.OvershootInterpolator(0.3f));
+            scrollFabRotationAnimator.start();
+        } else {
+            scrollFab.setRotation(targetRotation);
+        }
+        scrollFab.setContentDescription(cd);
+    }
+
+    private void handleNavigationFabClick() {
+        if (recycler == null) return;
+        RecyclerView.LayoutManager lm = recycler.getLayoutManager();
+        if (lm == null) return;
+        int total = lm.getItemCount();
+        if (total <= 0) return;
+        if (isScrollingDown) {
+            recycler.smoothScrollToPosition(total - 1);
+        } else {
+            recycler.smoothScrollToPosition(0);
+        }
+        uiHandler.postDelayed(this::updateNavigationFab, 500L);
+    }
+
+    private void showNavigationFab() {
+        if (scrollFab == null) return;
+        if (scrollFab.getVisibility() != View.VISIBLE) {
+            scrollFab.setAlpha(0f);
+            scrollFab.setVisibility(View.VISIBLE);
+            scrollFab.animate().alpha(1f).setDuration(200).start();
+        } else {
+            scrollFab.animate().alpha(1f).setDuration(120).start();
+        }
     }
 }

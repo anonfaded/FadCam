@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.fadcam.forensics.data.local.entity.AiEventEntity;
 import com.fadcam.forensics.data.local.model.AiEventWithMedia;
@@ -13,8 +14,11 @@ import java.util.List;
 @Dao
 public interface AiEventDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void upsert(AiEventEntity entity);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insertIgnore(AiEventEntity entity);
+
+    @Update
+    int update(AiEventEntity entity);
 
     @Query("SELECT * FROM ai_event WHERE media_uid = :mediaUid ORDER BY start_ms ASC")
     List<AiEventEntity> getByMediaUid(String mediaUid);
