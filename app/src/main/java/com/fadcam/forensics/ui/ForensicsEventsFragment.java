@@ -6,11 +6,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
+import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +31,7 @@ import com.google.android.material.chip.Chip;
 
 import android.graphics.Color;
 import android.text.TextUtils;
+import android.widget.Toast;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,6 +44,8 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
 
     private RecyclerView recycler;
     private TextView empty;
+    private TextView sortValue;
+    private TextView mediaStateValue;
     private Chip chipAll;
     private Chip chipPerson;
     private Chip chipVehicle;
@@ -52,6 +59,9 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     private ForensicsEventsAdapter adapter;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private boolean embeddedMode;
+    private String selectedSort = "newest";
+    @Nullable
+    private String selectedMediaState = null;
 
     public static ForensicsEventsFragment newEmbeddedInstance() {
         ForensicsEventsFragment fragment = new ForensicsEventsFragment();
@@ -86,6 +96,8 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
 
         recycler = view.findViewById(R.id.recycler_events);
         empty = view.findViewById(R.id.text_empty);
+        sortValue = view.findViewById(R.id.text_sort_value);
+        mediaStateValue = view.findViewById(R.id.text_media_state_value);
         chipAll = view.findViewById(R.id.chip_event_all);
         chipPerson = view.findViewById(R.id.chip_event_person);
         chipVehicle = view.findViewById(R.id.chip_event_vehicle);
@@ -107,6 +119,16 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chipPet.setOnClickListener(v -> selectEventTypeChip(chipPet));
         chipObject.setOnClickListener(v -> selectEventTypeChip(chipObject));
         chipHighConf.setOnCheckedChangeListener((buttonView, isChecked) -> loadEvents());
+        ImageView sortButton = view.findViewById(R.id.button_sort_events);
+        if (sortButton != null) {
+            sortButton.setOnClickListener(v -> showSortMenu(v));
+        }
+        if (sortValue != null) {
+            sortValue.setOnClickListener(this::showSortMenu);
+        }
+        if (mediaStateValue != null) {
+            mediaStateValue.setOnClickListener(this::showSortMenu);
+        }
         if (chipSubtypeAll != null) {
             chipSubtypeAll.setOnClickListener(v -> {
                 selectedSubtype = null;
@@ -136,8 +158,8 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         styleChip(chipHighConf);
         applyChipIcon(chipAll, R.drawable.ic_list);
         applyChipIcon(chipPerson, R.drawable.ic_broadcast_on_personal_24);
-        applyChipIcon(chipVehicle, R.drawable.ic_records);
-        applyChipIcon(chipPet, R.drawable.ic_theme);
+        applyChipIcon(chipVehicle, R.drawable.ic_forensics_vehicle);
+        applyChipIcon(chipPet, R.drawable.ic_forensics_pet);
         applyChipIcon(chipObject, R.drawable.ic_grid);
         applyChipIcon(chipHighConf, R.drawable.ic_focus_target);
         chipHighConf.setCheckedIconVisible(false);
@@ -187,6 +209,10 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
         chip.setChipStrokeWidth(dpToPx(1));
         chip.setEnsureMinTouchTargetSize(false);
+        chip.setMinHeight((int) dpToPx(32));
+        chip.setMinimumHeight((int) dpToPx(32));
+        chip.setChipStartPadding(dpToPx(10));
+        chip.setChipEndPadding(dpToPx(10));
     }
 
     private int resolveThemeColor(int attr) {
@@ -214,7 +240,16 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         final long since = System.currentTimeMillis() - (7L * 24L * 60L * 60L * 1000L);
         executor.execute(() -> {
             ForensicsDatabase db = ForensicsDatabase.getInstance(requireContext());
-            List<AiEventWithMedia> rows = db.aiEventDao().getTimeline(eventType, className, minConf, since, 400);
+            String sortOrder = "confidence".equals(selectedSort) ? "confidence" : "newest";
+            List<AiEventWithMedia> rows = db.aiEventDao().getTimeline(
+                    eventType,
+                    className,
+                    minConf,
+                    since,
+                    selectedMediaState,
+                    sortOrder,
+                    400
+            );
             List<String> dynamicSubtypes = objectMode
                     ? db.aiEventDao().getTopClassNames(since, "OBJECT", 10)
                     : null;
@@ -226,8 +261,82 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                 boolean hasRows = rows != null && !rows.isEmpty();
                 empty.setVisibility(hasRows ? View.GONE : View.VISIBLE);
                 renderSubtypeChips(dynamicSubtypes, objectMode);
+                refreshSortUi();
             });
         });
+    }
+
+    private void showSortMenu(View anchor) {
+        if (!isAdded()) {
+            return;
+        }
+        PopupMenu popup = new PopupMenu(requireContext(), anchor);
+        Menu menu = popup.getMenu();
+        menu.add(0, 1, 0, getString(R.string.forensics_sort_newest));
+        menu.add(0, 2, 1, getString(R.string.forensics_sort_confidence));
+        menu.add(0, 3, 2, getString(R.string.forensics_sort_evidence_rich));
+        menu.add(0, 4, 3, getString(R.string.forensics_media_all));
+        menu.add(0, 5, 4, getString(R.string.forensics_media_available));
+        menu.add(0, 6, 5, getString(R.string.forensics_media_missing_only));
+        popup.setOnMenuItemClickListener(this::onSortMenuItem);
+        popup.show();
+    }
+
+    private boolean onSortMenuItem(MenuItem item) {
+        switch (item.getItemId()) {
+            case 1:
+                selectedSort = "newest";
+                break;
+            case 2:
+                selectedSort = "confidence";
+                break;
+            case 3:
+                selectedSort = "evidence";
+                break;
+            case 4:
+                selectedMediaState = null;
+                break;
+            case 5:
+                selectedMediaState = "AVAILABLE";
+                break;
+            case 6:
+                selectedMediaState = "MISSING";
+                break;
+            default:
+                return false;
+        }
+        refreshSortUi();
+        loadEvents();
+        return true;
+    }
+
+    private void refreshSortUi() {
+        if (sortValue != null) {
+            String label;
+            switch (selectedSort) {
+                case "confidence":
+                    label = getString(R.string.forensics_sort_confidence);
+                    break;
+                case "evidence":
+                    label = getString(R.string.forensics_sort_evidence_rich);
+                    break;
+                default:
+                    label = getString(R.string.forensics_sort_newest);
+                    break;
+            }
+            sortValue.setText(getString(R.string.forensics_sort_label, label));
+        }
+        if (mediaStateValue != null) {
+            String label;
+            if ("AVAILABLE".equals(selectedMediaState)) {
+                label = getString(R.string.forensics_media_available);
+            } else if ("MISSING".equals(selectedMediaState)) {
+                label = getString(R.string.forensics_media_missing_only);
+            } else {
+                label = getString(R.string.forensics_media_all);
+            }
+            mediaStateValue.setText(getString(R.string.forensics_source_label, label));
+        }
     }
 
     private void renderSubtypeChips(@Nullable List<String> subtypes, boolean objectMode) {
@@ -313,6 +422,10 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
 
     @Override
     public void onEventClicked(AiEventWithMedia row) {
+        if (row != null && row.mediaMissing) {
+            Toast.makeText(requireContext(), R.string.forensics_media_missing, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (row == null || row.mediaUri == null || row.mediaUri.isEmpty()) {
             return;
         }
@@ -326,6 +439,10 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
 
     @Override
     public void onEventFrameClicked(AiEventWithMedia row, long targetMs) {
+        if (row != null && row.mediaMissing) {
+            Toast.makeText(requireContext(), R.string.forensics_media_missing, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (row == null || row.mediaUri == null || row.mediaUri.isEmpty()) {
             return;
         }

@@ -19,6 +19,17 @@ This roadmap is modular, realtime-oriented, and privacy-first.
 - [x] Bump forensics DB schema and use latest clean destructive reset policy for this refactor
 - [x] Keep English-first strings for new UI labels in this phase
 
+## Hard-Cut Runtime Stack (Locked 2026-02-15)
+- [x] Use EfficientDet-Lite1 as the only detector path in recording analysis
+- [x] Remove overlay payload compatibility fallback logic in renderer path (strict `LABEL|CONF|cx|cy|w|h|TYPE`)
+- [x] Shift forensic event persistence to real-time heartbeat writes (no stop-only dependency)
+- [x] Add multi-event active aggregation keyed by media+type+class
+- [x] Add persistent snapshot evidence table (`ai_event_snapshot`) + DAO
+- [x] Add lifecycle metadata fields to `ai_event` (`status`, seen-range, sample count, peak confidence, alert fields)
+- [x] Bump forensics DB schema to latest (`version=5`, destructive migration policy)
+- [x] Move Lab root from tabbed pager to events-first single surface with top-right hamburger
+- [x] Add Lab sidebar shell with Insights/admin destinations
+
 ## Architecture Decision (Locked 2026-02-13)
 - [x] Single detector source of truth: **EfficientDet-Lite1**
 - [x] Legacy person-only detector removed

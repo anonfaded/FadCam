@@ -3,7 +3,6 @@ package com.fadcam.forensics.ui;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.util.LruCache;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,8 +14,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.forensics.data.local.ForensicsDatabase;
+import com.fadcam.forensics.data.local.entity.AiEventSnapshotEntity;
 import com.fadcam.forensics.data.local.model.AiEventWithMedia;
 
 import java.util.ArrayList;
@@ -37,7 +40,6 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
     private final Listener listener;
     private final List<AiEventWithMedia> rows = new ArrayList<>();
     private final ExecutorService thumbExecutor = Executors.newSingleThreadExecutor();
-    private final LruCache<String, Bitmap> thumbCache = new LruCache<>(48);
 
     public ForensicsEventsAdapter(Listener listener) {
         this.listener = listener;
@@ -72,13 +74,14 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
 
         holder.title.setText(title);
         holder.subtitle.setText(String.format(Locale.US,
-                "%s • %s • %s-%s • conf %.2f • %s",
+                "%s • %s • %s-%s • conf %.2f • %s • %s",
                 mediaName,
                 row.eventType,
                 formatTime(startSec),
                 formatTime(endSec),
                 row.confidence,
-                detectedAt));
+                detectedAt,
+                row.mediaMissing ? "evidence-only" : "video-linked"));
 
         boolean seen = isEventSeen(holder.itemView, row.eventUid);
         if (!seen && isRecent(row)) {
@@ -104,20 +107,38 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
 
     private void bindProofImage(@NonNull Holder holder, AiEventWithMedia row, long startMs) {
         holder.proof.setImageResource(R.drawable.ic_photo);
-        if (row == null || row.mediaUri == null || row.mediaUri.isEmpty()) {
+        if (row == null) {
+            return;
+        }
+        final String token = "proof:" + row.eventUid + ":" + row.endMs;
+        holder.proof.setTag(token);
+        thumbExecutor.execute(() -> {
+            String bestSnapshotUri = ForensicsDatabase.getInstance(holder.itemView.getContext())
+                    .aiEventSnapshotDao()
+                    .getBestImageUri(row.eventUid);
+            holder.itemView.post(() -> {
+                Object activeToken = holder.proof.getTag();
+                if (!(activeToken instanceof String) || !token.equals(activeToken)) {
+                    return;
+                }
+                if (bestSnapshotUri != null && !bestSnapshotUri.isEmpty()) {
+                    bindImageFromUri(holder.proof, bestSnapshotUri);
+                    return;
+                }
+                bindProofFromMedia(holder, row, startMs);
+            });
+        });
+    }
+
+    private void bindProofFromMedia(@NonNull Holder holder, AiEventWithMedia row, long startMs) {
+        if (row.mediaUri == null || row.mediaUri.isEmpty()) {
             return;
         }
         final String key = row.mediaUri + "#" + startMs;
         holder.proof.setTag(key);
-        Bitmap cached = thumbCache.get(key);
-        if (cached != null) {
-            holder.proof.setImageBitmap(cached);
-            return;
-        }
         thumbExecutor.execute(() -> {
             Bitmap frame = extractFrame(holder.itemView.getContext(), row.mediaUri, startMs * 1_000L);
             if (frame != null) {
-                thumbCache.put(key, frame);
                 holder.itemView.post(() -> {
                     Object currentTag = holder.proof.getTag();
                     if (key.equals(currentTag)) {
@@ -128,28 +149,70 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         });
     }
 
+    private void bindImageFromUri(@NonNull ImageView imageView, @NonNull String uriString) {
+        Glide.with(imageView)
+                .load(Uri.parse(uriString))
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                .centerCrop()
+                .placeholder(R.drawable.ic_photo)
+                .error(R.drawable.ic_photo)
+                .into(imageView);
+    }
+
     private void bindPersonFrameStrip(@NonNull Holder holder, AiEventWithMedia row) {
-        if (row.mediaUri == null || row.mediaUri.isEmpty()) {
-            holder.frameStrip.setVisibility(View.GONE);
-            holder.frameHint.setVisibility(View.GONE);
-            holder.framesContainer.removeAllViews();
-            return;
-        }
         holder.frameStrip.setVisibility(View.VISIBLE);
         holder.frameHint.setVisibility(View.VISIBLE);
         holder.framesContainer.removeAllViews();
-
-        long start = Math.max(0L, row.startMs);
-        long mid = Math.max(start, (row.startMs + row.endMs) / 2L);
-        long end = Math.max(start, row.endMs - 250L);
-        addFrameThumb(holder, row, start);
-        addFrameThumb(holder, row, mid);
-        if (end != mid) {
-            addFrameThumb(holder, row, end);
-        }
+        final String bindToken = row.eventUid + "|" + row.endMs;
+        holder.framesContainer.setTag(bindToken);
+        thumbExecutor.execute(() -> {
+            List<AiEventSnapshotEntity> snapshots = ForensicsDatabase.getInstance(holder.itemView.getContext())
+                    .aiEventSnapshotDao()
+                    .getByEventUid(row.eventUid, 20);
+            holder.itemView.post(() -> {
+                Object currentToken = holder.framesContainer.getTag();
+                if (!bindToken.equals(currentToken)) {
+                    return;
+                }
+                holder.framesContainer.removeAllViews();
+                if (snapshots == null || snapshots.isEmpty()) {
+                    if (row.mediaUri == null || row.mediaUri.isEmpty()) {
+                        holder.frameStrip.setVisibility(View.GONE);
+                        holder.frameHint.setVisibility(View.GONE);
+                        return;
+                    }
+                    long start = Math.max(0L, row.startMs);
+                    long span = Math.max(1000L, row.endMs - row.startMs);
+                    int points = 6;
+                    for (int i = 0; i < points; i++) {
+                        long at = start + ((span * i) / Math.max(1, points - 1));
+                        addFrameThumb(holder, row, at, null);
+                    }
+                    holder.frameHint.setText(R.string.forensics_frames_hint_fallback);
+                    return;
+                }
+                List<AiEventSnapshotEntity> sampled = sampleSnapshots(snapshots, 12);
+                for (AiEventSnapshotEntity snapshot : sampled) {
+                    addFrameThumb(holder, row, Math.max(0L, snapshot.timelineMs), snapshot.imageUri);
+                }
+                holder.frameHint.setText(R.string.forensics_frames_hint);
+            });
+        });
     }
 
-    private void addFrameThumb(@NonNull Holder holder, AiEventWithMedia row, long frameMs) {
+    private List<AiEventSnapshotEntity> sampleSnapshots(List<AiEventSnapshotEntity> snapshots, int maxCount) {
+        if (snapshots == null || snapshots.size() <= maxCount) {
+            return snapshots;
+        }
+        List<AiEventSnapshotEntity> out = new ArrayList<>(maxCount);
+        for (int i = 0; i < maxCount; i++) {
+            int index = Math.min(snapshots.size() - 1, (i * (snapshots.size() - 1)) / Math.max(1, maxCount - 1));
+            out.add(snapshots.get(index));
+        }
+        return out;
+    }
+
+    private void addFrameThumb(@NonNull Holder holder, AiEventWithMedia row, long frameMs, @androidx.annotation.Nullable String snapshotImageUri) {
         android.content.Context context = holder.itemView.getContext();
         LinearLayout wrap = new LinearLayout(context);
         wrap.setOrientation(LinearLayout.VERTICAL);
@@ -176,16 +239,15 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         time.setText(formatTime(Math.max(0L, frameMs / 1000L)));
         wrap.addView(time);
 
-        final String key = row.mediaUri + "#p:" + frameMs;
+        final String key = (snapshotImageUri != null ? snapshotImageUri : row.mediaUri) + "#p:" + frameMs;
         image.setTag(key);
-        Bitmap cached = thumbCache.get(key);
-        if (cached != null) {
-            image.setImageBitmap(cached);
+        if (snapshotImageUri != null && !snapshotImageUri.isEmpty()) {
+            bindImageFromUri(image, snapshotImageUri);
         } else {
             thumbExecutor.execute(() -> {
-                Bitmap frame = extractFrame(context, row.mediaUri, frameMs * 1_000L);
+                Bitmap frame;
+                frame = extractFrame(context, row.mediaUri, frameMs * 1_000L);
                 if (frame != null) {
-                    thumbCache.put(key, frame);
                     holder.itemView.post(() -> {
                         Object currentTag = image.getTag();
                         if (key.equals(currentTag)) {
@@ -197,7 +259,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         }
 
         wrap.setOnClickListener(v -> {
-            if (listener != null) {
+            if (listener != null && !row.mediaMissing) {
                 markEventSeen(v, row.eventUid);
                 listener.onEventFrameClicked(row, frameMs);
             }
@@ -209,7 +271,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
             retriever.setDataSource(context, Uri.parse(uriString));
-            return retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            return retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST);
         } catch (Exception ignored) {
             return null;
         } finally {

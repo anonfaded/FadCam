@@ -7,10 +7,10 @@ import android.media.Image;
 import android.util.Log;
 
 import org.tensorflow.lite.support.image.TensorImage;
-import org.tensorflow.lite.task.core.BaseOptions;
-import org.tensorflow.lite.task.vision.detector.ObjectDetector;
-import org.tensorflow.lite.task.vision.detector.Detection;
 import org.tensorflow.lite.support.label.Category;
+import org.tensorflow.lite.task.core.BaseOptions;
+import org.tensorflow.lite.task.vision.detector.Detection;
+import org.tensorflow.lite.task.vision.detector.ObjectDetector;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -24,12 +24,87 @@ public class EfficientDetLite1Detector {
     private static final String TAG = "EfficientDetLite1";
     private static final String MODEL_PATH = "models/efficientdet_lite1.tflite";
 
-    private static final float MIN_CONFIDENCE = 0.45f;
-    private static final float MIN_PERSON_CONFIDENCE = 0.60f;
-    private static final float MIN_BOX_SIDE = 0.012f;
+    // Hard-cut single policy block (no compat thresholds).
+    private static final float MIN_CONFIDENCE = 0.30f;
+    private static final float MIN_PERSON_CONFIDENCE = 0.32f;
+    private static final float MIN_BOX_SIDE = 0.008f;
+    private static final int MAX_RESULTS = 25;
 
     private final ObjectDetector detector;
     private long lastInferenceWarnMs = 0L;
+
+    public static final class FramePacket {
+        public final int width;
+        public final int height;
+        public final int yRowStride;
+        public final int yPixelStride;
+        public final int uvRowStride;
+        public final int uvPixelStride;
+        public final byte[] y;
+        public final byte[] u;
+        public final byte[] v;
+
+        private FramePacket(
+                int width,
+                int height,
+                int yRowStride,
+                int yPixelStride,
+                int uvRowStride,
+                int uvPixelStride,
+                byte[] y,
+                byte[] u,
+                byte[] v
+        ) {
+            this.width = width;
+            this.height = height;
+            this.yRowStride = yRowStride;
+            this.yPixelStride = yPixelStride;
+            this.uvRowStride = uvRowStride;
+            this.uvPixelStride = uvPixelStride;
+            this.y = y;
+            this.u = u;
+            this.v = v;
+        }
+
+        public static FramePacket copyFrom(Image image) {
+            if (image == null || image.getPlanes() == null || image.getPlanes().length < 3) {
+                return null;
+            }
+            Image.Plane[] planes = image.getPlanes();
+            ByteBuffer yBuffer = planes[0].getBuffer();
+            ByteBuffer uBuffer = planes[1].getBuffer();
+            ByteBuffer vBuffer = planes[2].getBuffer();
+            if (yBuffer == null || uBuffer == null || vBuffer == null) {
+                return null;
+            }
+
+            ByteBuffer yDup = yBuffer.duplicate();
+            ByteBuffer uDup = uBuffer.duplicate();
+            ByteBuffer vDup = vBuffer.duplicate();
+            yDup.rewind();
+            uDup.rewind();
+            vDup.rewind();
+
+            byte[] y = new byte[yDup.remaining()];
+            byte[] u = new byte[uDup.remaining()];
+            byte[] v = new byte[vDup.remaining()];
+            yDup.get(y);
+            uDup.get(u);
+            vDup.get(v);
+
+            return new FramePacket(
+                    image.getWidth(),
+                    image.getHeight(),
+                    planes[0].getRowStride(),
+                    planes[0].getPixelStride(),
+                    planes[1].getRowStride(),
+                    planes[1].getPixelStride(),
+                    y,
+                    u,
+                    v
+            );
+        }
+    }
 
     public static final class DetectionResult {
         public final int classId;
@@ -72,7 +147,7 @@ public class EfficientDetLite1Detector {
                     ObjectDetector.ObjectDetectorOptions.builder()
                             .setBaseOptions(baseOptions)
                             .setScoreThreshold(MIN_CONFIDENCE)
-                            .setMaxResults(10)
+                            .setMaxResults(MAX_RESULTS)
                             .build();
             local = ObjectDetector.createFromFileAndOptions(context, MODEL_PATH, options);
             Log.i(TAG, "Loaded model via Task Vision API: " + MODEL_PATH);
@@ -87,12 +162,20 @@ public class EfficientDetLite1Detector {
     }
 
     public List<DetectionResult> detect(Image image) {
+        FramePacket packet = FramePacket.copyFrom(image);
+        if (packet == null) {
+            return new ArrayList<>();
+        }
+        return detect(packet);
+    }
+
+    public List<DetectionResult> detect(FramePacket packet) {
         List<DetectionResult> out = new ArrayList<>();
-        if (detector == null || image == null) {
+        if (detector == null || packet == null || packet.width <= 0 || packet.height <= 0) {
             return out;
         }
         try {
-            Bitmap bitmap = yuv420ToBitmap(image);
+            Bitmap bitmap = yuv420ToBitmap(packet);
             if (bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
                 return out;
             }
@@ -233,35 +316,20 @@ public class EfficientDetLite1Detector {
         return "OBJECT";
     }
 
-    private Bitmap yuv420ToBitmap(Image image) {
-        Image.Plane[] planes = image.getPlanes();
-        if (planes == null || planes.length < 3) {
-            return null;
-        }
-        ByteBuffer yBuffer = planes[0].getBuffer();
-        ByteBuffer uBuffer = planes[1].getBuffer();
-        ByteBuffer vBuffer = planes[2].getBuffer();
-        if (yBuffer == null || uBuffer == null || vBuffer == null) {
-            return null;
-        }
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int yRowStride = planes[0].getRowStride();
-        int yPixelStride = planes[0].getPixelStride();
-        int uvRowStride = planes[1].getRowStride();
-        int uvPixelStride = planes[1].getPixelStride();
-
+    private Bitmap yuv420ToBitmap(FramePacket packet) {
+        int width = packet.width;
+        int height = packet.height;
         int[] pixels = new int[width * height];
         int index = 0;
         for (int y = 0; y < height; y++) {
-            int yRowStart = y * yRowStride;
-            int uvRowStart = (y / 2) * uvRowStride;
+            int yRowStart = y * packet.yRowStride;
+            int uvRowStart = (y / 2) * packet.uvRowStride;
             for (int x = 0; x < width; x++) {
-                int yIndex = yRowStart + (x * yPixelStride);
-                int uvIndex = uvRowStart + ((x / 2) * uvPixelStride);
-                int yValue = (yIndex >= 0 && yIndex < yBuffer.limit()) ? (yBuffer.get(yIndex) & 0xFF) : 0;
-                int uValue = (uvIndex >= 0 && uvIndex < uBuffer.limit()) ? (uBuffer.get(uvIndex) & 0xFF) : 128;
-                int vValue = (uvIndex >= 0 && uvIndex < vBuffer.limit()) ? (vBuffer.get(uvIndex) & 0xFF) : 128;
+                int yIndex = yRowStart + (x * packet.yPixelStride);
+                int uvIndex = uvRowStart + ((x / 2) * packet.uvPixelStride);
+                int yValue = (yIndex >= 0 && yIndex < packet.y.length) ? (packet.y[yIndex] & 0xFF) : 0;
+                int uValue = (uvIndex >= 0 && uvIndex < packet.u.length) ? (packet.u[uvIndex] & 0xFF) : 128;
+                int vValue = (uvIndex >= 0 && uvIndex < packet.v.length) ? (packet.v[uvIndex] & 0xFF) : 128;
 
                 int r = clampByte(yValue + (int) (1.402f * (vValue - 128)));
                 int g = clampByte(yValue - (int) (0.344136f * (uValue - 128)) - (int) (0.714136f * (vValue - 128)));

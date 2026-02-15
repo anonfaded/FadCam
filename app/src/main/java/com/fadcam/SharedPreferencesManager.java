@@ -1930,6 +1930,32 @@ public class SharedPreferencesManager {
     public void setDfHeatmapEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_DF_HEATMAP_ENABLED, enabled).apply();
     }
+
+    public boolean isDfEvidenceCollectionEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVIDENCE_ENABLED, true);
+    }
+
+    public void setDfEvidenceCollectionEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVIDENCE_ENABLED, enabled).apply();
+    }
+
+    public String getDfCaptureScope() {
+        String value = sharedPreferences.getString(Constants.PREF_DF_CAPTURE_SCOPE, "both");
+        if ("people".equals(value) || "objects".equals(value) || "both".equals(value)) {
+            return value;
+        }
+        return "both";
+    }
+
+    public void setDfCaptureScope(String scope) {
+        String normalized;
+        if ("people".equals(scope) || "objects".equals(scope) || "both".equals(scope)) {
+            normalized = scope;
+        } else {
+            normalized = "both";
+        }
+        sharedPreferences.edit().putString(Constants.PREF_DF_CAPTURE_SCOPE, normalized).apply();
+    }
     // -------------- Digital Forensics (Advanced) Preferences End --------------
 
     /**

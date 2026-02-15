@@ -1668,7 +1668,7 @@ public class RecordingService extends Service {
                     || motionAnalysisReader.getHeight() != height;
             if (recreate) {
                 releaseMotionAnalysisReader();
-                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 1);
+                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
                 motionAnalysisReader.setOnImageAvailableListener(reader -> {
                     Image image = null;
                     try {
@@ -1681,7 +1681,12 @@ public class RecordingService extends Service {
                             return;
                         }
                         lastMotionAnalysisTimestampMs = now;
-                        processMotionFrame(image, now);
+                        float rawMotionScore = motionDetector.detectScore(image);
+                        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket =
+                                com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket.copyFrom(image);
+                        image.close();
+                        image = null;
+                        processMotionFrame(rawMotionScore, framePacket, now);
                     } catch (Throwable t) {
                         Log.w(TAG, "Motion analysis frame processing failed", t);
                     } finally {
@@ -1700,9 +1705,12 @@ public class RecordingService extends Service {
         }
     }
 
-    private void processMotionFrame(Image image, long nowMs) {
+    private void processMotionFrame(
+            float rawMotionScore,
+            @Nullable com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket,
+            long nowMs
+    ) {
         motionFramesAnalyzed++;
-        float rawMotionScore = motionDetector.detectScore(image);
         // OpenCV MOG2 outputs are intentionally conservative; normalize to policy scale.
         if (motionOpenCvActive) {
             rawMotionScore = Math.min(1f, rawMotionScore * 1.35f);
@@ -1718,7 +1726,9 @@ public class RecordingService extends Service {
         }
         float motionScore = motionScoreEma;
         List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections =
-                efficientDetDetector != null ? efficientDetDetector.detect(image) : java.util.Collections.emptyList();
+                (efficientDetDetector != null && framePacket != null)
+                        ? efficientDetDetector.detect(framePacket)
+                        : java.util.Collections.emptyList();
         com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult primaryDetection =
                 efficientDetDetector != null ? efficientDetDetector.choosePrimary(detections) : null;
         float personConfidence = efficientDetDetector != null ? efficientDetDetector.bestPersonConfidence(detections) : 0f;
@@ -1934,7 +1944,7 @@ public class RecordingService extends Service {
                         + ", actions=" + motionTriggerActionCount
                         + ", suppressed=" + motionSuppressedSignalCount + "}");
             }
-            if ((nowMs - motionLastTelemetryLogMs) >= 3500L) {
+            if ((nowMs - motionLastTelemetryLogMs) >= 10000L) {
                 motionLastTelemetryLogMs = nowMs;
                 Log.d(TAG, "MotionLab Live: state=" + motionStateMachine.getState()
                         + ", action=" + action
@@ -1952,30 +1962,21 @@ public class RecordingService extends Service {
                         + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
                         + ", globalSuppressed=" + debugGlobalSuppressed);
             }
-            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, image, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
+            byte[] frameJpeg = buildMotionDebugFrameJpeg(framePacket);
+            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, frameJpeg, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
 
             if (digitalForensicsEventRecorder != null
                     && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && motionLastEventType != null
-                    && !motionLastEventType.isEmpty()
                     && (nowMs - motionLastForensicsHeartbeatMs) >= 900L) {
                 motionLastForensicsHeartbeatMs = nowMs;
                 long timelineMs = recordingStartTime > 0L
                         ? Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime)
                         : 0L;
-                digitalForensicsEventRecorder.onMotionStart(
+                digitalForensicsEventRecorder.onDetections(
                         getCurrentRecordingMediaUri(),
                         timelineMs,
-                        motionLastEventType,
-                        motionLastClassName,
-                        motionLastDetectionConfidence,
-                        motionScore,
-                        debugChangedArea,
-                        debugStrongArea,
-                        motionLastCenterX,
-                        motionLastCenterY,
-                        motionLastBoxWidth,
-                        motionLastBoxHeight
+                        detections,
+                        frameJpeg
                 );
             }
         }
@@ -2033,29 +2034,8 @@ public class RecordingService extends Service {
         }
 
         if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
-            String eventType = (motionLastEventType == null || motionLastEventType.isEmpty())
-                    ? "OBJECT"
-                    : motionLastEventType;
-            String className = (motionLastClassName == null || motionLastClassName.isEmpty())
-                    ? "motion"
-                    : motionLastClassName;
-            float confidence = motionLastDetectionConfidence > 0f
-                    ? motionLastDetectionConfidence
-                    : Math.max(0f, Math.min(1f, motionLastScore));
-            digitalForensicsEventRecorder.onMotionStart(
-                    activeMediaUri,
-                    timelineMs,
-                    eventType,
-                    className,
-                    confidence,
-                    motionLastScore,
-                    motionLastChangedArea,
-                    motionLastStrongArea,
-                    motionLastCenterX,
-                    motionLastCenterY,
-                    motionLastBoxWidth,
-                    motionLastBoxHeight
-            );
+            // Real-time recorder updates are now driven by per-frame detection heartbeats.
+            return;
         } else if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
             digitalForensicsEventRecorder.onMotionStop(timelineMs);
         }
@@ -2086,23 +2066,6 @@ public class RecordingService extends Service {
             return null;
         }
         String payload = motionLastOverlayPayload;
-        if ((payload == null || payload.isEmpty()) && motionLastEventType != null && !motionLastEventType.isEmpty()) {
-            String label = motionLastClassName != null && !motionLastClassName.trim().isEmpty()
-                    ? motionLastClassName.trim().toLowerCase(Locale.US)
-                    : motionLastEventType.toLowerCase(Locale.US);
-            float cx = clamp01(motionLastCenterX);
-            float cy = clamp01(motionLastCenterY);
-            float boxW = clampBox(motionLastBoxWidth);
-            float boxH = clampBox(motionLastBoxHeight);
-            float conf = Math.max(0f, Math.min(1f, motionLastDetectionConfidence));
-            payload = label + "|"
-                    + String.format(Locale.US, "%.4f", conf) + "|"
-                    + String.format(Locale.US, "%.4f", cx) + "|"
-                    + String.format(Locale.US, "%.4f", cy) + "|"
-                    + String.format(Locale.US, "%.4f", boxW) + "|"
-                    + String.format(Locale.US, "%.4f", boxH) + "|"
-                    + motionLastEventType.toUpperCase(Locale.US);
-        }
         if (payload == null || payload.isEmpty()) {
             return null;
         }
@@ -2197,7 +2160,7 @@ public class RecordingService extends Service {
             boolean personDetected,
             float personConfidence,
             com.fadcam.motion.domain.state.MotionSessionState previousState,
-            Image frameImage,
+            @Nullable byte[] frameJpeg,
             float changedAreaRatio,
             float strongAreaRatio,
             float meanDelta,
@@ -2249,7 +2212,6 @@ public class RecordingService extends Service {
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BG_DELTA, backgroundDelta);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, maxDelta);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, globalSuppressed);
-        byte[] frameJpeg = buildMotionDebugFrameJpeg(frameImage);
         if (frameJpeg != null && frameJpeg.length > 0) {
             debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);
         }
@@ -2257,48 +2219,34 @@ public class RecordingService extends Service {
     }
 
     @Nullable
-    private byte[] buildMotionDebugFrameJpeg(@Nullable Image image) {
-        if (image == null) {
+    private byte[] buildMotionDebugFrameJpeg(
+            @Nullable com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+    ) {
+        if (framePacket == null) {
             return null;
         }
         try {
-            Image.Plane[] planes = image.getPlanes();
-            if (planes == null || planes.length == 0) {
-                return null;
-            }
-            int width = image.getWidth();
-            int height = image.getHeight();
+            int width = framePacket.width;
+            int height = framePacket.height;
             if (width <= 0 || height <= 0) {
                 return null;
             }
-            int targetWidth = 160;
-            int targetHeight = Math.max(1, (int) Math.round((targetWidth * (height / (float) width))));
-
-            java.nio.ByteBuffer yBuffer = planes[0].getBuffer();
-            int rowStride = planes[0].getRowStride();
-            byte[] yData = new byte[yBuffer.remaining()];
-            yBuffer.get(yData);
-
-            int[] pixels = new int[targetWidth * targetHeight];
-            for (int y = 0; y < targetHeight; y++) {
-                int srcY = Math.min(height - 1, y * height / targetHeight);
-                int srcRowOffset = srcY * rowStride;
-                for (int x = 0; x < targetWidth; x++) {
-                    int srcX = Math.min(width - 1, x * width / targetWidth);
-                    int lum = yData[srcRowOffset + srcX] & 0xFF;
-                    pixels[(y * targetWidth) + x] = 0xFF000000 | (lum << 16) | (lum << 8) | lum;
-                }
+            byte[] nv21 = framePacketToNv21(framePacket);
+            if (nv21 == null || nv21.length == 0) {
+                return null;
             }
-
-            android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
-                    targetWidth,
-                    targetHeight,
-                    android.graphics.Bitmap.Config.ARGB_8888
+            android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(
+                    nv21,
+                    android.graphics.ImageFormat.NV21,
+                    width,
+                    height,
+                    null
             );
-            bitmap.setPixels(pixels, 0, targetWidth, 0, 0, targetWidth, targetHeight);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 65, outputStream);
-            bitmap.recycle();
+            boolean encoded = yuvImage.compressToJpeg(new Rect(0, 0, width, height), 72, outputStream);
+            if (!encoded) {
+                return null;
+            }
             return outputStream.toByteArray();
         } catch (IllegalStateException ignored) {
             return null;
@@ -2306,6 +2254,45 @@ public class RecordingService extends Service {
             Log.v(TAG, "MotionLab debug frame skipped");
             return null;
         }
+    }
+
+    @Nullable
+    private byte[] framePacketToNv21(
+            @NonNull com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+    ) {
+        int width = framePacket.width;
+        int height = framePacket.height;
+        if (width <= 0 || height <= 0) {
+            return null;
+        }
+        int ySize = width * height;
+        int uvSize = ySize / 2;
+        byte[] out = new byte[ySize + uvSize];
+
+        // Y plane
+        for (int row = 0; row < height; row++) {
+            int srcRow = row * framePacket.yRowStride;
+            int dstRow = row * width;
+            for (int col = 0; col < width; col++) {
+                int srcIndex = srcRow + (col * framePacket.yPixelStride);
+                out[dstRow + col] = framePacket.y[srcIndex];
+            }
+        }
+
+        int uvHeight = height / 2;
+        int uvWidth = width / 2;
+        int dst = ySize;
+        for (int row = 0; row < uvHeight; row++) {
+            int uvRow = row * framePacket.uvRowStride;
+            for (int col = 0; col < uvWidth; col++) {
+                int uvIndex = uvRow + (col * framePacket.uvPixelStride);
+                byte v = framePacket.v[uvIndex];
+                byte u = framePacket.u[uvIndex];
+                out[dst++] = v;
+                out[dst++] = u;
+            }
+        }
+        return out;
     }
 
     private void releaseMotionAnalysisReader() {

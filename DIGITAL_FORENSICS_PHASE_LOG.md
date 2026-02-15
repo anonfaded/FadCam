@@ -1,8 +1,26 @@
 # Digital Forensics Phase Log
 
 ## Current Status
-- Active phase: **Lab Tab Consolidation + hardening**
-- Last updated: 2026-02-14
+- Active phase: **Hard-cut runtime integration + evidence persistence**
+- Last updated: 2026-02-15
+
+## Hard-Cut Runtime Integration (2026-02-15)
+### Completed
+- [x] Reworked detector input path to copy YUV frame buffers before downstream inference usage
+- [x] Updated `RecordingService` heartbeat to push full detection lists to forensics recorder
+- [x] Replaced stop-only event creation with real-time multi-event aggregation in `DigitalForensicsEventRecorder`
+- [x] Added persistent snapshot evidence writes during recording (`files/FadCam/Forensics/Snapshots/...`)
+- [x] Added new Room entity/DAO: `AiEventSnapshotEntity`, `AiEventSnapshotDao`
+- [x] Extended `AiEventEntity` with lifecycle + alert fields for future push/Discord pipeline
+- [x] Updated timeline DAO projection and filtering contract for new fields
+- [x] Updated timeline adapter to render snapshot-backed strips (not hardcoded 3-frame only)
+- [x] Added media-missing UX guardrails in event click handlers
+- [x] Refactored Lab root UI to events-first and added top-right sidebar menu
+- [x] Added `LabSidebarFragment` and drawer layout for Insights/admin routes
+- [x] Preview overlay now renders in preview content viewport bounds to reduce box distortion from letterbox scaling
+
+### Verification
+- [x] `./gradlew :app:compileDefaultDebugJavaWithJavac -x lint` passes after integration
 
 ## Lab Tab / Forensic Intelligence Migration (2026-02-14)
 ### Completed

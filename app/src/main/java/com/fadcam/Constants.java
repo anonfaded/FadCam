@@ -523,6 +523,8 @@ public abstract class Constants {
     public static final String PREF_DF_OVERLAY_ENABLED = "pref_df_overlay_enabled";
     public static final String PREF_DF_DAILY_SUMMARY_ENABLED = "pref_df_daily_summary_enabled";
     public static final String PREF_DF_HEATMAP_ENABLED = "pref_df_heatmap_enabled";
+    public static final String PREF_DF_EVIDENCE_ENABLED = "pref_df_evidence_enabled";
+    public static final String PREF_DF_CAPTURE_SCOPE = "pref_df_capture_scope"; // people|objects|both
 
     // ── Dual Camera (PiP) Constants ────────────────────────────────────────
     public static final String PREF_DUAL_CAMERA_ENABLED = "dual_camera_enabled";

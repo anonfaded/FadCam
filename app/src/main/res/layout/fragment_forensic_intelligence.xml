@@ -21,33 +21,30 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="@string/forensic_intelligence_title"
             android:textColor="@android:color/white"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/button_lab_menu"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/records_options_title"
+            android:padding="2dp"
+            android:src="@drawable/ic_two_line_hamburger"
+            android:tint="@android:color/white" />
     </LinearLayout>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/forensics_tab_layout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorDialog"
-        app:tabIndicatorColor="?attr/colorButton"
-        app:tabMode="fixed"
-        app:tabRippleColor="?attr/colorToggle"
-        app:tabSelectedTextColor="?attr/colorHeading"
-        app:tabTextColor="@android:color/darker_gray"
-        app:layout_constraintTop_toBottomOf="@id/header_bar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/forensics_view_pager"
+    <FrameLayout
+        android:id="@+id/forensics_content_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/forensics_tab_layout"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

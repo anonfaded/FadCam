@@ -60,4 +60,28 @@ public class AiEventEntity {
 
     @ColumnInfo(name = "detected_at_epoch_ms")
     public long detectedAtEpochMs;
+
+    @ColumnInfo(name = "status")
+    public String status;
+
+    @ColumnInfo(name = "first_seen_epoch_ms")
+    public long firstSeenEpochMs;
+
+    @ColumnInfo(name = "last_seen_epoch_ms")
+    public long lastSeenEpochMs;
+
+    @ColumnInfo(name = "sample_count")
+    public int sampleCount;
+
+    @ColumnInfo(name = "peak_confidence")
+    public float peakConfidence;
+
+    @ColumnInfo(name = "media_missing")
+    public boolean mediaMissing;
+
+    @ColumnInfo(name = "alert_state")
+    public String alertState;
+
+    @ColumnInfo(name = "alert_channel")
+    public String alertChannel;
 }

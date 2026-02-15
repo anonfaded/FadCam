@@ -53,6 +53,10 @@ public class GLWatermarkRenderer {
     private int forensicsOverlayTextureId;
     private FloatBuffer forensicsOverlayRectBuffer;
     private String forensicsOverlayPayload = "";
+    private int previewOverlayVpX = 0;
+    private int previewOverlayVpY = 0;
+    private int previewOverlayVpW = 0;
+    private int previewOverlayVpH = 0;
     private final Paint watermarkPaint;
 
     private boolean initialized = false;
@@ -742,6 +746,10 @@ public class GLWatermarkRenderer {
                 // Switch to the fit viewport for the sharp foreground
                 GLES20.glViewport(vpX, vpY, vpW, vpH);
             }
+            previewOverlayVpX = vpX;
+            previewOverlayVpY = vpY;
+            previewOverlayVpW = vpW;
+            previewOverlayVpH = vpH;
 
             // Pass 2: Sharp content at the aspect-ratio-preserving viewport
             drawOESTexture(previewMvpMatrix, previewTexMatrix);
@@ -1058,25 +1066,17 @@ public class GLWatermarkRenderer {
         int overlayHeight = Math.max(1, canvas.getHeight());
         // payload format: LABEL|CONF|cx|cy|w|h|TYPE
         String[] parts = payload.split("\\|");
-        if (parts.length < 5) {
+        if (parts.length != 7) {
             return;
         }
-        String classLabel;
-        float confidence = 0f;
-        String coarseType = "OBJECT";
-        int cursor;
-        if (parts.length >= 7) {
-            classLabel = parts[0];
-            try {
-                confidence = clamp01(Float.parseFloat(parts[1]));
-            } catch (Exception ignored) {
-                confidence = 0f;
-            }
-            coarseType = parts[6] != null ? parts[6].trim().toUpperCase() : "OBJECT";
-            cursor = 2;
-        } else {
-            classLabel = parts[0];
-            cursor = 1;
+        String classLabel = parts[0];
+        float confidence;
+        String coarseType = parts[6] != null ? parts[6].trim().toUpperCase() : "OBJECT";
+        int cursor = 2;
+        try {
+            confidence = clamp01(Float.parseFloat(parts[1]));
+        } catch (Exception ignored) {
+            confidence = 0f;
         }
         float cx;
         float cy;
@@ -1524,6 +1524,11 @@ public class GLWatermarkRenderer {
         if (forensicsOverlayPayload == null || forensicsOverlayPayload.isEmpty() || forensicsOverlayTextureId == 0) {
             return;
         }
+        int[] previousViewport = new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, previousViewport, 0);
+        if (previewOverlayVpW > 0 && previewOverlayVpH > 0) {
+            GLES20.glViewport(previewOverlayVpX, previewOverlayVpY, previewOverlayVpW, previewOverlayVpH);
+        }
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
         GLES20.glUseProgram(watermarkProgram);
@@ -1539,6 +1544,7 @@ public class GLWatermarkRenderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glUseProgram(0);
         GLES20.glDisable(GLES20.GL_BLEND);
+        GLES20.glViewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
     }
 
     private int createProgram(String vertexSource, String fragmentSource) {

@@ -12,6 +12,14 @@ public class AiEventWithMedia {
     public int priority;
     public String thumbnailRef;
     public long detectedAtEpochMs;
+    public String status;
+    public long firstSeenEpochMs;
+    public long lastSeenEpochMs;
+    public int sampleCount;
+    public float peakConfidence;
+    public boolean mediaMissing;
+    public String alertState;
+    public String alertChannel;
 
     public String mediaUri;
     public String mediaDisplayName;

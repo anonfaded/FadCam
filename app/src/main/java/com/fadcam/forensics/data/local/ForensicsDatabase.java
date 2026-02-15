@@ -7,10 +7,12 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 import com.fadcam.forensics.data.local.dao.AiEventDao;
+import com.fadcam.forensics.data.local.dao.AiEventSnapshotDao;
 import com.fadcam.forensics.data.local.dao.IntegrityLinkLogDao;
 import com.fadcam.forensics.data.local.dao.MediaAssetDao;
 import com.fadcam.forensics.data.local.dao.SyncQueueDao;
 import com.fadcam.forensics.data.local.entity.AiEventEntity;
+import com.fadcam.forensics.data.local.entity.AiEventSnapshotEntity;
 import com.fadcam.forensics.data.local.entity.IntegrityLinkLogEntity;
 import com.fadcam.forensics.data.local.entity.MediaAssetEntity;
 import com.fadcam.forensics.data.local.entity.SyncQueueEntity;
@@ -19,10 +21,11 @@ import com.fadcam.forensics.data.local.entity.SyncQueueEntity;
     entities = {
         MediaAssetEntity.class,
         AiEventEntity.class,
+        AiEventSnapshotEntity.class,
         IntegrityLinkLogEntity.class,
         SyncQueueEntity.class
     },
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 public abstract class ForensicsDatabase extends RoomDatabase {
@@ -33,6 +36,8 @@ public abstract class ForensicsDatabase extends RoomDatabase {
     public abstract MediaAssetDao mediaAssetDao();
 
     public abstract AiEventDao aiEventDao();
+
+    public abstract AiEventSnapshotDao aiEventSnapshotDao();
 
     public abstract IntegrityLinkLogDao integrityLinkLogDao();
 
