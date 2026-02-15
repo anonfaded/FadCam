@@ -14,32 +14,33 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!--Gradient scrim overlay that dims content behind the floating dock -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:foreground="@drawable/dock_gradient_scrim"
-        android:clickable="false"
-        android:focusable="false"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
     <!-- Floating dock navigation - overlays content at bottom -->
     <FrameLayout
         android:id="@+id/nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="16dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp"
         android:clipChildren="false"
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- Gradient scrim below and around dock -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="-80dp"
+            android:foreground="@drawable/dock_gradient_scrim"
+            android:clickable="false"
+            android:focusable="false" />
+
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:layout_gravity="bottom"
-            app:cardCornerRadius="28dp"
+            app:cardCornerRadius="26dp"
             app:cardElevation="12dp"
             app:cardBackgroundColor="?attr/colorTopBar">
 
@@ -48,9 +49,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                app:itemIconSize="24dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                app:itemIconSize="22dp"
                 app:itemIconTint="@android:color/white"
                 app:itemTextColor="@android:color/white"
                 app:labelVisibilityMode="selected"

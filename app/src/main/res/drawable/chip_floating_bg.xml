@@ -5,22 +5,21 @@
     <item android:state_selected="true">
         <shape android:shape="rectangle">
             <solid android:color="?attr/colorPrimary" />
-            <corners android:radius="20dp" />
+            <corners android:radius="14dp" />
         </shape>
     </item>
     <item android:state_checked="true">
         <shape android:shape="rectangle">
             <solid android:color="?attr/colorPrimary" />
-            <corners android:radius="20dp" />
+            <corners android:radius="14dp" />
         </shape>
     </item>
     
-    <!-- Default/Unselected state -->
+    <!-- Default/Unselected state - subtle background, no stroke -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#33FFFFFF" />
-            <corners android:radius="20dp" />
-            <stroke android:width="0dp" android:color="@android:color/transparent" />
+            <solid android:color="#1AFFFFFF" />
+            <corners android:radius="14dp" />
         </shape>
     </item>
 </selector>
