@@ -252,43 +252,6 @@
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    android:id="@+id/row_motion_trigger_mode"
-                    style="@style/SettingsGroupRow">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_notifications"
-                        android:tint="@android:color/darker_gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/motion_lab_trigger_mode"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/value_motion_trigger_mode"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp" />
-
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray" />
-                </LinearLayout>
-
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
                     android:id="@+id/row_motion_sensitivity"
                     style="@style/SettingsGroupRow">
 

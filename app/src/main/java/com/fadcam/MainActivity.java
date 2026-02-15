@@ -495,6 +495,8 @@ public class MainActivity extends AppCompatActivity {
                 viewPager.setCurrentItem(3, true);
             } else if (itemId == R.id.navigation_settings) {
                 viewPager.setCurrentItem(4, true);
+            } else if (itemId == R.id.navigation_lab) {
+                viewPager.setCurrentItem(5, true);
             }
             return true;
         });
@@ -547,6 +549,13 @@ public class MainActivity extends AppCompatActivity {
                         NewFeatureManager.markFeatureAsSeen(MainActivity.this, "settings_nav");
                         // Refresh badges after marking
                         updateFeatureBadgeVisibility();
+                        break;
+                    case 5:
+                        bottomNavigationView.setSelectedItemId(R.id.navigation_lab);
+                        // Reset nav and status bar color when leaving remote
+                        setBottomNavColor(0);
+                        setStatusBarColor(0);
+                        setNavigationBarColor(0);
                         break;
                 }
             }

@@ -16,7 +16,7 @@ public class SharedPrefsMotionSettingsRepository implements MotionSettingsReposi
     public MotionSettings getSettings() {
         return new MotionSettings(
             prefs.isMotionModeEnabled(),
-            MotionTriggerMode.fromValue(prefs.getMotionTriggerMode()),
+            MotionTriggerMode.ANY_MOTION,
             prefs.getMotionSensitivity(),
             prefs.getMotionAnalysisFps(),
             prefs.getMotionDebounceMs(),
@@ -33,7 +33,8 @@ public class SharedPrefsMotionSettingsRepository implements MotionSettingsReposi
 
     @Override
     public void setTriggerMode(MotionTriggerMode mode) {
-        prefs.setMotionTriggerMode(mode.getValue());
+        // Trigger mode is fixed to ANY_MOTION in simplified UX.
+        prefs.setMotionTriggerMode(MotionTriggerMode.ANY_MOTION.getValue());
     }
 
     @Override

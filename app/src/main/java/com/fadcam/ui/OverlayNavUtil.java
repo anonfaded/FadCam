@@ -70,4 +70,15 @@ public final class OverlayNavUtil {
             }
         }).start();
     }
+
+    /** Navigate one level back inside overlay stack; dismiss only if no parent overlay exists. */
+    public static void popLevel(FragmentActivity activity) {
+        if (activity == null) return;
+        androidx.fragment.app.FragmentManager fm = activity.getSupportFragmentManager();
+        if (fm.getBackStackEntryCount() > 1) {
+            fm.popBackStack();
+        } else {
+            dismiss(activity);
+        }
+    }
 }

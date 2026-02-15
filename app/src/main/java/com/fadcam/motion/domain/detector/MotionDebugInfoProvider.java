@@ -12,4 +12,12 @@ public interface MotionDebugInfoProvider {
     float getLastMaxDelta();
 
     boolean isLastGlobalMotionSuppressed();
+
+    default float getLastMotionCenterX() {
+        return 0.5f;
+    }
+
+    default float getLastMotionCenterY() {
+        return 0.5f;
+    }
 }

@@ -20,4 +20,8 @@
         android:id="@+id/navigation_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/nav_settings" />
+    <item
+        android:id="@+id/navigation_lab"
+        android:icon="@drawable/ic_experiment"
+        android:title="@string/nav_lab" />
 </menu>

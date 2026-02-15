@@ -2,8 +2,11 @@ package com.fadcam.ui.picker;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -817,6 +820,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if (switchDivider != null && !items.isEmpty()) switchDivider.setVisibility(View.VISIBLE);
                 switchLabel.setText(switchTitle);
                 swc.setChecked(switchState);
+                applyThemedSwitchColors(swc);
                 switchRef = swc;
 
                 // Ensure row click triggers the switch's native toggle (keeps internal animations + accessibility)
@@ -924,6 +928,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     // Show switch instead of subtitle
                     tvSubtitle.setVisibility(View.GONE);
                     itemSwitch.setVisibility(View.VISIBLE);
+                    applyThemedSwitchColors(itemSwitch);
                     itemSwitch.setChecked(
                         item.switchState != null && item.switchState
                     );
@@ -1481,6 +1486,42 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
 
         // Apply dependency to Arabic date format option
         updateArabicDateFormatDependency(arabicDateEnabled);
+    }
+
+    private void applyThemedSwitchColors(@Nullable androidx.appcompat.widget.SwitchCompat swc) {
+        if (swc == null || getContext() == null) {
+            return;
+        }
+        int activated = resolveThemeColor(R.attr.colorButton, 0xFF33D17A);
+        int surface = resolveThemeColor(R.attr.colorDialog, 0xFF2A2A2A);
+        int offThumb = resolveThemeColor(R.attr.pickerTextPrimary, Color.WHITE);
+
+        int[][] states = new int[][] {
+            new int[] { android.R.attr.state_checked },
+            new int[] {}
+        };
+        swc.setTrackTintList(new ColorStateList(states, new int[] {
+            adjustAlpha(activated, 170),
+            adjustAlpha(surface, 185)
+        }));
+        swc.setThumbTintList(new ColorStateList(states, new int[] {
+            Color.WHITE,
+            offThumb
+        }));
+    }
+
+    private int resolveThemeColor(int attr, int fallback) {
+        if (getContext() == null) {
+            return fallback;
+        }
+        TypedValue typedValue = new TypedValue();
+        boolean ok = getContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return ok ? typedValue.data : fallback;
+    }
+
+    private int adjustAlpha(int color, int alpha) {
+        int safeAlpha = Math.max(0, Math.min(255, alpha));
+        return Color.argb(safeAlpha, Color.red(color), Color.green(color), Color.blue(color));
     }
 
     /**

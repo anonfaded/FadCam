@@ -30,6 +30,8 @@ public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoP
     private volatile float lastBackgroundDelta = 0f;
     private volatile float lastMaxDelta = 0f;
     private volatile float lastStrongAreaRatio = 0f;
+    private volatile float lastMotionCenterX = 0.5f;
+    private volatile float lastMotionCenterY = 0.5f;
     private volatile boolean lastGlobalMotionSuppressed = false;
 
     public float getLastChangedAreaRatio() {
@@ -54,6 +56,16 @@ public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoP
 
     public boolean isLastGlobalMotionSuppressed() {
         return lastGlobalMotionSuppressed;
+    }
+
+    @Override
+    public float getLastMotionCenterX() {
+        return lastMotionCenterX;
+    }
+
+    @Override
+    public float getLastMotionCenterY() {
+        return lastMotionCenterY;
     }
 
     @Override
@@ -129,6 +141,9 @@ public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoP
         int changedPixels = 0;
         int strongPixels = 0;
         int maxDelta = 0;
+        long weightedX = 0L;
+        long weightedY = 0L;
+        long weightSum = 0L;
         for (int i = 0; i < current.length; i++) {
             int cur = current[i] & 0xFF;
             int prev = previous[i] & 0xFF;
@@ -146,6 +161,12 @@ public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoP
             }
             if (delta >= PIXEL_DELTA_THRESHOLD) {
                 changedPixels++;
+                int gx = i % gridW;
+                int gy = i / gridW;
+                int w = Math.max(1, delta);
+                weightedX += (long) gx * w;
+                weightedY += (long) gy * w;
+                weightSum += w;
             }
             if (delta >= STRONG_PIXEL_DELTA_THRESHOLD) {
                 strongPixels++;
@@ -163,6 +184,13 @@ public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoP
         float meanDelta = (sum / (float) current.length) / 255f;
         float meanBgDelta = (sumBg / (float) current.length) / 255f;
         float maxDeltaNorm = maxDelta / 255f;
+        if (weightSum > 0L) {
+            lastMotionCenterX = Math.max(0f, Math.min(1f, (weightedX / (float) weightSum) / Math.max(1f, gridW - 1f)));
+            lastMotionCenterY = Math.max(0f, Math.min(1f, (weightedY / (float) weightSum) / Math.max(1f, gridH - 1f)));
+        } else {
+            lastMotionCenterX = 0.5f;
+            lastMotionCenterY = 0.5f;
+        }
 
         lastChangedAreaRatio = changedAreaRatio;
         lastStrongAreaRatio = strongAreaRatio;

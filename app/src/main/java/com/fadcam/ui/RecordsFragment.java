@@ -61,6 +61,7 @@ import com.fadcam.Utils;
 import com.fadcam.utils.RecordingStoragePaths;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.forensics.service.DigitalForensicsIndexCoordinator;
 // Import the new VideoItem class
 // Ensure adapter import is correct
 import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
@@ -3634,6 +3635,12 @@ public class RecordsFragment extends BaseFragment implements
                 case "toggle_view_mode":
                     toggleViewMode();
                     break;
+                case "open_forensics_events":
+                    OverlayNavUtil.show(
+                            requireActivity(),
+                            new com.fadcam.forensics.ui.ForensicsEventsFragment(),
+                            "ForensicsEventsFragment");
+                    break;
                 case "set_view_mode":
                     String vm = bundle.getString("view_mode");
                     if (vm != null) {
@@ -4315,6 +4322,9 @@ public class RecordsFragment extends BaseFragment implements
                 // Update cache for next time with persistence
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems, requireContext());
                 com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size(), sharedPreferencesManager);
+
+                // Phase 1: non-blocking digital forensics asset indexing/relink pass.
+                DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(uniqueItems);
 
                 // -----------
 
