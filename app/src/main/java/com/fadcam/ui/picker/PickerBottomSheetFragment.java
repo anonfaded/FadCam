@@ -1172,17 +1172,16 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             1
                         );
-                    // Add horizontal margins to match SettingsDivider (14dp start, 12dp end)
-                    // Row now has 12dp outer margins + 14dp inner start and 12dp inner end paddings
-                    // Keep divider aligned with inner paddings, but also inset by the outer margins
+                    // Divider margins match row's horizontal padding (14dp start, 12dp end)
+                    // No vertical margins - rows provide spacing through their padding
                     lp.setMargins(
-                        dp(14) + dp(12),
-                        dp(2),
-                        dp(12) + dp(12),
-                        dp(2)
+                        dp(14),
+                        0,
+                        dp(12),
+                        0
                     );
                     rowDivider.setLayoutParams(lp);
-                    rowDivider.setBackgroundColor(0x33FFFFFF);
+                    rowDivider.setBackgroundColor(0xFF262626);
                     containerLayout.addView(rowDivider);
                 }
                 index++;

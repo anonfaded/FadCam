@@ -68,8 +68,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/settings_group_card_bg"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+
+>
 
             <LinearLayout
                 android:id="@+id/group_readme"
@@ -126,8 +126,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/settings_group_card_bg"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+
+>
 
             <!-- Video (from general, moved to quick access) -->
             <LinearLayout
@@ -282,8 +282,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/settings_group_card_bg"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+
+>
 
             <!-- Appearance Row -->
             <LinearLayout
@@ -533,8 +533,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/settings_group_card_bg"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+
+>
 
             <LinearLayout
                 android:id="@+id/group_motion_lab"
@@ -628,8 +628,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/settings_group_card_bg"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+
+>
 
             <!-- Onboarding Row -->
             <LinearLayout

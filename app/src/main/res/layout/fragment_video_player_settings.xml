@@ -75,8 +75,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <!-- Playback Speed Row -->
                 <LinearLayout
@@ -366,8 +366,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <!-- Mute Playback Row -->
                 <LinearLayout

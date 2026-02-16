@@ -52,7 +52,7 @@
             android:layout_marginTop="8dp"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="12dp"
-            app:dividerColor="#404040" />
+            app:dividerColor="#262626" />
 
         <TextView
             android:layout_width="match_parent"
@@ -99,7 +99,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="14dp"
                 android:layout_marginEnd="12dp"
-                app:dividerColor="#404040" />
+                app:dividerColor="#262626" />
 
             <LinearLayout
                 android:id="@+id/row_lab_info"

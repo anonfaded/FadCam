@@ -222,7 +222,7 @@
                     android:textColor="#4CAF50"
                     android:gravity="center"
                     android:paddingTop="8dp"
-                    android:paddingBottom="4dp"
+
                     android:fontFamily="@font/ubuntu_regular"
                     android:letterSpacing="0.05"
                     android:visibility="gone" />
@@ -598,7 +598,7 @@
                 </LinearLayout>
 
                 <!-- Undo/Redo Row -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="4dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
 
                     <!-- Undo -->
                     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp">
@@ -645,7 +645,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tools" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="8dp" android:paddingBottom="2dp" />
 
                 <!-- Tools Row -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="4dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp">
 
                     <!-- Select Tool -->
                     <LinearLayout android:id="@+id/btnSelectTool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="2dp" android:clickable="true" android:focusable="true" android:background="?android:attr/selectableItemBackground">

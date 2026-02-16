@@ -58,7 +58,7 @@
         android:fillViewport="true"
         android:maxHeight="700dp"
         android:overScrollMode="ifContentScrolls"
-        android:paddingBottom="4dp">
+>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -71,8 +71,8 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/settings_group_card_bg"
                 android:orientation="vertical"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <LinearLayout
                     android:id="@+id/video_info_grid"

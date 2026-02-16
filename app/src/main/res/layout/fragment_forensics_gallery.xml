@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingBottom="4dp">
+>
 
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
@@ -77,8 +77,8 @@
                     android:scrollbars="none"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp">
+
+>
 
                     <com.google.android.material.chip.ChipGroup
                         android:layout_width="wrap_content"

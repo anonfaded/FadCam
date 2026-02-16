@@ -59,7 +59,7 @@
             android:layout_marginTop="8dp"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="12dp"
-            app:dividerColor="#404040"/>
+            app:dividerColor="#262626"/>
 
         <!-- Group: Display Settings -->
         <TextView
@@ -78,8 +78,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
+
+
             android:background="@drawable/settings_group_card_bg">
 
             <!-- Preview toggle row -->
@@ -148,7 +148,7 @@
                 android:layout_height="1dp"
                 android:layout_marginStart="14dp"
                 android:layout_marginEnd="12dp"
-                app:dividerColor="#404040"/>
+                app:dividerColor="#262626"/>
 
             <LinearLayout
                 android:id="@+id/row_preview_quick_actions_toggle"
@@ -226,8 +226,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
+
+
             android:background="@drawable/settings_group_card_bg">
 
             <!-- What's New row -->
@@ -319,7 +319,7 @@
                 android:layout_height="1dp"
                 android:layout_marginStart="14dp"
                 android:layout_marginEnd="12dp"
-                app:dividerColor="#404040"/>
+                app:dividerColor="#262626"/>
 
             <!-- Tips row -->
             <LinearLayout

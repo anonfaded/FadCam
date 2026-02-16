@@ -90,8 +90,8 @@
         <item name="android:paddingEnd">12dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:layout_marginTop">4dp</item>
-        <item name="android:layout_marginBottom">4dp</item>
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:layout_marginBottom">0dp</item>
         <item name="android:background">@drawable/settings_home_row_bg</item>
         <item name="android:minHeight">48dp</item>
     </style>

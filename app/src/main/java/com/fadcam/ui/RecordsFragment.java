@@ -3794,12 +3794,6 @@ public class RecordsFragment extends BaseFragment implements
                 case "toggle_view_mode":
                     toggleViewMode();
                     break;
-                case "open_forensics_events":
-                    OverlayNavUtil.show(
-                            requireActivity(),
-                            new com.fadcam.forensics.ui.ForensicsEventsFragment(),
-                            "ForensicsEventsFragment");
-                    break;
                 case "set_view_mode":
                     String vm = bundle.getString("view_mode");
                     if (vm != null) {

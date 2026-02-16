@@ -450,7 +450,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="12sp"
                     android:textColor="?attr/colorHeading"
-                    android:paddingBottom="4dp" />
+ />
 
                 <TextView
                     android:id="@+id/bitrate_text"
@@ -458,7 +458,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="12sp"
                     android:textColor="?attr/colorHeading"
-                    android:paddingBottom="4dp" />
+ />
 
                 <TextView
                     android:layout_width="match_parent"

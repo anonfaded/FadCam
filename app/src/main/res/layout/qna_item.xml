@@ -20,7 +20,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#fff"
-            android:paddingBottom="4dp" />
+ />
 
         <ImageView
             android:id="@+id/expand_icon"

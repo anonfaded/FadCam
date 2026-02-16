@@ -16,7 +16,7 @@
         android:textColor="#FFFFFF" 
         android:fontFamily="@font/ubuntu_regular"
         android:gravity="center" 
-        android:paddingBottom="4dp" />
+ />
 
     <!-- Projects Path Info -->
     <TextView 

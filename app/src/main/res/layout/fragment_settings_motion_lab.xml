@@ -206,8 +206,8 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/settings_group_card_bg"
                 android:orientation="vertical"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <LinearLayout
                     android:id="@+id/row_motion_enabled"
