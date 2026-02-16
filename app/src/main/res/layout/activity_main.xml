@@ -55,7 +55,7 @@
                 android:paddingTop="2dp"
                 android:paddingBottom="2dp"
                 app:itemIconSize="22dp"
-                app:itemIconTint="@android:color/white"
+                app:itemIconTint="@color/bottom_nav_icon_tint"
                 app:itemTextColor="@android:color/white"
                 app:labelVisibilityMode="selected"
                 app:menu="@menu/bottom_nav_menu" />
