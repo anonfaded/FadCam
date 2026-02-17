@@ -93,16 +93,16 @@
     
 <br>
         
-- [Purpose](#purpose)
-- [Screenshots](#-screenshots)
-- [Featured on](#featured-on)
-- [Download](https://github.com/anonfaded/FadCam#-download)
-- [Features](#features)
-- [Upcoming Features](#upcoming-features)
-- [Join Community](#join-community)
-- [Support](#support)
-- [Contributions](#contributions)
-- [Credits](#credits)
+- [Purpose](#_-purpose)
+- [Screenshots](#_--screenshots)
+- [Featured on](#_-featured-on)
+- [Download](#_-%EF%B8%8F-download)
+- [Features](#_-features)
+- [Upcoming Features](#_-upcoming-features)
+- [Join Community](#_-join-community)
+- [Support](#_-support--shop)
+- [Contributions](#_-contributions)
+- [Credits](#_--credits)
 
 </details>
 
@@ -421,11 +421,12 @@ We welcome any contributions to improve this project! Whether it's bug fixes or 
 1. **Open an Issue First**: Before starting any work, please open an [issue](https://github.com/anonfaded/FadCam/issues) to discuss your proposed changes and get approval.
 2. **Fork the Repo**: Fork the repository to make your changes.
 3. **Submit a PR**: Create a pull request with a clear description of your changes.
+4. Translate app using [Weblate](https://hosted.weblate.org/projects/fadcam/).
 
 We look forward to your contributions!
 
 
-### `>_` 🙌 Contributions & Credits
+### `>_` 🙌 Credits
 
 - 🖼️ App screenshots and banner design by [T010](https://ko-fi.com/t010nl)
 - The 3D text in icon is from <a href="https://www.textstudio.com/">Font generator</a>.
