@@ -226,6 +226,14 @@ public class RecordsFragment extends BaseFragment implements
                     Log.d(TAG, "RecyclerView scrolled to position 0 to show first video");
                 }
 
+                // Hide progress indicator
+                if (progressHandler != null && showProgressRunnable != null) {
+                    progressHandler.removeCallbacks(showProgressRunnable);
+                }
+                if (loadingProgress != null) {
+                    loadingProgress.setVisibility(View.GONE);
+                }
+
                 // Ensure refresh indicator is stopped
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
@@ -262,6 +270,14 @@ public class RecordsFragment extends BaseFragment implements
 
                 updateUiVisibility();
                 isLoading = false;
+
+                // Hide progress indicator on error
+                if (progressHandler != null && showProgressRunnable != null) {
+                    progressHandler.removeCallbacks(showProgressRunnable);
+                }
+                if (loadingProgress != null) {
+                    loadingProgress.setVisibility(View.GONE);
+                }
 
                 // Ensure refresh indicator is stopped on error/empty state
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
@@ -322,6 +338,9 @@ public class RecordsFragment extends BaseFragment implements
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
+    private ProgressBar loadingProgress; // Thin progress bar for data loading feedback
+    private Handler progressHandler; // Handler for delayed progress show
+    private Runnable showProgressRunnable; // Runnable to show progress after delay
     private TextView titleText;
     private ImageView menuButton;
     private ImageView closeButton;
@@ -994,6 +1013,8 @@ public class RecordsFragment extends BaseFragment implements
         originalToolbarTitle = getString(R.string.records_title);
 
         loadingIndicator = view.findViewById(R.id.loading_indicator);
+        loadingProgress = view.findViewById(R.id.loading_progress);
+        progressHandler = new Handler(Looper.getMainLooper());
         recyclerView = view.findViewById(R.id.recycler_view_records);
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
@@ -4448,6 +4469,17 @@ public class RecordsFragment extends BaseFragment implements
 
         isLoading = true;
 
+        // Show progress indicator after 200ms if still loading (conditional feedback)
+        showProgressRunnable = () -> {
+            if (isLoading && loadingProgress != null) {
+                loadingProgress.setVisibility(View.VISIBLE);
+                Log.d(TAG, "Progress indicator shown after 200ms delay");
+            }
+        };
+        if (progressHandler != null) {
+            progressHandler.postDelayed(showProgressRunnable, 200);
+        }
+
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
         }
@@ -4482,7 +4514,7 @@ public class RecordsFragment extends BaseFragment implements
                 // -----------
 
                 // Add minimum delay to show shimmer animation (professional UX)
-                long minShimmerTime = 1000; // Minimum 1 second to show shimmer
+                long minShimmerTime = 180; // Minimum 180ms for smooth transition
 
                 Log.d(TAG, "Adding " + minShimmerTime + "ms delay to show shimmer animation");
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {

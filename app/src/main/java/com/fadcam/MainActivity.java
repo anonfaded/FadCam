@@ -551,6 +551,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Dock reveal animation – only on fresh cold start, not config changes
+        if (savedInstanceState == null) {
+            View navContainer = findViewById(R.id.nav_container);
+            com.fadcam.ui.DockRevealAnimator.reveal(navContainer, bottomNavigationView);
+        }
+
         // This is the path for the osmdroid tile cache
         File osmdroidBasePath = new File(getCacheDir().getAbsolutePath(), "osmdroid");
         File osmdroidTileCache = new File(osmdroidBasePath, "tiles");
@@ -1367,8 +1373,8 @@ public class MainActivity extends AppCompatActivity {
         // Set custom fade animations
         if (animate) {
             transaction.setCustomAnimations(
-                android.R.anim.fade_in,  // Enter animation
-                android.R.anim.fade_out  // Exit animation
+                R.anim.fade_in,  // Fast 120ms fade in
+                R.anim.fade_out  // Fast 100ms fade out
             );
         }
         

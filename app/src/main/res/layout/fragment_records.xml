@@ -77,6 +77,18 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- Subtle loading progress indicator - only shown if loading takes >200ms -->
+    <ProgressBar
+        android:id="@+id/loading_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Floating dock for filter chips -->
     <LinearLayout
         android:id="@+id/records_filter_row"
