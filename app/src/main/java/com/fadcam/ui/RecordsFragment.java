@@ -140,8 +140,8 @@ public class RecordsFragment extends BaseFragment implements
     private Set<Uri> currentlyProcessingUris = new HashSet<>();
     private static final String TAG = "RecordsFragment";
 
-    // Remove duplicate session cache - now using shared VideoSessionCache utility
-    // (Moved to com.fadcam.utils.VideoSessionCache for cross-fragment sharing)
+    // Video index is now backed by Room DB via VideoIndexRepository
+    // (Replaced com.fadcam.utils.VideoSessionCache with persistent SQLite index)
 
 
     /**
@@ -334,6 +334,8 @@ public class RecordsFragment extends BaseFragment implements
     private List<Uri> selectedVideosUris = new ArrayList<>();
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    /** Separate executor for background delta scans — never blocks the main executor. */
+    private volatile ExecutorService deltaExecutor = Executors.newSingleThreadExecutor();
     private SortOption currentSortOption = SortOption.LATEST_FIRST;
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
@@ -444,8 +446,9 @@ public class RecordsFragment extends BaseFragment implements
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             if (success) {
-                                // Invalidate cache when video is deleted
-                                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                                // Remove deleted video from persistent index, then refresh
+                                com.fadcam.data.VideoIndexRepository.getInstance(requireContext())
+                                        .removeFromIndex(videoItem.uri.toString());
 
                                 // Perform a complete refresh to ensure serial numbers are updated
                                 Log.d(TAG, "Single video deleted, performing full refresh to update serial numbers");
@@ -513,10 +516,9 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onMoveToTrashFinished(boolean success, String message) {
         if (success) {
-            // Invalidate caches when videos are deleted
+            // Invalidate stats cache when videos are deleted — index will delta-sync on next load
             com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
-            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess();
-            Log.d(TAG, "Invalidated video caches after successful video deletion");
+            Log.d(TAG, "Invalidated video stats cache after successful video deletion");
         }
 
         if (getActivity() == null)
@@ -568,7 +570,7 @@ public class RecordsFragment extends BaseFragment implements
                         message = getString(R.string.records_batch_completed);
                     }
                     Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
-                    com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                    // Delta scan will pick up new/changed files automatically
                     loadRecordsList();
                 }
             };
@@ -605,17 +607,17 @@ public class RecordsFragment extends BaseFragment implements
 
                         if (Constants.ACTION_STORAGE_LOCATION_CHANGED.equals(intent.getAction())) {
                             Log.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED broadcast. Refreshing records list.");
-                            // Clear caches to ensure fresh data from new storage location
-                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                            // Wipe index since storage location changed — completely different files
+                            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
                             }
                             // If storage location changed, we should definitely reload the list.
                             loadRecordsList();
                         } else if (Constants.ACTION_FILES_RESTORED.equals(intent.getAction())) {
-                            Log.i(TAG, "Received ACTION_FILES_RESTORED broadcast. Refreshing records list.");
-                            // Clear caches to ensure fresh data
-                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                            Log.i(TAG, "Received ACTION_FILES_RESTORED broadcast. Invalidating index and refreshing.");
+                            // Invalidate index so restored files are discovered on full re-scan
+                            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
                             }
@@ -698,7 +700,6 @@ public class RecordsFragment extends BaseFragment implements
                                             finalDocFile.getName(),
                                             finalDocFile.length(),
                                             finalDocFile.lastModified());
-                                    newItem.isTemporary = false;
                                     newItem.isNew = true;
                                     videoItems.add(0, newItem); // Add to top, assuming latest
                                     allLoadedItems.add(0, newItem);
@@ -733,12 +734,9 @@ public class RecordsFragment extends BaseFragment implements
                                 Log.d(TAG, "Cleared adapter caches for new recording");
                             }
                             // Invalidate cache so loadRecordsList will load fresh data including the new video
-                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
-                            Log.d(TAG, "Cache invalidated for new recording, forcing fresh load");
-                            // For non-SAF or if originalTempSafUriString was null, a full refresh is often
-                            // simplest
-                            // as the new item should be discoverable by loadRecordsList.
-                            loadRecordsList(); // This will re-scan and update everything.
+                            Log.d(TAG, "New recording complete, delta scan will pick it up");
+                            // Delta scan will pick up the new file automatically
+                            loadRecordsList(); // This will delta-scan and find the new video.
                         } else if (!success) {
                             Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
                                     + ". Refreshing list.");
@@ -747,9 +745,7 @@ public class RecordsFragment extends BaseFragment implements
                                 recordsAdapter.clearCaches();
                                 Log.d(TAG, "Cleared adapter caches for failed recording");
                             }
-                            // Invalidate cache so loadRecordsList will load fresh data and clear any temp states
-                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
-                            Log.d(TAG, "Cache invalidated for failed recording, forcing fresh load");
+                            Log.d(TAG, "Failed recording, refreshing via delta scan");
                             // Still refresh, as a temp file might need its processing state cleared
                             loadRecordsList();
                         } else if (success && finalUriString == null) {
@@ -760,9 +756,8 @@ public class RecordsFragment extends BaseFragment implements
                                 recordsAdapter.clearCaches();
                                 Log.d(TAG, "Cleared adapter caches for successful recording without URI");
                             }
-                            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
-                            Log.d(TAG, "Cache invalidated for successful recording without URI, forcing fresh load");
-                            loadRecordsList(); // This will re-scan and find the new video
+                            Log.d(TAG, "Successful recording without URI, delta scan will find it");
+                            loadRecordsList(); // This will delta-scan and find the new video
                         }
                     }
                 };
@@ -1028,41 +1023,41 @@ public class RecordsFragment extends BaseFragment implements
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "Swipe to refresh triggered.");
+                Log.d(TAG, "Swipe to refresh triggered — two-phase: instant DB → background delta");
 
-                // skeleton -----------
-
-                // Clear session cache to force fresh data
-                com.fadcam.utils.VideoSessionCache.clearSessionCache();
-                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                // DON'T invalidate the index — that forces a slow SAF directory scan.
+                // Instead: Phase 1 reads from DB instantly, Phase 2 delta-scans in background.
 
                 // Invalidate stats cache for manual refresh
                 com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
-                Log.d(TAG, "Invalidated video caches for manual refresh");
 
-                // Clear adapter caches
+                // Clear adapter caches (thumbnails, etc.)
                 if (recordsAdapter != null) {
-                    Log.d(TAG, "Swipe refresh: Clearing adapter caches for hard refresh");
                     recordsAdapter.clearCaches();
                 }
+
+                // Cancel any in-progress background delta scan so it doesn't
+                // compete with the new load. The main executorService is shared with
+                // RecordsAdapter and must NEVER be shut down.
+                if (deltaExecutor != null && !deltaExecutor.isShutdown()) {
+                    deltaExecutor.shutdownNow();
+                }
+                deltaExecutor = Executors.newSingleThreadExecutor();
+                Log.d(TAG, "Cancelled previous delta scan for instant refresh");
 
                 // Reset pagination and state variables
                 currentPage = 0;
                 allLoadedItems.clear();
                 hasMoreItems = true;
                 videoItemPositionCache.clear();
-                isLoading = false; // Reset loading state
+                isLoading = false;
+                isInitialLoad = true; // Allow loadRecordsList to run past the guard
 
-                // Show skeleton immediately for smooth UX
-                int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
-                if (estimatedCount <= 0) {
-                    estimatedCount = Math.max(6, videoItems.size()); // Use previous count or minimum 6
-                }
-
+                // Show skeleton briefly for smooth UX
+                int estimatedCount = Math.max(6, videoItems.size());
                 showSkeletonLoading(estimatedCount);
 
-                // Load fresh data silently in background (loadRecordsList will handle stopping
-                // refresh indicator)
+                // Load data: DB fast path (instant) + background delta scan for freshness
                 loadRecordsList();
 
             });
@@ -1099,7 +1094,7 @@ public class RecordsFragment extends BaseFragment implements
 
             // prevent flash -----------
             // CRITICAL: Show skeleton IMMEDIATELY to prevent empty flash
-            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+            int estimatedCount = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount();
             if (estimatedCount <= 0) {
                 estimatedCount = 12; // Default reasonable skeleton count
             }
@@ -1150,8 +1145,8 @@ public class RecordsFragment extends BaseFragment implements
         // Check if an external event (e.g. Faditor export) requested a refresh
         if (sPendingRefresh) {
             sPendingRefresh = false;
-            Log.i(TAG, "onResume: Pending refresh flag set, invalidating cache");
-            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+            Log.i(TAG, "onResume: Pending refresh flag set, invalidating index");
+            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
             if (recordsAdapter != null) {
                 recordsAdapter.clearCaches();
             }
@@ -1206,14 +1201,13 @@ public class RecordsFragment extends BaseFragment implements
 
         // Only reload if we actually need to (no data or cache invalidated)
         boolean hasData = recordsAdapter != null && recordsAdapter.getItemCount() > 0 && !videoItems.isEmpty();
-        boolean hasValidCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid() ||
-                com.fadcam.utils.VideoSessionCache.hasCachedData(sharedPreferencesManager);
+        boolean hasDbIndex = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount() > 0;
 
-        if (hasData && hasValidCache && !isLoading) {
+        if (hasData && (hasDbIndex || !videoItems.isEmpty()) && !isLoading) {
             Log.d(TAG, "onResume: Already have " + videoItems.size() + " videos loaded, skipping duplicate load");
             updateUiVisibility(); // Just update visibility state
         } else if (!isLoading) {
-            Log.i(TAG, "LOG_REFRESH: Loading from onResume - hasData: " + hasData + ", hasCache: " + hasValidCache);
+            Log.i(TAG, "LOG_REFRESH: Loading from onResume - hasData: " + hasData + ", hasDbIndex: " + hasDbIndex);
             loadRecordsList();
         } else {
             Log.d(TAG, "onResume: Already loading, skipping duplicate request");
@@ -1242,8 +1236,8 @@ public class RecordsFragment extends BaseFragment implements
             // Check pending refresh (e.g., Faditor export)
             if (sPendingRefresh) {
                 sPendingRefresh = false;
-                Log.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating cache");
-                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                Log.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating index");
+                com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                 if (recordsAdapter != null) {
                     recordsAdapter.clearCaches();
                 }
@@ -1259,10 +1253,9 @@ public class RecordsFragment extends BaseFragment implements
             
             // Check if data needs refreshing
             boolean hasData = recordsAdapter != null && recordsAdapter.getItemCount() > 0 && !videoItems.isEmpty();
-            boolean hasValidCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid() ||
-                    com.fadcam.utils.VideoSessionCache.hasCachedData(sharedPreferencesManager);
+            boolean hasDbIndex = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount() > 0;
             
-            if (hasData && hasValidCache && !isLoading) {
+            if (hasData && hasDbIndex && !isLoading) {
                 Log.d(TAG, "onHiddenChanged: Data valid, updating UI visibility only");
                 updateUiVisibility();
             } else if (!isLoading) {
@@ -1291,8 +1284,8 @@ public class RecordsFragment extends BaseFragment implements
                 videoItems = new ArrayList<>();
             }
 
-            // Show skeleton loading
-            int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+            // Show skeleton loading — use DB index count for accurate estimation
+            int estimatedCount = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount();
             if (estimatedCount <= 0) {
                 estimatedCount = 12;
             }
@@ -1880,7 +1873,6 @@ public class RecordsFragment extends BaseFragment implements
                 shotSubtype,
                 cameraSubtype,
                 faditorSubtype);
-        newItem.isTemporary = false;
         newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
         return newItem;
     }
@@ -1921,7 +1913,6 @@ public class RecordsFragment extends BaseFragment implements
                     inferred == VideoItem.Category.FADITOR
                             ? resolveFaditorSubtype(VideoItem.FaditorSubtype.UNKNOWN, name)
                             : VideoItem.FaditorSubtype.UNKNOWN);
-            item.isTemporary = false;
             item.isNew = Utils.isVideoConsideredNew(finalTimestamp);
             out.add(item);
         }
@@ -2983,7 +2974,6 @@ public class RecordsFragment extends BaseFragment implements
                     shotSubtype,
                     cameraSubtype,
                     faditorSubtype);
-            copy.isTemporary = item.isTemporary;
             copy.isNew = item.isNew;
             copy.isProcessingUri = item.isProcessingUri;
             copy.isSkeleton = item.isSkeleton;
@@ -3411,7 +3401,7 @@ public class RecordsFragment extends BaseFragment implements
 
         if (moveFiles) {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+                // Delta scan will detect moved files automatically
                 loadRecordsList();
             }, 1800);
         }
@@ -3516,12 +3506,14 @@ public class RecordsFragment extends BaseFragment implements
             int successCount = 0;
             int failCount = 0;
             List<VideoItem> allCurrentItems = new ArrayList<>(videoItems); // Copy for safe iteration
+            List<String> trashedUris = new ArrayList<>();
 
             for (Uri uri : itemsToDeleteUris) {
                 VideoItem itemToTrash = findVideoItemByUri(allCurrentItems, uri);
                 if (itemToTrash != null) {
                     if (moveToTrashVideoItem(itemToTrash)) {
                         successCount++;
+                        trashedUris.add(uri.toString());
                     } else {
                         failCount++;
                     }
@@ -3530,6 +3522,18 @@ public class RecordsFragment extends BaseFragment implements
                     failCount++;
                 }
             }
+
+            // Remove trashed items from the persistent index in bulk
+            if (!trashedUris.isEmpty()) {
+                try {
+                    com.fadcam.data.VideoIndexRepository.getInstance(requireContext())
+                            .removeFromIndex(trashedUris);
+                    Log.d(TAG, "Removed " + trashedUris.size() + " trashed items from index");
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to remove trashed items from index", e);
+                }
+            }
+
             Log.d(TAG, "BG Trash Operation Finished. Success: " + successCount + ", Fail: " + failCount);
             // Post results and UI refresh back to main thread
             final int finalSuccessCount = successCount;
@@ -3606,16 +3610,29 @@ public class RecordsFragment extends BaseFragment implements
         executorService.submit(() -> {
             int successCount = 0;
             int failCount = 0;
+            List<String> trashedUris = new ArrayList<>();
             for (VideoItem item : itemsToTrash) {
                 if (item != null && item.uri != null) {
                     if (moveToTrashVideoItem(item)) { // Pass the whole VideoItem
                         successCount++;
+                        trashedUris.add(item.uri.toString());
                     } else {
                         failCount++;
                     }
                 } else {
                     Log.w(TAG, "Encountered a null item or item with null URI in deleteAllVideos list.");
                     failCount++;
+                }
+            }
+
+            // Remove all trashed items from the persistent index
+            if (!trashedUris.isEmpty()) {
+                try {
+                    com.fadcam.data.VideoIndexRepository.getInstance(requireContext())
+                            .removeFromIndex(trashedUris);
+                    Log.d(TAG, "Removed " + trashedUris.size() + " trashed items from index (deleteAll)");
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to remove trashed items from index", e);
                 }
             }
 
@@ -3688,78 +3705,6 @@ public class RecordsFragment extends BaseFragment implements
             // Toast.makeText(context, "Failed to move '" + originalDisplayName + "' to
             // trash.", Toast.LENGTH_SHORT).show());
             return false;
-        }
-    }
-
-    // OLD deleteVideoUri - to be removed or commented out after confirming
-    // moveToTrashVideoItem is used everywhere
-    private boolean deleteVideoUri(Uri uri) {
-        // THIS METHOD IS NOW REPLACED BY moveToTrashVideoItem(VideoItem item)
-        // To use the new method, you need the VideoItem object, not just the URI,
-        // because we need the originalDisplayName and to determine if it's an SAF
-        // source.
-
-        // Find the VideoItem corresponding to this URI from your main list (videoItems)
-        VideoItem itemToTrash = null;
-        List<VideoItem> currentItems = new ArrayList<>(videoItems); // Use a copy to avoid issues if list is modified
-                                                                    // elsewhere
-        itemToTrash = findVideoItemByUri(currentItems, uri);
-
-        if (itemToTrash != null) {
-            Log.d(TAG, "Redirecting deleteVideoUri for " + uri + " to moveToTrashVideoItem.");
-            return moveToTrashVideoItem(itemToTrash);
-        } else {
-            Log.e(TAG, "deleteVideoUri called for URI not found in videoItems: " + uri
-                    + ". Attempting direct delete as fallback (SHOULD NOT HAPPEN).");
-            // Fallback to old deletion logic if item not found (should not happen ideally)
-            // This part should ideally be removed if moveToTrashVideoItem is robustly used.
-            Context context = getContext();
-            if (context == null) {
-                Log.e(TAG, "Fallback delete failed: context is null for URI: " + uri);
-                return false;
-            }
-            Log.w(TAG, "Fallback: Attempting direct delete for URI: " + uri + " (VideoItem not found)");
-            try {
-                if ("file".equals(uri.getScheme())) {
-                    File file = new File(uri.getPath());
-                    if (file.exists() && file.delete()) {
-                        Log.i(TAG, "Fallback: Deleted internal file: " + file.getName());
-                        return true;
-                    } else {
-                        Log.e(TAG, "Fallback: Failed to delete internal file: " + uri.getPath() + " Exists="
-                                + file.exists());
-                        return false;
-                    }
-                } else if ("content".equals(uri.getScheme())) {
-                    if (DocumentsContract.deleteDocument(context.getContentResolver(), uri)) {
-                        Log.i(TAG, "Fallback: Deleted SAF document: " + uri);
-                        return true;
-                    } else {
-                        DocumentFile doc = DocumentFile.fromSingleUri(context, uri);
-                        if (doc == null || !doc.exists()) {
-                            Log.w(TAG,
-                                    "Fallback: deleteDocument returned false, but file doesn't exist or became null. Treating as success. URI: "
-                                            + uri);
-                            return true; // If it's gone, it's 'deleted'
-                        }
-                        Log.e(TAG,
-                                "Fallback: Failed to delete SAF document (deleteDocument returned false and file still exists): "
-                                        + uri);
-                        return false;
-                    }
-                }
-                Log.w(TAG, "Fallback: Unknown URI scheme for direct delete: " + uri.getScheme());
-                return false;
-            } catch (SecurityException se) {
-                Log.e(TAG, "Fallback: SecurityException deleting URI: " + uri, se);
-                if (getActivity() != null)
-                    getActivity().runOnUiThread(() -> Toast
-                            .makeText(context, "Permission denied during fallback delete.", Toast.LENGTH_SHORT).show());
-                return false;
-            } catch (Exception e) {
-                Log.e(TAG, "Fallback: Exception deleting URI: " + uri, e);
-                return false;
-            }
         }
     }
 
@@ -3930,29 +3875,6 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    // In RecordsFragment.java
-
-    /**
-     * Scans the relevant external cache directories for lingering temporary video
-     * files.
-     * 
-     * @return A List of VideoItem objects representing the found temp files.
-     */
-    // system -----------
-    /**
-     * OBSOLETE: Temp cache system removed - now using OpenGL real-time processing
-     * 
-     * @deprecated This method is no longer used as temp file system was replaced
-     */
-    @Deprecated
-    private List<VideoItem> getTempCacheRecordsList() {
-        Log.d(TAG, "getTempCacheRecordsList: Obsolete temp cache system - returning empty list");
-        return new ArrayList<>();
-    }
-
-    // Removed scanDirectoryForTempVideos method - temp file system is obsolete
-    // Now using OpenGL pipeline, no longer need temp file scanning
-
     // -----
     private BroadcastReceiver segmentCompleteReceiver;
     private boolean isSegmentReceiverRegistered = false;
@@ -4074,12 +3996,12 @@ public class RecordsFragment extends BaseFragment implements
      */
     public void refreshList() {
         if (isAdded()) {
-            // Clear caches to ensure fresh data
-            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
+            // Invalidate persistent index to force full re-scan
+            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
             if (recordsAdapter != null) {
                 recordsAdapter.clearCaches();
             }
-            Log.i(TAG, "refreshList: Clearing caches and reloading records list.");
+            Log.i(TAG, "refreshList: Invalidated index, reloading records list.");
             loadRecordsList();
         }
     }
@@ -4097,6 +4019,11 @@ public class RecordsFragment extends BaseFragment implements
                 executorService.shutdownNow();
                 Thread.currentThread().interrupt();
             }
+        }
+
+        // Shutdown delta executor
+        if (deltaExecutor != null && !deltaExecutor.isShutdown()) {
+            deltaExecutor.shutdownNow();
         }
 
         // Clear video lists to free memory
@@ -4393,87 +4320,53 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     /**
-     * Loads the list of videos from all sources and updates the UI with
-     * professional skeleton loading
+     * Loads the list of videos using the persistent Room DB index.
+     * <p>
+     * Flow:
+     * <ol>
+     *   <li>If DB has data → return instantly (< 50 ms) → delta-scan in background</li>
+     *   <li>If DB empty (first launch / after wipe) → full scan → bulk insert → return</li>
+     *   <li>Background enrichment resolves durations without blocking the UI</li>
+     * </ol>
      */
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList() {
         Log.d(TAG, "loadRecordsList: start, storageMode=" + sharedPreferencesManager.getStorageMode()
                 + ", activeFilter=" + activeFilter);
-        Log.i(TAG, "loadRecordsList: Starting optimized progressive loading");
 
-        // -----------
-
-        // Debug: Log current cache state with more details
-        boolean hasSessionCache = com.fadcam.utils.VideoSessionCache.isSessionCacheValid();
-        boolean hasPersistentCache = com.fadcam.utils.VideoSessionCache.hasCachedData(sharedPreferencesManager);
-        int cachedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
-        boolean hasExistingData = !videoItems.isEmpty();
-
-        Log.d(TAG, "CACHE DEBUG: sessionCache=" + hasSessionCache + ", persistentCache=" + hasPersistentCache +
-                ", cachedCount=" + cachedCount + ", existingData=" + hasExistingData +
-                ", videoItems.size=" + videoItems.size() + ", isInitialLoad=" + isInitialLoad);
-
-
-        // Step 1: Check in-memory session cache first, with disk fallback
-        List<VideoItem> cachedVideos = com.fadcam.utils.VideoSessionCache.getSessionCachedVideos(requireContext());
-        if (!cachedVideos.isEmpty()) {
-            Log.d(TAG, "CACHE HIT: Using " + cachedVideos.size() + " cached videos (from memory or disk)");
-
-            // Sort cached videos
-            List<VideoItem> normalizedCached = normalizeVideoCategories(cachedVideos);
-            sortItems(normalizedCached, currentSortOption);
-
-            // Show skeleton first, then replace
-            int estimatedCount = normalizedCached.size();
-            if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
-                Log.d(TAG, "Showing " + estimatedCount + " skeleton items for cache hit");
-                showSkeletonLoading(estimatedCount);
-            }
-
-            // Replace skeleton with cached data immediately
-            replaceSkeletonsWithData(normalizedCached);
-
-            isLoading = false;
+        // Guard against duplicate loads
+        if (isLoading) {
+            Log.d(TAG, "loadRecordsList: already loading, skipping duplicate request");
             return;
         }
 
-        // Step 2: Check if we should skip loading entirely (already have data and not
-        // initial load)
+        // Skip reload if we already have data and this is not the initial load
         if (!videoItems.isEmpty() && !isInitialLoad) {
-            Log.d(TAG, "Already have " + videoItems.size() + " videos loaded, skipping reload");
+            Log.d(TAG, "loadRecordsList: already have " + videoItems.size() + " items, skipping");
             isLoading = false;
             updateUiVisibility();
             return;
         }
 
-        // Step 3: Show skeleton loading based on cached count
-        int estimatedCount = com.fadcam.utils.VideoSessionCache.getCachedVideoCount(sharedPreferencesManager);
+        isLoading = true;
+
+        // Show skeleton loading immediately for smooth UX
+        final com.fadcam.data.VideoIndexRepository repository =
+                com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+        int estimatedCount = repository.getIndexedCount();
         if (estimatedCount <= 0) {
-            estimatedCount = 12; // Default skeleton count
+            estimatedCount = 12; // Default skeleton count for first launch
         }
 
-        // Show skeleton immediately if not already showing
         if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
-            Log.d(TAG, "Showing " + estimatedCount + " skeleton items for fresh load");
+            Log.d(TAG, "Showing " + estimatedCount + " skeleton items");
             showSkeletonLoading(estimatedCount);
         }
 
-        // -----------
-
-        // Step 2: No cache - load progressively in background
-        if (isLoading) {
-            Log.d(TAG, "Already loading data, skipping duplicate request");
-            return;
-        }
-
-        isLoading = true;
-
-        // Show progress indicator after 200ms if still loading (conditional feedback)
+        // Show progress indicator after 200ms if still loading
         showProgressRunnable = () -> {
             if (isLoading && loadingProgress != null) {
                 loadingProgress.setVisibility(View.VISIBLE);
-                Log.d(TAG, "Progress indicator shown after 200ms delay");
             }
         };
         if (progressHandler != null) {
@@ -4484,46 +4377,66 @@ public class RecordsFragment extends BaseFragment implements
             executorService = Executors.newSingleThreadExecutor();
         }
 
-        // Load data progressively in background
         executorService.submit(() -> {
             try {
-                Log.d(TAG, "Background progressive loading started");
+                long loadStart = System.currentTimeMillis();
 
-                // Load primary videos progressively (temp file system removed)
-                List<VideoItem> primaryItems = loadPrimaryVideosProgressively();
+                // ── Primary load: instant from DB or full scan on cold start ──
+                List<VideoItem> items = repository.getVideos(sharedPreferencesManager);
 
-                // Use primary items directly (no temp files to combine)
-                List<VideoItem> allVideos = new ArrayList<>(primaryItems);
+                // Normalize categories and sort
+                List<VideoItem> normalized = normalizeVideoCategories(items);
+                sortItems(normalized, currentSortOption);
+                totalItems = normalized.size();
 
-                // Remove duplicates
-                List<VideoItem> uniqueItems = removeDuplicateVideos(allVideos);
+                long loadElapsed = System.currentTimeMillis() - loadStart;
+                Log.i(TAG, "loadRecordsList: " + normalized.size() + " items ready in " + loadElapsed + "ms");
 
-                // Sort all items
-                sortItems(uniqueItems, currentSortOption);
-                totalItems = uniqueItems.size();
+                // Digital forensics indexing (non-blocking)
+                DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(normalized);
 
-                Log.d(TAG, "Progressive loading complete: " + uniqueItems.size() + " total videos");
+                // Deliver results to UI
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    replaceSkeletonsWithData(normalized);
+                });
 
-                // Update cache for next time with persistence
-                com.fadcam.utils.VideoSessionCache.updateSessionCache(uniqueItems, requireContext());
-                com.fadcam.utils.VideoSessionCache.setCachedVideoCount(uniqueItems.size(), sharedPreferencesManager);
+                // Keep VideoSessionCache in sync so HomeFragment shows correct stats
+                com.fadcam.utils.VideoSessionCache.updateSessionCache(normalized);
 
-                // Phase 1: non-blocking digital forensics asset indexing/relink pass.
-                DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(uniqueItems);
+                // ── Background: delta scan for freshness (on separate executor
+                //    so it never blocks the main executor for subsequent loads) ──
+                final ExecutorService currentDeltaExecutor = deltaExecutor;
+                currentDeltaExecutor.submit(() -> {
+                    try {
+                        List<VideoItem> deltaItems = repository.deltaScan(sharedPreferencesManager);
+                        if (deltaItems.size() != totalItems) {
+                            // Data changed — re-normalize, sort, and push to UI
+                            List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
+                            sortItems(deltaNormalized, currentSortOption);
+                            totalItems = deltaNormalized.size();
+                            Log.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
+                            // Keep VideoSessionCache in sync
+                            com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                replaceSkeletonsWithData(deltaNormalized);
+                            });
+                        } else {
+                            Log.d(TAG, "Delta scan: no changes detected");
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Delta scan failed (non-fatal)", e);
+                    }
+                });
 
-                // -----------
-
-                // Add minimum delay to show shimmer animation (professional UX)
-                long minShimmerTime = 180; // Minimum 180ms for smooth transition
-
-                Log.d(TAG, "Adding " + minShimmerTime + "ms delay to show shimmer animation");
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    replaceSkeletonsWithData(uniqueItems);
-                }, minShimmerTime);
-
+                // ── Background: enrich durations ──
+                repository.startBackgroundEnrichment((uriString, durationMs) -> {
+                    // Duration resolved — could notify adapter for specific item
+                    // but the adapter also reads from DB on rebind, so this is optional
+                    Log.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms");
+                });
 
             } catch (Exception e) {
-                Log.e(TAG, "Error in progressive loading", e);
+                Log.e(TAG, "Error in loadRecordsList", e);
                 handleLoadingError();
             }
         });
@@ -5003,23 +4916,8 @@ public class RecordsFragment extends BaseFragment implements
         if (mediaType == null) {
             return;
         }
-        if (fileName != null && fileName.startsWith("temp_") && mediaType == VideoItem.MediaType.VIDEO) {
-            VideoItem tempVideoItem = new VideoItem(
-                    docFile.getUri(),
-                    fileName,
-                    docFile.length(),
-                    docFile.lastModified(),
-                    VideoItem.Category.UNKNOWN,
-                    VideoItem.MediaType.VIDEO,
-                    VideoItem.ShotSubtype.UNKNOWN,
-                    VideoItem.CameraSubtype.UNKNOWN,
-                    VideoItem.FaditorSubtype.UNKNOWN);
-            tempVideoItem.isTemporary = true;
-            tempVideoItem.isNew = false;
-            if (currentlyProcessingUris.contains(docFile.getUri())) {
-                tempVideoItem.isProcessingUri = true;
-            }
-            out.add(tempVideoItem);
+        if (fileName != null && fileName.startsWith("temp_")) {
+            // Skip temp_ files — OpenGL pipeline no longer uses them
             return;
         }
 
@@ -5046,7 +4944,6 @@ public class RecordsFragment extends BaseFragment implements
                 shotSubtype,
                 cameraSubtype,
                 faditorSubtype);
-        item.isTemporary = false;
         item.isNew = Utils.isVideoConsideredNew(lastModified);
         out.add(item);
     }

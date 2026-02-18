@@ -1308,6 +1308,12 @@ public class HomeFragment extends BaseFragment {
             recordingState = RecordingState.NONE;
             updateStartButtonAvailability();
         }
+
+        // Refresh stats: invalidate cache + update Room DB with new video,
+        // then update UI so the Home card shows the correct count/size.
+        VideoStatsCache.invalidateStats(sharedPreferencesManager);
+        com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
+        updateStats(); // Will query Room DB (fast) then background delta scan updates it
     }
 
     // Inside HomeFragment.java
@@ -1611,6 +1617,9 @@ public class HomeFragment extends BaseFragment {
         }
 
         Log.d(TAG, "onResume: Triggering stats update.");
+        // Always invalidate cache on resume so we query Room DB for fresh data.
+        // This ensures stats reflect any changes made in Records tab or after recording.
+        VideoStatsCache.invalidateStats(sharedPreferencesManager);
         updateStats();
         updateTorchUI(isTorchOn);
 
@@ -6254,12 +6263,48 @@ public class HomeFragment extends BaseFragment {
         // Step 2: Calculate fresh stats in background
         if (executorService == null || executorService.isShutdown()) {
             Log.w(TAG, "ExecutorService not available for updateStats");
-            // Reinitialize if needed or handle gracefully
             executorService = Executors.newSingleThreadExecutor();
         }
 
         executorService.submit(() -> {
-            // --- Get current storage settings ---
+            // --- Primary source: Room DB (sub-millisecond, persistent, accurate) ---
+            // The Room DB is kept in sync by RecordsFragment's delta scan.
+            // This is the fastest and most reliable source for video stats.
+            if (!isRecording) {
+                try {
+                    com.fadcam.data.VideoIndexRepository repo =
+                        com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+                    long[] quickStats = repo.getQuickStats();
+                    int dbCount = (int) quickStats[0];
+                    long dbTotalBytes = quickStats[1];
+                    long dbTotalMB = dbTotalBytes / (1024 * 1024);
+                    Log.d(TAG, "updateStats BG: Room DB stats: " + dbCount + " videos, " + dbTotalMB + "MB");
+                    VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, dbTotalMB);
+                    updateStatsUI(dbCount, dbTotalMB);
+
+                    // If the video index was just invalidated (e.g. after recording
+                    // stopped), run a background delta scan to pick up the new file,
+                    // then re-query stats so the card auto-updates.
+                    if (repo.isIndexInvalidated()) {
+                        Log.d(TAG, "updateStats BG: Index invalidated, running delta scan to pick up new files");
+                        repo.getVideos(sharedPreferencesManager); // Consumes invalidation flag + delta scans
+                        long[] freshStats = repo.getQuickStats();
+                        int freshCount = (int) freshStats[0];
+                        long freshMB = freshStats[1] / (1024 * 1024);
+                        if (freshCount != dbCount || freshMB != dbTotalMB) {
+                            Log.d(TAG, "updateStats BG: Delta scan found changes: " + freshCount + " videos, " + freshMB + "MB");
+                            VideoStatsCache.updateStats(sharedPreferencesManager, freshCount, freshMB);
+                            updateStatsUI(freshCount, freshMB);
+                        }
+                    }
+                    return; // DB is the source of truth — done
+                } catch (Exception e) {
+                    Log.w(TAG, "updateStats BG: Room DB query failed, falling back to scan: " + e.getMessage());
+                }
+            }
+
+            // --- Fallback: Full scan (only during recording or if DB failed) ---
+            // During recording, we need a live scan to capture the growing file.
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString =
                 sharedPreferencesManager.getCustomStorageUri();

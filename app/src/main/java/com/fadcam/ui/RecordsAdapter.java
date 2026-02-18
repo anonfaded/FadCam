@@ -359,45 +359,56 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
         }
 
-        // Optimize time-consuming operations using lightweight caching
+        // Optimize time-consuming operations using DB-backed duration cache
         if (holder.textViewFileTime != null) {
             if (isImage) {
                 holder.textViewFileTime.setText("");
                 holder.textViewFileTime.setVisibility(View.GONE);
             } else {
                 holder.textViewFileTime.setVisibility(View.VISIBLE);
-                // Check if we already have the duration cached
+                // Check in-memory position cache first (avoids even DB read on rebind)
                 String cachedDuration = loadedThumbnailCache.get(position);
                 if (cachedDuration != null) {
                     holder.textViewFileTime.setText(cachedDuration);
                 } else {
-                    // Show a placeholder while loading
+                    // Show placeholder immediately — never block the UI thread
                     holder.textViewFileTime.setText("--:--");
                     if (!(safeMediaProbeMode && isScrolling)) {
-                        // Calculate duration on background thread - this is one of the main causes of
-                        // lag
+                        // Try DB-backed duration first (instant), fall back to FFprobe only if needed
                         executorService.execute(() -> {
-                        // Add a small delay for newly recorded videos to ensure file is fully written
-                        if (videoItem.isNew) {
+                            long duration = -1;
+
+                            // Fast path: read from persistent Room DB index
                             try {
-                                Thread.sleep(500); // 500ms delay for new videos
-                                Log.d(TAG, "Added delay for new video duration calculation: " + videoItem.displayName);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
+                                com.fadcam.data.VideoIndexRepository repo =
+                                        com.fadcam.data.VideoIndexRepository.getInstance(context);
+                                duration = repo.getCachedDuration(videoUri.toString());
+                            } catch (Exception e) {
+                                Log.w(TAG, "DB duration lookup failed", e);
                             }
-                        }
 
-                        long duration = getVideoDuration(videoUri);
-                        String formattedDuration = formatVideoDuration(duration);
-                        loadedThumbnailCache.put(position, formattedDuration);
-
-                        // Update UI on main thread
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            // Make sure the view holder is still showing the same item before updating
-                            if (holder.getAdapterPosition() == position && holder.textViewFileTime != null) {
-                                holder.textViewFileTime.setText(formattedDuration);
+                            // Slow path: fall back to FFprobe/MMR only if DB has no data
+                            if (duration <= 0) {
+                                // Add a small delay for newly recorded videos
+                                if (videoItem.isNew) {
+                                    try {
+                                        Thread.sleep(500);
+                                    } catch (InterruptedException e) {
+                                        Thread.currentThread().interrupt();
+                                    }
+                                }
+                                duration = getVideoDuration(videoUri);
                             }
-                        });
+
+                            String formattedDuration = formatVideoDuration(duration);
+                            loadedThumbnailCache.put(position, formattedDuration);
+
+                            // Update UI on main thread
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                if (holder.getAdapterPosition() == position && holder.textViewFileTime != null) {
+                                    holder.textViewFileTime.setText(formattedDuration);
+                                }
+                            });
                         });
                     }
                 }
@@ -1494,6 +1505,18 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                         newFullName,
                         videoItem.size, // Ideally, re-query size from newUri if possible
                         System.currentTimeMillis());
+
+                // Update the persistent DB index: remove old URI, invalidate so
+                // the next loadRecordsList() picks up the renamed file.
+                try {
+                    com.fadcam.data.VideoIndexRepository repo =
+                            com.fadcam.data.VideoIndexRepository.getInstance(context);
+                    repo.removeFromIndex(videoItem.uri.toString());
+                    Log.d(TAG, "Removed old URI from index after rename: " + videoItem.uri);
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to update index after rename", e);
+                }
+
                 if (context instanceof Activity) {
                     ((Activity) context).runOnUiThread(() -> {
                         if (position >= 0 && position < records.size()) {
@@ -2539,14 +2562,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         holder.textViewFileTime.setText("██████");
 
         // Make text views appear as placeholder blocks
-        holder.textViewRecord.setAlpha(0.1f);
-        holder.textViewFileSize.setAlpha(0.1f);
-        holder.textViewFileTime.setAlpha(0.1f);
+        holder.textViewRecord.setAlpha(0.25f);
+        holder.textViewFileSize.setAlpha(0.25f);
+        holder.textViewFileTime.setAlpha(0.25f);
 
-        // Step 3: Set placeholder for thumbnail
+        // Step 3: Set placeholder for thumbnail — small centered icon like "hide thumbnails" mode
         holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
-        holder.imageViewThumbnail.setAlpha(0.3f); // Dimmed placeholder
-        holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        holder.imageViewThumbnail.setAlpha(0.5f); // Visible placeholder
+        holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
         // Step 4: Hide interactive elements during skeleton state
         if (holder.textViewStatusBadge != null) {
@@ -2561,7 +2584,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
         if (holder.textViewTimeAgo != null) {
             holder.textViewTimeAgo.setText("███████");
-            holder.textViewTimeAgo.setAlpha(0.1f);
+            holder.textViewTimeAgo.setAlpha(0.25f);
         }
 
         // Step 5: Hide processing and selection elements
@@ -2632,6 +2655,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Step 5: Clear shimmer from thumbnail and restore normal appearance
         holder.imageViewThumbnail.setBackground(null);
         holder.imageViewThumbnail.setAlpha(1.0f);
+        holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
         // Step 6: Restore visibility for hidden elements
         if (holder.textViewSerialNumber != null) {

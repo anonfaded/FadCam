@@ -6,6 +6,8 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
+import androidx.documentfile.provider.DocumentFile;
+
 import com.fadcam.Constants;
 import com.fadcam.model.TrashItem;
 import com.fadcam.Utils;
@@ -524,6 +526,11 @@ public class TrashManager {
             return true; // Nothing to do.
         }
 
+        // SAF restore uses a completely different code path (DocumentFile API)
+        if (destination == RestoreDestination.SAF_STORAGE) {
+            return restoreItemsToSaf(context, itemsToRestore);
+        }
+
         File trashDir = getTrashDirectory(context);
         if (trashDir == null) {
             Log.e(TAG, "restoreItemsFromTrash: Failed to get trash directory.");
@@ -541,7 +548,6 @@ public class TrashManager {
             if (!targetRestoreDir.mkdirs()) {
                 Log.e(TAG, "restoreItemsFromTrash: Failed to create target restore directory: "
                         + targetRestoreDir.getAbsolutePath());
-                // For internal storage, this is critical. For public storage, we'll try anyway.
                 if (destination == RestoreDestination.INTERNAL_STORAGE) {
                     return false;
                 }
@@ -643,6 +649,193 @@ public class TrashManager {
     }
 
     /**
+     * Restores trash items back to the original SAF (custom storage) location using
+     * DocumentFile API. Reads the SAF tree URI from SharedPreferencesManager and
+     * creates files directly in the user's configured custom storage directory.
+     *
+     * @param context        The application context.
+     * @param itemsToRestore The list of TrashItem objects to restore.
+     * @return true if all items were successfully restored, false otherwise.
+     */
+    private static boolean restoreItemsToSaf(Context context, List<TrashItem> itemsToRestore) {
+        File trashDir = getTrashDirectory(context);
+        if (trashDir == null) {
+            Log.e(TAG, "restoreItemsToSaf: Failed to get trash directory.");
+            return false;
+        }
+
+        // Get the SAF tree URI from preferences
+        String safUriString = SharedPreferencesManager.getInstance(context).getCustomStorageUri();
+        if (safUriString == null || safUriString.isEmpty()) {
+            Log.e(TAG, "restoreItemsToSaf: No custom storage URI configured. Cannot restore to SAF.");
+            return false;
+        }
+
+        Uri safTreeUri = Uri.parse(safUriString);
+
+        // Verify we still have write permission
+        boolean hasPermission = false;
+        for (android.content.UriPermission p : context.getContentResolver().getPersistedUriPermissions()) {
+            if (p.getUri().equals(safTreeUri) && p.isWritePermission()) {
+                hasPermission = true;
+                break;
+            }
+        }
+        if (!hasPermission) {
+            Log.e(TAG, "restoreItemsToSaf: No write permission for SAF URI: " + safTreeUri);
+            return false;
+        }
+
+        DocumentFile safDir = DocumentFile.fromTreeUri(context, safTreeUri);
+        if (safDir == null || !safDir.exists() || !safDir.canWrite()) {
+            Log.e(TAG, "restoreItemsToSaf: SAF directory is null, doesn't exist, or not writable.");
+            return false;
+        }
+
+        List<TrashItem> currentMetadata = loadTrashMetadata(context);
+        List<TrashItem> updatedMetadata = new ArrayList<>(currentMetadata);
+        boolean allSucceeded = true;
+
+        for (TrashItem item : itemsToRestore) {
+            if (item == null || item.getTrashFileName() == null) {
+                Log.w(TAG, "restoreItemsToSaf: Skipping null item or item with null trashFileName.");
+                continue;
+            }
+
+            File fileInTrash = new File(trashDir, item.getTrashFileName());
+            if (!fileInTrash.exists()) {
+                Log.w(TAG, "restoreItemsToSaf: File " + item.getTrashFileName()
+                        + " not found in trash. Removing from metadata if present.");
+                updatedMetadata.remove(item);
+                continue;
+            }
+
+            // Create a unique file name in the SAF directory
+            String targetFileName = getUniqueSafFileName(safDir, item.getOriginalDisplayName());
+            String mimeType = getMimeTypeForFile(targetFileName);
+
+            try {
+                // Create the document in the SAF directory
+                DocumentFile newDoc = safDir.createFile(mimeType, targetFileName);
+                if (newDoc == null) {
+                    Log.e(TAG, "restoreItemsToSaf: Failed to create document in SAF for: " + targetFileName);
+                    allSucceeded = false;
+                    continue;
+                }
+
+                // Copy content from trash file to new SAF document
+                try (InputStream in = new FileInputStream(fileInTrash);
+                     OutputStream out = context.getContentResolver().openOutputStream(newDoc.getUri())) {
+                    if (out == null) {
+                        Log.e(TAG, "restoreItemsToSaf: Failed to open output stream for SAF document: " + newDoc.getUri());
+                        newDoc.delete(); // Clean up the empty document
+                        allSucceeded = false;
+                        continue;
+                    }
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    out.flush();
+                }
+
+                Log.i(TAG, "restoreItemsToSaf: Successfully copied '" + fileInTrash.getName()
+                        + "' to SAF: " + newDoc.getUri());
+
+                // Delete the file from trash
+                if (fileInTrash.delete()) {
+                    Log.d(TAG, "restoreItemsToSaf: Deleted original from trash after SAF copy.");
+                } else {
+                    Log.w(TAG, "restoreItemsToSaf: Failed to delete original from trash: "
+                            + fileInTrash.getName() + " (SAF copy succeeded, treating as restored).");
+                }
+
+                // Remove from metadata
+                boolean removedFromMeta = updatedMetadata.remove(item);
+                if (!removedFromMeta) {
+                    Log.w(TAG, "restoreItemsToSaf: Item " + item.getOriginalDisplayName()
+                            + " not found in metadata during restoration.");
+                } else {
+                    Log.d(TAG, "restoreItemsToSaf: Item " + item.getOriginalDisplayName()
+                            + " removed from trash metadata after SAF restoration.");
+                }
+
+            } catch (IOException e) {
+                Log.e(TAG, "restoreItemsToSaf: IOException restoring " + item.getOriginalDisplayName(), e);
+                allSucceeded = false;
+            } catch (SecurityException e) {
+                Log.e(TAG, "restoreItemsToSaf: SecurityException restoring " + item.getOriginalDisplayName()
+                        + ". SAF permission may have been revoked.", e);
+                allSucceeded = false;
+            }
+        }
+
+        if (!saveTrashMetadata(context, updatedMetadata)) {
+            Log.e(TAG, "restoreItemsToSaf: Failed to save updated trash metadata after restoration attempts.");
+            allSucceeded = false;
+        }
+
+        return allSucceeded;
+    }
+
+    /**
+     * Generates a unique filename within a SAF DocumentFile directory.
+     * If a file with the given name already exists, appends (1), (2), etc.
+     *
+     * @param directory    The SAF DocumentFile directory.
+     * @param originalName The desired file name.
+     * @return A unique file name that doesn't conflict with existing files.
+     */
+    private static String getUniqueSafFileName(DocumentFile directory, String originalName) {
+        // Check if a file with this name already exists
+        DocumentFile existing = directory.findFile(originalName);
+        if (existing == null) {
+            return originalName;
+        }
+
+        String namePart = originalName;
+        String extPart = "";
+        int dotIndex = originalName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < originalName.length() - 1) {
+            namePart = originalName.substring(0, dotIndex);
+            extPart = originalName.substring(dotIndex);
+        }
+
+        int count = 1;
+        while (count <= 1000) {
+            String newName = namePart + " (" + count + ")" + extPart;
+            if (directory.findFile(newName) == null) {
+                return newName;
+            }
+            count++;
+        }
+
+        // Fallback to UUID
+        String generated = java.util.UUID.randomUUID().toString() + extPart;
+        Log.w(TAG, "getUniqueSafFileName: Exceeded 1000 attempts, using UUID: " + generated);
+        return generated;
+    }
+
+    /**
+     * Returns a MIME type for the given file name based on its extension.
+     *
+     * @param fileName The file name to determine MIME type for.
+     * @return The MIME type string, defaults to "video/mp4" for video files.
+     */
+    private static String getMimeTypeForFile(String fileName) {
+        if (fileName == null) return "video/mp4";
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".mp4")) return "video/mp4";
+        if (lower.endsWith(".mkv")) return "video/x-matroska";
+        if (lower.endsWith(".webm")) return "video/webm";
+        if (lower.endsWith(".3gp")) return "video/3gpp";
+        if (lower.endsWith(".avi")) return "video/x-msvideo";
+        if (lower.endsWith(".mov")) return "video/quicktime";
+        return "video/mp4"; // Default for FadCam recordings
+    }
+
+    /**
      * Gets the available restore destinations for the given trash items.
      *
      * @param items The list of trash items to check.
@@ -700,13 +893,10 @@ public class TrashManager {
                 return new File(externalFilesDir, Constants.RECORDING_DIRECTORY);
 
             case SAF_STORAGE:
-                // For SAF storage, we would need to use DocumentsContract
-                // This is more complex and would require user interaction for folder selection
-                // For now, fallback to Downloads folder
-                Log.w(TAG,
-                        "getRestoreTargetDirectory: SAF storage restore not yet implemented, falling back to Downloads");
-                File safFallbackDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                return new File(safFallbackDir, Constants.RECORDING_DIRECTORY);
+                // SAF restore is handled by restoreItemsToSaf() and should not reach here.
+                // If it does somehow, return null to prevent incorrect restores.
+                Log.e(TAG, "getRestoreTargetDirectory: SAF_STORAGE should be handled by restoreItemsToSaf(), not here.");
+                return null;
 
             default:
                 Log.e(TAG, "getRestoreTargetDirectory: Unknown destination: " + destination);
