@@ -81,6 +81,10 @@ public class ForensicsGalleryFragment extends Fragment {
     private String selectedType = null;
     private boolean embeddedMode;
     private boolean allSelectedState;
+    /** True while background data load is in progress — prevents redundant onResume reloads. */
+    private boolean isLoading;
+    /** True after first successful data load — prevents redundant onResume reloads. */
+    private boolean dataLoaded;
     private final android.os.Handler uiHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     @Nullable
     private Runnable batchFabShrinkRunnable;
@@ -247,7 +251,16 @@ public class ForensicsGalleryFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadData();
+        // Skip reload if data already loaded — only reload on explicit swipe-refresh or first open
+        if (!dataLoaded && !isLoading) {
+            loadData();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        executor.shutdownNow();
     }
 
     public void clearSelectionFromHost() {
@@ -359,7 +372,8 @@ public class ForensicsGalleryFragment extends Fragment {
     }
 
     private void loadData() {
-        if (!isAdded()) return;
+        if (!isAdded() || isLoading) return;
+        isLoading = true;
         final android.content.Context context = requireContext().getApplicationContext();
         executor.execute(() -> {
             List<ForensicsSnapshotWithMedia> rows = ForensicsDatabase.getInstance(context)
@@ -372,6 +386,8 @@ public class ForensicsGalleryFragment extends Fragment {
                 if (rows != null) allRows.addAll(rows);
                 applyFiltersAndRender();
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                isLoading = false;
+                dataLoaded = true;
             });
         });
     }
@@ -385,7 +401,12 @@ public class ForensicsGalleryFragment extends Fragment {
         }
         sortRows(filtered);
         adapter.submit(filtered);
-        empty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        // Don't flash empty state while still loading initial data
+        if (isLoading && filtered.isEmpty()) {
+            empty.setVisibility(View.GONE);
+        } else {
+            empty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        }
         renderChipCounts(allRows);
         renderStats(filtered);
         updateNavigationFab();
@@ -411,12 +432,25 @@ public class ForensicsGalleryFragment extends Fragment {
 
     private void renderStats(@NonNull List<ForensicsSnapshotWithMedia> rows) {
         int count = rows.size();
-        long sizeBytes = adapter.getTotalImageBytes();
         if (statCount != null) statCount.setText(String.valueOf(count));
-        if (statSize != null) statSize.setText(Formatter.formatShortFileSize(requireContext(), Math.max(0L, sizeBytes)));
+        // Show cached value immediately, compute actual in background
+        long cachedBytes = adapter.getTotalImageBytes();
+        if (statSize != null) statSize.setText(Formatter.formatShortFileSize(requireContext(), cachedBytes));
         if (hostSelectionUi != null) {
-            hostSelectionUi.onSummaryChanged(count, sizeBytes);
+            hostSelectionUi.onSummaryChanged(count, cachedBytes);
         }
+        // Compute actual file sizes in background to avoid main thread I/O
+        executor.execute(() -> {
+            adapter.computeTotalImageBytesAsync(null);
+            if (!isAdded()) return;
+            long totalBytes = adapter.getTotalImageBytes();
+            requireActivity().runOnUiThread(() -> {
+                if (statSize != null) statSize.setText(Formatter.formatShortFileSize(requireContext(), totalBytes));
+                if (hostSelectionUi != null) {
+                    hostSelectionUi.onSummaryChanged(count, totalBytes);
+                }
+            });
+        });
     }
 
     private void openViewer(@NonNull ForensicsSnapshotWithMedia row, boolean mediaMissing) {

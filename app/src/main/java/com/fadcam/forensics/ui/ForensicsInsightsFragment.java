@@ -33,6 +33,8 @@ public class ForensicsInsightsFragment extends Fragment {
     private ImageView heatmap;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private boolean embeddedMode;
+    private boolean dataLoaded;
+    private boolean isLoading;
 
     public static ForensicsInsightsFragment newEmbeddedInstance() {
         ForensicsInsightsFragment fragment = new ForensicsInsightsFragment();
@@ -72,12 +74,20 @@ public class ForensicsInsightsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (isAdded()) {
+        if (isAdded() && !dataLoaded && !isLoading) {
             loadInsights();
         }
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        executor.shutdownNow();
+    }
+
     private void loadInsights() {
+        if (isLoading) return;
+        isLoading = true;
         long since = System.currentTimeMillis() - (24L * 60L * 60L * 1000L);
         executor.execute(() -> {
             ForensicsDatabase db = ForensicsDatabase.getInstance(requireContext());
@@ -90,6 +100,7 @@ public class ForensicsInsightsFragment extends Fragment {
             Bitmap map = renderHeatmap(heatRows, 900, 420);
 
             if (!isAdded()) {
+                isLoading = false;
                 return;
             }
             requireActivity().runOnUiThread(() -> {
@@ -97,6 +108,8 @@ public class ForensicsInsightsFragment extends Fragment {
                         "Last 24h\n• Total events: %d\n• Person: %d\n• Vehicle: %d\n• Pet: %d\n• Object: %d",
                         total, people, vehicle, pet, object));
                 heatmap.setImageBitmap(map);
+                isLoading = false;
+                dataLoaded = true;
             });
         });
     }

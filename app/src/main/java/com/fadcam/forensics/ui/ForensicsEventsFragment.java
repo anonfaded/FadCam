@@ -61,6 +61,8 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     private ForensicsEventsAdapter adapter;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private boolean embeddedMode;
+    private boolean isLoading;
+    private boolean dataLoaded;
     private String selectedSort = "newest";
     @Nullable
     private String selectedMediaState = null;
@@ -164,9 +166,16 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     @Override
     public void onResume() {
         super.onResume();
-        if (isAdded()) {
+        if (isAdded() && !dataLoaded && !isLoading) {
             loadEvents();
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (adapter != null) adapter.shutdown();
+        executor.shutdownNow();
     }
 
     private void styleAndIconChips() {
@@ -249,6 +258,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
     }
 
     private void loadEvents() {
+        isLoading = true;
         final String eventType = resolveSelectedEventType();
         final boolean objectMode = "OBJECT".equals(eventType);
         final String className = (objectMode && !TextUtils.isEmpty(selectedSubtype)) ? selectedSubtype : null;
@@ -271,6 +281,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                     ? db.aiEventDao().getTopClassNames(since, "OBJECT", 10)
                     : null;
             if (!isAdded()) {
+                isLoading = false;
                 return;
             }
             requireActivity().runOnUiThread(() -> {
@@ -279,6 +290,8 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                 empty.setVisibility(hasRows ? View.GONE : View.VISIBLE);
                 renderSubtypeChips(dynamicSubtypes, objectMode);
                 refreshSortUi();
+                isLoading = false;
+                dataLoaded = true;
             });
         });
     }

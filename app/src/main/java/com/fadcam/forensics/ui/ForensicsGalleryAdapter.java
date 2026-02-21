@@ -21,11 +21,15 @@ import com.fadcam.forensics.data.local.model.ForensicsSnapshotWithMedia;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+
+import androidx.recyclerview.widget.DiffUtil;
 
 public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -64,6 +68,16 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     private final List<Entry> entries = new ArrayList<>();
     private final List<ForensicsSnapshotWithMedia> rows = new ArrayList<>();
     private final Set<String> selectedSnapshotIds = new HashSet<>();
+    /** Pre-built month → rows lookup. Rebuilt on every submit. */
+    private final Map<String, List<ForensicsSnapshotWithMedia>> monthIndex = new HashMap<>();
+    /** Pre-computed item numbers (1-based). Rebuilt on every rebuildEntries. */
+    private int[] itemNumbers;
+    /** Cached file sizes: imageUri → bytes. Survives across submits for perf. */
+    private final Map<String, Long> fileSizeCache = new HashMap<>();
+    /** Cached total bytes — computed in background, delivered to UI. */
+    private long cachedTotalBytes = -1L;
+    /** Reusable SimpleDateFormat for month headers. */
+    private final SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
     private Listener listener;
     private boolean selectionMode;
 
@@ -76,6 +90,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     public void submit(@Nullable List<ForensicsSnapshotWithMedia> data) {
+        List<Entry> oldEntries = new ArrayList<>(entries);
         rows.clear();
         if (data != null) {
             rows.addAll(data);
@@ -86,7 +101,37 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         }
         rebuildEntries();
         dispatchSelection();
-        notifyDataSetChanged();
+
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldEntries.size(); }
+            @Override public int getNewListSize() { return entries.size(); }
+            @Override
+            public boolean areItemsTheSame(int oldPos, int newPos) {
+                Entry oldE = oldEntries.get(oldPos);
+                Entry newE = entries.get(newPos);
+                if (oldE.type != newE.type) return false;
+                if (oldE instanceof HeaderEntry) {
+                    return ((HeaderEntry) oldE).monthKey.equals(((HeaderEntry) newE).monthKey);
+                }
+                return snapshotId(((ItemEntry) oldE).row).equals(snapshotId(((ItemEntry) newE).row));
+            }
+            @Override
+            public boolean areContentsTheSame(int oldPos, int newPos) {
+                Entry oldE = oldEntries.get(oldPos);
+                Entry newE = entries.get(newPos);
+                if (oldE instanceof HeaderEntry) {
+                    return ((HeaderEntry) oldE).monthKey.equals(((HeaderEntry) newE).monthKey);
+                }
+                ItemEntry o = (ItemEntry) oldE;
+                ItemEntry n = (ItemEntry) newE;
+                boolean oldSel = selectedSnapshotIds.contains(snapshotId(o.row));
+                boolean newSel = selectedSnapshotIds.contains(snapshotId(n.row));
+                return oldSel == newSel
+                        && o.row.capturedEpochMs == n.row.capturedEpochMs
+                        && o.row.confidence == n.row.confidence;
+            }
+        }, false);
+        result.dispatchUpdatesTo(this);
     }
 
     public boolean isSelectionMode() {
@@ -105,12 +150,26 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return !rows.isEmpty() && selectedSnapshotIds.size() == rows.size();
     }
 
+    /**
+     * Returns the cached total image bytes. Returns 0 if not yet computed.
+     * Call {@link #computeTotalImageBytesAsync(Runnable)} from background to populate.
+     */
     public long getTotalImageBytes() {
+        return Math.max(0L, cachedTotalBytes);
+    }
+
+    /**
+     * Computes total image bytes on the calling thread (call from background),
+     * then runs the callback on the same thread to signal completion.
+     * The result is cached and accessible via {@link #getTotalImageBytes()}.
+     */
+    public void computeTotalImageBytesAsync(@Nullable Runnable onComplete) {
         long total = 0L;
         for (ForensicsSnapshotWithMedia row : rows) {
-            total += resolveImageSize(row.imageUri);
+            total += resolveImageSizeCached(row.imageUri);
         }
-        return total;
+        cachedTotalBytes = total;
+        if (onComplete != null) onComplete.run();
     }
 
     public void clearSelection() {
@@ -228,7 +287,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 : row.className.toLowerCase(Locale.US);
         holder.title.setText(classLabel + " • " + formatTimelineMs(row.timelineMs));
         String sourceLabel = mediaMissing ? "snapshot-only" : "video-linked";
-        String sizeLabel = Formatter.formatShortFileSize(holder.itemView.getContext(), Math.max(0L, resolveImageSize(row.imageUri)));
+        String sizeLabel = Formatter.formatShortFileSize(holder.itemView.getContext(), Math.max(0L, resolveImageSizeCached(row.imageUri)));
         String timeAgo = Utils.formatTimeAgo(row.capturedEpochMs);
         holder.meta.setText(String.format(
                 Locale.US,
@@ -277,13 +336,11 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     private int itemNumberForPosition(int adapterPosition) {
-        int number = 0;
-        for (int i = 0; i <= adapterPosition; i++) {
-            if (entries.get(i) instanceof ItemEntry) {
-                number++;
-            }
+        if (itemNumbers != null && adapterPosition >= 0 && adapterPosition < itemNumbers.length) {
+            return itemNumbers[adapterPosition];
         }
-        return number;
+        // Fallback — should not happen
+        return 0;
     }
 
     private void toggleItem(@NonNull ForensicsSnapshotWithMedia row) {
@@ -308,6 +365,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
 
     private void rebuildEntries() {
         entries.clear();
+        monthIndex.clear();
         String lastMonth = null;
         for (ForensicsSnapshotWithMedia row : rows) {
             String month = monthKey(row.capturedEpochMs);
@@ -316,6 +374,24 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 lastMonth = month;
             }
             entries.add(new ItemEntry(row, month));
+
+            // Build month → rows index
+            List<ForensicsSnapshotWithMedia> monthList = monthIndex.get(month);
+            if (monthList == null) {
+                monthList = new ArrayList<>();
+                monthIndex.put(month, monthList);
+            }
+            monthList.add(row);
+        }
+
+        // Pre-compute item numbers (1-based sequential for item entries, 0 for headers)
+        itemNumbers = new int[entries.size()];
+        int counter = 0;
+        for (int i = 0; i < entries.size(); i++) {
+            if (entries.get(i) instanceof ItemEntry) {
+                counter++;
+                itemNumbers[i] = counter;
+            }
         }
     }
 
@@ -330,13 +406,8 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
 
     @NonNull
     private List<ForensicsSnapshotWithMedia> rowsForMonth(@NonNull String monthKey) {
-        List<ForensicsSnapshotWithMedia> out = new ArrayList<>();
-        for (ForensicsSnapshotWithMedia row : rows) {
-            if (monthKey(row.capturedEpochMs).equals(monthKey)) {
-                out.add(row);
-            }
-        }
-        return out;
+        List<ForensicsSnapshotWithMedia> cached = monthIndex.get(monthKey);
+        return cached != null ? cached : new ArrayList<>();
     }
 
     @NonNull
@@ -361,6 +432,18 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         }
     }
 
+    /**
+     * File size with in-memory cache. Safe to call from any thread.
+     */
+    private long resolveImageSizeCached(@Nullable String imageUri) {
+        if (imageUri == null || imageUri.isEmpty()) return 0L;
+        Long cached = fileSizeCache.get(imageUri);
+        if (cached != null) return cached;
+        long size = resolveImageSize(imageUri);
+        fileSizeCache.put(imageUri, size);
+        return size;
+    }
+
     private long resolveImageSize(@Nullable String imageUri) {
         if (imageUri == null || imageUri.isEmpty()) return 0L;
         try {
@@ -378,7 +461,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
 
     private String monthKey(long epochMs) {
         if (epochMs <= 0L) return "Unknown";
-        return new SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(new Date(epochMs));
+        return monthFormat.format(new Date(epochMs));
     }
 
     private String formatTimelineMs(long ms) {

@@ -24,10 +24,14 @@ import com.fadcam.forensics.data.local.model.AiEventWithMedia;
 import java.util.ArrayList;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import androidx.recyclerview.widget.DiffUtil;
 
 public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEventsAdapter.Holder> {
 
@@ -40,16 +44,52 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
     private final List<AiEventWithMedia> rows = new ArrayList<>();
     private final ExecutorService thumbExecutor = Executors.newSingleThreadExecutor();
 
+    /** In-memory cache: eventUid → best snapshot image URI. Survives scrolls, cleared on submit. */
+    private final Map<String, String> proofImageCache = new HashMap<>();
+
+    /** In-memory cache: eventUid → sampled snapshot list. Survives scrolls, cleared on submit. */
+    private final Map<String, List<AiEventSnapshotEntity>> frameStripCache = new HashMap<>();
+
     public ForensicsEventsAdapter(Listener listener) {
         this.listener = listener;
     }
 
     public void submit(List<AiEventWithMedia> data) {
+        List<AiEventWithMedia> oldList = new ArrayList<>(rows);
         rows.clear();
+        proofImageCache.clear();
+        frameStripCache.clear();
         if (data != null) {
             rows.addAll(data);
         }
-        notifyDataSetChanged();
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldList.size(); }
+            @Override public int getNewListSize() { return rows.size(); }
+            @Override
+            public boolean areItemsTheSame(int oldPos, int newPos) {
+                String oldId = oldList.get(oldPos).eventUid;
+                String newId = rows.get(newPos).eventUid;
+                if (oldId == null || newId == null) return oldPos == newPos;
+                return oldId.equals(newId);
+            }
+            @Override
+            public boolean areContentsTheSame(int oldPos, int newPos) {
+                AiEventWithMedia o = oldList.get(oldPos);
+                AiEventWithMedia n = rows.get(newPos);
+                return o.endMs == n.endMs
+                        && o.confidence == n.confidence
+                        && o.mediaMissing == n.mediaMissing
+                        && o.detectedAtEpochMs == n.detectedAtEpochMs;
+            }
+        }, false);
+        result.dispatchUpdatesTo(this);
+    }
+
+    /**
+     * Shuts down the background executor. Call from fragment onDestroyView.
+     */
+    public void shutdown() {
+        thumbExecutor.shutdownNow();
     }
 
     @NonNull
@@ -111,10 +151,22 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         }
         final String token = "proof:" + row.eventUid + ":" + row.endMs;
         holder.proof.setTag(token);
+
+        // Check in-memory cache first — avoid DB hit on scroll
+        String cachedUri = proofImageCache.get(row.eventUid);
+        if (cachedUri != null) {
+            if (!cachedUri.isEmpty()) {
+                bindImageFromUri(holder.proof, cachedUri);
+            }
+            return;
+        }
+
         thumbExecutor.execute(() -> {
             String bestSnapshotUri = ForensicsDatabase.getInstance(holder.itemView.getContext())
                     .aiEventSnapshotDao()
                     .getBestImageUri(row.eventUid);
+            // Cache regardless of result (empty string means "no image found")
+            proofImageCache.put(row.eventUid, bestSnapshotUri != null ? bestSnapshotUri : "");
             holder.itemView.post(() -> {
                 Object activeToken = holder.proof.getTag();
                 if (!(activeToken instanceof String) || !token.equals(activeToken)) {
@@ -143,28 +195,47 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
         holder.framesContainer.removeAllViews();
         final String bindToken = row.eventUid + "|" + row.endMs;
         holder.framesContainer.setTag(bindToken);
+
+        // Check in-memory cache first — avoid DB hit on scroll
+        List<AiEventSnapshotEntity> cached = frameStripCache.get(row.eventUid);
+        if (cached != null) {
+            renderFrameStrip(holder, row, cached, bindToken);
+            return;
+        }
+
         thumbExecutor.execute(() -> {
             List<AiEventSnapshotEntity> snapshots = ForensicsDatabase.getInstance(holder.itemView.getContext())
                     .aiEventSnapshotDao()
                     .getByEventUid(row.eventUid, 20);
+            List<AiEventSnapshotEntity> sampled = sampleSnapshots(snapshots, 12);
+            // Cache the result (empty list means "no snapshots found")
+            frameStripCache.put(row.eventUid, sampled != null ? sampled : new ArrayList<>());
             holder.itemView.post(() -> {
                 Object currentToken = holder.framesContainer.getTag();
                 if (!bindToken.equals(currentToken)) {
                     return;
                 }
-                holder.framesContainer.removeAllViews();
-                if (snapshots == null || snapshots.isEmpty()) {
-                    holder.frameStrip.setVisibility(View.GONE);
-                    holder.frameHint.setVisibility(View.GONE);
-                    return;
-                }
-                List<AiEventSnapshotEntity> sampled = sampleSnapshots(snapshots, 12);
-                for (AiEventSnapshotEntity snapshot : sampled) {
-                    addFrameThumb(holder, row, Math.max(0L, snapshot.timelineMs), snapshot.imageUri);
-                }
-                holder.frameHint.setText(R.string.forensics_frames_hint);
+                renderFrameStrip(holder, row, sampled, bindToken);
             });
         });
+    }
+
+    /**
+     * Renders frame strip thumbnails from pre-fetched (or cached) snapshot list.
+     */
+    private void renderFrameStrip(@NonNull Holder holder, AiEventWithMedia row,
+                                  @androidx.annotation.Nullable List<AiEventSnapshotEntity> sampled,
+                                  String bindToken) {
+        holder.framesContainer.removeAllViews();
+        if (sampled == null || sampled.isEmpty()) {
+            holder.frameStrip.setVisibility(View.GONE);
+            holder.frameHint.setVisibility(View.GONE);
+            return;
+        }
+        for (AiEventSnapshotEntity snapshot : sampled) {
+            addFrameThumb(holder, row, Math.max(0L, snapshot.timelineMs), snapshot.imageUri);
+        }
+        holder.frameHint.setText(R.string.forensics_frames_hint);
     }
 
     private List<AiEventSnapshotEntity> sampleSnapshots(List<AiEventSnapshotEntity> snapshots, int maxCount) {
