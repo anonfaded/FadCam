@@ -347,17 +347,23 @@ public class VideoIndexRepository {
                         }
 
                         long duration = computeDuration(Uri.parse(entity.uriString));
-                        dao.updateDuration(entity.uriString, duration);
-                        // Update in-memory cache so getCachedDuration() sees it immediately
-                        durationCache.put(entity.uriString, duration);
+                        if (duration > 0) {
+                            // Only mark as resolved if we actually got a valid duration.
+                            // If MMR returns 0, leave durationResolved=false so the adapter
+                            // can try FFprobe and write the result back via persistDurationToDb().
+                            dao.updateDuration(entity.uriString, duration);
+                            durationCache.put(entity.uriString, duration);
+                        } else {
+                            Log.d(TAG, "Enrichment: MMR returned 0 for " + entity.displayName + ", leaving unresolved for FFprobe fallback");
+                        }
 
                         if (callback != null) {
                             callback.onItemEnriched(entity.uriString, duration);
                         }
                     } catch (Exception e) {
-                        Log.w(TAG, "Failed to enrich: " + entity.displayName, e);
-                        // Mark as resolved with 0 to avoid re-processing
-                        dao.updateDuration(entity.uriString, 0);
+                        Log.w(TAG, "Failed to enrich: " + entity.displayName);
+                        // Don't mark as resolved — leave for FFprobe fallback
+                        Log.d(TAG, "Enrichment: leaving " + entity.displayName + " unresolved for FFprobe fallback");
                     }
                 }
 
@@ -378,6 +384,24 @@ public class VideoIndexRepository {
     public long getCachedDuration(@NonNull String uriString) {
         Long duration = durationCache.get(uriString);
         return duration != null ? duration : -1;
+    }
+
+    /**
+     * Persist a duration discovered by the adapter (via FFprobe) back into the Room DB
+     * and in-memory cache. This prevents re-probing on every fragment open.
+     * Safe to call from any thread — DB write is dispatched to the enrichment executor.
+     */
+    public void persistDurationToDb(@NonNull String uriString, long durationMs) {
+        if (durationMs <= 0) return;
+        durationCache.put(uriString, durationMs);
+        enrichmentExecutor.submit(() -> {
+            try {
+                dao.updateDuration(uriString, durationMs);
+                Log.d(TAG, "Persisted FFprobe duration to DB: " + durationMs + "ms for " + uriString);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to persist duration to DB: " + e.getMessage());
+            }
+        });
     }
 
     // ════════════════════════════════════════════════════════════════

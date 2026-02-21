@@ -219,12 +219,7 @@ public class RecordsFragment extends BaseFragment implements
                 // Update UI visibility
                 updateUiVisibility();
                 isLoading = false;
-
-                // CRITICAL FIX: Ensure RecyclerView scrolls to top after loading
-                if (recyclerView != null && actualItems.size() > 0) {
-                    recyclerView.scrollToPosition(0);
-                    Log.d(TAG, "RecyclerView scrolled to position 0 to show first video");
-                }
+                isInitialLoad = false;
 
                 // Hide progress indicator
                 if (progressHandler != null && showProgressRunnable != null) {
@@ -1023,42 +1018,67 @@ public class RecordsFragment extends BaseFragment implements
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "Swipe to refresh triggered — two-phase: instant DB → background delta");
+                Log.d(TAG, "Swipe to refresh triggered — silent background refresh (no skeleton)");
 
-                // DON'T invalidate the index — that forces a slow SAF directory scan.
-                // Instead: Phase 1 reads from DB instantly, Phase 2 delta-scans in background.
+                // Production pattern: keep existing data visible, refresh silently
+                // in background, swap data when ready. No skeleton, no UI thrashing.
 
-                // Invalidate stats cache for manual refresh
-                com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
-
-                // Clear adapter caches (thumbnails, etc.)
-                if (recordsAdapter != null) {
-                    recordsAdapter.clearCaches();
-                }
-
-                // Cancel any in-progress background delta scan so it doesn't
-                // compete with the new load. The main executorService is shared with
-                // RecordsAdapter and must NEVER be shut down.
+                // Cancel any in-progress delta scan from a previous refresh
                 if (deltaExecutor != null && !deltaExecutor.isShutdown()) {
                     deltaExecutor.shutdownNow();
                 }
                 deltaExecutor = Executors.newSingleThreadExecutor();
-                Log.d(TAG, "Cancelled previous delta scan for instant refresh");
 
-                // Reset pagination and state variables
-                currentPage = 0;
-                allLoadedItems.clear();
-                hasMoreItems = true;
-                videoItemPositionCache.clear();
-                isLoading = false;
-                isInitialLoad = true; // Allow loadRecordsList to run past the guard
+                // Invalidate stats cache
+                com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
 
-                // Show skeleton briefly for smooth UX
-                int estimatedCount = Math.max(6, videoItems.size());
-                showSkeletonLoading(estimatedCount);
+                // Silent background refresh — keep current content visible
+                final com.fadcam.data.VideoIndexRepository repo =
+                        com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
 
-                // Load data: DB fast path (instant) + background delta scan for freshness
-                loadRecordsList();
+                deltaExecutor.submit(() -> {
+                    try {
+                        // Phase 1: Quick DB read (sub-50ms) — no skeleton needed
+                        List<VideoItem> dbItems = repo.getVideos(sharedPreferencesManager);
+                        List<VideoItem> normalized = normalizeVideoCategories(dbItems);
+                        sortItems(normalized, currentSortOption);
+
+                        // Phase 2: Delta scan for freshness (picks up new/deleted files)
+                        List<VideoItem> deltaItems = repo.deltaScan(sharedPreferencesManager);
+                        List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
+                        sortItems(deltaNormalized, currentSortOption);
+                        totalItems = deltaNormalized.size();
+
+                        // Keep caches in sync
+                        com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
+
+                        // Push final data to UI in one smooth update
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (!isAdded()) return;
+
+                            allLoadedItems.clear();
+                            allLoadedItems.addAll(deltaNormalized);
+                            applyActiveFilterToUi();
+
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                            Log.i(TAG, "Silent refresh complete: " + deltaNormalized.size() + " items");
+                        });
+
+                        // Enrich any new unresolved durations
+                        repo.startBackgroundEnrichment((uri, dur) ->
+                            Log.d(TAG, "Duration enriched: " + uri + " → " + dur + "ms"));
+
+                    } catch (Exception e) {
+                        Log.w(TAG, "Silent refresh failed: " + e.getMessage());
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                        });
+                    }
+                });
 
             });
         } else {
@@ -1092,14 +1112,11 @@ public class RecordsFragment extends BaseFragment implements
 
             Log.d(TAG, "onViewCreated: Fragment is visible, initiating loadRecordsList.");
 
-            // prevent flash -----------
-            // CRITICAL: Show skeleton IMMEDIATELY to prevent empty flash
-            int estimatedCount = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount();
-            if (estimatedCount <= 0) {
-                estimatedCount = 12; // Default reasonable skeleton count
-            }
-            Log.d(TAG, "onViewCreated: Showing " + estimatedCount + " skeleton items immediately");
-            showSkeletonLoading(estimatedCount);
+            // loadRecordsList() handles everything:
+            // - If DB has data → synchronous fast path (~26ms), no skeleton
+            // - If DB empty → shows skeleton, runs async SAF scan
+            // No need to show skeleton here — it causes a wasteful
+            // skeleton→data transition (800ms+ Davey frame drop).
 
             isInitialLoad = true; // Mark as initial load
             loadRecordsList();
@@ -1284,14 +1301,9 @@ public class RecordsFragment extends BaseFragment implements
                 videoItems = new ArrayList<>();
             }
 
-            // Show skeleton loading — use DB index count for accurate estimation
-            int estimatedCount = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount();
-            if (estimatedCount <= 0) {
-                estimatedCount = 12;
-            }
-            Log.d(TAG, "onFragmentBecameVisible: Showing " + estimatedCount + " skeleton items");
-            showSkeletonLoading(estimatedCount);
-
+            // loadRecordsList() handles skeleton display internally:
+            // - DB has data → synchronous fast path, no skeleton needed
+            // - DB empty → shows skeleton, runs async SAF scan
             isInitialLoad = true;
             loadRecordsList();
         } else {
@@ -3530,7 +3542,7 @@ public class RecordsFragment extends BaseFragment implements
                             .removeFromIndex(trashedUris);
                     Log.d(TAG, "Removed " + trashedUris.size() + " trashed items from index");
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to remove trashed items from index", e);
+                    Log.w(TAG, "Failed to remove trashed items from index: " + e.getMessage());
                 }
             }
 
@@ -3632,7 +3644,7 @@ public class RecordsFragment extends BaseFragment implements
                             .removeFromIndex(trashedUris);
                     Log.d(TAG, "Removed " + trashedUris.size() + " trashed items from index (deleteAll)");
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to remove trashed items from index", e);
+                    Log.w(TAG, "Failed to remove trashed items from index (deleteAll): " + e.getMessage());
                 }
             }
 
@@ -4101,6 +4113,15 @@ public class RecordsFragment extends BaseFragment implements
                     + isEmpty);
         }
 
+        // While data is loading, don't flash empty state — keep recyclerView visible and
+        // empty state hidden. The background thread will deliver data shortly.
+        if (isEmpty && isLoading) {
+            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter empty but still loading — suppressing empty state flash");
+            if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
+            return;
+        }
+
         Log.i(TAG, "LOG_UI_VISIBILITY: updateUiVisibility called. Final decision: isEmpty = " + isEmpty);
 
         if (isEmpty) {
@@ -4350,16 +4371,116 @@ public class RecordsFragment extends BaseFragment implements
 
         isLoading = true;
 
-        // Show skeleton loading immediately for smooth UX
         final com.fadcam.data.VideoIndexRepository repository =
                 com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
-        int estimatedCount = repository.getIndexedCount();
-        if (estimatedCount <= 0) {
-            estimatedCount = 12; // Default skeleton count for first launch
+        final int indexedCount = repository.getIndexedCount();
+
+        // ═══════════════════════════════════════════════════════════════════════
+        //  PRODUCTION FAST PATH: DB has indexed data (~26ms to read).
+        //  NO skeleton — the DB read is so fast that showing skeleton for 26ms
+        //  then replacing it costs MORE (800ms+ Davey) than the actual data load.
+        //  Run DB read on background thread (Room requirement), deliver data
+        //  directly to adapter. RecyclerView stays invisible for ~26ms = imperceptible.
+        // ═══════════════════════════════════════════════════════════════════════
+        if (indexedCount > 0) {
+            Log.d(TAG, "loadRecordsList: DB fast path — " + indexedCount + " indexed, skipping skeleton");
+
+            // Ensure RecyclerView is visible but adapter is empty (no skeleton flash)
+            if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
+            if (loadingIndicator != null) loadingIndicator.setVisibility(View.GONE);
+
+            if (executorService == null || executorService.isShutdown()) {
+                executorService = Executors.newSingleThreadExecutor();
+            }
+
+            executorService.submit(() -> {
+                try {
+                    long loadStart = System.currentTimeMillis();
+
+                    // DB read on background thread (Room requires this)
+                    List<VideoItem> items = repository.getVideos(sharedPreferencesManager);
+                    List<VideoItem> normalized = normalizeVideoCategories(items);
+                    sortItems(normalized, currentSortOption);
+                    totalItems = normalized.size();
+
+                    long loadElapsed = System.currentTimeMillis() - loadStart;
+                    Log.i(TAG, "loadRecordsList: DB fast path — " + normalized.size() + " items in " + loadElapsed + "ms (no skeleton)");
+
+                    // Keep caches in sync
+                    com.fadcam.utils.VideoSessionCache.updateSessionCache(normalized);
+
+                    // Digital forensics indexing (non-blocking)
+                    DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(normalized);
+
+                    // Deliver directly to UI — no skeleton transition
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (!isAdded()) return;
+
+                        if (recordsAdapter != null && recordsAdapter.isSkeletonMode()) {
+                            recordsAdapter.setSkeletonMode(false);
+                        }
+                        allLoadedItems.clear();
+                        allLoadedItems.addAll(normalized);
+                        applyActiveFilterToUi();
+                        updateUiVisibility();
+                        isLoading = false;
+                        isInitialLoad = false;
+
+                        // Hide any lingering progress UI
+                        if (loadingProgress != null) loadingProgress.setVisibility(View.GONE);
+                        if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+                    });
+
+                    // ── Background: delta scan for freshness ──
+                    if (deltaExecutor == null || deltaExecutor.isShutdown()) {
+                        deltaExecutor = Executors.newSingleThreadExecutor();
+                    }
+                    final ExecutorService currentDeltaExec = deltaExecutor;
+                    currentDeltaExec.submit(() -> {
+                        try {
+                            List<VideoItem> deltaItems = repository.deltaScan(sharedPreferencesManager);
+                            if (deltaItems.size() != totalItems) {
+                                List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
+                                sortItems(deltaNormalized, currentSortOption);
+                                totalItems = deltaNormalized.size();
+                                Log.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
+                                com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
+                                new Handler(Looper.getMainLooper()).post(() -> {
+                                    if (!isAdded()) return;
+                                    allLoadedItems.clear();
+                                    allLoadedItems.addAll(deltaNormalized);
+                                    applyActiveFilterToUi();
+                                });
+                            } else {
+                                Log.d(TAG, "Delta scan: no changes detected");
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Delta scan failed (non-fatal): " + e.getMessage());
+                        }
+                    });
+
+                    // ── Background: enrich durations ──
+                    repository.startBackgroundEnrichment((uriString, durationMs) ->
+                        Log.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in loadRecordsList fast path", e);
+                    new Handler(Looper.getMainLooper()).post(() -> handleLoadingError());
+                }
+            });
+            return;
         }
 
+        // ═══════════════════════════════════════════════════════════════════════
+        //  COLD START PATH: DB is empty (first launch or after wipe).
+        //  Show skeleton while full SAF scan runs in background.
+        // ═══════════════════════════════════════════════════════════════════════
+        Log.d(TAG, "loadRecordsList: Cold start — DB empty, showing skeleton");
+        int estimatedCount = 12;
         if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
-            Log.d(TAG, "Showing " + estimatedCount + " skeleton items");
             showSkeletonLoading(estimatedCount);
         }
 
@@ -4381,59 +4502,29 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 long loadStart = System.currentTimeMillis();
 
-                // ── Primary load: instant from DB or full scan on cold start ──
+                // Full scan — DB is empty so getVideos() will do a full SAF scan
                 List<VideoItem> items = repository.getVideos(sharedPreferencesManager);
-
-                // Normalize categories and sort
                 List<VideoItem> normalized = normalizeVideoCategories(items);
                 sortItems(normalized, currentSortOption);
                 totalItems = normalized.size();
 
                 long loadElapsed = System.currentTimeMillis() - loadStart;
-                Log.i(TAG, "loadRecordsList: " + normalized.size() + " items ready in " + loadElapsed + "ms");
+                Log.i(TAG, "loadRecordsList: Cold start — " + normalized.size() + " items ready in " + loadElapsed + "ms");
 
                 // Digital forensics indexing (non-blocking)
                 DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(normalized);
 
-                // Deliver results to UI
+                // Deliver results to UI — replaces skeleton
                 new Handler(Looper.getMainLooper()).post(() -> {
                     replaceSkeletonsWithData(normalized);
                 });
 
-                // Keep VideoSessionCache in sync so HomeFragment shows correct stats
+                // Keep VideoSessionCache in sync
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(normalized);
 
-                // ── Background: delta scan for freshness (on separate executor
-                //    so it never blocks the main executor for subsequent loads) ──
-                final ExecutorService currentDeltaExecutor = deltaExecutor;
-                currentDeltaExecutor.submit(() -> {
-                    try {
-                        List<VideoItem> deltaItems = repository.deltaScan(sharedPreferencesManager);
-                        if (deltaItems.size() != totalItems) {
-                            // Data changed — re-normalize, sort, and push to UI
-                            List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
-                            sortItems(deltaNormalized, currentSortOption);
-                            totalItems = deltaNormalized.size();
-                            Log.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
-                            // Keep VideoSessionCache in sync
-                            com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
-                            new Handler(Looper.getMainLooper()).post(() -> {
-                                replaceSkeletonsWithData(deltaNormalized);
-                            });
-                        } else {
-                            Log.d(TAG, "Delta scan: no changes detected");
-                        }
-                    } catch (Exception e) {
-                        Log.w(TAG, "Delta scan failed (non-fatal)", e);
-                    }
-                });
-
-                // ── Background: enrich durations ──
-                repository.startBackgroundEnrichment((uriString, durationMs) -> {
-                    // Duration resolved — could notify adapter for specific item
-                    // but the adapter also reads from DB on rebind, so this is optional
-                    Log.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms");
-                });
+                // Background: enrich durations
+                repository.startBackgroundEnrichment((uriString, durationMs) ->
+                    Log.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
 
             } catch (Exception e) {
                 Log.e(TAG, "Error in loadRecordsList", e);

@@ -272,7 +272,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
         // binding real data -----------
-        clearSkeletonEffects(holder);
+        // Only clear skeleton effects if this ViewHolder was previously used for skeleton.
+        // Checking the tag avoids expensive shimmer removal on every rebind.
+        if (holder.itemView.getTag(R.id.skeleton_tag) != null) {
+            clearSkeletonEffects(holder);
+            holder.itemView.setTag(R.id.skeleton_tag, null);
+        }
 
         // --- 1. Basic Checks & Get Data ---
         if (records == null || position < 0 || position >= records.size() || records.get(position) == null
@@ -398,6 +403,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                                     }
                                 }
                                 duration = getVideoDuration(videoUri);
+
+                                // Write FFprobe result back to DB so we never re-probe this video
+                                if (duration > 0) {
+                                    try {
+                                        com.fadcam.data.VideoIndexRepository.getInstance(context)
+                                                .persistDurationToDb(videoUri.toString(), duration);
+                                    } catch (Exception ex) {
+                                        // Non-fatal: adapter cache still has the value
+                                    }
+                                }
                             }
 
                             String formattedDuration = formatVideoDuration(duration);
@@ -438,6 +453,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     // Try caches first
                     Long cachedSaved = savedPositionCache.get(key);
                     Long cachedDur = durationCache.get(key);
+                    // Also check DB-backed duration cache (avoids FFprobe entirely)
+                    if (cachedDur == null) {
+                        try {
+                            long dbDur = com.fadcam.data.VideoIndexRepository.getInstance(context)
+                                    .getCachedDuration(key);
+                            if (dbDur > 0) {
+                                cachedDur = dbDur;
+                                synchronized (durationCache) {
+                                    durationCache.put(key, dbDur);
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
                     if (cachedSaved != null && cachedDur != null) {
                         applyProgressToView(progressBg, progressFill, cachedSaved, cachedDur);
                     } else {
@@ -445,13 +473,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                             progressFill.setVisibility(View.GONE);
                             return;
                         }
+                        final Long finalCachedDur = cachedDur;
                         // Submit one background task to compute missing values
                         executorService.execute(() -> {
                             try {
                                 long savedMs = cachedSaved != null ? cachedSaved
                                         : sharedPreferencesManager.getSavedPlaybackPositionMsWithFilenameFallback(key,
                                                 getFileName(videoUri));
-                                long durationMs = cachedDur != null ? cachedDur : getVideoDuration(videoUri);
+                                long durationMs = finalCachedDur != null ? finalCachedDur : getVideoDuration(videoUri);
                                 // Cache results for future bindings (synchronized because LinkedHashMap isn't
                                 // thread-safe)
                                 synchronized (durationCache) {
@@ -2551,6 +2580,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
      */
     private void bindSkeletonItem(@NonNull RecordViewHolder holder, int position) {
         // -----------
+        // Tag this ViewHolder so we know it needs skeleton cleanup when rebound with real data.
+        holder.itemView.setTag(R.id.skeleton_tag, Boolean.TRUE);
 
         // Step 1: Clear any existing content and animations
         holder.itemView.clearAnimation();
