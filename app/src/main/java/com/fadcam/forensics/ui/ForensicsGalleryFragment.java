@@ -3,6 +3,8 @@ package com.fadcam.forensics.ui;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.format.Formatter;
@@ -21,11 +23,13 @@ import android.graphics.Rect;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
 import com.fadcam.forensics.data.local.model.ForensicsSnapshotWithMedia;
 import com.fadcam.ui.ImageViewerActivity;
@@ -39,10 +43,12 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -79,6 +85,8 @@ public class ForensicsGalleryFragment extends Fragment {
     private int currentGridSpan = 2;
     private String selectedSort = "newest";
     private String selectedType = null;
+    private String clipStyle = ForensicsGalleryAdapter.CLIP_STYLE_BLACK;
+    private String tapeStyle = ForensicsGalleryAdapter.TAPE_STYLE_TORN;
     private boolean embeddedMode;
     private boolean allSelectedState;
     /** True while background data load is in progress — prevents redundant onResume reloads. */
@@ -163,6 +171,8 @@ public class ForensicsGalleryFragment extends Fragment {
         recycler.setLayoutManager(grid);
         recycler.setHasFixedSize(true);
         recycler.setItemViewCacheSize(40);
+        recycler.setItemAnimator(null);
+        recycler.addItemDecoration(new ForensicsHangingStringDecoration(adapter));
         recycler.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
             public void getItemOffsets(@NonNull Rect outRect, @NonNull View child, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
@@ -172,15 +182,18 @@ public class ForensicsGalleryFragment extends Fragment {
                     outRect.set(0, dpToPxInt(6), 0, dpToPxInt(4));
                     return;
                 }
-                int hGap = dpToPxInt(8);
-                int vGap = dpToPxInt(10);
+                int hGap = dpToPxInt(7);
+                int vGap = dpToPxInt(12);
                 outRect.left = hGap / 2;
                 outRect.right = hGap / 2;
                 outRect.bottom = vGap;
-                outRect.top = dpToPxInt(2);
+                outRect.top = dpToPxInt(12);
             }
         });
         recycler.setAdapter(adapter);
+        loadVisualPrefs();
+        adapter.setGridSpan(currentGridSpan);
+        adapter.setVisualStyles(clipStyle, tapeStyle);
         recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -282,6 +295,32 @@ public class ForensicsGalleryFragment extends Fragment {
         }
         ForensicsGalleryInfoBottomSheetFragment.newInstance()
                 .show(getParentFragmentManager(), INFO_PICKER_RESULT + "_sheet");
+    }
+
+    public void applyClipStyleFromHost(@Nullable String style) {
+        String resolved = style == null ? ForensicsGalleryAdapter.CLIP_STYLE_BLACK : style;
+        if (clipStyle.equals(resolved)) return;
+        clipStyle = resolved;
+        persistVisualPrefs();
+        adapter.setVisualStyles(clipStyle, tapeStyle);
+    }
+
+    public void applyTapeStyleFromHost(@Nullable String style) {
+        String resolved = style == null ? ForensicsGalleryAdapter.TAPE_STYLE_TORN : style;
+        if (tapeStyle.equals(resolved)) return;
+        tapeStyle = resolved;
+        persistVisualPrefs();
+        adapter.setVisualStyles(clipStyle, tapeStyle);
+    }
+
+    @NonNull
+    public String getClipStyle() {
+        return clipStyle;
+    }
+
+    @NonNull
+    public String getTapeStyle() {
+        return tapeStyle;
     }
 
     private void showBatchActions() {
@@ -596,6 +635,7 @@ public class ForensicsGalleryFragment extends Fragment {
                 return adapter.getItemViewType(position) == 0 ? currentGridSpan : 1;
             }
         });
+        adapter.setGridSpan(currentGridSpan);
         grid.requestLayout();
     }
 
@@ -732,6 +772,262 @@ public class ForensicsGalleryFragment extends Fragment {
             scrollFab.animate().alpha(1f).setDuration(200).start();
         } else {
             scrollFab.animate().alpha(1f).setDuration(120).start();
+        }
+    }
+
+    private void loadVisualPrefs() {
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        clipStyle = prefs.sharedPreferences.getString(
+                ForensicsGalleryAdapter.PREF_CLIP_STYLE,
+                ForensicsGalleryAdapter.CLIP_STYLE_BLACK
+        );
+        tapeStyle = prefs.sharedPreferences.getString(
+                ForensicsGalleryAdapter.PREF_TAPE_STYLE,
+                ForensicsGalleryAdapter.TAPE_STYLE_TORN
+        );
+        if (clipStyle == null || clipStyle.trim().isEmpty()) {
+            clipStyle = ForensicsGalleryAdapter.CLIP_STYLE_BLACK;
+        }
+        if (tapeStyle == null || tapeStyle.trim().isEmpty()) {
+            tapeStyle = ForensicsGalleryAdapter.TAPE_STYLE_TORN;
+        }
+    }
+
+    private void persistVisualPrefs() {
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        prefs.sharedPreferences.edit()
+                .putString(ForensicsGalleryAdapter.PREF_CLIP_STYLE, clipStyle)
+                .putString(ForensicsGalleryAdapter.PREF_TAPE_STYLE, tapeStyle)
+                .apply();
+    }
+
+    private static class ForensicsCardItemAnimator extends DefaultItemAnimator {
+        private int runningAnimations;
+
+        ForensicsCardItemAnimator() {
+            setSupportsChangeAnimations(false);
+            setAddDuration(150L);
+            setRemoveDuration(120L);
+            setMoveDuration(160L);
+            setChangeDuration(0L);
+        }
+
+        @Override
+        public boolean animateAdd(@NonNull RecyclerView.ViewHolder holder) {
+            resetAnimation(holder);
+            holder.itemView.setAlpha(0f);
+            holder.itemView.setTranslationY(10f);
+            dispatchAddStarting(holder);
+            runningAnimations++;
+            holder.itemView.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(getAddDuration())
+                    .setInterpolator(new DecelerateInterpolator())
+                    .withEndAction(() -> {
+                        runningAnimations = Math.max(0, runningAnimations - 1);
+                        dispatchAddFinished(holder);
+                        if (runningAnimations == 0) {
+                            dispatchAnimationsFinished();
+                        }
+                    })
+                    .start();
+            return true;
+        }
+
+        @Override
+        public boolean animateRemove(@NonNull RecyclerView.ViewHolder holder) {
+            resetAnimation(holder);
+            dispatchRemoveStarting(holder);
+            runningAnimations++;
+            holder.itemView.animate()
+                    .alpha(0f)
+                    .translationY(6f)
+                    .setDuration(getRemoveDuration())
+                    .setInterpolator(new AccelerateInterpolator())
+                    .withEndAction(() -> {
+                        holder.itemView.setAlpha(1f);
+                        holder.itemView.setTranslationY(0f);
+                        runningAnimations = Math.max(0, runningAnimations - 1);
+                        dispatchRemoveFinished(holder);
+                        if (runningAnimations == 0) {
+                            dispatchAnimationsFinished();
+                        }
+                    })
+                    .start();
+            return true;
+        }
+
+        @Override
+        public void runPendingAnimations() {
+            // Animations are started immediately in animateAdd/animateRemove.
+        }
+
+        @Override
+        public void endAnimation(RecyclerView.ViewHolder item) {
+            item.itemView.animate().cancel();
+            item.itemView.setAlpha(1f);
+            item.itemView.setTranslationY(0f);
+        }
+
+        @Override
+        public void endAnimations() {
+            runningAnimations = 0;
+            dispatchAnimationsFinished();
+        }
+
+        @Override
+        public boolean isRunning() {
+            return runningAnimations > 0;
+        }
+
+        private void resetAnimation(@NonNull RecyclerView.ViewHolder holder) {
+            holder.itemView.animate().cancel();
+            holder.itemView.setAlpha(1f);
+            holder.itemView.setTranslationY(0f);
+        }
+    }
+
+    private static final class ForensicsHangingStringDecoration extends RecyclerView.ItemDecoration {
+        private final ForensicsGalleryAdapter adapter;
+        private final Paint stringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint dropPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint knotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Map<String, CachedPath> pathCache = new HashMap<>();
+        private int cachedWidth = -1;
+
+        ForensicsHangingStringDecoration(@NonNull ForensicsGalleryAdapter adapter) {
+            this.adapter = adapter;
+            stringPaint.setStyle(Paint.Style.STROKE);
+            stringPaint.setStrokeWidth(1.4f);
+            stringPaint.setColor(Color.argb(145, 219, 224, 232));
+            stringPaint.setStrokeCap(Paint.Cap.ROUND);
+            stringPaint.setStrokeJoin(Paint.Join.ROUND);
+
+            dropPaint.setStyle(Paint.Style.STROKE);
+            dropPaint.setStrokeWidth(1.15f);
+            dropPaint.setColor(Color.argb(128, 198, 205, 215));
+            dropPaint.setStrokeCap(Paint.Cap.ROUND);
+
+            knotPaint.setStyle(Paint.Style.FILL);
+            knotPaint.setColor(Color.argb(170, 232, 235, 240));
+        }
+
+        @Override
+        public void onDrawOver(@NonNull android.graphics.Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            if (parent.getWidth() != cachedWidth) {
+                pathCache.clear();
+                cachedWidth = parent.getWidth();
+            }
+
+            Map<String, RowBlock> blocks = collectVisibleRowBlocks(parent);
+            for (RowBlock block : blocks.values()) {
+                if (block.itemCount <= 0 || block.left >= block.right) {
+                    continue;
+                }
+
+                float left = block.left + dp(parent, 6f);
+                float right = block.right - dp(parent, 6f);
+                float y = block.top - dp(parent, 9f);
+                float sag = dp(parent, 2.2f + (Math.abs(block.rowKey.hashCode()) % 3));
+
+                CachedPath cached = getOrCreatePath(block.rowKey, left, right, y, sag);
+                canvas.drawPath(cached.path, stringPaint);
+                canvas.drawCircle(left, y, dp(parent, 1.55f), knotPaint);
+                canvas.drawCircle(right, y, dp(parent, 1.55f), knotPaint);
+
+                for (float pinX : block.pinXs) {
+                    float t = clamp((pinX - left) / Math.max(1f, right - left), 0f, 1f);
+                    float stringY = cubicY(y, y + sag, y + sag, y, t);
+                    float pinY = block.top + dp(parent, 19f);
+                    canvas.drawLine(pinX, stringY, pinX, pinY, dropPaint);
+                    canvas.drawCircle(pinX, stringY, dp(parent, 1.35f), knotPaint);
+                }
+            }
+        }
+
+        @NonNull
+        private CachedPath getOrCreatePath(@NonNull String monthKey, float left, float right, float y, float sag) {
+            String key = monthKey + "|" + Math.round(left) + "|" + Math.round(right) + "|" + Math.round(y) + "|" + Math.round(sag);
+            CachedPath cached = pathCache.get(key);
+            if (cached != null) {
+                return cached;
+            }
+            Path path = new Path();
+            float c1x = left + ((right - left) * 0.32f);
+            float c2x = left + ((right - left) * 0.68f);
+            path.moveTo(left, y);
+            path.cubicTo(c1x, y + sag, c2x, y + sag, right, y);
+            cached = new CachedPath(path);
+            pathCache.put(key, cached);
+            return cached;
+        }
+
+        @NonNull
+        private Map<String, RowBlock> collectVisibleRowBlocks(@NonNull RecyclerView parent) {
+            Map<String, RowBlock> blocks = new HashMap<>();
+            int childCount = parent.getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                View child = parent.getChildAt(i);
+                int adapterPos = parent.getChildAdapterPosition(child);
+                if (adapterPos == RecyclerView.NO_POSITION || !adapter.isItemPosition(adapterPos)) {
+                    continue;
+                }
+                String monthKey = adapter.monthKeyAt(adapterPos);
+                if (monthKey == null) {
+                    continue;
+                }
+                int rowBucket = Math.round(child.getTop() / Math.max(1f, dp(parent, 22f)));
+                String rowKey = monthKey + "|" + rowBucket;
+                RowBlock block = blocks.get(rowKey);
+                if (block == null) {
+                    block = new RowBlock(rowKey);
+                    blocks.put(rowKey, block);
+                }
+                block.itemCount++;
+                block.left = Math.min(block.left, child.getLeft());
+                block.right = Math.max(block.right, child.getRight());
+                block.top = Math.min(block.top, child.getTop());
+                block.pinXs.add(child.getLeft() + (child.getWidth() / 2f));
+            }
+            return blocks;
+        }
+
+        private static float cubicY(float y0, float y1, float y2, float y3, float t) {
+            float u = 1f - t;
+            return (u * u * u * y0)
+                    + (3f * u * u * t * y1)
+                    + (3f * u * t * t * y2)
+                    + (t * t * t * y3);
+        }
+
+        private static float dp(@NonNull View view, float valueDp) {
+            return valueDp * view.getResources().getDisplayMetrics().density;
+        }
+
+        private static float clamp(float value, float min, float max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        private static final class CachedPath {
+            final Path path;
+
+            CachedPath(@NonNull Path path) {
+                this.path = path;
+            }
+        }
+
+        private static final class RowBlock {
+            final String rowKey;
+            float left = Float.MAX_VALUE;
+            float right = -Float.MAX_VALUE;
+            float top = Float.MAX_VALUE;
+            int itemCount;
+            final List<Float> pinXs = new ArrayList<>();
+
+            RowBlock(@NonNull String rowKey) {
+                this.rowKey = rowKey;
+            }
         }
     }
 }

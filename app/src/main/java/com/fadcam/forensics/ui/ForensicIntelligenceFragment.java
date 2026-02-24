@@ -12,10 +12,16 @@ import androidx.fragment.app.FragmentManager;
 
 import com.fadcam.R;
 import com.fadcam.ui.OverlayNavUtil;
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
+
+import java.util.ArrayList;
 
 public class ForensicIntelligenceFragment extends Fragment {
 
     private static final String RESULT_KEY = "lab_sidebar_result";
+    private static final String RESULT_KEY_CLIP_STYLE = "lab_clip_style_picker";
+    private static final String RESULT_KEY_TAPE_STYLE = "lab_tape_style_picker";
     private static final String TAG_GALLERY = "lab_gallery";
     private android.widget.TextView titleView;
     private android.view.View closeSelectionButton;
@@ -84,6 +90,12 @@ public class ForensicIntelligenceFragment extends Fragment {
                     if (gallery != null) {
                         gallery.showInfoBottomPicker();
                     }
+                    break;
+                case "open_clip_style":
+                    showClipStylePicker();
+                    break;
+                case "open_tape_style":
+                    showTapeStylePicker();
                     break;
                 default:
                     break;
@@ -159,5 +171,49 @@ public class ForensicIntelligenceFragment extends Fragment {
                 }
             }
         }
+    }
+
+    private void showClipStylePicker() {
+        ForensicsGalleryFragment gallery = findGallery();
+        if (gallery == null) return;
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem(ForensicsGalleryAdapter.CLIP_STYLE_BLACK, getString(R.string.forensics_clip_black), null, null, R.drawable.ic_grid));
+        items.add(new OptionItem(ForensicsGalleryAdapter.CLIP_STYLE_RED, getString(R.string.forensics_clip_red), null, null, R.drawable.ic_grid));
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.forensics_clip_style_title),
+                items,
+                gallery.getClipStyle(),
+                RESULT_KEY_CLIP_STYLE,
+                getString(R.string.forensics_clip_style_helper),
+                true
+        );
+        getChildFragmentManager().setFragmentResultListener(RESULT_KEY_CLIP_STYLE, getViewLifecycleOwner(), (key, bundle) -> {
+            String selected = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID, ForensicsGalleryAdapter.CLIP_STYLE_BLACK);
+            ForensicsGalleryFragment g = findGallery();
+            if (g != null) g.applyClipStyleFromHost(selected);
+        });
+        sheet.show(getChildFragmentManager(), RESULT_KEY_CLIP_STYLE + "_sheet");
+    }
+
+    private void showTapeStylePicker() {
+        ForensicsGalleryFragment gallery = findGallery();
+        if (gallery == null) return;
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem(ForensicsGalleryAdapter.TAPE_STYLE_TORN, getString(R.string.forensics_tape_torn), null, null, R.drawable.ic_grid));
+        items.add(new OptionItem(ForensicsGalleryAdapter.TAPE_STYLE_CLASSIC, getString(R.string.forensics_tape_classic), null, null, R.drawable.ic_grid));
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.forensics_tape_style_title),
+                items,
+                gallery.getTapeStyle(),
+                RESULT_KEY_TAPE_STYLE,
+                getString(R.string.forensics_tape_style_helper),
+                true
+        );
+        getChildFragmentManager().setFragmentResultListener(RESULT_KEY_TAPE_STYLE, getViewLifecycleOwner(), (key, bundle) -> {
+            String selected = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID, ForensicsGalleryAdapter.TAPE_STYLE_TORN);
+            ForensicsGalleryFragment g = findGallery();
+            if (g != null) g.applyTapeStyleFromHost(selected);
+        });
+        sheet.show(getChildFragmentManager(), RESULT_KEY_TAPE_STYLE + "_sheet");
     }
 }

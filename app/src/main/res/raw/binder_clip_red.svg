@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bodyRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cc3333"/>
+      <stop offset="50%" stop-color="#aa1111"/>
+      <stop offset="100%" stop-color="#7a0000"/>
+    </linearGradient>
+    <linearGradient id="redSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="silverH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b8b8b8"/>
+      <stop offset="30%" stop-color="#eeeeee"/>
+      <stop offset="70%" stop-color="#eeeeee"/>
+      <stop offset="100%" stop-color="#b0b0b0"/>
+    </linearGradient>
+    <linearGradient id="silverV" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cccccc"/>
+      <stop offset="50%" stop-color="#f2f2f2"/>
+      <stop offset="100%" stop-color="#b8b8b8"/>
+    </linearGradient>
+    <filter id="shadow4">
+      <feDropShadow dx="2" dy="5" stdDeviation="5" flood-color="#7a000050"/>
+    </filter>
+  </defs>
+
+  <!-- Body -->
+  <rect x="18" y="86" width="164" height="100" rx="11" fill="url(#bodyRed)" filter="url(#shadow4)"/>
+  <rect x="18" y="86" width="164" height="52" rx="11" fill="url(#redSheen)"/>
+  <rect x="22" y="88" width="156" height="2" rx="1" fill="white" opacity="0.35"/>
+  <rect x="18" y="86" width="35" height="100" rx="11" fill="#00000018"/>
+
+  <!-- Slots -->
+  <rect x="60" y="86" width="13" height="50" rx="3" fill="#550000"/>
+  <rect x="127" y="86" width="13" height="50" rx="3" fill="#550000"/>
+
+  <!-- Handle stems -->
+  <rect x="60" y="124" width="13" height="64" rx="6.5" fill="url(#silverV)"/>
+  <rect x="127" y="124" width="13" height="64" rx="6.5" fill="url(#silverV)"/>
+  <rect x="61.5" y="125" width="3" height="60" rx="1.5" fill="white" opacity="0.45"/>
+  <rect x="128.5" y="125" width="3" height="60" rx="1.5" fill="white" opacity="0.45"/>
+
+  <!-- Knobs -->
+  <ellipse cx="66.5" cy="191" rx="12" ry="6.5" fill="#aaaaaa"/>
+  <ellipse cx="66.5" cy="189.5" rx="9.5" ry="5" fill="#eeeeee"/>
+  <ellipse cx="133.5" cy="191" rx="12" ry="6.5" fill="#aaaaaa"/>
+  <ellipse cx="133.5" cy="189.5" rx="9.5" ry="5" fill="#eeeeee"/>
+
+  <!-- Arch -->
+  <path d="M62 126 Q47 94 62 50 Q76 15 100 12 Q124 15 138 50 Q153 94 138 126"
+        fill="none" stroke="#a0a0a0" stroke-width="17" stroke-linecap="round"/>
+  <path d="M62 126 Q47 94 62 50 Q76 15 100 12 Q124 15 138 50 Q153 94 138 126"
+        fill="none" stroke="url(#silverH)" stroke-width="13" stroke-linecap="round"/>
+  <path d="M67 125 Q53 95 67 53 Q80 20 100 18 Q120 20 133 53 Q147 95 133 125"
+        fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
+</svg>

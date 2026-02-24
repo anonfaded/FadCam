@@ -23,4 +23,13 @@
     <attr name="pickerIconTint" format="color" />
     <attr name="pickerSliderActive" format="color" />
     <attr name="pickerSliderInactive" format="color" />
-</resources> 
+
+    <declare-styleable name="TornPaperImageView">
+        <attr name="tearAmplitude" format="dimension" />
+        <attr name="tearFrequency" format="float" />
+        <attr name="paperTint" format="color" />
+        <attr name="grainAlpha" format="float" />
+        <attr name="edgeShadowAlpha" format="float" />
+        <attr name="seedKey" format="string" />
+    </declare-styleable>
+</resources>

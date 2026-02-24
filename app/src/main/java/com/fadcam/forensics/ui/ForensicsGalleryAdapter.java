@@ -1,7 +1,10 @@
 package com.fadcam.forensics.ui;
 
 import android.net.Uri;
+import android.app.ActivityManager;
 import android.text.format.Formatter;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.fadcam.BuildConfig;
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
 import com.fadcam.forensics.data.local.model.ForensicsSnapshotWithMedia;
+import com.fadcam.forensics.ui.view.ForensicsCardContainerView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,6 +38,14 @@ import java.util.Set;
 import androidx.recyclerview.widget.DiffUtil;
 
 public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final String PREF_TORN_THEME_ENABLED = "forensics_torn_card_theme_enabled";
+    public static final String PREF_CLIP_STYLE = "forensics_gallery_clip_style";
+    public static final String PREF_TAPE_STYLE = "forensics_gallery_tape_style";
+    public static final String CLIP_STYLE_BLACK = "black";
+    public static final String CLIP_STYLE_RED = "red";
+    public static final String TAPE_STYLE_TORN = "torn";
+    public static final String TAPE_STYLE_CLASSIC = "classic";
+    private static final String TAG = "ForensicsGalleryAdapter";
 
     public interface Listener {
         void onSelectionChanged(int selectedCount);
@@ -80,6 +94,15 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     private final SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
     private Listener listener;
     private boolean selectionMode;
+    @Nullable
+    private Boolean tornThemeEnabled;
+    @Nullable
+    private Boolean lowRamDevice;
+    @NonNull
+    private String clipStyle = CLIP_STYLE_BLACK;
+    @NonNull
+    private String tapeStyle = TAPE_STYLE_TORN;
+    private int currentGridSpan = 2;
 
     public ForensicsGalleryAdapter() {
         setHasStableIds(false);
@@ -89,12 +112,33 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         this.listener = listener;
     }
 
+    public void setVisualStyles(@Nullable String clipStyle, @Nullable String tapeStyle) {
+        String newClip = (clipStyle == null || clipStyle.trim().isEmpty()) ? CLIP_STYLE_BLACK : clipStyle;
+        String newTape = (tapeStyle == null || tapeStyle.trim().isEmpty()) ? TAPE_STYLE_TORN : tapeStyle;
+        boolean changed = !this.clipStyle.equals(newClip) || !this.tapeStyle.equals(newTape);
+        this.clipStyle = newClip;
+        this.tapeStyle = newTape;
+        if (changed) {
+            notifyDataSetChanged();
+        }
+    }
+
+    public void setGridSpan(int spanCount) {
+        int normalized = Math.max(2, Math.min(4, spanCount));
+        if (currentGridSpan == normalized) {
+            return;
+        }
+        currentGridSpan = normalized;
+        notifyDataSetChanged();
+    }
+
     public void submit(@Nullable List<ForensicsSnapshotWithMedia> data) {
         List<Entry> oldEntries = new ArrayList<>(entries);
         rows.clear();
         if (data != null) {
             rows.addAll(data);
         }
+        logIdentityIntegrityIfNeeded();
         selectedSnapshotIds.retainAll(currentIds());
         if (selectedSnapshotIds.isEmpty()) {
             selectionMode = false;
@@ -127,6 +171,13 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 boolean oldSel = selectedSnapshotIds.contains(snapshotId(o.row));
                 boolean newSel = selectedSnapshotIds.contains(snapshotId(n.row));
                 return oldSel == newSel
+                        && safe(o.row.className).equals(safe(n.row.className))
+                        && safe(o.row.eventType).equals(safe(n.row.eventType))
+                        && safe(o.row.eventUid).equals(safe(n.row.eventUid))
+                        && o.row.mediaMissing == n.row.mediaMissing
+                        && o.row.timelineMs == n.row.timelineMs
+                        && safe(o.row.imageUri).equals(safe(n.row.imageUri))
+                        && safe(o.row.mediaUri).equals(safe(n.row.mediaUri))
                         && o.row.capturedEpochMs == n.row.capturedEpochMs
                         && o.row.confidence == n.row.confidence;
             }
@@ -281,24 +332,28 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         ForensicsSnapshotWithMedia row = entry.row;
         boolean mediaMissing = row.mediaMissing || isMediaMissing(row.mediaUri);
         boolean selected = selectionMode && selectedSnapshotIds.contains(snapshotId(row));
+        String snapshotId = snapshotId(row);
+        boolean tornTheme = isTornThemeEnabled(holder.itemView.getContext());
 
         String classLabel = (row.className == null || row.className.trim().isEmpty())
                 ? (row.eventType == null ? "object" : row.eventType.toLowerCase(Locale.US))
                 : row.className.toLowerCase(Locale.US);
-        holder.title.setText(classLabel + " • " + formatTimelineMs(row.timelineMs));
-        String sourceLabel = mediaMissing ? "snapshot-only" : "video-linked";
+        holder.title.setText(holder.itemView.getContext().getString(R.string.forensics_detected_label, classLabel));
+        String sourceLabel = mediaMissing
+                ? holder.itemView.getContext().getString(R.string.forensics_snapshot_only)
+                : holder.itemView.getContext().getString(R.string.forensics_video_linked);
         String sizeLabel = Formatter.formatShortFileSize(holder.itemView.getContext(), Math.max(0L, resolveImageSizeCached(row.imageUri)));
         String timeAgo = Utils.formatTimeAgo(row.capturedEpochMs);
-        holder.meta.setText(String.format(
-                Locale.US,
-                "%s • conf %.2f • %s",
-                (timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo,
-                row.confidence,
-                sourceLabel
-        ));
-        holder.overlaySize.setText(sizeLabel);
-        holder.overlayTime.setText((timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo);
+        holder.metaTime.setText((timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo);
+        holder.metaConfidence.setText(String.format(Locale.US, "%.2f", row.confidence));
+        holder.metaSource.setText(sourceLabel);
+        holder.metaSize.setText(sizeLabel);
         holder.index.setText(String.valueOf(itemNumberForPosition(position)));
+
+        holder.cardContainer.setTearSeed(snapshotId);
+        holder.cardContainer.setTearStyle(6.6f, 1.85f);
+        holder.cardContainer.setRealismMode(isLowRamDevice(holder.itemView.getContext()));
+        holder.cardContainer.setCardFillStyle(ForensicsCardContainerView.CARD_FILL_DOSSIER);
 
         holder.selectionDimOverlay.setVisibility(selected ? View.VISIBLE : View.GONE);
         if (selectionMode) {
@@ -313,6 +368,20 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             holder.iconCheck.setScaleY(0f);
         }
 
+        int snapshotHash = Math.abs(snapshotId.hashCode());
+        boolean showDecor = tornTheme;
+        holder.paperClip.setVisibility(showDecor ? View.VISIBLE : View.GONE);
+        holder.indexTape.setVisibility(showDecor ? View.VISIBLE : View.GONE);
+        holder.paperClip.setImageResource(CLIP_STYLE_RED.equalsIgnoreCase(clipStyle)
+                ? R.drawable.binder_clip_glossy_red_asset
+                : R.drawable.binder_clip_glossy_black_asset);
+        holder.indexTape.setBackgroundResource(TAPE_STYLE_CLASSIC.equalsIgnoreCase(tapeStyle)
+                ? R.drawable.forensics_index_tape_alt
+                : R.drawable.forensics_index_tape);
+        holder.indexTape.setRotation(-4f - (snapshotHash % 5));
+        holder.cardMotionLayer.setRotation(0f);
+        applyGridSizing(holder);
+
         Glide.with(holder.image)
                 .load(Uri.parse(row.imageUri))
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
@@ -321,6 +390,10 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 .error(R.drawable.ic_photo)
                 .into(holder.image);
 
+        holder.cardMotionLayer.setScaleX(1f);
+        holder.cardMotionLayer.setScaleY(1f);
+        holder.cardMotionLayer.setAlpha(1f);
+
         holder.itemView.setOnClickListener(v -> {
             if (selectionMode) {
                 toggleItem(row);
@@ -328,11 +401,101 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 listener.onOpenViewer(row, mediaMissing);
             }
         });
+        holder.itemView.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    holder.cardMotionLayer.animate()
+                            .cancel();
+                    holder.cardMotionLayer.animate()
+                            .alpha(0.9f)
+                            .setDuration(72L)
+                            .start();
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    holder.cardMotionLayer.animate()
+                            .cancel();
+                    holder.cardMotionLayer.animate()
+                            .alpha(1f)
+                            .setDuration(115L)
+                            .start();
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        });
         holder.itemView.setOnLongClickListener(v -> {
             selectionMode = true;
             toggleItem(row);
             return true;
         });
+    }
+
+    private void applyGridSizing(@NonNull ItemHolder holder) {
+        float imageRatio;
+        float titleSp;
+        float metaSp;
+        switch (currentGridSpan) {
+            case 4:
+                imageRatio = 0.72f;
+                titleSp = 10.5f;
+                metaSp = 9f;
+                break;
+            case 3:
+                imageRatio = 0.76f;
+                titleSp = 11f;
+                metaSp = 9.5f;
+                break;
+            default:
+                imageRatio = 0.82f;
+                titleSp = 12f;
+                metaSp = 10f;
+                break;
+        }
+        int width = holder.itemView.getWidth();
+        if (width <= 0) {
+            holder.itemView.post(() -> applyGridSizing(holder));
+            return;
+        }
+        int targetHeight = Math.max(dp(holder.itemView, 78f), Math.round(width * imageRatio));
+        ViewGroup.LayoutParams photoLp = holder.photoContainer.getLayoutParams();
+        if (photoLp.height != targetHeight) {
+            photoLp.height = targetHeight;
+            holder.photoContainer.setLayoutParams(photoLp);
+        }
+        holder.title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, titleSp);
+        holder.metaTime.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        holder.metaConfidence.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        holder.metaSource.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        holder.metaSize.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+    }
+
+    private static int dp(@NonNull View view, float value) {
+        return Math.round(value * view.getResources().getDisplayMetrics().density);
+    }
+
+    public boolean isMonthHeaderPosition(int position) {
+        return position >= 0 && position < entries.size() && entries.get(position) instanceof HeaderEntry;
+    }
+
+    public boolean isItemPosition(int position) {
+        return position >= 0 && position < entries.size() && entries.get(position) instanceof ItemEntry;
+    }
+
+    @Nullable
+    public String monthKeyAt(int position) {
+        if (position < 0 || position >= entries.size()) {
+            return null;
+        }
+        Entry entry = entries.get(position);
+        if (entry instanceof HeaderEntry) {
+            return ((HeaderEntry) entry).monthKey;
+        }
+        if (entry instanceof ItemEntry) {
+            return ((ItemEntry) entry).monthKey;
+        }
+        return null;
     }
 
     private int itemNumberForPosition(int adapterPosition) {
@@ -464,13 +627,6 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return monthFormat.format(new Date(epochMs));
     }
 
-    private String formatTimelineMs(long ms) {
-        long totalSec = Math.max(0L, ms / 1000L);
-        long mins = totalSec / 60L;
-        long secs = totalSec % 60L;
-        return String.format(Locale.US, "%d:%02d", mins, secs);
-    }
-
     @NonNull
     static String deriveDisplayName(@NonNull ForensicsSnapshotWithMedia row) {
         if (row.mediaDisplayName != null && !row.mediaDisplayName.isEmpty()) return row.mediaDisplayName;
@@ -485,33 +641,85 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return value == null ? "" : value;
     }
 
+    private boolean isTornThemeEnabled(@NonNull android.content.Context context) {
+        if (tornThemeEnabled != null) {
+            return tornThemeEnabled;
+        }
+        boolean defaultEnabled = BuildConfig.DEBUG || BuildConfig.APPLICATION_ID.contains("beta");
+        try {
+            tornThemeEnabled = SharedPreferencesManager.getInstance(context)
+                    .getBoolean(PREF_TORN_THEME_ENABLED, defaultEnabled);
+        } catch (Exception ignored) {
+            tornThemeEnabled = defaultEnabled;
+        }
+        return tornThemeEnabled;
+    }
+
+    private boolean isLowRamDevice(@NonNull android.content.Context context) {
+        if (lowRamDevice != null) {
+            return lowRamDevice;
+        }
+        ActivityManager am = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        lowRamDevice = am != null && am.isLowRamDevice();
+        return lowRamDevice;
+    }
+
+    private void logIdentityIntegrityIfNeeded() {
+        if (!BuildConfig.DEBUG) {
+            return;
+        }
+        Set<String> ids = new HashSet<>();
+        int collisionCount = 0;
+        for (ForensicsSnapshotWithMedia row : rows) {
+            String id = snapshotId(row);
+            if (!ids.add(id)) {
+                collisionCount++;
+            }
+        }
+        if (collisionCount > 0) {
+            Log.w(TAG, "submit integrity warning: duplicate snapshot identity count=" + collisionCount + ", rows=" + rows.size());
+        }
+    }
+
     @Override
     public int getItemCount() {
         return entries.size();
     }
 
     static class ItemHolder extends RecyclerView.ViewHolder {
+        final View cardMotionLayer;
+        final ForensicsCardContainerView cardContainer;
+        final View photoContainer;
         final ImageView image;
         final View iconCheckContainer;
         final ImageView iconCheck;
         final View selectionDimOverlay;
         final TextView title;
-        final TextView meta;
+        final TextView metaTime;
+        final TextView metaConfidence;
+        final TextView metaSource;
+        final TextView metaSize;
         final TextView index;
-        final TextView overlaySize;
-        final TextView overlayTime;
+        final View indexTape;
+        final ImageView paperClip;
 
         ItemHolder(@NonNull View itemView) {
             super(itemView);
+            cardMotionLayer = itemView.findViewById(R.id.card_motion_layer);
+            cardContainer = itemView.findViewById(R.id.root_gallery_card);
+            photoContainer = itemView.findViewById(R.id.section_gallery_photo_container);
             image = itemView.findViewById(R.id.image_gallery_snapshot);
             iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
             iconCheck = itemView.findViewById(R.id.icon_check);
             selectionDimOverlay = itemView.findViewById(R.id.selection_dim_overlay);
             title = itemView.findViewById(R.id.text_gallery_title);
-            meta = itemView.findViewById(R.id.text_gallery_meta);
+            metaTime = itemView.findViewById(R.id.text_gallery_meta_time);
+            metaConfidence = itemView.findViewById(R.id.text_gallery_meta_confidence);
+            metaSource = itemView.findViewById(R.id.text_gallery_meta_source);
+            metaSize = itemView.findViewById(R.id.text_gallery_meta_size);
             index = itemView.findViewById(R.id.text_gallery_index);
-            overlaySize = itemView.findViewById(R.id.text_gallery_overlay_size);
-            overlayTime = itemView.findViewById(R.id.text_gallery_overlay_time);
+            indexTape = itemView.findViewById(R.id.tape_index_container);
+            paperClip = itemView.findViewById(R.id.view_paper_clip);
         }
     }
 
