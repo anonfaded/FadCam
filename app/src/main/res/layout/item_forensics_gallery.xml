@@ -102,7 +102,7 @@
                     android:lineSpacingExtra="1dp"
                     android:maxLines="2"
                     android:minLines="1"
-                    android:textColor="#C9B99F"
+                    android:textColor="#E2C99A"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
@@ -127,14 +127,19 @@
 
                     <TextView
                         android:id="@+id/text_gallery_meta_time"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:layout_marginStart="4dp"
-                        android:layout_marginEnd="10dp"
-                        android:textColor="#BAC4CF"
+                        android:layout_marginEnd="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#9EABBA"
                         android:textSize="10sp" />
 
                     <ImageView
+                        android:id="@+id/icon_gallery_meta_confidence"
                         android:layout_width="11dp"
                         android:layout_height="11dp"
                         android:src="@drawable/ic_focus_target"
@@ -145,7 +150,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:textColor="#BAC4CF"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#9EABBA"
                         android:textSize="10sp" />
                 </LinearLayout>
 
@@ -157,6 +165,7 @@
                     android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/icon_gallery_meta_source"
                         android:layout_width="11dp"
                         android:layout_height="11dp"
                         android:src="@drawable/ic_info"
@@ -164,15 +173,19 @@
 
                     <TextView
                         android:id="@+id/text_gallery_meta_source"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:layout_marginStart="4dp"
+                        android:layout_marginEnd="8dp"
+                        android:ellipsize="end"
                         android:maxLines="1"
-                        android:layout_marginEnd="10dp"
-                        android:textColor="#B2BCC7"
+                        android:singleLine="true"
+                        android:textColor="#95A2B1"
                         android:textSize="10sp" />
 
                     <ImageView
+                        android:id="@+id/icon_gallery_meta_size"
                         android:layout_width="11dp"
                         android:layout_height="11dp"
                         android:src="@drawable/database_24px"
@@ -183,8 +196,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
+                        android:ellipsize="end"
                         android:maxLines="1"
-                        android:textColor="#AEB8C4"
+                        android:singleLine="true"
+                        android:textColor="#8E9BAA"
                         android:textSize="10sp" />
                 </LinearLayout>
             </LinearLayout>
@@ -197,13 +212,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="top|start"
             android:layout_marginStart="14dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="18dp"
             android:background="@drawable/forensics_index_tape"
             android:elevation="8dp"
             android:gravity="center"
-            android:minWidth="24dp"
-            android:paddingHorizontal="4dp"
-            android:paddingVertical="1dp"
+            android:minWidth="0dp"
+            android:paddingHorizontal="3dp"
+            android:paddingVertical="0.5dp"
             android:rotation="-6">
 
             <TextView
@@ -212,7 +227,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/ubuntu_regular"
                 android:textColor="#101114"
-                android:textSize="9sp"
+                android:textSize="8sp"
                 android:textStyle="bold" />
         </LinearLayout>
 

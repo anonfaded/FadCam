@@ -1408,6 +1408,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_open_source_video">Open source video</string>
     <string name="forensics_evidence_details">Evidence details</string>
     <string name="forensics_detected_label">Detected: %1$s</string>
+    <string name="forensics_section_actions">Actions</string>
+    <string name="forensics_section_appearance">Appearance</string>
     <string name="forensics_clip_style_title">Binder Clip Style</string>
     <string name="forensics_clip_style_helper">Choose clip color for gallery cards.</string>
     <string name="forensics_clip_black">Black clip</string>

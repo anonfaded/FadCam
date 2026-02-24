@@ -914,7 +914,7 @@ public class ForensicsGalleryFragment extends Fragment {
         }
 
         @Override
-        public void onDrawOver(@NonNull android.graphics.Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+        public void onDraw(@NonNull android.graphics.Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
             if (parent.getWidth() != cachedWidth) {
                 pathCache.clear();
                 cachedWidth = parent.getWidth();
@@ -939,7 +939,7 @@ public class ForensicsGalleryFragment extends Fragment {
                 for (float pinX : block.pinXs) {
                     float t = clamp((pinX - left) / Math.max(1f, right - left), 0f, 1f);
                     float stringY = cubicY(y, y + sag, y + sag, y, t);
-                    float pinY = block.top + dp(parent, 19f);
+                    float pinY = block.top + dp(parent, 25f);
                     canvas.drawLine(pinX, stringY, pinX, pinY, dropPaint);
                     canvas.drawCircle(pinX, stringY, dp(parent, 1.35f), knotPaint);
                 }

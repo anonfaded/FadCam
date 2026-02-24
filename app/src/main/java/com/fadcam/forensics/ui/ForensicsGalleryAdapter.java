@@ -342,10 +342,13 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         String sourceLabel = mediaMissing
                 ? holder.itemView.getContext().getString(R.string.forensics_snapshot_only)
                 : holder.itemView.getContext().getString(R.string.forensics_video_linked);
+        if (currentGridSpan >= 3) {
+            sourceLabel = mediaMissing ? "Snapshot" : "Video linked";
+        }
         String sizeLabel = Formatter.formatShortFileSize(holder.itemView.getContext(), Math.max(0L, resolveImageSizeCached(row.imageUri)));
         String timeAgo = Utils.formatTimeAgo(row.capturedEpochMs);
         holder.metaTime.setText((timeAgo == null || timeAgo.trim().isEmpty()) ? "Just now" : timeAgo);
-        holder.metaConfidence.setText(String.format(Locale.US, "%.2f", row.confidence));
+        holder.metaConfidence.setText(String.format(Locale.US, currentGridSpan >= 3 ? "%.1f" : "%.2f", row.confidence));
         holder.metaSource.setText(sourceLabel);
         holder.metaSize.setText(sizeLabel);
         holder.index.setText(String.valueOf(itemNumberForPosition(position)));
@@ -373,12 +376,12 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         holder.paperClip.setVisibility(showDecor ? View.VISIBLE : View.GONE);
         holder.indexTape.setVisibility(showDecor ? View.VISIBLE : View.GONE);
         holder.paperClip.setImageResource(CLIP_STYLE_RED.equalsIgnoreCase(clipStyle)
-                ? R.drawable.binder_clip_glossy_red_asset
+                ? R.drawable.binder_clip_red_asset
                 : R.drawable.binder_clip_glossy_black_asset);
         holder.indexTape.setBackgroundResource(TAPE_STYLE_CLASSIC.equalsIgnoreCase(tapeStyle)
                 ? R.drawable.forensics_index_tape_alt
                 : R.drawable.forensics_index_tape);
-        holder.indexTape.setRotation(-4f - (snapshotHash % 5));
+        holder.indexTape.setRotation((currentGridSpan >= 3 ? -2.5f : -4f) - (snapshotHash % 4));
         holder.cardMotionLayer.setRotation(0f);
         applyGridSizing(holder);
 
@@ -407,6 +410,8 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                     holder.cardMotionLayer.animate()
                             .cancel();
                     holder.cardMotionLayer.animate()
+                            .scaleX(0.985f)
+                            .scaleY(0.985f)
                             .alpha(0.9f)
                             .setDuration(72L)
                             .start();
@@ -416,6 +421,8 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                     holder.cardMotionLayer.animate()
                             .cancel();
                     holder.cardMotionLayer.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
                             .alpha(1f)
                             .setDuration(115L)
                             .start();
@@ -433,24 +440,44 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     private void applyGridSizing(@NonNull ItemHolder holder) {
-        float imageRatio;
         float titleSp;
         float metaSp;
+        int tapeTopMarginDp;
+        int tapeStartMarginDp;
+        int tapePadH;
+        int tapePadV;
+        int indexTextSp;
+        boolean showMetaSize;
         switch (currentGridSpan) {
             case 4:
-                imageRatio = 0.72f;
                 titleSp = 10.5f;
-                metaSp = 9f;
+                metaSp = 8.6f;
+                tapeTopMarginDp = 41;
+                tapeStartMarginDp = 9;
+                tapePadH = 2;
+                tapePadV = 0;
+                indexTextSp = 7;
+                showMetaSize = false;
                 break;
             case 3:
-                imageRatio = 0.76f;
                 titleSp = 11f;
-                metaSp = 9.5f;
+                metaSp = 9f;
+                tapeTopMarginDp = 39;
+                tapeStartMarginDp = 10;
+                tapePadH = 2;
+                tapePadV = 0;
+                indexTextSp = 7;
+                showMetaSize = true;
                 break;
             default:
-                imageRatio = 0.82f;
                 titleSp = 12f;
                 metaSp = 10f;
+                tapeTopMarginDp = 18;
+                tapeStartMarginDp = 14;
+                tapePadH = 3;
+                tapePadV = 1;
+                indexTextSp = 8;
+                showMetaSize = true;
                 break;
         }
         int width = holder.itemView.getWidth();
@@ -458,7 +485,9 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             holder.itemView.post(() -> applyGridSizing(holder));
             return;
         }
-        int targetHeight = Math.max(dp(holder.itemView, 78f), Math.round(width * imageRatio));
+        int targetHeight = currentGridSpan >= 4
+                ? dp(holder.itemView, 96f)
+                : (currentGridSpan == 3 ? dp(holder.itemView, 112f) : dp(holder.itemView, 132f));
         ViewGroup.LayoutParams photoLp = holder.photoContainer.getLayoutParams();
         if (photoLp.height != targetHeight) {
             photoLp.height = targetHeight;
@@ -469,6 +498,35 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         holder.metaConfidence.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
         holder.metaSource.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
         holder.metaSize.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        holder.index.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, indexTextSp);
+        holder.metaTime.setSingleLine(true);
+        holder.metaConfidence.setSingleLine(true);
+        holder.metaSource.setSingleLine(true);
+        holder.metaSize.setSingleLine(true);
+
+        ViewGroup.MarginLayoutParams tapeLp = (ViewGroup.MarginLayoutParams) holder.indexTape.getLayoutParams();
+        int tapeTopPx = dp(holder.itemView, tapeTopMarginDp);
+        int tapeStartPx = dp(holder.itemView, tapeStartMarginDp);
+        if (tapeLp.topMargin != tapeTopPx || tapeLp.getMarginStart() != tapeStartPx) {
+            tapeLp.topMargin = tapeTopPx;
+            tapeLp.setMarginStart(tapeStartPx);
+            holder.indexTape.setLayoutParams(tapeLp);
+        }
+        holder.indexTape.setPadding(dp(holder.itemView, tapePadH), dp(holder.itemView, tapePadV), dp(holder.itemView, tapePadH), dp(holder.itemView, tapePadV));
+        if (currentGridSpan >= 4) {
+            holder.iconConfidence.setVisibility(View.GONE);
+            holder.metaConfidence.setVisibility(View.GONE);
+            holder.iconSource.setImageResource(R.drawable.database_24px);
+            holder.metaSource.setText(holder.metaSize.getText());
+            holder.iconSize.setVisibility(View.GONE);
+            holder.metaSize.setVisibility(View.GONE);
+        } else {
+            holder.iconConfidence.setVisibility(View.VISIBLE);
+            holder.metaConfidence.setVisibility(View.VISIBLE);
+            holder.iconSource.setImageResource(R.drawable.ic_info);
+            holder.iconSize.setVisibility(showMetaSize ? View.VISIBLE : View.GONE);
+            holder.metaSize.setVisibility(showMetaSize ? View.VISIBLE : View.GONE);
+        }
     }
 
     private static int dp(@NonNull View view, float value) {
@@ -699,6 +757,9 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         final TextView metaConfidence;
         final TextView metaSource;
         final TextView metaSize;
+        final ImageView iconConfidence;
+        final ImageView iconSource;
+        final ImageView iconSize;
         final TextView index;
         final View indexTape;
         final ImageView paperClip;
@@ -717,6 +778,9 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             metaConfidence = itemView.findViewById(R.id.text_gallery_meta_confidence);
             metaSource = itemView.findViewById(R.id.text_gallery_meta_source);
             metaSize = itemView.findViewById(R.id.text_gallery_meta_size);
+            iconConfidence = itemView.findViewById(R.id.icon_gallery_meta_confidence);
+            iconSource = itemView.findViewById(R.id.icon_gallery_meta_source);
+            iconSize = itemView.findViewById(R.id.icon_gallery_meta_size);
             index = itemView.findViewById(R.id.text_gallery_index);
             indexTape = itemView.findViewById(R.id.tape_index_container);
             paperClip = itemView.findViewById(R.id.view_paper_clip);

@@ -177,8 +177,8 @@ public class ForensicIntelligenceFragment extends Fragment {
         ForensicsGalleryFragment gallery = findGallery();
         if (gallery == null) return;
         ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem(ForensicsGalleryAdapter.CLIP_STYLE_BLACK, getString(R.string.forensics_clip_black), null, null, R.drawable.ic_grid));
-        items.add(new OptionItem(ForensicsGalleryAdapter.CLIP_STYLE_RED, getString(R.string.forensics_clip_red), null, null, R.drawable.ic_grid));
+        items.add(new OptionItem(ForensicsGalleryAdapter.CLIP_STYLE_BLACK, getString(R.string.forensics_clip_black), null, null, R.drawable.binder_clip_glossy_black_asset));
+        items.add(new OptionItem(ForensicsGalleryAdapter.CLIP_STYLE_RED, getString(R.string.forensics_clip_red), null, null, R.drawable.binder_clip_red_asset));
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
                 getString(R.string.forensics_clip_style_title),
                 items,
@@ -199,8 +199,8 @@ public class ForensicIntelligenceFragment extends Fragment {
         ForensicsGalleryFragment gallery = findGallery();
         if (gallery == null) return;
         ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem(ForensicsGalleryAdapter.TAPE_STYLE_TORN, getString(R.string.forensics_tape_torn), null, null, R.drawable.ic_grid));
-        items.add(new OptionItem(ForensicsGalleryAdapter.TAPE_STYLE_CLASSIC, getString(R.string.forensics_tape_classic), null, null, R.drawable.ic_grid));
+        items.add(new OptionItem(ForensicsGalleryAdapter.TAPE_STYLE_TORN, getString(R.string.forensics_tape_torn), null, null, R.drawable.forensics_index_tape));
+        items.add(new OptionItem(ForensicsGalleryAdapter.TAPE_STYLE_CLASSIC, getString(R.string.forensics_tape_classic), null, null, R.drawable.forensics_index_tape_alt));
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
                 getString(R.string.forensics_tape_style_title),
                 items,

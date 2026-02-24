@@ -70,13 +70,13 @@ public class ForensicsCardContainerView extends LinearLayout {
 
         edgePaint.setStyle(Paint.Style.STROKE);
         edgePaint.setStrokeWidth(dp(0.85f));
-        edgePaint.setColor(Color.argb(138, 245, 243, 236));
+        edgePaint.setColor(Color.argb(94, 132, 142, 154));
         edgePaint.setDither(true);
         edgePaint.setFilterBitmap(true);
 
         edgeShadowPaint.setStyle(Paint.Style.STROKE);
         edgeShadowPaint.setStrokeWidth(dp(1.45f));
-        edgeShadowPaint.setColor(Color.argb(70, 0, 0, 0));
+        edgeShadowPaint.setColor(Color.argb(92, 0, 0, 0));
         edgeShadowPaint.setMaskFilter(new BlurMaskFilter(dp(1.1f), BlurMaskFilter.Blur.NORMAL));
         edgeShadowPaint.setDither(true);
         edgeShadowPaint.setFilterBitmap(true);

@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
             android:paddingBottom="8dp"
-            android:text="@string/nav_lab"
+            android:text="@string/forensics_section_actions"
             android:textColor="?attr/colorHeading"
             android:textStyle="bold" />
 
@@ -125,12 +125,23 @@
                     android:tint="@android:color/darker_gray" />
             </LinearLayout>
 
-            <com.google.android.material.divider.MaterialDivider
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_marginEnd="12dp"
-                app:dividerColor="#262626" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/forensics_section_appearance"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_group_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
 
             <LinearLayout
                 android:id="@+id/row_lab_clip_style"
@@ -139,8 +150,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="12dp"
-                    android:src="@drawable/ic_grid"
-                    android:tint="@android:color/darker_gray" />
+                    android:src="@drawable/binder_clip_glossy_black_asset" />
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -170,8 +180,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="12dp"
-                    android:src="@drawable/ic_grid"
-                    android:tint="@android:color/darker_gray" />
+                    android:src="@drawable/forensics_index_tape" />
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
