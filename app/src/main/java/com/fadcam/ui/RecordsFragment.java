@@ -21,6 +21,7 @@ import android.animation.ObjectAnimator;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.DocumentsContract;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -339,6 +340,10 @@ public class RecordsFragment extends BaseFragment implements
     private Handler progressHandler; // Handler for delayed progress show
     private Runnable showProgressRunnable; // Runnable to show progress after delay
     private TextView titleText;
+    private TextView statsTotalText;
+    private TextView statsPhotosText;
+    private TextView statsVideosText;
+    private TextView statsSizeText;
     private ImageView menuButton;
     private ImageView closeButton;
     private View selectAllContainer;
@@ -866,6 +871,10 @@ public class RecordsFragment extends BaseFragment implements
 
         // Initialize header elements
         titleText = view.findViewById(R.id.title_text);
+        statsTotalText = view.findViewById(R.id.text_records_stat_total);
+        statsPhotosText = view.findViewById(R.id.text_records_stat_photos);
+        statsVideosText = view.findViewById(R.id.text_records_stat_videos);
+        statsSizeText = view.findViewById(R.id.text_records_stat_size);
         menuButton = view.findViewById(R.id.action_more_options);
         closeButton = view.findViewById(R.id.action_close);
         selectAllContainer = view.findViewById(R.id.action_select_all_container);
@@ -2771,7 +2780,7 @@ public class RecordsFragment extends BaseFragment implements
         int checkedBg = resolveThemeColor(R.attr.colorButton);
         int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
         int checkedStroke = resolveThemeColor(R.attr.colorToggle);
-        int uncheckedStroke = Color.parseColor("#1A1A1A");
+        int uncheckedStroke = Color.parseColor("#4A4A4A");
         int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
         int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
         int[][] states = new int[][]{
@@ -4102,6 +4111,7 @@ public class RecordsFragment extends BaseFragment implements
             Log.w(TAG, "LOG_UI_VISIBILITY: getView() is null. Cannot update UI visibility.");
             return;
         }
+        updateHeaderStats();
 
         boolean isEmpty;
         if (recordsAdapter != null) {
@@ -4147,6 +4157,31 @@ public class RecordsFragment extends BaseFragment implements
             loadingIndicator.setVisibility(View.GONE);
             Log.d(TAG, "LOG_UI_VISIBILITY: Loading indicator was visible, set to GONE.");
         }
+    }
+
+    private void updateHeaderStats() {
+        if (getContext() == null) return;
+        List<VideoItem> source = allLoadedItems == null || allLoadedItems.isEmpty() ? videoItems : allLoadedItems;
+        int total = 0;
+        int photos = 0;
+        int videos = 0;
+        long totalBytes = 0L;
+        if (source != null) {
+            for (VideoItem item : source) {
+                if (item == null) continue;
+                total++;
+                if (item.mediaType == VideoItem.MediaType.IMAGE) {
+                    photos++;
+                } else {
+                    videos++;
+                }
+                totalBytes += Math.max(0L, item.size);
+            }
+        }
+        if (statsTotalText != null) statsTotalText.setText(String.valueOf(total));
+        if (statsPhotosText != null) statsPhotosText.setText(String.valueOf(photos));
+        if (statsVideosText != null) statsVideosText.setText(String.valueOf(videos));
+        if (statsSizeText != null) statsSizeText.setText(Formatter.formatShortFileSize(requireContext(), totalBytes));
     }
 
     // Add the missing SpacesItemDecoration class back into the RecordsFragment

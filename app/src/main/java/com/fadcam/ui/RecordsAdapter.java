@@ -24,6 +24,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -333,13 +334,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 holder.menuButton.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
             }
 
-            // Ensure file time and size in the overlay have good contrast
-            if (holder.textViewFileSize != null) {
-                holder.textViewFileSize.setTextColor(Color.WHITE);
-            }
-            if (holder.textViewFileTime != null) {
-                holder.textViewFileTime.setTextColor(Color.WHITE);
-            }
+            // Ensure metadata has good contrast on white cards.
+            if (holder.textViewFileSize != null) holder.textViewFileSize.setTextColor(Color.BLACK);
+            if (holder.textViewFileTime != null) holder.textViewFileTime.setTextColor(Color.BLACK);
+            if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setTextColor(Color.BLACK);
         } else {
             // For other themes, use the default background color
             if (holder.itemView instanceof CardView && context != null) {
@@ -360,8 +358,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 holder.textViewRecord.setTextColor(holder.defaultTextColor);
             }
             if (holder.textViewTimeAgo != null) {
-                holder.textViewTimeAgo.setTextColor(holder.defaultTextColor);
+                holder.textViewTimeAgo.setTextColor(holder.defaultMetaTextColor);
             }
+            if (holder.textViewFileSize != null) holder.textViewFileSize.setTextColor(holder.defaultMetaTextColor);
+            if (holder.textViewFileTime != null) holder.textViewFileTime.setTextColor(holder.defaultMetaTextColor);
         }
 
         // Optimize time-consuming operations using DB-backed duration cache
@@ -369,7 +369,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             if (isImage) {
                 holder.textViewFileTime.setText("");
                 holder.textViewFileTime.setVisibility(View.GONE);
+                if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.GONE);
             } else {
+                if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.VISIBLE);
                 holder.textViewFileTime.setVisibility(View.VISIBLE);
                 // Check in-memory position cache first (avoids even DB read on rebind)
                 String cachedDuration = loadedThumbnailCache.get(position);
@@ -612,8 +614,29 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
             });
         }
+        applyPressFeedback(holder.itemView, holder.itemView);
+        applyPressFeedback(holder.imageViewThumbnail, holder.itemView);
+        applyPressFeedback(holder.thumbnailContainer, holder.itemView);
 
     } // End onBindViewHolder
+
+    private void applyPressFeedback(View touchView, View targetView) {
+        if (touchView == null || targetView == null) return;
+        touchView.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    targetView.animate().scaleX(0.985f).scaleY(0.985f).setDuration(90L).start();
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    targetView.animate().scaleX(1f).scaleY(1f).setDuration(120L).start();
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        });
+    }
 
     private int getImageBadgeLabelRes(@NonNull VideoItem videoItem) {
         VideoItem.ShotSubtype subtype = videoItem.shotSubtype == null
@@ -916,6 +939,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         if (holder.imageViewThumbnail != null && context != null) {
             Glide.with(context).clear(holder.imageViewThumbnail);
         }
+        holder.itemView.setScaleX(1f);
+        holder.itemView.setScaleY(1f);
     }
 
     // Override onBindViewHolder to handle payload for quality changes
@@ -975,6 +1000,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 holder.textViewRecord.setTextColor(Color.BLACK);
             if (holder.textViewTimeAgo != null)
                 holder.textViewTimeAgo.setTextColor(Color.BLACK);
+            if (holder.textViewFileSize != null)
+                holder.textViewFileSize.setTextColor(Color.BLACK);
+            if (holder.textViewFileTime != null)
+                holder.textViewFileTime.setTextColor(Color.BLACK);
         }
     }
 
@@ -2439,6 +2468,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         ImageView checkIcon;
         View iconCheckContainer;
         View iconCheckBg;
+        View metaDurationContainer;
         ImageView menuButton; // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot; // *** ADDED: Reference for the warning dot ***
@@ -2451,6 +2481,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         TextView textViewTimeAgo;
         // *** ADD Field for Default Text Color ***
         int defaultTextColor; // Store the default color
+        int defaultMetaTextColor;
 
         RecordViewHolder(View itemView) {
             super(itemView);
@@ -2462,6 +2493,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             checkIcon = itemView.findViewById(R.id.icon_check);
             iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
             iconCheckBg = itemView.findViewById(R.id.icon_check_bg);
+            metaDurationContainer = itemView.findViewById(R.id.meta_duration_container);
             menuButton = itemView.findViewById(R.id.menu_button);
 
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot); // *** Find the warning dot ***
@@ -2482,6 +2514,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 Log.e(TAG, "ViewHolder: textViewRecord is NULL, cannot get default text color!");
                 // Set a fallback default color?
                 defaultTextColor = Color.WHITE; // Example fallback
+            }
+            if (textViewTimeAgo != null) {
+                defaultMetaTextColor = textViewTimeAgo.getCurrentTextColor();
+            } else {
+                defaultMetaTextColor = defaultTextColor;
             }
 
         }
@@ -2638,12 +2675,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         // Step 7: Disable all click events for skeleton items
         holder.itemView.setOnClickListener(null);
         holder.itemView.setOnLongClickListener(null);
+        holder.itemView.setOnTouchListener(null);
         holder.imageViewThumbnail.setOnClickListener(null);
         holder.imageViewThumbnail.setOnLongClickListener(null);
+        holder.imageViewThumbnail.setOnTouchListener(null);
 
         if (holder.thumbnailContainer != null) {
             holder.thumbnailContainer.setOnClickListener(null);
             holder.thumbnailContainer.setOnLongClickListener(null);
+            holder.thumbnailContainer.setOnTouchListener(null);
         }
 
         if (holder.menuButtonContainer != null) {

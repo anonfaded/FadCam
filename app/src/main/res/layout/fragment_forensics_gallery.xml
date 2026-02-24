@@ -61,63 +61,71 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <HorizontalScrollView
-                android:id="@+id/chip_scroll_gallery"
+            <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:overScrollMode="never"
-                android:scrollbars="none"
-                android:paddingStart="8dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="4dp">
+                app:cardBackgroundColor="?attr/colorTopBar"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-                <com.google.android.material.chip.ChipGroup
-                    android:layout_width="wrap_content"
+                <HorizontalScrollView
+                    android:id="@+id/chip_scroll_gallery"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:chipSpacingHorizontal="6dp"
-                    app:selectionRequired="true"
-                    app:singleLine="true"
-                    app:singleSelection="true">
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:paddingStart="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="4dp">
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_gallery_all"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                    <com.google.android.material.chip.ChipGroup
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="@string/forensics_filter_all" />
+                        app:chipSpacingHorizontal="6dp"
+                        app:selectionRequired="true"
+                        app:singleLine="true"
+                        app:singleSelection="true">
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_gallery_person"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/forensics_filter_person" />
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_all"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="@string/forensics_filter_all" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_gallery_vehicle"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/forensics_filter_vehicle" />
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_person"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_person" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_gallery_pet"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/forensics_filter_pet" />
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_vehicle"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_vehicle" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_gallery_object"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/forensics_filter_object" />
-                </com.google.android.material.chip.ChipGroup>
-            </HorizontalScrollView>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_pet"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_pet" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_object"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_object" />
+                    </com.google.android.material.chip.ChipGroup>
+                </HorizontalScrollView>
+            </androidx.cardview.widget.CardView>
 
             <ImageView
                 android:id="@+id/button_gallery_sort"

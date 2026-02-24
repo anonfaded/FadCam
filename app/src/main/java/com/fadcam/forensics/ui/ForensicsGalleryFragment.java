@@ -707,7 +707,7 @@ public class ForensicsGalleryFragment extends Fragment {
         int checkedBg = resolveThemeColor(R.attr.colorButton);
         int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
         int checkedStroke = resolveThemeColor(R.attr.colorToggle);
-        int uncheckedStroke = Color.parseColor("#1A1A1A");
+        int uncheckedStroke = Color.parseColor("#4A4A4A");
         int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
         int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
         int[][] states = new int[][]{ new int[]{android.R.attr.state_checked}, new int[]{} };
