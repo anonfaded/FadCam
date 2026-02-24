@@ -151,8 +151,8 @@ public class ForensicsGalleryFragment extends Fragment {
         }
 
         applyChipIcon(chipAll, R.drawable.ic_list);
-        applyChipIcon(chipPerson, R.drawable.ic_broadcast_on_personal_24);
-        applyChipIcon(chipVehicle, R.drawable.ic_forensics_vehicle);
+        applyChipIcon(chipPerson, R.drawable.ic_person_24);
+        applyChipIcon(chipVehicle, R.drawable.ic_vehicle_24);
         applyChipIcon(chipPet, R.drawable.ic_forensics_pet);
         applyChipIcon(chipObject, R.drawable.ic_grid);
         styleFilterChip(chipAll);
@@ -204,7 +204,21 @@ public class ForensicsGalleryFragment extends Fragment {
                     isScrollingDown = false;
                 }
                 updateNavigationFab();
-                showNavigationFab();
+                RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+                int firstVisible = 0;
+                int lastVisible = 0;
+                int total = 0;
+                if (layoutManager instanceof GridLayoutManager) {
+                    firstVisible = ((GridLayoutManager) layoutManager).findFirstVisibleItemPosition();
+                    lastVisible = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
+                    total = layoutManager.getItemCount();
+                }
+                if (firstVisible > 0 && lastVisible < total - 1) {
+                    showNavigationFab();
+                } else if (scrollFab != null) {
+                    scrollFab.animate().alpha(0f).setDuration(180)
+                            .withEndAction(() -> scrollFab.setVisibility(View.GONE)).start();
+                }
             }
         });
 
@@ -575,7 +589,7 @@ public class ForensicsGalleryFragment extends Fragment {
 
     private void showSortMenu(View anchor) {
         ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("sort_newest", getString(R.string.forensics_sort_newest), null, null, R.drawable.ic_arrow_down));
+        items.add(new OptionItem("sort_newest", getString(R.string.forensics_sort_newest), null, null, R.drawable.ic_arrow_downward));
         items.add(new OptionItem("sort_oldest", getString(R.string.sort_oldest_first), null, null, R.drawable.ic_arrow_up));
         items.add(new OptionItem("sort_confidence", getString(R.string.forensics_sort_confidence), null, null, R.drawable.ic_focus_target));
         String selectedId = "sort_newest";
@@ -692,14 +706,15 @@ public class ForensicsGalleryFragment extends Fragment {
         if (chip == null || getContext() == null) return;
         int checkedBg = resolveThemeColor(R.attr.colorButton);
         int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
-        int stroke = resolveThemeColor(R.attr.colorToggle);
+        int checkedStroke = resolveThemeColor(R.attr.colorToggle);
+        int uncheckedStroke = Color.parseColor("#1A1A1A");
         int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
         int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
         int[][] states = new int[][]{ new int[]{android.R.attr.state_checked}, new int[]{} };
         chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
         chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
         chip.setChipIconTint(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
-        chip.setChipStrokeColor(ColorStateList.valueOf(stroke));
+        chip.setChipStrokeColor(new ColorStateList(states, new int[]{checkedStroke, uncheckedStroke}));
         chip.setChipStrokeWidth(dpToPx(1));
         chip.setEnsureMinTouchTargetSize(false);
     }
@@ -728,11 +743,10 @@ public class ForensicsGalleryFragment extends Fragment {
         RecyclerView.LayoutManager lm = recycler.getLayoutManager();
         if (lm == null) return;
         int total = lm.getItemCount();
-        if (total <= 8) {
+        if (total <= 5) {
             scrollFab.setVisibility(View.GONE);
             return;
         }
-        scrollFab.setVisibility(View.VISIBLE);
         float targetRotation = isScrollingDown ? 90f : -90f;
         String cd = getString(isScrollingDown ? R.string.scroll_to_bottom : R.string.scroll_to_top);
         if (scrollFabRotationAnimator != null && scrollFabRotationAnimator.isRunning()) {
