@@ -61,18 +61,18 @@
                 <ImageView
                     android:layout_width="12dp"
                     android:layout_height="12dp"
-                    android:src="@drawable/ic_list"
+                    android:src="@drawable/ic_stat_playback"
                     android:tint="#CCFFFFFF" />
 
                 <TextView
-                    android:id="@+id/text_records_stat_total"
+                    android:id="@+id/text_records_stat_videos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="3dp"
                     android:textColor="#CCFFFFFF"
                     android:textSize="11sp"
                     android:textStyle="bold"
-                    tools:text="102" />
+                    tools:text="82" />
 
                 <ImageView
                     android:layout_width="12dp"
@@ -90,23 +90,6 @@
                     android:textSize="11sp"
                     android:textStyle="bold"
                     tools:text="20" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginStart="10dp"
-                    android:src="@drawable/ic_play_arrow_24"
-                    android:tint="#CCFFFFFF" />
-
-                <TextView
-                    android:id="@+id/text_records_stat_videos"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    tools:text="82" />
 
                 <ImageView
                     android:layout_width="12dp"

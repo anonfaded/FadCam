@@ -340,7 +340,6 @@ public class RecordsFragment extends BaseFragment implements
     private Handler progressHandler; // Handler for delayed progress show
     private Runnable showProgressRunnable; // Runnable to show progress after delay
     private TextView titleText;
-    private TextView statsTotalText;
     private TextView statsPhotosText;
     private TextView statsVideosText;
     private TextView statsSizeText;
@@ -871,7 +870,6 @@ public class RecordsFragment extends BaseFragment implements
 
         // Initialize header elements
         titleText = view.findViewById(R.id.title_text);
-        statsTotalText = view.findViewById(R.id.text_records_stat_total);
         statsPhotosText = view.findViewById(R.id.text_records_stat_photos);
         statsVideosText = view.findViewById(R.id.text_records_stat_videos);
         statsSizeText = view.findViewById(R.id.text_records_stat_size);
@@ -2780,7 +2778,7 @@ public class RecordsFragment extends BaseFragment implements
         int checkedBg = resolveThemeColor(R.attr.colorButton);
         int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
         int checkedStroke = resolveThemeColor(R.attr.colorToggle);
-        int uncheckedStroke = Color.parseColor("#4A4A4A");
+        int uncheckedStroke = Color.parseColor("#666666");
         int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
         int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
         int[][] states = new int[][]{
@@ -4162,14 +4160,12 @@ public class RecordsFragment extends BaseFragment implements
     private void updateHeaderStats() {
         if (getContext() == null) return;
         List<VideoItem> source = allLoadedItems == null || allLoadedItems.isEmpty() ? videoItems : allLoadedItems;
-        int total = 0;
         int photos = 0;
         int videos = 0;
         long totalBytes = 0L;
         if (source != null) {
             for (VideoItem item : source) {
                 if (item == null) continue;
-                total++;
                 if (item.mediaType == VideoItem.MediaType.IMAGE) {
                     photos++;
                 } else {
@@ -4178,7 +4174,6 @@ public class RecordsFragment extends BaseFragment implements
                 totalBytes += Math.max(0L, item.size);
             }
         }
-        if (statsTotalText != null) statsTotalText.setText(String.valueOf(total));
         if (statsPhotosText != null) statsPhotosText.setText(String.valueOf(photos));
         if (statsVideosText != null) statsVideosText.setText(String.valueOf(videos));
         if (statsSizeText != null) statsSizeText.setText(Formatter.formatShortFileSize(requireContext(), totalBytes));
