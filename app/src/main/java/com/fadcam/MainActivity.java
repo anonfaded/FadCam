@@ -534,23 +534,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // Add custom "soon" badge to Faditor Mini tab only (Remote uses NewFeatureBadge system)
-        bottomNavigationView.post(() -> {
-            ViewGroup menuView = (ViewGroup) bottomNavigationView.getChildAt(0);
-            if (menuView != null && menuView.getChildCount() > 3) {
-                // Add badge to Faditor Mini tab (index 3)
-                View faditorMiniTab = menuView.getChildAt(3); // 0:home, 1:records, 2:remote, 3:faditor_mini
-                if (faditorMiniTab instanceof ViewGroup) {
-                    // Prevent duplicate badge
-                    View existingBadge = ((ViewGroup) faditorMiniTab).findViewById(R.id.badge_text);
-                    if (existingBadge == null) {
-                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) faditorMiniTab, false);
-                        ((ViewGroup) faditorMiniTab).addView(badge);
-                    }
-                }
-            }
-        });
-
         // Dock reveal animation – only on fresh cold start, not config changes
         if (savedInstanceState == null) {
             View navContainer = findViewById(R.id.nav_container);
