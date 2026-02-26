@@ -11,8 +11,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.ViewConfiguration;
 import android.widget.Toast;
 import com.fadcam.ui.OverlayNavUtil;
 
@@ -43,6 +46,9 @@ import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.widget.HorizontalScrollView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -67,6 +73,14 @@ public class MainActivity extends AppCompatActivity {
             doubleBackToExitPressedOnce = false;
         }
     };
+
+    // Tab swipe navigation state (fragment-based navigation, not ViewPager)
+    private float swipeDownX = 0f;
+    private float swipeDownY = 0f;
+    private boolean swipeCandidate = false;
+    private boolean swipeHandled = false;
+    private int swipeTouchSlop = 0;
+    private static final float SWIPE_HORIZONTAL_RATIO = 1.35f;
 
     /**
      * Public method to be called from fragments that need to disable the
@@ -278,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
         SplashScreen.installSplashScreen(this);
         // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by
@@ -612,6 +627,120 @@ public class MainActivity extends AppCompatActivity {
         // shortcuts)-----------
         handleWidgetIntent();
         // shortcuts)-----------
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // Disable tab swipe when overlay fragment is visible.
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        boolean overlayVisible = overlayContainer != null && overlayContainer.getVisibility() == View.VISIBLE;
+        if (overlayVisible) {
+            return super.dispatchTouchEvent(ev);
+        }
+
+        final int action = ev.getActionMasked();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN: {
+                swipeDownX = ev.getRawX();
+                swipeDownY = ev.getRawY();
+                swipeHandled = false;
+                View touched = findDeepestViewAt(getWindow().getDecorView(), ev.getRawX(), ev.getRawY());
+                swipeCandidate = !isSwipeExcludedTarget(touched);
+                break;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                if (!swipeCandidate || swipeHandled) break;
+                float dx = ev.getRawX() - swipeDownX;
+                float dy = ev.getRawY() - swipeDownY;
+                if (Math.abs(dy) > Math.abs(dx)) {
+                    swipeCandidate = false;
+                }
+                break;
+            }
+            case MotionEvent.ACTION_UP: {
+                if (!swipeCandidate || swipeHandled) break;
+                float dx = ev.getRawX() - swipeDownX;
+                float dy = ev.getRawY() - swipeDownY;
+                if (Math.abs(dx) > Math.max(swipeTouchSlop * 6f, 180f)
+                        && Math.abs(dx) > Math.abs(dy) * SWIPE_HORIZONTAL_RATIO) {
+                    int target = currentFragmentPosition + (dx < 0 ? 1 : -1);
+                    if (target >= 0 && target <= 5) {
+                        switchFragment(target, true);
+                        swipeHandled = true;
+                        swipeCandidate = false;
+                        return true;
+                    }
+                }
+                swipeCandidate = false;
+                break;
+            }
+            case MotionEvent.ACTION_CANCEL: {
+                swipeCandidate = false;
+                swipeHandled = false;
+                break;
+            }
+            default:
+                break;
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private boolean isSwipeExcludedTarget(View touchedView) {
+        if (touchedView == null) return false;
+
+        View navContainer = findViewById(R.id.nav_container);
+        if (navContainer != null && isDescendantOf(touchedView, navContainer)) {
+            return true;
+        }
+
+        ViewParent parent = touchedView.getParent();
+        View current = touchedView;
+        while (current != null) {
+            if (current instanceof HorizontalScrollView) return true;
+            if (current instanceof com.google.android.material.chip.Chip) return true;
+            if (current instanceof com.google.android.material.chip.ChipGroup) return true;
+            if (current instanceof BottomNavigationView) return true;
+            if (current instanceof RecyclerView) {
+                RecyclerView rv = (RecyclerView) current;
+                if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
+            }
+            if (!(parent instanceof View)) break;
+            current = (View) parent;
+            parent = current.getParent();
+        }
+        return false;
+    }
+
+    private boolean isDescendantOf(@NonNull View child, @NonNull View ancestor) {
+        ViewParent p = child.getParent();
+        while (p instanceof View) {
+            if (p == ancestor) return true;
+            p = p.getParent();
+        }
+        return false;
+    }
+
+    private View findDeepestViewAt(@NonNull View root, float rawX, float rawY) {
+        int[] loc = new int[2];
+        root.getLocationOnScreen(loc);
+        float x = rawX - loc[0];
+        float y = rawY - loc[1];
+        return findDeepestViewAtInternal(root, x, y);
+    }
+
+    private View findDeepestViewAtInternal(@NonNull View view, float x, float y) {
+        if (x < 0 || y < 0 || x > view.getWidth() || y > view.getHeight()) return null;
+        if (!(view instanceof ViewGroup)) return view;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = group.getChildCount() - 1; i >= 0; i--) {
+            View child = group.getChildAt(i);
+            if (child.getVisibility() != View.VISIBLE) continue;
+            float childX = x - child.getLeft();
+            float childY = y - child.getTop();
+            View target = findDeepestViewAtInternal(child, childX, childY);
+            if (target != null) return target;
+        }
+        return view;
     }
 
     private void handleWidgetIntent() {
