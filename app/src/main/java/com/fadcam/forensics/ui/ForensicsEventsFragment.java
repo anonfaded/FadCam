@@ -264,8 +264,10 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         final String className = (objectMode && !TextUtils.isEmpty(selectedSubtype)) ? selectedSubtype : null;
         final float minConf = (chipHighConf != null && chipHighConf.isChecked()) ? 0.75f : 0f;
         final long since = System.currentTimeMillis() - (7L * 24L * 60L * 60L * 1000L);
+        // Capture application context on main thread to avoid requireContext() crash inside executor
+        final android.content.Context appContext = requireContext().getApplicationContext();
         executor.execute(() -> {
-            ForensicsDatabase db = ForensicsDatabase.getInstance(requireContext());
+            ForensicsDatabase db = ForensicsDatabase.getInstance(appContext);
             String sortOrder = "confidence".equals(selectedSort) ? "confidence" : "newest";
             List<AiEventWithMedia> rows = db.aiEventDao().getTimeline(
                     eventType,
@@ -276,7 +278,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                     sortOrder,
                     400
             );
-            reconcileMediaState(rows, db);
+            reconcileMediaState(rows, db, appContext);
             List<String> dynamicSubtypes = objectMode
                     ? db.aiEventDao().getTopClassNames(since, "OBJECT", 10)
                     : null;
@@ -296,12 +298,14 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         });
     }
 
-    private void reconcileMediaState(@Nullable List<AiEventWithMedia> rows, @NonNull ForensicsDatabase db) {
+    private void reconcileMediaState(@Nullable List<AiEventWithMedia> rows,
+                                     @NonNull ForensicsDatabase db,
+                                     @NonNull android.content.Context appContext) {
         if (rows == null || rows.isEmpty()) {
             return;
         }
         for (AiEventWithMedia row : rows) {
-            boolean missing = isMediaMissing(row.mediaUri);
+            boolean missing = isMediaMissing(row.mediaUri, appContext);
             if (row.mediaMissing != missing && row.mediaUid != null && !row.mediaUid.isEmpty()) {
                 row.mediaMissing = missing;
                 try {
@@ -314,7 +318,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
         }
     }
 
-    private boolean isMediaMissing(@Nullable String mediaUri) {
+    private boolean isMediaMissing(@Nullable String mediaUri, @NonNull android.content.Context appContext) {
         if (mediaUri == null || mediaUri.isEmpty()) {
             return true;
         }
@@ -325,7 +329,7 @@ public class ForensicsEventsFragment extends Fragment implements ForensicsEvents
                 return path == null || !new java.io.File(path).exists();
             }
             try (android.content.res.AssetFileDescriptor afd =
-                         requireContext().getContentResolver().openAssetFileDescriptor(uri, "r")) {
+                         appContext.getContentResolver().openAssetFileDescriptor(uri, "r")) {
                 return afd == null;
             }
         } catch (Exception e) {

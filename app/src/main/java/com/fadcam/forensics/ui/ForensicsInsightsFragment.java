@@ -89,15 +89,21 @@ public class ForensicsInsightsFragment extends Fragment {
         if (isLoading) return;
         isLoading = true;
         long since = System.currentTimeMillis() - (24L * 60L * 60L * 1000L);
+        // Capture application context on main thread to avoid requireContext() crash inside executor
+        final android.content.Context appContext = requireContext().getApplicationContext();
+        // Resolve theme colors on main thread (requires Activity theme)
+        final int canvasColor = resolveThemeColor(R.attr.colorDialog);
+        final int gridColor = adjustAlpha(resolveThemeColor(R.attr.colorToggle), 80);
+        final int hotColor = resolveThemeColor(R.attr.colorButton);
         executor.execute(() -> {
-            ForensicsDatabase db = ForensicsDatabase.getInstance(requireContext());
+            ForensicsDatabase db = ForensicsDatabase.getInstance(appContext);
             int total = db.aiEventDao().countSince(since);
             int people = db.aiEventDao().countByTypeSince("PERSON", since);
             int vehicle = db.aiEventDao().countByTypeSince("VEHICLE", since);
             int pet = db.aiEventDao().countByTypeSince("PET", since);
             int object = db.aiEventDao().countByTypeSince("OBJECT", since);
             List<AiEventEntity> heatRows = db.aiEventDao().getRecentForHeatmap(since, 500);
-            Bitmap map = renderHeatmap(heatRows, 900, 420);
+            Bitmap map = renderHeatmapSafe(heatRows, 900, 420, canvasColor, gridColor, hotColor);
 
             if (!isAdded()) {
                 isLoading = false;
@@ -114,10 +120,8 @@ public class ForensicsInsightsFragment extends Fragment {
         });
     }
 
-    private Bitmap renderHeatmap(List<AiEventEntity> rows, int width, int height) {
-        int canvasColor = resolveThemeColor(R.attr.colorDialog);
-        int gridColor = adjustAlpha(resolveThemeColor(R.attr.colorToggle), 80);
-        int hotColor = resolveThemeColor(R.attr.colorButton);
+    private Bitmap renderHeatmapSafe(List<AiEventEntity> rows, int width, int height,
+                                     int canvasColor, int gridColor, int hotColor) {
         Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
         canvas.drawColor(canvasColor);

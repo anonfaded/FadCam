@@ -62,7 +62,7 @@ public class RemoteStreamManager {
     // Active recording tracking
     private File activeRecordingFile = null;
     private boolean recordingActive = false; // Separate flag for SAF mode where File is null
-    private boolean recordingPaused = false; // Tracks paused state for dashboard
+    private volatile boolean recordingPaused = false; // Tracks paused state for dashboard
     
     // Metadata
     private int activeConnections = 0;

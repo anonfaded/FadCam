@@ -87,6 +87,24 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         stopPreviewLoop();
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        stopPreviewLoop();
+        // Cancel running animations to prevent withEndAction from firing after view is destroyed
+        if (previewBox != null) previewBox.animate().cancel();
+        if (previewLabel != null) previewLabel.animate().cancel();
+        // Null out view references to prevent handler callbacks from accessing stale views
+        previewBox = null;
+        previewLabel = null;
+        valueStatus = null;
+        valueEvidence = null;
+        valueCaptureScope = null;
+        valueOverlay = null;
+        motionLabBanner = null;
+        rowCaptureScope = null;
+    }
+
     private void bindCurrentValues() {
         valueStatus.setText(enabledLabel(prefs.isDigitalForensicsEnabled()));
         boolean evidenceEnabled = prefs.isDfEvidenceCollectionEnabled();
@@ -208,7 +226,7 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     }
 
     private void animatePreviewStep() {
-        if (previewBox == null || previewLabel == null) {
+        if (previewBox == null || previewLabel == null || !isAdded()) {
             return;
         }
         final float x;
@@ -257,7 +275,11 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 .translationY(y - dp(22))
                 .alpha(0.25f)
                 .setDuration(150L)
-                .withEndAction(() -> previewLabel.animate().alpha(1f).setDuration(220L).start())
+                .withEndAction(() -> {
+                    if (previewLabel != null) {
+                        previewLabel.animate().alpha(1f).setDuration(220L).start();
+                    }
+                })
                 .start();
     }
 

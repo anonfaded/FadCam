@@ -43,6 +43,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
     private final Listener listener;
     private final List<AiEventWithMedia> rows = new ArrayList<>();
     private final ExecutorService thumbExecutor = Executors.newSingleThreadExecutor();
+    private volatile boolean isShutdown = false;
 
     /** In-memory cache: eventUid → best snapshot image URI. Survives scrolls, cleared on submit. */
     private final Map<String, String> proofImageCache = new HashMap<>();
@@ -89,6 +90,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
      * Shuts down the background executor. Call from fragment onDestroyView.
      */
     public void shutdown() {
+        isShutdown = true;
         thumbExecutor.shutdownNow();
     }
 
@@ -161,6 +163,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
             return;
         }
 
+        if (isShutdown) return;
         thumbExecutor.execute(() -> {
             String bestSnapshotUri = ForensicsDatabase.getInstance(holder.itemView.getContext())
                     .aiEventSnapshotDao()
@@ -203,6 +206,7 @@ public class ForensicsEventsAdapter extends RecyclerView.Adapter<ForensicsEvents
             return;
         }
 
+        if (isShutdown) return;
         thumbExecutor.execute(() -> {
             List<AiEventSnapshotEntity> snapshots = ForensicsDatabase.getInstance(holder.itemView.getContext())
                     .aiEventSnapshotDao()
