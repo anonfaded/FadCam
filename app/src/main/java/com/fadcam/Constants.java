@@ -379,6 +379,8 @@ public abstract class Constants {
     // Broadcast action sent when files are restored from trash
     public static final String ACTION_FILES_RESTORED =
         "com.fadcam.FILES_RESTORED";
+    public static final String ACTION_FORENSICS_SNAPSHOT_PERSISTED =
+        "com.fadcam.ACTION_FORENSICS_SNAPSHOT_PERSISTED";
 
     // Broadcast Actions for Video Processing State
     public static final String ACTION_PROCESSING_STARTED =

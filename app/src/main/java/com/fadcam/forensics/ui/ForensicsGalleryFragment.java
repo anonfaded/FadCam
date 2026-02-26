@@ -37,6 +37,7 @@ import com.fadcam.ui.InputActionBottomSheetFragment;
 import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.utils.RealtimeMediaInvalidationCoordinator;
 import com.fadcam.utils.TrashManager;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -49,6 +50,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -94,6 +96,9 @@ public class ForensicsGalleryFragment extends Fragment {
     /** True after first successful data load — prevents redundant onResume reloads. */
     private boolean dataLoaded;
     private final android.os.Handler uiHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    @Nullable
+    private RealtimeMediaInvalidationCoordinator invalidationCoordinator;
+    private boolean pendingRealtimeRefresh;
     @Nullable
     private Runnable batchFabShrinkRunnable;
     private boolean isScrollingDown;
@@ -261,7 +266,7 @@ public class ForensicsGalleryFragment extends Fragment {
         if (gridButton != null) gridButton.setOnClickListener(this::showGridMenu);
 
         if (swipeRefresh != null) {
-            swipeRefresh.setOnRefreshListener(this::loadData);
+            swipeRefresh.setOnRefreshListener(() -> loadData(true));
         }
 
         if (batchFab != null) {
@@ -272,21 +277,28 @@ public class ForensicsGalleryFragment extends Fragment {
         }
 
         renderSelectionState(0);
-        loadData();
+        invalidationCoordinator = new RealtimeMediaInvalidationCoordinator(requireContext());
+        invalidationCoordinator.addListener(reason -> requestRealtimeRefresh("coordinator:" + reason));
+        invalidationCoordinator.start();
+
+        loadData(true);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Skip reload if data already loaded — only reload on explicit swipe-refresh or first open
         if (!dataLoaded && !isLoading) {
-            loadData();
+            loadData(true);
         }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (invalidationCoordinator != null) {
+            invalidationCoordinator.stop();
+            invalidationCoordinator = null;
+        }
         executor.shutdownNow();
     }
 
@@ -424,23 +436,49 @@ public class ForensicsGalleryFragment extends Fragment {
         }
     }
 
+    private void requestRealtimeRefresh(@NonNull String reason) {
+        if (!isAdded()) return;
+        if (isLoading) {
+            pendingRealtimeRefresh = true;
+            return;
+        }
+        loadData(true);
+    }
+
     private void loadData() {
-        if (!isAdded() || isLoading) return;
+        loadData(false);
+    }
+
+    private void loadData(boolean forceReload) {
+        if (!isAdded()) return;
+        if (isLoading) {
+            if (forceReload) pendingRealtimeRefresh = true;
+            return;
+        }
+        if (!forceReload && dataLoaded && !allRows.isEmpty()) {
+            return;
+        }
         isLoading = true;
         final android.content.Context context = requireContext().getApplicationContext();
         executor.execute(() -> {
             List<ForensicsSnapshotWithMedia> rows = ForensicsDatabase.getInstance(context)
                     .aiEventSnapshotDao()
                     .getGallerySnapshots(null, 0f, null, 0L, 3000);
+            rows = dedupeRowsByStableId(rows);
+            final List<ForensicsSnapshotWithMedia> finalRows = rows;
             reconcileMediaState(rows);
             if (!isAdded()) return;
             requireActivity().runOnUiThread(() -> {
                 allRows.clear();
-                if (rows != null) allRows.addAll(rows);
+                if (finalRows != null) allRows.addAll(finalRows);
                 applyFiltersAndRender();
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                 isLoading = false;
                 dataLoaded = true;
+                if (pendingRealtimeRefresh) {
+                    pendingRealtimeRefresh = false;
+                    loadData(true);
+                }
             });
         });
     }
@@ -678,6 +716,24 @@ public class ForensicsGalleryFragment extends Fragment {
                 try { db.aiEventDao().updateMediaMissingByMediaUid(row.mediaUid, missing); } catch (Exception ignored) {}
             }
         }
+    }
+
+    @NonNull
+    private List<ForensicsSnapshotWithMedia> dedupeRowsByStableId(@Nullable List<ForensicsSnapshotWithMedia> rows) {
+        if (rows == null || rows.isEmpty()) return new ArrayList<>();
+        LinkedHashMap<String, ForensicsSnapshotWithMedia> unique = new LinkedHashMap<>();
+        for (ForensicsSnapshotWithMedia row : rows) {
+            if (row == null) continue;
+            String id = row.snapshotUid != null && !row.snapshotUid.isEmpty()
+                    ? row.snapshotUid
+                    : (ForensicsGalleryAdapter.safe(row.imageUri)
+                    + "|" + ForensicsGalleryAdapter.safe(row.mediaUri)
+                    + "|" + row.timelineMs
+                    + "|" + row.capturedEpochMs
+                    + "|" + ForensicsGalleryAdapter.safe(row.eventUid));
+            unique.put(id, row);
+        }
+        return new ArrayList<>(unique.values());
     }
 
     private boolean isMediaMissing(@Nullable String mediaUri) {

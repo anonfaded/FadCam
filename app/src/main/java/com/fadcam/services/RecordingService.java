@@ -2029,7 +2029,10 @@ public class RecordingService extends Service {
                         timelineMs,
                         detections,
                         frameJpeg,
-                        recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT
+                        recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT,
+                        getCurrentSensorOrientationDegrees(),
+                        sharedPreferencesManager != null ? sharedPreferencesManager.getVideoOrientation() : "portrait",
+                        shouldMirrorForensicsSnapshots()
                 );
                 if ((nowMs - motionLastTelemetryLogMs) >= 10000L) {
                     Log.i(TAG, "Forensics heartbeat: detections=" + detections.size()
@@ -2324,6 +2327,19 @@ public class RecordingService extends Service {
             return false;
         }
         return sharedPreferencesManager != null && sharedPreferencesManager.isMotionDebugUiActive();
+    }
+
+    private int getCurrentSensorOrientationDegrees() {
+        if (currentCameraCharacteristics == null) {
+            return 90;
+        }
+        Integer so = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        return so == null ? 90 : so;
+    }
+
+    private boolean shouldMirrorForensicsSnapshots() {
+        // Keep snapshots aligned with recorded output, not selfie-preview mirror.
+        return false;
     }
 
     private void maybeLogForensicsPerf(long nowMs) {

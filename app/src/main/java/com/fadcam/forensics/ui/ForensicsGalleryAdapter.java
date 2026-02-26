@@ -105,7 +105,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     private int currentGridSpan = 2;
 
     public ForensicsGalleryAdapter() {
-        setHasStableIds(false);
+        setHasStableIds(true);
     }
 
     public void setListener(@Nullable Listener listener) {
@@ -351,7 +351,9 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         holder.metaConfidence.setText(String.format(Locale.US, currentGridSpan >= 3 ? "%.1f" : "%.2f", row.confidence));
         holder.metaSource.setText(sourceLabel);
         holder.metaSize.setText(sizeLabel);
-        holder.index.setText(String.valueOf(itemNumberForPosition(position)));
+        int indexNumber = itemNumberForPosition(position);
+        holder.index.setText(indexNumber > 0 ? ("#" + indexNumber) : "");
+        holder.index.setTextColor(android.graphics.Color.parseColor("#E8D9B3"));
 
         holder.cardContainer.setTearSeed(snapshotId);
         holder.cardContainer.setTearStyle(6.6f, 1.85f);
@@ -564,6 +566,19 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return 0;
     }
 
+    @Override
+    public long getItemId(int position) {
+        if (position < 0 || position >= entries.size()) return RecyclerView.NO_ID;
+        Entry entry = entries.get(position);
+        if (entry instanceof HeaderEntry) {
+            return ("header|" + ((HeaderEntry) entry).monthKey).hashCode();
+        }
+        if (entry instanceof ItemEntry) {
+            return snapshotId(((ItemEntry) entry).row).hashCode();
+        }
+        return RecyclerView.NO_ID;
+    }
+
     private void toggleItem(@NonNull ForensicsSnapshotWithMedia row) {
         String id = snapshotId(row);
         if (selectedSnapshotIds.contains(id)) {
@@ -636,7 +651,14 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         if (row.snapshotUid != null && !row.snapshotUid.isEmpty()) {
             return row.snapshotUid;
         }
-        return safe(row.imageUri) + "|" + row.timelineMs + "|" + row.capturedEpochMs + "|" + safe(row.eventUid);
+        return safe(row.imageUri)
+                + "|" + safe(row.mediaUri)
+                + "|" + safe(row.mediaUid)
+                + "|" + safe(row.eventUid)
+                + "|" + safe(row.className)
+                + "|" + safe(row.eventType)
+                + "|" + row.timelineMs
+                + "|" + row.capturedEpochMs;
     }
 
     private boolean isMediaMissing(@Nullable String mediaUri) {

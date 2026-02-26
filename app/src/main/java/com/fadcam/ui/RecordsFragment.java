@@ -109,6 +109,7 @@ import java.util.concurrent.TimeUnit;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.utils.DebouncedRunnable;
+import com.fadcam.utils.RealtimeMediaInvalidationCoordinator;
 import android.util.SparseArray;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -221,6 +222,7 @@ public class RecordsFragment extends BaseFragment implements
                 updateUiVisibility();
                 isLoading = false;
                 isInitialLoad = false;
+                drainPendingRealtimeRefresh();
 
                 // Hide progress indicator
                 if (progressHandler != null && showProgressRunnable != null) {
@@ -266,6 +268,7 @@ public class RecordsFragment extends BaseFragment implements
 
                 updateUiVisibility();
                 isLoading = false;
+                drainPendingRealtimeRefresh();
 
                 // Hide progress indicator on error
                 if (progressHandler != null && showProgressRunnable != null) {
@@ -543,12 +546,22 @@ public class RecordsFragment extends BaseFragment implements
         registerProcessingStateReceivers();
         registerSegmentCompleteReceiver();
         registerBatchMediaCompletedReceiver();
+        if (invalidationCoordinator == null && getContext() != null) {
+            invalidationCoordinator = new RealtimeMediaInvalidationCoordinator(requireContext());
+            invalidationCoordinator.addListener(reason -> requestRealtimeRefresh("coordinator:" + reason));
+        }
+        if (invalidationCoordinator != null) {
+            invalidationCoordinator.start();
+        }
     }
 
     // *** Unregister in onStop ***
     @Override
     public void onStop() {
         super.onStop();
+        if (invalidationCoordinator != null) {
+            invalidationCoordinator.stop();
+        }
         unregisterRecordingCompleteReceiver();
         unregisterStorageLocationChangedReceiver();
         unregisterProcessingStateReceivers();
@@ -1616,6 +1629,9 @@ public class RecordsFragment extends BaseFragment implements
     private static final int SCROLL_THRESHOLD = 8; // Load more when user is this many items from the end
     private boolean isLoading = false;
     private boolean isInitialLoad = true;
+    private boolean pendingForcedRealtimeReload = false;
+    @Nullable
+    private RealtimeMediaInvalidationCoordinator invalidationCoordinator;
     private int totalItems = 0; // Track the total number of items
     private final List<VideoItem> cachedInternalItems = new ArrayList<>(); // Cache internal items
     private final List<VideoItem> cachedSafItems = new ArrayList<>(); // Cache SAF items
@@ -4382,21 +4398,42 @@ public class RecordsFragment extends BaseFragment implements
      * </ol>
      */
     @SuppressLint("NotifyDataSetChanged")
+    private void requestRealtimeRefresh(@NonNull String reason) {
+        if (!isAdded()) return;
+        loadRecordsList(true);
+    }
+
+    private void drainPendingRealtimeRefresh() {
+        if (pendingForcedRealtimeReload && !isLoading) {
+            pendingForcedRealtimeReload = false;
+            loadRecordsList(true);
+        }
+    }
+
     private void loadRecordsList() {
+        loadRecordsList(false);
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void loadRecordsList(boolean forceReload) {
         Log.d(TAG, "loadRecordsList: start, storageMode=" + sharedPreferencesManager.getStorageMode()
-                + ", activeFilter=" + activeFilter);
+                + ", activeFilter=" + activeFilter + ", forceReload=" + forceReload);
 
         // Guard against duplicate loads
         if (isLoading) {
+            if (forceReload) {
+                pendingForcedRealtimeReload = true;
+            }
             Log.d(TAG, "loadRecordsList: already loading, skipping duplicate request");
             return;
         }
 
         // Skip reload if we already have data and this is not the initial load
-        if (!videoItems.isEmpty() && !isInitialLoad) {
+        if (!forceReload && !videoItems.isEmpty() && !isInitialLoad) {
             Log.d(TAG, "loadRecordsList: already have " + videoItems.size() + " items, skipping");
             isLoading = false;
             updateUiVisibility();
+            drainPendingRealtimeRefresh();
             return;
         }
 
@@ -4457,6 +4494,7 @@ public class RecordsFragment extends BaseFragment implements
                         updateUiVisibility();
                         isLoading = false;
                         isInitialLoad = false;
+                        drainPendingRealtimeRefresh();
 
                         // Hide any lingering progress UI
                         if (loadingProgress != null) loadingProgress.setVisibility(View.GONE);
@@ -4618,6 +4656,7 @@ public class RecordsFragment extends BaseFragment implements
                 }
 
                 isLoading = false;
+                drainPendingRealtimeRefresh();
             });
         }
     }
@@ -4665,6 +4704,7 @@ public class RecordsFragment extends BaseFragment implements
 
             isLoading = false;
             isInitialLoad = false;
+            drainPendingRealtimeRefresh();
         });
     }
 

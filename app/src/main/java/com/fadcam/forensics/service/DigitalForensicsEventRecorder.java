@@ -1,6 +1,7 @@
 package com.fadcam.forensics.service;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
@@ -9,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.Constants;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
 import com.fadcam.forensics.data.local.dao.AiEventDao;
 import com.fadcam.forensics.data.local.dao.AiEventSnapshotDao;
@@ -41,6 +43,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.text.TextPaint;
+import android.text.TextUtils;
 
 /**
  * Real-time forensics event writer: multi-event, snapshot-first, no stop-only dependency.
@@ -101,7 +105,10 @@ public class DigitalForensicsEventRecorder {
             long timelineMs,
             @Nullable List<EfficientDetLite1Detector.DetectionResult> detections,
             @Nullable byte[] snapshotJpeg,
-            boolean frontCamera
+            boolean frontCamera,
+            int sensorOrientationDegrees,
+            @Nullable String recordingOrientation,
+            boolean mirrorHorizontally
     ) {
         if (!prefs.isDigitalForensicsEnabled() || !prefs.isDfEvidenceCollectionEnabled()) {
             return;
@@ -152,7 +159,16 @@ public class DigitalForensicsEventRecorder {
         if (stable.isEmpty()) {
             return;
         }
-        ioExecutor.submit(() -> handleDetections(mediaUri, Math.max(0L, timelineMs), stable, snapshotJpeg, frontCamera));
+        ioExecutor.submit(() -> handleDetections(
+                mediaUri,
+                Math.max(0L, timelineMs),
+                stable,
+                snapshotJpeg,
+                frontCamera,
+                sensorOrientationDegrees,
+                recordingOrientation,
+                mirrorHorizontally
+        ));
     }
 
     public void onMotionStop(long timelineMs) {
@@ -168,7 +184,10 @@ public class DigitalForensicsEventRecorder {
             long timelineMs,
             List<EfficientDetLite1Detector.DetectionResult> detections,
             @Nullable byte[] snapshotJpeg,
-            boolean frontCamera
+            boolean frontCamera,
+            int sensorOrientationDegrees,
+            @Nullable String recordingOrientation,
+            boolean mirrorHorizontally
     ) {
         String mediaUid = ensureMediaAsset(mediaUri);
         if (mediaUid == null) {
@@ -217,7 +236,16 @@ public class DigitalForensicsEventRecorder {
 
             if (snapshotJpeg != null && snapshotJpeg.length > 0
                     && (event.lastSnapshotMs < 0 || (timelineMs - event.lastSnapshotMs) >= SNAPSHOT_MIN_INTERVAL_MS)) {
-                byte[] detectionSnapshot = buildDetectionSnapshot(snapshotJpeg, detection, frontCamera, timelineMs, nowEpoch);
+                byte[] detectionSnapshot = buildDetectionSnapshot(
+                        snapshotJpeg,
+                        detection,
+                        frontCamera,
+                        sensorOrientationDegrees,
+                        recordingOrientation,
+                        mirrorHorizontally,
+                        timelineMs,
+                        nowEpoch
+                );
                 String snapshotUid = UUID.randomUUID().toString();
                 String imageUri = persistSnapshotFile(mediaUid, event.eventUid, snapshotUid, timelineMs, detectionSnapshot);
                 if (imageUri != null && detectionSnapshot != null) {
@@ -250,6 +278,10 @@ public class DigitalForensicsEventRecorder {
                             + ", mediaSnapshots=" + mediaCount
                             + ", totalSnapshots=" + totalCount
                             + ", lastSnapshotUid=" + snapshotUid);
+                    Intent persisted = new Intent(Constants.ACTION_FORENSICS_SNAPSHOT_PERSISTED);
+                    persisted.putExtra("snapshot_uid", snapshotUid);
+                    persisted.putExtra("media_uid", mediaUid);
+                    appContext.sendBroadcast(persisted);
                 }
                 event.lastSnapshotMs = timelineMs;
             }
@@ -427,6 +459,9 @@ public class DigitalForensicsEventRecorder {
             @NonNull byte[] fullJpeg,
             @NonNull EfficientDetLite1Detector.DetectionResult detection,
             boolean frontCamera,
+            int sensorOrientationDegrees,
+            @Nullable String recordingOrientation,
+            boolean mirrorHorizontally,
             long timelineMs,
             long captureEpochMs
     ) {
@@ -445,10 +480,23 @@ public class DigitalForensicsEventRecorder {
             int cropH = Math.max(1, bottom - top);
             Bitmap cropped = Bitmap.createBitmap(full, left, top, cropW, cropH);
             Bitmap finalBitmap = cropped;
-            if (frontCamera) {
-                Matrix matrix = new Matrix();
-                matrix.postRotate(90f);
-                finalBitmap = Bitmap.createBitmap(cropped, 0, 0, cropped.getWidth(), cropped.getHeight(), matrix, true);
+            FrameOrientationTransform transform = resolveTransform(
+                    frontCamera,
+                    sensorOrientationDegrees,
+                    recordingOrientation,
+                    mirrorHorizontally
+            );
+            if (transform.rotationDegrees != 0 || transform.mirrorHorizontally || transform.mirrorVertically) {
+                Matrix matrix = transform.toMatrix(cropped.getWidth(), cropped.getHeight());
+                finalBitmap = Bitmap.createBitmap(
+                        cropped,
+                        0,
+                        0,
+                        cropped.getWidth(),
+                        cropped.getHeight(),
+                        matrix,
+                        true
+                );
             }
             drawSnapshotWatermark(finalBitmap, timelineMs, captureEpochMs);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -462,11 +510,12 @@ public class DigitalForensicsEventRecorder {
     private void drawSnapshotWatermark(@NonNull Bitmap bitmap, long timelineMs, long captureEpochMs) {
         try {
             Canvas canvas = new Canvas(bitmap);
-            String stamp = formatWatermark(captureEpochMs, timelineMs);
-            float textSize = Math.max(18f, Math.min(24f, bitmap.getWidth() * 0.006f));
-            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            String stamp = formatWatermark(captureEpochMs, timelineMs).replace('\r', ' ').replace('\n', ' ');
+            float maxTextSize = Math.max(15f, Math.min(22f, bitmap.getWidth() * 0.055f));
+            float minTextSize = Math.max(10f, maxTextSize * 0.62f);
+            TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             paint.setColor(Color.WHITE);
-            paint.setTextSize(textSize);
+            paint.setTextSize(maxTextSize);
             paint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
             paint.setFakeBoldText(true);
             try {
@@ -476,17 +525,53 @@ public class DigitalForensicsEventRecorder {
                 paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
             }
 
-            int padding = Math.max(14, Math.round(bitmap.getWidth() * 0.012f));
-            String[] lines = stamp.split("\n");
+            int padding = Math.max(10, Math.round(Math.min(bitmap.getWidth(), bitmap.getHeight()) * 0.035f));
+            int maxWidth = Math.max(20, bitmap.getWidth() - (padding * 2));
+            CharSequence line1 = stamp;
+            CharSequence line2 = null;
+
+            while (paint.measureText(line1, 0, line1.length()) > maxWidth && paint.getTextSize() > minTextSize) {
+                paint.setTextSize(Math.max(minTextSize, paint.getTextSize() - 1f));
+            }
+
+            if (paint.measureText(line1, 0, line1.length()) > maxWidth) {
+                int splitAt = findSplitIndex(line1, maxWidth, paint);
+                if (splitAt > 0 && splitAt < line1.length()) {
+                    CharSequence first = line1.subSequence(0, splitAt).toString().trim();
+                    CharSequence second = line1.subSequence(splitAt, line1.length()).toString().trim();
+                    line1 = TextUtils.ellipsize(first, paint, maxWidth, TextUtils.TruncateAt.END);
+                    line2 = TextUtils.ellipsize(second, paint, maxWidth, TextUtils.TruncateAt.END);
+                } else {
+                    line1 = TextUtils.ellipsize(line1, paint, maxWidth, TextUtils.TruncateAt.END);
+                }
+            }
+
             Paint.FontMetrics fm = paint.getFontMetrics();
-            float lineHeight = (fm.descent - fm.ascent) + 4f;
-            float y = padding - fm.ascent;
-            for (String line : lines) {
-                canvas.drawText(line, padding, y, paint);
-                y += lineHeight;
+            float lineHeight = (fm.descent - fm.ascent) + 3f;
+            float yTop = padding - fm.ascent;
+            float yBottomBase = bitmap.getHeight() - padding - (line2 == null ? 0f : lineHeight);
+            float y = (yTop + ((line2 == null ? yTop : (yTop + lineHeight)) > yBottomBase ? yBottomBase : yTop));
+
+            canvas.drawText(line1, 0, line1.length(), padding, y, paint);
+            if (line2 != null) {
+                canvas.drawText(line2, 0, line2.length(), padding, y + lineHeight, paint);
             }
         } catch (Throwable ignored) {
         }
+    }
+
+    private int findSplitIndex(@NonNull CharSequence value, int maxWidth, @NonNull TextPaint paint) {
+        int best = -1;
+        for (int i = 8; i < value.length() - 8; i++) {
+            if (value.charAt(i) == ' ') {
+                if (paint.measureText(value, 0, i) <= maxWidth) {
+                    best = i;
+                } else {
+                    break;
+                }
+            }
+        }
+        return best;
     }
 
     @NonNull
@@ -495,6 +580,28 @@ public class DigitalForensicsEventRecorder {
         String custom = prefs.getWatermarkCustomText();
         String customLine = (custom != null && !custom.trim().isEmpty()) ? ("\n" + custom.trim()) : "";
         return "Captured by FadCam - " + date + customLine;
+    }
+
+    @NonNull
+    private FrameOrientationTransform resolveTransform(
+            boolean frontCamera,
+            int sensorOrientationDegrees,
+            @Nullable String recordingOrientation,
+            boolean mirrorHorizontally
+    ) {
+        String orientation = recordingOrientation == null ? "" : recordingOrientation.toLowerCase(Locale.US);
+        int sensor = ((sensorOrientationDegrees % 360) + 360) % 360;
+        int rotation;
+        if (orientation.contains("portrait")) {
+            rotation = sensor == 0 ? (frontCamera ? 270 : 90) : sensor;
+        } else if (orientation.contains("reverse_landscape")) {
+            rotation = 180;
+        } else if (orientation.contains("reverse_portrait")) {
+            rotation = (sensor + 180) % 360;
+        } else {
+            rotation = 0;
+        }
+        return new FrameOrientationTransform(rotation, mirrorHorizontally, false);
     }
 
     private String normalizeClassName(String raw) {

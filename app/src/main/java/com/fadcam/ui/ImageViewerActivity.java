@@ -1,11 +1,15 @@
 package com.fadcam.ui;
 
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.Window;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.graphics.Color;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
@@ -61,6 +65,7 @@ public class ImageViewerActivity extends AppCompatActivity {
             setTheme(R.style.Base_Theme_FadCam);
         }
         super.onCreate(savedInstanceState);
+        enforceBlackStatusBar();
         setContentView(R.layout.activity_image_viewer);
 
         ImageView back = findViewById(R.id.imageViewerBack);
@@ -108,6 +113,18 @@ public class ImageViewerActivity extends AppCompatActivity {
                     }
                 })
                 .into(imageView);
+    }
+
+    private void enforceBlackStatusBar() {
+        Window window = getWindow();
+        if (window == null) return;
+        window.setStatusBarColor(Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            View decor = window.getDecorView();
+            int flags = decor.getSystemUiVisibility();
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            decor.setSystemUiVisibility(flags);
+        }
     }
 
     @Nullable
