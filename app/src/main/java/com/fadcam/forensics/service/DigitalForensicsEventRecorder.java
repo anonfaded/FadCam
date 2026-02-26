@@ -581,13 +581,13 @@ public class DigitalForensicsEventRecorder {
         try {
             Canvas canvas = new Canvas(bitmap);
             String stamp = formatWatermark(captureEpochMs, timelineMs).replace('\r', ' ').replace('\n', ' ');
-            float maxTextSize = Math.max(7f, Math.min(12f, bitmap.getWidth() * 0.024f));
-            float minTextSize = Math.max(6f, maxTextSize * 0.72f);
+            float maxTextSize = Math.max(8f, Math.min(13f, bitmap.getWidth() * 0.026f));
+            float minTextSize = Math.max(7f, maxTextSize * 0.75f);
             TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             paint.setColor(Color.WHITE);
             paint.setTextSize(maxTextSize);
-            paint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
-            paint.setFakeBoldText(true);
+            paint.setShadowLayer(1.4f, 0f, 0.6f, Color.BLACK);
+            paint.setFakeBoldText(false);
             try {
                 Typeface ubuntu = Typeface.createFromAsset(appContext.getAssets(), "ubuntu_regular.ttf");
                 paint.setTypeface(ubuntu);
@@ -595,7 +595,7 @@ public class DigitalForensicsEventRecorder {
                 paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
             }
 
-            int padding = Math.max(2, Math.round(Math.min(bitmap.getWidth(), bitmap.getHeight()) * 0.006f));
+            int padding = Math.max(1, Math.round(Math.min(bitmap.getWidth(), bitmap.getHeight()) * 0.0035f));
             int maxWidth = Math.max(20, bitmap.getWidth() - (padding * 2));
             CharSequence line1 = stamp;
             CharSequence line2 = null;

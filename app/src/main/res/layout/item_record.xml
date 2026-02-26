@@ -282,13 +282,13 @@
                     android:layout_row="1"
                     android:layout_column="1"
                     android:layout_marginTop="2dp"
-                    android:gravity="end"
-                    android:orientation="vertical">
+                    android:gravity="center_vertical|end"
+                    android:orientation="horizontal">
 
                     <ImageView
+                        android:id="@+id/icon_file_size"
                         android:layout_width="12dp"
                         android:layout_height="12dp"
-                        android:layout_gravity="end"
                         android:src="@drawable/database_24px"
                         android:tint="?android:attr/textColorSecondary" />
 
@@ -296,8 +296,7 @@
                         android:id="@+id/text_view_file_size"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:layout_gravity="end"
+                        android:layout_marginStart="4dp"
                         android:textColor="?android:attr/textColorSecondary"
                         android:textSize="10sp"
                         tools:text="123.4 MB" />

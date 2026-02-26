@@ -30,6 +30,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -371,6 +372,22 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 holder.textViewFileTime.setText("");
                 holder.textViewFileTime.setVisibility(View.GONE);
                 if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.GONE);
+                if (holder.recordMetaRowSize instanceof LinearLayout) {
+                    LinearLayout sizeRow = (LinearLayout) holder.recordMetaRowSize;
+                    sizeRow.setOrientation(LinearLayout.VERTICAL);
+                    sizeRow.setGravity(android.view.Gravity.END);
+                }
+                if (holder.iconFileSize != null) {
+                    LinearLayout.LayoutParams iconLp = (LinearLayout.LayoutParams) holder.iconFileSize.getLayoutParams();
+                    iconLp.setMarginStart(0);
+                    holder.iconFileSize.setLayoutParams(iconLp);
+                }
+                if (holder.textViewFileSize != null) {
+                    LinearLayout.LayoutParams textLp = (LinearLayout.LayoutParams) holder.textViewFileSize.getLayoutParams();
+                    textLp.setMarginStart(0);
+                    textLp.topMargin = dpToPx(2);
+                    holder.textViewFileSize.setLayoutParams(textLp);
+                }
                 if (holder.recordMetaRowSize != null) {
                     ViewGroup.LayoutParams layoutParams = holder.recordMetaRowSize.getLayoutParams();
                     if (layoutParams instanceof GridLayout.LayoutParams) {
@@ -382,6 +399,22 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             } else {
                 if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.VISIBLE);
                 holder.textViewFileTime.setVisibility(View.VISIBLE);
+                if (holder.recordMetaRowSize instanceof LinearLayout) {
+                    LinearLayout sizeRow = (LinearLayout) holder.recordMetaRowSize;
+                    sizeRow.setOrientation(LinearLayout.HORIZONTAL);
+                    sizeRow.setGravity(android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END);
+                }
+                if (holder.iconFileSize != null) {
+                    LinearLayout.LayoutParams iconLp = (LinearLayout.LayoutParams) holder.iconFileSize.getLayoutParams();
+                    iconLp.setMarginStart(0);
+                    holder.iconFileSize.setLayoutParams(iconLp);
+                }
+                if (holder.textViewFileSize != null) {
+                    LinearLayout.LayoutParams textLp = (LinearLayout.LayoutParams) holder.textViewFileSize.getLayoutParams();
+                    textLp.setMarginStart(dpToPx(4));
+                    textLp.topMargin = 0;
+                    holder.textViewFileSize.setLayoutParams(textLp);
+                }
                 if (holder.recordMetaRowSize != null) {
                     ViewGroup.LayoutParams layoutParams = holder.recordMetaRowSize.getLayoutParams();
                     if (layoutParams instanceof GridLayout.LayoutParams) {
@@ -653,6 +686,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
             return false;
         });
+    }
+
+    private int dpToPx(int dp) {
+        if (context == null) return dp;
+        float density = context.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
     }
 
     private int getImageBadgeLabelRes(@NonNull VideoItem videoItem) {
@@ -1126,10 +1165,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         items.add(new OptionItem(
                 "action_save",
                 ctx.getString(R.string.video_menu_save),
-                null, // No helper text, just title like other options
+                ctx.getString(R.string.records_batch_save_desc),
                 null,
                 null,
-                null,
+                R.drawable.ic_arrow_right,
                 null,
                 null,
                 "download",
@@ -2507,6 +2546,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         View iconCheckBg;
         View metaDurationContainer;
         View recordMetaRowSize;
+        ImageView iconFileSize;
         ImageView menuButton; // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot; // *** ADDED: Reference for the warning dot ***
@@ -2533,6 +2573,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             iconCheckBg = itemView.findViewById(R.id.icon_check_bg);
             metaDurationContainer = itemView.findViewById(R.id.meta_duration_container);
             recordMetaRowSize = itemView.findViewById(R.id.record_meta_row_size);
+            iconFileSize = itemView.findViewById(R.id.icon_file_size);
             menuButton = itemView.findViewById(R.id.menu_button);
 
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot); // *** Find the warning dot ***

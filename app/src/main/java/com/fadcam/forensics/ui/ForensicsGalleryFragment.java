@@ -32,6 +32,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
@@ -394,10 +395,10 @@ public class ForensicsGalleryFragment extends Fragment {
         items.add(new OptionItem(
                 "save_gallery",
                 getString(R.string.video_menu_save),
+                getString(R.string.records_batch_save_desc),
                 null,
                 null,
-                null,
-                null,
+                R.drawable.ic_arrow_right,
                 null,
                 null,
                 "download"));
@@ -434,9 +435,22 @@ public class ForensicsGalleryFragment extends Fragment {
             return;
         }
         ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(OptionItem.withLigature("save_copy", getString(R.string.video_menu_save_copy), "content_copy"));
-        items.add(OptionItem.withLigature("save_move", getString(R.string.video_menu_save_move), "drive_file_move"));
-        items.add(OptionItem.withLigature("save_custom_location", getString(R.string.records_batch_save_custom_location), "folder_open"));
+        String destinationLabel = getGalleryDestinationLabel();
+        items.add(new OptionItem(
+                "save_copy",
+                getString(R.string.video_menu_save_copy),
+                getString(R.string.records_batch_save_copy_helper, destinationLabel),
+                null, null, null, null, null, "content_copy"));
+        items.add(new OptionItem(
+                "save_move",
+                getString(R.string.video_menu_save_move),
+                getString(R.string.records_batch_save_move_helper, destinationLabel),
+                null, null, null, null, null, "drive_file_move"));
+        items.add(new OptionItem(
+                "save_custom_location",
+                getString(R.string.records_batch_save_custom_location),
+                getString(R.string.records_batch_save_custom_location_desc),
+                null, null, null, null, null, "folder_open"));
         FragmentActivity activity = (FragmentActivity) getActivity();
         String resultKey = "forensics_batch_save_options";
         activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
@@ -464,6 +478,11 @@ public class ForensicsGalleryFragment extends Fragment {
         Bundle args = sheet.getArguments();
         if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         sheet.show(activity.getSupportFragmentManager(), "forensics_batch_save_sheet");
+    }
+
+    @NonNull
+    private String getGalleryDestinationLabel() {
+        return "Downloads/" + Constants.RECORDING_DIRECTORY;
     }
 
     private void queueBatchSaveToGallery(boolean moveFiles) {
