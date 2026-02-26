@@ -61,6 +61,7 @@ public class RemoteStreamManager {
     
     // Active recording tracking
     private File activeRecordingFile = null;
+    private boolean recordingActive = false; // Separate flag for SAF mode where File is null
     
     // Metadata
     private int activeConnections = 0;
@@ -245,6 +246,7 @@ public class RemoteStreamManager {
                                      !activeRecordingFile.getAbsolutePath().equals(recordingFile.getAbsolutePath()));
             
             activeRecordingFile = recordingFile;
+            recordingActive = true;
             
             if (isNewRecording) {
                 clearBuffer(); // Reset buffer for new recording
@@ -258,6 +260,33 @@ public class RemoteStreamManager {
         
         // Log.i(TAG, "Remote streaming ready (callback-based)");
     }
+
+    /**
+     * Start recording session for SAF (Storage Access Framework) mode.
+     * Called when RecordingService starts recording with custom storage (SD card),
+     * where no File object is available (uses ParcelFileDescriptor instead).
+     * This sets the recording active flag so status JSON reports isRecording=true.
+     */
+    public void startRecordingSaf() {
+        if (!streamingEnabled) {
+            Log.w(TAG, "❌ Streaming NOT enabled - ignoring startRecordingSaf call");
+            return;
+        }
+
+        bufferLock.writeLock().lock();
+        try {
+            boolean isNewRecording = !recordingActive;
+            activeRecordingFile = null; // SAF mode has no File object
+            recordingActive = true;
+
+            if (isNewRecording) {
+                clearBuffer();
+            }
+            Log.i(TAG, "🎬 SAF recording started (no File, using flag)");
+        } finally {
+            bufferLock.writeLock().unlock();
+        }
+    }
     
     /**
      * Stop recording session.
@@ -270,6 +299,7 @@ public class RemoteStreamManager {
         bufferLock.writeLock().lock();
         try {
             activeRecordingFile = null;
+            recordingActive = false;
             // DO NOT clear buffer here - let clients finish playback
             // Buffer will be cleared when next recording starts via startRecording()
         } finally {
@@ -287,9 +317,10 @@ public class RemoteStreamManager {
     
     /**
      * Check if recording is currently active.
+     * Uses recordingActive flag to support both File-based and SAF-based recording.
      */
     public boolean isRecording() {
-        return activeRecordingFile != null;
+        return recordingActive;
     }
     
     /**
@@ -667,7 +698,7 @@ public class RemoteStreamManager {
             // which requires: streamingEnabled && isRecording && hasInit && bufferedCount >= 2
             String state;
             String message;
-            boolean isRecording = (activeRecordingFile != null);
+            boolean isRecording = recordingActive;
             boolean hasInit = (initializationSegment != null);
             
             if (!streamingEnabled) {

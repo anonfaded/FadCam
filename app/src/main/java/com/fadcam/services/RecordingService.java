@@ -1206,6 +1206,39 @@ public class RecordingService extends Service {
                     }
                 }
 
+                // STREAM_ONLY: Clean up ALL tracked temporary files (internal storage)
+                // Handles segment splits where multiple temp files were created
+                if (!streamOnlyTempFiles.isEmpty()) {
+                    Log.i(TAG, "🗑️ STREAM_ONLY: Cleaning up " + streamOnlyTempFiles.size() + " tracked temp files");
+                    for (File tempFile : streamOnlyTempFiles) {
+                        if (tempFile != null && tempFile.exists()) {
+                            boolean deleted = tempFile.delete();
+                            Log.i(TAG, "🗑️ STREAM_ONLY: " + (deleted ? "Deleted" : "FAILED to delete") + " temp: " + tempFile.getName());
+                        }
+                    }
+                    streamOnlyTempFiles.clear();
+                }
+
+                // STREAM_ONLY (SAF): Clean up tracked SAF URIs (SD card storage)
+                // These are 0-byte files created for the GL pipeline but never written to
+                if (!streamOnlySafUris.isEmpty()) {
+                    Log.i(TAG, "🗑️ STREAM_ONLY (SAF): Cleaning up " + streamOnlySafUris.size() + " tracked SAF files");
+                    for (String uriStr : streamOnlySafUris) {
+                        try {
+                            Uri safUri = Uri.parse(uriStr);
+                            androidx.documentfile.provider.DocumentFile docFile =
+                                    androidx.documentfile.provider.DocumentFile.fromSingleUri(RecordingService.this, safUri);
+                            if (docFile != null && docFile.exists()) {
+                                boolean deleted = docFile.delete();
+                                Log.i(TAG, "🗑️ STREAM_ONLY (SAF): " + (deleted ? "Deleted" : "FAILED to delete") + " URI: " + uriStr);
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "⚠️ STREAM_ONLY (SAF): Error deleting URI: " + uriStr + " - " + e.getMessage());
+                        }
+                    }
+                    streamOnlySafUris.clear();
+                }
+
                 // Give some time for the GL pipeline to release resources
                 try {
                     Thread.sleep(50);
@@ -4703,6 +4736,12 @@ public class RecordingService extends Service {
     private String currentSegmentPath;
     private String currentSegmentUriString;
     
+    // Track all temporary files created during STREAM_ONLY mode for cleanup
+    // In STREAM_ONLY, 0-byte segment files are created (GL pipeline needs a handle)
+    // but no data is written. All of them must be deleted when recording stops.
+    private final java.util.List<File> streamOnlyTempFiles = new java.util.ArrayList<>();
+    private final java.util.List<String> streamOnlySafUris = new java.util.ArrayList<>();
+    
     // Add this helper method for OpenGL pipeline direct output
     private File getFinalOutputFile() {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
@@ -4768,6 +4807,13 @@ public class RecordingService extends Service {
                 currentSegmentUriString = safUri.toString();
                 currentSegmentPath = safUri.toString();
                 currentSegmentFile = null;
+                // Track SAF URI for STREAM_ONLY cleanup during segment rollover
+                boolean isStreamOnlyRollover = isStreamingActive
+                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                if (isStreamOnlyRollover) {
+                    streamOnlySafUris.add(safUri.toString());
+                    Log.i(TAG, "📺 STREAM_ONLY (SAF rollover): Tracking temp URI: " + safUri);
+                }
                 try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w")) {
                     if (pfd == null) {
                         Log.e(TAG, "Segment rollover: Failed to open ParcelFileDescriptor for SAF URI");
@@ -4830,6 +4876,10 @@ public class RecordingService extends Service {
             Log.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
             return;
         }
+
+        // Clear STREAM_ONLY temp file tracking from any previous session
+        streamOnlyTempFiles.clear();
+        streamOnlySafUris.clear();
 
         // Clear runtime overrides so saved preferences take priority on fresh recording
         // session
@@ -4991,6 +5041,13 @@ public class RecordingService extends Service {
                 currentSegmentUriString = safUri.toString();
                 currentSegmentPath = safUri.toString();
                 currentSegmentFile = null;
+                // Track SAF URI for STREAM_ONLY cleanup (0-byte files created but no data written)
+                boolean isStreamOnlySaf = isStreamingActive
+                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                if (isStreamOnlySaf) {
+                    streamOnlySafUris.add(safUri.toString());
+                    Log.i(TAG, "📺 STREAM_ONLY (SAF): Tracking temp URI for cleanup: " + safUri);
+                }
                 // -----
                 safRecordingPfd = getContentResolver().openFileDescriptor(safUri, "w");
                 if (safRecordingPfd == null) {
@@ -5043,6 +5100,7 @@ public class RecordingService extends Service {
                 if (isStreamOnly) {
                     // STREAM_ONLY: Use temporary file that will be deleted after recording
                     outputFile = new File(getCacheDir(), "stream_temp_" + System.currentTimeMillis() + ".mp4");
+                    streamOnlyTempFiles.add(outputFile); // Track for cleanup
                     Log.i(TAG, "📺 STREAM_ONLY mode: Using temporary file: " + outputFile.getName());
                 } else {
                     // STREAM_AND_SAVE: Write directly to final MP4 file (removed .tmp/remux logic)
@@ -5072,7 +5130,9 @@ public class RecordingService extends Service {
                     Log.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: "
                             + currentSegmentFile.getAbsolutePath());
                 } else {
-                    Log.w(TAG, "Skipping RemoteStreamManager start notification: currentSegmentFile is null");
+                    // SAF mode: no File object available, use flag-based notification
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecordingSaf();
+                    Log.i(TAG, "🎬 RemoteStreamManager notified: SAF recording started (no File)");
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);

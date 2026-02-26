@@ -319,21 +319,38 @@ class FadexNotificationManager {
      */
     async fetchNotificationFromGitHub() {
         try {
-            console.log(`🌐 [FETCH] Getting notifications from backend endpoint...`);
-            
-            // Use backend endpoint which handles GitHub fetch server-side
-            // Avoids browser CORS issues since backend fetches from GitHub directly
-            const response = await fetch('/api/github/notification');
+            // In cloud mode, fetch directly from GitHub raw URL (no local proxy available)
+            // In local mode, use backend proxy which strips JSONC comments server-side
+            const isCloud = window.FadCamRemote && window.FadCamRemote.isCloudMode && window.FadCamRemote.isCloudMode();
 
-            if (!response.ok) {
-                console.log(`❌ [FETCH] HTTP ${response.status}`);
-                throw new Error(`HTTP ${response.status}`);
+            let json;
+
+            if (isCloud) {
+                console.log(`☁️ [FETCH] Cloud mode - fetching directly from GitHub...`);
+                const response = await fetch(this.constants.GITHUB_NOTIFICATION_URL);
+
+                if (!response.ok) {
+                    console.log(`❌ [FETCH] HTTP ${response.status}`);
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const text = await response.text();
+                console.log(`📄 [RESPONSE] Received JSONC from GitHub`);
+                json = this.parseJSONС(text);
+            } else {
+                console.log(`🌐 [FETCH] Local mode - using backend proxy...`);
+                const response = await fetch('/api/github/notification');
+
+                if (!response.ok) {
+                    console.log(`❌ [FETCH] HTTP ${response.status}`);
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const text = await response.text();
+                console.log(`📄 [RESPONSE] Received from backend`);
+                json = JSON.parse(text); // Backend returns clean JSON (comments stripped)
             }
 
-            const text = await response.text();
-            console.log(`📄 [RESPONSE] Received from backend`);
-            
-            const json = JSON.parse(text); // Backend returns clean JSON (comments stripped)
             console.log(`✅ [PARSED] JSON:`, json);
             
             if (!json.notifications || typeof json.notifications !== 'object') {
