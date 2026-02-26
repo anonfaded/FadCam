@@ -4,6 +4,8 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -19,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.fadcam.R;
+import com.fadcam.ui.VideoPlayerActivity;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -59,11 +62,6 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
         args.putString(ARG_SNAPSHOT_URI, snapshotUri);
         sheet.setArguments(args);
         return sheet;
-    }
-
-    @Override
-    public int getTheme() {
-        return R.style.CustomBottomSheetDialogTheme;
     }
 
     @Nullable
@@ -120,8 +118,6 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
                 formatTimeline(timelineMs));
         addRow(container, "description", getString(R.string.video_info_file_name),
                 firstNonEmpty(sourceLabel, getString(R.string.forensics_unknown_source)));
-        addRow(container, "movie", getString(R.string.forensics_open_source_video),
-                !TextUtils.isEmpty(sourceUri) ? sourceUri : getString(R.string.forensics_not_available));
         addRow(container, "image", getString(R.string.forensics_event_proof_frame),
                 firstNonEmpty(snapshotUri, getString(R.string.forensics_not_available)));
     }
@@ -172,8 +168,10 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
             row.setAlpha(available ? 1f : 0.55f);
             row.setOnClickListener(available ? v -> {
                 try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(Uri.parse(sourceUri), "video/*");
+                    Intent intent = new Intent(requireContext(), VideoPlayerActivity.class);
+                    intent.setData(Uri.parse(sourceUri));
+                    intent.putExtra(ForensicsEventsFragment.EXTRA_OPEN_AT_MS,
+                            Math.max(0L, args != null ? args.getLong(ARG_TIMELINE_MS, 0L) : 0L));
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     startActivity(intent);
                     dismiss();
@@ -220,7 +218,7 @@ public class ForensicsEvidenceInfoBottomSheet extends BottomSheetDialogFragment 
         dialog.setOnShowListener(d -> {
             View bottomSheet = ((BottomSheetDialog) dialog).findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if (bottomSheet != null) {
-                bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
+                bottomSheet.setBackground(new ColorDrawable(Color.TRANSPARENT));
             }
         });
         return dialog;

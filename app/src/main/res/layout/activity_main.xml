@@ -14,19 +14,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Floating dock navigation - overlays content at bottom -->
-    <!-- Gradient scrim overlay - minimal above navbar -->
-    <FrameLayout
+    <!-- Full bottom focus scrim around dock -->
+    <View
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="-8dp"
-        android:layout_marginEnd="-8dp"
-        android:layout_marginBottom="-50dp"
-        android:foreground="@drawable/dock_gradient_scrim"
+        android:layout_height="104dp"
+        android:layout_marginBottom="0dp"
+        android:background="@drawable/dock_focus_gradient"
         android:clickable="false"
         android:focusable="false"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <FrameLayout
         android:id="@+id/nav_container"

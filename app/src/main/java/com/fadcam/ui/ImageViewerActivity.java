@@ -15,7 +15,9 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.fadcam.Constants;
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.ui.ForensicsEvidenceInfoBottomSheet;
 
 import java.text.DateFormat;
@@ -46,6 +48,18 @@ public class ImageViewerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        SharedPreferencesManager spm = SharedPreferencesManager.getInstance(this);
+        String savedTheme = spm.sharedPreferences.getString(
+                Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME
+        );
+        if ("Crimson Bloom".equals(savedTheme)) {
+            setTheme(R.style.Theme_FadCam_Red);
+        } else if ("Faded Night".equals(savedTheme)) {
+            setTheme(R.style.Theme_FadCam_Amoled);
+        } else {
+            setTheme(R.style.Base_Theme_FadCam);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_viewer);
 

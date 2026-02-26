@@ -7,9 +7,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="@drawable/ripple_black_rounded"
     app:cardElevation="2dp"
     app:cardCornerRadius="8dp"
-    android:background="?android:attr/selectableItemBackground">
+    android:background="@android:color/transparent">
 
     <!-- ConstraintLayout holding all inner content -->
     <androidx.constraintlayout.widget.ConstraintLayout

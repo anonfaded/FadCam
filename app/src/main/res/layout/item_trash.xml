@@ -13,7 +13,7 @@
     app:cardCornerRadius="8dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground">
+    android:foreground="@drawable/ripple_black_rounded">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
