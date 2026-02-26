@@ -53,7 +53,14 @@ public class DigitalForensicsEventRecorder {
 
     private static final String TAG = "ForensicsEventRecorder";
     private static final long EVENT_STALE_GAP_MS = 1800L;
-    private static final long SNAPSHOT_MIN_INTERVAL_MS = 900L;
+    private static final long SNAPSHOT_FAST_INTERVAL_MS = 900L;
+    private static final long SNAPSHOT_STEADY_INTERVAL_MS = 6000L;
+    private static final long SNAPSHOT_HEARTBEAT_INTERVAL_MS = 12000L;
+    private static final int SNAPSHOT_FAST_COUNT = 3;
+    private static final float SNAPSHOT_CENTER_DELTA_THRESHOLD = 0.04f;
+    private static final float SNAPSHOT_SIZE_DELTA_THRESHOLD = 0.06f;
+    private static final float SNAPSHOT_CONF_DELTA_THRESHOLD = 0.10f;
+    private static final int SNAPSHOT_PHASH_HAMMING_THRESHOLD = 4;
 
     private final SharedPreferencesManager prefs;
     private final Context appContext;
@@ -82,12 +89,29 @@ public class DigitalForensicsEventRecorder {
         long firstSeenEpochMs;
         long lastSeenEpochMs;
         long lastSnapshotMs;
+        long lastSnapshotPHash;
+        float lastSnapshotConfidence;
+        float lastSnapshotCenterX;
+        float lastSnapshotCenterY;
+        float lastSnapshotWidth;
+        float lastSnapshotHeight;
+        int snapshotCount;
         float peakConfidence;
         float centerX;
         float centerY;
         float boxWidth;
         float boxHeight;
         int sampleCount;
+    }
+
+    private static final class SnapshotPayload {
+        final byte[] jpeg;
+        final long pHash;
+
+        SnapshotPayload(byte[] jpeg, long pHash) {
+            this.jpeg = jpeg;
+            this.pHash = pHash;
+        }
     }
 
     public DigitalForensicsEventRecorder(Context context) {
@@ -234,9 +258,8 @@ public class DigitalForensicsEventRecorder {
 
             upsertEvent(event, false);
 
-            if (snapshotJpeg != null && snapshotJpeg.length > 0
-                    && (event.lastSnapshotMs < 0 || (timelineMs - event.lastSnapshotMs) >= SNAPSHOT_MIN_INTERVAL_MS)) {
-                byte[] detectionSnapshot = buildDetectionSnapshot(
+            if (snapshotJpeg != null && snapshotJpeg.length > 0) {
+                SnapshotPayload payload = buildDetectionSnapshot(
                         snapshotJpeg,
                         detection,
                         frontCamera,
@@ -246,9 +269,15 @@ public class DigitalForensicsEventRecorder {
                         timelineMs,
                         nowEpoch
                 );
+                if (payload == null || payload.jpeg == null || payload.jpeg.length == 0) {
+                    continue;
+                }
+                if (!shouldPersistSnapshot(event, detection, payload.pHash, timelineMs)) {
+                    continue;
+                }
                 String snapshotUid = UUID.randomUUID().toString();
-                String imageUri = persistSnapshotFile(mediaUid, event.eventUid, snapshotUid, timelineMs, detectionSnapshot);
-                if (imageUri != null && detectionSnapshot != null) {
+                String imageUri = persistSnapshotFile(mediaUid, event.eventUid, snapshotUid, timelineMs, payload.jpeg);
+                if (imageUri != null) {
                     AiEventSnapshotEntity snapshot = new AiEventSnapshotEntity();
                     snapshot.snapshotUid = snapshotUid;
                     snapshot.eventUid = event.eventUid;
@@ -260,7 +289,7 @@ public class DigitalForensicsEventRecorder {
                     snapshot.confidence = detection.confidence;
                     snapshot.bboxNorm = toBbox(event.centerX, event.centerY, event.boxWidth, event.boxHeight);
                     snapshot.imageUri = imageUri;
-                    snapshot.sha256 = sha256(detectionSnapshot);
+                    snapshot.sha256 = sha256(payload.jpeg);
                     snapshotDao.upsert(snapshot);
                     snapshotPersistCount++;
                     long mediaCount = snapshotDao.countByMediaUid(mediaUid);
@@ -284,8 +313,49 @@ public class DigitalForensicsEventRecorder {
                     appContext.sendBroadcast(persisted);
                 }
                 event.lastSnapshotMs = timelineMs;
+                event.lastSnapshotPHash = payload.pHash;
+                event.lastSnapshotConfidence = detection.confidence;
+                event.lastSnapshotCenterX = event.centerX;
+                event.lastSnapshotCenterY = event.centerY;
+                event.lastSnapshotWidth = event.boxWidth;
+                event.lastSnapshotHeight = event.boxHeight;
+                event.snapshotCount += 1;
             }
         }
+    }
+
+    private boolean shouldPersistSnapshot(
+            @NonNull ActiveEvent event,
+            @NonNull EfficientDetLite1Detector.DetectionResult detection,
+            long newPHash,
+            long timelineMs
+    ) {
+        if (event.lastSnapshotMs < 0L) {
+            return true;
+        }
+        long elapsed = Math.max(0L, timelineMs - event.lastSnapshotMs);
+        long minInterval = event.snapshotCount < SNAPSHOT_FAST_COUNT
+                ? SNAPSHOT_FAST_INTERVAL_MS
+                : SNAPSHOT_STEADY_INTERVAL_MS;
+
+        float centerDx = Math.abs(event.centerX - event.lastSnapshotCenterX);
+        float centerDy = Math.abs(event.centerY - event.lastSnapshotCenterY);
+        float sizeDw = Math.abs(event.boxWidth - event.lastSnapshotWidth);
+        float sizeDh = Math.abs(event.boxHeight - event.lastSnapshotHeight);
+        float confDelta = Math.abs(detection.confidence - event.lastSnapshotConfidence);
+        boolean motionChanged = (centerDx + centerDy) > SNAPSHOT_CENTER_DELTA_THRESHOLD
+                || (sizeDw + sizeDh) > SNAPSHOT_SIZE_DELTA_THRESHOLD
+                || confDelta > SNAPSHOT_CONF_DELTA_THRESHOLD;
+        boolean visualChanged = hammingDistance(event.lastSnapshotPHash, newPHash) > SNAPSHOT_PHASH_HAMMING_THRESHOLD;
+        boolean heartbeatDue = elapsed >= SNAPSHOT_HEARTBEAT_INTERVAL_MS;
+
+        if (heartbeatDue) {
+            return true;
+        }
+        if (elapsed < minInterval) {
+            return motionChanged || visualChanged;
+        }
+        return motionChanged || visualChanged;
     }
 
     private void closeStaleEvents(long timelineMs, boolean forceAll) {
@@ -455,7 +525,7 @@ public class DigitalForensicsEventRecorder {
     }
 
     @Nullable
-    private byte[] buildDetectionSnapshot(
+    private SnapshotPayload buildDetectionSnapshot(
             @NonNull byte[] fullJpeg,
             @NonNull EfficientDetLite1Detector.DetectionResult detection,
             boolean frontCamera,
@@ -468,7 +538,7 @@ public class DigitalForensicsEventRecorder {
         try {
             Bitmap full = BitmapFactory.decodeByteArray(fullJpeg, 0, fullJpeg.length);
             if (full == null) {
-                return fullJpeg;
+                return new SnapshotPayload(fullJpeg, 0L);
             }
             int width = full.getWidth();
             int height = full.getHeight();
@@ -501,9 +571,9 @@ public class DigitalForensicsEventRecorder {
             drawSnapshotWatermark(finalBitmap, timelineMs, captureEpochMs);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             finalBitmap.compress(Bitmap.CompressFormat.JPEG, 84, out);
-            return out.toByteArray();
+            return new SnapshotPayload(out.toByteArray(), computeDHash64(finalBitmap));
         } catch (Throwable t) {
-            return fullJpeg;
+            return new SnapshotPayload(fullJpeg, 0L);
         }
     }
 
@@ -511,8 +581,8 @@ public class DigitalForensicsEventRecorder {
         try {
             Canvas canvas = new Canvas(bitmap);
             String stamp = formatWatermark(captureEpochMs, timelineMs).replace('\r', ' ').replace('\n', ' ');
-            float maxTextSize = Math.max(15f, Math.min(22f, bitmap.getWidth() * 0.055f));
-            float minTextSize = Math.max(10f, maxTextSize * 0.62f);
+            float maxTextSize = Math.max(7f, Math.min(12f, bitmap.getWidth() * 0.024f));
+            float minTextSize = Math.max(6f, maxTextSize * 0.72f);
             TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             paint.setColor(Color.WHITE);
             paint.setTextSize(maxTextSize);
@@ -525,7 +595,7 @@ public class DigitalForensicsEventRecorder {
                 paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
             }
 
-            int padding = Math.max(10, Math.round(Math.min(bitmap.getWidth(), bitmap.getHeight()) * 0.035f));
+            int padding = Math.max(2, Math.round(Math.min(bitmap.getWidth(), bitmap.getHeight()) * 0.006f));
             int maxWidth = Math.max(20, bitmap.getWidth() - (padding * 2));
             CharSequence line1 = stamp;
             CharSequence line2 = null;
@@ -545,6 +615,8 @@ public class DigitalForensicsEventRecorder {
                     line1 = TextUtils.ellipsize(line1, paint, maxWidth, TextUtils.TruncateAt.END);
                 }
             }
+            // Keep forensic snapshots compact by default (single-line first).
+            line2 = null;
 
             Paint.FontMetrics fm = paint.getFontMetrics();
             float lineHeight = (fm.descent - fm.ascent) + 3f;
@@ -577,9 +649,7 @@ public class DigitalForensicsEventRecorder {
     @NonNull
     private String formatWatermark(long captureEpochMs, long timelineMs) {
         String date = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH).format(new Date(Math.max(0L, captureEpochMs)));
-        String custom = prefs.getWatermarkCustomText();
-        String customLine = (custom != null && !custom.trim().isEmpty()) ? ("\n" + custom.trim()) : "";
-        return "Captured by FadCam - " + date + customLine;
+        return "Captured by FadCam - " + date;
     }
 
     @NonNull
@@ -602,6 +672,33 @@ public class DigitalForensicsEventRecorder {
             rotation = 0;
         }
         return new FrameOrientationTransform(rotation, mirrorHorizontally, false);
+    }
+
+    private long computeDHash64(@NonNull Bitmap source) {
+        try {
+            Bitmap scaled = Bitmap.createScaledBitmap(source, 9, 8, true);
+            long hash = 0L;
+            int bit = 0;
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 8; x++) {
+                    int a = scaled.getPixel(x, y);
+                    int b = scaled.getPixel(x + 1, y);
+                    int ga = (((a >> 16) & 0xFF) * 3 + ((a >> 8) & 0xFF) * 6 + (a & 0xFF)) / 10;
+                    int gb = (((b >> 16) & 0xFF) * 3 + ((b >> 8) & 0xFF) * 6 + (b & 0xFF)) / 10;
+                    if (ga > gb) {
+                        hash |= (1L << bit);
+                    }
+                    bit++;
+                }
+            }
+            return hash;
+        } catch (Throwable t) {
+            return 0L;
+        }
+    }
+
+    private int hammingDistance(long a, long b) {
+        return Long.bitCount(a ^ b);
     }
 
     private String normalizeClassName(String raw) {

@@ -248,42 +248,6 @@
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    android:id="@+id/row_df_wired_status"
-                    style="@style/SettingsGroupRow">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_focus_target"
-                        android:tint="@android:color/darker_gray" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/digital_forensics_wired_status_title"
-                            android:textColor="?attr/colorHeading"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/value_df_wired_status"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
                     android:id="@+id/row_df_evidence_enabled"
                     style="@style/SettingsGroupRow">
 

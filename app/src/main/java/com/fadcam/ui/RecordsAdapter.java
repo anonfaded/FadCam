@@ -28,6 +28,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -370,9 +371,25 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 holder.textViewFileTime.setText("");
                 holder.textViewFileTime.setVisibility(View.GONE);
                 if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.GONE);
+                if (holder.recordMetaRowSize != null) {
+                    ViewGroup.LayoutParams layoutParams = holder.recordMetaRowSize.getLayoutParams();
+                    if (layoutParams instanceof GridLayout.LayoutParams) {
+                        GridLayout.LayoutParams gridLayoutParams = (GridLayout.LayoutParams) layoutParams;
+                        gridLayoutParams.rowSpec = GridLayout.spec(0);
+                        holder.recordMetaRowSize.setLayoutParams(gridLayoutParams);
+                    }
+                }
             } else {
                 if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.VISIBLE);
                 holder.textViewFileTime.setVisibility(View.VISIBLE);
+                if (holder.recordMetaRowSize != null) {
+                    ViewGroup.LayoutParams layoutParams = holder.recordMetaRowSize.getLayoutParams();
+                    if (layoutParams instanceof GridLayout.LayoutParams) {
+                        GridLayout.LayoutParams gridLayoutParams = (GridLayout.LayoutParams) layoutParams;
+                        gridLayoutParams.rowSpec = GridLayout.spec(1);
+                        holder.recordMetaRowSize.setLayoutParams(gridLayoutParams);
+                    }
+                }
                 // Check in-memory position cache first (avoids even DB read on rebind)
                 String cachedDuration = loadedThumbnailCache.get(position);
                 if (cachedDuration != null) {
@@ -1249,6 +1266,21 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 null,
                 null));
 
+        // Custom export location
+        items.add(new OptionItem(
+                "save_export_custom_location",
+                ctx.getString(R.string.records_batch_save_custom_location),
+                ctx.getString(R.string.records_batch_save_custom_location_desc),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "folder_open",
+                null,
+                null,
+                null));
+
         String resultKey = "save_options:" + (videoItem.uri != null ? videoItem.uri.toString() : System.identityHashCode(videoItem));
         FragmentManager fm = ((FragmentActivity) ctx).getSupportFragmentManager();
         fm.setFragmentResultListener(resultKey, (FragmentActivity) ctx, (requestKey, bundle) -> {
@@ -1264,6 +1296,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 case "save_move":
                     // Start move operation in background
                     FileOperationService.startMoveToGallery(ctx, videoItem.uri, videoItem.displayName, videoItem.displayName);
+                    break;
+                case "save_export_custom_location":
+                    if (actionListener != null) {
+                        actionListener.onCustomExportRequested(videoItem);
+                    }
                     break;
             }
         });
@@ -2469,6 +2506,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         View iconCheckContainer;
         View iconCheckBg;
         View metaDurationContainer;
+        View recordMetaRowSize;
         ImageView menuButton; // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         ImageView menuWarningDot; // *** ADDED: Reference for the warning dot ***
@@ -2494,6 +2532,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
             iconCheckBg = itemView.findViewById(R.id.icon_check_bg);
             metaDurationContainer = itemView.findViewById(R.id.meta_duration_container);
+            recordMetaRowSize = itemView.findViewById(R.id.record_meta_row_size);
             menuButton = itemView.findViewById(R.id.menu_button);
 
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot); // *** Find the warning dot ***

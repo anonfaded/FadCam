@@ -29,7 +29,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     private TextView valueEvidence;
     private TextView valueCaptureScope;
     private TextView valueOverlay;
-    private TextView valueWiredStatus;
     private View motionLabBanner;
     private View rowCaptureScope;
     private View previewBox;
@@ -65,7 +64,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         valueEvidence = view.findViewById(R.id.value_df_evidence);
         valueCaptureScope = view.findViewById(R.id.value_df_capture_scope);
         valueOverlay = view.findViewById(R.id.value_df_overlay);
-        valueWiredStatus = view.findViewById(R.id.value_df_wired_status);
         motionLabBanner = view.findViewById(R.id.motion_lab_dependency_banner);
         rowCaptureScope = view.findViewById(R.id.row_df_capture_scope);
         previewBox = view.findViewById(R.id.forensics_preview_bbox);
@@ -102,27 +100,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         boolean motionLabEnabled = prefs.isMotionModeEnabled();
         if (motionLabBanner != null) {
             motionLabBanner.setVisibility(motionLabEnabled ? View.GONE : View.VISIBLE);
-        }
-        if (valueWiredStatus != null) {
-            if (!motionLabEnabled) {
-                valueWiredStatus.setText(R.string.digital_forensics_wired_status_inactive);
-            } else {
-                int sensitivity = prefs.getMotionSensitivity();
-                int fps = prefs.getMotionAnalysisFps();
-                int debounceMs = prefs.getMotionDebounceMs();
-                int postRollS = Math.max(0, prefs.getMotionPostRollMs() / 1000);
-                com.fadcam.motion.domain.policy.MotionPolicy policy = new com.fadcam.motion.domain.policy.MotionPolicy();
-                float startThreshold = policy.startThresholdFromSensitivity(sensitivity);
-                float stopThreshold = policy.stopThresholdFromSensitivity(sensitivity);
-                valueWiredStatus.setText(getString(
-                        R.string.digital_forensics_wired_status_active,
-                        startThreshold,
-                        stopThreshold,
-                        fps,
-                        debounceMs,
-                        postRollS
-                ));
-            }
         }
     }
 

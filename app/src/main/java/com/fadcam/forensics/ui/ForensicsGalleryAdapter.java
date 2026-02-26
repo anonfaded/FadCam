@@ -105,7 +105,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     private int currentGridSpan = 2;
 
     public ForensicsGalleryAdapter() {
-        setHasStableIds(true);
+        setHasStableIds(false);
     }
 
     public void setListener(@Nullable Listener listener) {
@@ -564,19 +564,6 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         }
         // Fallback — should not happen
         return 0;
-    }
-
-    @Override
-    public long getItemId(int position) {
-        if (position < 0 || position >= entries.size()) return RecyclerView.NO_ID;
-        Entry entry = entries.get(position);
-        if (entry instanceof HeaderEntry) {
-            return ("header|" + ((HeaderEntry) entry).monthKey).hashCode();
-        }
-        if (entry instanceof ItemEntry) {
-            return snapshotId(((ItemEntry) entry).row).hashCode();
-        }
-        return RecyclerView.NO_ID;
     }
 
     private void toggleItem(@NonNull ForensicsSnapshotWithMedia row) {

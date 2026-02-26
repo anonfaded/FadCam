@@ -52,5 +52,10 @@ public interface RecordActionListener {
      */
     void onDeleteVideo(VideoItem videoItem);
 
+    /**
+     * Called when user chooses exporting a single item to a custom location.
+     */
+    void onCustomExportRequested(VideoItem videoItem);
+
     // Add more methods here for other actions if needed (e.g., onDeleteStarted/Finished)
 }

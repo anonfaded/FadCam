@@ -4315,6 +4315,15 @@ public class RecordsFragment extends BaseFragment implements
         onMoveToTrashRequested(videoItem);
     }
 
+    @Override
+    public void onCustomExportRequested(VideoItem videoItem) {
+        if (!isAdded() || videoItem == null || videoItem.uri == null) return;
+        if (customExportTreePickerLauncher == null) return;
+        pendingCustomExportUris = new ArrayList<>();
+        pendingCustomExportUris.add(videoItem.uri);
+        customExportTreePickerLauncher.launch(null);
+    }
+
     // Helper to set text colors recursively for all TextViews and RadioButtons
     private void setTextColorsRecursive(View view, int primary, int secondary) {
         if (view instanceof TextView) {

@@ -22,7 +22,11 @@ import android.graphics.Rect;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -37,6 +41,7 @@ import com.fadcam.ui.InputActionBottomSheetFragment;
 import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.service.FileOperationService;
 import com.fadcam.utils.RealtimeMediaInvalidationCoordinator;
 import com.fadcam.utils.TrashManager;
 import com.google.android.material.chip.Chip;
@@ -106,6 +111,9 @@ public class ForensicsGalleryFragment extends Fragment {
     private ObjectAnimator scrollFabRotationAnimator;
     @Nullable
     private HostSelectionUi hostSelectionUi;
+    @Nullable
+    private ActivityResultLauncher<Uri> customExportTreePickerLauncher;
+    private List<Uri> pendingCustomExportUris = new ArrayList<>();
 
     private final List<ForensicsSnapshotWithMedia> allRows = new ArrayList<>();
 
@@ -119,6 +127,30 @@ public class ForensicsGalleryFragment extends Fragment {
 
     public ForensicsGalleryFragment() {
         super(R.layout.fragment_forensics_gallery);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (customExportTreePickerLauncher == null) {
+            customExportTreePickerLauncher = registerForActivityResult(
+                    new ActivityResultContracts.OpenDocumentTree(),
+                    uri -> {
+                        if (uri == null) {
+                            pendingCustomExportUris.clear();
+                            return;
+                        }
+                        if (getContext() == null) return;
+                        try {
+                            final int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                            requireContext().getContentResolver().takePersistableUriPermission(uri, flags);
+                        } catch (Exception ignored) {
+                        }
+                        exportSelectedEvidenceToCustomTree(uri);
+                    }
+            );
+        }
     }
 
     public void setHostSelectionUi(@Nullable HostSelectionUi hostSelectionUi) {
@@ -356,27 +388,205 @@ public class ForensicsGalleryFragment extends Fragment {
         }
         ArrayList<OptionItem> items = new ArrayList<>();
         boolean allSel = adapter.isAllSelected();
-        items.add(new OptionItem("toggle_all",
+        items.add(OptionItem.withLigature("toggle_all",
                 getString(allSel ? R.string.records_batch_deselect_all : R.string.records_batch_select_all),
-                null, null, R.drawable.ic_check));
-        items.add(new OptionItem("delete", getString(R.string.records_batch_delete), null, null, R.drawable.ic_delete));
+                "check"));
+        items.add(new OptionItem(
+                "save_gallery",
+                getString(R.string.video_menu_save),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "download"));
+        items.add(OptionItem.withLigature("delete", getString(R.string.records_batch_delete), "delete"));
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
                 getString(R.string.records_batch_actions_title),
                 items,
-                "delete",
+                null,
                 BATCH_PICKER_RESULT,
                 getString(R.string.records_batch_delete_desc),
                 true
         );
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         getParentFragmentManager().setFragmentResultListener(BATCH_PICKER_RESULT, getViewLifecycleOwner(), (key, bundle) -> {
             String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID, "");
             if ("toggle_all".equals(id)) {
                 if (adapter.isAllSelected()) adapter.clearSelection(); else adapter.selectAll();
+            } else if ("save_gallery".equals(id)) {
+                showBatchSaveOptionsSheet();
             } else if ("delete".equals(id)) {
                 deleteSelectedEvidence();
             }
         });
         sheet.show(getParentFragmentManager(), BATCH_PICKER_RESULT + "_sheet");
+    }
+
+    private void showBatchSaveOptionsSheet() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (!(getActivity() instanceof FragmentActivity)) return;
+        List<ForensicsSnapshotWithMedia> selectedRows = adapter.getSelectedRows();
+        if (selectedRows.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.records_batch_select_items_first, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(OptionItem.withLigature("save_copy", getString(R.string.video_menu_save_copy), "content_copy"));
+        items.add(OptionItem.withLigature("save_move", getString(R.string.video_menu_save_move), "drive_file_move"));
+        items.add(OptionItem.withLigature("save_custom_location", getString(R.string.records_batch_save_custom_location), "folder_open"));
+        FragmentActivity activity = (FragmentActivity) getActivity();
+        String resultKey = "forensics_batch_save_options";
+        activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
+            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (id == null) return;
+            if ("save_copy".equals(id)) {
+                queueBatchSaveToGallery(false);
+            } else if ("save_move".equals(id)) {
+                queueBatchSaveToGallery(true);
+            } else if ("save_custom_location".equals(id)) {
+                if (customExportTreePickerLauncher != null) {
+                    pendingCustomExportUris = selectedEvidenceUris(selectedRows);
+                    customExportTreePickerLauncher.launch(null);
+                }
+            }
+        });
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
+                getString(R.string.video_menu_save_copy_or_move_title),
+                items,
+                "save_copy",
+                resultKey,
+                null,
+                true
+        );
+        Bundle args = sheet.getArguments();
+        if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        sheet.show(activity.getSupportFragmentManager(), "forensics_batch_save_sheet");
+    }
+
+    private void queueBatchSaveToGallery(boolean moveFiles) {
+        List<ForensicsSnapshotWithMedia> selectedRows = adapter.getSelectedRows();
+        int queued = 0;
+        for (ForensicsSnapshotWithMedia row : selectedRows) {
+            if (row == null || row.imageUri == null || row.imageUri.isEmpty()) continue;
+            Uri source = Uri.parse(row.imageUri);
+            String fileName = deriveEvidenceName(row);
+            if (moveFiles) {
+                FileOperationService.startMoveToGallery(requireContext(), source, fileName, fileName);
+            } else {
+                FileOperationService.startCopyToGallery(requireContext(), source, fileName, fileName);
+            }
+            queued++;
+        }
+        Toast.makeText(requireContext(), getString(R.string.records_batch_save_queued, queued), Toast.LENGTH_SHORT).show();
+    }
+
+    @NonNull
+    private List<Uri> selectedEvidenceUris(@NonNull List<ForensicsSnapshotWithMedia> selectedRows) {
+        List<Uri> out = new ArrayList<>();
+        for (ForensicsSnapshotWithMedia row : selectedRows) {
+            if (row == null || row.imageUri == null || row.imageUri.isEmpty()) continue;
+            try {
+                out.add(Uri.parse(row.imageUri));
+            } catch (Exception ignored) {
+            }
+        }
+        return out;
+    }
+
+    @NonNull
+    private String deriveEvidenceName(@NonNull ForensicsSnapshotWithMedia row) {
+        String fallback = "evidence_" + Math.max(0L, row.timelineMs) + ".jpg";
+        try {
+            Uri uri = Uri.parse(row.imageUri);
+            String name = uri.getLastPathSegment();
+            return (name == null || name.isEmpty()) ? fallback : name;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private void exportSelectedEvidenceToCustomTree(@NonNull Uri treeUri) {
+        if (pendingCustomExportUris == null || pendingCustomExportUris.isEmpty()) {
+            return;
+        }
+        if (getContext() == null) return;
+        final List<Uri> urisToExport = new ArrayList<>(pendingCustomExportUris);
+        pendingCustomExportUris.clear();
+        Toast.makeText(requireContext(), getString(R.string.records_batch_custom_export_started, urisToExport.size()),
+                Toast.LENGTH_SHORT).show();
+        executor.execute(() -> {
+            int success = 0;
+            int failed = 0;
+            DocumentFile targetDir = DocumentFile.fromTreeUri(requireContext(), treeUri);
+            if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
+                            getString(R.string.records_batch_custom_export_invalid_folder), Toast.LENGTH_LONG).show());
+                }
+                return;
+            }
+            for (Uri uri : urisToExport) {
+                try {
+                    DocumentFile out = createUniqueSafFile(targetDir, deriveNameFromUri(uri));
+                    if (out == null) {
+                        failed++;
+                        continue;
+                    }
+                    try (java.io.InputStream in = requireContext().getContentResolver().openInputStream(uri);
+                         java.io.OutputStream os = requireContext().getContentResolver().openOutputStream(out.getUri(), "w")) {
+                        if (in == null || os == null) {
+                            failed++;
+                            continue;
+                        }
+                        byte[] buffer = new byte[16 * 1024];
+                        int len;
+                        while ((len = in.read(buffer)) > 0) {
+                            os.write(buffer, 0, len);
+                        }
+                        os.flush();
+                        success++;
+                    }
+                } catch (Exception e) {
+                    failed++;
+                }
+            }
+            final int successFinal = success;
+            final int failedFinal = failed;
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
+                        getString(R.string.records_batch_custom_export_done, successFinal, failedFinal),
+                        Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    @Nullable
+    private DocumentFile createUniqueSafFile(@NonNull DocumentFile targetDir, @NonNull String originalName) {
+        String base = originalName;
+        String ext = "";
+        int dot = originalName.lastIndexOf('.');
+        if (dot > 0) {
+            base = originalName.substring(0, dot);
+            ext = originalName.substring(dot);
+        }
+        String candidate = originalName;
+        int suffix = 1;
+        while (targetDir.findFile(candidate) != null) {
+            candidate = base + " (" + suffix + ")" + ext;
+            suffix++;
+        }
+        String mime = "image/jpeg";
+        if (candidate.toLowerCase(Locale.US).endsWith(".png")) mime = "image/png";
+        return targetDir.createFile(mime, candidate);
+    }
+
+    @NonNull
+    private String deriveNameFromUri(@NonNull Uri uri) {
+        String path = uri.getLastPathSegment();
+        return (path == null || path.trim().isEmpty()) ? "evidence.jpg" : path;
     }
 
     private void renderSelectionState(int selectedCount) {

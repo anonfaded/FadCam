@@ -1327,9 +1327,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_scope_objects_helper">Store only non-person detections (vehicles, pets, objects).</string>
     <string name="digital_forensics_scope_picker_helper">Choose what should be persisted as evidence. This affects database rows and saved proof frames.</string>
     <string name="digital_forensics_motion_lab_dependency">Motion Lab is currently disabled. Forensics recording depends on Motion Lab analysis. Enable Motion Lab first to capture forensic events.</string>
-    <string name="digital_forensics_wired_status_title">Motion Lab Wiring Status</string>
-    <string name="digital_forensics_wired_status_active">Uses Motion Lab sensitivity/FPS/debounce/post-roll: Active (start %1$.2f, stop %2$.2f, %3$dfps, %4$dms, %5$ds)</string>
-    <string name="digital_forensics_wired_status_inactive">Uses Motion Lab sensitivity/FPS/debounce/post-roll: Inactive (Motion Lab disabled)</string>
+
     <string name="digital_forensics_person_helper">Records events when a person is detected in motion sessions. Best option for home room monitoring and entry-point logs.</string>
     <string name="digital_forensics_vehicle_helper">Vehicle tagging needs a dedicated model and is still being expanded. You can keep this off until model support lands.</string>
     <string name="digital_forensics_pet_helper">Pet tagging needs a dedicated model and is still being expanded. Turn on only if you are testing early support.</string>
