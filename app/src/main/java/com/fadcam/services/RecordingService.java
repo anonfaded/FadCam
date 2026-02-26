@@ -1337,6 +1337,8 @@ public class RecordingService extends Service {
             glRecordingPipeline.pauseRecording(); // if supported
         recordingState = RecordingState.PAUSED;
         sharedPreferencesManager.setRecordingInProgress(false);
+        // Notify RemoteStreamManager so status JSON reflects paused state
+        com.fadcam.streaming.RemoteStreamManager.getInstance().pauseRecording();
         setupRecordingResumeNotification();
         showRecordingInPausedToast();
         broadcastOnRecordingPaused();
@@ -1349,6 +1351,8 @@ public class RecordingService extends Service {
             glRecordingPipeline.resumeRecording(); // if supported
         recordingState = RecordingState.IN_PROGRESS;
         sharedPreferencesManager.setRecordingInProgress(true);
+        // Notify RemoteStreamManager so status JSON reflects resumed (recording) state
+        com.fadcam.streaming.RemoteStreamManager.getInstance().resumeRecording();
         setupRecordingInProgressNotification();
         showRecordingResumedToast();
         broadcastOnRecordingResumed();

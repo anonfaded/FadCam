@@ -62,6 +62,7 @@ public class RemoteStreamManager {
     // Active recording tracking
     private File activeRecordingFile = null;
     private boolean recordingActive = false; // Separate flag for SAF mode where File is null
+    private boolean recordingPaused = false; // Tracks paused state for dashboard
     
     // Metadata
     private int activeConnections = 0;
@@ -289,6 +290,43 @@ public class RemoteStreamManager {
     }
     
     /**
+     * Pause recording session.
+     * Called when recording is paused on the device.
+     * Keeps buffers intact - stream stays "alive" but paused.
+     */
+    public void pauseRecording() {
+        bufferLock.writeLock().lock();
+        try {
+            recordingPaused = true;
+            Log.i(TAG, "⏸️ Recording PAUSED - stream buffers retained");
+        } finally {
+            bufferLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Resume recording session.
+     * Called when recording is resumed on the device.
+     */
+    public void resumeRecording() {
+        bufferLock.writeLock().lock();
+        try {
+            recordingPaused = false;
+            Log.i(TAG, "▶️ Recording RESUMED");
+        } finally {
+            bufferLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Check if recording is currently paused.
+     * @return true if recording is paused
+     */
+    public boolean isPaused() {
+        return recordingPaused;
+    }
+
+    /**
      * Stop recording session.
      * Called when recording stops.
      * DOES NOT clear buffer - keeps fragments available for playback until next recording starts.
@@ -300,6 +338,7 @@ public class RemoteStreamManager {
         try {
             activeRecordingFile = null;
             recordingActive = false;
+            recordingPaused = false;
             // DO NOT clear buffer here - let clients finish playback
             // Buffer will be cleared when next recording starts via startRecording()
         } finally {
@@ -810,7 +849,7 @@ public class RemoteStreamManager {
             String result = String.format(
                 "{\"streaming\": %s, \"mode\": %s, \"state\": %s, \"message\": %s, " +
                 "\"lastUpdated\": %d, \"serverVersion\": %s, " +
-                "\"isRecording\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
+                "\"isRecording\": %s, \"isPaused\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
                 "\"latestSequence\": %d, \"oldestSequence\": %d, \"activeConnections\": %d, " +
                 "\"cloudViewers\": %d, " +
                 "\"hasInitSegment\": %s, \"uptimeSeconds\": %d, " +
@@ -835,6 +874,7 @@ public class RemoteStreamManager {
                 lastUpdatedTimestamp,
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(serverVersion),
                 isRecording,
+                recordingPaused,
                 bufferedCount,
                 totalBytes / (1024.0 * 1024.0),
                 fragmentSequence,

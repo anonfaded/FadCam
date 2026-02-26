@@ -24,6 +24,7 @@ class ServerStatus {
         this.mode = data.mode || 'disabled';
         this.message = data.message || '';
         this.isRecording = data.isRecording || false;
+        this.isPaused = data.isPaused || false;
         this.streaming = data.streaming || false;
         
         // Uptime details (nested object)
