@@ -444,14 +444,17 @@
                 <video id="videoPlayer" playsinline muted controls></video>
                 <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="overlay-content">
-                        <div class="overlay-icon">
+                        <div class="overlay-icon" id="overlayIcon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <circle cx="12" cy="12" r="10"/>
                                 <polygon points="10 8 16 12 10 16" fill="currentColor" stroke="none"/>
                             </svg>
                         </div>
-                        <div class="overlay-title">Waiting for stream</div>
-                        <div class="overlay-text">Stream will auto-start when recording begins</div>
+                        <div class="overlay-spinner" id="overlaySpinner" style="display:none;">
+                            <div class="spinner-ring"></div>
+                        </div>
+                        <div class="overlay-title" id="overlayTitle">Waiting for stream</div>
+                        <div class="overlay-text" id="overlayText">Stream will auto-start when recording begins</div>
                         <div class="overlay-divider"></div>
                         <div class="overlay-hint">
                             <span class="hint-label">Refresh if needed</span>
@@ -2312,6 +2315,7 @@
                 streamUrl = FadCamRemote.getRelayHlsUrl();
                 if (!streamUrl) {
                     console.error('[HlsService] Cloud mode but no relay HLS URL available');
+                    hlsLoaded = false; // Reset so auto-play can retry on next poll
                     return;
                 }
                 console.log('[HlsService] ☁️ Cloud mode: Loading stream from relay:', streamUrl);
@@ -2629,19 +2633,44 @@
                 console.log('[Alarm] Skipping UI sync during preview');
             }
 
-            // Update video overlay based on stream readiness (use CSS class for disabled state)
+            // Update video overlay based on stream readiness
             const videoOverlay = document.getElementById('videoOverlay');
+            const overlayTitle = document.getElementById('overlayTitle');
+            const overlayText = document.getElementById('overlayText');
+            const overlayIcon = document.getElementById('overlayIcon');
+            const overlaySpinner = document.getElementById('overlaySpinner');
+
             if (status.state === 'ready' && status.isRecording) {
-                videoOverlay.classList.remove('disabled');
+                videoOverlay.classList.remove('disabled', 'loading');
+                overlayIcon.style.display = '';
+                overlaySpinner.style.display = 'none';
+                overlayTitle.textContent = 'Stream ready';
+                overlayText.textContent = 'Tap to play';
+            } else if (status.state === 'initializing' && status.isRecording) {
+                videoOverlay.classList.add('disabled', 'loading');
+                overlayIcon.style.display = 'none';
+                overlaySpinner.style.display = '';
+                overlayTitle.textContent = 'Starting stream...';
+                overlayText.textContent = 'Preparing video encoder';
+            } else if (status.state === 'buffering' && status.isRecording) {
+                videoOverlay.classList.add('disabled', 'loading');
+                overlayIcon.style.display = 'none';
+                overlaySpinner.style.display = '';
+                overlayTitle.textContent = 'Almost ready...';
+                overlayText.textContent = 'Buffering video segments';
             } else {
                 videoOverlay.classList.add('disabled');
+                videoOverlay.classList.remove('loading');
+                overlayIcon.style.display = '';
+                overlaySpinner.style.display = 'none';
+                overlayTitle.textContent = 'Waiting for stream';
+                overlayText.textContent = 'Stream will auto-start when recording begins';
             }
 
-            // AUTO-LOAD STREAM when status becomes ready (manifest available)
-            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
-                console.log('📺 Stream ready! Loading now...');
-                playStream();
-            }
+            // ===== SYNC RECORDING STATE FIRST (before auto-play check) =====
+            // MUST run before auto-play to ensure lastRecordingState is current.
+            // Without this ordering, playStream() creates HLS and then the recording
+            // state tracker immediately destroys it (create-then-destroy race condition).
             
             // FIRST STATUS UPDATE: Ensure player is in correct state on page load
             // Handles case where user loads dashboard while server is on but not recording
@@ -2671,7 +2700,7 @@
                 }
             }
             
-            // Track recording state for logging
+            // Track recording state changes (must run before auto-play)
             if (status.isRecording && !lastRecordingState) {
                 console.log('🔴 Recording started');
                 lastRecordingState = true;
@@ -2709,6 +2738,15 @@
                 videoOverlay.classList.remove('hidden');
                 videoOverlay.classList.add('disabled');
                 console.log('[Stream] Restored initial overlay state');
+            }
+
+            // AUTO-LOAD STREAM when status becomes ready (manifest available)
+            // NOTE: This MUST run AFTER recording state sync above, so that
+            // lastRecordingState is already set and won't trigger a destroy
+            // immediately after playStream() creates the HLS instance.
+            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
+                console.log('📺 Stream ready! Loading now...');
+                playStream();
             }
 
             // Server status - DYNAMIC based on staleness (Step 6.11)

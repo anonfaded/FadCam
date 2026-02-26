@@ -319,9 +319,10 @@ class FadexNotificationManager {
      */
     async fetchNotificationFromGitHub() {
         try {
-            // In cloud mode, fetch directly from GitHub raw URL (no local proxy available)
-            // In local mode, use backend proxy which strips JSONC comments server-side
-            const isCloud = window.FadCamRemote && window.FadCamRemote.isCloudMode && window.FadCamRemote.isCloudMode();
+            // Detect web/cloud access (fadseclab.com, localhost) vs local phone access (IP)
+            // Uses isWebAccess() not isCloudMode() because notifications start polling before
+            // stream auth completes (streamContext is still null during early polls)
+            const isCloud = window.FadCamRemote && window.FadCamRemote.isWebAccess && window.FadCamRemote.isWebAccess();
 
             let json;
 
