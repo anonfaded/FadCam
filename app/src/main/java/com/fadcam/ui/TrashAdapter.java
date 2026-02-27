@@ -367,20 +367,16 @@ public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             itemView.setOnClickListener(v -> {
                 if (selectedItems.isEmpty()) {
                     if (interactionListener != null) {
-                        if (item.isForensicsEvidence()) {
-                            toggleSelection(item);
-                            return;
-                        }
                         File trashDirectory = TrashManager.getTrashDirectory(context);
                         if (trashDirectory != null && item.getTrashFileName() != null) {
-                            File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());
-                            if (trashedVideoFile.exists()) {
-                                interactionListener.onPlayVideoRequested(item); // item itself is fine, TrashFragment will reconstruct path
+                            File trashedFile = new File(trashDirectory, item.getTrashFileName());
+                            if (trashedFile.exists()) {
+                                interactionListener.onPlayVideoRequested(item);
                             } else {
-                                Toast.makeText(context, "Video file not found in trash.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "File not found in trash.", Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            Toast.makeText(context, "Cannot locate video file.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, "Cannot locate file.", Toast.LENGTH_SHORT).show();
                         }
                     }
                 } else {

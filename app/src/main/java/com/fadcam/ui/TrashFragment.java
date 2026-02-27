@@ -671,7 +671,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onPlayVideoRequested(TrashItem item) {
         if (getContext() == null || item == null || item.getTrashFileName() == null) {
-            Toast.makeText(getContext(), "Cannot play video. Invalid item data.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Cannot open file. Invalid item data.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -681,22 +681,39 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             return;
         }
 
-        File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());
+        File trashedFile = new File(trashDirectory, item.getTrashFileName());
 
-        if (!trashedVideoFile.exists()) {
-            Log.e(TAG, "Trashed video file does not exist: " + trashedVideoFile.getAbsolutePath());
-            Toast.makeText(getContext(), "Video file not found in trash.", Toast.LENGTH_SHORT).show();
+        if (!trashedFile.exists()) {
+            Log.e(TAG, "Trashed file does not exist: " + trashedFile.getAbsolutePath());
+            Toast.makeText(getContext(), "File not found in trash.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
-            Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-            intent.setData(Uri.fromFile(trashedVideoFile));
+            boolean isImage = isImageFile(item.getTrashFileName());
+            Intent intent = isImage
+                    ? new Intent(getContext(), ImageViewerActivity.class)
+                    : new Intent(getContext(), VideoPlayerActivity.class);
+            intent.setData(Uri.fromFile(trashedFile));
             startActivity(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Error starting VideoPlayerActivity for trash item: " + trashedVideoFile.getAbsolutePath(), e);
-            Toast.makeText(getContext(), "Error playing video.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error opening trash item: " + trashedFile.getAbsolutePath(), e);
+            Toast.makeText(getContext(), "Error opening file.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Checks if the given filename is an image based on its extension.
+     *
+     * @param fileName The file name to check.
+     * @return true if the file is an image, false otherwise.
+     */
+    private boolean isImageFile(String fileName) {
+        if (fileName == null) return false;
+        String lower = fileName.toLowerCase(java.util.Locale.ROOT);
+        return lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                || lower.endsWith(".png") || lower.endsWith(".webp")
+                || lower.endsWith(".bmp") || lower.endsWith(".gif");
     }
 
     @Override
