@@ -116,7 +116,7 @@ public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             ((androidx.cardview.widget.CardView) holder.itemView).setCardBackgroundColor(android.graphics.Color.WHITE);
             if (holder.tvOriginalName != null) holder.tvOriginalName.setTextColor(android.graphics.Color.BLACK);
             if (holder.tvDateTrashed != null) holder.tvDateTrashed.setTextColor(android.graphics.Color.BLACK);
-            if (holder.tvOriginalLocation != null) holder.tvOriginalLocation.setTextColor(android.graphics.Color.BLACK);
+            if (holder.tvFileSize != null) holder.tvFileSize.setTextColor(android.graphics.Color.BLACK);
         }
     }
 
@@ -141,26 +141,25 @@ public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         if (payloads.contains("SELECTION_TOGGLE")) {
             if (holder.iconCheckContainer != null && holder.iconCheck != null) {
+                boolean inSelectionMode = !selectedItems.isEmpty();
+                // Show/hide check container based on selection mode
+                holder.iconCheckContainer.setVisibility(inSelectionMode ? View.VISIBLE : View.GONE);
+                // Show/hide dim overlay
+                if (holder.selectionDimOverlay != null) {
+                    holder.selectionDimOverlay.setVisibility(selected ? View.VISIBLE : View.GONE);
+                }
                 if (selected) {
-                    holder.iconCheckContainer.setVisibility(View.VISIBLE);
+                    holder.iconCheck.setScaleX(1f);
+                    holder.iconCheck.setScaleY(1f);
                     holder.iconCheck.setAlpha(1f);
-                    // Create a fresh AnimatedVectorDrawableCompat and start it
                     AnimatedVectorDrawableCompat avd = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_check_draw);
                     if (avd != null) {
                         holder.iconCheck.setImageDrawable(avd);
                         avd.start();
-                    } else {
-                        // Fallback: simple scale/pop animation
-                        holder.iconCheck.setScaleX(0.7f);
-                        holder.iconCheck.setScaleY(0.7f);
-                        holder.iconCheck.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(200).start();
                     }
                 } else {
-                    // Fade out the tick but keep the container visible (empty state)
-                    holder.iconCheck.animate().alpha(0f).setDuration(180).withEndAction(() -> {
-                        // Clear drawable to avoid leftover AVD artifacts and keep background visible
+                    holder.iconCheck.animate().alpha(0f).scaleX(0f).scaleY(0f).setDuration(180).withEndAction(() -> {
                         holder.iconCheck.setImageDrawable(null);
-                        holder.iconCheck.setAlpha(0f);
                     }).start();
                 }
             }
@@ -226,29 +225,49 @@ public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     class TrashViewHolder extends RecyclerView.ViewHolder {
         TextView tvOriginalName;
         TextView tvDateTrashed;
-        TextView tvOriginalLocation;
-    View iconCheckContainer;
-    ImageView iconCheck;
+        TextView tvFileSize;
+        View iconCheckContainer;
+        ImageView iconCheck;
         ImageView imageViewThumbnail;
         TextView tvRemainingTime;
+        View selectionDimOverlay;
 
         TrashViewHolder(@NonNull View itemView) {
             super(itemView);
             imageViewThumbnail = itemView.findViewById(R.id.image_view_trash_thumbnail);
             tvOriginalName = itemView.findViewById(R.id.tv_trash_item_original_name);
             tvDateTrashed = itemView.findViewById(R.id.tv_trash_item_date_trashed);
-            tvOriginalLocation = itemView.findViewById(R.id.tv_trash_item_original_location);
+            tvFileSize = itemView.findViewById(R.id.tv_trash_item_file_size);
             iconCheckContainer = itemView.findViewById(R.id.icon_check_container);
             iconCheck = itemView.findViewById(R.id.icon_check);
             tvRemainingTime = itemView.findViewById(R.id.tv_trash_item_remaining_time);
+            selectionDimOverlay = itemView.findViewById(R.id.trash_selection_dim_overlay);
         }
 
         void bind(final TrashItem item) {
             tvOriginalName.setText(item.getOriginalDisplayName());
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
-            tvDateTrashed.setText("Trashed: " + sdf.format(new Date(item.getDateTrashed())));
-            String kind = item.isForensicsEvidence() ? "Evidence" : "Video";
-            tvOriginalLocation.setText("Original: " + kind + " • " + (item.isFromSaf() ? "SAF Storage" : "Internal Storage"));
+            // Use relative time (e.g., "2 days ago") matching Records style
+            CharSequence relativeDate = android.text.format.DateUtils.getRelativeTimeSpanString(
+                    item.getDateTrashed(),
+                    System.currentTimeMillis(),
+                    android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                    android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE);
+            tvDateTrashed.setText(relativeDate);
+
+            // Compute file size from disk
+            if (tvFileSize != null && context != null) {
+                File trashDirectory = TrashManager.getTrashDirectory(context);
+                if (trashDirectory != null && item.getTrashFileName() != null) {
+                    File trashedFile = new File(trashDirectory, item.getTrashFileName());
+                    if (trashedFile.exists()) {
+                        tvFileSize.setText(android.text.format.Formatter.formatShortFileSize(context, trashedFile.length()));
+                    } else {
+                        tvFileSize.setText("—");
+                    }
+                } else {
+                    tvFileSize.setText("—");
+                }
+            }
 
             if (tvRemainingTime != null && sharedPreferencesManager != null && context != null) {
                 int autoDeleteMinutes = sharedPreferencesManager.getTrashAutoDeleteMinutes();
@@ -313,22 +332,32 @@ public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 }
             }
 
-            // Show check container by default (background visible). The inner tick image is shown when selected.
+            // --- Selection state (matching Records behavior) ---
+            boolean inSelectionMode = !selectedItems.isEmpty();
+            boolean isSelected = selectedItems.contains(item);
+
+            // Selection dim overlay — darken thumbnail when selected
+            if (selectionDimOverlay != null) {
+                selectionDimOverlay.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+            }
+
+            // Check container — only visible in selection mode
             if (iconCheckContainer != null) {
-                iconCheckContainer.setVisibility(View.VISIBLE);
+                iconCheckContainer.setVisibility(inSelectionMode ? View.VISIBLE : View.GONE);
                 if (iconCheck != null) {
-                    if (selectedItems.contains(item)) {
-                        // Ensure a drawable is set (recycled views might have been cleared)
+                    if (isSelected) {
                         AnimatedVectorDrawableCompat avd = AnimatedVectorDrawableCompat.create(context, R.drawable.avd_check_draw);
                         if (avd != null) {
                             iconCheck.setImageDrawable(avd);
-                            // It's okay to animate when coming into view; ensures a consistent drawn tick
                             avd.start();
                         }
+                        iconCheck.setScaleX(1f);
+                        iconCheck.setScaleY(1f);
                         iconCheck.setAlpha(1f);
                     } else {
-                        // Unselected: ensure inner tick is cleared and transparent, keep background visible
                         iconCheck.setImageDrawable(null);
+                        iconCheck.setScaleX(0f);
+                        iconCheck.setScaleY(0f);
                         iconCheck.setAlpha(0f);
                     }
                 }

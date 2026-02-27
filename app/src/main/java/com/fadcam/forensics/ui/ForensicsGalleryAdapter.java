@@ -124,7 +124,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     }
 
     public void setGridSpan(int spanCount) {
-        int normalized = Math.max(2, Math.min(4, spanCount));
+        int normalized = Math.max(1, Math.min(5, spanCount));
         if (currentGridSpan == normalized) {
             return;
         }
@@ -471,6 +471,16 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         int indexTextSp;
         boolean showMetaSize;
         switch (currentGridSpan) {
+            case 5:
+                titleSp = 9.5f;
+                metaSp = 7.5f;
+                tapeTopMarginDp = 41;
+                tapeStartMarginDp = 6;
+                tapePadH = 1;
+                tapePadV = 0;
+                indexTextSp = 6;
+                showMetaSize = false;
+                break;
             case 4:
                 titleSp = 10.5f;
                 metaSp = 8.6f;
@@ -491,6 +501,16 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
                 indexTextSp = 7;
                 showMetaSize = true;
                 break;
+            case 1:
+                titleSp = 14f;
+                metaSp = 11f;
+                tapeTopMarginDp = 18;
+                tapeStartMarginDp = 14;
+                tapePadH = 4;
+                tapePadV = 2;
+                indexTextSp = 9;
+                showMetaSize = true;
+                break;
             default:
                 titleSp = 12f;
                 metaSp = 10f;
@@ -507,9 +527,18 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             holder.itemView.post(() -> applyGridSizing(holder));
             return;
         }
-        int targetHeight = currentGridSpan >= 4
-                ? dp(holder.itemView, 96f)
-                : (currentGridSpan == 3 ? dp(holder.itemView, 112f) : dp(holder.itemView, 132f));
+        int targetHeight;
+        if (currentGridSpan >= 5) {
+            targetHeight = dp(holder.itemView, 80f);
+        } else if (currentGridSpan == 4) {
+            targetHeight = dp(holder.itemView, 96f);
+        } else if (currentGridSpan == 3) {
+            targetHeight = dp(holder.itemView, 112f);
+        } else if (currentGridSpan == 1) {
+            targetHeight = dp(holder.itemView, 180f);
+        } else {
+            targetHeight = dp(holder.itemView, 132f);
+        }
         ViewGroup.LayoutParams photoLp = holder.photoContainer.getLayoutParams();
         if (photoLp.height != targetHeight) {
             photoLp.height = targetHeight;
@@ -535,19 +564,30 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             holder.indexTape.setLayoutParams(tapeLp);
         }
         holder.indexTape.setPadding(dp(holder.itemView, tapePadH), dp(holder.itemView, tapePadV), dp(holder.itemView, tapePadH), dp(holder.itemView, tapePadV));
-        if (currentGridSpan >= 4) {
+        if (currentGridSpan >= 5) {
+            // At 5 columns: hide all meta except source (repurposed for size)
             holder.iconConfidence.setVisibility(View.GONE);
             holder.metaConfidence.setVisibility(View.GONE);
             holder.iconSource.setImageResource(R.drawable.database_24px);
             holder.metaSource.setText(holder.metaSize.getText());
             holder.iconSize.setVisibility(View.GONE);
             holder.metaSize.setVisibility(View.GONE);
+            holder.title.setMaxLines(1);
+        } else if (currentGridSpan >= 4) {
+            holder.iconConfidence.setVisibility(View.GONE);
+            holder.metaConfidence.setVisibility(View.GONE);
+            holder.iconSource.setImageResource(R.drawable.database_24px);
+            holder.metaSource.setText(holder.metaSize.getText());
+            holder.iconSize.setVisibility(View.GONE);
+            holder.metaSize.setVisibility(View.GONE);
+            holder.title.setMaxLines(1);
         } else {
             holder.iconConfidence.setVisibility(View.VISIBLE);
             holder.metaConfidence.setVisibility(View.VISIBLE);
             holder.iconSource.setImageResource(R.drawable.ic_info);
             holder.iconSize.setVisibility(showMetaSize ? View.VISIBLE : View.GONE);
             holder.metaSize.setVisibility(showMetaSize ? View.VISIBLE : View.GONE);
+            holder.title.setMaxLines(currentGridSpan == 3 ? 1 : 2);
         }
     }
 

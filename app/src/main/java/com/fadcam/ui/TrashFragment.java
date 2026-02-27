@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.text.format.Formatter;
+
 import com.fadcam.MainActivity;
 import com.fadcam.service.FileOperationService;
 import com.fadcam.ui.InputActionBottomSheetFragment;
@@ -93,6 +95,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private Chip chipVideos;
     private Chip chipEvidence;
     private TrashFilter activeFilter = TrashFilter.ALL;
+    private TextView statsVideosText;
+    private TextView statsEvidenceText;
+    private TextView statsSizeText;
 
     private enum TrashFilter {
         ALL,
@@ -180,6 +185,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         chipAll = view.findViewById(R.id.chip_trash_all);
         chipVideos = view.findViewById(R.id.chip_trash_videos);
         chipEvidence = view.findViewById(R.id.chip_trash_evidence);
+        statsVideosText = view.findViewById(R.id.text_trash_stat_videos);
+        statsEvidenceText = view.findViewById(R.id.text_trash_stat_evidence);
+        statsSizeText = view.findViewById(R.id.text_trash_stat_size);
     selectAllContainer = view.findViewById(R.id.action_select_all_container);
     selectAllCheck = view.findViewById(R.id.action_select_all_check);
     selectAllBg = view.findViewById(R.id.action_select_all_bg);
@@ -259,14 +267,14 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (getContext() == null)
             return;
         trashAdapter = new TrashAdapter(getContext(), trashItems, this, null);
-        // Use GridLayoutManager so month headers span full width
-        GridLayoutManager grid = new GridLayoutManager(getContext(), 1);
+        // Use GridLayoutManager with 2 columns; month headers span full width
+        GridLayoutManager grid = new GridLayoutManager(getContext(), 2);
         grid.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
-                // Headers (type 0) span full width; items span 1
+                // Headers (type 0) span full width (2 cols); items span 1
                 if (trashAdapter != null && trashAdapter.getItemViewType(position) == 0) {
-                    return 1; // Full span (since span count is 1)
+                    return 2;
                 }
                 return 1;
             }
@@ -401,6 +409,38 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         updateFilterSelection();
         updateActionButtonsState();
         checkEmptyState();
+        updateHeaderStats();
+    }
+
+    /**
+     * Updates the header stats row with video count, evidence count, and total trash size.
+     * Iterates allTrashItems (unfiltered) to always reflect the full trash state.
+     */
+    private void updateHeaderStats() {
+        if (getContext() == null) return;
+        java.io.File trashDir = TrashManager.getTrashDirectory(getContext());
+        int videos = 0;
+        int evidence = 0;
+        long totalBytes = 0L;
+        for (TrashItem item : allTrashItems) {
+            if (item == null) continue;
+            if (item.isForensicsEvidence()) {
+                evidence++;
+            } else {
+                videos++;
+            }
+            try {
+                java.io.File file = new java.io.File(trashDir, item.getTrashFileName());
+                if (file.exists()) {
+                    totalBytes += file.length();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "updateHeaderStats: error reading file size for " + item.getTrashFileName(), e);
+            }
+        }
+        if (statsVideosText != null) statsVideosText.setText(String.valueOf(videos));
+        if (statsEvidenceText != null) statsEvidenceText.setText(String.valueOf(evidence));
+        if (statsSizeText != null) statsSizeText.setText(Formatter.formatShortFileSize(requireContext(), totalBytes));
     }
 
     private void updateFilterLabels() {

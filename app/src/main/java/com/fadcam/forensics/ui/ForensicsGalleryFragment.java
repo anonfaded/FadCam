@@ -898,10 +898,12 @@ public class ForensicsGalleryFragment extends Fragment {
 
     private void showGridMenu(View anchor) {
         ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem("view_1", getString(R.string.forensics_grid_1), null, null, R.drawable.ic_grid));
         items.add(new OptionItem("view_2", getString(R.string.forensics_grid_2), null, null, R.drawable.ic_grid));
         items.add(new OptionItem("view_3", getString(R.string.forensics_grid_3), null, null, R.drawable.ic_grid));
         items.add(new OptionItem("view_4", getString(R.string.forensics_grid_4), null, null, R.drawable.ic_grid));
-        String selectedId = currentGridSpan == 4 ? "view_4" : (currentGridSpan == 3 ? "view_3" : "view_2");
+        items.add(new OptionItem("view_5", getString(R.string.forensics_grid_5), null, null, R.drawable.ic_grid));
+        String selectedId = "view_" + currentGridSpan;
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
                 getString(R.string.forensics_grid_option),
                 items,
@@ -912,7 +914,13 @@ public class ForensicsGalleryFragment extends Fragment {
         );
         getParentFragmentManager().setFragmentResultListener(GRID_PICKER_RESULT, getViewLifecycleOwner(), (key, bundle) -> {
             String picked = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID, "");
-            currentGridSpan = "view_4".equals(picked) ? 4 : ("view_3".equals(picked) ? 3 : 2);
+            switch (picked) {
+                case "view_1": currentGridSpan = 1; break;
+                case "view_3": currentGridSpan = 3; break;
+                case "view_4": currentGridSpan = 4; break;
+                case "view_5": currentGridSpan = 5; break;
+                default: currentGridSpan = 2; break;
+            }
             applyGridSpan();
         });
         sheet.show(getParentFragmentManager(), GRID_PICKER_RESULT + "_sheet");

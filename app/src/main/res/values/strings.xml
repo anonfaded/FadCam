@@ -1405,6 +1405,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_grid_2">2 columns</string>
     <string name="forensics_grid_3">3 columns</string>
     <string name="forensics_grid_4">4 columns</string>
+    <string name="forensics_grid_1">1 column</string>
+    <string name="forensics_grid_5">5 columns</string>
     <string name="forensics_serial_strip">evidence</string>
     <string name="forensics_info_title">Evidence Info</string>
     <string name="forensics_info_body">Evidence Gallery stores snapshots captured during active recording sessions.\n\nSnapshots are standalone evidence files and remain viewable even if the source video is moved or deleted.\n\nFor video-linked items, use evidence details inside the photo viewer to jump to source footage when available.</string>
@@ -1507,6 +1509,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="records_grid_5">5 columns</string>
     <string name="records_grid_option">Grid Layout</string>
     <string name="records_grid_helper">Pick how many columns to show in gallery.</string>
+    <string name="trash_item_thumbnail_desc">Trashed item thumbnail</string>
     <string name="delete_all_videos_subtitle_short">Remove all recordings</string>
     <string name="sort_latest_first">Latest First</string>
     <string name="sort_oldest_first">Oldest First</string>

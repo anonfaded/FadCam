@@ -1438,6 +1438,7 @@ public class RecordsFragment extends BaseFragment implements
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(
                 com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         recordsAdapter.setSnowVeilTheme("Snow Veil".equals(currentTheme));
+        recordsAdapter.setGridSpan(currentGridSpan);
 
         // Set the layout manager
         setLayoutManager();
@@ -1650,6 +1651,9 @@ public class RecordsFragment extends BaseFragment implements
         vibrate();
         currentGridSpan = newSpan;
         setLayoutManager();
+        if (recordsAdapter != null) {
+            recordsAdapter.setGridSpan(currentGridSpan);
+        }
         updateFabIcons();
     }
 

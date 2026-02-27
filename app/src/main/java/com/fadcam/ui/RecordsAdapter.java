@@ -175,6 +175,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private boolean isScrolling = false;
     // Add skeleton mode for professional loading experience
     private boolean isSkeletonMode = false;
+    // Grid span for dynamic sizing at high column counts
+    private int currentGridSpan = 2;
 
     // --- Interfaces Updated ---
     public interface OnVideoClickListener {
@@ -727,6 +729,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         applyPressFeedback(holder.itemView, holder.itemView);
         applyPressFeedback(holder.imageViewThumbnail, holder.itemView);
         applyPressFeedback(holder.thumbnailContainer, holder.itemView);
+
+        // --- Adapt card content for current grid span ---
+        applyGridSizing(holder);
 
     } // End onBindViewHolder
 
@@ -2694,6 +2699,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // *** ADD Field for Default Text Color ***
         int defaultTextColor; // Store the default color
         int defaultMetaTextColor;
+        // Grid-adaptive container refs
+        View recordContentContainer;
+        View recordTitleRow;
+        View recordMetaDivider;
+        View recordMetaGrid;
+        View recordMetaRowTime;
 
         RecordViewHolder(View itemView) {
             super(itemView);
@@ -2720,6 +2731,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             processingSpinner = itemView.findViewById(R.id.processing_spinner);
             // *** Find the new TextView ***
             textViewTimeAgo = itemView.findViewById(R.id.text_view_time_ago);
+            // Grid-adaptive container refs
+            recordContentContainer = itemView.findViewById(R.id.record_content_container);
+            recordTitleRow = itemView.findViewById(R.id.record_title_row);
+            recordMetaDivider = itemView.findViewById(R.id.record_meta_divider);
+            recordMetaGrid = itemView.findViewById(R.id.record_meta_grid);
+            recordMetaRowTime = itemView.findViewById(R.id.record_meta_row_time);
 
             // *** Store the default text color ***
             if (textViewRecord != null) {
@@ -2815,6 +2832,112 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     public boolean isSkeletonMode() {
         return isSkeletonMode;
+    }
+
+    /**
+     * Updates the grid span count and refreshes all items for dynamic sizing.
+     *
+     * @param spanCount The new column count (1-5)
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setGridSpan(int spanCount) {
+        int normalized = Math.max(1, Math.min(5, spanCount));
+        if (currentGridSpan == normalized) return;
+        currentGridSpan = normalized;
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Adapts card content visibility and text sizes for the current grid span.
+     * At higher column counts, content is progressively reduced to fit.
+     */
+    private void applyGridSizing(@NonNull RecordViewHolder holder) {
+        float titleSp;
+        float metaSp;
+        boolean showTitleRow;
+        boolean showMetaDivider;
+        boolean showTimeAgo;
+        boolean showContentContainer;
+        int titleMaxLines;
+
+        switch (currentGridSpan) {
+            case 1: // List mode — full content
+                titleSp = 14f;
+                metaSp = 10f;
+                showTitleRow = true;
+                showMetaDivider = true;
+                showTimeAgo = true;
+                showContentContainer = true;
+                titleMaxLines = 2;
+                break;
+            case 3:
+                titleSp = 12f;
+                metaSp = 9f;
+                showTitleRow = true;
+                showMetaDivider = true;
+                showTimeAgo = true;
+                showContentContainer = true;
+                titleMaxLines = 1;
+                break;
+            case 4:
+                titleSp = 10f;
+                metaSp = 8f;
+                showTitleRow = false;
+                showMetaDivider = false;
+                showTimeAgo = false;
+                showContentContainer = true;
+                titleMaxLines = 1;
+                break;
+            case 5:
+                titleSp = 9f;
+                metaSp = 7.5f;
+                showTitleRow = false;
+                showMetaDivider = false;
+                showTimeAgo = false;
+                showContentContainer = true;
+                titleMaxLines = 1;
+                break;
+            default: // 2 columns — default
+                titleSp = 14f;
+                metaSp = 10f;
+                showTitleRow = true;
+                showMetaDivider = true;
+                showTimeAgo = true;
+                showContentContainer = true;
+                titleMaxLines = 2;
+                break;
+        }
+
+        // Content container
+        if (holder.recordContentContainer != null) {
+            holder.recordContentContainer.setVisibility(showContentContainer ? View.VISIBLE : View.GONE);
+        }
+        // Title row (filename + 3-dot menu)
+        if (holder.recordTitleRow != null) {
+            holder.recordTitleRow.setVisibility(showTitleRow ? View.VISIBLE : View.GONE);
+        }
+        // Divider
+        if (holder.recordMetaDivider != null) {
+            holder.recordMetaDivider.setVisibility(showMetaDivider ? View.VISIBLE : View.GONE);
+        }
+        // Time ago row
+        if (holder.recordMetaRowTime != null) {
+            holder.recordMetaRowTime.setVisibility(showTimeAgo ? View.VISIBLE : View.GONE);
+        }
+        // Text sizes
+        if (holder.textViewRecord != null) {
+            holder.textViewRecord.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, titleSp);
+            holder.textViewRecord.setMaxLines(titleMaxLines);
+        }
+        if (holder.textViewFileTime != null) {
+            holder.textViewFileTime.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        }
+        if (holder.textViewFileSize != null) {
+            holder.textViewFileSize.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        }
+        if (holder.textViewTimeAgo != null) {
+            holder.textViewTimeAgo.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+        }
     }
 
     /**
