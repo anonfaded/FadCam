@@ -284,6 +284,26 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         return entries.get(position).type;
     }
 
+    /**
+     * Returns the section label (month header text) for the given adapter position.
+     * Walks backwards from position to find the nearest HeaderEntry.
+     * Used by the fast scroller to display a date bubble.
+     *
+     * @param position adapter position
+     * @return section text like "June 2025", or empty string if none found
+     */
+    @NonNull
+    public String getSectionText(int position) {
+        if (position < 0 || position >= entries.size()) return "";
+        for (int i = position; i >= 0; i--) {
+            Entry e = entries.get(i);
+            if (e instanceof HeaderEntry) {
+                return ((HeaderEntry) e).monthKey;
+            }
+        }
+        return "";
+    }
+
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

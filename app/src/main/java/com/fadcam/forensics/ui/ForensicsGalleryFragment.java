@@ -115,6 +115,8 @@ public class ForensicsGalleryFragment extends Fragment {
     @Nullable
     private ActivityResultLauncher<Uri> customExportTreePickerLauncher;
     private List<Uri> pendingCustomExportUris = new ArrayList<>();
+    @Nullable
+    private com.fadcam.ui.GalleryFastScroller fastScroller;
 
     private final List<ForensicsSnapshotWithMedia> allRows = new ArrayList<>();
 
@@ -229,6 +231,14 @@ public class ForensicsGalleryFragment extends Fragment {
             }
         });
         recycler.setAdapter(adapter);
+
+        // ── Fast scroller setup ──
+        fastScroller = view.findViewById(R.id.fast_scroller);
+        if (fastScroller != null) {
+            fastScroller.attachTo(recycler);
+            fastScroller.setSectionIndexer(position -> adapter.getSectionText(position));
+        }
+
         loadVisualPrefs();
         adapter.setGridSpan(currentGridSpan);
         adapter.setVisualStyles(clipStyle, tapeStyle);
@@ -328,6 +338,10 @@ public class ForensicsGalleryFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (fastScroller != null) {
+            fastScroller.detach();
+            fastScroller = null;
+        }
         if (invalidationCoordinator != null) {
             invalidationCoordinator.stop();
             invalidationCoordinator = null;

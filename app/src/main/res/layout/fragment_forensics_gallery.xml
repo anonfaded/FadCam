@@ -192,22 +192,33 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_gallery"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/forensics_board_bg">
+            android:layout_weight="1">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_gallery"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_gallery"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@android:color/transparent"
-                android:clipToPadding="false"
-                android:paddingBottom="88dp" />
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                android:layout_marginTop="6dp"
+                android:background="@drawable/forensics_board_bg">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_gallery"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="88dp"
+                    android:scrollbars="none" />
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+            <com.fadcam.ui.GalleryFastScroller
+                android:id="@+id/fast_scroller"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/text_gallery_empty"
