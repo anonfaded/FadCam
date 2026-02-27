@@ -107,6 +107,9 @@ public class ForensicsInsightsFragment extends Fragment {
     private LinearLayout containerBars;
     private TextView peakInfo;
     private TextView timelineDetail;
+    private TextView timelineTitle;
+    private View selectedBar;
+    private GradientDrawable selectedBarOrigBg;
     private final FrameLayout[][] zoneCells = new FrameLayout[3][3];
     private final TextView[][] zoneCountTexts = new TextView[3][3];
     private TextView observations;
@@ -209,6 +212,8 @@ public class ForensicsInsightsFragment extends Fragment {
         containerBars = view.findViewById(R.id.container_bars);
         peakInfo = view.findViewById(R.id.text_peak_info);
         timelineDetail = view.findViewById(R.id.text_timeline_detail);
+        timelineTitle = view.findViewById(R.id.text_timeline_title);
+        updateTimelineTitle();
 
         // Zone grid
         zoneCells[0][0] = view.findViewById(R.id.zone_nw);
@@ -271,8 +276,21 @@ public class ForensicsInsightsFragment extends Fragment {
         if (range == selectedRange) return;
         selectedRange = range;
         updateChipVisuals();
+        updateTimelineTitle();
         dataLoaded = false;
         loadIntelligence();
+    }
+
+    private void updateTimelineTitle() {
+        if (timelineTitle == null) return;
+        String rangeLabel;
+        switch (selectedRange) {
+            case D7:  rangeLabel = "7 DAYS"; break;
+            case D30: rangeLabel = "30 DAYS"; break;
+            case ALL: rangeLabel = "ALL TIME"; break;
+            default:  rangeLabel = "24H"; break;
+        }
+        timelineTitle.setText("ACTIVITY TIMELINE \u2022 " + rangeLabel);
     }
 
     private void updateChipVisuals() {
@@ -401,10 +419,17 @@ public class ForensicsInsightsFragment extends Fragment {
                         longestQuiet, quietStartBest,
                         zones, events.size(), now);
 
-                // SITREP
-                String sitrep = "SITREP \u2022 "
-                        + new SimpleDateFormat("h:mm a dd MMM yyyy", Locale.US)
-                        .format(new Date(now)).toUpperCase(Locale.US);
+                // SITREP — show generation time + selected range
+                String rangeTag;
+                switch (selectedRange) {
+                    case D7:  rangeTag = "LAST 7 DAYS"; break;
+                    case D30: rangeTag = "LAST 30 DAYS"; break;
+                    case ALL: rangeTag = "ALL TIME"; break;
+                    default:  rangeTag = "LAST 24 HOURS"; break;
+                }
+                String sitrep = new SimpleDateFormat("h:mm a \u2022 dd MMM yyyy", Locale.US)
+                        .format(new Date(now)).toUpperCase(Locale.US)
+                        + " \u2022 " + rangeTag;
 
                 // Time range label
                 String rangeSummary;
@@ -570,15 +595,36 @@ public class ForensicsInsightsFragment extends Fragment {
             final int hour = h;
             final int count = hourlyCounts[h];
             bar.setClickable(true);
-            bar.setOnClickListener(v -> showHourDetail(hour, count));
+            bar.setTag(R.id.container_bars, barBg); // store original bg for restoration
+            bar.setOnClickListener(v -> showHourDetail(v, hour, count));
             containerBars.addView(bar);
         }
     }
 
     /**
      * Shows a detail panel below the bar chart with per-type breakdown for the tapped hour.
+     * Highlights the tapped bar with a bright dotted outline and restores the previous bar.
      */
-    private void showHourDetail(int hour, int count) {
+    private void showHourDetail(View tappedBar, int hour, int count) {
+        // Restore previous bar's background
+        if (selectedBar != null && selectedBarOrigBg != null) {
+            selectedBar.setBackground(selectedBarOrigBg);
+        }
+
+        // Highlight tapped bar with dotted outline
+        GradientDrawable origBg = (GradientDrawable) tappedBar.getTag(R.id.container_bars);
+        selectedBarOrigBg = origBg;
+        selectedBar = tappedBar;
+
+        if (origBg != null) {
+            GradientDrawable highlighted = new GradientDrawable();
+            float r = dpToPx(2);
+            highlighted.setCornerRadii(new float[]{r, r, r, r, 0, 0, 0, 0});
+            highlighted.setColor(origBg.getColor() != null ? origBg.getColor().getDefaultColor() : accentColor);
+            highlighted.setStroke(dpToPx(2), 0xFFFFFFFF, dpToPx(3), dpToPx(2)); // white dotted outline
+            tappedBar.setBackground(highlighted);
+        }
+
         if (timelineDetail == null) return;
         if (count == 0) {
             timelineDetail.setText(String.format(Locale.US,

@@ -42,7 +42,7 @@
         <item name="android:paddingStart">12dp</item>
         <item name="android:paddingEnd">12dp</item>
         <item name="chipBackgroundColor">@drawable/chip_floating_bg</item>
-        <item name="android:elevation">2dp</item>
+        <item name="android:elevation">0dp</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>

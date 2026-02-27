@@ -465,6 +465,7 @@
 
             <!-- ═══ ACTIVITY TIMELINE ═══ -->
             <TextView
+                android:id="@+id/text_timeline_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"

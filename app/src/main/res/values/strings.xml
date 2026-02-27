@@ -1358,7 +1358,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="intel_total_detections">TOTAL DETECTIONS</string>
     <string name="intel_threat_assessment">THREAT ASSESSMENT</string>
     <string name="intel_detection_breakdown">DETECTION BREAKDOWN</string>
-    <string name="intel_activity_timeline">ACTIVITY TIMELINE (24H)</string>
+    <string name="intel_activity_timeline">ACTIVITY TIMELINE</string>
     <string name="intel_zone_analysis">ZONE ANALYSIS</string>
     <string name="intel_zone_desc">Camera frame sector activity distribution</string>
     <string name="intel_key_observations">KEY OBSERVATIONS</string>
