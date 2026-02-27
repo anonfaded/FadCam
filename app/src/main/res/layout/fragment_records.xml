@@ -182,12 +182,12 @@
                 android:layout_height="wrap_content"
                 android:scrollbars="none"
                 android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
                 android:paddingStart="8dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="8dp"
-                android:paddingBottom="4dp"
-
->
+                android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_records_filter"
@@ -285,12 +285,12 @@
                 android:layout_height="wrap_content"
                 android:scrollbars="none"
                 android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
                 android:paddingStart="8dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="8dp"
-                android:paddingBottom="4dp"
-
->
+                android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_camera_filter"
@@ -362,6 +362,8 @@
                 android:fillViewport="false"
                 android:scrollbars="none"
                 android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
                 android:paddingStart="8dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="8dp"
@@ -430,6 +432,8 @@
                 android:fillViewport="false"
                 android:scrollbars="none"
                 android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
                 android:paddingStart="8dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="8dp"
