@@ -1179,10 +1179,12 @@ public class RecordsFragment extends BaseFragment implements
         Log.d(TAG, "lifecycle onResume: activeFilter=" + activeFilter + ", loadedItems=" + allLoadedItems.size());
         Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
 
-        // Check if an external event (e.g. Faditor export) requested a refresh
+        // Check if an external event (e.g. Faditor export, FadShot capture) requested a refresh
+        boolean needsForceReload = false;
         if (sPendingRefresh) {
             sPendingRefresh = false;
-            Log.i(TAG, "onResume: Pending refresh flag set, invalidating index");
+            needsForceReload = true;
+            Log.i(TAG, "onResume: Pending refresh flag set, invalidating index and forcing reload");
             com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
             if (recordsAdapter != null) {
                 recordsAdapter.clearCaches();
@@ -1240,7 +1242,10 @@ public class RecordsFragment extends BaseFragment implements
         boolean hasData = recordsAdapter != null && recordsAdapter.getItemCount() > 0 && !videoItems.isEmpty();
         boolean hasDbIndex = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount() > 0;
 
-        if (hasData && (hasDbIndex || !videoItems.isEmpty()) && !isLoading) {
+        if (needsForceReload && !isLoading) {
+            Log.i(TAG, "LOG_REFRESH: Force reload from onResume (pending refresh consumed)");
+            loadRecordsList(true);
+        } else if (hasData && (hasDbIndex || !videoItems.isEmpty()) && !isLoading) {
             Log.d(TAG, "onResume: Already have " + videoItems.size() + " videos loaded, skipping duplicate load");
             updateUiVisibility(); // Just update visibility state
         } else if (!isLoading) {

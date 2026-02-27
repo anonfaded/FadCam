@@ -1042,6 +1042,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 }
                 return;
             }
+
+            if (payloads.contains("SERIAL_UPDATE")) {
+                // Lightweight rebind: only update the serial number for shifted items
+                if (holder.textViewSerialNumber != null) {
+                    holder.textViewSerialNumber.setText(String.valueOf(position + 1));
+                }
+                return;
+            }
         }
         // If no specific payload, do a full bind
         onBindViewHolder(holder, position);
@@ -2210,10 +2218,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         });
 
         // Update the records list with a copy of the new list
+        int oldSize = this.records.size();
         this.records = new ArrayList<>(newRecords);
 
         // Dispatch updates to the adapter
         diffResult.dispatchUpdatesTo(this);
+
+        // Force serial number refresh for all items when list size changed (items shifted positions)
+        int newSize = this.records.size();
+        if (oldSize != newSize && newSize > 0) {
+            notifyItemRangeChanged(0, newSize, "SERIAL_UPDATE");
+        }
 
         Log.d(TAG, "updateRecords completed. Final size: " + records.size() +
                 ", skeleton mode: " + isSkeletonMode);

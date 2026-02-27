@@ -1237,7 +1237,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="version_format">v%s</string>
 
     <string name="edit_with_faditorx">Edit with Faditor Mini</string>
-    <string name="remote_coming_soon_badge">NEW</string>
+    <string name="remote_coming_soon_badge">Coming Soon</string>
 
     <!-- Update Bottom Sheet Strings -->
     <string name="update_sarcastic_heading">📦 Oh look, another update...</string>

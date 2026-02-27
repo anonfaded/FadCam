@@ -121,15 +121,7 @@ public class RealtimeMediaInvalidationCoordinator {
         if (!fadCamRoot.exists()) return;
 
         List<File> watchRoots = new ArrayList<>();
-        watchRoots.add(fadCamRoot);
-        File[] firstLevel = fadCamRoot.listFiles();
-        if (firstLevel != null) {
-            for (File child : firstLevel) {
-                if (child != null && child.isDirectory()) {
-                    watchRoots.add(child);
-                }
-            }
-        }
+        collectAllDirectories(fadCamRoot, watchRoots);
 
         for (File dir : watchRoots) {
             if (dir == null || !dir.exists() || !dir.isDirectory()) continue;
@@ -159,5 +151,22 @@ public class RealtimeMediaInvalidationCoordinator {
             }
         }
         fileObservers.clear();
+    }
+
+    /**
+     * Recursively collects all directories starting from the given root.
+     * This ensures FileObservers cover nested subdirectories
+     * (e.g. FadCam/FadShot/Back/, FadCam/FadShot/Selfie/).
+     */
+    private void collectAllDirectories(@NonNull File dir, @NonNull List<File> result) {
+        result.add(dir);
+        File[] children = dir.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                if (child != null && child.isDirectory()) {
+                    collectAllDirectories(child, result);
+                }
+            }
+        }
     }
 }
