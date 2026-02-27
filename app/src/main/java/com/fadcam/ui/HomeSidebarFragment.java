@@ -1,6 +1,8 @@
 package com.fadcam.ui;
 
 import android.app.Dialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -215,6 +217,20 @@ public class HomeSidebarFragment extends DialogFragment {
                 "Failed to bind preview control",
                 e
             );
+        }
+
+        // Discord branding row
+        View discordRow = view.findViewById(R.id.row_discord_branding);
+        if (discordRow != null) {
+            discordRow.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://discord.gg/kvAZvdkuuN"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    android.util.Log.w("HomeSidebar", "Failed to open Discord link", e);
+                }
+            });
         }
     }
 

@@ -1930,4 +1930,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="lab_hide_thumbnails_redacted">REDACTED</string>
     <string name="lab_section_about">About</string>
 
+    <!-- Home sidebar branding -->
+    <string name="home_sidebar_discord">Discord</string>
+    <string name="home_sidebar_discord_sub">Join the community</string>
+    <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
+
 </resources>
