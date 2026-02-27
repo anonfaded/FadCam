@@ -214,6 +214,7 @@ public class HomeFragment extends BaseFragment {
     private boolean isLaunchingPhotoCapture = false;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon
+    private android.view.animation.Animation bubbleRotationAnimation; // Animation instance to preserve state across tab switches
 
     private CardView cardClock;
     private TextView tvClock, tvDateEnglish, tvDateArabic;
@@ -716,7 +717,7 @@ public class HomeFragment extends BaseFragment {
 
         Log.init(requireContext());
 
-        Log.d(TAG, "HomeFragment created.");
+        Log.d(TAG, "[FragmentLifecycle] onCreate: HomeFragment being created, savedInstanceState=" + (savedInstanceState == null ? "null" : "exists"));
 
         // Request essential permissions on every launch
         // requestEssentialPermissions(); // <-- Disabled, handled in onboarding only
@@ -1307,6 +1308,12 @@ public class HomeFragment extends BaseFragment {
             recordingState = RecordingState.NONE;
             updateStartButtonAvailability();
         }
+
+        // Refresh stats: invalidate cache + update Room DB with new video,
+        // then update UI so the Home card shows the correct count/size.
+        VideoStatsCache.invalidateStats(sharedPreferencesManager);
+        com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
+        updateStats(); // Will query Room DB (fast) then background delta scan updates it
     }
 
     // Inside HomeFragment.java
@@ -1539,11 +1546,27 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "HomeFragment resumed.");
+        Log.d(TAG, "[FragmentLifecycle] onResume: Fragment resuming, isAdded=" + isAdded() + ", isVisible=" + isVisible() + ", isHidden=" + isHidden());
         if (!isAdded() || getContext() == null || getActivity() == null) {
-            Log.e(TAG, "onResume: Not attached!");
+            Log.e(TAG, "[FragmentLifecycle] onResume: Not attached!");
             return;
         }
+        
+        // With hide/show navigation, onResume is called for ALL fragments when app returns
+        // from background. Only perform heavy ops if this fragment is actually visible.
+        if (isHidden()) {
+            Log.d(TAG, "onResume: Fragment is hidden, skipping heavy operations");
+            return;
+        }
+        
+        performResumeOperations();
+    }
+
+    /**
+     * Shared logic for resuming fragment operations.
+     * Called from both onResume (when visible) and onHiddenChanged(false).
+     */
+    private void performResumeOperations() {
         if (sharedPreferencesManager == null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(
                 requireContext()
@@ -1594,6 +1617,9 @@ public class HomeFragment extends BaseFragment {
         }
 
         Log.d(TAG, "onResume: Triggering stats update.");
+        // Always invalidate cache on resume so we query Room DB for fresh data.
+        // This ensures stats reflect any changes made in Records tab or after recording.
+        VideoStatsCache.invalidateStats(sharedPreferencesManager);
         updateStats();
         updateTorchUI(isTorchOn);
 
@@ -2979,10 +3005,14 @@ public class HomeFragment extends BaseFragment {
         @Nullable ViewGroup container,
         @Nullable Bundle savedInstanceState
     ) {
+        Log.d(TAG, "[FragmentLifecycle] onCreateView: Inflating layout, container=" + (container == null ? "null" : "exists"));
+        
         // Debug recording time issue
         debugRecordingTimeVariables();
 
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        Log.d(TAG, "[FragmentLifecycle] onCreateView: Layout inflated successfully");
+        return view;
     }
 
     /**
@@ -3102,7 +3132,7 @@ public class HomeFragment extends BaseFragment {
         @Nullable Bundle savedInstanceState
     ) {
         super.onViewCreated(view, savedInstanceState);
-        com.fadcam.Log.i(TAG, "onViewCreated: method entered");
+        com.fadcam.Log.i(TAG, "[FragmentLifecycle] onViewCreated: Starting view setup, view is attached: " + view.isAttachedToWindow());
 
         // Initialize SharedPreferencesManager
         sharedPreferencesManager = SharedPreferencesManager.getInstance(
@@ -6233,12 +6263,48 @@ public class HomeFragment extends BaseFragment {
         // Step 2: Calculate fresh stats in background
         if (executorService == null || executorService.isShutdown()) {
             Log.w(TAG, "ExecutorService not available for updateStats");
-            // Reinitialize if needed or handle gracefully
             executorService = Executors.newSingleThreadExecutor();
         }
 
         executorService.submit(() -> {
-            // --- Get current storage settings ---
+            // --- Primary source: Room DB (sub-millisecond, persistent, accurate) ---
+            // The Room DB is kept in sync by RecordsFragment's delta scan.
+            // This is the fastest and most reliable source for video stats.
+            if (!isRecording) {
+                try {
+                    com.fadcam.data.VideoIndexRepository repo =
+                        com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+                    long[] quickStats = repo.getQuickStats();
+                    int dbCount = (int) quickStats[0];
+                    long dbTotalBytes = quickStats[1];
+                    long dbTotalMB = dbTotalBytes / (1024 * 1024);
+                    Log.d(TAG, "updateStats BG: Room DB stats: " + dbCount + " videos, " + dbTotalMB + "MB");
+                    VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, dbTotalMB);
+                    updateStatsUI(dbCount, dbTotalMB);
+
+                    // If the video index was just invalidated (e.g. after recording
+                    // stopped), run a background delta scan to pick up the new file,
+                    // then re-query stats so the card auto-updates.
+                    if (repo.isIndexInvalidated()) {
+                        Log.d(TAG, "updateStats BG: Index invalidated, running delta scan to pick up new files");
+                        repo.getVideos(sharedPreferencesManager); // Consumes invalidation flag + delta scans
+                        long[] freshStats = repo.getQuickStats();
+                        int freshCount = (int) freshStats[0];
+                        long freshMB = freshStats[1] / (1024 * 1024);
+                        if (freshCount != dbCount || freshMB != dbTotalMB) {
+                            Log.d(TAG, "updateStats BG: Delta scan found changes: " + freshCount + " videos, " + freshMB + "MB");
+                            VideoStatsCache.updateStats(sharedPreferencesManager, freshCount, freshMB);
+                            updateStatsUI(freshCount, freshMB);
+                        }
+                    }
+                    return; // DB is the source of truth — done
+                } catch (Exception e) {
+                    Log.w(TAG, "updateStats BG: Room DB query failed, falling back to scan: " + e.getMessage());
+                }
+            }
+
+            // --- Fallback: Full scan (only during recording or if DB failed) ---
+            // During recording, we need a live scan to capture the growing file.
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString =
                 sharedPreferencesManager.getCustomStorageUri();
@@ -7437,6 +7503,12 @@ public class HomeFragment extends BaseFragment {
 
     @Override
     public void onDestroyView() {
+        // Clean up bubble rotation animation
+        if (ivBubbleBackground != null) {
+            ivBubbleBackground.clearAnimation();
+            bubbleRotationAnimation = null;
+        }
+        
         super.onDestroyView();
         TorchService.setHomeFragment(null);
 
@@ -8113,11 +8185,8 @@ public class HomeFragment extends BaseFragment {
                 try {
                     if (getActivity() instanceof com.fadcam.MainActivity) {
                         com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
-                        // Switch both ViewPager2 page and BottomNavigation selection
-                        androidx.viewpager2.widget.ViewPager2 pager = act.findViewById(R.id.view_pager);
-                        if (pager != null) pager.setCurrentItem(1, true); // Records is index 1
-                        com.google.android.material.bottomnavigation.BottomNavigationView bnv = act.findViewById(R.id.bottom_navigation);
-                        if (bnv != null) bnv.setSelectedItemId(R.id.navigation_records);
+                        // Switch to Records tab (index 1)
+                        act.switchFragment(1, true);
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to navigate to Records from Stats card", e);
@@ -8202,26 +8271,61 @@ public class HomeFragment extends BaseFragment {
     /**
      * Starts a continuous slow rotation animation on the bubble background shape.
      * Creates a modern, dynamic visual effect behind the camera icon.
+     * Preserves animation state across tab switches to avoid resetting to initial position.
      */
     private void startBubbleRotation() {
-        if (ivBubbleBackground != null) {
-            if (ivBubbleBackground.getAnimation() != null) {
-                return;
-            }
-            android.view.animation.Animation rotateAnimation = 
-                android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.rotate_slow_left);
-            ivBubbleBackground.startAnimation(rotateAnimation);
-            Log.d(TAG, "Started bubble background rotation animation");
+        if (ivBubbleBackground == null) {
+            return;
         }
+        
+        // If animation already exists and is running, resume it (API 26+) or just return
+        if (bubbleRotationAnimation != null) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                // Resume the animation from where it was paused using reflection
+                try {
+                    java.lang.reflect.Method isPausedMethod = android.view.animation.Animation.class.getMethod("isPaused");
+                    java.lang.reflect.Method resumeMethod = android.view.animation.Animation.class.getMethod("resume");
+                    if ((boolean) isPausedMethod.invoke(bubbleRotationAnimation)) {
+                        resumeMethod.invoke(bubbleRotationAnimation);
+                        Log.d(TAG, "Resumed bubble background rotation animation");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to resume animation via reflection", e);
+                }
+            }
+            return; // Animation already set, don't recreate
+        }
+        
+        // First time: create and start the animation
+        bubbleRotationAnimation = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.rotate_slow_left);
+        ivBubbleBackground.startAnimation(bubbleRotationAnimation);
+        Log.d(TAG, "Started bubble background rotation animation");
     }
 
     /**
-     * Stops the bubble rotation animation (for cleanup on pause/destroy).
+     * Pauses the bubble rotation animation (for battery optimization when fragment is hidden).
+     * Preserves the current rotation position instead of resetting to 0°.
      */
     private void stopBubbleRotation() {
-        if (ivBubbleBackground != null) {
-            ivBubbleBackground.clearAnimation();
+        if (ivBubbleBackground == null || bubbleRotationAnimation == null) {
+            return;
         }
+        
+        // Pause the animation to preserve current rotation (API 26+) using reflection
+        // For older APIs, we just leave it running (minimal CPU usage for a simple rotation)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                java.lang.reflect.Method isPausedMethod = android.view.animation.Animation.class.getMethod("isPaused");
+                java.lang.reflect.Method pauseMethod = android.view.animation.Animation.class.getMethod("pause");
+                if (!(boolean) isPausedMethod.invoke(bubbleRotationAnimation)) {
+                    pauseMethod.invoke(bubbleRotationAnimation);
+                    Log.d(TAG, "Paused bubble background rotation animation");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to pause animation via reflection", e);
+            }
+        }
+        // For API < 26: animation keeps running even when hidden (negligible performance impact)
     }
 
     // ─── Fullscreen Preview ──────────────────────────────────────────────────
@@ -8763,35 +8867,39 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        Log.d(
-            TAG,
-            "onHiddenChanged: Fragment " + (hidden ? "hidden" : "shown")
-        );
+        Log.d(TAG, "onHiddenChanged: Fragment " + (hidden ? "hidden" : "shown") + ", isResumed=" + isResumed());
+        
+        if (!isAdded() || getContext() == null || getActivity() == null) {
+            return;
+        }
+        
         if (!hidden) {
+            // Tab switched back — resume all operations
+            if (isResumed()) {
+                performResumeOperations();
+            }
+            
+            // Camera surface handling
             if (
                 isPreviewEnabled &&
                 isRecordingOrPaused() &&
                 textureViewSurface != null &&
                 textureViewSurface.isValid()
             ) {
-                Log.d(
-                    TAG,
-                    "onHiddenChanged: Preview enabled, sending valid surface to service"
-                );
+                Log.d(TAG, "onHiddenChanged: Preview enabled, sending valid surface to service");
                 updateServiceWithCurrentSurface(textureViewSurface);
             } else if (!isPreviewEnabled || !isRecordingOrPaused()) {
-                Log.d(
-                    TAG,
-                    "onHiddenChanged: Preview disabled or not recording, sending null surface"
-                );
+                Log.d(TAG, "onHiddenChanged: Preview disabled or not recording, sending null surface");
                 updateServiceWithCurrentSurface(null);
             }
         } else {
+            // Tab switched away — pause heavy operations
+            if (!isLaunchingPhotoCapture) {
+                stopBubbleRotation();
+            }
+            
             if (isRecordingOrPaused()) {
-                Log.d(
-                    TAG,
-                    "onHiddenChanged: Fragment hidden while recording, sending null surface"
-                );
+                Log.d(TAG, "onHiddenChanged: Fragment hidden while recording, sending null surface");
                 updateServiceWithCurrentSurface(null);
             }
         }

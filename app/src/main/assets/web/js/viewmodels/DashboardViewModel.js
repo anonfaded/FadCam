@@ -330,6 +330,40 @@ class DashboardViewModel {
     }
 
     /**
+     * Pause active recording
+     * @returns {Promise<Object>} Response with {status, action, isRecording, isPaused}
+     */
+    async pauseRecording() {
+        try {
+            const result = await apiService.pauseRecording();
+            console.log('[DashboardViewModel] Recording paused:', result);
+            eventBus.emit('recording-paused', result);
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to pause recording:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Resume paused recording
+     * @returns {Promise<Object>} Response with {status, action, isRecording, isPaused}
+     */
+    async resumeRecording() {
+        try {
+            const result = await apiService.resumeRecording();
+            console.log('[DashboardViewModel] Recording resumed:', result);
+            eventBus.emit('recording-resumed', result);
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to resume recording:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Toggle server on/off
      */
     async toggleServer() {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gradient scrim/dim effect that fades from transparent to very dark at bottom -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="#80000000"
+        android:centerColor="#FA000000"
+        android:endColor="#FF000000"
+        android:type="linear" />
+</shape>

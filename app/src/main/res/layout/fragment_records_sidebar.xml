@@ -58,7 +58,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginStart="14dp"
         android:layout_marginEnd="12dp"
-        app:dividerColor="#404040"/>
+        app:dividerColor="#262626"/>
 
     <!-- Group: Sorting -->
     <TextView
@@ -76,8 +76,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/settings_group_card_bg"
-        android:orientation="vertical"
-        android:padding="8dp">
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/row_sort"
@@ -126,7 +125,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="12dp"
-            app:dividerColor="#404040"/>
+            app:dividerColor="#262626"/>
 
         <!-- View Mode Row (moved from FAB) -->
         <LinearLayout
@@ -175,7 +174,7 @@
         android:id="@+id/sort_group_helper"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="4dp"
+
         android:layout_marginStart="14dp"
         android:layout_marginEnd="12dp"
         android:textColor="@android:color/darker_gray"
@@ -198,7 +197,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/settings_group_card_bg"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:paddingVertical="4dp">
 
         <LinearLayout
             android:id="@+id/row_hide_thumbnails"
@@ -240,17 +239,6 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/hide_thumbs_helper"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
-        android:layout_marginEnd="12dp"
-        android:paddingTop="8dp"
-        android:textColor="@android:color/darker_gray"
-        android:text="@string/records_hide_thumbnails_subtitle"/>
-
-    <!-- Group: Danger Zone -->
-    <TextView
         android:id="@+id/delete_group_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -265,8 +253,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/settings_group_card_bg"
-        android:orientation="vertical"
-        android:padding="8dp">
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/row_delete_all"

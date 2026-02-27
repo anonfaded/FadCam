@@ -343,6 +343,10 @@
                                 <div class="torch-label">Recording</div>
                                 <div class="torch-value" id="recordingState">STOPPED</div>
                             </div>
+                            <!-- Pause/Resume Button (visible only when recording or paused) -->
+                            <button class="recording-pause-btn" id="recordingPauseBtn" onclick="event.stopPropagation(); togglePauseRecording();" style="display: none;">
+                                <i class="fas fa-pause" id="recordingPauseBtnIcon"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -444,14 +448,17 @@
                 <video id="videoPlayer" playsinline muted controls></video>
                 <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
                     <div class="overlay-content">
-                        <div class="overlay-icon">
+                        <div class="overlay-icon" id="overlayIcon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <circle cx="12" cy="12" r="10"/>
                                 <polygon points="10 8 16 12 10 16" fill="currentColor" stroke="none"/>
                             </svg>
                         </div>
-                        <div class="overlay-title">Waiting for stream</div>
-                        <div class="overlay-text">Stream will auto-start when recording begins</div>
+                        <div class="overlay-spinner" id="overlaySpinner" style="display:none;">
+                            <div class="spinner-ring"></div>
+                        </div>
+                        <div class="overlay-title" id="overlayTitle">Waiting for stream</div>
+                        <div class="overlay-text" id="overlayText">Stream will auto-start when recording begins</div>
                         <div class="overlay-divider"></div>
                         <div class="overlay-hint">
                             <span class="hint-label">Refresh if needed</span>
@@ -2261,7 +2268,10 @@
         async function toggleRecording() {
             console.log('[Recording] Toggle requested');
             const oldState = currentStatus?.isRecording;
-            const newState = !oldState;
+            const isPaused = currentStatus?.isPaused;
+            
+            // If paused, toggle should stop recording (not resume — pause btn handles resume)
+            const newState = isPaused ? false : !oldState;
             
             // Show "Executing..." overlay on recording card
             executingState.start('isRecording', newState, '.recording-card');
@@ -2275,6 +2285,38 @@
                 console.error('[Recording] Failed to toggle:', error);
                 executingState.stop('isRecording');
                 showToast('Failed to toggle recording');
+            }
+        }
+
+        /**
+         * Toggle pause/resume recording.
+         * When recording → pause. When paused → resume.
+         */
+        async function togglePauseRecording() {
+            const isPaused = currentStatus?.isPaused;
+            const isRecording = currentStatus?.isRecording;
+            
+            if (!isRecording && !isPaused) {
+                console.warn('[Recording] Cannot pause/resume — not recording');
+                return;
+            }
+            
+            console.log(`[Recording] ${isPaused ? 'Resume' : 'Pause'} requested`);
+            
+            // Show "Executing..." overlay on recording card
+            executingState.start('isPaused', !isPaused, '.recording-card');
+            
+            try {
+                if (isPaused) {
+                    await dashboardViewModel.resumeRecording();
+                } else {
+                    await dashboardViewModel.pauseRecording();
+                }
+                // executingState will check and update when status poll returns matching value
+            } catch (error) {
+                console.error(`[Recording] Failed to ${isPaused ? 'resume' : 'pause'}:`, error);
+                executingState.stop('isPaused');
+                showToast(`Failed to ${isPaused ? 'resume' : 'pause'} recording`);
             }
         }
 
@@ -2312,6 +2354,7 @@
                 streamUrl = FadCamRemote.getRelayHlsUrl();
                 if (!streamUrl) {
                     console.error('[HlsService] Cloud mode but no relay HLS URL available');
+                    hlsLoaded = false; // Reset so auto-play can retry on next poll
                     return;
                 }
                 console.log('[HlsService] ☁️ Cloud mode: Loading stream from relay:', streamUrl);
@@ -2597,6 +2640,11 @@
                     console.log('[Status] Recording CONFIRMED by server poll - updating UI');
                 }
             }
+            if (executingState.isExecuting('isPaused')) {
+                if (executingState.checkConfirmation('isPaused', status.isPaused)) {
+                    console.log('[Status] Pause/Resume CONFIRMED by server poll - updating UI');
+                }
+            }
             
             currentStatus = status;
 
@@ -2629,19 +2677,52 @@
                 console.log('[Alarm] Skipping UI sync during preview');
             }
 
-            // Update video overlay based on stream readiness (use CSS class for disabled state)
+            // Update video overlay based on stream readiness
             const videoOverlay = document.getElementById('videoOverlay');
-            if (status.state === 'ready' && status.isRecording) {
-                videoOverlay.classList.remove('disabled');
+            const overlayTitle = document.getElementById('overlayTitle');
+            const overlayText = document.getElementById('overlayText');
+            const overlayIcon = document.getElementById('overlayIcon');
+            const overlaySpinner = document.getElementById('overlaySpinner');
+
+            if (status.state === 'ready' && status.isRecording && !status.isPaused) {
+                videoOverlay.classList.remove('disabled', 'loading');
+                overlayIcon.style.display = '';
+                overlaySpinner.style.display = 'none';
+                overlayTitle.textContent = 'Stream ready';
+                overlayText.textContent = 'Tap to play';
+            } else if (status.isPaused) {
+                // Recording paused — show paused overlay over frozen frame
+                videoOverlay.classList.remove('hidden', 'loading');
+                videoOverlay.classList.add('disabled');
+                overlayIcon.style.display = '';
+                overlaySpinner.style.display = 'none';
+                overlayTitle.textContent = 'Recording paused';
+                overlayText.textContent = 'Resume recording to continue stream';
+            } else if (status.state === 'initializing' && status.isRecording) {
+                videoOverlay.classList.add('disabled', 'loading');
+                overlayIcon.style.display = 'none';
+                overlaySpinner.style.display = '';
+                overlayTitle.textContent = 'Starting stream...';
+                overlayText.textContent = 'Preparing video encoder';
+            } else if (status.state === 'buffering' && status.isRecording) {
+                videoOverlay.classList.add('disabled', 'loading');
+                overlayIcon.style.display = 'none';
+                overlaySpinner.style.display = '';
+                overlayTitle.textContent = 'Almost ready...';
+                overlayText.textContent = 'Buffering video segments';
             } else {
                 videoOverlay.classList.add('disabled');
+                videoOverlay.classList.remove('loading');
+                overlayIcon.style.display = '';
+                overlaySpinner.style.display = 'none';
+                overlayTitle.textContent = 'Waiting for stream';
+                overlayText.textContent = 'Stream will auto-start when recording begins';
             }
 
-            // AUTO-LOAD STREAM when status becomes ready (manifest available)
-            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
-                console.log('📺 Stream ready! Loading now...');
-                playStream();
-            }
+            // ===== SYNC RECORDING STATE FIRST (before auto-play check) =====
+            // MUST run before auto-play to ensure lastRecordingState is current.
+            // Without this ordering, playStream() creates HLS and then the recording
+            // state tracker immediately destroys it (create-then-destroy race condition).
             
             // FIRST STATUS UPDATE: Ensure player is in correct state on page load
             // Handles case where user loads dashboard while server is on but not recording
@@ -2671,7 +2752,7 @@
                 }
             }
             
-            // Track recording state for logging
+            // Track recording state changes (must run before auto-play)
             if (status.isRecording && !lastRecordingState) {
                 console.log('🔴 Recording started');
                 lastRecordingState = true;
@@ -2709,6 +2790,15 @@
                 videoOverlay.classList.remove('hidden');
                 videoOverlay.classList.add('disabled');
                 console.log('[Stream] Restored initial overlay state');
+            }
+
+            // AUTO-LOAD STREAM when status becomes ready (manifest available)
+            // NOTE: This MUST run AFTER recording state sync above, so that
+            // lastRecordingState is already set and won't trigger a destroy
+            // immediately after playStream() creates the HLS instance.
+            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
+                console.log('📺 Stream ready! Loading now...');
+                playStream();
             }
 
             // Server status - DYNAMIC based on staleness (Step 6.11)
@@ -2803,12 +2893,20 @@
             // Recording status LED - show unknown when offline
             const recordingLED = document.getElementById('recordingLED');
             const isRecording = isOffline ? false : status.isRecording;
-            recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
+            const isPaused = isOffline ? false : status.isPaused;
+            if (isPaused) {
+                recordingLED.className = 'led-dot recording-led paused';
+            } else {
+                recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
+            }
             
             // Update recording status label (skip if offline - already set to UNKNOWN)
             const recordingStatusLabel = document.getElementById('recordingStatusLabel');
             if (recordingStatusLabel && !isOffline) {
-                if (isRecording) {
+                if (isPaused) {
+                    recordingStatusLabel.textContent = 'PAUSED';
+                    recordingStatusLabel.className = 'status-value recording-text-paused';
+                } else if (isRecording) {
                     recordingStatusLabel.textContent = 'RECORDING';
                     recordingStatusLabel.className = 'status-value recording-text-active';
                 } else {
@@ -2889,21 +2987,52 @@
                 const recordingCard = document.querySelector('.recording-card');
                 const recordingIcon = document.getElementById('recordingIcon');
                 const recordingFill = document.getElementById('recordingFill');
+                const pauseBtn = document.getElementById('recordingPauseBtn');
+                const pauseBtnIcon = document.getElementById('recordingPauseBtnIcon');
                 
                 if (recordingState && recordingCard) {
-                    recordingCard.classList.remove('on', 'off');
+                    recordingCard.classList.remove('on', 'off', 'paused');
                     
-                    if (status.isRecording) {
+                    if (status.isPaused) {
+                        // PAUSED state — amber/yellow
+                        recordingState.textContent = 'PAUSED';
+                        recordingCard.classList.add('paused');
+                        if (recordingIcon) {
+                            recordingIcon.className = 'fas fa-pause recording-icon-fa';
+                        }
+                        // Show resume button
+                        if (pauseBtn) {
+                            pauseBtn.style.display = '';
+                            pauseBtn.title = 'Resume recording';
+                        }
+                        if (pauseBtnIcon) {
+                            pauseBtnIcon.className = 'fas fa-play';
+                        }
+                    } else if (status.isRecording) {
+                        // RECORDING state — red
                         recordingState.textContent = 'RECORDING';
                         recordingCard.classList.add('on');
                         if (recordingIcon) {
                             recordingIcon.className = 'fas fa-circle recording-icon-fa';
                         }
+                        // Show pause button
+                        if (pauseBtn) {
+                            pauseBtn.style.display = '';
+                            pauseBtn.title = 'Pause recording';
+                        }
+                        if (pauseBtnIcon) {
+                            pauseBtnIcon.className = 'fas fa-pause';
+                        }
                     } else {
+                        // STOPPED state — default
                         recordingState.textContent = 'STOPPED';
                         recordingCard.classList.add('off');
                         if (recordingIcon) {
                             recordingIcon.className = 'fas fa-circle recording-icon-fa';
+                        }
+                        // Hide pause button when not recording
+                        if (pauseBtn) {
+                            pauseBtn.style.display = 'none';
                         }
                     }
                 }

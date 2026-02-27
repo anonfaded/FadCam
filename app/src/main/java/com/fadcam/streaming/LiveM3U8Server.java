@@ -165,6 +165,10 @@ import fi.iki.elonen.NanoHTTPD;
                 response = toggleTorch();
             } else if ("/recording/toggle".equals(uri)) {
                 response = toggleRecording();
+            } else if ("/recording/pause".equals(uri)) {
+                response = pauseRecording();
+            } else if ("/recording/resume".equals(uri)) {
+                response = resumeRecording();
             } else if ("/config/recordingMode".equals(uri)) {
                 response = setRecordingMode(session);
             } else if ("/config/streamQuality".equals(uri)) {
@@ -666,10 +670,20 @@ import fi.iki.elonen.NanoHTTPD;
             
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
             boolean isRecording = spManager.isRecordingInProgress();
+            boolean isPaused = RemoteStreamManager.getInstance().isPaused();
             
             android.content.Intent intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
             
-            if (isRecording) {
+            if (isPaused) {
+                // Currently paused - resume recording
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
+                Log.d(TAG, "Recording paused - sending RESUME_RECORDING intent");
+                ServiceStartPolicy.startRecordingAction(context, intent);
+                String responseJson = "{\"status\": \"success\", \"action\": \"resume\", \"isRecording\": true, \"isPaused\": false}";
+                Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", responseJson);
+                response.addHeader("Cache-Control", "no-cache");
+                return response;
+            } else if (isRecording) {
                 // Stop recording
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_RECORDING);
                 Log.d(TAG, "Recording in progress - sending STOP_RECORDING intent");
@@ -683,7 +697,7 @@ import fi.iki.elonen.NanoHTTPD;
             ServiceStartPolicy.startRecordingAction(context, intent);
             
             String action = isRecording ? "stop" : "start";
-            String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s}", 
+            String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s, \"isPaused\": false}", 
                 action, !isRecording);
             
             Log.i(TAG, "✅ Recording " + action + " intent sent");
@@ -694,6 +708,71 @@ import fi.iki.elonen.NanoHTTPD;
         } catch (Exception e) {
             Log.e(TAG, "Error toggling recording", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", 
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * POST /recording/pause - Pause the current recording.
+     */
+    @NonNull
+    private Response pauseRecording() {
+        try {
+            Log.i(TAG, "⏸️ Recording pause requested via web interface");
+            
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+            boolean isRecording = spManager.isRecordingInProgress();
+            
+            if (!isRecording) {
+                return newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
+                    "{\"status\": \"error\", \"message\": \"Not currently recording\"}");
+            }
+            
+            android.content.Intent intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
+            intent.setAction(com.fadcam.Constants.INTENT_ACTION_PAUSE_RECORDING);
+            ServiceStartPolicy.startRecordingAction(context, intent);
+            
+            Log.i(TAG, "✅ Pause recording intent sent");
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
+                "{\"status\": \"success\", \"action\": \"pause\", \"isRecording\": true, \"isPaused\": true}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error pausing recording", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8",
+                "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /**
+     * POST /recording/resume - Resume the paused recording.
+     */
+    @NonNull
+    private Response resumeRecording() {
+        try {
+            Log.i(TAG, "▶️ Recording resume requested via web interface");
+            
+            boolean isPaused = RemoteStreamManager.getInstance().isPaused();
+            
+            if (!isPaused) {
+                return newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
+                    "{\"status\": \"error\", \"message\": \"Recording is not paused\"}");
+            }
+            
+            android.content.Intent intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
+            intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
+            ServiceStartPolicy.startRecordingAction(context, intent);
+            
+            Log.i(TAG, "✅ Resume recording intent sent");
+            
+            Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
+                "{\"status\": \"success\", \"action\": \"resume\", \"isRecording\": true, \"isPaused\": false}");
+            response.addHeader("Cache-Control", "no-cache");
+            return response;
+        } catch (Exception e) {
+            Log.e(TAG, "Error resuming recording", e);
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8",
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }

@@ -18,7 +18,7 @@
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
-        android:background="?attr/colorTopBar">
+        android:background="@drawable/header_bar_rounded_bg">
 
         <TextView
             android:id="@+id/title_text"
@@ -32,17 +32,15 @@
             android:gravity="start|center_vertical"
             android:textAlignment="viewStart" />
 
-        <!-- Info icon -->
-        <TextView
+        <ImageView
             android:id="@+id/btn_info"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:gravity="center"
-            android:fontFamily="@font/materialicons"
-            android:text="help"
-            android:textColor="@android:color/white"
-            android:textSize="22sp"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_menu_info"
+            android:padding="2dp"
+            android:src="@drawable/ic_info"
+            android:tint="@android:color/white" />
     </LinearLayout>
 
     <ScrollView

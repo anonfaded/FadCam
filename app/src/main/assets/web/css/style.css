@@ -847,6 +847,36 @@ video {
     height: 100%;
 }
 
+/* Spinner for loading/buffering states */
+.overlay-spinner {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--spacing-md);
+}
+
+.spinner-ring {
+    width: 100%;
+    height: 100%;
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    border-top-color: var(--accent-red);
+    border-radius: 50%;
+    animation: spinnerRotate 1s linear infinite;
+}
+
+@keyframes spinnerRotate {
+    to { transform: rotate(360deg); }
+}
+
+/* Pulse animation for overlay icon in loading state */
+.video-overlay.loading .overlay-icon {
+    animation: overlayPulse 2s ease-in-out infinite;
+}
+
+@keyframes overlayPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.9; }
+}
+
 .overlay-title {
     font-size: 18px;
     font-weight: 600;
@@ -2082,6 +2112,47 @@ video {
     animation: pulse-recording 1s infinite;
 }
 
+/* Paused state - Amber/Yellow fill */
+.recording-card.paused .recording-fill {
+    opacity: 1;
+    background: linear-gradient(90deg, #e6a817 0%, #c68f00 100%);
+}
+
+.recording-card.paused .recording-icon-fa {
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(230, 168, 23, 0.8), 0 0 4px rgba(230, 168, 23, 0.6);
+    animation: pulse-recording 1.5s infinite;
+}
+
+/* Pause/Resume button on recording card */
+.recording-pause-btn {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 200ms ease, transform 100ms ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.recording-pause-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.1);
+}
+
+.recording-pause-btn:active {
+    transform: scale(0.95);
+}
+
 /* Pulsing animation for recording indicator */
 @keyframes pulse-recording {
     0%, 100% {
@@ -2405,6 +2476,10 @@ video {
     color: #f85149;
 }
 
+.status-value.recording-text-paused {
+    color: #d29922;
+}
+
 /* Staleness text colors (Step 6.11) */
 .status-value.warning-text {
     color: #d29922;
@@ -2454,6 +2529,12 @@ video {
 .recording-led.active {
     background: #f85149;
     box-shadow: 0 0 10px rgba(248, 81, 73, 0.7);
+}
+
+.recording-led.paused {
+    background: #d29922;
+    box-shadow: 0 0 10px rgba(210, 153, 34, 0.7);
+    animation: pulse-warning 1.5s infinite;
 }
 
 .led-label {

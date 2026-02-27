@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/settings_group_card_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="10dp">
+
+    <ImageView
+        android:id="@+id/image_proof"
+        android:layout_width="88dp"
+        android:layout_height="64dp"
+        android:background="@drawable/motion_lab_frame_bg"
+        android:clipToOutline="true"
+        android:contentDescription="@string/forensics_event_proof_frame"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_photo" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorHeading"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/text_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/text_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/new_badge_background"
+            android:paddingStart="8dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="3dp"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <HorizontalScrollView
+            android:id="@+id/person_frames_strip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/person_frames_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/text_frame_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="@string/forensics_frames_hint"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="10sp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

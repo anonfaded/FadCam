@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_scene_layer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <FrameLayout
+        android:id="@+id/card_motion_layer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <com.fadcam.forensics.ui.view.ForensicsCardContainerView
+            android:id="@+id/root_gallery_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="2dp"
+            android:background="@android:color/transparent"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="10dp">
+
+            <FrameLayout
+                android:id="@+id/section_gallery_photo_container"
+                android:layout_width="match_parent"
+                android:layout_height="132dp"
+                android:layout_marginTop="6dp">
+
+                <FrameLayout
+                    android:id="@+id/frame_gallery_photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/forensics_photo_frame_bg"
+                    android:padding="4dp">
+
+                    <ImageView
+                        android:id="@+id/image_gallery_snapshot"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:adjustViewBounds="false"
+                        android:contentDescription="@string/forensics_event_proof_frame"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_photo" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/selection_dim_overlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#B5000000"
+                    android:visibility="gone" />
+
+                <FrameLayout
+                    android:id="@+id/icon_check_container"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone">
+
+                    <View
+                        android:id="@+id/icon_check_bg"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/picker_check_background" />
+
+                    <ImageView
+                        android:id="@+id/icon_check"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:alpha="0.0"
+                        android:scaleX="0"
+                        android:scaleY="0"
+                        android:src="@drawable/avd_check_draw"
+                        android:tint="?attr/colorPrimary" />
+                </FrameLayout>
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="9dp"
+                android:orientation="vertical"
+                android:paddingStart="1dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="1dp"
+                android:paddingBottom="2dp">
+
+                <TextView
+                    android:id="@+id/text_gallery_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="1dp"
+                    android:maxLines="2"
+                    android:minLines="1"
+                    android:textColor="#E2C99A"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.8dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="#35F0E9DD" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:src="@drawable/ic_calendar"
+                        android:tint="#94A1AE" />
+
+                    <TextView
+                        android:id="@+id/text_gallery_meta_time"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#9EABBA"
+                        android:textSize="10sp" />
+
+                    <ImageView
+                        android:id="@+id/icon_gallery_meta_confidence"
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:src="@drawable/ic_focus_target"
+                        android:tint="#8EA3B8" />
+
+                    <TextView
+                        android:id="@+id/text_gallery_meta_confidence"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#9EABBA"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/icon_gallery_meta_source"
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:src="@drawable/ic_info"
+                        android:tint="#8B99A7" />
+
+                    <TextView
+                        android:id="@+id/text_gallery_meta_source"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#95A2B1"
+                        android:textSize="10sp" />
+
+                    <ImageView
+                        android:id="@+id/icon_gallery_meta_size"
+                        android:layout_width="11dp"
+                        android:layout_height="11dp"
+                        android:src="@drawable/database_24px"
+                        android:tint="#8895A4" />
+
+                    <TextView
+                        android:id="@+id/text_gallery_meta_size"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#8E9BAA"
+                        android:textSize="10sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </com.fadcam.forensics.ui.view.ForensicsCardContainerView>
+
+        <LinearLayout
+            android:id="@+id/tape_index_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/forensics_index_tape"
+            android:elevation="8dp"
+            android:gravity="center"
+            android:minWidth="0dp"
+            android:paddingHorizontal="3dp"
+            android:paddingVertical="0.5dp"
+            android:rotation="-6">
+
+            <TextView
+                android:id="@+id/text_gallery_index"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/ubuntu_regular"
+                android:textColor="#101114"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/view_paper_clip"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="5dp"
+            android:alpha="1"
+            android:elevation="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/binder_clip_glossy_black_asset" />
+    </FrameLayout>
+
+</FrameLayout>

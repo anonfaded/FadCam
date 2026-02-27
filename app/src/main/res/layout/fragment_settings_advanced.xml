@@ -16,7 +16,7 @@
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
-        android:background="?attr/colorTopBar"
+        android:background="@drawable/header_bar_rounded_bg"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -43,7 +43,8 @@
         android:id="@+id/content_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:paddingBottom="24dp"
+        android:paddingBottom="76dp"
+        android:clipToPadding="false"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -62,8 +63,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
             <LinearLayout
                 android:id="@+id/row_motion_lab"
@@ -93,6 +94,47 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/motion_lab_row_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"
+                        android:textAlignment="viewStart"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <LinearLayout
+                android:id="@+id/row_digital_forensics"
+                style="@style/SettingsGroupRow"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_debug"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/digital_forensics_title"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"
+                        android:textAlignment="viewStart"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/digital_forensics_row_subtitle"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp"
                         android:textAlignment="viewStart"/>

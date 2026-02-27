@@ -113,7 +113,8 @@ public class HomeFragmentHelper {
 
     /**
      * Recreate the home fragment to switch between FadCam and FadRec modes.
-     * This triggers ViewPagerAdapter to create the appropriate fragment.
+     * With hide/show navigation, we must force remove and re-add the fragment
+     * since switchFragment() would return early (same position).
      */
     private void recreateHomeFragment() {
         try {
@@ -123,23 +124,15 @@ public class HomeFragmentHelper {
                 return;
             }
 
-            // Find the ViewPager
-            ViewPager2 viewPager = activity.findViewById(R.id.view_pager);
-            if (viewPager == null) {
-                Log.w(TAG, "ViewPager not found");
-                return;
-            }
-
-            // Get current position
-            int currentPosition = viewPager.getCurrentItem();
-            
-            // Force adapter to recreate fragments by setting adapter again
-            FragmentStateAdapter adapter = (FragmentStateAdapter) viewPager.getAdapter();
-            if (adapter != null) {
-                viewPager.setAdapter(adapter);
-                // Navigate back to home tab to show the new fragment
-                viewPager.setCurrentItem(currentPosition, false);
+            // Use MainActivity to force recreate the Home fragment for mode switch
+            if (activity instanceof com.fadcam.MainActivity) {
+                com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) activity;
+                
+                // Force recreate position 0 (Home tab)
+                mainActivity.forceRecreateFragment(0);
                 Log.d(TAG, "Home fragment recreated for mode switch");
+            } else {
+                Log.w(TAG, "Activity is not MainActivity");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error recreating home fragment", e);

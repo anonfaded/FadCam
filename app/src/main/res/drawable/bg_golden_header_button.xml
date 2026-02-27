@@ -8,7 +8,7 @@
         android:startColor="#C9A227"
         android:centerColor="#FFD700"
         android:endColor="#E8C547" />
-    <corners android:radius="14dp" />
+    <corners android:radius="8dp" />
     <padding
         android:left="10dp"
         android:right="10dp"

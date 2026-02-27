@@ -27,7 +27,6 @@ import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
 import com.fadcam.motion.data.SharedPrefsMotionSettingsRepository;
-import com.fadcam.motion.domain.model.MotionTriggerMode;
 import com.fadcam.motion.presentation.MotionLabViewModel;
 import com.fadcam.motion.presentation.MotionLabViewModelFactory;
 import com.fadcam.motion.presentation.MotionLabViewState;
@@ -43,7 +42,6 @@ public class MotionLabSettingsFragment extends Fragment {
     private MotionLabViewModel viewModel;
 
     private TextView valueMotionStatus;
-    private TextView valueTriggerMode;
     private TextView valueSensitivity;
     private TextView valueAnalysisFps;
     private TextView valueDebounce;
@@ -97,7 +95,6 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private void bindViews(@NonNull View view) {
         valueMotionStatus = view.findViewById(R.id.value_motion_status);
-        valueTriggerMode = view.findViewById(R.id.value_motion_trigger_mode);
         valueSensitivity = view.findViewById(R.id.value_motion_sensitivity);
         valueAnalysisFps = view.findViewById(R.id.value_motion_analysis_fps);
         valueDebounce = view.findViewById(R.id.value_motion_debounce);
@@ -124,7 +121,6 @@ public class MotionLabSettingsFragment extends Fragment {
         switchMotionEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onEnabledChanged(isChecked));
         switchMotionAutoTorch.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onAutoTorchChanged(isChecked));
 
-        view.findViewById(R.id.row_motion_trigger_mode).setOnClickListener(v -> showTriggerModePicker());
         view.findViewById(R.id.row_motion_sensitivity).setOnClickListener(v -> showSensitivityInput());
         view.findViewById(R.id.row_motion_analysis_fps).setOnClickListener(v -> showAnalysisFpsPicker());
         view.findViewById(R.id.row_motion_debounce).setOnClickListener(v -> showDebounceInput());
@@ -155,9 +151,6 @@ public class MotionLabSettingsFragment extends Fragment {
         valueMotionStatus.setText(state.enabled
             ? getString(R.string.motion_lab_status_enabled)
             : getString(R.string.motion_lab_status_disabled));
-        valueTriggerMode.setText(state.triggerMode == MotionTriggerMode.ANY_MOTION
-            ? getString(R.string.motion_lab_trigger_any_motion)
-            : getString(R.string.motion_lab_trigger_person_confirmed));
         valueSensitivity.setText(getString(R.string.motion_lab_percent_value, state.sensitivity));
         valueAnalysisFps.setText(getString(R.string.motion_lab_fps_value, state.analysisFps));
         valueDebounce.setText(getString(R.string.motion_lab_ms_value, state.debounceMs));
@@ -165,34 +158,9 @@ public class MotionLabSettingsFragment extends Fragment {
         valuePreRoll.setText(getString(R.string.motion_lab_seconds_value, state.preRollSeconds));
     }
 
-    private void showTriggerModePicker() {
-        final String resultKey = "rk_motion_trigger_mode";
-        ArrayList<OptionItem> items = new ArrayList<>();
-        items.add(new OptionItem("any_motion", getString(R.string.motion_lab_trigger_any_motion), getString(R.string.motion_lab_trigger_any_motion_desc)));
-        items.add(new OptionItem("person_confirmed", getString(R.string.motion_lab_trigger_person_confirmed), getString(R.string.motion_lab_trigger_person_confirmed_desc)));
-
-        MotionLabViewState current = viewModel.getState().getValue();
-        String selected = current != null && current.triggerMode == MotionTriggerMode.ANY_MOTION ? "any_motion" : "person_confirmed";
-        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
-            getString(R.string.motion_lab_trigger_mode), items, selected, resultKey,
-            getString(R.string.motion_lab_trigger_mode_helper)
-        );
-
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
-            String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if ("any_motion".equals(id)) {
-                viewModel.onTriggerModeChanged(MotionTriggerMode.ANY_MOTION);
-            } else if ("person_confirmed".equals(id)) {
-                viewModel.onTriggerModeChanged(MotionTriggerMode.PERSON_CONFIRMED);
-            }
-        });
-
-        sheet.show(getParentFragmentManager(), "motion_trigger_mode_picker");
-    }
-
     private void showAnalysisFpsPicker() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 8 : current.analysisFps;
+        int initial = current == null ? 6 : current.analysisFps;
         showNumericInput(
             "rk_motion_analysis_fps",
             getString(R.string.motion_lab_analysis_fps),
@@ -329,11 +297,15 @@ public class MotionLabSettingsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        SharedPreferencesManager.getInstance(requireContext()).setMotionDebugUiActive(true);
         registerMotionDebugReceiverIfNeeded();
     }
 
     @Override
     public void onStop() {
+        if (isAdded()) {
+            SharedPreferencesManager.getInstance(requireContext()).setMotionDebugUiActive(false);
+        }
         unregisterMotionDebugReceiverIfNeeded();
         super.onStop();
     }
@@ -385,12 +357,24 @@ public class MotionLabSettingsFragment extends Fragment {
         float maxDelta = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, 0f);
         boolean globalSuppressed = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, false);
         boolean person = intent.getBooleanExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, false);
+        String className = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_NAME);
+        float classConf = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_CONF, 0f);
+        String eventType = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_EVENT_TYPE);
+        if (className == null || className.trim().isEmpty()) {
+            className = eventType == null || eventType.trim().isEmpty() ? "-" : eventType.trim().toLowerCase();
+        }
 
         valueDebugState.setText(state == null ? "-" : state);
         valueDebugScore.setText(getString(R.string.motion_lab_debug_score_value, raw, score));
         valueDebugThreshold.setText(getString(R.string.motion_lab_debug_threshold_value, startThreshold, stopThreshold));
         valueDebugAction.setText(action == null ? "-" : action);
-        valueDebugPerson.setText(getString(R.string.motion_lab_debug_person_value, person ? "YES" : "NO", personConf));
+        valueDebugPerson.setText(getString(
+            R.string.motion_lab_debug_person_value,
+            className,
+            classConf,
+            person ? "YES" : "NO",
+            personConf
+        ));
         valueDebugMetrics.setText(getString(
             R.string.motion_lab_debug_metrics_value,
             changedArea,
@@ -408,6 +392,8 @@ public class MotionLabSettingsFragment extends Fragment {
             + ", smoothed=" + String.format(java.util.Locale.US, "%.3f", score)
             + ", startThreshold=" + String.format(java.util.Locale.US, "%.3f", startThreshold)
             + ", stopThreshold=" + String.format(java.util.Locale.US, "%.3f", stopThreshold)
+            + ", class=" + className
+            + ", classConf=" + String.format(java.util.Locale.US, "%.3f", classConf)
             + ", person=" + (person ? "YES" : "NO")
             + ", personConf=" + String.format(java.util.Locale.US, "%.3f", personConf)
             + ", area=" + String.format(java.util.Locale.US, "%.3f", changedArea)

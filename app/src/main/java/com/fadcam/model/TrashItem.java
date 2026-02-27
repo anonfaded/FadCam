@@ -1,5 +1,7 @@
 package com.fadcam.model;
 
+import com.fadcam.Constants;
+
 import java.util.Objects;
 
 public class TrashItem {
@@ -40,6 +42,14 @@ public class TrashItem {
 
     public boolean isFromSaf() {
         return isFromSaf;
+    }
+
+    public boolean isForensicsEvidence() {
+        if (trashFileName == null) {
+            return false;
+        }
+        return trashFileName.startsWith(Constants.TRASH_SUBDIR_FORENSICS_EVIDENCE + "/")
+                || trashFileName.startsWith(Constants.TRASH_SUBDIR_FORENSICS_EVIDENCE + java.io.File.separator);
     }
 
     // Setters (might be needed for Gson or other reflection-based libraries, though often not if constructor is used)

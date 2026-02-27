@@ -135,6 +135,12 @@ public abstract class Constants {
     public static final String EXTRA_MOTION_DEBUG_PERSON_CONF =
         "motion_debug_person_conf";
     public static final String EXTRA_MOTION_DEBUG_PERSON = "motion_debug_person";
+    public static final String EXTRA_MOTION_DEBUG_CLASS_NAME =
+        "motion_debug_class_name";
+    public static final String EXTRA_MOTION_DEBUG_CLASS_CONF =
+        "motion_debug_class_conf";
+    public static final String EXTRA_MOTION_DEBUG_EVENT_TYPE =
+        "motion_debug_event_type";
     public static final String EXTRA_MOTION_DEBUG_FRAME_JPEG =
         "motion_debug_frame_jpeg";
     public static final String EXTRA_MOTION_DEBUG_CHANGED_AREA =
@@ -373,6 +379,8 @@ public abstract class Constants {
     // Broadcast action sent when files are restored from trash
     public static final String ACTION_FILES_RESTORED =
         "com.fadcam.FILES_RESTORED";
+    public static final String ACTION_FORENSICS_SNAPSHOT_PERSISTED =
+        "com.fadcam.ACTION_FORENSICS_SNAPSHOT_PERSISTED";
 
     // Broadcast Actions for Video Processing State
     public static final String ACTION_PROCESSING_STARTED =
@@ -421,6 +429,8 @@ public abstract class Constants {
     // Trash Feature Constants
     public static final String TRASH_DIRECTORY_NAME = "Trash";
     public static final String TRASH_METADATA_FILENAME = "trash_metadata.json";
+    public static final String TRASH_SUBDIR_VIDEO_RECORDINGS = "VideoRecordings";
+    public static final String TRASH_SUBDIR_FORENSICS_EVIDENCE = "ForensicsEvidence";
 
     // Request codes
     public static final int REQUEST_CODE_OPEN_DOCUMENT_TREE_FOR_SAF = 1001; // Added request code
@@ -508,6 +518,18 @@ public abstract class Constants {
     public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";
     public static final String PREF_MOTION_ZONES_JSON = "pref_motion_zones_json";
     public static final String PREF_MOTION_AUTO_TORCH_ENABLED = "pref_motion_auto_torch_enabled";
+    public static final String PREF_MOTION_DEBUG_UI_ACTIVE = "pref_motion_debug_ui_active";
+    // Digital Forensics (advanced) preferences
+    public static final String PREF_DF_ENABLED = "pref_df_enabled";
+    public static final String PREF_DF_EVENT_PERSON = "pref_df_event_person";
+    public static final String PREF_DF_EVENT_VEHICLE = "pref_df_event_vehicle";
+    public static final String PREF_DF_EVENT_PET = "pref_df_event_pet";
+    public static final String PREF_DF_EVENT_DANGEROUS_OBJECT = "pref_df_event_dangerous_object";
+    public static final String PREF_DF_OVERLAY_ENABLED = "pref_df_overlay_enabled";
+    public static final String PREF_DF_DAILY_SUMMARY_ENABLED = "pref_df_daily_summary_enabled";
+    public static final String PREF_DF_HEATMAP_ENABLED = "pref_df_heatmap_enabled";
+    public static final String PREF_DF_EVIDENCE_ENABLED = "pref_df_evidence_enabled";
+    public static final String PREF_DF_CAPTURE_SCOPE = "pref_df_capture_scope"; // people|objects|both
 
     // ── Dual Camera (PiP) Constants ────────────────────────────────────────
     public static final String PREF_DUAL_CAMERA_ENABLED = "dual_camera_enabled";

@@ -8,6 +8,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import com.fadcam.Constants;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.ui.FadRecHomeFragment;
+import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
 
 /**
  * ViewPagerAdapter manages fragments for the main ViewPager.
@@ -38,6 +39,8 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
             case 4:
                 // Phase 1: Use new SettingsHomeFragment (legacy fragment accessible from inside)
                 return new SettingsHomeFragment();
+            case 5:
+                return new ForensicIntelligenceFragment();
             default:
                 return new HomeFragment();
         }
@@ -64,6 +67,6 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 5; // Added Faditor Mini tab between Remote and Settings
+        return 6; // Home, Records, Remote, Faditor Mini, Settings, Lab
     }
 }

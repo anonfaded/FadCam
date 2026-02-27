@@ -6,26 +6,58 @@
     android:layout_height="match_parent"
     android:background="?android:colorBackground">
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/view_pager"
+    <!-- Fragment container for tab content -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/nav_container"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Container for bottom navigation -->
+    <!-- Full bottom focus scrim around dock -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="104dp"
+        android:layout_marginBottom="0dp"
+        android:background="@drawable/dock_focus_gradient"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <FrameLayout
         android:id="@+id/nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottom_navigation"
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_gravity="bottom"
-            app:menu="@menu/bottom_nav_menu" />
+            app:cardCornerRadius="24dp"
+            app:cardElevation="12dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
+
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/bottom_navigation"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                app:itemIconSize="22dp"
+                app:itemIconTint="@color/bottom_nav_icon_tint"
+                app:itemTextColor="@android:color/white"
+                app:labelVisibilityMode="selected"
+                app:menu="@menu/bottom_nav_menu" />
+        </androidx.cardview.widget.CardView>
     </FrameLayout>
 
     <!-- ********************************************************** -->

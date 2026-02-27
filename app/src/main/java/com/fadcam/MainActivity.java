@@ -11,8 +11,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.ViewConfiguration;
 import android.widget.Toast;
 import com.fadcam.ui.OverlayNavUtil;
 
@@ -22,12 +25,12 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager2.widget.ViewPager2;
 
 import com.fadcam.ui.RecordsFragment;
-import com.fadcam.ui.TrashFragment;
-import com.fadcam.ui.ViewPagerAdapter;
-import com.fadcam.ui.FadePageTransformer;
+import com.fadcam.ui.RemoteFragment;
+import com.fadcam.ui.FaditorMiniFragment;
+import com.fadcam.ui.SettingsHomeFragment;
+import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
 import com.fadcam.ui.utils.NewFeatureManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -43,10 +46,12 @@ import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.widget.HorizontalScrollView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ViewPager2 viewPager;
     private BottomNavigationView bottomNavigationView;
     private int originalBottomNavColor = 0; // Store original bottom nav color
 
@@ -68,6 +73,14 @@ public class MainActivity extends AppCompatActivity {
             doubleBackToExitPressedOnce = false;
         }
     };
+
+    // Tab swipe navigation state (fragment-based navigation, not ViewPager)
+    private float swipeDownX = 0f;
+    private float swipeDownY = 0f;
+    private boolean swipeCandidate = false;
+    private boolean swipeHandled = false;
+    private int swipeTouchSlop = 0;
+    private static final float SWIPE_HORIZONTAL_RATIO = 1.35f;
 
     /**
      * Public method to be called from fragments that need to disable the
@@ -279,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
         SplashScreen.installSplashScreen(this);
         // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by
@@ -402,8 +416,11 @@ public class MainActivity extends AppCompatActivity {
         }
         // startup)-----------
 
-        viewPager = findViewById(R.id.view_pager);
+        // Fragment container for tab navigation
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        
+        // Initialize SharedPreferencesManager before using it in fragments
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
 
         // A simple overlay that we can show/hide to mask the UI before recents
         // snapshot.
@@ -471,103 +488,72 @@ public class MainActivity extends AppCompatActivity {
             Log.e("MainActivity", "Error getting bottom nav color from colorTopBar", e);
         }
 
-        ViewPagerAdapter adapter = new ViewPagerAdapter(this);
-        viewPager.setAdapter(adapter);
-
-        // Apply the fade animation transformer with more conservative settings
-        viewPager.setPageTransformer(new FadePageTransformer());
-
-        // Keep all pages in memory to prevent content disappearing
-        viewPager.setOffscreenPageLimit(adapter.getItemCount());
-
         // Initialize badge visibility
         updateFeatureBadgeVisibility();
 
+        // Load initial fragment (Home tab) immediately with commitNow()
+        // Check if there's already a fragment (e.g., after configuration change)
+        Log.d("FragmentNav", "onCreate: About to load initial fragment (position 0), savedInstanceState=" + (savedInstanceState == null ? "null" : "exists"));
+        if (savedInstanceState == null) {
+            // Fresh launch — load Home tab
+            Log.d("FragmentNav", "onCreate: No saved state, loading Home fragment");
+            switchFragment(0, false); // Uses commitNow() for instant, synchronous load
+            Log.d("FragmentNav", "onCreate: Initial fragment load completed");
+        } else {
+            // Configuration change / process death — FragmentManager restores all added fragments
+            // We need to find which was the current one and ensure others are hidden
+            Log.d("FragmentNav", "onCreate: Restoring from savedInstanceState");
+            int restoredPosition = savedInstanceState.getInt("current_fragment_position", 0);
+            androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+            
+            // Hide all fragments except the current one, and restore currentFragmentPosition
+            for (int i = 0; i < 6; i++) {
+                String tag = FRAGMENT_TAG_PREFIX + i;
+                Fragment f = fm.findFragmentByTag(tag);
+                if (f != null) {
+                    if (i == restoredPosition) {
+                        fm.beginTransaction().show(f).commitNow();
+                        Log.d("FragmentNav", "onCreate: Showing restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                    } else {
+                        fm.beginTransaction().hide(f).commitNow();
+                        Log.d("FragmentNav", "onCreate: Hiding restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                    }
+                }
+            }
+            currentFragmentPosition = restoredPosition;
+            Log.d("FragmentNav", "onCreate: Restored current position to " + restoredPosition);
+        }
+
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
+            int targetPosition = -1;
+            
             if (itemId == R.id.navigation_home) {
-                viewPager.setCurrentItem(0, true);
+                targetPosition = 0;
             } else if (itemId == R.id.navigation_records) {
-                viewPager.setCurrentItem(1, true);
+                targetPosition = 1;
             } else if (itemId == R.id.navigation_remote) {
-                viewPager.setCurrentItem(2, true);
+                targetPosition = 2;
             } else if (itemId == R.id.navigation_faditor_mini) {
-                viewPager.setCurrentItem(3, true);
+                targetPosition = 3;
             } else if (itemId == R.id.navigation_settings) {
-                viewPager.setCurrentItem(4, true);
+                targetPosition = 4;
+            } else if (itemId == R.id.navigation_lab) {
+                targetPosition = 5;
+            }
+            
+            if (targetPosition != -1) {
+                // Always use instant switch with fade animation
+                switchFragment(targetPosition, true);
             }
             return true;
         });
 
-        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                switch (position) {
-                    case 0:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_home);
-                        // Reset nav and status bar color when leaving remote
-                        setBottomNavColor(0);
-                        setStatusBarColor(0);
-                        setNavigationBarColor(0);
-                        break;
-                    case 1:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_records);
-                        // Reset nav and status bar color when leaving remote
-                        setBottomNavColor(0);
-                        setStatusBarColor(0);
-                        setNavigationBarColor(0);
-                        // Trigger lazy loading when user navigates to Records tab
-                        try {
-                            Fragment recordsFragment = getSupportFragmentManager().findFragmentByTag("f" + position);
-                            if (recordsFragment instanceof RecordsFragment) {
-                                ((RecordsFragment) recordsFragment).onFragmentBecameVisible();
-                            }
-                        } catch (Exception e) {
-                            Log.e("MainActivity", "Error triggering Records lazy load", e);
-                        }
-                        break;
-                    case 2:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_remote);
-                        // Remote tab will handle its own nav and status bar colors in onResume()
-                        break;
-                    case 3:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_faditor_mini);
-                        // Reset nav and status bar color when leaving remote
-                        setBottomNavColor(0);
-                        setStatusBarColor(0);
-                        setNavigationBarColor(0);
-                        break;
-                    case 4:
-                        bottomNavigationView.setSelectedItemId(R.id.navigation_settings);
-                        // Reset nav and status bar color when leaving remote
-                        setBottomNavColor(0);
-                        setStatusBarColor(0);
-                        setNavigationBarColor(0);
-                        // Mark settings nav badge as seen when entering Settings
-                        NewFeatureManager.markFeatureAsSeen(MainActivity.this, "settings_nav");
-                        // Refresh badges after marking
-                        updateFeatureBadgeVisibility();
-                        break;
-                }
-            }
-        });
-
-        // Add custom "soon" badge to Faditor Mini tab only (Remote uses NewFeatureBadge system)
-        bottomNavigationView.post(() -> {
-            ViewGroup menuView = (ViewGroup) bottomNavigationView.getChildAt(0);
-            if (menuView != null && menuView.getChildCount() > 3) {
-                // Add badge to Faditor Mini tab (index 3)
-                View faditorMiniTab = menuView.getChildAt(3); // 0:home, 1:records, 2:remote, 3:faditor_mini
-                if (faditorMiniTab instanceof ViewGroup) {
-                    // Prevent duplicate badge
-                    View existingBadge = ((ViewGroup) faditorMiniTab).findViewById(R.id.badge_text);
-                    if (existingBadge == null) {
-                        View badge = getLayoutInflater().inflate(R.layout.custom_badge, (ViewGroup) faditorMiniTab, false);
-                        ((ViewGroup) faditorMiniTab).addView(badge);
-                    }
-                }
-            }
-        });
+        // Dock reveal animation – only on fresh cold start, not config changes
+        if (savedInstanceState == null) {
+            View navContainer = findViewById(R.id.nav_container);
+            com.fadcam.ui.DockRevealAnimator.reveal(navContainer, bottomNavigationView);
+        }
 
         // This is the path for the osmdroid tile cache
         File osmdroidBasePath = new File(getCacheDir().getAbsolutePath(), "osmdroid");
@@ -602,12 +588,11 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences reopenPrefs = sharedPreferencesManager.sharedPreferences;
             boolean reopenAppearance = reopenPrefs.getBoolean("reopen_appearance_after_theme", false);
             if (reopenAppearance) {
+                Log.d("FragmentNav", "Theme reopen: Switching to Settings tab");
                 // Clear flag to avoid loops
                 reopenPrefs.edit().putBoolean("reopen_appearance_after_theme", false).apply();
-                // Ensure Settings tab selected (index 4)
-                if (viewPager != null) {
-                    viewPager.setCurrentItem(4, false);
-                }
+                //  Ensure Settings tab selected (index 4)
+                switchFragment(4, false);
                 // Post to allow SettingsHomeFragment attach
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     try {
@@ -644,16 +629,129 @@ public class MainActivity extends AppCompatActivity {
         // shortcuts)-----------
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // Disable tab swipe when overlay fragment is visible.
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        boolean overlayVisible = overlayContainer != null && overlayContainer.getVisibility() == View.VISIBLE;
+        if (overlayVisible) {
+            return super.dispatchTouchEvent(ev);
+        }
+
+        final int action = ev.getActionMasked();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN: {
+                swipeDownX = ev.getRawX();
+                swipeDownY = ev.getRawY();
+                swipeHandled = false;
+                View touched = findDeepestViewAt(getWindow().getDecorView(), ev.getRawX(), ev.getRawY());
+                swipeCandidate = !isSwipeExcludedTarget(touched);
+                break;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                if (!swipeCandidate || swipeHandled) break;
+                float dx = ev.getRawX() - swipeDownX;
+                float dy = ev.getRawY() - swipeDownY;
+                if (Math.abs(dy) > Math.abs(dx)) {
+                    swipeCandidate = false;
+                }
+                break;
+            }
+            case MotionEvent.ACTION_UP: {
+                if (!swipeCandidate || swipeHandled) break;
+                float dx = ev.getRawX() - swipeDownX;
+                float dy = ev.getRawY() - swipeDownY;
+                if (Math.abs(dx) > Math.max(swipeTouchSlop * 6f, 180f)
+                        && Math.abs(dx) > Math.abs(dy) * SWIPE_HORIZONTAL_RATIO) {
+                    int target = currentFragmentPosition + (dx < 0 ? 1 : -1);
+                    if (target >= 0 && target <= 5) {
+                        switchFragment(target, true);
+                        swipeHandled = true;
+                        swipeCandidate = false;
+                        return true;
+                    }
+                }
+                swipeCandidate = false;
+                break;
+            }
+            case MotionEvent.ACTION_CANCEL: {
+                swipeCandidate = false;
+                swipeHandled = false;
+                break;
+            }
+            default:
+                break;
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private boolean isSwipeExcludedTarget(View touchedView) {
+        if (touchedView == null) return false;
+
+        View navContainer = findViewById(R.id.nav_container);
+        if (navContainer != null && isDescendantOf(touchedView, navContainer)) {
+            return true;
+        }
+
+        ViewParent parent = touchedView.getParent();
+        View current = touchedView;
+        while (current != null) {
+            if (current instanceof HorizontalScrollView) return true;
+            if (current instanceof com.google.android.material.chip.Chip) return true;
+            if (current instanceof com.google.android.material.chip.ChipGroup) return true;
+            if (current instanceof BottomNavigationView) return true;
+            if (current instanceof RecyclerView) {
+                RecyclerView rv = (RecyclerView) current;
+                if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
+            }
+            if (!(parent instanceof View)) break;
+            current = (View) parent;
+            parent = current.getParent();
+        }
+        return false;
+    }
+
+    private boolean isDescendantOf(@NonNull View child, @NonNull View ancestor) {
+        ViewParent p = child.getParent();
+        while (p instanceof View) {
+            if (p == ancestor) return true;
+            p = p.getParent();
+        }
+        return false;
+    }
+
+    private View findDeepestViewAt(@NonNull View root, float rawX, float rawY) {
+        int[] loc = new int[2];
+        root.getLocationOnScreen(loc);
+        float x = rawX - loc[0];
+        float y = rawY - loc[1];
+        return findDeepestViewAtInternal(root, x, y);
+    }
+
+    private View findDeepestViewAtInternal(@NonNull View view, float x, float y) {
+        if (x < 0 || y < 0 || x > view.getWidth() || y > view.getHeight()) return null;
+        if (!(view instanceof ViewGroup)) return view;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = group.getChildCount() - 1; i >= 0; i--) {
+            View child = group.getChildAt(i);
+            if (child.getVisibility() != View.VISIBLE) continue;
+            float childX = x - child.getLeft();
+            float childY = y - child.getTop();
+            View target = findDeepestViewAtInternal(child, childX, childY);
+            if (target != null) return target;
+        }
+        return view;
+    }
+
     private void handleWidgetIntent() {
         Intent intent = getIntent();
         if (intent != null) {
             // Handle navigation to specific tab (e.g., from notification)
             int navigateToTab = intent.getIntExtra("navigate_to_tab", -1);
-            if (navigateToTab >= 0 && viewPager != null) {
+            if (navigateToTab >= 0) {
                 // Use a delay to ensure fragments are properly initialized
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    if (viewPager != null) {
-                        viewPager.setCurrentItem(navigateToTab, true); // Use smooth scroll
+                    switchFragment(navigateToTab, true); // Use smooth fade
                         
                         // Trigger fragment visibility callback for Records tab
                         if (navigateToTab == 1) {
@@ -661,7 +759,7 @@ public class MainActivity extends AppCompatActivity {
                             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                                 try {
                                     Fragment recordsFragment = getSupportFragmentManager()
-                                        .findFragmentByTag("f" + navigateToTab);
+                                        .findFragmentByTag(FRAGMENT_TAG_PREFIX + navigateToTab);
                                     if (recordsFragment instanceof RecordsFragment) {
                                         RecordsFragment records = (RecordsFragment) recordsFragment;
                                         records.onFragmentBecameVisible();
@@ -674,7 +772,6 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }, 300); // Additional delay for refresh
                         }
-                    }
                 }, 200);
                 // Clear the extra so it doesn't trigger again on configuration change
                 intent.removeExtra("navigate_to_tab");
@@ -683,9 +780,7 @@ public class MainActivity extends AppCompatActivity {
             // Handle widget intent to open shortcuts
             if (intent.getBooleanExtra("open_shortcuts_widgets", false)) {
                 // Navigate to Settings tab and then open Shortcuts & Widgets screen
-                if (viewPager != null) {
-                    viewPager.setCurrentItem(4, false); // Settings tab
-                }
+                switchFragment(4, false); // Settings tab
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     try {
                         com.fadcam.ui.ShortcutsSettingsFragment frag = new com.fadcam.ui.ShortcutsSettingsFragment();
@@ -775,6 +870,12 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
     }
 
+    @Override
+    protected void onSaveInstanceState(@androidx.annotation.NonNull android.os.Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("current_fragment_position", currentFragmentPosition);
+    }
+
     /** Shows or hides the cloak overlay based on preference. */
     private void applyCloakIfNeeded(boolean show) {
         try {
@@ -843,8 +944,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // If we're not on the home tab, go to home tab first before exiting
-        if (viewPager.getCurrentItem() != 0) {
-            viewPager.setCurrentItem(0, true); // Enable animation
+        if (getCurrentFragmentPosition() != 0) {
+            switchFragment(0, true); // Enable animation
         } else {
             // Check if we should skip this back handling
             if (skipNextBackHandling) {
@@ -905,6 +1006,11 @@ public class MainActivity extends AppCompatActivity {
         }
         // state)-----------
 
+        // Restore status/nav bar colors for the current tab
+        // With hide/show navigation, fragments stay alive and don't re-trigger color setup
+        // So we must restore the correct colors when app returns from background
+        restoreBarColorsForCurrentTab();
+
         // Update badge visibility for new features
         updateFeatureBadgeVisibility();
 
@@ -940,7 +1046,7 @@ public class MainActivity extends AppCompatActivity {
         // Handle any pending intents
         Intent intent = getIntent();
         if (intent != null && Constants.ACTION_SHOW_RECORDS.equals(intent.getAction())) {
-            viewPager.setCurrentItem(1, false); // Navigate to Records tab
+            switchFragment(1, false); // Navigate to Records tab
         }
 
         // Set up the back press behavior with the newer API
@@ -955,8 +1061,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     // If we're not on the home tab, go to home tab first before exiting
-                    if (viewPager.getCurrentItem() != 0) {
-                        viewPager.setCurrentItem(0, true); // Enable animation
+                    if (getCurrentFragmentPosition() != 0) {
+                        switchFragment(0, true); // Enable animation
                     } else {
                         // Check if we should skip this back handling
                         if (skipNextBackHandling) {
@@ -1243,35 +1349,70 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Notify all fragments in the ViewPager about orientation changes
-     * so they can refresh their layouts appropriately
+     * Handle orientation changes by detaching and re-attaching ALL added fragments in separate transactions.
+     * With hide/show navigation, fragments stay alive in memory — their views
+     * are never re-inflated on orientation change. We must use TWO separate transactions:
+     * 1. Detach all and commit
+     * 2. Re-attach all with correct layouts (e.g., layout-land/fragment_home.xml)
+     * Using separate transactions prevents FragmentManager from optimizing away the detach+attach.
      */
     private void notifyFragmentsOfOrientationChange(int orientation) {
         try {
-            ViewPagerAdapter adapter = (ViewPagerAdapter) viewPager.getAdapter();
-            if (adapter != null) {
-                // Force the ViewPager to recreate the current fragment
-                int currentItem = viewPager.getCurrentItem();
-
-                // Temporarily disable smooth scrolling and recreate the adapter
-                viewPager.setUserInputEnabled(false);
-
-                // Create a new adapter instance to force fragment recreation
-                ViewPagerAdapter newAdapter = new ViewPagerAdapter(this);
-                viewPager.setAdapter(newAdapter);
-
-                // Restore the current item
-                viewPager.setCurrentItem(currentItem, false);
-
-                // Re-enable user input
-                viewPager.setUserInputEnabled(true);
-
-                Log.d("MainActivity", "ViewPager adapter recreated for orientation: " +
-                        (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape"
-                                : "portrait"));
+            androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+            
+            // TRANSACTION 1: Detach all added fragments
+            androidx.fragment.app.FragmentTransaction detachTx = fm.beginTransaction();
+            for (int i = 0; i < 6; i++) {
+                String tag = FRAGMENT_TAG_PREFIX + i;
+                Fragment f = fm.findFragmentByTag(tag);
+                if (f != null) {
+                    detachTx.detach(f);
+                    Log.d("MainActivity", "Orientation: detaching fragment at position " + i + ": " + f.getClass().getSimpleName());
+                }
             }
+            detachTx.commitNow(); // Must commit before re-attaching
+            
+            // TRANSACTION 2: Re-attach all fragments (they will re-inflate with new orientation's layout)
+            androidx.fragment.app.FragmentTransaction attachTx = fm.beginTransaction();
+            for (int i = 0; i < 6; i++) {
+                String tag = FRAGMENT_TAG_PREFIX + i;
+                Fragment f = fm.findFragmentByTag(tag);
+                if (f != null) {
+                    attachTx.attach(f);
+                    // Re-apply hidden state: only the current tab is visible
+                    if (i != currentFragmentPosition) {
+                        attachTx.hide(f);
+                    } else {
+                        attachTx.show(f);
+                    }
+                    Log.d("MainActivity", "Orientation: re-attached fragment at position " + i + ": " + f.getClass().getSimpleName());
+                }
+            }
+            attachTx.commitNow();
+            
+            Log.d("MainActivity", "Orientation changed to " +
+                    (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape" : "portrait") +
+                    " — all fragments re-inflated");
         } catch (Exception e) {
-            Log.e("MainActivity", "Error recreating ViewPager adapter for orientation change", e);
+            Log.e("MainActivity", "Error handling orientation change", e);
+        }
+    }
+
+    /**
+     * Restore status bar, navigation bar, and bottom nav colors based on the current tab.
+     * Called from onResume to ensure colors are correct when returning from background.
+     */
+    private void restoreBarColorsForCurrentTab() {
+        if (currentFragmentPosition == 2) {
+            // Remote tab uses black bars
+            setBottomNavColor(0xFF000000);
+            setStatusBarColor(0xFF000000);
+            setNavigationBarColor(0xFF000000);
+        } else {
+            // All other tabs use theme default colors
+            setBottomNavColor(0);
+            setStatusBarColor(0);
+            setNavigationBarColor(0);
         }
     }
 
@@ -1293,14 +1434,13 @@ public class MainActivity extends AppCompatActivity {
                     .getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
 
             // Apply insets to main content areas
-            View viewPager = findViewById(R.id.view_pager);
             View bottomNav = findViewById(R.id.bottom_navigation);
+            View fragmentContainer = findViewById(R.id.fragment_container);
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
-
-            if (viewPager != null) {
+            if (fragmentContainer != null) {
                 // Apply top and side insets to main content, but not bottom (handled by bottom
                 // nav)
-                viewPager.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+                fragmentContainer.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             }
 
             if (bottomNav != null) {
@@ -1309,11 +1449,227 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (overlayContainer != null) {
-                // Apply all insets to overlay container
+                // Apply all insets to overlay container (for trash, etc.)
                 overlayContainer.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             }
 
             return insets;
         });
+    }
+
+    // ========== Fragment-based Navigation System ==========
+    
+    private int currentFragmentPosition = -1; // -1 means no fragment loaded yet
+    private static final String FRAGMENT_TAG_PREFIX = "tab_fragment_";
+    
+    /**
+     * Switch to a fragment at the specified position using hide/show for instant switching.
+     * Fragments are kept alive in memory — views are preserved, animations continue,
+     * and subsequent tab switches are instant (no inflation or setup overhead).
+     * Public method accessible to fragments for programmatic navigation.
+     * @param position Tab position (0-5)
+     * @param animate Whether to animate the transition
+     */
+    public void switchFragment(int position, boolean animate) {
+        Log.d("FragmentNav", "switchFragment: Called with position=" + position + ", animate=" + animate + ", current=" + currentFragmentPosition);
+        
+        if (position == currentFragmentPosition) {
+            Log.d("FragmentNav", "switchFragment: Already showing position " + position + ", returning");
+            return; // Already showing this fragment
+        }
+        
+        long startTime = System.currentTimeMillis();
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        androidx.fragment.app.FragmentTransaction transaction = fm.beginTransaction();
+        
+        // Set custom fade animations
+        if (animate) {
+            transaction.setCustomAnimations(
+                R.anim.fade_in,  // Fast 120ms fade in
+                R.anim.fade_out  // Fast 100ms fade out
+            );
+        }
+        
+        // Hide the currently visible fragment (if any)
+        if (currentFragmentPosition >= 0) {
+            String currentTag = FRAGMENT_TAG_PREFIX + currentFragmentPosition;
+            Fragment currentFragment = fm.findFragmentByTag(currentTag);
+            if (currentFragment != null) {
+                transaction.hide(currentFragment);
+                Log.d("FragmentNav", "switchFragment: Hiding fragment at position " + currentFragmentPosition);
+            }
+        }
+        
+        // Show existing fragment or add new one for the target position
+        String targetTag = FRAGMENT_TAG_PREFIX + position;
+        Fragment targetFragment = fm.findFragmentByTag(targetTag);
+        
+        if (targetFragment != null) {
+            // Fragment already added — just show it (instant, no view inflation)
+            transaction.show(targetFragment);
+            Log.d("FragmentNav", "switchFragment: Showing existing fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
+        } else {
+            // First time visiting this tab — create and add
+            targetFragment = createFragmentForPosition(position);
+            transaction.add(R.id.fragment_container, targetFragment, targetTag);
+            Log.d("FragmentNav", "switchFragment: Adding new fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
+        }
+        
+        // Use commitNow() for instant switching (no lag), commit() for animated transitions
+        if (animate) {
+            Log.d("FragmentNav", "switchFragment: Committing with animation (async)");
+            transaction.commit(); // Async for animation
+        } else {
+            Log.d("FragmentNav", "switchFragment: Committing NOW (synchronous)");
+            transaction.commitNow(); // Immediate for instant switching and initial load
+        }
+        
+        long endTime = System.currentTimeMillis();
+        Log.d("FragmentNav", "switchFragment: Transaction completed in " + (endTime - startTime) + "ms");
+        
+        currentFragmentPosition = position;
+        Log.d("FragmentNav", "switchFragment: Updated currentFragmentPosition to " + position);
+        
+        // Handle tab-specific logic (same as old onPageSelected)
+        handleTabSelected(position);
+    }
+    
+    /**
+     * Create a new fragment instance for the given tab position.
+     * Only called the first time a tab is visited — subsequent visits reuse the existing fragment.
+     */
+    private Fragment createFragmentForPosition(int position) {
+        Log.d("FragmentNav", "createFragmentForPosition: Creating new fragment for position " + position);
+        
+        // Create new fragment if not found
+        Fragment newFragment;
+        switch (position) {
+            case 0:
+                // Home tab - check current mode
+                String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
+                if (com.fadcam.Constants.MODE_FADREC.equals(currentMode)) {
+                    newFragment = com.fadcam.fadrec.ui.FadRecHomeFragment.newInstance();
+                } else {
+                    newFragment = new com.fadcam.ui.HomeFragment();
+                }
+                break;
+            case 1:
+                newFragment = new RecordsFragment();
+                break;
+            case 2:
+                newFragment = new RemoteFragment();
+                break;
+            case 3:
+                newFragment = new FaditorMiniFragment();
+                break;
+            case 4:
+                newFragment = new com.fadcam.ui.SettingsHomeFragment();
+                break;
+            case 5:
+                newFragment = new com.fadcam.forensics.ui.ForensicIntelligenceFragment();
+                break;
+            default:
+                newFragment = new com.fadcam.ui.HomeFragment();
+        }
+        
+        Log.d("FragmentNav", "createFragmentForPosition: Created new fragment for position " + position + ": " + newFragment.getClass().getSimpleName());
+        return newFragment;
+    }
+    
+    /**
+     * Handle tab-specific logic when a tab is selected.
+     * Replaces old ViewPager2.OnPageChangeCallback logic.
+     */
+    private void handleTabSelected(int position) {
+        Log.d("FragmentNav", "handleTabSelected: Called for position " + position);
+        
+        // Update bottom nav selection
+        int navItemId = getNavItemIdForPosition(position);
+        if (navItemId != -1) {
+            bottomNavigationView.setSelectedItemId(navItemId);
+        }
+        
+        // Restore correct bar colors for the selected tab
+        restoreBarColorsForCurrentTab();
+        
+        // Handle tab-specific callbacks
+        switch (position) {
+            case 1: // Records tab
+                // Trigger lazy loading
+                try {
+                    Fragment recordsFragment = getSupportFragmentManager()
+                        .findFragmentByTag(FRAGMENT_TAG_PREFIX + position);
+                    if (recordsFragment instanceof RecordsFragment) {
+                        ((RecordsFragment) recordsFragment).onFragmentBecameVisible();
+                    }
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error triggering Records lazy load", e);
+                }
+                break;
+            case 5: // Lab tab
+                // Mark feature as seen
+                com.fadcam.ui.utils.NewFeatureManager.markFeatureAsSeen(this, "lab");
+                refreshFeatureBadges();
+                break;
+        }
+    }
+    
+    /**
+     * Get navigation item ID for a given tab position.
+     */
+    private int getNavItemIdForPosition(int position) {
+        switch (position) {
+            case 0: return R.id.navigation_home;
+            case 1: return R.id.navigation_records;
+            case 2: return R.id.navigation_remote;
+            case 3: return R.id.navigation_faditor_mini;
+            case 4: return R.id.navigation_settings;
+            case 5: return R.id.navigation_lab;
+            default: return -1;
+        }
+    }
+    
+    /**
+     * Get the current fragment position.
+     */
+    public int getCurrentFragmentPosition() {
+        return currentFragmentPosition;
+    }
+
+    /**
+     * Force recreate the fragment at the specified position.
+     * Used for mode switching (FadCam <-> FadRec) where the fragment class changes
+     * but the position stays the same.
+     * @param position Tab position to recreate
+     */
+    public void forceRecreateFragment(int position) {
+        Log.d("FragmentNav", "forceRecreateFragment: Forcing recreation of fragment at position " + position);
+        
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        String tag = FRAGMENT_TAG_PREFIX + position;
+        Fragment existingFragment = fm.findFragmentByTag(tag);
+        
+        if (existingFragment != null) {
+            // Remove the existing fragment
+            androidx.fragment.app.FragmentTransaction removeTx = fm.beginTransaction();
+            removeTx.remove(existingFragment);
+            removeTx.commitNow();
+            Log.d("FragmentNav", "forceRecreateFragment: Removed existing fragment: " + existingFragment.getClass().getSimpleName());
+        }
+        
+        // Create and add the new fragment
+        Fragment newFragment = createFragmentForPosition(position);
+        androidx.fragment.app.FragmentTransaction addTx = fm.beginTransaction();
+        addTx.add(R.id.fragment_container, newFragment, tag);
+        
+        // Apply visibility state: only show if it's the current position
+        if (position == currentFragmentPosition) {
+            addTx.show(newFragment);
+        } else {
+            addTx.hide(newFragment);
+        }
+        
+        addTx.commitNow();
+        Log.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
     }
 }

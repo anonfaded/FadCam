@@ -14,7 +14,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:fitsSystemWindows="true"
-        android:paddingTop="4dp"
+
         android:paddingBottom="8dp">
 
         <!-- Scroll Progress Bar with gradient and glow -->
@@ -120,7 +120,7 @@
             android:orientation="vertical"
             android:paddingHorizontal="12dp"
             android:paddingTop="1dp"
-            android:paddingBottom="4dp"
+
             android:visibility="visible">
 
             <!-- Shimmer placeholder lines with visible shimmer effect -->
@@ -183,7 +183,7 @@
             android:layout_weight="1"
             android:paddingHorizontal="12dp"
             android:paddingTop="1dp"
-            android:paddingBottom="4dp"
+
             android:visibility="gone" />
 
         <!-- Bottom CTA Button with Countdown -->

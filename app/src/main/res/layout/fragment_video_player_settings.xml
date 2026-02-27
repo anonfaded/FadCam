@@ -16,7 +16,7 @@
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
-        android:background="?attr/colorTopBar"
+        android:background="@drawable/header_bar_rounded_bg"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -75,8 +75,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <!-- Playback Speed Row -->
                 <LinearLayout
@@ -366,8 +366,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <!-- Mute Playback Row -->
                 <LinearLayout

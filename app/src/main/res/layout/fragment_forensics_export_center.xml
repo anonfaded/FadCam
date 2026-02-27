@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <LinearLayout
+        android:id="@+id/header_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/header_bar_rounded_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/back_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:padding="2dp"
+            android:src="@drawable/ic_close"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="@string/forensics_export_title"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header_bar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/forensics_export_subtitle"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/text_export_stats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/forensics_export_source_warning"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_pick_export_path"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/forensics_export_pick_path"
+                android:textAllCaps="false"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/text_export_path"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/forensics_export_no_path"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_export_forensics"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/forensics_export_action"
+                android:textAllCaps="false"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/text_export_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

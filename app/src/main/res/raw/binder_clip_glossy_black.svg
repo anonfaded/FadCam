@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bodyGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#444"/>
+      <stop offset="50%" stop-color="#222"/>
+      <stop offset="100%" stop-color="#111"/>
+    </linearGradient>
+    <linearGradient id="sheen2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="handleGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#cccccc"/>
+      <stop offset="30%" stop-color="#f0f0f0"/>
+      <stop offset="70%" stop-color="#f0f0f0"/>
+      <stop offset="100%" stop-color="#bbbbbb"/>
+    </linearGradient>
+    <radialGradient id="knobGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#aaaaaa"/>
+    </radialGradient>
+    <filter id="dropshadow2">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#00000060"/>
+    </filter>
+  </defs>
+
+  <!-- Body -->
+  <rect x="18" y="88" width="164" height="98" rx="12" fill="url(#bodyGrad2)" filter="url(#dropshadow2)"/>
+  <!-- Gloss sheen -->
+  <rect x="18" y="88" width="164" height="50" rx="12" fill="url(#sheen2)"/>
+  <!-- Top edge highlight -->
+  <line x1="30" y1="90" x2="170" y2="90" stroke="white" stroke-width="1.5" stroke-opacity="0.3" stroke-linecap="round"/>
+
+  <!-- Slots -->
+  <rect x="60" y="88" width="13" height="48" rx="3" fill="#0a0a0a"/>
+  <rect x="127" y="88" width="13" height="48" rx="3" fill="#0a0a0a"/>
+
+  <!-- Handle stems -->
+  <rect x="60" y="126" width="13" height="62" rx="6.5" fill="url(#handleGrad2)"/>
+  <rect x="127" y="126" width="13" height="62" rx="6.5" fill="url(#handleGrad2)"/>
+
+  <!-- Knobs -->
+  <ellipse cx="66.5" cy="190" rx="13" ry="7.5" fill="#bbb"/>
+  <ellipse cx="66.5" cy="188" rx="10" ry="5.5" fill="url(#knobGrad)"/>
+  <ellipse cx="133.5" cy="190" rx="13" ry="7.5" fill="#bbb"/>
+  <ellipse cx="133.5" cy="188" rx="10" ry="5.5" fill="url(#knobGrad)"/>
+
+  <!-- Loop outer (shadow) -->
+  <path d="M63 128 Q50 95 63 52 Q76 18 100 15 Q124 18 137 52 Q150 95 137 128"
+        fill="none" stroke="#aaaaaa" stroke-width="16" stroke-linecap="round"/>
+  <!-- Loop middle -->
+  <path d="M63 128 Q50 95 63 52 Q76 18 100 15 Q124 18 137 52 Q150 95 137 128"
+        fill="none" stroke="url(#handleGrad2)" stroke-width="13" stroke-linecap="round"/>
+  <!-- Loop highlight -->
+  <path d="M67 127 Q55 97 67 54 Q79 23 100 21 Q121 23 133 54 Q145 97 133 127"
+        fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+  <!-- Loop inner shadow -->
+  <path d="M70 126 Q60 98 70 56 Q81 28 100 25 Q119 28 130 56 Q140 98 130 126"
+        fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+</svg>

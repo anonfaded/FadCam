@@ -36,8 +36,8 @@
             android:background="@drawable/badge_bg_green"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
+
+ />
     </LinearLayout>
 
     <!-- Metrics Grid -->

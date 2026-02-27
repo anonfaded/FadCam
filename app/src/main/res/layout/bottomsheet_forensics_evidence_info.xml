@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/picker_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="14dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="6dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="12dp">
+
+        <ImageView
+            android:id="@+id/picker_close_btn"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/close"
+            android:src="@drawable/ic_close"
+            android:tint="?attr/pickerTextSecondary" />
+
+        <TextView
+            android:id="@+id/picker_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/forensics_evidence_details"
+            android:textAlignment="viewStart"
+            android:textColor="?attr/colorHeading"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/picker_title_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:background="#404040" />
+
+    <ScrollView
+        android:id="@+id/picker_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:maxHeight="700dp"
+        android:overScrollMode="ifContentScrolls"
+>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/video_info_card_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/settings_group_card_bg"
+                android:orientation="vertical"
+
+>
+
+                <LinearLayout
+                    android:id="@+id/video_info_grid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="#404040" />
+
+                <LinearLayout
+                    android:id="@+id/open_video_action_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/settings_home_row_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="movie"
+                        android:textColor="?attr/pickerTextPrimary"
+                        android:textSize="22sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_open_source_video"
+                            android:textColor="?attr/pickerTextPrimary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/open_video_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/forensics_not_available"
+                            android:textColor="?attr/pickerTextSecondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="#404040" />
+
+                <LinearLayout
+                    android:id="@+id/copy_action_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/settings_home_row_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:id="@+id/copy_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="content_copy"
+                        android:textColor="?attr/pickerTextPrimary"
+                        android:textSize="22sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/copy_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/video_info_copy_clipboard"
+                            android:textColor="?attr/pickerTextPrimary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/copy_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/video_info_copy_subtitle"
+                            android:textColor="?attr/pickerTextSecondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
+

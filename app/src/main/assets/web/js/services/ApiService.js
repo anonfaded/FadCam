@@ -330,6 +330,22 @@ class ApiService {
     }
     
     /**
+     * POST /recording/pause - Pause active recording
+     * @returns {Promise<Object>} Response data with {status, action, isRecording, isPaused}
+     */
+    async pauseRecording() {
+        return this.post('/recording/pause', {});
+    }
+
+    /**
+     * POST /recording/resume - Resume paused recording
+     * @returns {Promise<Object>} Response data with {status, action, isRecording, isPaused}
+     */
+    async resumeRecording() {
+        return this.post('/recording/resume', {});
+    }
+
+    /**
      * Generic POST request
      * @param {string} endpoint - API endpoint path
      * @param {Object} data - Request body data

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <LinearLayout
+        android:id="@+id/header_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#000000"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/back_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:padding="2dp"
+            android:src="@drawable/ic_close"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="@string/forensics_gallery_title"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#000000"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header_bar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="12dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:cardBackgroundColor="?attr/colorTopBar"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <HorizontalScrollView
+                    android:id="@+id/chip_scroll_gallery"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:requiresFadingEdge="horizontal"
+                    android:fadingEdgeLength="24dp"
+                    android:paddingStart="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="4dp">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="6dp"
+                        app:selectionRequired="true"
+                        app:singleLine="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_all"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="@string/forensics_filter_all" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_person"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_person" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_vehicle"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_vehicle" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_pet"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_pet" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_gallery_object"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/forensics_filter_object" />
+                    </com.google.android.material.chip.ChipGroup>
+                </HorizontalScrollView>
+            </androidx.cardview.widget.CardView>
+
+            <ImageView
+                android:id="@+id/button_gallery_sort"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/sort_by"
+                android:padding="4dp"
+                android:src="@drawable/ic_sort"
+                android:tint="?attr/colorHeading" />
+
+            <ImageView
+                android:id="@+id/button_gallery_grid"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/forensics_grid_option"
+                android:padding="4dp"
+                android:src="@drawable/ic_grid"
+                android:tint="?attr/colorHeading" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/row_gallery_stats_icons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_photo"
+                android:tint="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/text_gallery_stat_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/database_24px"
+                android:tint="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/text_gallery_stat_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_gallery"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/forensics_board_bg">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_gallery"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="88dp"
+                    android:scrollbars="none" />
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/text_gallery_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp"
+            android:text="@string/forensics_gallery_empty"
+            android:textColor="@android:color/darker_gray"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fab_gallery_batch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="76dp"
+        android:text="@string/records_batch_fab_label"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
+        app:backgroundTint="?attr/colorPrimary"
+        app:icon="@drawable/ic_list"
+        app:iconTint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_gallery_scroll_navigation"
+        style="?attr/floatingActionButtonSmallStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="76dp"
+        android:contentDescription="@string/scroll_to_top"
+        android:rotation="-90"
+        android:visibility="gone"
+        app:backgroundTint="@color/gray_button_filled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/ic_double_chevron"
+        app:useCompatPadding="true" />
+
+    <com.fadcam.ui.GalleryFastScroller
+        android:id="@+id/fast_scroller"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:translationZ="12dp"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

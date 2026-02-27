@@ -3,6 +3,8 @@ package com.fadcam.ui;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.Typeface;
 import android.location.Address;
 import android.location.Geocoder;
@@ -54,6 +56,19 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     private long fileSize;
     private long lastModified;
     private Typeface materialIconsTypeface;
+
+    @Override
+    public android.app.Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        android.app.Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.setOnShowListener(d -> {
+            View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog)
+                    .findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackground(new ColorDrawable(Color.TRANSPARENT));
+            }
+        });
+        return dialog;
+    }
 
     /**
      * Factory method to create a new instance of VideoInfoBottomSheet

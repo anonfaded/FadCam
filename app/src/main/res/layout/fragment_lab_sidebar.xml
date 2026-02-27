@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/sidesheet_wrapper_bg_dynamic"
+    android:clipToOutline="true"
+    android:fillViewport="true"
+    android:scrollbars="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp">
+
+            <ImageView
+                android:id="@+id/lab_sidebar_close_btn"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_close"
+                android:tint="?attr/pickerTextSecondary" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/forensic_intelligence_title"
+                android:textAlignment="viewStart"
+                android:textColor="?attr/pickerTextPrimary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="12dp"
+            app:dividerColor="#262626" />
+
+        <!-- ═══ About ═══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/lab_section_about"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold" />
+
+        <!-- Evidence Info — standalone top item -->
+        <LinearLayout
+            android:id="@+id/row_lab_info"
+            style="@style/SettingsGroupRow"
+            android:background="@drawable/settings_group_card_bg"
+            android:padding="8dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_info"
+                android:tint="@android:color/darker_gray" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/forensics_info_title"
+                android:textColor="?attr/colorHeading"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="@android:color/darker_gray" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/forensics_section_actions"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_group_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:id="@+id/row_lab_export"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_share"
+                    android:tint="@android:color/darker_gray" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Export Center"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
+            </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                app:dividerColor="#262626" />
+
+            <LinearLayout
+                android:id="@+id/row_lab_insights"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_grid"
+                    android:tint="@android:color/darker_gray" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/forensics_insights_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/forensics_insights_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp" />
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/forensics_section_appearance"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_group_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <!-- Hide Thumbnails toggle -->
+            <LinearLayout
+                android:id="@+id/row_lab_hide_thumbnails"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_visibility_off"
+                    android:tint="@android:color/darker_gray" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lab_hide_thumbnails_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/row_lab_hide_thumbnails_state"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/disabled"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp" />
+                </LinearLayout>
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/row_lab_hide_thumbnails_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                app:dividerColor="#262626" />
+
+            <LinearLayout
+                android:id="@+id/row_lab_clip_style"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/binder_clip_glossy_black_asset" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/forensics_clip_style_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
+            </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                app:dividerColor="#262626" />
+
+            <LinearLayout
+                android:id="@+id/row_lab_tape_style"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/forensics_index_tape" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/forensics_tape_style_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

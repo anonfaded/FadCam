@@ -30,7 +30,22 @@
         <item name="ensureMinTouchTargetSize">false</item>
         <item name="android:textSize">11sp</item>
         <item name="checkedIconVisible">false</item>
-        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipStrokeColor">@android:color/transparent</item>
+        <item name="chipCornerRadius">8dp</item>
+        <item name="chipStartPadding">6dp</item>
+        <item name="chipEndPadding">6dp</item>
+        <item name="textStartPadding">4dp</item>
+        <item name="textEndPadding">4dp</item>
+        <item name="iconStartPadding">2dp</item>
+        <item name="iconEndPadding">2dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="chipBackgroundColor">@color/chip_floating_bg_color</item>
+        <item name="chipSurfaceColor">@android:color/transparent</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
     <style name="RecordsActionPill" parent="">
@@ -82,8 +97,8 @@
         <item name="android:paddingEnd">12dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:layout_marginTop">4dp</item>
-        <item name="android:layout_marginBottom">4dp</item>
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:layout_marginBottom">0dp</item>
         <item name="android:background">@drawable/settings_home_row_bg</item>
         <item name="android:minHeight">48dp</item>
     </style>

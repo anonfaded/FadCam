@@ -18,7 +18,7 @@
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
-        android:background="?attr/colorTopBar"
+        android:background="@drawable/header_bar_rounded_bg"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -34,16 +34,81 @@
             android:visibility="gone"
             android:layout_marginEnd="12dp"/>
 
-        <TextView
-            android:id="@+id/title_text"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/records_title"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:gravity="start|center_vertical"/>
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/title_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:text="@string/records_title"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/records_header_stats_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_stat_playback"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_records_stat_videos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="82" />
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="10dp"
+                    android:src="@drawable/ic_photo"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_records_stat_photos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="20" />
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="10dp"
+                    android:src="@drawable/database_24px"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_records_stat_size"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="1.8 GB" />
+            </LinearLayout>
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/action_more_options"
@@ -77,26 +142,52 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- Subtle loading progress indicator - only shown if loading takes >200ms -->
+    <ProgressBar
+        android:id="@+id/loading_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Floating dock for filter chips -->
     <LinearLayout
         android:id="@+id/records_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="6dp"
+
         app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <HorizontalScrollView
+        <androidx.cardview.widget.CardView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:scrollbars="none"
-            android:overScrollMode="never">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_records_filter"
@@ -104,7 +195,8 @@
                 android:layout_height="wrap_content"
                 app:singleSelection="true"
                 app:selectionRequired="true"
-                app:singleLine="true">
+                app:singleLine="true"
+                app:chipSpacingHorizontal="6dp">
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_filter_all"
@@ -150,40 +242,55 @@
                     android:text="@string/records_filter_shot" />
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
 
         <TextView
             android:id="@+id/btn_filter_checklist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="6dp"
             android:fontFamily="@font/materialicons"
             android:text="checklist"
             android:textColor="#666666"
-            android:textSize="22sp"
+            android:textSize="20sp"
             android:padding="4dp"
             android:contentDescription="@string/records_filter_checklist_desc" />
     </LinearLayout>
 
-    <HorizontalScrollView
+    <!-- Floating dock for camera filter chips -->
+    <LinearLayout
         android:id="@+id/records_camera_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        android:fillViewport="true"
-        android:scrollbars="none"
-        android:overScrollMode="never"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:paddingTop="2dp"
-        android:paddingBottom="2dp"
+        android:paddingBottom="6dp"
         app:layout_constraintTop_toBottomOf="@id/records_filter_row"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group_camera_filter"
@@ -191,7 +298,8 @@
                 android:layout_height="wrap_content"
                 app:singleSelection="true"
                 app:selectionRequired="true"
-                app:singleLine="true">
+                app:singleLine="true"
+                app:chipSpacingHorizontal="6dp">
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_camera_all"
@@ -222,123 +330,156 @@
                     android:layout_height="wrap_content"
                     android:text="@string/records_filter_camera_dual" />
             </com.google.android.material.chip.ChipGroup>
-        </LinearLayout>
-    </HorizontalScrollView>
+        </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
-    <HorizontalScrollView
+    <LinearLayout
         android:id="@+id/records_faditor_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        android:fillViewport="true"
-        android:scrollbars="none"
-        android:overScrollMode="never"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:paddingTop="2dp"
-        android:paddingBottom="2dp"
+        android:paddingBottom="6dp"
         app:layout_constraintTop_toBottomOf="@id/records_camera_filter_row"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chip_group_faditor_filter"
+            <HorizontalScrollView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:singleSelection="true"
-                app:selectionRequired="true"
-                app:singleLine="true">
+                android:fillViewport="false"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_faditor_all"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_faditor_filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="@string/records_filter_faditor_all" />
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:chipSpacingHorizontal="6dp">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_faditor_converted"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/records_filter_faditor_converted" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_faditor_all"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/records_filter_faditor_all" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_faditor_merge"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/records_filter_faditor_merge" />
-            </com.google.android.material.chip.ChipGroup>
-        </LinearLayout>
-    </HorizontalScrollView>
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_faditor_converted"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/records_filter_faditor_converted" />
 
-    <HorizontalScrollView
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_faditor_merge"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/records_filter_faditor_merge" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/records_shot_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        android:fillViewport="true"
-        android:scrollbars="none"
-        android:overScrollMode="never"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:paddingTop="2dp"
-        android:paddingBottom="2dp"
+        android:paddingBottom="6dp"
         app:layout_constraintTop_toBottomOf="@id/records_faditor_filter_row"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="?attr/colorTopBar">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chip_group_shot_filter"
+            <HorizontalScrollView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:singleSelection="true"
-                app:selectionRequired="true"
-                app:singleLine="true">
+                android:fillViewport="false"
+                android:scrollbars="none"
+                android:overScrollMode="never"
+                android:requiresFadingEdge="horizontal"
+                android:fadingEdgeLength="24dp"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_shot_all"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_shot_filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="@string/records_filter_shot_all" />
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:chipSpacingHorizontal="6dp">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_shot_back"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/records_filter_shot_back" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shot_all"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/records_filter_shot_all" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_shot_selfie"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/records_filter_shot_selfie" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shot_back"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/records_filter_shot_back" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_shot_fadrec"
-                    style="@style/Widget.FadCam.RecordsFilterChip"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/records_filter_shot_fadrec" />
-            </com.google.android.material.chip.ChipGroup>
-        </LinearLayout>
-    </HorizontalScrollView>
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shot_selfie"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/records_filter_shot_selfie" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shot_fadrec"
+                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/records_filter_shot_fadrec" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/filter_helper_text"
@@ -460,6 +601,8 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingTop="8dp"
+            android:paddingBottom="76dp"
+            android:scrollbars="none"
             android:visibility="gone"/> <!-- Initially hidden -->
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
@@ -471,7 +614,9 @@
         android:id="@+id/fab_delete_selected"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="76dp"
         android:visibility="gone"
         android:contentDescription="@string/records_batch_actions_title"
         android:text="@string/records_batch_fab_label"
@@ -488,7 +633,9 @@
         style="?attr/floatingActionButtonSmallStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="76dp"
         android:visibility="gone"
         app:useCompatPadding="true"
         app:backgroundTint="@color/gray_button_filled"
@@ -497,6 +644,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/scroll_to_top"
         android:rotation="-90" />
+
+    <!-- Fast scroller overlay (above FABs, below applock) -->
+    <com.fadcam.ui.GalleryFastScroller
+        android:id="@+id/fast_scroller"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:translationZ="12dp"
+        app:layout_constraintTop_toBottomOf="@id/selection_actions_row"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Fix Start: AppLock full-screen overlay (initially gone)  -->
     <FrameLayout

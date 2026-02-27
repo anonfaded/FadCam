@@ -10,7 +10,7 @@
     </LinearLayout>
 
     <!-- Control Buttons Row -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="4dp" android:paddingBottom="8dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingBottom="8dp">
 
         <!-- Start/Stop Button -->
         <LinearLayout android:id="@+id/btnStartStopRec" android:layout_width="80dp" android:layout_height="80dp" android:orientation="vertical" android:gravity="center" android:padding="8dp" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp">

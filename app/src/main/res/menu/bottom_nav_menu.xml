@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_home"
+        android:icon="@drawable/ic_house"
         android:title="@string/nav_home" />
     <item
         android:id="@+id/navigation_records"
-        android:icon="@drawable/ic_records"
+        android:icon="@drawable/ic_records_selector"
         android:title="@string/nav_records" />
     <item
         android:id="@+id/navigation_remote"
@@ -18,6 +18,10 @@
         android:title="@string/nav_faditor_mini" />
     <item
         android:id="@+id/navigation_settings"
-        android:icon="@drawable/ic_settings"
+        android:icon="@drawable/settings"
         android:title="@string/nav_settings" />
+    <item
+        android:id="@+id/navigation_lab"
+        android:icon="@drawable/biotech_24px"
+        android:title="@string/nav_lab" />
 </menu>

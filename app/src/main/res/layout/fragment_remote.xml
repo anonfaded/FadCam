@@ -5,11 +5,24 @@
     android:orientation="vertical"
     android:background="#000000">
 
-    <!-- Server Room Image Header with Status Overlay -->
-    <FrameLayout
+    <!-- Scrollable Content (including Server Room header) -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:layout_height="match_parent"
+        android:paddingBottom="76dp"
+        android:clipToPadding="false"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Server Room Image Header with Status Overlay -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
 
         <ImageView
             android:layout_width="match_parent"
@@ -170,20 +183,15 @@
         </LinearLayout>
     </FrameLayout>
 
-    <!-- Scrollable Content -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="24dp">
+            <!-- Server Room Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="24dp">
 
             <!-- Server Room Heading -->
             <TextView
@@ -903,8 +911,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
+
+
                 android:layout_marginBottom="16dp">
 
                 <!-- Enable Authentication Row -->
@@ -1190,7 +1198,8 @@
                     android:textColor="#FF6B6B" />
             </LinearLayout>
 
-        </LinearLayout>
+            </LinearLayout> <!-- Close Server Room Section -->
+        </LinearLayout> <!-- Close ScrollView wrapper LinearLayout -->
     </ScrollView>
 
-</LinearLayout>
+</LinearLayout> <!-- Close root LinearLayout -->

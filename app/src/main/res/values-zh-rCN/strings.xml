@@ -919,7 +919,7 @@
     <string name="settings_section_app">App</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="icon_zoom_in_ligature">zoom_in</string>
-    <string name="nav_faditor_mini">Faditor Mini</string>
+    <string name="nav_faditor_mini">Faditor</string>
     <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
     <string name="arabic_date_sample_mixed">7 صفر 1447</string>
     <string name="arabic_date_sample_english">7 Safar 1447</string>

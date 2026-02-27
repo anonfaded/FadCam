@@ -38,6 +38,14 @@ public class AdvancedSettingsFragment extends Fragment {
                 "MotionLabSettingsFragment"
             ));
         }
+        View digitalForensics = view.findViewById(R.id.row_digital_forensics);
+        if (digitalForensics != null) {
+            digitalForensics.setOnClickListener(v -> OverlayNavUtil.show(
+                requireActivity(),
+                new DigitalForensicsSettingsFragment(),
+                "DigitalForensicsSettingsFragment"
+            ));
+        }
     }
 
     private void handleBack() {

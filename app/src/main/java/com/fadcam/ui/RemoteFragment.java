@@ -315,17 +315,117 @@ public class RemoteFragment extends BaseFragment {
         };
     }
     
+    /**
+     * Handle visibility changes from hide/show navigation.
+     * With hide/show, onResume is NOT called on tab switches — only onHiddenChanged is.
+     * Sets/restores black bar colors when this tab becomes visible/hidden.
+     */
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        Log.d(TAG, "onHiddenChanged: hidden=" + hidden);
+        
+        if (!isAdded() || getContext() == null || getActivity() == null) {
+            return;
+        }
+        
+        if (!hidden) {
+            // Tab switched to Remote — apply black bars
+            applyRemoteBarColors();
+            
+            // Resume UI updates if already resumed
+            if (isResumed()) {
+                performRemoteResumeOps();
+            }
+        } else {
+            // Tab switched away from Remote — restore original colors
+            restoreOriginalBarColors();
+            
+            // Mark feature as seen
+            NewFeatureManager.markFeatureAsSeen(requireContext(), "remote");
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).refreshFeatureBadges();
+            }
+            
+            // Pause UI updates
+            pauseRemoteUpdates();
+        }
+    }
+    
+    /** Apply black status/nav/bottom bar colors for Remote tab. */
+    private void applyRemoteBarColors() {
+        if (getActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) getActivity();
+            mainActivity.setBottomNavColor(0xFF000000);
+            mainActivity.setStatusBarColor(0xFF000000);
+            mainActivity.setNavigationBarColor(0xFF000000);
+        }
+    }
+    
+    /** Restore original theme bar colors. */
+    private void restoreOriginalBarColors() {
+        if (getActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) getActivity();
+            mainActivity.setBottomNavColor(0);
+            mainActivity.setStatusBarColor(0);
+            mainActivity.setNavigationBarColor(0);
+        }
+    }
+    
+    /** Resume streaming UI update loops. */
+    private void performRemoteResumeOps() {
+        boolean serviceRunning = RemoteStreamManager.getInstance().isStreamingEnabled();
+        if (serviceRunning) {
+            Intent intent = new Intent(requireContext(), RemoteStreamService.class);
+            requireContext().bindService(intent, serviceConnection, 0);
+            streamStartTime = System.currentTimeMillis();
+        }
+        
+        if (statusUpdateHandler != null && statusUpdateRunnable != null) {
+            statusUpdateHandler.post(statusUpdateRunnable);
+        }
+        
+        if (healthUpdateHandler != null && healthUpdateRunnable != null) {
+            healthUpdateHandler.post(healthUpdateRunnable);
+        }
+        
+        updateUI();
+        updateModeDisplay();
+    }
+    
+    /** Pause streaming update handlers and unbind service. */
+    private void pauseRemoteUpdates() {
+        if (serviceBound) {
+            try {
+                requireContext().unbindService(serviceConnection);
+            } catch (Exception e) {
+                Log.e(TAG, "Error unbinding service in onHiddenChanged", e);
+            }
+            serviceBound = false;
+        }
+        
+        if (statusUpdateHandler != null && statusUpdateRunnable != null) {
+            statusUpdateHandler.removeCallbacks(statusUpdateRunnable);
+        }
+        
+        if (healthUpdateHandler != null && healthUpdateRunnable != null) {
+            healthUpdateHandler.removeCallbacks(healthUpdateRunnable);
+        }
+    }
+    
     @Override
     public void onResume() {
         super.onResume();
         
-        // Set bottom nav AND status bar to black when remote tab is visible
-        if (getActivity() instanceof MainActivity) {
-            MainActivity mainActivity = (MainActivity) getActivity();
-            mainActivity.setBottomNavColor(0xFF000000); // Pure black
-            mainActivity.setStatusBarColor(0xFF000000); // Pure black
-            mainActivity.setNavigationBarColor(0xFF000000); // Pure black
+        // With hide/show navigation, onResume fires for ALL fragments on app resume.
+        // Only perform heavy ops if this fragment is actually visible.
+        if (isHidden()) {
+            Log.d(TAG, "onResume: Fragment is hidden, skipping heavy operations");
+            return;
         }
+        
+        // Set bottom nav AND status bar to black when remote tab is visible
+        applyRemoteBarColors();
         
         boolean serviceRunning = RemoteStreamManager.getInstance().isStreamingEnabled();
         if (serviceRunning) {
@@ -351,35 +451,22 @@ public class RemoteFragment extends BaseFragment {
         super.onPause();
         
         // Mark remote feature as seen when user leaves the Remote tab
-        // (This ensures badge is visible until user explicitly views it)
         Log.d(TAG, "onPause: Marking remote feature as seen");
         NewFeatureManager.markFeatureAsSeen(requireContext(), "remote");
         
-        // Refresh badge UI immediately to show the change
+        // Refresh badge UI
         if (getActivity() instanceof MainActivity) {
-            MainActivity mainActivity = (MainActivity) getActivity();
-            mainActivity.refreshFeatureBadges(); // Update badge UI immediately
-            mainActivity.setBottomNavColor(0); // Restore original
-            mainActivity.setStatusBarColor(0); // Restore original from theme
-            mainActivity.setNavigationBarColor(0); // Restore original from theme
+            ((MainActivity) getActivity()).refreshFeatureBadges();
         }
         
-        if (serviceBound) {
-            try {
-                requireContext().unbindService(serviceConnection);
-            } catch (Exception e) {
-                Log.e(TAG, "Error unbinding service", e);
-            }
-            serviceBound = false;
+        // Only restore colors if this fragment is actually visible (not hidden by tab switch).
+        // If hidden, onHiddenChanged already restored colors.
+        if (!isHidden()) {
+            restoreOriginalBarColors();
         }
         
-        if (statusUpdateHandler != null && statusUpdateRunnable != null) {
-            statusUpdateHandler.removeCallbacks(statusUpdateRunnable);
-        }
-        
-        if (healthUpdateHandler != null && healthUpdateRunnable != null) {
-            healthUpdateHandler.removeCallbacks(healthUpdateRunnable);
-        }
+        // Pause updates
+        pauseRemoteUpdates();
     }
     
     private void startStreaming() {

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <LinearLayout
+        android:id="@+id/header_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/header_bar_rounded_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/button_lab_close_selection"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="10dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/universal_close"
+            android:padding="2dp"
+            android:src="@drawable/ic_close"
+            android:tint="@android:color/white"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_lab_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/forensic_intelligence_title"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/lab_header_stats_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_photo"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_lab_stat_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="10dp"
+                    android:src="@drawable/database_24px"
+                    android:tint="#CCFFFFFF" />
+
+                <TextView
+                    android:id="@+id/text_lab_stat_size"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/lab_header_action_slot"
+            android:layout_width="24dp"
+            android:layout_height="24dp">
+
+            <ImageView
+                android:id="@+id/button_lab_menu"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/records_options_title"
+                android:padding="2dp"
+                android:src="@drawable/ic_two_line_hamburger"
+                android:tint="@android:color/white" />
+
+            <FrameLayout
+                android:id="@+id/button_lab_select_all_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/button_lab_select_all_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/picker_check_background"
+                    android:visibility="invisible" />
+
+                <ImageView
+                    android:id="@+id/button_lab_select_all_check"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/avd_check_draw"
+                    android:tint="?attr/colorPrimary"
+                    android:visibility="invisible" />
+            </FrameLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/forensics_content_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -21,11 +21,7 @@ public final class OverlayNavUtil {
         if(container==null) return;
         container.setVisibility(View.VISIBLE);
         container.setAlpha(0f);
-        // Disable background pager swipes while overlay is open
-        androidx.viewpager2.widget.ViewPager2 vp = activity.findViewById(R.id.view_pager);
-        if(vp != null){
-            try { vp.setUserInputEnabled(false); } catch (Throwable ignored) { }
-        }
+        // Fragment container doesn't use swipe gestures, no need to disable input
         activity.getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.overlay_fragment_container, fragment, tag)
@@ -34,7 +30,7 @@ public final class OverlayNavUtil {
         container.animate().alpha(1f).setDuration(160).start();
     }
 
-    /** Dismiss overlay with fade and restore ViewPager state like TrashFragment. */
+    /** Dismiss overlay with fade and restore state. */
     public static void dismiss(FragmentActivity activity){
         if(activity==null) return;
         View container = activity.findViewById(R.id.overlay_fragment_container);
@@ -46,12 +42,7 @@ public final class OverlayNavUtil {
         final androidx.fragment.app.Fragment beforeTop = activity.getSupportFragmentManager()
                 .findFragmentById(R.id.overlay_fragment_container);
         final int beforeBackStackCount = activity.getSupportFragmentManager().getBackStackEntryCount();
-        int currentPosition = 0;
-        ViewPager2 vp = activity.findViewById(R.id.view_pager);
-        if(vp!=null){
-            currentPosition = vp.getCurrentItem();
-            try { vp.setUserInputEnabled(true); } catch (Throwable ignored) { }
-        }
+        // Fragment container doesn't use swipe gestures, no need to re-enable input
         container.animate().alpha(0f).setDuration(160).withEndAction(() -> {
             androidx.fragment.app.Fragment currentTop = activity.getSupportFragmentManager()
                     .findFragmentById(R.id.overlay_fragment_container);
@@ -69,5 +60,16 @@ public final class OverlayNavUtil {
                 container.setAlpha(1f);
             }
         }).start();
+    }
+
+    /** Navigate one level back inside overlay stack; dismiss only if no parent overlay exists. */
+    public static void popLevel(FragmentActivity activity) {
+        if (activity == null) return;
+        androidx.fragment.app.FragmentManager fm = activity.getSupportFragmentManager();
+        if (fm.getBackStackEntryCount() > 1) {
+            fm.popBackStack();
+        } else {
+            dismiss(activity);
+        }
     }
 }

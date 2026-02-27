@@ -824,6 +824,23 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // ----- Hide thumbnails in Lab (Forensics Gallery) preference -----
+    private static final String PREF_KEY_LAB_HIDE_THUMBNAILS =
+        "pref_lab_hide_thumbnails";
+
+    /** Returns whether thumbnails should be hidden in Lab gallery. Default: false. */
+    public boolean isLabHideThumbnailsEnabled() {
+        return sharedPreferences.getBoolean(PREF_KEY_LAB_HIDE_THUMBNAILS, false);
+    }
+
+    /** Sets whether thumbnails should be hidden in Lab gallery. */
+    public void setLabHideThumbnailsEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(PREF_KEY_LAB_HIDE_THUMBNAILS, enabled)
+            .apply();
+    }
+
     public boolean isLocalisationEnabled() {
         return sharedPreferences.getBoolean(
             Constants.PREF_LOCATION_DATA,
@@ -1817,8 +1834,8 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionAnalysisFps() {
-        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 8);
-        return fps <= 0 ? 8 : fps;
+        int fps = sharedPreferences.getInt(Constants.PREF_MOTION_ANALYSIS_FPS, 6);
+        return fps <= 0 ? 6 : fps;
     }
 
     public void setMotionAnalysisFps(int fps) {
@@ -1864,7 +1881,107 @@ public class SharedPreferencesManager {
     public void setMotionAutoTorchEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_AUTO_TORCH_ENABLED, enabled).apply();
     }
+
+    public boolean isMotionDebugUiActive() {
+        return sharedPreferences.getBoolean(Constants.PREF_MOTION_DEBUG_UI_ACTIVE, false);
+    }
+
+    public void setMotionDebugUiActive(boolean active) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_MOTION_DEBUG_UI_ACTIVE, active).apply();
+    }
     // -------------- Motion Lab (Advanced) Preferences End --------------
+
+    // -------------- Digital Forensics (Advanced) Preferences Start --------------
+    public boolean isDigitalForensicsEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_ENABLED, false);
+    }
+
+    public void setDigitalForensicsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfEventPersonEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PERSON, true);
+    }
+
+    public void setDfEventPersonEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_PERSON, enabled).apply();
+    }
+
+    public boolean isDfEventVehicleEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_VEHICLE, true);
+    }
+
+    public void setDfEventVehicleEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_VEHICLE, enabled).apply();
+    }
+
+    public boolean isDfEventPetEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_PET, true);
+    }
+
+    public void setDfEventPetEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_PET, enabled).apply();
+    }
+
+    public boolean isDfDangerousObjectEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVENT_DANGEROUS_OBJECT, true);
+    }
+
+    public void setDfDangerousObjectEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVENT_DANGEROUS_OBJECT, enabled).apply();
+    }
+
+    public boolean isDfOverlayEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_OVERLAY_ENABLED, false);
+    }
+
+    public void setDfOverlayEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_OVERLAY_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfDailySummaryEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_DAILY_SUMMARY_ENABLED, false);
+    }
+
+    public void setDfDailySummaryEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_DAILY_SUMMARY_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfHeatmapEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_HEATMAP_ENABLED, false);
+    }
+
+    public void setDfHeatmapEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_HEATMAP_ENABLED, enabled).apply();
+    }
+
+    public boolean isDfEvidenceCollectionEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_DF_EVIDENCE_ENABLED, true);
+    }
+
+    public void setDfEvidenceCollectionEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_DF_EVIDENCE_ENABLED, enabled).apply();
+    }
+
+    public String getDfCaptureScope() {
+        String value = sharedPreferences.getString(Constants.PREF_DF_CAPTURE_SCOPE, "both");
+        if ("people".equals(value) || "objects".equals(value) || "both".equals(value)) {
+            return value;
+        }
+        return "both";
+    }
+
+    public void setDfCaptureScope(String scope) {
+        String normalized;
+        if ("people".equals(scope) || "objects".equals(scope) || "both".equals(scope)) {
+            normalized = scope;
+        } else {
+            normalized = "both";
+        }
+        sharedPreferences.edit().putString(Constants.PREF_DF_CAPTURE_SCOPE, normalized).apply();
+    }
+    // -------------- Digital Forensics (Advanced) Preferences End --------------
 
     /**
      * Gets whether floating controls (assistive touch) is enabled for FadRec.

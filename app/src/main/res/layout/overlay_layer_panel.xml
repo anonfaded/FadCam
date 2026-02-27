@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingTop="4dp"
+
         android:paddingBottom="12dp">
 
         <TextView
@@ -98,8 +98,8 @@
             android:orientation="vertical"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
+
+ />
     </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>

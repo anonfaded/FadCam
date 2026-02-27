@@ -14,8 +14,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.text.format.Formatter;
 
 import com.fadcam.MainActivity;
 import com.fadcam.service.FileOperationService;
@@ -25,6 +28,7 @@ import com.fadcam.model.TrashItem;
 import com.fadcam.utils.TrashManager;
 import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.json.JSONObject;
 import java.util.ArrayList;
@@ -58,6 +62,7 @@ import android.os.Looper;
 import android.graphics.PorterDuff;
 import android.widget.RadioButton;
 import java.lang.reflect.Field;
+import android.util.TypedValue;
 // Picker bottom sheet imports
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
@@ -67,6 +72,8 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private static final String TAG = "TrashFragment";
     private RecyclerView recyclerViewTrashItems;
     private TrashAdapter trashAdapter;
+    private GalleryFastScroller fastScroller;
+    private List<TrashItem> allTrashItems = new ArrayList<>();
     private List<TrashItem> trashItems = new ArrayList<>();
     private Button buttonRestoreSelected;
     private Button buttonDeleteSelectedPermanently;
@@ -84,6 +91,19 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private ImageView selectAllCheck;
     private ImageView selectAllBg;
     private ImageView settingsIcon;
+    private Chip chipAll;
+    private Chip chipVideos;
+    private Chip chipEvidence;
+    private TrashFilter activeFilter = TrashFilter.ALL;
+    private TextView statsVideosText;
+    private TextView statsEvidenceText;
+    private TextView statsSizeText;
+
+    private enum TrashFilter {
+        ALL,
+        VIDEOS,
+        EVIDENCE
+    }
 
     private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
     private boolean isUnlocked = false;
@@ -162,6 +182,12 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
         emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
         tvAutoDeleteInfo = view.findViewById(R.id.tvAutoDeleteInfo);
+        chipAll = view.findViewById(R.id.chip_trash_all);
+        chipVideos = view.findViewById(R.id.chip_trash_videos);
+        chipEvidence = view.findViewById(R.id.chip_trash_evidence);
+        statsVideosText = view.findViewById(R.id.text_trash_stat_videos);
+        statsEvidenceText = view.findViewById(R.id.text_trash_stat_evidence);
+        statsSizeText = view.findViewById(R.id.text_trash_stat_size);
     selectAllContainer = view.findViewById(R.id.action_select_all_container);
     selectAllCheck = view.findViewById(R.id.action_select_all_check);
     selectAllBg = view.findViewById(R.id.action_select_all_bg);
@@ -211,6 +237,26 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     if (selectAllContainer != null) selectAllContainer.setVisibility(View.GONE);
     if (selectAllBg != null) selectAllBg.setVisibility(View.INVISIBLE);
     if (selectAllCheck != null) selectAllCheck.setVisibility(View.INVISIBLE);
+        if (chipAll != null) {
+            chipAll.setOnClickListener(v -> {
+                activeFilter = TrashFilter.ALL;
+                applyTrashFilter();
+            });
+        }
+        if (chipVideos != null) {
+            chipVideos.setOnClickListener(v -> {
+                activeFilter = TrashFilter.VIDEOS;
+                applyTrashFilter();
+            });
+        }
+        if (chipEvidence != null) {
+            chipEvidence.setOnClickListener(v -> {
+                activeFilter = TrashFilter.EVIDENCE;
+                applyTrashFilter();
+            });
+        }
+        styleFilterChips();
+        updateFilterSelection();
 
     setupRecyclerView();
     setupButtonListeners();
@@ -221,8 +267,53 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (getContext() == null)
             return;
         trashAdapter = new TrashAdapter(getContext(), trashItems, this, null);
-        recyclerViewTrashItems.setLayoutManager(new LinearLayoutManager(getContext()));
+        // Use GridLayoutManager with 2 columns; month headers span full width
+        GridLayoutManager grid = new GridLayoutManager(getContext(), 2);
+        grid.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                // Headers (type 0) span full width (2 cols); items span 1
+                if (trashAdapter != null && trashAdapter.getItemViewType(position) == 0) {
+                    return 2;
+                }
+                return 1;
+            }
+        });
+        recyclerViewTrashItems.setLayoutManager(grid);
         recyclerViewTrashItems.setAdapter(trashAdapter);
+
+        // Set up month selection listener
+        trashAdapter.setOnMonthActionListener((monthKey, items) -> {
+            if (items == null || items.isEmpty()) return;
+            // Check if all items in the month are already selected
+            List<com.fadcam.model.TrashItem> selected = trashAdapter.getSelectedItems();
+            boolean allSelected = true;
+            for (com.fadcam.model.TrashItem item : items) {
+                if (!selected.contains(item)) {
+                    allSelected = false;
+                    break;
+                }
+            }
+            // Toggle: select all or deselect all in the month
+            for (com.fadcam.model.TrashItem item : items) {
+                boolean isSelected = trashAdapter.getSelectedItems().contains(item);
+                if (allSelected && isSelected) {
+                    // Need to deselect — simulate toggle
+                    trashAdapter.toggleSelectionExternal(item);
+                } else if (!allSelected && !isSelected) {
+                    trashAdapter.toggleSelectionExternal(item);
+                }
+            }
+            updateSelectAllCheckboxState();
+            updateActionButtonsState();
+        });
+
+        // Setup fast scroller
+        fastScroller = getView().findViewById(R.id.fast_scroller);
+        if (fastScroller != null) {
+            fastScroller.attachTo(recyclerViewTrashItems);
+            fastScroller.setSectionIndexer(position -> trashAdapter.getSectionText(position));
+        }
 
         // Add scroll state change listener to maintain selection during scrolling
         recyclerViewTrashItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -289,13 +380,143 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (getContext() == null)
             return;
         List<TrashItem> loadedItems = TrashManager.loadTrashMetadata(getContext());
+        allTrashItems.clear();
+        allTrashItems.addAll(loadedItems);
+        applyTrashFilter();
+    }
+
+    private void applyTrashFilter() {
+        updateFilterLabels();
         trashItems.clear();
-        trashItems.addAll(loadedItems);
-        if (trashAdapter != null) {
-            trashAdapter.notifyDataSetChanged();
+        for (TrashItem item : allTrashItems) {
+            if (item == null) continue;
+            if (activeFilter == TrashFilter.ALL) {
+                trashItems.add(item);
+            } else if (activeFilter == TrashFilter.EVIDENCE) {
+                if (item.isForensicsEvidence()) {
+                    trashItems.add(item);
+                }
+            } else {
+                if (!item.isForensicsEvidence()) {
+                    trashItems.add(item);
+                }
+            }
         }
+        if (trashAdapter != null) {
+            trashAdapter.clearSelections();
+            trashAdapter.rebuildAndNotify();
+        }
+        updateFilterSelection();
         updateActionButtonsState();
         checkEmptyState();
+        updateHeaderStats();
+    }
+
+    /**
+     * Updates the header stats row with video count, evidence count, and total trash size.
+     * Iterates allTrashItems (unfiltered) to always reflect the full trash state.
+     */
+    private void updateHeaderStats() {
+        if (getContext() == null) return;
+        java.io.File trashDir = TrashManager.getTrashDirectory(getContext());
+        int videos = 0;
+        int evidence = 0;
+        long totalBytes = 0L;
+        for (TrashItem item : allTrashItems) {
+            if (item == null) continue;
+            if (item.isForensicsEvidence()) {
+                evidence++;
+            } else {
+                videos++;
+            }
+            try {
+                java.io.File file = new java.io.File(trashDir, item.getTrashFileName());
+                if (file.exists()) {
+                    totalBytes += file.length();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "updateHeaderStats: error reading file size for " + item.getTrashFileName(), e);
+            }
+        }
+        if (statsVideosText != null) statsVideosText.setText(String.valueOf(videos));
+        if (statsEvidenceText != null) statsEvidenceText.setText(String.valueOf(evidence));
+        if (statsSizeText != null) statsSizeText.setText(Formatter.formatShortFileSize(requireContext(), totalBytes));
+    }
+
+    private void updateFilterLabels() {
+        int total = allTrashItems.size();
+        int evidence = 0;
+        for (TrashItem item : allTrashItems) {
+            if (item != null && item.isForensicsEvidence()) evidence++;
+        }
+        int videos = Math.max(0, total - evidence);
+        if (chipAll != null) chipAll.setText(getString(R.string.forensics_filter_with_count, getString(R.string.forensics_filter_all), total));
+        if (chipVideos != null) chipVideos.setText(getString(R.string.forensics_filter_with_count, getString(R.string.nav_records), videos));
+        if (chipEvidence != null) chipEvidence.setText(getString(R.string.forensics_filter_with_count, getString(R.string.forensics_gallery_title), evidence));
+    }
+
+    private void updateFilterSelection() {
+        if (chipAll != null) {
+            chipAll.setChecked(activeFilter == TrashFilter.ALL);
+        }
+        if (chipVideos != null) {
+            chipVideos.setChecked(activeFilter == TrashFilter.VIDEOS);
+        }
+        if (chipEvidence != null) {
+            chipEvidence.setChecked(activeFilter == TrashFilter.EVIDENCE);
+        }
+    }
+
+    private void styleFilterChips() {
+        applyChipIcon(chipAll, R.drawable.ic_list);
+        applyChipIcon(chipVideos, R.drawable.ic_chip_videocam);
+        applyChipIcon(chipEvidence, R.drawable.ic_photo);
+        styleFilterChip(chipAll);
+        styleFilterChip(chipVideos);
+        styleFilterChip(chipEvidence);
+    }
+
+    private void applyChipIcon(@Nullable Chip chip, int drawableRes) {
+        if (chip == null) return;
+        chip.setChipIconResource(drawableRes);
+        chip.setChipIconVisible(true);
+        chip.setCheckedIconVisible(false);
+        chip.setIconStartPadding(dpToPx(2));
+        chip.setChipIconSize(dpToPx(16));
+    }
+
+    private void styleFilterChip(@Nullable Chip chip) {
+        if (chip == null || getContext() == null) return;
+        int checkedBg = resolveThemeColor(R.attr.colorButton);
+        int uncheckedBg = androidx.core.graphics.ColorUtils.setAlphaComponent(checkedBg, 77);
+        int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
+        int uncheckedText = Color.WHITE;
+        int[][] states = new int[][]{
+                new int[]{android.R.attr.state_checked},
+                new int[]{}
+        };
+        chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
+        chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipIconTint(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
+        chip.setChipStrokeWidth(0f);
+        chip.setEnsureMinTouchTargetSize(false);
+    }
+
+    private int resolveThemeColor(int attr) {
+        TypedValue typedValue = new TypedValue();
+        requireContext().getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
+    }
+
+    private boolean isDarkColor(int color) {
+        double luminance = (0.299 * Color.red(color)
+                + 0.587 * Color.green(color)
+                + 0.114 * Color.blue(color)) / 255d;
+        return luminance < 0.55d;
+    }
+
+    private float dpToPx(int dp) {
+        return dp * getResources().getDisplayMetrics().density;
     }
 
     private void updateActionButtonsState() {
@@ -450,7 +671,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onPlayVideoRequested(TrashItem item) {
         if (getContext() == null || item == null || item.getTrashFileName() == null) {
-            Toast.makeText(getContext(), "Cannot play video. Invalid item data.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Cannot open file. Invalid item data.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -460,22 +681,39 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             return;
         }
 
-        File trashedVideoFile = new File(trashDirectory, item.getTrashFileName());
+        File trashedFile = new File(trashDirectory, item.getTrashFileName());
 
-        if (!trashedVideoFile.exists()) {
-            Log.e(TAG, "Trashed video file does not exist: " + trashedVideoFile.getAbsolutePath());
-            Toast.makeText(getContext(), "Video file not found in trash.", Toast.LENGTH_SHORT).show();
+        if (!trashedFile.exists()) {
+            Log.e(TAG, "Trashed file does not exist: " + trashedFile.getAbsolutePath());
+            Toast.makeText(getContext(), "File not found in trash.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
-            Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-            intent.setData(Uri.fromFile(trashedVideoFile));
+            boolean isImage = isImageFile(item.getTrashFileName());
+            Intent intent = isImage
+                    ? new Intent(getContext(), ImageViewerActivity.class)
+                    : new Intent(getContext(), VideoPlayerActivity.class);
+            intent.setData(Uri.fromFile(trashedFile));
             startActivity(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Error starting VideoPlayerActivity for trash item: " + trashedVideoFile.getAbsolutePath(), e);
-            Toast.makeText(getContext(), "Error playing video.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error opening trash item: " + trashedFile.getAbsolutePath(), e);
+            Toast.makeText(getContext(), "Error opening file.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Checks if the given filename is an image based on its extension.
+     *
+     * @param fileName The file name to check.
+     * @return true if the file is an image, false otherwise.
+     */
+    private boolean isImageFile(String fileName) {
+        if (fileName == null) return false;
+        String lower = fileName.toLowerCase(java.util.Locale.ROOT);
+        return lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                || lower.endsWith(".png") || lower.endsWith(".webp")
+                || lower.endsWith(".bmp") || lower.endsWith(".gif");
     }
 
     @Override
@@ -584,6 +822,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (fastScroller != null) {
+            fastScroller.detach();
+        }
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();
         }
@@ -672,7 +913,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             }
             loadTrashItems();
             if (trashAdapter != null && !itemsWereAutoDeleted) {
-                trashAdapter.notifyDataSetChanged();
+                trashAdapter.rebuildAndNotify();
             }
         });
 
@@ -779,7 +1020,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         }
                         loadTrashItems();
                         if (trashAdapter != null && !itemsWereAutoDeleted) {
-                            trashAdapter.notifyDataSetChanged();
+                            trashAdapter.rebuildAndNotify();
                         }
                     }
                 })

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Floating chip background - modern rounded chips -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Selected/Checked state -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorPrimary" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorPrimary" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    
+    <!-- Default/Unselected state - solid dark fill, no border -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FF1A1A2E" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+</selector>

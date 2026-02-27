@@ -16,6 +16,14 @@ public class ZoomableImageView extends AppCompatImageView {
     private static final float MIN_SCALE = 1f;
     private static final float MAX_SCALE = 5f;
 
+    /**
+     * Listener for single-tap events on the image, confirmed after
+     * ruling out double-tap and scroll gestures.
+     */
+    public interface OnSingleTapListener {
+        void onSingleTap();
+    }
+
     private final Matrix matrix = new Matrix();
     private final float[] values = new float[9];
     private final PointF last = new PointF();
@@ -24,6 +32,8 @@ public class ZoomableImageView extends AppCompatImageView {
     private boolean dragging = false;
     private float currentScale = 1f;
     private float baseScale = 1f;
+    @Nullable
+    private OnSingleTapListener singleTapListener;
 
     public ZoomableImageView(@NonNull Context context) {
         this(context, null);
@@ -34,6 +44,15 @@ public class ZoomableImageView extends AppCompatImageView {
         setScaleType(ScaleType.MATRIX);
         scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
         gestureDetector = new GestureDetector(context, new GestureListener());
+    }
+
+    /**
+     * Sets a listener that will be called when the user performs a confirmed single tap.
+     *
+     * @param listener The listener to set, or null to remove.
+     */
+    public void setOnSingleTapListener(@Nullable OnSingleTapListener listener) {
+        this.singleTapListener = listener;
     }
 
     @Override
@@ -148,6 +167,14 @@ public class ZoomableImageView extends AppCompatImageView {
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            if (singleTapListener != null) {
+                singleTapListener.onSingleTap();
+            }
+            return true;
+        }
+
         @Override
         public boolean onDoubleTap(MotionEvent e) {
             resetZoom();

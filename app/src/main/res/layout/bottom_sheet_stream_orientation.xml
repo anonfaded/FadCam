@@ -14,7 +14,7 @@
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
-        android:paddingBottom="4dp" />
+ />
 
     <TextView
         android:layout_width="wrap_content"

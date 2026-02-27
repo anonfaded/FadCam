@@ -12,7 +12,7 @@
 <LinearLayout
     android:id="@+id/home_sidebar_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:paddingTop="16dp"
     android:paddingBottom="16dp"
@@ -59,7 +59,7 @@
             android:layout_marginTop="8dp"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="12dp"
-            app:dividerColor="#404040"/>
+            app:dividerColor="#262626"/>
 
         <!-- Group: Display Settings -->
         <TextView
@@ -78,8 +78,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
+
+
             android:background="@drawable/settings_group_card_bg">
 
             <!-- Preview toggle row -->
@@ -148,7 +148,7 @@
                 android:layout_height="1dp"
                 android:layout_marginStart="14dp"
                 android:layout_marginEnd="12dp"
-                app:dividerColor="#404040"/>
+                app:dividerColor="#262626"/>
 
             <LinearLayout
                 android:id="@+id/row_preview_quick_actions_toggle"
@@ -226,8 +226,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
+
+
             android:background="@drawable/settings_group_card_bg">
 
             <!-- What's New row -->
@@ -248,8 +248,7 @@
                     android:text="new_releases"
                     android:textColor="?attr/colorHeading"
                     android:textSize="18sp"
-                    android:gravity="center"
-                    android:layout_gravity="top" />
+                    android:gravity="center" />
 
                 <!-- What's New title and subtitle -->
                 <LinearLayout
@@ -319,7 +318,7 @@
                 android:layout_height="1dp"
                 android:layout_marginStart="14dp"
                 android:layout_marginEnd="12dp"
-                app:dividerColor="#404040"/>
+                app:dividerColor="#262626"/>
 
             <!-- Tips row -->
             <LinearLayout
@@ -379,6 +378,62 @@
                     android:tint="@android:color/darker_gray" />
 
             </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Spacer to push branding footer to bottom -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Branding footer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="24dp"
+            android:paddingBottom="8dp">
+
+            <!-- Discord row -->
+            <LinearLayout
+                android:id="@+id/row_discord_branding"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/ic_discord" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_sidebar_discord"
+                    android:textColor="?attr/pickerTextPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Copyright -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/home_sidebar_copyright"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="11sp"
+                android:gravity="center" />
 
         </LinearLayout>
 

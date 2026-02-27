@@ -9,7 +9,7 @@
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="?attr/colorTopBar"
+        android:background="@drawable/header_bar_rounded_bg"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
@@ -58,6 +58,8 @@
         android:id="@+id/content_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:paddingBottom="76dp"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -204,8 +206,8 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/settings_group_card_bg"
                 android:orientation="vertical"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp">
+
+>
 
                 <LinearLayout
                     android:id="@+id/row_motion_enabled"
@@ -247,43 +249,6 @@
                         android:id="@+id/switch_motion_enabled"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
-                    android:id="@+id/row_motion_trigger_mode"
-                    style="@style/SettingsGroupRow">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_notifications"
-                        android:tint="@android:color/darker_gray" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/motion_lab_trigger_mode"
-                        android:textColor="?attr/colorHeading"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/value_motion_trigger_mode"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="13sp" />
-
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:src="@drawable/ic_arrow_right"
-                        android:tint="@android:color/darker_gray" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -407,7 +372,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_clock"
+                        android:src="@drawable/ic_fast_forward_24"
                         android:tint="@android:color/darker_gray" />
 
                     <TextView

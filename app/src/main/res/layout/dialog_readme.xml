@@ -10,8 +10,8 @@
     android:orientation="vertical"
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp">
+
+>
 
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
