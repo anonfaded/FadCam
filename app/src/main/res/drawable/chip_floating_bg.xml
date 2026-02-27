@@ -15,10 +15,10 @@
         </shape>
     </item>
     
-    <!-- Default/Unselected state - subtle background, no stroke -->
+    <!-- Default/Unselected state - solid dark fill, no border -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#1AFFFFFF" />
+            <solid android:color="#FF1A1A2E" />
             <corners android:radius="14dp" />
         </shape>
     </item>

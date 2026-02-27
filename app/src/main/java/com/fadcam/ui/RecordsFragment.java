@@ -2792,11 +2792,9 @@ public class RecordsFragment extends BaseFragment implements
     private void styleFilterChip(@Nullable Chip chip) {
         if (chip == null || getContext() == null) return;
         int checkedBg = resolveThemeColor(R.attr.colorButton);
-        int uncheckedBg = resolveThemeColor(R.attr.colorDialog);
-        int checkedStroke = resolveThemeColor(R.attr.colorToggle);
-        int uncheckedStroke = Color.parseColor("#666666");
+        int uncheckedBg = androidx.core.graphics.ColorUtils.setAlphaComponent(checkedBg, 77);
         int checkedText = isDarkColor(checkedBg) ? Color.WHITE : Color.BLACK;
-        int uncheckedText = isDarkColor(uncheckedBg) ? Color.WHITE : Color.BLACK;
+        int uncheckedText = Color.WHITE;
         int[][] states = new int[][]{
                 new int[]{android.R.attr.state_checked},
                 new int[]{}
@@ -2804,8 +2802,7 @@ public class RecordsFragment extends BaseFragment implements
         chip.setChipBackgroundColor(new ColorStateList(states, new int[]{checkedBg, uncheckedBg}));
         chip.setTextColor(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
         chip.setChipIconTint(new ColorStateList(states, new int[]{checkedText, uncheckedText}));
-        chip.setChipStrokeColor(new ColorStateList(states, new int[]{checkedStroke, uncheckedStroke}));
-        chip.setChipStrokeWidth(dpToPx(1));
+        chip.setChipStrokeWidth(0f);
         chip.setEnsureMinTouchTargetSize(false);
     }
 
