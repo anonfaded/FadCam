@@ -60,7 +60,6 @@ public class LabSidebarFragment extends DialogFragment {
         bindAction(view, R.id.row_lab_export, resultKey, "open_export");
         bindAction(view, R.id.row_lab_info, resultKey, "open_info");
         bindAction(view, R.id.row_lab_insights, resultKey, "open_insights");
-        bindAction(view, R.id.row_lab_events, resultKey, "open_events");
         bindAction(view, R.id.row_lab_clip_style, resultKey, "open_clip_style");
         bindAction(view, R.id.row_lab_tape_style, resultKey, "open_tape_style");
     }

@@ -1350,10 +1350,34 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_filter_object">Object</string>
     <string name="forensics_filter_high_conf">High confidence only</string>
     <string name="forensics_filter_all_subtypes">All subtypes</string>
-    <string name="forensics_insights_title">Activity Insights</string>
-    <string name="forensics_insights_subtitle">Daily summary and movement heatmap.</string>
+    <string name="forensics_insights_title">Intelligence Briefing</string>
+    <string name="forensics_insights_subtitle">24-hour threat analysis and situation report.</string>
     <string name="forensics_heatmap_cd">Activity heatmap</string>
     <string name="forensics_heatmap_legend">Brighter spots mean repeated movement. Dim spots mean less activity.</string>
+    <!-- Intelligence Briefing -->
+    <string name="intel_total_detections">TOTAL DETECTIONS</string>
+    <string name="intel_threat_assessment">THREAT ASSESSMENT</string>
+    <string name="intel_detection_breakdown">DETECTION BREAKDOWN</string>
+    <string name="intel_activity_timeline">ACTIVITY TIMELINE (24H)</string>
+    <string name="intel_zone_analysis">ZONE ANALYSIS</string>
+    <string name="intel_zone_desc">Camera frame sector activity distribution</string>
+    <string name="intel_key_observations">KEY OBSERVATIONS</string>
+    <string name="intel_personnel">PERSONNEL</string>
+    <string name="intel_vehicles">VEHICLES</string>
+    <string name="intel_animals">ANIMALS</string>
+    <string name="intel_objects">OBJECTS</string>
+    <string name="intel_no_data">No intelligence data available.\nAsset monitoring is active.</string>
+    <string name="intel_time_window">24-hour monitoring window</string>
+    <string name="intel_range_24h">24H</string>
+    <string name="intel_range_7d">7 DAYS</string>
+    <string name="intel_range_30d">30 DAYS</string>
+    <string name="intel_range_all">ALL TIME</string>
+    <string name="intel_range_summary_24h">Last 24 hours</string>
+    <string name="intel_range_summary_7d">Last 7 days</string>
+    <string name="intel_range_summary_30d">Last 30 days</string>
+    <string name="intel_range_summary_all">All recorded data</string>
+    <string name="intel_tap_bar_hint">Tap any bar for hourly breakdown</string>
+    <string name="intel_zone_desc_v2">Your camera view divided into 9 zones. Brighter = more activity detected in that area.</string>
     <string name="forensics_event_proof_frame">Event proof frame</string>
     <string name="forensics_frames_hint">Swipe frames to preview moments</string>
     <string name="forensics_frames_hint_fallback">Fallback preview (exact keyframes may vary)</string>

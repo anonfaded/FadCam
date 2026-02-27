@@ -94,9 +94,6 @@ public class ForensicIntelligenceFragment extends Fragment {
                 case "open_insights":
                     OverlayNavUtil.show(requireActivity(), new ForensicsInsightsFragment(), "forensics_insights");
                     break;
-                case "open_events":
-                    OverlayNavUtil.show(requireActivity(), new ForensicsEventsFragment(), "forensics_events");
-                    break;
                 case "open_clip_style":
                     showClipStylePicker();
                     break;
