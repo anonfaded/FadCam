@@ -2,6 +2,7 @@ package com.fadcam.ui;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -75,6 +76,7 @@ public class GalleryFastScroller extends View {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private static final long AUTO_HIDE_DELAY_MS = 1500L;
+    private ValueAnimator thumbWidthAnimator;
 
     private final Runnable hideRunnable = () -> animateVisibility(false);
 
@@ -159,6 +161,10 @@ public class GalleryFastScroller extends View {
      */
     public void detach() {
         handler.removeCallbacks(hideRunnable);
+        if (thumbWidthAnimator != null) {
+            thumbWidthAnimator.cancel();
+            thumbWidthAnimator = null;
+        }
         if (recyclerView != null) {
             recyclerView.removeOnScrollListener(scrollListener);
             recyclerView = null;
@@ -229,6 +235,8 @@ public class GalleryFastScroller extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (recyclerView == null) return false;
+        // ── FIX: Don't intercept touches when the scroller is invisible ──
+        if (getAlpha() < 0.1f) return false;
 
         int h = getHeight();
         float trackTop = thumbHeight / 2f;
@@ -344,18 +352,16 @@ public class GalleryFastScroller extends View {
 
     private void animateThumbWidth(float targetWidth) {
         if (Math.abs(currentThumbWidth - targetWidth) < 0.5f) return;
-        animate().cancel();
-        // Animate currentThumbWidth smoothly
-        final float startWidth = currentThumbWidth;
-        final float delta = targetWidth - startWidth;
-        animate()
-                .setDuration(150)
-                .setUpdateListener(animation -> {
-                    float fraction1 = animation.getAnimatedFraction();
-                    currentThumbWidth = startWidth + delta * fraction1;
-                    invalidate();
-                })
-                .start();
+        if (thumbWidthAnimator != null) {
+            thumbWidthAnimator.cancel();
+        }
+        thumbWidthAnimator = ValueAnimator.ofFloat(currentThumbWidth, targetWidth);
+        thumbWidthAnimator.setDuration(150);
+        thumbWidthAnimator.addUpdateListener(animation -> {
+            currentThumbWidth = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        thumbWidthAnimator.start();
     }
 
     private void animateVisibility(boolean show) {

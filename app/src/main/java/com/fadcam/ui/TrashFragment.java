@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -69,6 +70,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private static final String TAG = "TrashFragment";
     private RecyclerView recyclerViewTrashItems;
     private TrashAdapter trashAdapter;
+    private GalleryFastScroller fastScroller;
     private List<TrashItem> allTrashItems = new ArrayList<>();
     private List<TrashItem> trashItems = new ArrayList<>();
     private Button buttonRestoreSelected;
@@ -257,8 +259,53 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         if (getContext() == null)
             return;
         trashAdapter = new TrashAdapter(getContext(), trashItems, this, null);
-        recyclerViewTrashItems.setLayoutManager(new LinearLayoutManager(getContext()));
+        // Use GridLayoutManager so month headers span full width
+        GridLayoutManager grid = new GridLayoutManager(getContext(), 1);
+        grid.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                // Headers (type 0) span full width; items span 1
+                if (trashAdapter != null && trashAdapter.getItemViewType(position) == 0) {
+                    return 1; // Full span (since span count is 1)
+                }
+                return 1;
+            }
+        });
+        recyclerViewTrashItems.setLayoutManager(grid);
         recyclerViewTrashItems.setAdapter(trashAdapter);
+
+        // Set up month selection listener
+        trashAdapter.setOnMonthActionListener((monthKey, items) -> {
+            if (items == null || items.isEmpty()) return;
+            // Check if all items in the month are already selected
+            List<com.fadcam.model.TrashItem> selected = trashAdapter.getSelectedItems();
+            boolean allSelected = true;
+            for (com.fadcam.model.TrashItem item : items) {
+                if (!selected.contains(item)) {
+                    allSelected = false;
+                    break;
+                }
+            }
+            // Toggle: select all or deselect all in the month
+            for (com.fadcam.model.TrashItem item : items) {
+                boolean isSelected = trashAdapter.getSelectedItems().contains(item);
+                if (allSelected && isSelected) {
+                    // Need to deselect — simulate toggle
+                    trashAdapter.toggleSelectionExternal(item);
+                } else if (!allSelected && !isSelected) {
+                    trashAdapter.toggleSelectionExternal(item);
+                }
+            }
+            updateSelectAllCheckboxState();
+            updateActionButtonsState();
+        });
+
+        // Setup fast scroller
+        fastScroller = getView().findViewById(R.id.fast_scroller);
+        if (fastScroller != null) {
+            fastScroller.attachTo(recyclerViewTrashItems);
+            fastScroller.setSectionIndexer(position -> trashAdapter.getSectionText(position));
+        }
 
         // Add scroll state change listener to maintain selection during scrolling
         recyclerViewTrashItems.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -349,7 +396,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         }
         if (trashAdapter != null) {
             trashAdapter.clearSelections();
-            trashAdapter.notifyDataSetChanged();
+            trashAdapter.rebuildAndNotify();
         }
         updateFilterSelection();
         updateActionButtonsState();
@@ -718,6 +765,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (fastScroller != null) {
+            fastScroller.detach();
+        }
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();
         }
@@ -806,7 +856,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             }
             loadTrashItems();
             if (trashAdapter != null && !itemsWereAutoDeleted) {
-                trashAdapter.notifyDataSetChanged();
+                trashAdapter.rebuildAndNotify();
             }
         });
 
@@ -913,7 +963,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         }
                         loadTrashItems();
                         if (trashAdapter != null && !itemsWereAutoDeleted) {
-                            trashAdapter.notifyDataSetChanged();
+                            trashAdapter.rebuildAndNotify();
                         }
                     }
                 })

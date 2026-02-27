@@ -320,7 +320,8 @@ public class RecordsFragment extends BaseFragment implements
     private SwipeRefreshLayout swipeRefreshLayout; // ADD THIS FIELD
     private LinearLayout emptyStateContainer; // Add field for the empty state layout
     private RecordsAdapter recordsAdapter;
-    private boolean isGridView = true;
+    private GalleryFastScroller fastScroller;
+    private int currentGridSpan = 2;
     private ExtendedFloatingActionButton fabDeleteSelected;
     private FloatingActionButton fabScrollNavigation; // Navigation FAB for scroll to top/bottom
     private boolean isScrollingDown = true; // Track scroll direction for FAB icon
@@ -1418,7 +1419,7 @@ public class RecordsFragment extends BaseFragment implements
         recyclerView.setItemViewCacheSize(20); // Increase view cache size
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-        recyclerView.setHasFixedSize(true); // Use if all items have the same size
+        recyclerView.setHasFixedSize(false); // Mixed item types (month headers + records)
 
         recyclerView.addItemDecoration(itemDecoration = new SpacesItemDecoration(4)); // Default spacing
 
@@ -1443,6 +1444,46 @@ public class RecordsFragment extends BaseFragment implements
 
         // Set adapter
         recyclerView.setAdapter(recordsAdapter);
+
+        // Set up month selection listener
+        recordsAdapter.setOnMonthActionListener((monthKey, items) -> {
+            if (items == null || items.isEmpty()) return;
+            // Enter selection mode if not already
+            if (!isInSelectionMode) {
+                isInSelectionMode = true;
+            }
+            // Check if all items in the month are already selected
+            boolean allSelected = true;
+            for (VideoItem item : items) {
+                if (!selectedUris.contains(item.uri)) {
+                    allSelected = false;
+                    break;
+                }
+            }
+            // Toggle: if all selected → deselect all; otherwise → select all
+            for (VideoItem item : items) {
+                if (allSelected) {
+                    selectedUris.remove(item.uri);
+                } else {
+                    if (!selectedUris.contains(item.uri)) {
+                        selectedUris.add(item.uri);
+                    }
+                }
+            }
+            if (selectedUris.isEmpty()) {
+                exitSelectionMode();
+            } else {
+                updateUiForSelectionMode();
+                recordsAdapter.setSelectionModeActive(true, selectedUris);
+            }
+        });
+
+        // Setup fast scroller
+        fastScroller = getView().findViewById(R.id.fast_scroller);
+        if (fastScroller != null) {
+            fastScroller.attachTo(recyclerView);
+            fastScroller.setSectionIndexer(position -> recordsAdapter.getSectionText(position));
+        }
 
         // Setup RecyclerView scroll listener for optimized loading
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -1605,9 +1646,9 @@ public class RecordsFragment extends BaseFragment implements
 
     }
 
-    private void toggleViewMode() {
+    private void applyGridSpan(int newSpan) {
         vibrate();
-        isGridView = !isGridView;
+        currentGridSpan = newSpan;
         setLayoutManager();
         updateFabIcons();
     }
@@ -3771,7 +3812,7 @@ public class RecordsFragment extends BaseFragment implements
         if (getActivity() == null)
             return;
         // Use unified overlay: open a sidebar-style fragment to host row-based options.
-        RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), isGridView);
+        RecordsSidebarFragment sidebar = RecordsSidebarFragment.newInstance(mapSortToId(currentSortOption), currentGridSpan);
         // Listen for result events from rows (sort picker, delete all, etc.)
         final String resultKey = "records_sidebar_result";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
@@ -3796,16 +3837,13 @@ public class RecordsFragment extends BaseFragment implements
                     confirmDeleteAll();
                     break;
                 case "toggle_view_mode":
-                    toggleViewMode();
+                    // Legacy: cycle to next span
+                    applyGridSpan(currentGridSpan >= 5 ? 1 : currentGridSpan + 1);
                     break;
                 case "set_view_mode":
-                    String vm = bundle.getString("view_mode");
-                    if (vm != null) {
-                        boolean toGrid = "grid".equals(vm);
-                        if (isGridView != toGrid) {
-                            // reuse existing toggle logic
-                            toggleViewMode();
-                        }
+                    int span = bundle.getInt("grid_span", currentGridSpan);
+                    if (span != currentGridSpan) {
+                        applyGridSpan(span);
                     }
                     break;
                 case "hide_thumbnails_toggled":
@@ -4093,12 +4131,18 @@ public class RecordsFragment extends BaseFragment implements
     // Restore this important method that was removed
     private void setLayoutManager() {
         if (recyclerView != null) {
-            RecyclerView.LayoutManager layoutManager = isGridView ? new GridLayoutManager(getContext(), 2) : // 2
-                                                                                                             // columns
-                                                                                                             // for grid
-                    new LinearLayoutManager(getContext());
-            recyclerView.setLayoutManager(layoutManager);
-            Log.d(TAG, "LayoutManager set to: " + (isGridView ? "GridLayout" : "LinearLayout"));
+            GridLayoutManager grid = new GridLayoutManager(getContext(), currentGridSpan);
+            grid.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                @Override
+                public int getSpanSize(int position) {
+                    if (recordsAdapter != null && recordsAdapter.getItemViewType(position) == 0) {
+                        return currentGridSpan; // Month headers span full width
+                    }
+                    return 1;
+                }
+            });
+            recyclerView.setLayoutManager(grid);
+            Log.d(TAG, "LayoutManager set to GridLayout with " + currentGridSpan + " columns");
         }
     }
 
@@ -4348,6 +4392,9 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (fastScroller != null) {
+            fastScroller.detach();
+        }
         clearResources();
     }
 

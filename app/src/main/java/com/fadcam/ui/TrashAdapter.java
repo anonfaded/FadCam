@@ -15,8 +15,10 @@ import com.fadcam.model.TrashItem;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import com.bumptech.glide.Glide;
 import android.net.Uri;
 import java.io.File;
@@ -27,15 +29,31 @@ import com.fadcam.SharedPreferencesManager;
 import java.util.concurrent.TimeUnit;
 import com.fadcam.Constants;
 
-public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHolder> {
+public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int VIEW_TYPE_HEADER = 0;
+    private static final int VIEW_TYPE_ITEM = 1;
+    private static final SimpleDateFormat MONTH_FORMAT = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
+
+    /** Represents a month header row. */
+    static class MonthHeaderEntry { final String monthKey; MonthHeaderEntry(String mk) { this.monthKey = mk; } }
+    /** Wraps a TrashItem with its month key. */
+    static class TrashItemEntry { final TrashItem item; final String monthKey; TrashItemEntry(TrashItem i, String mk) { this.item = i; this.monthKey = mk; } }
+
+    /** Callback for month-level selection actions. */
+    public interface OnMonthActionListener {
+        void onMonthSelectAll(String monthKey, List<TrashItem> items);
+    }
 
     private final Context context;
     private final List<TrashItem> trashItems;
+    private final List<Object> entries = new ArrayList<>();
     private final List<TrashItem> selectedItems = new ArrayList<>();
     private final OnTrashItemInteractionListener interactionListener;
     private final OnTrashItemLongClickListener longClickListener; // Optional
     private final SharedPreferencesManager sharedPreferencesManager;
     private boolean isSnowVeilTheme = false;
+    private OnMonthActionListener monthActionListener;
 
     public interface OnTrashItemInteractionListener {
         void onItemCheckChanged(TrashItem item, boolean isChecked);
@@ -61,17 +79,37 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
         sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
         this.isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+        buildEntries();
+    }
+
+    public void setOnMonthActionListener(OnMonthActionListener listener) {
+        this.monthActionListener = listener;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return entries.get(position) instanceof MonthHeaderEntry ? VIEW_TYPE_HEADER : VIEW_TYPE_ITEM;
     }
 
     @NonNull
     @Override
-    public TrashViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_HEADER) {
+            View view = LayoutInflater.from(context).inflate(R.layout.item_forensics_month_header, parent, false);
+            return new MonthHeaderViewHolder(view);
+        }
         View view = LayoutInflater.from(context).inflate(R.layout.item_trash, parent, false);
         return new TrashViewHolder(view);
     }
     @Override
-    public void onBindViewHolder(@NonNull TrashViewHolder holder, int position) {
-        TrashItem item = trashItems.get(position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder vh, int position) {
+        Object entry = entries.get(position);
+        if (entry instanceof MonthHeaderEntry) {
+            bindMonthHeader((MonthHeaderViewHolder) vh, (MonthHeaderEntry) entry);
+            return;
+        }
+        TrashViewHolder holder = (TrashViewHolder) vh;
+        TrashItem item = ((TrashItemEntry) entry).item;
         holder.bind(item);
         // Apply Snow Veil theme if needed (apply after normal binding)
         if (isSnowVeilTheme && holder.itemView instanceof androidx.cardview.widget.CardView) {
@@ -84,15 +122,21 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
 
     // Payload-aware binding so we can play an animation only when selection toggles occur.
     @Override
-    public void onBindViewHolder(@NonNull TrashViewHolder holder, int position, @NonNull List<Object> payloads) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder vh, int position, @NonNull List<Object> payloads) {
+        Object entry = entries.get(position);
+        if (entry instanceof MonthHeaderEntry) {
+            bindMonthHeader((MonthHeaderViewHolder) vh, (MonthHeaderEntry) entry);
+            return;
+        }
         if (payloads == null || payloads.isEmpty()) {
             // Full bind
-            onBindViewHolder(holder, position);
+            onBindViewHolder(vh, position);
             return;
         }
 
+        TrashViewHolder holder = (TrashViewHolder) vh;
         // Handle selection toggle payload specifically
-        TrashItem item = trashItems.get(position);
+        TrashItem item = ((TrashItemEntry) entry).item;
         boolean selected = selectedItems.contains(item);
 
         if (payloads.contains("SELECTION_TOGGLE")) {
@@ -128,6 +172,11 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
 
     @Override
     public int getItemCount() {
+        return entries.size();
+    }
+
+    /** Returns the count of actual trash items (excluding headers). */
+    public int getTrashItemCount() {
         return trashItems.size();
     }
 
@@ -342,6 +391,17 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
      * Toggle selection state of an item
      */
     private void toggleSelection(TrashItem item) {
+        toggleSelectionInternal(item);
+    }
+
+    /**
+     * Public method for external callers (e.g., month header selection) to toggle an item.
+     */
+    public void toggleSelectionExternal(TrashItem item) {
+        toggleSelectionInternal(item);
+    }
+
+    private void toggleSelectionInternal(TrashItem item) {
         boolean newState = !selectedItems.contains(item);
         if (newState) {
             selectedItems.add(item);
@@ -349,15 +409,40 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
             selectedItems.remove(item);
         }
         
-        // Find the position of the item and notify the adapter (use payload for targeted bind)
-        int position = trashItems.indexOf(item);
+        // Find the position of the item in entries and notify the adapter
+        int position = findEntryPosition(item);
         if (position != -1) {
             notifyItemChanged(position, "SELECTION_TOGGLE");
         }
+        // Also update the month header for this item's month
+        notifyMonthHeaderForItem(item);
         
         if (interactionListener != null) {
             interactionListener.onItemCheckChanged(item, newState);
             interactionListener.onItemSelectedStateChanged(!selectedItems.isEmpty());
+        }
+    }
+
+    /** Find position of a TrashItem in the entries list. */
+    private int findEntryPosition(TrashItem item) {
+        for (int i = 0; i < entries.size(); i++) {
+            Object e = entries.get(i);
+            if (e instanceof TrashItemEntry && ((TrashItemEntry) e).item == item) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** Notify the month header for a given item to update its checkbox state. */
+    private void notifyMonthHeaderForItem(TrashItem item) {
+        String monthKey = MONTH_FORMAT.format(new Date(item.getDateTrashed()));
+        for (int i = 0; i < entries.size(); i++) {
+            Object e = entries.get(i);
+            if (e instanceof MonthHeaderEntry && ((MonthHeaderEntry) e).monthKey.equals(monthKey)) {
+                notifyItemChanged(i);
+                break;
+            }
         }
     }
 
@@ -366,5 +451,102 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.TrashViewHol
      */
     public boolean isInSelectionMode() {
         return !selectedItems.isEmpty();
+    }
+
+    // ────────────────────── Month Grouping Helpers ──────────────────────
+
+    /** Build the interleaved entries list from the flat trashItems list. */
+    private void buildEntries() {
+        entries.clear();
+        if (trashItems == null || trashItems.isEmpty()) return;
+
+        // Group by month, preserving insertion order (items are already sorted newest-first)
+        LinkedHashMap<String, List<TrashItem>> grouped = new LinkedHashMap<>();
+        for (TrashItem item : trashItems) {
+            String monthKey = MONTH_FORMAT.format(new Date(item.getDateTrashed()));
+            grouped.computeIfAbsent(monthKey, k -> new ArrayList<>()).add(item);
+        }
+        for (Map.Entry<String, List<TrashItem>> e : grouped.entrySet()) {
+            entries.add(new MonthHeaderEntry(e.getKey()));
+            for (TrashItem item : e.getValue()) {
+                entries.add(new TrashItemEntry(item, e.getKey()));
+            }
+        }
+    }
+
+    /** Rebuild entries and refresh the whole list (called after external data changes). */
+    public void rebuildAndNotify() {
+        buildEntries();
+        notifyDataSetChanged();
+    }
+
+    /** Bind a month header ViewHolder. */
+    private void bindMonthHeader(MonthHeaderViewHolder holder, MonthHeaderEntry entry) {
+        holder.title.setText(entry.monthKey);
+
+        // Match Lab tab style: container is always VISIBLE, alpha controls visibility
+        boolean inSelectionMode = !selectedItems.isEmpty();
+        holder.selectContainer.setVisibility(View.VISIBLE);
+        holder.selectContainer.setAlpha(inSelectionMode ? 1f : 0f);
+        holder.selectContainer.setEnabled(inSelectionMode);
+
+        List<TrashItem> monthItems = getItemsForMonth(entry.monthKey);
+        boolean allInMonthSelected = !monthItems.isEmpty();
+        for (TrashItem item : monthItems) {
+            if (!selectedItems.contains(item)) {
+                allInMonthSelected = false;
+                break;
+            }
+        }
+        holder.selectBg.setVisibility(inSelectionMode ? View.VISIBLE : View.INVISIBLE);
+        holder.selectCheck.setVisibility(inSelectionMode && allInMonthSelected ? View.VISIBLE : View.INVISIBLE);
+        holder.selectContainer.setOnClickListener(inSelectionMode ? v -> {
+            if (monthActionListener != null) {
+                monthActionListener.onMonthSelectAll(entry.monthKey, monthItems);
+            }
+        } : null);
+    }
+
+    /** Get all trash items for a given month key. */
+    public List<TrashItem> getItemsForMonth(String monthKey) {
+        List<TrashItem> result = new ArrayList<>();
+        for (Object e : entries) {
+            if (e instanceof TrashItemEntry && ((TrashItemEntry) e).monthKey.equals(monthKey)) {
+                result.add(((TrashItemEntry) e).item);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the section text (month key) for the given adapter position.
+     * Used by GalleryFastScroller bubble.
+     */
+    public String getSectionText(int position) {
+        if (position < 0 || position >= entries.size()) return "";
+        // Walk backward to find nearest month header
+        for (int i = position; i >= 0; i--) {
+            Object e = entries.get(i);
+            if (e instanceof MonthHeaderEntry) return ((MonthHeaderEntry) e).monthKey;
+            if (e instanceof TrashItemEntry) return ((TrashItemEntry) e).monthKey;
+        }
+        return "";
+    }
+
+    // ────────────────────── Month Header ViewHolder ──────────────────────
+
+    static class MonthHeaderViewHolder extends RecyclerView.ViewHolder {
+        final TextView title;
+        final View selectContainer;
+        final ImageView selectBg;
+        final ImageView selectCheck;
+
+        MonthHeaderViewHolder(@NonNull View itemView) {
+            super(itemView);
+            title = itemView.findViewById(R.id.text_month_title);
+            selectContainer = itemView.findViewById(R.id.month_select_container);
+            selectBg = itemView.findViewById(R.id.month_select_bg);
+            selectCheck = itemView.findViewById(R.id.month_select_check);
+        }
     }
 } 

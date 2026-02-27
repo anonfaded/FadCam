@@ -1500,6 +1500,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="records_view_mode_title">View mode</string>
     <string name="view_mode_grid">Grid</string>
     <string name="view_mode_list">List</string>
+    <string name="records_grid_1">1 column</string>
+    <string name="records_grid_2">2 columns</string>
+    <string name="records_grid_3">3 columns</string>
+    <string name="records_grid_4">4 columns</string>
+    <string name="records_grid_5">5 columns</string>
+    <string name="records_grid_option">Grid Layout</string>
+    <string name="records_grid_helper">Pick how many columns to show in gallery.</string>
     <string name="delete_all_videos_subtitle_short">Remove all recordings</string>
     <string name="sort_latest_first">Latest First</string>
     <string name="sort_oldest_first">Oldest First</string>

@@ -28,7 +28,7 @@ public class RecordsSidebarFragment extends DialogFragment {
     private static final String ARG_SELECTED_SORT_ID = "selected_sort_id";
     private String resultKey = "records_sidebar_result";
     private String selectedSortId;
-    private boolean isGridViewInitial = true;
+    private int currentGridSpan = 2;
 
     public static RecordsSidebarFragment newInstance(String selectedSortId){
         RecordsSidebarFragment f = new RecordsSidebarFragment();
@@ -38,11 +38,11 @@ public class RecordsSidebarFragment extends DialogFragment {
         return f;
     }
 
-    public static RecordsSidebarFragment newInstance(String selectedSortId, boolean isGrid){
+    public static RecordsSidebarFragment newInstance(String selectedSortId, int gridSpan){
         RecordsSidebarFragment f = new RecordsSidebarFragment();
         Bundle b = new Bundle();
         b.putString(ARG_SELECTED_SORT_ID, selectedSortId);
-        b.putBoolean("is_grid_view", isGrid);
+        b.putInt("grid_span", gridSpan);
         f.setArguments(b);
         return f;
     }
@@ -79,7 +79,7 @@ public class RecordsSidebarFragment extends DialogFragment {
         super.onViewCreated(view, savedInstanceState);
         if(getArguments()!=null){
             selectedSortId = getArguments().getString(ARG_SELECTED_SORT_ID, "latest");
-            isGridViewInitial = getArguments().getBoolean("is_grid_view", true);
+            currentGridSpan = getArguments().getInt("grid_span", 2);
         }
 
         // Handle close button
@@ -111,8 +111,8 @@ public class RecordsSidebarFragment extends DialogFragment {
         View viewModeRow = view.findViewById(R.id.row_view_mode);
         TextView viewModeSub = view.findViewById(R.id.row_view_mode_subtitle);
         android.widget.ImageView viewModeIcon = view.findViewById(R.id.row_view_mode_icon);
-        if(viewModeSub!=null){ viewModeSub.setText(isGridViewInitial ? R.string.view_mode_grid : R.string.view_mode_list); }
-        if(viewModeIcon!=null){ viewModeIcon.setImageResource(isGridViewInitial ? R.drawable.ic_grid : R.drawable.ic_list); }
+        if(viewModeSub!=null){ viewModeSub.setText(getGridSpanLabel(currentGridSpan)); }
+        if(viewModeIcon!=null){ viewModeIcon.setImageResource(R.drawable.ic_grid); }
         if(viewModeRow!=null){
             viewModeRow.setOnClickListener(v -> openViewModePicker());
         }
@@ -143,24 +143,47 @@ public class RecordsSidebarFragment extends DialogFragment {
     private void openViewModePicker(){
         final String pickerKey = "records_view_mode_picker";
         ArrayList<OptionItem> options = new ArrayList<>();
-        options.add(OptionItem.withLigature("grid", getString(R.string.view_mode_grid), "grid_view"));
-        options.add(OptionItem.withLigature("list", getString(R.string.view_mode_list), "view_list"));
+        options.add(OptionItem.withLigature("view_1", getString(R.string.records_grid_1), "view_list"));
+        options.add(OptionItem.withLigature("view_2", getString(R.string.records_grid_2), "grid_view"));
+        options.add(OptionItem.withLigature("view_3", getString(R.string.records_grid_3), "grid_view"));
+        options.add(OptionItem.withLigature("view_4", getString(R.string.records_grid_4), "grid_view"));
+        options.add(OptionItem.withLigature("view_5", getString(R.string.records_grid_5), "grid_view"));
+        String selectedId = "view_" + currentGridSpan;
 
         getParentFragmentManager().setFragmentResultListener(pickerKey, this, (k, bundle) -> {
             String selId = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if(selId!=null){
+                int span = 2; // default
+                switch (selId) {
+                    case "view_1": span = 1; break;
+                    case "view_2": span = 2; break;
+                    case "view_3": span = 3; break;
+                    case "view_4": span = 4; break;
+                    case "view_5": span = 5; break;
+                }
                 Bundle out = new Bundle();
                 out.putString("action", "set_view_mode");
-                out.putString("view_mode", selId);
+                out.putInt("grid_span", span);
                 getParentFragmentManager().setFragmentResult(resultKey, out);
                 dismiss();
             }
         });
 
         PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
-                getString(R.string.records_view_mode_title), options, isGridViewInitial ? "grid" : "list", pickerKey, getString(R.string.records_sort_helper)
+                getString(R.string.records_grid_option), options, selectedId, pickerKey, getString(R.string.records_grid_helper)
         );
         picker.show(getParentFragmentManager(), "RecordsViewModePicker");
+    }
+
+    /** Returns the display label for a grid span count. */
+    private String getGridSpanLabel(int span) {
+        switch (span) {
+            case 1: return getString(R.string.records_grid_1);
+            case 3: return getString(R.string.records_grid_3);
+            case 4: return getString(R.string.records_grid_4);
+            case 5: return getString(R.string.records_grid_5);
+            default: return getString(R.string.records_grid_2);
+        }
     }
 
     private void openSortPicker(){

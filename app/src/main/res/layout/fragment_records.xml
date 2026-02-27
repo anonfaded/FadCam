@@ -598,6 +598,7 @@
             android:clipToPadding="false"
             android:paddingTop="8dp"
             android:paddingBottom="76dp"
+            android:scrollbars="none"
             android:visibility="gone"/> <!-- Initially hidden -->
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
@@ -639,6 +640,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/scroll_to_top"
         android:rotation="-90" />
+
+    <!-- Fast scroller overlay (above FABs, below applock) -->
+    <com.fadcam.ui.GalleryFastScroller
+        android:id="@+id/fast_scroller"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:translationZ="12dp"
+        app:layout_constraintTop_toBottomOf="@id/selection_actions_row"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Fix Start: AppLock full-screen overlay (initially gone)  -->
     <FrameLayout

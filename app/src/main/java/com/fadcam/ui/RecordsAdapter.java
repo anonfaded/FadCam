@@ -59,7 +59,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -84,7 +86,44 @@ import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.service.FileOperationService;
 
 // Modify the class declaration to remove the ListPreloader implementation
-public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordViewHolder> {
+public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    // ── View type constants ──
+    public static final int VIEW_TYPE_HEADER = 0;
+    public static final int VIEW_TYPE_ITEM = 1;
+
+    // ── Month grouping entry classes ──
+    static class MonthHeaderEntry {
+        final String monthKey;
+        MonthHeaderEntry(String monthKey) { this.monthKey = monthKey; }
+    }
+
+    static class VideoItemEntry {
+        final VideoItem item;
+        final String monthKey;
+        final int serialNumber; // 1-based, headers excluded
+        VideoItemEntry(VideoItem item, String monthKey, int serialNumber) {
+            this.item = item;
+            this.monthKey = monthKey;
+            this.serialNumber = serialNumber;
+        }
+    }
+
+    // ── Month selection listener ──
+    public interface OnMonthActionListener {
+        void onMonthSelectAll(String monthKey, List<VideoItem> items);
+    }
+
+    private OnMonthActionListener monthActionListener;
+
+    public void setOnMonthActionListener(OnMonthActionListener listener) {
+        this.monthActionListener = listener;
+    }
+
+    // ── Entries list (interleaved headers + items) ──
+    private List<Object> entries = new ArrayList<>();
+
+    private static final SimpleDateFormat MONTH_FORMAT = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
 
     // Keep the cache for thumbnails but optimize it
     private final SparseArray<String> loadedThumbnailCache = new SparseArray<>();
@@ -156,6 +195,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         this.context = Objects.requireNonNull(context, "Context cannot be null for RecordsAdapter");
         this.safeMediaProbeMode = RuntimeCompat.shouldUseSafeMediaProbe(this.context);
         this.records = new ArrayList<>(records); // Use a mutable copy
+        this.entries = buildEntries(this.records); // Build month-grouped entries
         this.executorService = Objects.requireNonNull(executorService, "ExecutorService cannot be null");
         this.sharedPreferencesManager = Objects.requireNonNull(sharedPreferencesManager,
                 "SharedPreferencesManager cannot be null"); // <<< STORE IT
@@ -242,9 +282,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (position < 0 || position >= entries.size()) return VIEW_TYPE_ITEM;
+        return entries.get(position) instanceof MonthHeaderEntry ? VIEW_TYPE_HEADER : VIEW_TYPE_ITEM;
+    }
+
     @NonNull
     @Override
-    public RecordViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_HEADER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_forensics_month_header, parent, false);
+            return new MonthHeaderViewHolder(view);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_record, parent, false);
         return new RecordViewHolder(view);
     }
@@ -267,7 +317,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // Optimize onBindViewHolder to reduce work on the UI thread
     @Override
-    public void onBindViewHolder(@NonNull RecordViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+        // ── Handle month header ──
+        if (viewHolder instanceof MonthHeaderViewHolder) {
+            bindMonthHeader((MonthHeaderViewHolder) viewHolder, position);
+            return;
+        }
+        RecordViewHolder holder = (RecordViewHolder) viewHolder;
         // --- 0. Handle Skeleton Mode ---
         if (isSkeletonMode) {
             bindSkeletonItem(holder, position);
@@ -283,13 +339,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         }
 
         // --- 1. Basic Checks & Get Data ---
-        if (records == null || position < 0 || position >= records.size() || records.get(position) == null
-                || records.get(position).uri == null) {
+        if (entries == null || position < 0 || position >= entries.size()
+                || !(entries.get(position) instanceof VideoItemEntry)) {
             Log.e(TAG, "onBindViewHolder: Invalid item/data at position " + position);
-            // Optionally clear the views in the holder to avoid displaying stale data
             return;
         }
-        final VideoItem videoItem = records.get(position);
+        final VideoItemEntry entry = (VideoItemEntry) entries.get(position);
+        final VideoItem videoItem = entry.item;
+        if (videoItem == null || videoItem.uri == null) {
+            Log.e(TAG, "onBindViewHolder: Null videoItem or uri at position " + position);
+            return;
+        }
         final Uri videoUri = videoItem.uri;
         final String displayName = videoItem.displayName != null ? videoItem.displayName : "Unnamed Video";
         final String uriString = videoUri.toString();
@@ -311,7 +371,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         // --- 3. Bind Standard Data, optimized for fewer UI operations ---
         if (holder.textViewSerialNumber != null)
-            holder.textViewSerialNumber.setText(String.valueOf(position + 1));
+            holder.textViewSerialNumber.setText(String.valueOf(entry.serialNumber));
         if (holder.textViewRecord != null)
             holder.textViewRecord.setText(displayName);
         if (holder.textViewFileSize != null)
@@ -713,9 +773,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     @Override
     public int getItemCount() {
-        int count = records == null ? 0 : records.size();
+        int count = entries == null ? 0 : entries.size();
         if (count == 0) {
-            Log.d(TAG, "getItemCount returning 0 - records is " + (records == null ? "null" : "empty") +
+            Log.d(TAG, "getItemCount returning 0 - entries is " + (entries == null ? "null" : "empty") +
                     ", skeleton mode: " + isSkeletonMode);
         }
         return count;
@@ -988,8 +1048,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // Override onViewRecycled to cancel thumbnail loading for recycled views
     @Override
-    public void onViewRecycled(@NonNull RecordViewHolder holder) {
-        super.onViewRecycled(holder);
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder viewHolder) {
+        super.onViewRecycled(viewHolder);
+        if (!(viewHolder instanceof RecordViewHolder)) return;
+        RecordViewHolder holder = (RecordViewHolder) viewHolder;
 
         // Cancel any pending image loads when view is recycled
         if (holder.imageViewThumbnail != null && context != null) {
@@ -1001,12 +1063,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
     // Override onBindViewHolder to handle payload for quality changes
     @Override
-    public void onBindViewHolder(@NonNull RecordViewHolder holder, int position, @NonNull List<Object> payloads) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position, @NonNull List<Object> payloads) {
+        // ── Month headers: always full rebind ──
+        if (viewHolder instanceof MonthHeaderViewHolder) {
+            bindMonthHeader((MonthHeaderViewHolder) viewHolder, position);
+            return;
+        }
+        RecordViewHolder holder = (RecordViewHolder) viewHolder;
         if (!payloads.isEmpty()) {
             if (payloads.contains("QUALITY_CHANGE")) {
                 // Only update thumbnail when scrolling stops
-                if (holder.imageViewThumbnail != null && position < records.size()) {
-                    VideoItem videoItem = records.get(position);
+                if (holder.imageViewThumbnail != null && position < entries.size()
+                        && entries.get(position) instanceof VideoItemEntry) {
+                    VideoItem videoItem = ((VideoItemEntry) entries.get(position)).item;
                     if (videoItem != null && videoItem.uri != null) {
                         setThumbnail(holder, videoItem.uri);
                     }
@@ -1015,8 +1084,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
 
             if (payloads.contains("SELECTION_TOGGLE")) {
-                if (position < records.size()) {
-                    VideoItem videoItem = records.get(position);
+                if (position < entries.size() && entries.get(position) instanceof VideoItemEntry) {
+                    VideoItem videoItem = ((VideoItemEntry) entries.get(position)).item;
                     boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
                     applySelectionVisuals(holder, isCurrentlySelected, true);
                 }
@@ -1024,8 +1093,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             }
 
             if (payloads.contains("SELECTION_MODE")) {
-                if (position < records.size()) {
-                    VideoItem videoItem = records.get(position);
+                if (position < entries.size() && entries.get(position) instanceof VideoItemEntry) {
+                    VideoItem videoItem = ((VideoItemEntry) entries.get(position)).item;
                     boolean isCurrentlySelected = this.currentSelectedUris.contains(videoItem.uri);
                     applySelectionVisuals(holder, isCurrentlySelected, false);
                     boolean isProcessing = this.currentlyProcessingUris.contains(videoItem.uri);
@@ -1045,8 +1114,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
             if (payloads.contains("SERIAL_UPDATE")) {
                 // Lightweight rebind: only update the serial number for shifted items
-                if (holder.textViewSerialNumber != null) {
-                    holder.textViewSerialNumber.setText(String.valueOf(position + 1));
+                if (holder.textViewSerialNumber != null && position < entries.size()
+                        && entries.get(position) instanceof VideoItemEntry) {
+                    holder.textViewSerialNumber.setText(
+                            String.valueOf(((VideoItemEntry) entries.get(position)).serialNumber));
                 }
                 return;
             }
@@ -1096,18 +1167,20 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Helper to find item position by URI (important for notifyItemChanged)
     // Make this public so the Fragment can call it after marking an item opened
     public int findPositionByUri(Uri uri) { // <-- *** CHANGED to public ***
-        if (uri == null || records == null) {
-            Log.w(TAG, "findPositionByUri called with null uri or null records list.");
+        if (uri == null || entries == null) {
+            Log.w(TAG, "findPositionByUri called with null uri or null entries list.");
             return -1;
         }
-        for (int i = 0; i < records.size(); i++) {
-            VideoItem item = records.get(i);
-            // Added null check for item as well for safety
-            if (item != null && item.uri != null && uri.equals(item.uri)) { // Use equals for URI comparison
-                return i;
+        for (int i = 0; i < entries.size(); i++) {
+            Object entry = entries.get(i);
+            if (entry instanceof VideoItemEntry) {
+                VideoItem item = ((VideoItemEntry) entry).item;
+                if (item != null && item.uri != null && uri.equals(item.uri)) {
+                    return i;
+                }
             }
         }
-        Log.v(TAG, "URI not found in adapter list: " + uri); // Use v for verbose logs
+        Log.v(TAG, "URI not found in adapter entries: " + uri); // Use v for verbose logs
         return -1; // Not found
     }
 
@@ -1127,10 +1200,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     }
 
     private int findPositionByStringUri(String uriStr) {
-        if (uriStr == null || records == null)
+        if (uriStr == null || entries == null)
             return -1;
-        for (int i = 0; i < records.size(); i++) {
-            VideoItem it = records.get(i);
+        for (int i = 0; i < entries.size(); i++) {
+            Object entry = entries.get(i);
+            if (!(entry instanceof VideoItemEntry)) continue;
+            VideoItem it = ((VideoItemEntry) entry).item;
             if (it == null)
                 continue;
             if (uriStr.equals(it.uri == null ? null : it.uri.toString()))
@@ -1846,22 +1921,52 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
     // Helper method to remove video item from list after move operation
     private void removeVideoItemFromList(VideoItem videoItem) {
         if (records == null || videoItem == null) return;
-        
-        int position = -1;
-        for (int i = 0; i < records.size(); i++) {
-            VideoItem item = records.get(i);
-            if (item != null && item.uri != null && item.uri.equals(videoItem.uri)) {
-                position = i;
-                break;
+
+        // Remove from flat records list
+        records.removeIf(item -> item != null && item.uri != null && item.uri.equals(videoItem.uri));
+
+        // Find and remove from entries, also remove orphan month headers
+        int entryPos = -1;
+        for (int i = 0; i < entries.size(); i++) {
+            Object entry = entries.get(i);
+            if (entry instanceof VideoItemEntry) {
+                VideoItem item = ((VideoItemEntry) entry).item;
+                if (item != null && item.uri != null && item.uri.equals(videoItem.uri)) {
+                    entryPos = i;
+                    break;
+                }
             }
         }
-        
-        if (position >= 0) {
-            records.remove(position);
-            notifyItemRemoved(position);
-            // Update item count if needed
-            if (records.isEmpty()) {
-                notifyDataSetChanged(); // Refresh to show empty state if applicable
+
+        if (entryPos >= 0) {
+            String removedMonth = ((VideoItemEntry) entries.get(entryPos)).monthKey;
+            entries.remove(entryPos);
+            notifyItemRemoved(entryPos);
+
+            // Check if the month header is now orphaned (no more items for that month)
+            boolean monthHasItems = false;
+            for (Object e : entries) {
+                if (e instanceof VideoItemEntry && removedMonth.equals(((VideoItemEntry) e).monthKey)) {
+                    monthHasItems = true;
+                    break;
+                }
+            }
+            if (!monthHasItems) {
+                for (int i = 0; i < entries.size(); i++) {
+                    if (entries.get(i) instanceof MonthHeaderEntry
+                            && removedMonth.equals(((MonthHeaderEntry) entries.get(i)).monthKey)) {
+                        entries.remove(i);
+                        notifyItemRemoved(i);
+                        break;
+                    }
+                }
+            }
+
+            // Refresh serial numbers
+            rebuildSerialNumbers();
+
+            if (entries.isEmpty()) {
+                notifyDataSetChanged();
             }
         }
     }
@@ -2171,8 +2276,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
         Log.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) +
                 " to " + newRecords.size() + " records");
 
-        // real data -----------
-
         // Check if we're updating with skeleton data or real data
         boolean isSkeletonData = !newRecords.isEmpty() && newRecords.get(0).isSkeleton;
 
@@ -2181,57 +2284,73 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
             setSkeletonMode(false);
         } else if (isSkeletonMode && isSkeletonData) {
             Log.d(TAG, "updateRecords: Updating skeleton data - keeping skeleton mode enabled");
-            // Keep skeleton mode enabled
         }
 
+        // Build new entries from the new records
+        final List<Object> newEntries = buildEntries(newRecords);
+        final List<Object> oldEntries = this.entries;
 
-        // Use DiffUtil to calculate the differences and dispatch updates efficiently
+        // Use DiffUtil to calculate the differences on entries
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
-                return records.size();
+                return oldEntries.size();
             }
 
             @Override
             public int getNewListSize() {
-                return newRecords.size();
+                return newEntries.size();
             }
 
             @Override
             public boolean areItemsTheSame(int oldPosition, int newPosition) {
-                // Check if URIs match to determine if items are the same
-                Uri oldUri = records.get(oldPosition).uri;
-                Uri newUri = newRecords.get(newPosition).uri;
-                return oldUri != null && newUri != null && oldUri.equals(newUri);
+                Object oldEntry = oldEntries.get(oldPosition);
+                Object newEntry = newEntries.get(newPosition);
+                if (oldEntry instanceof MonthHeaderEntry && newEntry instanceof MonthHeaderEntry) {
+                    return ((MonthHeaderEntry) oldEntry).monthKey.equals(((MonthHeaderEntry) newEntry).monthKey);
+                }
+                if (oldEntry instanceof VideoItemEntry && newEntry instanceof VideoItemEntry) {
+                    Uri oldUri = ((VideoItemEntry) oldEntry).item.uri;
+                    Uri newUri = ((VideoItemEntry) newEntry).item.uri;
+                    return oldUri != null && newUri != null && oldUri.equals(newUri);
+                }
+                return false;
             }
 
             @Override
             public boolean areContentsTheSame(int oldPosition, int newPosition) {
-                VideoItem oldItem = records.get(oldPosition);
-                VideoItem newItem = newRecords.get(newPosition);
-
-                // Compare fields that affect the display
-                return oldItem.displayName.equals(newItem.displayName) &&
-                        oldItem.size == newItem.size &&
-                        oldItem.lastModified == newItem.lastModified;
+                Object oldEntry = oldEntries.get(oldPosition);
+                Object newEntry = newEntries.get(newPosition);
+                if (oldEntry instanceof MonthHeaderEntry && newEntry instanceof MonthHeaderEntry) {
+                    return true; // Headers are static
+                }
+                if (oldEntry instanceof VideoItemEntry && newEntry instanceof VideoItemEntry) {
+                    VideoItem oldItem = ((VideoItemEntry) oldEntry).item;
+                    VideoItem newItem = ((VideoItemEntry) newEntry).item;
+                    return oldItem.displayName.equals(newItem.displayName) &&
+                            oldItem.size == newItem.size &&
+                            oldItem.lastModified == newItem.lastModified;
+                }
+                return false;
             }
         });
 
-        // Update the records list with a copy of the new list
-        int oldSize = this.records.size();
+        // Update the data
+        int oldSize = this.entries.size();
         this.records = new ArrayList<>(newRecords);
+        this.entries = newEntries;
 
         // Dispatch updates to the adapter
         diffResult.dispatchUpdatesTo(this);
 
-        // Force serial number refresh for all items when list size changed (items shifted positions)
-        int newSize = this.records.size();
+        // Force serial number refresh for all items when list size changed
+        int newSize = this.entries.size();
         if (oldSize != newSize && newSize > 0) {
             notifyItemRangeChanged(0, newSize, "SERIAL_UPDATE");
         }
 
-        Log.d(TAG, "updateRecords completed. Final size: " + records.size() +
-                ", skeleton mode: " + isSkeletonMode);
+        Log.d(TAG, "updateRecords completed. Final entries: " + entries.size() +
+                ", records: " + records.size() + ", skeleton mode: " + isSkeletonMode);
     }
 
     // Format file size helper
@@ -2654,6 +2773,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                     }
                 }
             }
+            // ── FIX: Also refresh all month headers so checkmarks update ──
+            for (int i = 0; i < entries.size(); i++) {
+                if (entries.get(i) instanceof MonthHeaderEntry) {
+                    notifyItemChanged(i, "SELECTION_MODE");
+                }
+            }
         } else {
             Log.d(TAG, "setSelectionModeActive: Mode and selection unchanged, no refresh needed.");
         }
@@ -2704,6 +2829,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
 
         Log.d(TAG, "setSkeletonData: Setting " + skeletonItems.size() + " skeleton items");
         this.records = new ArrayList<>(skeletonItems);
+        this.entries = buildEntries(this.records);
         notifyDataSetChanged();
     }
 
@@ -3155,6 +3281,136 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecordsAdapter.RecordVi
                 return newName;
             }
             count++;
+        }
+    }
+
+    // ── Month grouping helper methods ──
+
+    /**
+     * Builds a list of entries (interleaved month headers + video items) from a flat list.
+     */
+    private List<Object> buildEntries(List<VideoItem> items) {
+        List<Object> result = new ArrayList<>();
+        if (items == null || items.isEmpty()) return result;
+        String lastMonth = null;
+        int serial = 0;
+        for (VideoItem item : items) {
+            if (item == null) continue;
+            String month = (item.lastModified > 0)
+                    ? MONTH_FORMAT.format(new Date(item.lastModified))
+                    : "Unknown";
+            if (!month.equals(lastMonth)) {
+                result.add(new MonthHeaderEntry(month));
+                lastMonth = month;
+            }
+            serial++;
+            result.add(new VideoItemEntry(item, month, serial));
+        }
+        return result;
+    }
+
+    /**
+     * Reassigns serial numbers in the current entries list after a removal.
+     */
+    private void rebuildSerialNumbers() {
+        int serial = 0;
+        for (int i = 0; i < entries.size(); i++) {
+            Object entry = entries.get(i);
+            if (entry instanceof VideoItemEntry) {
+                serial++;
+                VideoItemEntry old = (VideoItemEntry) entry;
+                entries.set(i, new VideoItemEntry(old.item, old.monthKey, serial));
+            }
+        }
+    }
+
+    /**
+     * Binds a month header ViewHolder.
+     */
+    private void bindMonthHeader(@NonNull MonthHeaderViewHolder holder, int position) {
+        if (position < 0 || position >= entries.size()) return;
+        Object entry = entries.get(position);
+        if (!(entry instanceof MonthHeaderEntry)) return;
+        MonthHeaderEntry header = (MonthHeaderEntry) entry;
+        holder.title.setText(header.monthKey);
+
+        // Match Lab tab style: container is always VISIBLE, alpha controls visibility
+        holder.selectContainer.setVisibility(View.VISIBLE);
+        holder.selectContainer.setAlpha(isSelectionModeActive ? 1f : 0f);
+        holder.selectContainer.setEnabled(isSelectionModeActive);
+
+        // Check if all items in this month are selected
+        List<VideoItem> monthItems = getItemsForMonth(header.monthKey);
+        boolean allSelected = !monthItems.isEmpty();
+        for (VideoItem item : monthItems) {
+            if (!currentSelectedUris.contains(item.uri)) {
+                allSelected = false;
+                break;
+            }
+        }
+        holder.selectBg.setVisibility(isSelectionModeActive ? View.VISIBLE : View.INVISIBLE);
+        holder.selectCheck.setVisibility(isSelectionModeActive && allSelected ? View.VISIBLE : View.INVISIBLE);
+        holder.selectContainer.setOnClickListener(isSelectionModeActive ? v -> {
+            if (monthActionListener != null) {
+                monthActionListener.onMonthSelectAll(header.monthKey, monthItems);
+            }
+        } : null);
+    }
+
+    /**
+     * Returns all VideoItems belonging to a specific month key.
+     */
+    private List<VideoItem> getItemsForMonth(String monthKey) {
+        List<VideoItem> result = new ArrayList<>();
+        for (Object entry : entries) {
+            if (entry instanceof VideoItemEntry && monthKey.equals(((VideoItemEntry) entry).monthKey)) {
+                result.add(((VideoItemEntry) entry).item);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the section text (month/year) for a given adapter position,
+     * walking backward to find the nearest month header.
+     * Used by the fast scroller date bubble.
+     */
+    public String getSectionText(int position) {
+        if (entries == null || position < 0) return "";
+        int pos = Math.min(position, entries.size() - 1);
+        while (pos >= 0) {
+            Object entry = entries.get(pos);
+            if (entry instanceof MonthHeaderEntry) {
+                return ((MonthHeaderEntry) entry).monthKey;
+            }
+            if (entry instanceof VideoItemEntry) {
+                return ((VideoItemEntry) entry).monthKey;
+            }
+            pos--;
+        }
+        return "";
+    }
+
+    /**
+     * Returns the count of actual video/image records (excluding month headers).
+     */
+    public int getRecordsCount() {
+        return records == null ? 0 : records.size();
+    }
+
+    // ── MonthHeaderViewHolder ──
+    static class MonthHeaderViewHolder extends RecyclerView.ViewHolder {
+        final TextView title;
+        final View selectContainer;
+        final ImageView selectBg;
+        final ImageView selectCheck;
+
+        MonthHeaderViewHolder(View itemView) {
+            super(itemView);
+            title = itemView.findViewById(R.id.text_month_title);
+            selectContainer = itemView.findViewById(R.id.month_select_container);
+            selectBg = itemView.findViewById(R.id.month_select_bg);
+            selectCheck = itemView.findViewById(R.id.month_select_check);
         }
     }
 }
