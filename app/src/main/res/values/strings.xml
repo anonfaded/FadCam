@@ -1925,4 +1925,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_seconds_value">%1$d s</string>
     <string name="motion_lab_footer">Customize the controls above only if you need special behavior. For most setups, defaults are the safest and most reliable choice.</string>
 
+    <!-- Lab sidebar – Hide Thumbnails -->
+    <string name="lab_hide_thumbnails_title">Classified Mode</string>
+    <string name="lab_hide_thumbnails_redacted">REDACTED</string>
+
 </resources>

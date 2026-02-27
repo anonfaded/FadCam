@@ -100,6 +100,12 @@ public class ForensicIntelligenceFragment extends Fragment {
                 case "open_tape_style":
                     showTapeStylePicker();
                     break;
+                case "hide_thumbnails_toggled":
+                    ForensicsGalleryFragment galleryHide = findGallery();
+                    if (galleryHide != null) {
+                        galleryHide.refreshHideThumbnails(bundle.getBoolean("hide_thumbnails", false));
+                    }
+                    break;
                 default:
                     break;
             }

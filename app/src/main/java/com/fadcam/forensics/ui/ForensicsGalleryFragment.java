@@ -242,6 +242,10 @@ public class ForensicsGalleryFragment extends Fragment {
         loadVisualPrefs();
         adapter.setGridSpan(currentGridSpan);
         adapter.setVisualStyles(clipStyle, tapeStyle);
+        // Load Classified Mode preference
+        adapter.setHideThumbnails(
+                SharedPreferencesManager.getInstance(requireContext()).isLabHideThumbnailsEnabled()
+        );
         recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -384,6 +388,16 @@ public class ForensicsGalleryFragment extends Fragment {
         tapeStyle = resolved;
         persistVisualPrefs();
         adapter.setVisualStyles(clipStyle, tapeStyle);
+    }
+
+    /**
+     * Called by host when Classified Mode toggle changes from the sidebar.
+     * Updates the adapter to hide or show evidence thumbnails.
+     *
+     * @param hide true to enable Classified Mode (redacted thumbnails)
+     */
+    public void refreshHideThumbnails(boolean hide) {
+        adapter.setHideThumbnails(hide);
     }
 
     @NonNull

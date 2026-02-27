@@ -103,6 +103,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
     @NonNull
     private String tapeStyle = TAPE_STYLE_TORN;
     private int currentGridSpan = 2;
+    private boolean hideThumbnails;
 
     public ForensicsGalleryAdapter() {
         setHasStableIds(false);
@@ -121,6 +122,21 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         if (changed) {
             notifyDataSetChanged();
         }
+    }
+
+    /**
+     * Enables or disables "Classified Mode": hides evidence thumbnails behind
+     * a redacted placeholder with a forensic-flavored overlay.
+     */
+    public void setHideThumbnails(boolean hide) {
+        if (hideThumbnails == hide) return;
+        hideThumbnails = hide;
+        notifyDataSetChanged();
+    }
+
+    /** Returns whether thumbnails are currently hidden (Classified Mode). */
+    public boolean isHideThumbnails() {
+        return hideThumbnails;
     }
 
     public void setGridSpan(int spanCount) {
@@ -407,13 +423,24 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
         holder.cardMotionLayer.setRotation(0f);
         applyGridSizing(holder);
 
-        Glide.with(holder.image)
-                .load(Uri.parse(row.imageUri))
-                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                .centerCrop()
-                .placeholder(R.drawable.ic_photo)
-                .error(R.drawable.ic_photo)
-                .into(holder.image);
+        // Classified Mode: hide evidence thumbnail behind redacted overlay
+        if (hideThumbnails) {
+            holder.image.setImageResource(R.drawable.ic_visibility_off);
+            holder.image.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            holder.image.setBackgroundColor(0xFF1A1A2E);
+            holder.image.setColorFilter(0x66FFFFFF, android.graphics.PorterDuff.Mode.SRC_IN);
+        } else {
+            holder.image.setColorFilter(null);
+            holder.image.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            holder.image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            Glide.with(holder.image)
+                    .load(Uri.parse(row.imageUri))
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .centerCrop()
+                    .placeholder(R.drawable.ic_photo)
+                    .error(R.drawable.ic_photo)
+                    .into(holder.image);
+        }
 
         holder.cardMotionLayer.setScaleX(1f);
         holder.cardMotionLayer.setScaleY(1f);

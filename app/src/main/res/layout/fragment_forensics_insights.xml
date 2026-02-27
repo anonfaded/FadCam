@@ -115,71 +115,67 @@
                 android:textColor="@android:color/darker_gray"
                 android:textSize="11sp" />
 
-            <!-- Time range selector -->
-            <LinearLayout
-                android:id="@+id/time_range_container"
+            <!-- Time range selector — chip dock -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="?attr/colorTopBar">
 
-                <TextView
-                    android:id="@+id/chip_24h"
-                    android:layout_width="0dp"
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="3dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:text="@string/intel_range_24h"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:scrollbars="none"
+                    android:overScrollMode="never"
+                    android:requiresFadingEdge="horizontal"
+                    android:fadingEdgeLength="24dp"
+                    android:paddingStart="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="4dp">
 
-                <TextView
-                    android:id="@+id/chip_7d"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="3dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:text="@string/intel_range_7d"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/time_range_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        app:singleLine="true"
+                        app:chipSpacingHorizontal="6dp">
 
-                <TextView
-                    android:id="@+id/chip_30d"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="3dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:text="@string/intel_range_30d"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_24h"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/intel_range_24h" />
 
-                <TextView
-                    android:id="@+id/chip_all"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="3dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:text="@string/intel_range_all"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_7d"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/intel_range_7d" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_30d"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/intel_range_30d" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_all"
+                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="@string/intel_range_all" />
+                    </com.google.android.material.chip.ChipGroup>
+                </HorizontalScrollView>
+            </androidx.cardview.widget.CardView>
 
             <!-- ═══ TOTAL DETECTIONS hero card ═══ -->
             <LinearLayout

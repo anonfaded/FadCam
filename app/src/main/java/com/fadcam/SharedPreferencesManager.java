@@ -824,6 +824,23 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // ----- Hide thumbnails in Lab (Forensics Gallery) preference -----
+    private static final String PREF_KEY_LAB_HIDE_THUMBNAILS =
+        "pref_lab_hide_thumbnails";
+
+    /** Returns whether thumbnails should be hidden in Lab gallery. Default: false. */
+    public boolean isLabHideThumbnailsEnabled() {
+        return sharedPreferences.getBoolean(PREF_KEY_LAB_HIDE_THUMBNAILS, false);
+    }
+
+    /** Sets whether thumbnails should be hidden in Lab gallery. */
+    public void setLabHideThumbnailsEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(PREF_KEY_LAB_HIDE_THUMBNAILS, enabled)
+            .apply();
+    }
+
     public boolean isLocalisationEnabled() {
         return sharedPreferences.getBoolean(
             Constants.PREF_LOCATION_DATA,

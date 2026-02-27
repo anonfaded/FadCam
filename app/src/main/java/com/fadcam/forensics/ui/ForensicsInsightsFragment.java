@@ -21,6 +21,8 @@ import com.fadcam.R;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
 import com.fadcam.forensics.data.local.entity.AiEventEntity;
 import com.fadcam.ui.OverlayNavUtil;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -118,10 +120,10 @@ public class ForensicsInsightsFragment extends Fragment {
     private ProgressBar loadingProgress;
 
     // Time range chips
-    private TextView chip24h;
-    private TextView chip7d;
-    private TextView chip30d;
-    private TextView chipAll;
+    private Chip chip24h;
+    private Chip chip7d;
+    private Chip chip30d;
+    private Chip chipAll;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private boolean embeddedMode;
@@ -258,17 +260,18 @@ public class ForensicsInsightsFragment extends Fragment {
     // ── Time range chips ─────────────────────────────────────────────────
 
     private void setupChips() {
-        View.OnClickListener chipClick = v -> {
-            int id = v.getId();
-            if (id == R.id.chip_24h) selectRange(TimeRange.H24);
-            else if (id == R.id.chip_7d) selectRange(TimeRange.D7);
-            else if (id == R.id.chip_30d) selectRange(TimeRange.D30);
-            else if (id == R.id.chip_all) selectRange(TimeRange.ALL);
-        };
-        if (chip24h != null) chip24h.setOnClickListener(chipClick);
-        if (chip7d != null) chip7d.setOnClickListener(chipClick);
-        if (chip30d != null) chip30d.setOnClickListener(chipClick);
-        if (chipAll != null) chipAll.setOnClickListener(chipClick);
+        ChipGroup chipGroup = null;
+        if (chip24h != null) chipGroup = (ChipGroup) chip24h.getParent();
+        if (chipGroup != null) {
+            chipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+                if (checkedIds.isEmpty()) return;
+                int id = checkedIds.get(0);
+                if (id == R.id.chip_24h) selectRange(TimeRange.H24);
+                else if (id == R.id.chip_7d) selectRange(TimeRange.D7);
+                else if (id == R.id.chip_30d) selectRange(TimeRange.D30);
+                else if (id == R.id.chip_all) selectRange(TimeRange.ALL);
+            });
+        }
         updateChipVisuals();
     }
 
@@ -294,16 +297,11 @@ public class ForensicsInsightsFragment extends Fragment {
     }
 
     private void updateChipVisuals() {
-        TextView[] chips = {chip24h, chip7d, chip30d, chipAll};
+        Chip[] chips = {chip24h, chip7d, chip30d, chipAll};
         TimeRange[] ranges = {TimeRange.H24, TimeRange.D7, TimeRange.D30, TimeRange.ALL};
         for (int i = 0; i < chips.length; i++) {
             if (chips[i] == null) continue;
-            boolean selected = ranges[i] == selectedRange;
-            GradientDrawable bg = new GradientDrawable();
-            bg.setCornerRadius(dpToPx(6));
-            bg.setColor(selected ? accentColor : 0xFF1A1A2E);
-            chips[i].setBackground(bg);
-            chips[i].setTextColor(selected ? 0xFFFFFFFF : 0xAAFFFFFF);
+            chips[i].setChecked(ranges[i] == selectedRange);
         }
     }
 
@@ -551,7 +549,7 @@ public class ForensicsInsightsFragment extends Fragment {
             if (cell == null) continue;
             GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(dpToPx(8));
-            bg.setColor(0xFF1A1A2E);
+            bg.setColor(0x4D1A1A2E); // 30% opacity — matches inactive chip tone
             cell.setBackground(bg);
         }
     }
