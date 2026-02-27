@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -30,6 +32,8 @@ import java.util.Locale;
 
 public class ImageViewerActivity extends AppCompatActivity {
 
+    private static final int OVERLAY_ANIM_DURATION = 200;
+
     public static final String EXTRA_SOURCE_VIDEO_URI = "com.fadcam.extra.SOURCE_VIDEO_URI";
     public static final String EXTRA_OPEN_AT_MS = "com.fadcam.extra.OPEN_AT_MS";
     public static final String EXTRA_EVENT_TYPE = "com.fadcam.extra.EVENT_TYPE";
@@ -37,6 +41,12 @@ public class ImageViewerActivity extends AppCompatActivity {
     public static final String EXTRA_CONFIDENCE = "com.fadcam.extra.CONFIDENCE";
     public static final String EXTRA_CAPTURED_AT = "com.fadcam.extra.CAPTURED_AT";
     public static final String EXTRA_SOURCE_LABEL = "com.fadcam.extra.SOURCE_LABEL";
+
+    @Nullable
+    private View topDock;
+    @Nullable
+    private View bottomDock;
+    private boolean overlayVisible = true;
 
     @Nullable
     private Uri sourceVideoUri;
@@ -70,10 +80,15 @@ public class ImageViewerActivity extends AppCompatActivity {
 
         ImageView back = findViewById(R.id.imageViewerBack);
         ImageView more = findViewById(R.id.imageViewerMore);
-        ImageView imageView = findViewById(R.id.imageViewerImage);
+        ZoomableImageView imageView = findViewById(R.id.imageViewerImage);
         TextView metaView = findViewById(R.id.imageViewerMeta);
+        topDock = findViewById(R.id.imageViewerTopDock);
+        bottomDock = findViewById(R.id.imageViewerBottomDock);
         if (back != null) {
             back.setOnClickListener(v -> finish());
+        }
+        if (imageView != null) {
+            imageView.setOnSingleTapListener(this::toggleOverlay);
         }
 
         Uri uri = getIntent() != null ? getIntent().getData() : null;
@@ -113,6 +128,43 @@ public class ImageViewerActivity extends AppCompatActivity {
                     }
                 })
                 .into(imageView);
+    }
+
+    /**
+     * Toggles the visibility of the top and bottom overlay docks with a fade animation.
+     * Called on single-tap of the image.
+     */
+    private void toggleOverlay() {
+        overlayVisible = !overlayVisible;
+        if (overlayVisible) {
+            showDock(topDock);
+            showDock(bottomDock);
+        } else {
+            hideDock(topDock);
+            hideDock(bottomDock);
+        }
+    }
+
+    private void showDock(@Nullable View dock) {
+        if (dock == null) return;
+        dock.setVisibility(View.VISIBLE);
+        dock.setAlpha(0f);
+        dock.animate()
+                .alpha(1f)
+                .setDuration(OVERLAY_ANIM_DURATION)
+                .setInterpolator(new DecelerateInterpolator())
+                .setListener(null)
+                .start();
+    }
+
+    private void hideDock(@Nullable View dock) {
+        if (dock == null) return;
+        dock.animate()
+                .alpha(0f)
+                .setDuration(OVERLAY_ANIM_DURATION)
+                .setInterpolator(new AccelerateInterpolator())
+                .withEndAction(() -> dock.setVisibility(View.GONE))
+                .start();
     }
 
     private void enforceBlackStatusBar() {
