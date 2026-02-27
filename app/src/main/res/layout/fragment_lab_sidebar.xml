@@ -54,11 +54,20 @@
             android:layout_marginEnd="12dp"
             app:dividerColor="#262626" />
 
+        <!-- ═══ About ═══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/lab_section_about"
+            android:textColor="?attr/colorHeading"
+            android:textStyle="bold" />
+
         <!-- Evidence Info — standalone top item -->
         <LinearLayout
             android:id="@+id/row_lab_info"
             style="@style/SettingsGroupRow"
-            android:layout_marginTop="12dp"
             android:background="@drawable/settings_group_card_bg"
             android:padding="8dp">
             <ImageView

@@ -545,11 +545,20 @@ public class ForensicsInsightsFragment extends Fragment {
 
     private void tintDetectionCells() {
         View[] cells = {cellPersonnel, cellVehicles, cellAnimals, cellObjects};
+        // Resolve colorTopBar from the current theme for consistent card-in-card look
+        int cellColor;
+        try {
+            android.util.TypedValue tv = new android.util.TypedValue();
+            requireContext().getTheme().resolveAttribute(R.attr.colorTopBar, tv, true);
+            cellColor = tv.data;
+        } catch (Exception e) {
+            cellColor = 0xFF1A1A2E; // fallback
+        }
         for (View cell : cells) {
             if (cell == null) continue;
             GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(dpToPx(8));
-            bg.setColor(0x4D1A1A2E); // 30% opacity — matches inactive chip tone
+            bg.setColor(cellColor);
             cell.setBackground(bg);
         }
     }
