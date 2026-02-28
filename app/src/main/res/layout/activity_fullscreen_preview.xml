@@ -11,6 +11,89 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <TextView
+        android:id="@+id/textFullscreenPreviewHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="94dp"
+        android:background="@drawable/fullscreen_dock_bg"
+        android:paddingStart="10dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="6dp"
+        android:text="Long press to start live preview"
+        android:textColor="#E6FFFFFF"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:id="@+id/containerZoomHud"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="88dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/fullscreen_icon_bg"
+        android:elevation="11dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textZoomHud"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1.0x"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/containerZoomMap"
+            android:layout_width="42dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="8dp"
+            android:clipChildren="true"
+            android:clipToPadding="true"
+            android:background="@drawable/fullscreen_icon_bg">
+
+            <View
+                android:id="@+id/viewZoomMapViewport"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:background="@drawable/fadcam_zoom_viewport_indicator" />
+        </FrameLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnZoomReset"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="6dp"
+            android:contentDescription="@string/zoom_slider_title"
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            app:backgroundTint="#5A0D1015"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/ic_zoom_out_map"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="18dp"
+            app:iconTint="@android:color/white"
+            app:rippleColor="#33FFFFFF"
+            app:strokeColor="#2AFFFFFF"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
@@ -326,29 +409,93 @@
 
     </FrameLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFullscreenCaptureShot"
-        style="@style/Widget.Material3.Button"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_gravity="end|center_vertical"
-        android:layout_marginEnd="14dp"
-        android:contentDescription="@string/shortcut_take_photo"
-        android:insetLeft="0dp"
-        android:insetTop="0dp"
-        android:insetRight="0dp"
-        android:insetBottom="0dp"
-        android:minWidth="0dp"
-        android:padding="0dp"
-        app:backgroundTint="#7A0D1015"
-        app:cornerRadius="16dp"
-        app:icon="@drawable/ic_camera"
-        app:iconGravity="textStart"
-        app:iconPadding="0dp"
-        app:iconSize="24dp"
-        app:iconTint="@android:color/white"
-        app:rippleColor="#33FFFFFF"
-        app:strokeColor="#2AFFFFFF"
-        app:strokeWidth="1dp" />
+    <LinearLayout
+        android:id="@+id/containerFullscreenMirror"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="122dp"
+        android:elevation="12dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFullscreenMirror"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/front_video_mirror_enable"
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            app:backgroundTint="#5A0D1015"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_mirror_video"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="22dp"
+            app:iconTint="@android:color/white"
+            app:rippleColor="#33FFFFFF"
+            app:strokeColor="#2AFFFFFF"
+            app:strokeWidth="1dp" />
+
+        <TextView
+            android:id="@+id/labelFullscreenMirror"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/fullscreen_label_mirror"
+            android:textColor="#B3FFFFFF"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/containerFullscreenShot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="122dp"
+        android:elevation="12dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFullscreenCaptureShot"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:contentDescription="@string/shortcut_take_photo"
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            app:backgroundTint="#7A0D1015"
+            app:cornerRadius="16dp"
+            app:icon="@drawable/ic_camera"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="24dp"
+            app:iconTint="@android:color/white"
+            app:rippleColor="#33FFFFFF"
+            app:strokeColor="#2AFFFFFF"
+            app:strokeWidth="1dp" />
+
+        <TextView
+            android:id="@+id/labelFullscreenShot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/fullscreen_label_shot"
+            android:textColor="#B3FFFFFF"
+            android:textSize="10sp" />
+    </LinearLayout>
 
 </FrameLayout>

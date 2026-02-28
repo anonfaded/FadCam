@@ -160,6 +160,10 @@ public class ScreenRecordingService extends Service {
                 handleResumeRecording();
                 break;
 
+            case Constants.INTENT_ACTION_SET_SCREEN_RECORDING_MUTE:
+                handleSetMute(intent);
+                break;
+
             case Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE:
                 handleQueryRecordingState();
                 break;
@@ -308,6 +312,7 @@ public class ScreenRecordingService extends Service {
         // Get audio config
         String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
         boolean enableAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
+        boolean initialMuted = sharedPreferencesManager.isScreenRecordingMuted();
         
         // Calculate bitrate based on resolution
         int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
@@ -337,6 +342,7 @@ public class ScreenRecordingService extends Service {
             }
             
             recordingPipeline = pipelineBuilder.build();
+            recordingPipeline.setAudioMuted(initialMuted);
             
             Log.d(TAG, "ScreenRecordingPipeline built successfully");
             
@@ -409,6 +415,18 @@ public class ScreenRecordingService extends Service {
             sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
             throw new IOException("Failed to start pipeline: " + e.getMessage(), e);
         }
+    }
+
+    private void handleSetMute(Intent intent) {
+        boolean muted = intent.getBooleanExtra(Constants.EXTRA_SCREEN_RECORDING_MUTED, false);
+        sharedPreferencesManager.setScreenRecordingMuted(muted);
+        if (recordingPipeline != null) {
+            recordingPipeline.setAudioMuted(muted);
+        }
+        Intent broadcast = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED);
+        broadcast.putExtra(Constants.EXTRA_SCREEN_RECORDING_MUTED, muted);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+        Log.d(TAG, "Screen recording mute updated: " + muted);
     }
     
     /**

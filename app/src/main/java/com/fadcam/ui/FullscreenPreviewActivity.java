@@ -23,6 +23,7 @@ import android.util.Log;
 import android.util.Range;
 import android.util.Rational;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -52,6 +53,7 @@ import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
+import com.fadcam.utils.ServiceStartPolicy;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -83,9 +85,20 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private View bottomBar;
     private MaterialButton btnFullscreenTorch;
     private MaterialButton btnFullscreenCamSwitch;
+    private MaterialButton btnFullscreenMirror;
     private MaterialButton btnFullscreenPauseResume;
     private MaterialButton btnFullscreenCaptureShot;
     private MaterialButton btnTapFocusToggle;
+    private View containerFullscreenMirror;
+    private View containerFullscreenShot;
+    private TextView labelFullscreenMirror;
+    private TextView labelFullscreenShot;
+    private View containerZoomHud;
+    private TextView textZoomHud;
+    private MaterialButton btnZoomReset;
+    private View containerZoomMap;
+    private View viewZoomMapViewport;
+    private TextView textFullscreenPreviewHint;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
@@ -104,7 +117,24 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private boolean controlsVisible = true;
     private boolean isTorchOn = false;
     private boolean isRecordingPaused = false;
+    private boolean isRecordingActive = false;
+    private boolean isPreviewOnlyActive = false;
+    private boolean isPreviewAttachedInRecording = true;
     private boolean tapToFocusEnabled = true;
+    private float pinchZoomRatio = 1.0f;
+    private long lastZoomDispatchMs = 0L;
+    private float lastDispatchedZoomRatio = -1f;
+    private ScaleGestureDetector scaleGestureDetector;
+    private boolean longPressTriggered = false;
+    private final Handler longPressHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingLongPressRunnable;
+    private boolean autoPreviewStartRequested = false;
+    private float previewUiScale = 1.0f;
+    private float previewUiPanX = 0f;
+    private float previewUiPanY = 0f;
+    private float lastTouchX = 0f;
+    private float lastTouchY = 0f;
+    private boolean isPanningPreview = false;
 
     // Camera control state — mirrors HomeFragment's fields
     private int currentEvIndex;
@@ -133,22 +163,54 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             if (Constants.BROADCAST_ON_RECORDING_PAUSED.equals(action)
                     || Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED.equals(action)) {
                 isRecordingPaused = true;
+                isRecordingActive = true;
             } else if (Constants.BROADCAST_ON_RECORDING_RESUMED.equals(action)
                     || Constants.BROADCAST_ON_RECORDING_STARTED.equals(action)
                     || Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED.equals(action)) {
                 isRecordingPaused = false;
+                isRecordingActive = true;
+                isPreviewAttachedInRecording = true;
+                if (previewSurface != null && previewSurface.isValid()) {
+                    scheduleSurfaceResendBurst();
+                }
+            } else if (Constants.BROADCAST_ON_RECORDING_STOPPED.equals(action)
+                    || Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED.equals(action)) {
+                isRecordingPaused = false;
+                isRecordingActive = false;
+                isPreviewOnlyActive = false;
             } else if (Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK.equals(action)) {
                 try {
                     RecordingState state = (RecordingState) intent.getSerializableExtra(
                             Constants.INTENT_EXTRA_RECORDING_STATE);
+                    isPreviewOnlyActive = intent.getBooleanExtra(Constants.EXTRA_PREVIEW_ONLY_ACTIVE, false);
                     if (state == RecordingState.PAUSED) {
                         isRecordingPaused = true;
+                        isRecordingActive = true;
+                        isPreviewAttachedInRecording = true;
                     } else if (state == RecordingState.IN_PROGRESS || state == RecordingState.STARTING) {
                         isRecordingPaused = false;
+                        isRecordingActive = true;
+                        isPreviewAttachedInRecording = true;
+                    } else {
+                        isRecordingPaused = false;
+                        isRecordingActive = false;
                     }
                 } catch (Exception ignored) { }
+            } else if (Constants.BROADCAST_ON_PREVIEW_ONLY_STARTED.equals(action)) {
+                isPreviewOnlyActive = true;
+                autoPreviewStartRequested = false;
+                if (previewSurface != null && previewSurface.isValid() && textureView != null) {
+                    sendSurfaceToService(previewSurface, textureView.getWidth(), textureView.getHeight());
+                    scheduleSurfaceResendBurst();
+                }
+            } else if (Constants.BROADCAST_ON_PREVIEW_ONLY_STOPPED.equals(action)) {
+                isPreviewOnlyActive = false;
+                autoPreviewStartRequested = false;
             }
             updatePauseResumeButton();
+            updateMirrorButtonVisibilityAndState();
+            updatePreviewHintVisibility();
+            maybeStartPreviewOnlyAutomatically();
         }
     };
 
@@ -182,9 +244,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupCloseButton();
         setupTorchButton();
         setupCamSwitchButton();
+        setupMirrorButton();
         setupPauseResumeButton();
         setupCaptureShotButton();
+        setupZoomHud();
         setupSystemInsets();
+        updatePreviewHintVisibility();
         registerTorchReceiver();
         registerRecordingStateReceiver();
         requestRecordingStateSync();
@@ -195,10 +260,19 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         enterImmersiveMode();
+        updateMirrorButtonVisibilityAndState();
+        isTorchOn = prefs.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
+        updateTorchIcon();
+        pinchZoomRatio = prefs.getSpecificZoomRatio(prefs.getCameraSelection());
+        updateZoomHudUi(pinchZoomRatio);
+        updatePreviewHintVisibility();
+        requestRecordingStateSync();
         if (previewSurface != null && textureView != null && textureView.isAvailable()) {
             sendSurfaceToService(previewSurface,
                     textureView.getWidth(), textureView.getHeight());
+            scheduleSurfaceResendBurst();
         }
+        maybeStartPreviewOnlyAutomatically();
     }
 
     @Override
@@ -268,9 +342,20 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         bottomBar = findViewById(R.id.bottomBar);
         btnFullscreenTorch = findViewById(R.id.btnFullscreenTorch);
         btnFullscreenCamSwitch = findViewById(R.id.btnFullscreenCamSwitch);
+        btnFullscreenMirror = findViewById(R.id.btnFullscreenMirror);
         btnFullscreenPauseResume = findViewById(R.id.btnFullscreenPauseResume);
         btnFullscreenCaptureShot = findViewById(R.id.btnFullscreenCaptureShot);
         btnTapFocusToggle = findViewById(R.id.btnTapFocusToggle);
+        containerFullscreenMirror = findViewById(R.id.containerFullscreenMirror);
+        labelFullscreenMirror = findViewById(R.id.labelFullscreenMirror);
+        containerFullscreenShot = findViewById(R.id.containerFullscreenShot);
+        labelFullscreenShot = findViewById(R.id.labelFullscreenShot);
+        containerZoomHud = findViewById(R.id.containerZoomHud);
+        textZoomHud = findViewById(R.id.textZoomHud);
+        btnZoomReset = findViewById(R.id.btnZoomReset);
+        containerZoomMap = findViewById(R.id.containerZoomMap);
+        viewZoomMapViewport = findViewById(R.id.viewZoomMapViewport);
+        textFullscreenPreviewHint = findViewById(R.id.textFullscreenPreviewHint);
     }
 
     private void setupCaptureShotButton() {
@@ -290,15 +375,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 android.util.Log.d("FullscreenPreview", "onSurfaceTextureAvailable: " + w + "x" + h);
                 previewSurface = new Surface(st);
                 sendSurfaceToService(previewSurface, w, h);
-                
-                // Retry after 100ms to ensure service receives surface
-                // (handles race condition where service might not be ready)
-                textureView.postDelayed(() -> {
-                    if (previewSurface != null && previewSurface.isValid()) {
-                        android.util.Log.d("FullscreenPreview", "Re-sending surface to service (retry)");
-                        sendSurfaceToService(previewSurface, w, h);
-                    }
-                }, 100);
+                scheduleSurfaceResendBurst();
+                maybeStartPreviewOnlyAutomatically();
             }
 
             @Override
@@ -318,6 +396,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             @Override
             public void onSurfaceTextureUpdated(@NonNull SurfaceTexture st) { /* no-op */ }
         });
+
+        if (textureView.isAvailable()) {
+            SurfaceTexture st = textureView.getSurfaceTexture();
+            if (st != null) {
+                previewSurface = new Surface(st);
+                sendSurfaceToService(previewSurface, textureView.getWidth(), textureView.getHeight());
+                scheduleSurfaceResendBurst();
+                maybeStartPreviewOnlyAutomatically();
+            }
+        }
     }
 
     private void setupCloseButton() {
@@ -330,32 +418,163 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void setupTouchHandling() {
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                applyPinchZoom(detector.getScaleFactor());
+                return true;
+            }
+        });
+
         textureView.setOnTouchListener((v, event) -> {
-            if (event.getAction() != MotionEvent.ACTION_UP) return true;
+            final int action = event.getActionMasked();
+            final float touchSlop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
+            final boolean skipZoomLock = Math.abs(pinchZoomRatio - 0.5f) < 0.01f;
+            final boolean zoomGestureLock = !skipZoomLock &&
+                    (previewUiScale > 1.001f || pinchZoomRatio > 1.001f);
+            if (scaleGestureDetector != null) {
+                scaleGestureDetector.onTouchEvent(event);
+                if (scaleGestureDetector.isInProgress()) {
+                    if (pendingLongPressRunnable != null) {
+                        longPressHandler.removeCallbacks(pendingLongPressRunnable);
+                    }
+                    isPanningPreview = false;
+                    return true;
+                }
+            }
+            if (action == MotionEvent.ACTION_POINTER_DOWN && pendingLongPressRunnable != null) {
+                longPressHandler.removeCallbacks(pendingLongPressRunnable);
+            }
+
+            if (action == MotionEvent.ACTION_DOWN) {
+                longPressTriggered = false;
+                isPanningPreview = false;
+                lastTouchX = event.getX();
+                lastTouchY = event.getY();
+                pendingLongPressRunnable = () -> {
+                    if (v.isPressed()) {
+                        longPressTriggered = true;
+                        handlePreviewLongPress();
+                    }
+                };
+                if (!zoomGestureLock) {
+                    longPressHandler.postDelayed(pendingLongPressRunnable, 420L);
+                }
+                v.setPressed(true);
+                return true;
+            }
+            if (action == MotionEvent.ACTION_MOVE) {
+                float travelDx = event.getX() - lastTouchX;
+                float travelDy = event.getY() - lastTouchY;
+                if (Math.abs(travelDx) > touchSlop || Math.abs(travelDy) > touchSlop) {
+                    if (pendingLongPressRunnable != null) {
+                        longPressHandler.removeCallbacks(pendingLongPressRunnable);
+                    }
+                }
+            }
+            if (action == MotionEvent.ACTION_MOVE && previewUiScale > 1.001f) {
+                float dx = event.getX() - lastTouchX;
+                float dy = event.getY() - lastTouchY;
+                if (Math.abs(dx) > 1f || Math.abs(dy) > 1f) {
+                    isPanningPreview = true;
+                    previewUiPanX += dx;
+                    previewUiPanY += dy;
+                    applyPreviewTransform();
+                    lastTouchX = event.getX();
+                    lastTouchY = event.getY();
+                    return true;
+                }
+            }
+            if (action == MotionEvent.ACTION_CANCEL) {
+                if (pendingLongPressRunnable != null) {
+                    longPressHandler.removeCallbacks(pendingLongPressRunnable);
+                }
+                v.setPressed(false);
+                return true;
+            }
+            if (action != MotionEvent.ACTION_UP) return true;
+
+            if (pendingLongPressRunnable != null) {
+                longPressHandler.removeCallbacks(pendingLongPressRunnable);
+            }
+            v.setPressed(false);
+            if (longPressTriggered) {
+                longPressTriggered = false;
+                return true;
+            }
+            if (isPanningPreview) {
+                isPanningPreview = false;
+                return true;
+            }
 
             float y = event.getY();
             float height = v.getHeight();
-            float fraction = y / height;
+            float fraction = y / Math.max(1f, height);
 
             if (fraction < EDGE_ZONE_FRACTION || fraction > (1f - EDGE_ZONE_FRACTION)) {
-                // Edge zone — toggle controls
                 toggleControls();
-            } else {
-                if (tapToFocusEnabled) {
-                    // Center zone — tap-to-focus
-                    float normX = event.getX() / v.getWidth();
-                    float normY = event.getY() / v.getHeight();
-                    Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
-                    intent.setClass(this, getTargetServiceClass());
-                    startService(intent);
-                    showFocusIndicator(event.getX(), event.getY());
-                } else {
-                    // Tap-to-focus disabled — center tap only toggles controls.
-                    toggleControls();
-                }
+                return true;
             }
+
+            if (tapToFocusEnabled && (isRecordingActive || isPreviewOnlyActive)) {
+                float normX = event.getX() / Math.max(1f, v.getWidth());
+                float normY = event.getY() / Math.max(1f, v.getHeight());
+                Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
+                intent.setClass(this, getTargetServiceClass());
+                startService(intent);
+                showFocusIndicator(event.getX(), event.getY());
+            } else {
+                toggleControls();
+            }
+            scheduleAutoHide();
             return true;
         });
+    }
+
+    private void handlePreviewLongPress() {
+        if ((previewUiScale > 1.001f || pinchZoomRatio > 1.001f)
+                && Math.abs(pinchZoomRatio - 0.5f) >= 0.01f) {
+            Log.d(TAG, "Ignoring long-press toggle while zoom/pan gesture mode is active");
+            return;
+        }
+        if (textureView != null) {
+            textureView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+        }
+        if (isRecordingActive || isRecordingPaused) {
+            isPreviewAttachedInRecording = !isPreviewAttachedInRecording;
+            if (isPreviewAttachedInRecording && previewSurface != null && previewSurface.isValid()) {
+                sendSurfaceToService(previewSurface,
+                        textureView != null ? textureView.getWidth() : -1,
+                        textureView != null ? textureView.getHeight() : -1);
+            } else {
+                sendSurfaceToService(null, -1, -1);
+            }
+        } else {
+            Intent intent = new Intent(this, RecordingService.class);
+            if (isPreviewOnlyActive) {
+                intent.setAction(Constants.INTENT_ACTION_STOP_PREVIEW_ONLY);
+            } else {
+                if (prefs.getCameraSelection() != CameraType.BACK && prefs.getCameraSelection() != CameraType.FRONT) {
+                    Toast.makeText(this, R.string.preview_dual_not_supported, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                intent.setAction(Constants.INTENT_ACTION_START_PREVIEW_ONLY);
+                if ((previewSurface == null || !previewSurface.isValid()) && textureView != null && textureView.isAvailable()) {
+                    SurfaceTexture st = textureView.getSurfaceTexture();
+                    if (st != null) {
+                        previewSurface = new Surface(st);
+                    }
+                }
+                if (previewSurface != null && previewSurface.isValid()) {
+                    intent.putExtra("SURFACE", previewSurface);
+                    intent.putExtra("SURFACE_WIDTH", textureView != null ? textureView.getWidth() : -1);
+                    intent.putExtra("SURFACE_HEIGHT", textureView != null ? textureView.getHeight() : -1);
+                }
+            }
+            ServiceStartPolicy.startRecordingAction(this, intent);
+        }
+        updatePreviewHintVisibility();
+        scheduleAutoHide();
     }
 
     private void toggleControls() {
@@ -427,15 +646,47 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         updateTorchIcon();
 
         btnFullscreenTorch.setOnClickListener(v -> {
-            // Send toggle to correct recording service (single or dual)
-            Intent intent = new Intent(this, getTargetServiceClass());
-            intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
-            try {
-                startService(intent);
-            } catch (Exception e) {
-                Log.e(TAG, "Torch toggle failed", e);
+            if (isRecordingActive || isRecordingPaused || isPreviewOnlyActive) {
+                Intent intent = new Intent(this, getTargetServiceClass());
+                intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
+                try {
+                    startService(intent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Torch toggle failed", e);
+                }
+            } else {
+                toggleTorchIdle();
             }
         });
+    }
+
+    private void toggleTorchIdle() {
+        try {
+            CameraType selected = prefs.getCameraSelection();
+            String targetId = getCameraIdForType(selected);
+            if (targetId == null || cameraManager == null) {
+                Toast.makeText(this, R.string.torch_unavailable, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            CameraCharacteristics cc = cameraManager.getCameraCharacteristics(targetId);
+            Boolean hasFlash = cc.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+            if (hasFlash == null || !hasFlash) {
+                Toast.makeText(this, R.string.torch_unavailable, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            isTorchOn = !isTorchOn;
+            cameraManager.setTorchMode(targetId, isTorchOn);
+            prefs.sharedPreferences.edit()
+                    .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn)
+                    .apply();
+            Intent stateIntent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+            stateIntent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isTorchOn);
+            sendBroadcast(stateIntent);
+            updateTorchIcon();
+        } catch (Exception e) {
+            Log.e(TAG, "Idle torch toggle failed", e);
+            Toast.makeText(this, R.string.torch_unavailable, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void updateTorchIcon() {
@@ -478,9 +729,13 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         filter.addAction(Constants.BROADCAST_ON_RECORDING_STARTED);
         filter.addAction(Constants.BROADCAST_ON_RECORDING_RESUMED);
         filter.addAction(Constants.BROADCAST_ON_RECORDING_PAUSED);
+        filter.addAction(Constants.BROADCAST_ON_RECORDING_STOPPED);
         filter.addAction(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+        filter.addAction(Constants.BROADCAST_ON_PREVIEW_ONLY_STARTED);
+        filter.addAction(Constants.BROADCAST_ON_PREVIEW_ONLY_STOPPED);
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED);
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
+        filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 registerReceiver(recordingStateReceiver, filter, Context.RECEIVER_EXPORTED);
@@ -520,6 +775,39 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         btnFullscreenCamSwitch.setOnClickListener(v -> switchCamera());
     }
 
+    private void setupMirrorButton() {
+        if (btnFullscreenMirror == null) return;
+        btnFullscreenMirror.setOnClickListener(v -> {
+            boolean enabled = !prefs.isFrontVideoMirrorEnabled();
+            prefs.setFrontVideoMirrorEnabled(enabled);
+            Intent intent = new Intent(this, RecordingService.class);
+            intent.setAction(Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR);
+            intent.putExtra(Constants.EXTRA_FRONT_VIDEO_MIRROR_ENABLED, enabled);
+            startService(intent);
+            updateMirrorButtonVisibilityAndState();
+            scheduleAutoHide();
+        });
+        updateMirrorButtonVisibilityAndState();
+    }
+
+    private void updateMirrorButtonVisibilityAndState() {
+        if (btnFullscreenMirror == null || containerFullscreenMirror == null) return;
+        boolean front = prefs.getCameraSelection() == CameraType.FRONT;
+        containerFullscreenMirror.setVisibility(front && controlsVisible ? View.VISIBLE : View.GONE);
+        if (!front) return;
+
+        boolean enabled = prefs.isFrontVideoMirrorEnabled();
+        btnFullscreenMirror.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                enabled ? 0x405B1212 : 0x5A0D1015));
+        btnFullscreenMirror.setStrokeColor(android.content.res.ColorStateList.valueOf(
+                enabled ? 0x66FFC107 : 0x2AFFFFFF));
+        btnFullscreenMirror.setContentDescription(getString(
+                enabled ? R.string.front_video_mirror_disable : R.string.front_video_mirror_enable));
+        if (labelFullscreenMirror != null) {
+            labelFullscreenMirror.setTextColor(enabled ? 0xFFFFC107 : 0xB3FFFFFF);
+        }
+    }
+
     private void setupPauseResumeButton() {
         labelPauseResume = findViewById(R.id.labelPauseResume);
         updatePauseResumeButton();
@@ -529,10 +817,27 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void togglePauseResumeRecording() {
         Intent intent = new Intent(this, getTargetServiceClass());
-        if (isDualRecordingRunning()) {
+        if (!isRecordingActive) {
+            CameraType selected = prefs.getCameraSelection();
+            boolean dual = selected != null && selected.isDual();
+            intent.setClass(this, dual ? DualCameraRecordingService.class : RecordingService.class);
+            intent.setAction(dual
+                    ? Constants.INTENT_ACTION_START_DUAL_RECORDING
+                    : Constants.INTENT_ACTION_START_RECORDING);
+            ServiceStartPolicy.startRecordingAction(this, intent);
+            isRecordingActive = true;
+            isRecordingPaused = false;
+            isPreviewAttachedInRecording = true;
+            updatePauseResumeButton();
+            scheduleSurfaceResendBurst();
+        } else if (isDualRecordingRunning()) {
             intent.setAction(isRecordingPaused
                     ? Constants.INTENT_ACTION_RESUME_DUAL_RECORDING
                     : Constants.INTENT_ACTION_PAUSE_DUAL_RECORDING);
+            startService(intent);
+            if (!isRecordingPaused) {
+                scheduleSurfaceResendBurst();
+            }
         } else {
             intent.setAction(isRecordingPaused
                     ? Constants.INTENT_ACTION_RESUME_RECORDING
@@ -547,8 +852,11 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     intent.putExtra("SURFACE_HEIGHT", textureView.getHeight());
                 }
             }
+            startService(intent);
+            if (isRecordingPaused) {
+                scheduleSurfaceResendBurst();
+            }
         }
-        startService(intent);
         if (btnFullscreenPauseResume != null) {
             btnFullscreenPauseResume.setEnabled(false);
             btnFullscreenPauseResume.postDelayed(() -> {
@@ -559,18 +867,25 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void updatePauseResumeButton() {
         if (btnFullscreenPauseResume == null) return;
-        int iconRes = isRecordingPaused ? R.drawable.ic_play : R.drawable.ic_pause;
-        int labelRes = isRecordingPaused ? R.string.button_resume : R.string.button_pause;
+        int iconRes;
+        int labelRes;
+        if (!isRecordingActive) {
+            iconRes = R.drawable.ic_play;
+            labelRes = R.string.button_start;
+        } else {
+            iconRes = isRecordingPaused ? R.drawable.ic_play : R.drawable.ic_pause;
+            labelRes = isRecordingPaused ? R.string.button_resume : R.string.button_pause;
+        }
         btnFullscreenPauseResume.setIconResource(iconRes);
         btnFullscreenPauseResume.setIconTint(android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
         btnFullscreenPauseResume.setContentDescription(getString(labelRes));
         btnFullscreenPauseResume.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                isRecordingPaused ? 0x40210F00 : 0x5A0D1015));
+                !isRecordingActive ? 0x404CAF50 : (isRecordingPaused ? 0x40210F00 : 0x5A0D1015)));
         btnFullscreenPauseResume.setStrokeColor(android.content.res.ColorStateList.valueOf(
-                isRecordingPaused ? 0x66FFC107 : 0x2AFFFFFF));
+                !isRecordingActive ? 0x664CAF50 : (isRecordingPaused ? 0x66FFC107 : 0x2AFFFFFF)));
         if (labelPauseResume != null) {
             labelPauseResume.setText(labelRes);
-            labelPauseResume.setTextColor(isRecordingPaused ? 0xFFFFC107 : 0xB3FFFFFF);
+            labelPauseResume.setTextColor(!isRecordingActive ? 0xFF8DE28D : (isRecordingPaused ? 0xFFFFC107 : 0xB3FFFFFF));
         }
     }
 
@@ -591,6 +906,23 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         CameraType targetType = (currentType == CameraType.BACK)
                 ? CameraType.FRONT : CameraType.BACK;
 
+        if (!isRecordingActive && !isRecordingPaused && !isPreviewOnlyActive
+                && !isServiceRunning(RecordingService.class)) {
+            prefs.sharedPreferences
+                    .edit()
+                    .putString(Constants.PREF_CAMERA_SELECTION, targetType.toString())
+                    .apply();
+            pinchZoomRatio = prefs.getSpecificZoomRatio(targetType);
+            updateZoomHudUi(pinchZoomRatio);
+            updateMirrorButtonVisibilityAndState();
+            autoPreviewStartRequested = false;
+            maybeStartPreviewOnlyAutomatically();
+            Toast.makeText(this,
+                    "Switched to " + (targetType == CameraType.FRONT ? "front" : "rear") + " camera",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent switchIntent = new Intent(this, RecordingService.class);
         switchIntent.setAction(Constants.INTENT_ACTION_SWITCH_CAMERA);
         switchIntent.putExtra(Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH, targetType.toString());
@@ -599,6 +931,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         Toast.makeText(this,
                 "Switching to " + (targetType == CameraType.FRONT ? "front" : "rear") + " camera...",
                 Toast.LENGTH_SHORT).show();
+        updateMirrorButtonVisibilityAndState();
+        rootLayout.postDelayed(this::updateMirrorButtonVisibilityAndState, 700);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -836,6 +1170,178 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         return list;
     }
 
+    private void applyPinchZoom(float scaleFactor) {
+        CameraType cam = prefs.getCameraSelection();
+        float minZoom = 0.5f;
+        float maxZoom = getMaxZoomRatio(cam);
+        float base = pinchZoomRatio > 0f ? pinchZoomRatio : prefs.getSpecificZoomRatio(cam);
+        float next = Math.max(minZoom, Math.min(maxZoom, base * scaleFactor));
+        pinchZoomRatio = next;
+        previewUiScale = Math.max(1.0f, Math.min(4.0f, next));
+        applyPreviewTransform();
+        prefs.setSpecificZoomRatio(cam, next);
+        updateZoomTileTint();
+        updateZoomHudUi(next);
+
+        long now = System.currentTimeMillis();
+        if (now - lastZoomDispatchMs < 66) {
+            return;
+        }
+        if (lastDispatchedZoomRatio > 0f && Math.abs(next - lastDispatchedZoomRatio) < 0.02f) {
+            return;
+        }
+        lastZoomDispatchMs = now;
+        lastDispatchedZoomRatio = next;
+        Intent intent = RecordingControlIntents.setZoomRatio(this, next);
+        intent.setClass(this, getTargetServiceClass());
+        startService(intent);
+    }
+
+    private void applyPreviewTransform() {
+        if (textureView == null) return;
+        float w = textureView.getWidth();
+        float h = textureView.getHeight();
+        if (w <= 0 || h <= 0) return;
+
+        float maxPanX = (w * (previewUiScale - 1f)) / 2f;
+        float maxPanY = (h * (previewUiScale - 1f)) / 2f;
+        previewUiPanX = Math.max(-maxPanX, Math.min(maxPanX, previewUiPanX));
+        previewUiPanY = Math.max(-maxPanY, Math.min(maxPanY, previewUiPanY));
+
+        android.graphics.Matrix m = new android.graphics.Matrix();
+        m.postScale(previewUiScale, previewUiScale, w / 2f, h / 2f);
+        m.postTranslate(previewUiPanX, previewUiPanY);
+        textureView.setTransform(m);
+        updateZoomMapUi();
+    }
+
+    private void setupZoomHud() {
+        if (btnZoomReset != null) {
+            btnZoomReset.setOnClickListener(v -> {
+                CameraType cam = prefs.getCameraSelection();
+                pinchZoomRatio = 1.0f;
+                previewUiScale = 1.0f;
+                previewUiPanX = 0f;
+                previewUiPanY = 0f;
+                prefs.setSpecificZoomRatio(cam, 1.0f);
+                updateZoomTileTint();
+                updateZoomHudUi(1.0f);
+                applyPreviewTransform();
+                Intent intent = RecordingControlIntents.setZoomRatio(this, 1.0f);
+                intent.setClass(this, getTargetServiceClass());
+                startService(intent);
+                scheduleAutoHide();
+            });
+        }
+        updateZoomHudUi(prefs.getSpecificZoomRatio(prefs.getCameraSelection()));
+    }
+
+    private void updateZoomHudUi(float zoomRatio) {
+        if (containerZoomHud == null || textZoomHud == null || btnZoomReset == null) return;
+        textZoomHud.setText(String.format(java.util.Locale.getDefault(), "%.1fx", zoomRatio));
+        boolean show = zoomRatio > 1.01f;
+        containerZoomHud.setVisibility(show ? View.VISIBLE : View.GONE);
+        btnZoomReset.setVisibility(show ? View.VISIBLE : View.GONE);
+        updateZoomMapUi();
+    }
+
+    private void updateZoomMapUi() {
+        if (containerZoomMap == null || viewZoomMapViewport == null || textureView == null) return;
+        if (containerZoomMap instanceof ViewGroup) {
+            ((ViewGroup) containerZoomMap).setClipChildren(true);
+            ((ViewGroup) containerZoomMap).setClipToPadding(true);
+        }
+        int mapW;
+        int mapH;
+        String orientation = prefs != null ? prefs.getVideoOrientation() : null;
+        boolean portrait = orientation == null || !orientation.toLowerCase(java.util.Locale.US).contains("landscape");
+        float density = getResources().getDisplayMetrics().density;
+        if (portrait) {
+            mapW = Math.round(42f * density);
+            mapH = Math.round(56f * density);
+        } else {
+            mapW = Math.round(56f * density);
+            mapH = Math.round(42f * density);
+        }
+        ViewGroup.LayoutParams mapLp = containerZoomMap.getLayoutParams();
+        if (mapLp != null && (mapLp.width != mapW || mapLp.height != mapH)) {
+            mapLp.width = mapW;
+            mapLp.height = mapH;
+            containerZoomMap.setLayoutParams(mapLp);
+        }
+
+        float scale = Math.max(1.0f, previewUiScale);
+        int vpW = Math.max(8, Math.min(mapW, Math.round(mapW / scale)));
+        int vpH = Math.max(8, Math.min(mapH, Math.round(mapH / scale)));
+        ViewGroup.LayoutParams vpLp = viewZoomMapViewport.getLayoutParams();
+        if (vpLp != null && (vpLp.width != vpW || vpLp.height != vpH)) {
+            vpLp.width = vpW;
+            vpLp.height = vpH;
+            viewZoomMapViewport.setLayoutParams(vpLp);
+        }
+
+        float viewW = textureView.getWidth();
+        float viewH = textureView.getHeight();
+        float maxPanX = (viewW * (scale - 1f)) / 2f;
+        float maxPanY = (viewH * (scale - 1f)) / 2f;
+        float nx = 0.5f;
+        float ny = 0.5f;
+        if (maxPanX > 0f) {
+            nx = (maxPanX - previewUiPanX) / (2f * maxPanX);
+        }
+        if (maxPanY > 0f) {
+            ny = (maxPanY - previewUiPanY) / (2f * maxPanY);
+        }
+        nx = Math.max(0f, Math.min(1f, nx));
+        ny = Math.max(0f, Math.min(1f, ny));
+        float tx = (mapW - vpW) * nx;
+        float ty = (mapH - vpH) * ny;
+        tx = Math.max(0f, Math.min(Math.max(0f, mapW - vpW), tx));
+        ty = Math.max(0f, Math.min(Math.max(0f, mapH - vpH), ty));
+        viewZoomMapViewport.setTranslationX(tx);
+        viewZoomMapViewport.setTranslationY(ty);
+    }
+
+    private void updatePreviewHintVisibility() {
+        if (textFullscreenPreviewHint == null) return;
+        boolean show = !isRecordingActive && !isRecordingPaused && !isPreviewOnlyActive;
+        textFullscreenPreviewHint.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void maybeStartPreviewOnlyAutomatically() {
+        if (autoPreviewStartRequested || previewSurface == null || !previewSurface.isValid()) return;
+        if (isRecordingActive || isRecordingPaused || isPreviewOnlyActive) return;
+        CameraType cam = prefs.getCameraSelection();
+        if (cam == null || cam.isDual()) return;
+        if (!prefs.isPreviewEnabled()) return;
+
+        autoPreviewStartRequested = true;
+        Intent intent = new Intent(this, RecordingService.class);
+        intent.setAction(Constants.INTENT_ACTION_START_PREVIEW_ONLY);
+        intent.putExtra("SURFACE", previewSurface);
+        intent.putExtra("SURFACE_WIDTH", textureView != null ? textureView.getWidth() : -1);
+        intent.putExtra("SURFACE_HEIGHT", textureView != null ? textureView.getHeight() : -1);
+        ServiceStartPolicy.startRecordingAction(this, intent);
+        if (textureView != null) {
+            textureView.postDelayed(() -> {
+                if (!isPreviewOnlyActive && !isRecordingActive && !isRecordingPaused) {
+                    autoPreviewStartRequested = false;
+                }
+            }, 1200L);
+        }
+    }
+
+    private void scheduleSurfaceResendBurst() {
+        if (previewSurface == null || !previewSurface.isValid() || textureView == null) {
+            return;
+        }
+        final int w = textureView.getWidth();
+        final int h = textureView.getHeight();
+        textureView.post(() -> sendSurfaceToService(previewSurface, w, h));
+        textureView.postDelayed(() -> sendSurfaceToService(previewSurface, w, h), 100L);
+        textureView.postDelayed(() -> sendSurfaceToService(previewSurface, w, h), 300L);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Tile tinting helpers
     // ─────────────────────────────────────────────────────────────────────────
@@ -896,7 +1402,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         controlsVisible = true;
         animateBar(topBar, true);
         animateBar(bottomBar, true);
-        animateBar(btnFullscreenCaptureShot, true);
+        animateBar(containerFullscreenShot, true);
+        animateBar(containerFullscreenMirror, prefs.getCameraSelection() == CameraType.FRONT);
     }
 
     private void hideControls() {
@@ -904,7 +1411,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         autoHideHandler.removeCallbacks(autoHideRunnable);
         animateBar(topBar, false);
         animateBar(bottomBar, false);
-        animateBar(btnFullscreenCaptureShot, false);
+        animateBar(containerFullscreenShot, false);
+        animateBar(containerFullscreenMirror, false);
     }
 
     private void scheduleAutoHide() {
@@ -1006,13 +1514,20 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void sendSurfaceToService(@Nullable Surface surface, int w, int h) {
         Class<?> svc = getTargetServiceClass();
+
+        boolean shouldSync = isRecordingActive || isRecordingPaused || isPreviewOnlyActive
+                || isServiceRunning(svc);
+        if (!shouldSync && svc == RecordingService.class) {
+            android.util.Log.d("FullscreenPreview", "sendSurfaceToService: skipped while idle");
+            return;
+        }
         
         android.util.Log.d("FullscreenPreview", "sendSurfaceToService: surface=" + 
                 (surface != null && surface.isValid() ? "VALID " + w + "x" + h : "NULL") + 
                 ", service=" + svc.getSimpleName());
 
-        if (!isServiceRunning(svc)) {
-            android.util.Log.w("FullscreenPreview", "Service not running: " + svc.getSimpleName());
+        if (!isServiceRunning(svc) && svc == DualCameraRecordingService.class) {
+            android.util.Log.w("FullscreenPreview", "Dual service not running: " + svc.getSimpleName());
             return;
         }
 

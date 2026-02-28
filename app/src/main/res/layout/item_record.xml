@@ -60,24 +60,43 @@
                 android:textStyle="bold"
                 tools:text="99" />
 
-            <!-- TEMP Badge Overlay -->
-            <!-- *** START: SINGLE STATUS BADGE (Replaces TEMP and NEW badges) *** -->
-            <TextView
-                android:id="@+id/text_view_status_badge"
+            <LinearLayout
+                android:id="@+id/status_badge_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
                 android:layout_margin="4dp"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:textSize="9sp"
-                android:textStyle="bold"
-                android:visibility="gone"
-                tools:background="@drawable/temp_badge_background"
-                tools:text="TEMP"
-                tools:textColor="@color/black"
-                tools:visibility="visible" />
-            <!-- *** END: SINGLE STATUS BADGE *** -->
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/text_view_new_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/new_badge_background"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="NEW"
+                    android:textColor="@color/white"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/text_view_status_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:background="@drawable/temp_badge_background"
+                    tools:text="TEMP"
+                    tools:textColor="@color/black"
+                    tools:visibility="visible" />
+            </LinearLayout>
 
             <View
                 android:id="@+id/processing_scrim"

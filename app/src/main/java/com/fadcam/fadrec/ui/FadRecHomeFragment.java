@@ -74,6 +74,7 @@ public class FadRecHomeFragment extends HomeFragment {
     // Timer handler for live updates of elapsed/remaining time
     private android.os.Handler timerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable timerUpdateRunnable;
+    private MaterialButton buttonFadRecMute;
     
     // Material loading dialog for annotation service startup
     private androidx.appcompat.app.AlertDialog loadingDialog;
@@ -885,6 +886,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // This ensures we override the parent's camera click listener with screen recording logic
         buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
+        buttonFadRecMute = rootView.findViewById(com.fadcam.R.id.buttonFadRecMute);
         
         Log.d(TAG, "buttonStartStop found: " + (buttonStartStop != null));
         Log.d(TAG, "buttonPauseResume found: " + (buttonPauseResume != null));
@@ -947,6 +949,19 @@ public class FadRecHomeFragment extends HomeFragment {
             Log.d(TAG, "Click listener successfully attached to buttonStartStop");
         } else {
             Log.e(TAG, "buttonStartStop is NULL - cannot setup click listener!");
+        }
+
+        if (buttonFadRecMute != null) {
+            buttonFadRecMute.setVisibility(View.VISIBLE);
+            buttonFadRecMute.setOnClickListener(v -> {
+                boolean newMuted = !sharedPreferencesManager.isScreenRecordingMuted();
+                sharedPreferencesManager.setScreenRecordingMuted(newMuted);
+                if (mediaProjectionHelper != null && screenRecordingState != ScreenRecordingState.NONE) {
+                    mediaProjectionHelper.setScreenRecordingMuted(newMuted);
+                }
+                updateMuteButtonUi();
+            });
+            updateMuteButtonUi();
         }
         
         Log.d(TAG, "========== SETUP BUTTON HANDLERS COMPLETE ==========");
@@ -1171,6 +1186,9 @@ public class FadRecHomeFragment extends HomeFragment {
                                 }
                             }
                             break;
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED:
+                            updateMuteButtonUi();
+                            break;
                     }
                 }
             };
@@ -1183,6 +1201,7 @@ public class FadRecHomeFragment extends HomeFragment {
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED);
             // Add overlay actions
             filter.addAction(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY);
             filter.addAction(Constants.ACTION_PAUSE_SCREEN_RECORDING);
@@ -1278,6 +1297,13 @@ public class FadRecHomeFragment extends HomeFragment {
                 );
             }
         }
+
+        if (buttonFadRecMute != null) {
+            buttonFadRecMute.setVisibility(View.VISIBLE);
+            buttonFadRecMute.setEnabled(true);
+            buttonFadRecMute.setAlpha(1.0f);
+            updateMuteButtonUi();
+        }
         
         Log.d(TAG, "UI updated for state: " + screenRecordingState);
         
@@ -1316,6 +1342,26 @@ public class FadRecHomeFragment extends HomeFragment {
             // Fallback to instant change
             button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(toColor));
         }
+    }
+
+    private void updateMuteButtonUi() {
+        if (buttonFadRecMute == null || !isAdded()) return;
+        boolean muted = sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingMuted();
+        buttonFadRecMute.setIcon(
+            AppCompatResources.getDrawable(
+                requireContext(),
+                muted ? com.fadcam.R.drawable.ic_volume_off_24 : com.fadcam.R.drawable.ic_volume_up_24
+            )
+        );
+        buttonFadRecMute.setContentDescription(
+            muted ? getString(com.fadcam.R.string.fadrec_unmute_audio) : getString(com.fadcam.R.string.fadrec_mute_audio)
+        );
+        buttonFadRecMute.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+            muted
+                ? androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop)
+                : 0xFF3A3A3A
+        ));
+        buttonFadRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
     }
     
     /**

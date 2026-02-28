@@ -81,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean swipeHandled = false;
     private int swipeTouchSlop = 0;
     private static final float SWIPE_HORIZONTAL_RATIO = 1.35f;
+    private boolean previewGestureInProgress = false;
+    private float previewGestureZoomRatio = 1.0f;
 
     /**
      * Public method to be called from fragments that need to disable the
@@ -646,10 +648,17 @@ public class MainActivity extends AppCompatActivity {
                 swipeHandled = false;
                 View touched = findDeepestViewAt(getWindow().getDecorView(), ev.getRawX(), ev.getRawY());
                 swipeCandidate = !isSwipeExcludedTarget(touched);
+                if (previewGestureInProgress && Math.abs(previewGestureZoomRatio - 0.5f) >= 0.01f) {
+                    swipeCandidate = false;
+                }
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
                 if (!swipeCandidate || swipeHandled) break;
+                if (previewGestureInProgress && Math.abs(previewGestureZoomRatio - 0.5f) >= 0.01f) {
+                    swipeCandidate = false;
+                    break;
+                }
                 float dx = ev.getRawX() - swipeDownX;
                 float dy = ev.getRawY() - swipeDownY;
                 if (Math.abs(dy) > Math.abs(dx)) {
@@ -700,6 +709,7 @@ public class MainActivity extends AppCompatActivity {
             if (current instanceof com.google.android.material.chip.Chip) return true;
             if (current instanceof com.google.android.material.chip.ChipGroup) return true;
             if (current instanceof BottomNavigationView) return true;
+            if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
             if (current instanceof RecyclerView) {
                 RecyclerView rv = (RecyclerView) current;
                 if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
@@ -709,6 +719,11 @@ public class MainActivity extends AppCompatActivity {
             parent = current.getParent();
         }
         return false;
+    }
+
+    public void setPreviewGestureInProgress(boolean inProgress, float zoomRatio) {
+        previewGestureInProgress = inProgress;
+        previewGestureZoomRatio = zoomRatio;
     }
 
     private boolean isDescendantOf(@NonNull View child, @NonNull View ancestor) {

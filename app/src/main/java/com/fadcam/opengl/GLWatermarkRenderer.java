@@ -23,6 +23,8 @@ import android.opengl.EGLExt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.CameraType;
+import com.fadcam.SharedPreferencesManager;
 import com.fadcam.dualcam.DualCameraConfig;
 
 import java.nio.ByteBuffer;
@@ -159,6 +161,9 @@ public class GLWatermarkRenderer {
 
     private volatile boolean frameAvailable = false;
     private final Object frameSyncObject = new Object();
+    private final float[] latestTexMatrix = new float[16];
+    private volatile boolean hasLatestTexMatrix = false;
+    private volatile boolean suppressWatermarkForSnapshot = false;
 
     // Watermark rendering (simplified)
     private int simpleWatermarkProgram;
@@ -180,6 +185,10 @@ public class GLWatermarkRenderer {
     private static final float[] WATERMARK_TEXCOORDS = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
 
     private final int sensorOrientation;
+    private volatile boolean frontVideoMirrorEnabled = false;
+    private int lastLoggedRotation = Integer.MIN_VALUE;
+    private boolean lastLoggedFront = false;
+    private boolean lastLoggedFlip = false;
     private final int videoWidth;
     private final int videoHeight;
 
@@ -236,6 +245,12 @@ public class GLWatermarkRenderer {
 
     private int dynamicBitmapWidth = 0;
     private int dynamicBitmapHeight = 48; // Fixed small height for dashcam style
+    private int lastWatermarkVpW = -1;
+    private int lastWatermarkVpH = -1;
+    private int lastWatermarkBitmapW = -1;
+    private int lastWatermarkBitmapH = -1;
+    private float lastWatermarkNdcW = -1f;
+    private float lastWatermarkNdcH = -1f;
 
     private boolean released = false;
 
@@ -265,6 +280,7 @@ public class GLWatermarkRenderer {
         watermarkRectBuffer = ByteBuffer.allocateDirect(WATERMARK_RECT_VERTICES.length * 4)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         watermarkRectBuffer.put(WATERMARK_RECT_VERTICES).position(0);
+        Matrix.setIdentityM(latestTexMatrix, 0);
     }
 
     public void setOnFrameAvailableListener(OnFrameAvailableListener listener) {
@@ -288,11 +304,67 @@ public class GLWatermarkRenderer {
     }
 
     /**
+     * Renders only to preview using the most recent camera frame.
+     * Used by preview-only mode where encoder/muxer are not active.
+     */
+    public void renderPreviewOnlyFrame() {
+        synchronized (renderLock) {
+            if (!initialized || released || eglDisplay == EGL14.EGL_NO_DISPLAY
+                    || eglContext == EGL14.EGL_NO_CONTEXT || eglSurface == EGL14.EGL_NO_SURFACE) {
+                return;
+            }
+            if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                int err = EGL14.eglGetError();
+                Log.w(TAG, "renderPreviewOnlyFrame: eglMakeCurrent failed 0x" + Integer.toHexString(err));
+                return;
+            }
+        }
+        synchronized (frameSyncObject) {
+            if (!frameAvailable) {
+                return;
+            }
+            frameAvailable = false;
+        }
+        try {
+            if (cameraSurfaceTexture != null) {
+                cameraSurfaceTexture.updateTexImage();
+                cameraSurfaceTexture.getTransformMatrix(latestTexMatrix);
+                hasLatestTexMatrix = true;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "renderPreviewOnlyFrame: updateTexImage failed", e);
+            return;
+        }
+        try {
+            renderToPreview();
+        } catch (Exception e) {
+            Log.w(TAG, "renderPreviewOnlyFrame: preview render failed", e);
+        }
+    }
+
+    /**
      * Renders only to the encoder surface for recording.
      * This method should be used for background recording when the app is not
      * visible.
      */
     public void renderToEncoder() {
+        renderToEncoderInternal(false);
+    }
+
+    /**
+     * Renders to encoder surface but does not block waiting for a brand-new frame.
+     * Useful for snapshot capture during preview-only mode where preview loop may
+     * have already consumed the latest frame.
+     */
+    public void renderToEncoderAllowStaleFrame() {
+        renderToEncoderInternal(true);
+    }
+
+    public void setSuppressWatermarkForSnapshot(boolean suppress) {
+        suppressWatermarkForSnapshot = suppress;
+    }
+
+    private void renderToEncoderInternal(boolean allowStaleFrame) {
         synchronized (renderLock) {
             // Check if we need to initialize or reinitialize EGL
             if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY) {
@@ -451,31 +523,57 @@ public class GLWatermarkRenderer {
                 throw new IllegalStateException("cameraSurfaceTexture is null");
             }
 
-            // Wait for a new frame if needed
-            synchronized (frameSyncObject) {
-                while (!frameAvailable) {
-                    try {
-                        frameSyncObject.wait(100);
-                        if (!frameAvailable) {
-                            Log.w(TAG, "renderToEncoder: frame wait timed out");
-                            return;
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return;
+            float[] texMatrix = new float[16];
+            boolean consumedFreshFrame = false;
+            if (allowStaleFrame) {
+                synchronized (frameSyncObject) {
+                    if (frameAvailable) {
+                        frameAvailable = false;
+                        consumedFreshFrame = true;
                     }
                 }
-                frameAvailable = false;
-            }
-
-            // Update texture image
-            float[] texMatrix = new float[16];
-            try {
-                cameraSurfaceTexture.updateTexImage();
-                cameraSurfaceTexture.getTransformMatrix(texMatrix);
-            } catch (Exception e) {
-                Log.e(TAG, "Error updating texture image", e);
-                return;
+                if (consumedFreshFrame) {
+                    try {
+                        cameraSurfaceTexture.updateTexImage();
+                        cameraSurfaceTexture.getTransformMatrix(texMatrix);
+                        System.arraycopy(texMatrix, 0, latestTexMatrix, 0, texMatrix.length);
+                        hasLatestTexMatrix = true;
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error updating texture image", e);
+                        return;
+                    }
+                } else if (hasLatestTexMatrix) {
+                    System.arraycopy(latestTexMatrix, 0, texMatrix, 0, texMatrix.length);
+                } else {
+                    Log.w(TAG, "renderToEncoder: stale frame requested but no cached matrix yet");
+                    return;
+                }
+            } else {
+                // Wait for a new frame if needed
+                synchronized (frameSyncObject) {
+                    while (!frameAvailable) {
+                        try {
+                            frameSyncObject.wait(100);
+                            if (!frameAvailable) {
+                                Log.w(TAG, "renderToEncoder: frame wait timed out");
+                                return;
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
+                    frameAvailable = false;
+                }
+                try {
+                    cameraSurfaceTexture.updateTexImage();
+                    cameraSurfaceTexture.getTransformMatrix(texMatrix);
+                    System.arraycopy(texMatrix, 0, latestTexMatrix, 0, texMatrix.length);
+                    hasLatestTexMatrix = true;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error updating texture image", e);
+                    return;
+                }
             }
 
             // Update matrices for correct orientation
@@ -529,6 +627,10 @@ public class GLWatermarkRenderer {
                 // Portrait: use original texMatrix
                 encoderTexMatrix = texMatrix;
             }
+            float[] encoderCameraMvp = recordingMvpMatrix;
+            if (isFrontCamera() && frontVideoMirrorEnabled) {
+                encoderTexMatrix = applyHorizontalTexFlip(encoderTexMatrix);
+            }
 
             // Draw to encoder
             try {
@@ -536,12 +638,12 @@ public class GLWatermarkRenderer {
                 int primaryTextureId = camerasSwapped ? pipOesTextureId : oesTextureId;
                 if (mFullFrameBlit != null && primaryTextureId == oesTextureId) {
                     // Normal (unswapped): use standard draw path
-                    drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+                    drawOESTexture(encoderCameraMvp, encoderTexMatrix);
                 } else if (camerasSwapped && mFullFrameBlit != null) {
                     // Swapped: draw PiP texture as full screen using standard method
-                    drawOESTextureWithId(pipOesTextureId, recordingMvpMatrix, encoderTexMatrix);
+                    drawOESTextureWithId(pipOesTextureId, encoderCameraMvp, encoderTexMatrix);
                 } else {
-                    drawOESTexture(recordingMvpMatrix, encoderTexMatrix);
+                    drawOESTexture(encoderCameraMvp, encoderTexMatrix);
                 }
 
                 // Draw PiP overlay (if dual camera mode is active)
@@ -735,12 +837,16 @@ public class GLWatermarkRenderer {
                 // Portrait: use original texMatrix
                 previewTexMatrix = texMatrix;
             }
+            float[] previewCameraMvp = previewMvpMatrix;
+            if (isFrontCamera() && frontVideoMirrorEnabled) {
+                previewTexMatrix = applyHorizontalTexFlip(previewTexMatrix);
+            }
 
             updateMatrices();
 
             // Pass 1: Zoom-fill background (drawn at the fill-crop viewport set above)
             if (needsLetterbox) {
-                drawOESTexture(previewMvpMatrix, previewTexMatrix);
+                drawOESTexture(previewCameraMvp, previewTexMatrix);
                 // Dim the background so the sharp foreground visually pops
                 drawDimOverlay(0.75f);
                 // Switch to the fit viewport for the sharp foreground
@@ -752,7 +858,7 @@ public class GLWatermarkRenderer {
             previewOverlayVpH = vpH;
 
             // Pass 2: Sharp content at the aspect-ratio-preserving viewport
-            drawOESTexture(previewMvpMatrix, previewTexMatrix);
+            drawOESTexture(previewCameraMvp, previewTexMatrix);
 
             // Watermark and AI overlay in preview.
             drawWatermark();
@@ -970,15 +1076,24 @@ public class GLWatermarkRenderer {
         if (watermarkTextureId == 0) {
             return;
         }
-        // Use a smaller font for dashcam style
-        watermarkPaint.setTextSize(20);
-        // Restore isPortrait for NDC scaling
-        String orientationPref = com.fadcam.SharedPreferencesManager.getInstance(context).getVideoOrientation();
-        boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
+        String text = watermarkText == null ? "" : watermarkText.trim();
+        if (text.isEmpty()) {
+            dynamicBitmapWidth = 0;
+            dynamicBitmapHeight = 0;
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
+            Bitmap empty = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888);
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, empty, 0);
+            empty.recycle();
+            return;
+        }
+        int refWidth = Math.max(1, Math.max(encoderWidth, videoWidth));
+        float dynamicTextSize = Math.max(18f, Math.min(24f, refWidth * 0.006f));
+        watermarkPaint.setTextSize(dynamicTextSize);
         watermarkPaint.setAntiAlias(true);
         watermarkPaint.setARGB(255, 255, 255, 255);
-        watermarkPaint.setShadowLayer(1.5f, 0f, 1.5f, Color.BLACK);
-        watermarkPaint.setLetterSpacing(0.08f);
+        watermarkPaint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
+        watermarkPaint.setFakeBoldText(true);
+        watermarkPaint.setLetterSpacing(0.0f);
         // Set Ubuntu font for watermark text
         try {
             android.graphics.Typeface ubuntuTypeface = android.graphics.Typeface.createFromAsset(context.getAssets(),
@@ -989,32 +1104,28 @@ public class GLWatermarkRenderer {
             watermarkPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT_BOLD,
                     android.graphics.Typeface.BOLD));
         }
-        String text = watermarkText;
-        int padding = 32;
-        // Use a fixed bitmap width for regular watermark options
-        dynamicBitmapWidth = 800;
-        android.text.TextPaint textPaint = new android.text.TextPaint(watermarkPaint);
+        int padding = Math.max(14, Math.round(refWidth * 0.012f));
+        Paint.FontMetrics fm = watermarkPaint.getFontMetrics();
+        float lineHeight = (fm.descent - fm.ascent) + Math.max(4f, dynamicTextSize * 0.12f);
+        String[] lines = text.split("\n");
+        float maxLineWidth = 0f;
+        for (String line : lines) {
+            maxLineWidth = Math.max(maxLineWidth, watermarkPaint.measureText(line == null ? "" : line));
+        }
+        dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
+        dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round((lineHeight * lines.length) + (padding * 1.5f))));
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
         }
         Canvas canvas = new Canvas(watermarkBitmap);
         canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
-        int maxWidth = dynamicBitmapWidth - padding;
-        android.text.StaticLayout staticLayout = new android.text.StaticLayout(
-                text, textPaint, maxWidth, android.text.Layout.Alignment.ALIGN_NORMAL, 1.0f, 0f, false);
-        int textHeight = staticLayout.getHeight();
-        int rectHeight = textHeight + 8; // 4px top/bottom padding
-        if (rectHeight > dynamicBitmapHeight) {
-            rectHeight = dynamicBitmapHeight;
+        float textX = padding;
+        float textY = padding - fm.ascent;
+        for (String line : lines) {
+            canvas.drawText(line == null ? "" : line, textX, textY, watermarkPaint);
+            textY += lineHeight;
         }
-        // Draw text at top left with padding
-        canvas.save();
-        float textX = padding / 2f;
-        float textY = 4; // 4px top padding
-        canvas.translate(textX, textY);
-        staticLayout.draw(canvas);
-        canvas.restore();
         // Flip the bitmap vertically before uploading to OpenGL
         android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
         flipMatrix.preScale(1.0f, -1.0f);
@@ -1023,26 +1134,54 @@ public class GLWatermarkRenderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
         flippedBitmap.recycle();
-        // Use orientation from SharedPreferencesManager
-        float ndcWidth, ndcHeight;
-        float bitmapAspect = (float) dynamicBitmapWidth / (float) dynamicBitmapHeight;
-        if (isPortrait) {
-            // Portrait: use previously working logic (scale by width)
-            float targetFractionOfWidth = 0.8f;
-            ndcWidth = targetFractionOfWidth * 2.0f;
-            ndcHeight = ndcWidth / bitmapAspect;
-            ndcHeight = ndcHeight / 1.7f; // Make height much smaller in portrait
-        } else {
-            // Landscape: scale by width, but use a smaller fraction (e.g., 0.7)
-            float targetFractionOfWidth = 0.7f;
-            ndcWidth = targetFractionOfWidth * 2.0f;
-            ndcHeight = ndcWidth / bitmapAspect;
-            ndcHeight = ndcHeight * 1.7f; // Make height much bigger in landscape
+        int fallbackVpW = mSurfaceWidth > 0 ? mSurfaceWidth : (encoderWidth > 0 ? encoderWidth : videoWidth);
+        int fallbackVpH = mSurfaceHeight > 0 ? mSurfaceHeight : (encoderHeight > 0 ? encoderHeight : videoHeight);
+        updateWatermarkRectForViewport(fallbackVpW, fallbackVpH);
+    }
+
+    private void updateWatermarkRectForViewport(int viewportWidth, int viewportHeight) {
+        if (dynamicBitmapWidth <= 0 || dynamicBitmapHeight <= 0) {
+            return;
         }
+        int vpW = Math.max(1, viewportWidth);
+        int vpH = Math.max(1, viewportHeight);
+
+        int refWidth = Math.max(1, Math.max(encoderWidth, videoWidth));
+        String orientationPref = SharedPreferencesManager.getInstance(context).getVideoOrientation();
+        boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
+
+        float bitmapAspect = (float) dynamicBitmapWidth / (float) dynamicBitmapHeight;
+        float intrinsicFraction = Math.max(0.35f, Math.min(0.90f, dynamicBitmapWidth / (float) refWidth));
+        float targetFractionOfWidth = isPortrait
+                ? Math.min(0.82f, intrinsicFraction)
+                : Math.min(0.72f, intrinsicFraction);
+        float ndcWidth = targetFractionOfWidth * 2.0f;
+        // Correct for active viewport aspect ratio so watermark text shape remains consistent.
+        float ndcHeight = (ndcWidth * ((float) vpW / (float) vpH)) / bitmapAspect;
+        ndcHeight = Math.min(ndcHeight, 0.32f);
+
+        if (watermarkRectBuffer != null
+                && lastWatermarkVpW == vpW
+                && lastWatermarkVpH == vpH
+                && lastWatermarkBitmapW == dynamicBitmapWidth
+                && lastWatermarkBitmapH == dynamicBitmapHeight
+                && Math.abs(lastWatermarkNdcW - ndcWidth) < 0.0001f
+                && Math.abs(lastWatermarkNdcH - ndcHeight) < 0.0001f) {
+            return;
+        }
+
         float[] rectVerts = computeWatermarkRectVertices(ndcWidth, ndcHeight);
-        watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4).order(ByteOrder.nativeOrder())
+        watermarkRectBuffer = ByteBuffer.allocateDirect(rectVerts.length * 4)
+                .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         watermarkRectBuffer.put(rectVerts).position(0);
+
+        lastWatermarkVpW = vpW;
+        lastWatermarkVpH = vpH;
+        lastWatermarkBitmapW = dynamicBitmapWidth;
+        lastWatermarkBitmapH = dynamicBitmapHeight;
+        lastWatermarkNdcW = ndcWidth;
+        lastWatermarkNdcH = ndcHeight;
     }
 
     private void drawForensicsOverlay(Canvas canvas, String payload) {
@@ -1499,8 +1638,17 @@ public class GLWatermarkRenderer {
     }
 
     private void drawWatermark() {
+        if (suppressWatermarkForSnapshot) {
+            return;
+        }
         if (watermarkText == null || watermarkText.isEmpty()) {
             // Do not draw any watermark if text is empty (no watermark option)
+            return;
+        }
+        int[] viewport = new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, viewport, 0);
+        updateWatermarkRectForViewport(viewport[2], viewport[3]);
+        if (watermarkRectBuffer == null) {
             return;
         }
         GLES20.glEnable(GLES20.GL_BLEND);
@@ -2097,6 +2245,41 @@ public class GLWatermarkRenderer {
         }
     }
 
+    @Nullable
+    public Bitmap capturePreviewFrameBitmap() {
+        synchronized (previewRenderLock) {
+            if (!initialized || released || eglDisplay == EGL14.EGL_NO_DISPLAY
+                    || eglContext == EGL14.EGL_NO_CONTEXT || previewEglSurface == EGL14.EGL_NO_SURFACE) {
+                return null;
+            }
+            if (!EGL14.eglMakeCurrent(eglDisplay, previewEglSurface, previewEglSurface, eglContext)) {
+                return null;
+            }
+            int width = mSurfaceWidth > 0 ? mSurfaceWidth : (encoderWidth > 0 ? encoderWidth : videoWidth);
+            int height = mSurfaceHeight > 0 ? mSurfaceHeight : (encoderHeight > 0 ? encoderHeight : videoHeight);
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+
+            java.nio.IntBuffer ib = java.nio.IntBuffer.allocate(width * height);
+            GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, ib);
+
+            int[] src = ib.array();
+            int[] dst = new int[src.length];
+            for (int y = 0; y < height; y++) {
+                int srcOffset = y * width;
+                int dstOffset = (height - y - 1) * width;
+                for (int x = 0; x < width; x++) {
+                    int p = src[srcOffset + x];
+                    int r = (p >> 16) & 0xff;
+                    int b = p & 0xff;
+                    dst[dstOffset + x] = (p & 0xff00ff00) | (b << 16) | r;
+                }
+            }
+            return Bitmap.createBitmap(dst, width, height, Bitmap.Config.ARGB_8888);
+        }
+    }
+
     /**
      * Sets the exposure compensation value for the GL shader.
      * This method is thread-safe and can be called from any thread.
@@ -2107,6 +2290,16 @@ public class GLWatermarkRenderer {
         // Clamp to reasonable range to prevent shader overflow
         currentExposureCompensation = Math.max(-4.0f, Math.min(4.0f, evStops));
         Log.d(TAG, "GL exposure compensation set to " + currentExposureCompensation + " EV stops");
+    }
+
+    public void setFrontVideoMirrorEnabled(boolean enabled) {
+        if (frontVideoMirrorEnabled == enabled) {
+            return;
+        }
+        frontVideoMirrorEnabled = enabled;
+        Log.d(TAG, "Flip video changed: enabled=" + enabled + ", sensorOrientation=" + sensorOrientation
+                + ", deviceOrientation=" + deviceOrientation + ", frontCamera=" + isFrontCamera());
+        updateMatrices();
     }
 
     /**
@@ -2192,15 +2385,17 @@ public class GLWatermarkRenderer {
 
     private void updateMatrices() {
         int rotationDegrees = getRequiredRotation();
-        boolean isPortrait = (videoHeight > videoWidth && (rotationDegrees == 90 || rotationDegrees == 270)) ||
-                (videoWidth > videoHeight && (rotationDegrees == 0 || rotationDegrees == 180));
-        if (isPortrait) {
-            dynamicBitmapWidth = 1200;
-            dynamicBitmapHeight = 36;
-        } else {
-            dynamicBitmapWidth = 800;
-            dynamicBitmapHeight = 48;
+        boolean front = isFrontCamera();
+        if (rotationDegrees != lastLoggedRotation || front != lastLoggedFront || frontVideoMirrorEnabled != lastLoggedFlip) {
+            Log.d(TAG, "updateMatrices: rotation=" + rotationDegrees + ", front=" + front
+                    + ", flip=" + frontVideoMirrorEnabled + ", sensor=" + sensorOrientation
+                    + ", device=" + deviceOrientation);
+            lastLoggedRotation = rotationDegrees;
+            lastLoggedFront = front;
+            lastLoggedFlip = frontVideoMirrorEnabled;
         }
+        // Watermark texture dimensions are calculated from text metrics in
+        // updateWatermarkTexture() to prevent squeeze/stretch artifacts.
         // Log.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees +
         // ", deviceOrientation=" + deviceOrientation +
         // ", sensorOrientation=" + sensorOrientation);
@@ -2212,9 +2407,6 @@ public class GLWatermarkRenderer {
         // Preview matrix: handles rotation, mirroring, and aspect ratio
         Matrix.setIdentityM(previewMvpMatrix, 0);
         Matrix.rotateM(previewMvpMatrix, 0, rotationDegrees, 0, 0, 1);
-        if (isFrontCamera()) {
-            Matrix.scaleM(previewMvpMatrix, 0, -1, 1, 1);
-        }
         // Properly handle aspect ratio to avoid stretching/squeezing
         if (mSurfaceWidth <= 0 || mSurfaceHeight <= 0) {
             // Can't calculate aspect ratio yet, return early
@@ -2259,7 +2451,10 @@ public class GLWatermarkRenderer {
     }
 
     private int getRequiredRotation() {
-        int rotation = (sensorOrientation - deviceOrientation + 360) % 360;
+        int displayRotationDegrees = getDisplayRotation();
+        int rotation = (sensorOrientation - displayRotationDegrees + 360) % 360;
+        // Keep the same front-camera compensation regardless of flip state.
+        // Flip must not alter rotation path; it should only mirror horizontally.
         if (isFrontCamera()) {
             rotation = (360 - rotation) % 360;
         }
@@ -2269,10 +2464,33 @@ public class GLWatermarkRenderer {
     }
 
     private boolean isFrontCamera() {
-        // Use a more reliable way to identify front camera if possible
-        // For now, we'll go with the common case of front camera having
-        // a sensor orientation of 270 degrees
+        // Prefer user-selected camera source; sensor orientation alone is not reliable
+        // across OEMs for front/back detection.
+        try {
+            CameraType selected = SharedPreferencesManager.getInstance(context).getCameraSelection();
+            if (selected == CameraType.FRONT) {
+                return true;
+            }
+            if (selected == CameraType.BACK || selected.isDual()) {
+                return false;
+            }
+        } catch (Exception ignored) {
+            // Fall through to legacy heuristic if prefs are temporarily unavailable.
+        }
         return sensorOrientation == 270;
+    }
+
+    private float[] applyHorizontalTexFlip(float[] source) {
+        float[] flip = new float[16];
+        Matrix.setIdentityM(flip, 0);
+        Matrix.translateM(flip, 0, 1f, 0f, 0f);
+        Matrix.scaleM(flip, 0, -1f, 1f, 1f);
+
+        float[] out = new float[16];
+        // Apply flip after camera transform so flip behaves as mirror-only and
+        // doesn't alter effective rotation on OEM-specific ST matrices.
+        Matrix.multiplyMM(out, 0, source, 0, flip, 0);
+        return out;
     }
 
     /**

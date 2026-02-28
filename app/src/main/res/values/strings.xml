@@ -124,6 +124,8 @@
     <string name="fadrec_ready_to_record_subtitle">Tap to begin</string>
     <string name="fadrec_permission_denied">Screen recording permission denied</string>
     <string name="fadrec_mode_title">FadRec • Screen Recording</string>
+    <string name="fadrec_mute_audio">Mute recording audio</string>
+    <string name="fadrec_unmute_audio">Unmute recording audio</string>
 
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>
@@ -758,7 +760,7 @@
     <string name="settings_option_theme">Choose Theme</string>
     <string name="settings_theme_changed">Theme changed. Applying changes...</string>
     <string name="note_theme">Choose your preferred app theme</string>
-    <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we long press on app icon   -->
+    <!-- Below are the start and stop shortcut texts for the shortcuts that appears when we Íss on app icon   -->
     <string name="start_recording">Start</string>
     <string name="shortcut_start_back">Start Back</string>
     <string name="shortcut_start_front">Start Front</string>
@@ -1866,10 +1868,18 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="fullscreen_torch">Torch</string>
     <string name="fullscreen_focus_toggle">Tap focus toggle</string>
     <string name="fullscreen_label_switch">Switch</string>
+    <string name="fullscreen_label_mirror">Flip Video</string>
     <string name="fullscreen_label_torch">Torch</string>
+    <string name="fullscreen_label_shot">Shot</string>
     <string name="fullscreen_label_af">AF</string>
     <string name="fullscreen_label_exposure">EV</string>
     <string name="fullscreen_label_zoom">Zoom</string>
+    <string name="front_video_mirror_enable">Enable front video flip</string>
+    <string name="front_video_mirror_disable">Disable front video flip</string>
+    <string name="preview_dual_not_supported">Preview-only works on front/back cameras only</string>
+    <string name="preview_enable_hint">Long press to enable preview</string>
+    <string name="preview_starting">Starting live preview...</string>
+    <string name="torch_unavailable">Torch unavailable for this camera</string>
 
     <!-- Motion Lab -->
     <string name="motion_lab_title">Motion Lab</string>

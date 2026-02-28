@@ -49,6 +49,7 @@ public class GLRecordingPipeline {
     private Surface encoderInputSurface;
     private Surface cameraInputSurface;
     private boolean isRecording = false;
+    private volatile boolean previewOnlyRendering = false;
     private boolean isStopped = false;
     private HandlerThread renderThread;
     private Handler handler;
@@ -152,6 +153,7 @@ public class GLRecordingPipeline {
     private int encoderWidth;
     private int encoderHeight;
     private int deviceOrientation = android.view.Surface.ROTATION_0;
+    private volatile boolean frontVideoMirrorEnabled;
 
     // Audio recording/encoding fields
     private android.media.AudioRecord audioRecord;
@@ -226,22 +228,82 @@ public class GLRecordingPipeline {
     }
 
     public void capturePhotoFrame(@Nullable PhotoCaptureCallback callback) {
-        if (handler == null || glRenderer == null || !isRecording) {
+        if (handler == null || glRenderer == null || (!isRecording && !previewOnlyRendering)) {
             if (callback != null) callback.onCaptured(null);
             return;
         }
         rendererActions.offer(() -> {
             android.graphics.Bitmap bitmap = null;
             try {
-                bitmap = glRenderer.captureEncoderFrameBitmap();
+                // Capture raw camera frame from GL path (without GL watermark),
+                // then let PhotoStorageHelper apply the exact normal FadShot watermark style.
+                glRenderer.setSuppressWatermarkForSnapshot(true);
+                for (int i = 0; i < 3; i++) {
+                    glRenderer.renderToEncoderAllowStaleFrame();
+                    bitmap = glRenderer.captureEncoderFrameBitmap();
+                    if (!isClearlyBlankFrame(bitmap)) {
+                        break;
+                    }
+                    if (bitmap != null) {
+                        bitmap.recycle();
+                        bitmap = null;
+                    }
+                }
+                if (isClearlyBlankFrame(bitmap)) {
+                    if (bitmap != null) {
+                        bitmap.recycle();
+                    }
+                    bitmap = null;
+                }
             } catch (Exception e) {
                 Log.w(TAG, "capturePhotoFrame failed", e);
+            } finally {
+                try {
+                    glRenderer.setSuppressWatermarkForSnapshot(false);
+                } catch (Exception ignored) {
+                }
             }
             if (callback != null) {
                 callback.onCaptured(bitmap);
             }
         });
         handler.post(renderRunnable);
+    }
+
+    private boolean isClearlyBlankFrame(@Nullable android.graphics.Bitmap bitmap) {
+        if (bitmap == null || bitmap.isRecycled()) {
+            return true;
+        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width <= 0 || height <= 0) {
+            return true;
+        }
+        int sampleGrid = 10;
+        int stepX = Math.max(1, width / sampleGrid);
+        int stepY = Math.max(1, height / sampleGrid);
+        int firstPixel = Integer.MIN_VALUE;
+        boolean allSame = true;
+        int totalSamples = 0;
+        for (int y = stepY / 2; y < height; y += stepY) {
+            for (int x = stepX / 2; x < width; x += stepX) {
+                int pixel = bitmap.getPixel(x, y);
+                if (firstPixel == Integer.MIN_VALUE) {
+                    firstPixel = pixel;
+                } else if (pixel != firstPixel) {
+                    allSame = false;
+                }
+                totalSamples++;
+            }
+        }
+        if (totalSamples == 0 || !allSame) {
+            return false;
+        }
+        int r = (firstPixel >> 16) & 0xff;
+        int g = (firstPixel >> 8) & 0xff;
+        int b = firstPixel & 0xff;
+        int luma = (r * 299 + g * 587 + b * 114) / 1000;
+        return luma <= 3;
     }
 
     /**
@@ -253,7 +315,7 @@ public class GLRecordingPipeline {
             updateWatermarkRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    if (isRecording && !released) {
+                    if ((isRecording || previewOnlyRendering) && !released) {
                         try {
                             updateWatermark();
                         } catch (Exception e) {
@@ -312,6 +374,9 @@ public class GLRecordingPipeline {
         this.videoCodec = videoCodec;
         this.locationLatitude = latitude;
         this.locationLongitude = longitude;
+        this.frontVideoMirrorEnabled = com.fadcam.SharedPreferencesManager
+                .getInstance(context)
+                .isFrontVideoMirrorEnabled();
         // Fetch video bitrate from SharedPreferencesManager
         this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
         // Initialize surface dimensions with video dimensions as default
@@ -347,6 +412,9 @@ public class GLRecordingPipeline {
         this.videoCodec = videoCodec;
         this.locationLatitude = latitude;
         this.locationLongitude = longitude;
+        this.frontVideoMirrorEnabled = com.fadcam.SharedPreferencesManager
+                .getInstance(context)
+                .isFrontVideoMirrorEnabled();
         // Fetch video bitrate from SharedPreferencesManager
         this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
         // Initialize surface dimensions with video dimensions as default
@@ -490,6 +558,7 @@ public class GLRecordingPipeline {
                         videoWidth, videoHeight);
                 glRenderer.setUserOrientationSetting(orientation);
                 glRenderer.setRecordingPipeline(this); // Set reference for timestamp synchronization
+                glRenderer.setFrontVideoMirrorEnabled(frontVideoMirrorEnabled);
                 // Propagate encoder dimensions that were computed during initializeEncoder().
                 // initializeEncoder() runs BEFORE the renderer is created, so its
                 // setEncoderDimensions() call hits null and is silently skipped.
@@ -587,7 +656,7 @@ public class GLRecordingPipeline {
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
                     @Override
                     public void onFrameAvailable() {
-                        if (isRecording && handler != null) {
+                        if ((isRecording || previewOnlyRendering) && handler != null) {
                             handler.post(renderRunnable);
                         }
                     }
@@ -1318,11 +1387,26 @@ public class GLRecordingPipeline {
     private final Runnable renderRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!isRecording || released) {
+            if ((!isRecording && !previewOnlyRendering) || released) {
                 return;
             }
 
             try {
+                if (previewOnlyRendering && !isRecording) {
+                    Runnable action;
+                    while ((action = rendererActions.poll()) != null) {
+                        try {
+                            action.run();
+                        } catch (Throwable t) {
+                            android.util.Log.w(TAG, "Renderer action failed", t);
+                        }
+                    }
+                    if (glRenderer != null) {
+                        glRenderer.renderPreviewOnlyFrame();
+                    }
+                    return;
+                }
+
                 // CRITICAL: Drain audio encoder FIRST before rendering and draining video
                 // This ensures audio samples are queued in Media3 BEFORE video creates fragments
                 // Otherwise audio samples get dropped when video keyframes trigger fragment creation
@@ -1725,9 +1809,11 @@ public class GLRecordingPipeline {
             Log.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
             return;
         }
+        boolean wasPreviewOnly = previewOnlyRendering && !isRecording;
         isStopped = true;
         released = true;
         isRecording = false;
+        previewOnlyRendering = false;
 
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
@@ -1763,6 +1849,18 @@ public class GLRecordingPipeline {
                 com.fadcam.Log.w(TAG, "Error stopping watermark updater: " + e.getMessage());
             } catch (Throwable ignore) {
             }
+        }
+
+        if (wasPreviewOnly) {
+            quickReleaseForPreviewOnly();
+            Log.d(TAG, "GLRecordingPipeline preview-only stopped and released.");
+            // Reset flags so a new preview-only/recording session can start cleanly.
+            isStopped = false;
+            released = false;
+            isRecording = false;
+            recordingStartTimeNanos = -1;
+            recordingStartSystemTimeNanos = -1;
+            return;
         }
 
         // CRITICAL FIX: Drain encoders FIRST while GL thread is still alive
@@ -1910,6 +2008,78 @@ public class GLRecordingPipeline {
         // Clear retry/time bases
         recordingStartTimeNanos = -1;
         recordingStartSystemTimeNanos = -1;
+    }
+
+    private void quickReleaseForPreviewOnly() {
+        if (renderThread != null) {
+            try {
+                renderThread.quitSafely();
+                renderThread.join(250);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            renderThread = null;
+        }
+
+        if (videoEncoder != null) {
+            try {
+                videoEncoder.stop();
+            } catch (Exception ignore) {
+            }
+            try {
+                videoEncoder.release();
+            } catch (Exception ignore) {
+            }
+            videoEncoder = null;
+        }
+
+        if (audioEncoder != null) {
+            try {
+                audioEncoder.stop();
+            } catch (Exception ignore) {
+            }
+            try {
+                audioEncoder.release();
+            } catch (Exception ignore) {
+            }
+            audioEncoder = null;
+        }
+
+        if (audioRecord != null) {
+            try {
+                if (audioRecord.getRecordingState() == android.media.AudioRecord.RECORDSTATE_RECORDING) {
+                    audioRecord.stop();
+                }
+                audioRecord.release();
+            } catch (Exception ignore) {
+            }
+            audioRecord = null;
+        }
+
+        if (encoderInputSurface != null) {
+            try {
+                encoderInputSurface.release();
+            } catch (Exception ignore) {
+            }
+            encoderInputSurface = null;
+        }
+
+        if (glRenderer != null) {
+            try {
+                glRenderer.release();
+            } catch (Exception ignore) {
+            }
+            glRenderer = null;
+        }
+
+        handler = null;
+        previewSurface = null;
+        cameraInputSurface = null;
+        mediaMuxer = null;
+        muxerStarted = false;
+        audioTrackIndex = -1;
+        videoTrackIndex = -1;
+        audioEncoderStarted = false;
     }
 
     /**
@@ -2105,6 +2275,20 @@ public class GLRecordingPipeline {
         }
     }
 
+    public void setFrontVideoMirrorEnabled(boolean enabled) {
+        frontVideoMirrorEnabled = enabled;
+        if (glRenderer != null) {
+            rendererActions.offer(() -> {
+                if (glRenderer != null) {
+                    glRenderer.setFrontVideoMirrorEnabled(enabled);
+                }
+            });
+            if (handler != null) {
+                handler.post(renderRunnable);
+            }
+        }
+    }
+
     /**
      * Sets the preview surface with IMMEDIATE application (no debounce).
      * Use this for critical transitions like fullscreen where delay causes stuck preview.
@@ -2144,6 +2328,9 @@ public class GLRecordingPipeline {
                     Log.e(TAG, "Immediate preview apply failed", t);
                 }
             });
+            if (handler != null && (isRecording || previewOnlyRendering)) {
+                handler.post(renderRunnable);
+            }
         } else {
             Log.w(TAG, "setPreviewSurfaceImmediate called but glRenderer is null");
         }
@@ -2203,6 +2390,27 @@ public class GLRecordingPipeline {
                 });
             }
         }
+        if (handler != null && (isRecording || previewOnlyRendering)) {
+            handler.post(renderRunnable);
+        }
+    }
+
+    public void startPreviewOnlyRendering() {
+        if (released || isStopped) return;
+        previewOnlyRendering = true;
+        if (renderThread == null || handler == null) {
+            startRenderLoop();
+        }
+        ensureWatermarkUpdaterRunning();
+        updateWatermark();
+        if (handler != null) {
+            handler.post(renderRunnable);
+        }
+    }
+
+    public void stopPreviewOnlyRendering() {
+        previewOnlyRendering = false;
+        watermarkUpdateHandler.removeCallbacks(updateWatermarkRunnable);
     }
 
     /**

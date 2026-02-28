@@ -301,6 +301,27 @@ public class SharedPreferencesManager {
         }
     }
 
+    /**
+     * Returns whether front-camera video mirroring is enabled.
+     * Applies to preview + recorded video output for front camera only.
+     */
+    public boolean isFrontVideoMirrorEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_FRONT_VIDEO_MIRROR_ENABLED,
+            false
+        );
+    }
+
+    /**
+     * Persists front-camera video mirroring preference.
+     */
+    public void setFrontVideoMirrorEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_FRONT_VIDEO_MIRROR_ENABLED, enabled)
+            .apply();
+    }
+
     public Size getCameraResolution() {
         return new Size(
             sharedPreferences.getInt(
@@ -1783,6 +1804,26 @@ public class SharedPreferencesManager {
             .putString(Constants.PREF_SCREEN_RECORDING_STATE, state)
             .apply();
         Log.d("SharedPrefs", "Screen recording state changed to: " + state);
+    }
+
+    /**
+     * Returns whether FadRec recording is currently muted.
+     */
+    public boolean isScreenRecordingMuted() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_SCREEN_RECORDING_MUTED,
+            false
+        );
+    }
+
+    /**
+     * Persists FadRec recording muted state.
+     */
+    public void setScreenRecordingMuted(boolean muted) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_SCREEN_RECORDING_MUTED, muted)
+            .apply();
     }
 
     /**

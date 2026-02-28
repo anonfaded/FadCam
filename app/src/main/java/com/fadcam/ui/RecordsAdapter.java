@@ -637,6 +637,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (holder.textViewStatusBadge != null && context != null) {
             if (isProcessing) {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide all badges during processing
+                if (holder.textViewNewBadge != null) {
+                    holder.textViewNewBadge.setVisibility(View.GONE);
+                }
             } else if (isImage) {
                 int badgeRes = getImageBadgeLabelRes(videoItem);
                 holder.textViewStatusBadge.setText(context.getString(badgeRes).toUpperCase(Locale.US));
@@ -644,6 +647,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         .setBackground(ContextCompat.getDrawable(context, R.drawable.badge_bg_gray));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
+                if (holder.textViewNewBadge != null) {
+                    holder.textViewNewBadge.setVisibility(showNewBadge ? View.VISIBLE : View.GONE);
+                }
             } else if (showNewBadge) {
                 // Show NEW badge
                 holder.textViewStatusBadge.setText("NEW");
@@ -651,9 +657,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         .setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
+                if (holder.textViewNewBadge != null) {
+                    holder.textViewNewBadge.setVisibility(View.GONE);
+                }
             } else {
                 // Hide badge
                 holder.textViewStatusBadge.setVisibility(View.GONE);
+                if (holder.textViewNewBadge != null) {
+                    holder.textViewNewBadge.setVisibility(View.GONE);
+                }
             }
         }
         // *** END RESTORED Status Badge Logic ***
@@ -2688,6 +2700,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         ImageView iconFileSize;
         ImageView menuButton; // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
+        TextView textViewNewBadge;
         ImageView menuWarningDot; // *** ADDED: Reference for the warning dot ***
         FrameLayout menuButtonContainer; // *** ADDED: Reference to the container holding the button and dot ***
         View selectionDimOverlay;
@@ -2725,6 +2738,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             menuButtonContainer = itemView.findViewById(R.id.menu_button_container); // *** Find the container ***
             textViewStatusBadge = itemView.findViewById(R.id.text_view_status_badge); // *** Find the new single badge
                                                                                       // ***
+            textViewNewBadge = itemView.findViewById(R.id.text_view_new_badge);
             selectionDimOverlay = itemView.findViewById(R.id.selection_dim_overlay);
 
             processingScrim = itemView.findViewById(R.id.processing_scrim);

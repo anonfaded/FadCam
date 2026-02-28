@@ -181,6 +181,21 @@ public class MediaProjectionHelper {
             Log.e(TAG, "Error resuming ScreenRecordingService", e);
         }
     }
+
+    /**
+     * Toggle live mute state for FadRec while recording.
+     */
+    public void setScreenRecordingMuted(boolean muted) {
+        try {
+            Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
+            serviceIntent.setAction(Constants.INTENT_ACTION_SET_SCREEN_RECORDING_MUTE);
+            serviceIntent.putExtra(Constants.EXTRA_SCREEN_RECORDING_MUTED, muted);
+            context.startService(serviceIntent);
+            Log.i(TAG, "Mute toggle sent to ScreenRecordingService: " + muted);
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling ScreenRecordingService mute", e);
+        }
+    }
     
     /**
      * Check if MediaProjectionManager is available.

@@ -143,6 +143,10 @@ public class PhotoCaptureActivity extends ComponentActivity {
                             if (finalSaved != null) {
                                 Utils.showQuickToast(PhotoCaptureActivity.this, R.string.photo_capture_saved);
                                 com.fadcam.ui.RecordsFragment.requestRefresh();
+                                Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                                updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
+                                updateIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, finalSaved.toString());
+                                sendBroadcast(updateIntent);
                             } else {
                                 Toast.makeText(PhotoCaptureActivity.this, R.string.photo_capture_failed, Toast.LENGTH_SHORT).show();
                             }

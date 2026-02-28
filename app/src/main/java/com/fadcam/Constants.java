@@ -28,6 +28,8 @@ public abstract class Constants {
     public static final String PREF_ZOOM_RATIO_BACK = "zoom_ratio_back";
     // *** End New Zoom Ratio Prefs ***
     public static final String PREF_CAMERA_SELECTION = "camera_selection";
+    public static final String PREF_FRONT_VIDEO_MIRROR_ENABLED =
+        "pref_front_video_mirror_enabled";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
     public static final String PREF_RECORDING_START_TIME = "recording_start_time"; // Stores recording start timestamp for orientation changes
     public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for FadRec
@@ -95,6 +97,10 @@ public abstract class Constants {
         "ON_RECORDING_PAUSED";
     public static final String BROADCAST_ON_RECORDING_STOPPED =
         "ON_RECORDING_STOPPED";
+    public static final String BROADCAST_ON_PREVIEW_ONLY_STARTED =
+        "ON_PREVIEW_ONLY_STARTED";
+    public static final String BROADCAST_ON_PREVIEW_ONLY_STOPPED =
+        "ON_PREVIEW_ONLY_STOPPED";
     public static final String BROADCAST_ON_RECORDING_STATE_REQUEST =
         "ON_RECORDING_STATE_REQUEST";
     public static final String BROADCAST_ON_RECORDING_STATE_CALLBACK =
@@ -174,6 +180,12 @@ public abstract class Constants {
         "com.fadcam.ACTION_TAP_TO_FOCUS";
     public static final String INTENT_ACTION_SET_ZOOM_RATIO =
         "com.fadcam.ACTION_SET_ZOOM_RATIO";
+    public static final String INTENT_ACTION_SET_FRONT_VIDEO_MIRROR =
+        "com.fadcam.ACTION_SET_FRONT_VIDEO_MIRROR";
+    public static final String INTENT_ACTION_START_PREVIEW_ONLY =
+        "com.fadcam.ACTION_START_PREVIEW_ONLY";
+    public static final String INTENT_ACTION_STOP_PREVIEW_ONLY =
+        "com.fadcam.ACTION_STOP_PREVIEW_ONLY";
 
     // Extras for the above intents
     public static final String EXTRA_EXPOSURE_COMPENSATION =
@@ -181,6 +193,10 @@ public abstract class Constants {
     public static final String EXTRA_AE_LOCK = "com.fadcam.EXTRA_AE_LOCK"; // boolean
     public static final String EXTRA_AF_MODE = "com.fadcam.EXTRA_AF_MODE"; // int (CaptureRequest.CONTROL_AF_MODE
     // values)
+    public static final String EXTRA_FRONT_VIDEO_MIRROR_ENABLED =
+        "com.fadcam.EXTRA_FRONT_VIDEO_MIRROR_ENABLED"; // boolean
+    public static final String EXTRA_PREVIEW_ONLY_ACTIVE =
+        "com.fadcam.EXTRA_PREVIEW_ONLY_ACTIVE"; // boolean
 
     // Camera switch broadcast extras
     /** Extra for camera switch broadcasts: source camera type (CameraType enum as string) */
@@ -210,6 +226,8 @@ public abstract class Constants {
         "com.fadcam.ACTION_PAUSE_SCREEN_RECORDING";
     public static final String INTENT_ACTION_RESUME_SCREEN_RECORDING =
         "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
+    public static final String INTENT_ACTION_SET_SCREEN_RECORDING_MUTE =
+        "com.fadcam.ACTION_SET_SCREEN_RECORDING_MUTE";
 
     // Query current screen recording state (service will respond via state broadcast)
     public static final String INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE =
@@ -262,10 +280,14 @@ public abstract class Constants {
         "com.fadcam.ON_SCREEN_RECORDING_RESUMED";
     public static final String BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK =
         "com.fadcam.ON_SCREEN_RECORDING_STATE_CALLBACK";
+    public static final String BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED =
+        "com.fadcam.ON_SCREEN_RECORDING_MUTE_CHANGED";
 
     // Screen recording preferences
     public static final String PREF_SCREEN_RECORDING_AUDIO_SOURCE =
         "pref_screen_recording_audio_source"; // mic/none
+    public static final String PREF_SCREEN_RECORDING_MUTED =
+        "pref_screen_recording_muted"; // boolean
     public static final String PREF_SCREEN_RECORDING_WATERMARK_ENABLED =
         "pref_screen_recording_watermark_enabled"; // boolean
     public static final String PREF_IS_SCREEN_RECORDING_IN_PROGRESS =
@@ -282,6 +304,8 @@ public abstract class Constants {
     // Screen recording audio source options
     public static final String AUDIO_SOURCE_NONE = "none";
     public static final String AUDIO_SOURCE_MIC = "microphone";
+    public static final String EXTRA_SCREEN_RECORDING_MUTED =
+        "com.fadcam.EXTRA_SCREEN_RECORDING_MUTED";
     // -------------- FadRec (Screen Recording) Constants End --------------
     public static final String EXTRA_FOCUS_X = "com.fadcam.EXTRA_FOCUS_X"; // float (normalized 0..1)
     public static final String EXTRA_FOCUS_Y = "com.fadcam.EXTRA_FOCUS_Y"; // float (normalized 0..1)

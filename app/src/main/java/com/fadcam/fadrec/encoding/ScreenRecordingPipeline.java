@@ -85,6 +85,7 @@ public class ScreenRecordingPipeline {
     private boolean isPaused = false;
     private boolean isStopped = false;
     private boolean muxerStarted = false;
+    private volatile boolean audioMuted = false;
     
     // Timestamp management
     private final Object timestampLock = new Object();
@@ -575,12 +576,21 @@ public class ScreenRecordingPipeline {
                 int bytesRead = audioRecord.read(audioBuffer, audioBuffer.capacity());
                 
                 if (bytesRead > 0) {
+                    if (audioMuted) {
+                        zeroAudioBuffer(audioBuffer, bytesRead);
+                    }
                     audioBuffer.limit(bytesRead);
                     queueAudioData(audioBuffer, bytesRead);
                 }
             }
         });
         audioRecordingThread.start();
+    }
+
+    private void zeroAudioBuffer(ByteBuffer buffer, int size) {
+        for (int i = 0; i < size; i++) {
+            buffer.put(i, (byte) 0);
+        }
     }
     
     /**
@@ -716,6 +726,14 @@ public class ScreenRecordingPipeline {
         
         isPaused = false;
         Log.d(TAG, "Recording resumed");
+    }
+
+    /**
+     * Runtime mute toggle for screen-recording audio.
+     * Keeps encoder timestamps continuous by feeding silent PCM while muted.
+     */
+    public void setAudioMuted(boolean muted) {
+        this.audioMuted = muted;
     }
     
     /**
