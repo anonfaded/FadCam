@@ -196,6 +196,7 @@ public class HomeFragment extends BaseFragment {
     
     private ImageView btnHamburgerMenu;
     private View hamburgerBadgeDot;
+    private ImageView ivAppTitle; // App logo in header
     private TextView tvPreviewPlaceholder;
     private TextView tvPreviewHint; // Hint text for long press to enable preview
     
@@ -3396,6 +3397,14 @@ public class HomeFragment extends BaseFragment {
             requireContext()
         );
 
+        // Initialize views first
+        initializeViews(view);
+
+        // Trigger logo reveal animation on fresh start
+        if (savedInstanceState == null) {
+            startLogoRevealAnimation();
+        }
+
         // Initialize camera control state from saved preferences
         currentEvIndex =
             sharedPreferencesManager.getSavedExposureCompensation();
@@ -3483,8 +3492,6 @@ public class HomeFragment extends BaseFragment {
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
         }
-
-        initializeViews(view);
 
         // Initialize UI components using helper
         fragmentHelper = new HomeFragmentHelper(this);
@@ -7757,9 +7764,12 @@ public class HomeFragment extends BaseFragment {
             containerPreviewZoomMap.setLayoutParams(mapLp);
         }
 
+        int actualMapW = containerPreviewZoomMap.getWidth() > 0 ? containerPreviewZoomMap.getWidth() : mapW;
+        int actualMapH = containerPreviewZoomMap.getHeight() > 0 ? containerPreviewZoomMap.getHeight() : mapH;
+
         float scale = Math.max(1.0f, previewUiScale);
-        int vpW = Math.max(8, Math.min(mapW, Math.round(mapW / scale)));
-        int vpH = Math.max(8, Math.min(mapH, Math.round(mapH / scale)));
+        int vpW = Math.max(8, Math.min(actualMapW, Math.round(actualMapW / scale)));
+        int vpH = Math.max(8, Math.min(actualMapH, Math.round(actualMapH / scale)));
         ViewGroup.LayoutParams vpLp = viewPreviewZoomMapViewport.getLayoutParams();
         if (vpLp != null && (vpLp.width != vpW || vpLp.height != vpH)) {
             vpLp.width = vpW;
@@ -7774,17 +7784,17 @@ public class HomeFragment extends BaseFragment {
         float nx = 0.5f;
         float ny = 0.5f;
         if (maxPanX > 0f) {
-            nx = (previewUiPanX + maxPanX) / (2f * maxPanX);
+            nx = (maxPanX - previewUiPanX) / (2f * maxPanX);
         }
         if (maxPanY > 0f) {
-            ny = (previewUiPanY + maxPanY) / (2f * maxPanY);
+            ny = (maxPanY - previewUiPanY) / (2f * maxPanY);
         }
         nx = Math.max(0f, Math.min(1f, nx));
         ny = Math.max(0f, Math.min(1f, ny));
-        float tx = (mapW - vpW) * nx;
-        float ty = (mapH - vpH) * ny;
-        tx = Math.max(0f, Math.min(Math.max(0f, mapW - vpW), tx));
-        ty = Math.max(0f, Math.min(Math.max(0f, mapH - vpH), ty));
+        float tx = (actualMapW - vpW) * nx;
+        float ty = (actualMapH - vpH) * ny;
+        tx = Math.max(0f, Math.min(Math.max(0f, actualMapW - vpW), tx));
+        ty = Math.max(0f, Math.min(Math.max(0f, actualMapH - vpH), ty));
         viewPreviewZoomMapViewport.setTranslationX(tx);
         viewPreviewZoomMapViewport.setTranslationY(ty);
     }
@@ -8699,9 +8709,8 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void setupAppLogoLongPressListener(View view) {
-        ImageView appLogo = view.findViewById(R.id.ivAppTitle);
-        if (appLogo != null) {
-            appLogo.setOnLongClickListener(v -> {
+        if (ivAppTitle != null) {
+            ivAppTitle.setOnLongClickListener(v -> {
                 performHapticFeedback();
                 Log.i(
                     TAG,
@@ -8771,6 +8780,58 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
+     * Plays a nice slide-up reveal animation for the app logo in the header.
+     * Matches the timing and style of the bottom navigation dock reveal.
+     */
+    private void startLogoRevealAnimation() {
+        if (ivAppTitle == null) return;
+
+        // Respect system animation scale (accessibility)
+        if (isAnimationDisabled(ivAppTitle)) {
+            ivAppTitle.setAlpha(1f);
+            ivAppTitle.setTranslationY(0f);
+            return;
+        }
+
+        // Initial hidden state
+        ivAppTitle.setAlpha(0f);
+
+        // Defer until layout to ensure precise positioning, though SLIDE_DP is fixed
+        ivAppTitle.post(() -> {
+            if (!isAdded()) return;
+            
+            float density = getResources().getDisplayMetrics().density;
+            float slideY = 18f * density; // Match DockRevealAnimator.SLIDE_DP
+
+            ivAppTitle.setTranslationY(slideY);
+            ivAppTitle.setAlpha(0f);
+
+            ivAppTitle.animate()
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(450) // Match DockRevealAnimator.EXPAND_DURATION
+                    .setStartDelay(50) // Match DockRevealAnimator.START_DELAY_MS
+                    .setInterpolator(new android.view.animation.PathInterpolator(0.2f, 1.0f, 0.3f, 1.0f))
+                    .start();
+        });
+    }
+
+    /**
+     * Returns true if the user has disabled animations via accessibility or
+     * developer options (global animation scale = 0).
+     */
+    private boolean isAnimationDisabled(View view) {
+        try {
+            android.content.ContentResolver cr = view.getContext().getContentResolver();
+            float scale = android.provider.Settings.Global.getFloat(cr,
+                    android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
+            return scale == 0f;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    /**
      * Wires the "Stats" card to navigate to the Records tab.
      * Applies only to Home and is safe across configuration changes.
      */
@@ -8813,6 +8874,7 @@ public class HomeFragment extends BaseFragment {
         tvRemainingSubtitle = view.findViewById(R.id.tvRemainingSubtitle);
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
+        ivAppTitle = view.findViewById(R.id.ivAppTitle);
 
         // Update hamburger badge visibility
         updateHamburgerBadgeVisibility();

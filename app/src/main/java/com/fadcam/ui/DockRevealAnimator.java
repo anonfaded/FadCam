@@ -92,14 +92,16 @@ public class DockRevealAnimator {
 
         // ── Animators ─────────────────────────────────────────────────────
 
-        // Custom smooth decelerate curve (cubic Bézier matching Material Motion)
-        final DecelerateInterpolator decel = new DecelerateInterpolator(2.4f);
+        // Custom smooth cubic bezier curve for a premium, expressive feel
+        // (0.2, 1, 0.3, 1) starts fast and has a long, elegant tail
+        final android.view.animation.Interpolator premiumCurve = 
+                new android.view.animation.PathInterpolator(0.2f, 1.0f, 0.3f, 1.0f);
 
         // 1. Horizontal expansion (circle → pill)
         ObjectAnimator expandX = ObjectAnimator.ofFloat(
                 dockContainer, View.SCALE_X, SCALE_START, SCALE_END);
         expandX.setDuration(EXPAND_DURATION);
-        expandX.setInterpolator(decel);
+        expandX.setInterpolator(premiumCurve);
 
         // 2. Container fade-in (very quick – just to avoid a hard pop)
         ObjectAnimator alphaIn = ObjectAnimator.ofFloat(
@@ -110,7 +112,7 @@ public class DockRevealAnimator {
         ObjectAnimator slideUp = ObjectAnimator.ofFloat(
                 dockContainer, View.TRANSLATION_Y, slideY, 0f);
         slideUp.setDuration(EXPAND_DURATION);
-        slideUp.setInterpolator(decel);
+        slideUp.setInterpolator(premiumCurve);
 
         // 4. Icons / labels fade in after the pill is mostly expanded
         ObjectAnimator iconsFade = navView != null

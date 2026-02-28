@@ -99,6 +99,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private View containerZoomMap;
     private View viewZoomMapViewport;
     private TextView textFullscreenPreviewHint;
+    private View viewFullscreenIdleMask;
+    private View ivFullscreenBubbleBackground;
+    private View ivFullscreenCameraIcon;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
@@ -355,6 +358,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         containerZoomMap = findViewById(R.id.containerZoomMap);
         viewZoomMapViewport = findViewById(R.id.viewZoomMapViewport);
         textFullscreenPreviewHint = findViewById(R.id.textFullscreenPreviewHint);
+        viewFullscreenIdleMask = findViewById(R.id.viewFullscreenIdleMask);
+        ivFullscreenBubbleBackground = findViewById(R.id.ivFullscreenBubbleBackground);
+        ivFullscreenCameraIcon = findViewById(R.id.ivFullscreenCameraIcon);
     }
 
     private void setupCaptureShotButton() {
@@ -1282,9 +1288,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             containerZoomMap.setLayoutParams(mapLp);
         }
 
+        int actualMapW = containerZoomMap.getWidth() > 0 ? containerZoomMap.getWidth() : mapW;
+        int actualMapH = containerZoomMap.getHeight() > 0 ? containerZoomMap.getHeight() : mapH;
+
         float scale = Math.max(1.0f, previewUiScale);
-        int vpW = Math.max(8, Math.min(mapW, Math.round(mapW / scale)));
-        int vpH = Math.max(8, Math.min(mapH, Math.round(mapH / scale)));
+        int vpW = Math.max(8, Math.min(actualMapW, Math.round(actualMapW / scale)));
+        int vpH = Math.max(8, Math.min(actualMapH, Math.round(actualMapH / scale)));
         ViewGroup.LayoutParams vpLp = viewZoomMapViewport.getLayoutParams();
         if (vpLp != null && (vpLp.width != vpW || vpLp.height != vpH)) {
             vpLp.width = vpW;
@@ -1299,25 +1308,35 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         float nx = 0.5f;
         float ny = 0.5f;
         if (maxPanX > 0f) {
-            nx = (previewUiPanX + maxPanX) / (2f * maxPanX);
+            nx = (maxPanX - previewUiPanX) / (2f * maxPanX);
         }
         if (maxPanY > 0f) {
-            ny = (previewUiPanY + maxPanY) / (2f * maxPanY);
+            ny = (maxPanY - previewUiPanY) / (2f * maxPanY);
         }
         nx = Math.max(0f, Math.min(1f, nx));
         ny = Math.max(0f, Math.min(1f, ny));
-        float tx = (mapW - vpW) * nx;
-        float ty = (mapH - vpH) * ny;
-        tx = Math.max(0f, Math.min(Math.max(0f, mapW - vpW), tx));
-        ty = Math.max(0f, Math.min(Math.max(0f, mapH - vpH), ty));
+        float tx = (actualMapW - vpW) * nx;
+        float ty = (actualMapH - vpH) * ny;
+        tx = Math.max(0f, Math.min(Math.max(0f, actualMapW - vpW), tx));
+        ty = Math.max(0f, Math.min(Math.max(0f, actualMapH - vpH), ty));
         viewZoomMapViewport.setTranslationX(tx);
         viewZoomMapViewport.setTranslationY(ty);
     }
 
     private void updatePreviewHintVisibility() {
         if (textFullscreenPreviewHint == null) return;
-        boolean show = !isRecordingActive && !isRecordingPaused && !isPreviewOnlyActive;
-        textFullscreenPreviewHint.setVisibility(show ? View.VISIBLE : View.GONE);
+        boolean showPreviewSurface = isPreviewOnlyActive || ((isRecordingActive || isRecordingPaused) && isPreviewAttachedInRecording);
+        if (viewFullscreenIdleMask != null) {
+            viewFullscreenIdleMask.setVisibility(showPreviewSurface ? View.GONE : View.VISIBLE);
+        }
+        boolean showIdlePlaceholder = !showPreviewSurface;
+        textFullscreenPreviewHint.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
+        if (ivFullscreenBubbleBackground != null) {
+            ivFullscreenBubbleBackground.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
+        }
+        if (ivFullscreenCameraIcon != null) {
+            ivFullscreenCameraIcon.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void maybeStartPreviewOnlyAutomatically() {

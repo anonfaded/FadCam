@@ -11,12 +11,45 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <View
+        android:id="@+id/viewFullscreenIdleMask"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/ivFullscreenBubbleBackground"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_gravity="center"
+        android:alpha="0.15"
+        android:contentDescription="Fullscreen bubble background"
+        android:scaleType="fitCenter"
+        android:src="@drawable/bubble_shape"
+        android:tint="#B3FFFFFF"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/ivFullscreenCameraIcon"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        android:alpha="0.35"
+        android:contentDescription="Fullscreen camera icon"
+        android:scaleType="fitCenter"
+        android:src="@drawable/cctv"
+        android:tint="#B3FFFFFF"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/textFullscreenPreviewHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="94dp"
+        android:layout_gravity="center_horizontal|center"
+        android:layout_marginTop="154dp"
         android:background="@drawable/fullscreen_dock_bg"
         android:paddingStart="10dp"
         android:paddingTop="6dp"
