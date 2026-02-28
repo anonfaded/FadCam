@@ -263,8 +263,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         updateMirrorButtonVisibilityAndState();
         isTorchOn = prefs.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
         updateTorchIcon();
-        pinchZoomRatio = prefs.getSpecificZoomRatio(prefs.getCameraSelection());
-        updateZoomHudUi(pinchZoomRatio);
+        syncZoomUiStateFromPrefs(false);
         updatePreviewHintVisibility();
         requestRecordingStateSync();
         if (previewSurface != null && textureView != null && textureView.isAvailable()) {
@@ -429,9 +428,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         textureView.setOnTouchListener((v, event) -> {
             final int action = event.getActionMasked();
             final float touchSlop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
-            final boolean skipZoomLock = Math.abs(pinchZoomRatio - 0.5f) < 0.01f;
-            final boolean zoomGestureLock = !skipZoomLock &&
-                    (previewUiScale > 1.001f || pinchZoomRatio > 1.001f);
+            final boolean zoomGestureLock = previewUiScale > 1.001f;
             if (scaleGestureDetector != null) {
                 scaleGestureDetector.onTouchEvent(event);
                 if (scaleGestureDetector.isInProgress()) {
@@ -532,8 +529,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     }
 
     private void handlePreviewLongPress() {
-        if ((previewUiScale > 1.001f || pinchZoomRatio > 1.001f)
-                && Math.abs(pinchZoomRatio - 0.5f) >= 0.01f) {
+        if (previewUiScale > 1.001f) {
             Log.d(TAG, "Ignoring long-press toggle while zoom/pan gesture mode is active");
             return;
         }
@@ -1245,6 +1241,22 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         updateZoomMapUi();
     }
 
+    private void syncZoomUiStateFromPrefs(boolean forceResetPan) {
+        CameraType cam = prefs.getCameraSelection();
+        if (cam == null) return;
+        float savedZoom = prefs.getSpecificZoomRatio(cam);
+        pinchZoomRatio = savedZoom;
+        previewUiScale = Math.max(1.0f, Math.min(4.0f, savedZoom));
+        if (forceResetPan || previewUiScale <= 1.001f) {
+            previewUiPanX = 0f;
+            previewUiPanY = 0f;
+            isPanningPreview = false;
+            longPressTriggered = false;
+        }
+        applyPreviewTransform();
+        updateZoomHudUi(pinchZoomRatio);
+    }
+
     private void updateZoomMapUi() {
         if (containerZoomMap == null || viewZoomMapViewport == null || textureView == null) return;
         if (containerZoomMap instanceof ViewGroup) {
@@ -1287,10 +1299,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         float nx = 0.5f;
         float ny = 0.5f;
         if (maxPanX > 0f) {
-            nx = (maxPanX - previewUiPanX) / (2f * maxPanX);
+            nx = (previewUiPanX + maxPanX) / (2f * maxPanX);
         }
         if (maxPanY > 0f) {
-            ny = (maxPanY - previewUiPanY) / (2f * maxPanY);
+            ny = (previewUiPanY + maxPanY) / (2f * maxPanY);
         }
         nx = Math.max(0f, Math.min(1f, nx));
         ny = Math.max(0f, Math.min(1f, ny));

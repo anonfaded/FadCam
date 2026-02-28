@@ -576,8 +576,7 @@ public class HomeFragment extends BaseFragment {
      * (card long-press, texture long-press via GestureDetector).
      */
     private void handlePreviewLongPress() {
-        if ((previewUiScale > 1.001f || previewPinchZoomRatio > 1.001f)
-                && Math.abs(previewPinchZoomRatio - 0.5f) >= 0.01f) {
+        if (previewUiScale > 1.001f) {
             Log.d(TAG, "Ignoring long-press toggle while zoom/pan gesture mode is active");
             return;
         }
@@ -1693,6 +1692,7 @@ public class HomeFragment extends BaseFragment {
 
         // Re-load preview state from SharedPreferences to ensure consistency
         isPreviewEnabled = sharedPreferencesManager.isPreviewEnabled();
+        syncPreviewZoomStateFromPrefs(false);
         Log.d(
             TAG,
             "onResume: Loaded isPreviewEnabled state = " + isPreviewEnabled
@@ -4741,10 +4741,7 @@ public class HomeFragment extends BaseFragment {
             tvPreviewPlaceholder.setFocusable(false);
         }
 
-        previewPinchZoomRatio = sharedPreferencesManager.getSpecificZoomRatio(
-            sharedPreferencesManager.getCameraSelection()
-        );
-        updatePreviewZoomHudUi(previewPinchZoomRatio);
+        syncPreviewZoomStateFromPrefs(false);
         previewScaleGestureDetector = new android.view.ScaleGestureDetector(
             requireContext(),
             new android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -4760,9 +4757,7 @@ public class HomeFragment extends BaseFragment {
             try {
                 final int action = event.getActionMasked();
                 final float touchSlop = android.view.ViewConfiguration.get(requireContext()).getScaledTouchSlop();
-                final boolean skipZoomLock = Math.abs(previewPinchZoomRatio - 0.5f) < 0.01f;
-                final boolean zoomGestureLock = !skipZoomLock &&
-                    (previewUiScale > 1.001f || previewPinchZoomRatio > 1.001f);
+                final boolean zoomGestureLock = previewUiScale > 1.001f;
                 updateMainSwipeGestureGate(zoomGestureLock || isPanningPreview);
                 requestPreviewParentIntercept(v, zoomGestureLock || action == MotionEvent.ACTION_POINTER_DOWN);
                 if (previewScaleGestureDetector != null) {
@@ -4771,7 +4766,7 @@ public class HomeFragment extends BaseFragment {
                         if (pendingPreviewLongPressRunnable != null) {
                             previewLongPressHandler.removeCallbacks(pendingPreviewLongPressRunnable);
                         }
-                        updateMainSwipeGestureGate(!skipZoomLock);
+                        updateMainSwipeGestureGate(zoomGestureLock);
                         isPanningPreview = false;
                         return true;
                     }
@@ -4805,7 +4800,7 @@ public class HomeFragment extends BaseFragment {
                             float dy = travelDy;
                             if (Math.abs(dx) > 1f || Math.abs(dy) > 1f) {
                                 isPanningPreview = true;
-                                updateMainSwipeGestureGate(!skipZoomLock);
+                                updateMainSwipeGestureGate(true);
                                 previewUiPanX += dx;
                                 previewUiPanY += dy;
                                 applyPreviewTransform();
@@ -7779,10 +7774,10 @@ public class HomeFragment extends BaseFragment {
         float nx = 0.5f;
         float ny = 0.5f;
         if (maxPanX > 0f) {
-            nx = (maxPanX - previewUiPanX) / (2f * maxPanX);
+            nx = (previewUiPanX + maxPanX) / (2f * maxPanX);
         }
         if (maxPanY > 0f) {
-            ny = (maxPanY - previewUiPanY) / (2f * maxPanY);
+            ny = (previewUiPanY + maxPanY) / (2f * maxPanY);
         }
         nx = Math.max(0f, Math.min(1f, nx));
         ny = Math.max(0f, Math.min(1f, ny));
@@ -7792,6 +7787,24 @@ public class HomeFragment extends BaseFragment {
         ty = Math.max(0f, Math.min(Math.max(0f, mapH - vpH), ty));
         viewPreviewZoomMapViewport.setTranslationX(tx);
         viewPreviewZoomMapViewport.setTranslationY(ty);
+    }
+
+    private void syncPreviewZoomStateFromPrefs(boolean forceResetPan) {
+        if (sharedPreferencesManager == null) return;
+        CameraType cam = sharedPreferencesManager.getCameraSelection();
+        if (cam == null) return;
+        float savedZoom = sharedPreferencesManager.getSpecificZoomRatio(cam);
+        previewPinchZoomRatio = savedZoom;
+        previewUiScale = Math.max(1.0f, Math.min(4.0f, savedZoom));
+        if (forceResetPan || previewUiScale <= 1.001f) {
+            previewUiPanX = 0f;
+            previewUiPanY = 0f;
+            isPanningPreview = false;
+            previewLongPressTriggered = false;
+            updateMainSwipeGestureGate(false);
+        }
+        applyPreviewTransform();
+        updatePreviewZoomHudUi(previewPinchZoomRatio);
     }
 
     /**
@@ -8983,6 +8996,7 @@ public class HomeFragment extends BaseFragment {
                         isLaunchingFullscreen = false;
                         isReturningFromFullscreen = true;
                         resetTextureView();
+                        syncPreviewZoomStateFromPrefs(true);
                         // Safety retry: if TextureView wasn't ready yet (e.g. it
                         // was recreated), onSurfaceTextureAvailable handles it.
                         // But if it IS available and the first reset didn't take
@@ -8993,6 +9007,7 @@ public class HomeFragment extends BaseFragment {
                                             || !textureViewSurface.isValid()) {
                                         resetTextureView();
                                     }
+                                    syncPreviewZoomStateFromPrefs(true);
                                     // Clear the guard flag after surface should be stable
                                     isReturningFromFullscreen = false;
                                 }, 600);
