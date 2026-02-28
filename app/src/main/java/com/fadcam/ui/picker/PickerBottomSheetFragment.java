@@ -299,6 +299,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         sliderStep = 1,
         sliderInitial = 0;
     private float sliderStepFloat = 1f; // EV per index
+    private boolean sliderInteractionsEnabled = true;
+    private int pendingProgrammaticSliderDispatches = 0;
     private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
     private Integer previousActivityNavBarColor = null;
     private Boolean previousActivityNavContrastEnforced = null;
@@ -526,22 +528,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         );
                     } catch (Exception ignored) {}
                     // Set initial text value based on mode
-                    if (
-                        sliderZoomMode &&
-                        zoomRatios != null &&
-                        sliderInitial >= 0 &&
-                        sliderInitial < zoomRatios.length
-                    ) {
-                        tvVal.setText(
-                            String.format(
-                                java.util.Locale.US,
-                                "%.1fx",
-                                zoomRatios[sliderInitial]
-                            )
-                        );
-                    } else {
-                        tvVal.setText(String.valueOf(sliderInitial));
-                    }
+                    tvVal.setText(formatSliderDisplayValue(sliderInitial));
                     // Configure label row (min / mid / max)
                     try {
                         TextView lblMin = view.findViewById(
@@ -657,8 +644,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         android.util.Log.d(
                             "PickerBottomSheet",
                             "Slider onChange triggered: value=" +
-                            value +
-                            ", fromUser=" +
+                                value +
+                                ", fromUser=" +
                             fromUser
                         );
                         com.fadcam.Log.d(
@@ -678,32 +665,19 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             ", sliderStep=" +
                             sliderStep
                         );
-                        if (
-                            sliderZoomMode &&
-                            zoomRatios != null &&
-                            intVal >= 0 &&
-                            intVal < zoomRatios.length
-                        ) {
-                            // Zoom mode: show zoom ratio
-                            tvVal.setText(
-                                String.format(
-                                    java.util.Locale.US,
-                                    "%.1fx",
-                                    zoomRatios[intVal]
-                                )
-                            );
-                        } else {
-                            // EV mode: show with +/- sign
-                            float evFloat = intVal * sliderStepFloat;
-                            String sign = evFloat > 0 ? "+" : "";
-                            tvVal.setText(
-                                sign +
-                                String.format(
-                                    java.util.Locale.US,
-                                    "%.1f",
-                                    evFloat
-                                )
-                            );
+                        tvVal.setText(formatSliderDisplayValue(intVal));
+                        // Guard against disabled interaction state (e.g., AE lock enabled).
+                        // Also suppress incidental programmatic changes unless they came from +/-/reset taps.
+                        if (!sliderInteractionsEnabled) {
+                            return;
+                        }
+                        boolean shouldDispatch =
+                            fromUser || pendingProgrammaticSliderDispatches > 0;
+                        if (!shouldDispatch) {
+                            return;
+                        }
+                        if (!fromUser && pendingProgrammaticSliderDispatches > 0) {
+                            pendingProgrammaticSliderDispatches--;
                         }
                         // Live update: post result so callers can react immediately while recording
                         Bundle result = new Bundle();
@@ -754,6 +728,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     // +/- buttons
                     if (minus != null) {
                         minus.setOnClickListener(v -> {
+                            if (!sliderInteractionsEnabled) return;
+                            pendingProgrammaticSliderDispatches++;
                             slider.setValue(
                                 Math.max(0f, slider.getValue() - 1f)
                             );
@@ -761,6 +737,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                     if (plus != null) {
                         plus.setOnClickListener(v -> {
+                            if (!sliderInteractionsEnabled) return;
+                            pendingProgrammaticSliderDispatches++;
                             slider.setValue(
                                 Math.min(
                                     slider.getValueTo(),
@@ -771,6 +749,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                     if (reset != null) {
                         reset.setOnClickListener(v -> {
+                            if (!sliderInteractionsEnabled) return;
                             float resetPos;
                             if (sliderZoomMode && zoomRatios != null) {
                                 // For zoom mode, reset to 1.0x
@@ -796,6 +775,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                                 0f,
                                 Math.min(resetPos, slider.getValueTo())
                             );
+                            pendingProgrammaticSliderDispatches++;
                             slider.setValue(resetPos);
                         });
                     }
@@ -1389,12 +1369,71 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             boolean targetEnabled = enabled;
             child.setEnabled(targetEnabled);
             child.setAlpha(targetAlpha);
+            child.setClickable(targetEnabled);
             // Also adjust inner text views for clarity
             View title = child.findViewById(R.id.picker_item_title);
             View subtitle = child.findViewById(R.id.picker_item_subtitle);
             if (title != null) { title.setEnabled(targetEnabled); title.setAlpha(enabled ? 1f : 0.5f); }
             if (subtitle != null) { subtitle.setEnabled(targetEnabled); subtitle.setAlpha(enabled ? 1f : 0.5f); }
+
+            // Slider row needs explicit child-level interaction toggles.
+            com.google.android.material.slider.Slider slider =
+                child.findViewById(R.id.picker_slider);
+            TextView sliderValue = child.findViewById(R.id.picker_slider_value);
+            TextView minusButton = child.findViewById(R.id.picker_slider_minus);
+            TextView plusButton = child.findViewById(R.id.picker_slider_plus);
+            ImageView resetIcon = child.findViewById(R.id.picker_slider_reset_icon);
+            if (slider != null) {
+                sliderInteractionsEnabled = targetEnabled;
+                if (!targetEnabled) {
+                    pendingProgrammaticSliderDispatches = 0;
+                }
+                slider.setEnabled(targetEnabled);
+                slider.setClickable(targetEnabled);
+                slider.setFocusable(targetEnabled);
+                slider.setAlpha(enabled ? 1f : 0.45f);
+            }
+            if (sliderValue != null) {
+                sliderValue.setEnabled(targetEnabled);
+                sliderValue.setAlpha(enabled ? 1f : 0.6f);
+            }
+            if (minusButton != null) {
+                minusButton.setEnabled(targetEnabled);
+                minusButton.setClickable(targetEnabled);
+                minusButton.setFocusable(targetEnabled);
+                minusButton.setAlpha(enabled ? 1f : 0.4f);
+            }
+            if (plusButton != null) {
+                plusButton.setEnabled(targetEnabled);
+                plusButton.setClickable(targetEnabled);
+                plusButton.setFocusable(targetEnabled);
+                plusButton.setAlpha(enabled ? 1f : 0.4f);
+            }
+            if (resetIcon != null) {
+                resetIcon.setEnabled(targetEnabled);
+                resetIcon.setClickable(targetEnabled);
+                resetIcon.setFocusable(targetEnabled);
+                resetIcon.setAlpha(enabled ? 1f : 0.4f);
+            }
         }
+    }
+
+    private String formatSliderDisplayValue(int intVal) {
+        if (
+            sliderZoomMode &&
+            zoomRatios != null &&
+            intVal >= 0 &&
+            intVal < zoomRatios.length
+        ) {
+            return String.format(
+                java.util.Locale.US,
+                "%.1fx",
+                zoomRatios[intVal]
+            );
+        }
+        float evFloat = intVal * sliderStepFloat;
+        String sign = evFloat > 0 ? "+" : "";
+        return sign + String.format(java.util.Locale.US, "%.1f", evFloat);
     }
 
     // Branding dependency removed: branding is independent of background

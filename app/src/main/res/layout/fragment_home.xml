@@ -281,7 +281,7 @@
                         android:id="@+id/viewPreviewZoomMapViewport"
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:layout_gravity="center"
+                        android:layout_gravity="top|start"
                         android:background="@drawable/fadcam_zoom_viewport_indicator" />
                 </FrameLayout>
 

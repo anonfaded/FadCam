@@ -1056,6 +1056,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         // ── Exposure compensation ──
         getSupportFragmentManager().setFragmentResultListener(
                 Constants.RK_EXPOSURE_COMPENSATION, this, (key, result) -> {
+                    if (aeLocked) {
+                        return;
+                    }
                     if (result.containsKey(PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE)) {
                         currentEvIndex = result.getInt(PickerBottomSheetFragment.BUNDLE_SLIDER_VALUE);
                     } else if (result.containsKey(PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
@@ -1064,6 +1067,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                                     result.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID, "0"));
                         } catch (NumberFormatException ignored) { }
                     }
+                    prefs.setSavedExposureCompensation(currentEvIndex);
                     Intent intent = RecordingControlIntents.setExposureCompensation(this, currentEvIndex);
                     intent.setClass(this, getTargetServiceClass());
                     startService(intent);
@@ -1074,6 +1078,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         getSupportFragmentManager().setFragmentResultListener(
                 Constants.RK_AE_LOCK, this, (key, result) -> {
                     aeLocked = result.getBoolean(PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, false);
+                    prefs.setSavedAeLock(aeLocked);
                     Intent intent = RecordingControlIntents.toggleAeLock(this, aeLocked);
                     intent.setClass(this, getTargetServiceClass());
                     startService(intent);

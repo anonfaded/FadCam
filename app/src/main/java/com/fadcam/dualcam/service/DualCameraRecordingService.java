@@ -551,8 +551,12 @@ public class DualCameraRecordingService extends Service {
      * Sets the exposure compensation value on the primary camera.
      */
     private void handleSetExposureCompensation(@NonNull Intent intent) {
-        if (primaryRequestBuilder == null || primarySession == null) return;
         int ev = intent.getIntExtra(Constants.EXTRA_EXPOSURE_COMPENSATION, 0);
+        try {
+            prefs.setSavedExposureCompensation(ev);
+        } catch (Exception ignored) {
+        }
+        if (primaryRequestBuilder == null || primarySession == null) return;
         primaryRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, ev);
         if (applyPrimaryRepeating()) {
             Log.d(TAG, "Exposure compensation set to: " + ev);
@@ -563,8 +567,12 @@ public class DualCameraRecordingService extends Service {
      * Toggles the AE lock on the primary camera.
      */
     private void handleToggleAeLock(@NonNull Intent intent) {
-        if (primaryRequestBuilder == null || primarySession == null) return;
         boolean lock = intent.getBooleanExtra(Constants.EXTRA_AE_LOCK, false);
+        try {
+            prefs.setSavedAeLock(lock);
+        } catch (Exception ignored) {
+        }
+        if (primaryRequestBuilder == null || primarySession == null) return;
         primaryRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, lock);
         if (applyPrimaryRepeating()) {
             Log.d(TAG, "AE lock set to: " + lock);
@@ -575,9 +583,13 @@ public class DualCameraRecordingService extends Service {
      * Sets the autofocus mode on the primary camera.
      */
     private void handleSetAfMode(@NonNull Intent intent) {
-        if (primaryRequestBuilder == null || primarySession == null) return;
         int mode = intent.getIntExtra(Constants.EXTRA_AF_MODE,
                 CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+        try {
+            prefs.setSavedAfMode(mode);
+        } catch (Exception ignored) {
+        }
+        if (primaryRequestBuilder == null || primarySession == null) return;
         primaryRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mode);
         if (applyPrimaryRepeating()) {
             Log.d(TAG, "AF mode set to: " + mode);

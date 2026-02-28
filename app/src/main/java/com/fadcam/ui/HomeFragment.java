@@ -3553,6 +3553,13 @@ public class HomeFragment extends BaseFragment {
                         bundle.keySet()
                     );
                     if (sliderVal != Integer.MIN_VALUE) {
+                        if (aeLocked) {
+                            com.fadcam.Log.d(
+                                TAG,
+                                "Ignoring exposure slider update while AE lock is enabled"
+                            );
+                            return;
+                        }
                         currentEvIndex = sliderVal;
                         // Debug: record that we received slider update (will only write to debug log
                         // when enabled)
@@ -3578,12 +3585,12 @@ public class HomeFragment extends BaseFragment {
                     }
                     SharedPreferencesManager sp =
                         SharedPreferencesManager.getInstance(requireContext());
+                    sp.setSavedExposureCompensation(currentEvIndex);
                     if (
                         !isMyServiceRunning(
                             com.fadcam.services.RecordingService.class
                         )
                     ) {
-                        sp.setSavedExposureCompensation(currentEvIndex);
                         com.fadcam.Log.d(
                             TAG,
                             "Exposure saved to prefs via picker"
@@ -3661,12 +3668,12 @@ public class HomeFragment extends BaseFragment {
 
                     SharedPreferencesManager sp =
                         SharedPreferencesManager.getInstance(requireContext());
+                    sp.setSavedAeLock(aeLocked);
                     if (
                         !isMyServiceRunning(
                             com.fadcam.services.RecordingService.class
                         )
                     ) {
-                        sp.setSavedAeLock(aeLocked);
                         com.fadcam.Log.d(
                             TAG,
                             "AE lock saved to prefs via picker"
@@ -3882,6 +3889,12 @@ public class HomeFragment extends BaseFragment {
                                     "x saved to preferences"
                                 );
                             }
+
+                            // Sync UI scale and update map/HUD
+                            previewPinchZoomRatio = zoomRatio;
+                            previewUiScale = Math.max(1.0f, Math.min(4.0f, zoomRatio));
+                            applyPreviewTransform();
+                            updatePreviewZoomHudUi(zoomRatio);
                         } else {
                             com.fadcam.Log.w(
                                 TAG,

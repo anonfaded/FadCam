@@ -230,6 +230,73 @@
                     android:textSize="19sp"
                     android:visibility="gone" />
 
+                <LinearLayout
+                    android:id="@+id/containerPreviewZoomHud"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/fullscreen_icon_bg"
+                    android:elevation="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="6dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/textPreviewZoomHud"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1.0x"
+                        android:textColor="@android:color/white"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <FrameLayout
+                        android:id="@+id/containerPreviewZoomMap"
+                        android:layout_width="42dp"
+                        android:layout_height="56dp"
+                        android:layout_marginStart="8dp"
+                        android:clipChildren="true"
+                        android:clipToPadding="true"
+                        android:background="@drawable/fullscreen_icon_bg">
+
+                        <View
+                            android:id="@+id/viewPreviewZoomMapViewport"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="top|start"
+                            android:background="@drawable/fadcam_zoom_viewport_indicator" />
+                    </FrameLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPreviewZoomReset"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_marginStart="6dp"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        app:backgroundTint="#5A0D1015"
+                        app:cornerRadius="10dp"
+                        app:icon="@drawable/ic_zoom_out_map"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:iconSize="16dp"
+                        app:iconTint="@android:color/white"
+                        app:rippleColor="#33FFFFFF"
+                        app:strokeColor="#2AFFFFFF"
+                        app:strokeWidth="1dp" />
+                </LinearLayout>
+
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 
