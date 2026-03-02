@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sleep ambiance: crescent moon (upper-left) + scattered stars.
+  Two-arc crescent technique — no evenOdd needed.
+    Tips at (95,55) and (95,95). Outer arc r=26 (CCW) = solid back (right side).
+    Inner arc r=32 (CW) = concave face (left side). Opening faces left.
+    Group rotation=20° tilts opening toward lower-left (natural moon tilt).
+  Neutral dark gray — alpha driven by Java twinkle animator.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+
+    <!-- Crescent moon — upper-left, small, opening tilted toward top-right -->
+    <group
+        android:rotation="-20"
+        android:pivotX="95"
+        android:pivotY="75">
+        <path
+            android:fillColor="#6e6e6e"
+            android:fillAlpha="0.60"
+            android:pathData="M 95,55 A 26,26 0 1,0 95,95 A 32,32 0 1,1 95,55 Z" />
+    </group>
+
+    <!-- Star 1 — upper-right area, medium -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.50"
+        android:pathData="M 310,70 L 311.5,66 L 315,64.5 L 311.5,63 L 310,59 L 308.5,63 L 305,64.5 L 308.5,66 Z" />
+
+    <!-- Star 2 — mid-right -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.42"
+        android:pathData="M 345,165 L 346.3,161.8 L 349.5,160.5 L 346.3,159.2 L 345,156 L 343.7,159.2 L 340.5,160.5 L 343.7,161.8 Z" />
+
+    <!-- Star 3 — upper-centre -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.44"
+        android:pathData="M 200,45 L 201,42.5 L 203.5,41.5 L 201,40.5 L 200,38 L 199,40.5 L 196.5,41.5 L 199,42.5 Z" />
+
+    <!-- Star 4 — lower-left -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.38"
+        android:pathData="M 60,220 L 61,217.5 L 63.5,216.5 L 61,215.5 L 60,213 L 59,215.5 L 56.5,216.5 L 59,217.5 Z" />
+
+    <!-- Star 5 — lower-right -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.34"
+        android:pathData="M 330,270 L 330.9,267.3 L 333.5,266.3 L 330.9,265.3 L 330,262.5 L 329.1,265.3 L 326.5,266.3 L 329.1,267.3 Z" />
+
+    <!-- Star 6 — mid-left, below moon -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.40"
+        android:pathData="M 55,140 L 55.8,138 L 57.7,137.2 L 55.8,136.4 L 55,134.5 L 54.2,136.4 L 52.3,137.2 L 54.2,138 Z" />
+
+    <!-- Star 7 — upper-right, near top edge, tiny -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.32"
+        android:pathData="M 265,35 L 265.7,33.2 L 267.5,32.5 L 265.7,31.8 L 265,30 L 264.3,31.8 L 262.5,32.5 L 264.3,33.2 Z" />
+
+    <!-- Star 8 — lower-centre-left, tiny -->
+    <path
+        android:fillColor="#787878"
+        android:fillAlpha="0.30"
+        android:pathData="M 145,290 L 145.7,288.2 L 147.5,287.5 L 145.7,286.8 L 145,285 L 144.3,286.8 L 142.5,287.5 L 144.3,288.2 Z" />
+
+</vector>

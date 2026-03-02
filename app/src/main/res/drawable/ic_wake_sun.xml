@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sun wake-up ambiance.
+  Positioned in the upper-left corner (same area as the moon in ic_sleep_ambiance.xml).
+  Center at (90,75) in 400×400 viewport — mirrors the moon's corner placement.
+  Disk r=20, rays inner r=28 outer r=44 (8 rays via rotation groups).
+  Warm golden tone #e8c97a, alpha-driven by Java animator.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+
+    <!-- Outermost soft corona halo -->
+    <path
+        android:fillColor="#e8c97a"
+        android:fillAlpha="0.05"
+        android:pathData="M 43,75 A 47,47 0 1,0 137,75 A 47,47 0 1,0 43,75 Z" />
+
+    <!-- Mid corona halo -->
+    <path
+        android:fillColor="#e8c97a"
+        android:fillAlpha="0.10"
+        android:pathData="M 55,75 A 35,35 0 1,0 125,75 A 35,35 0 1,0 55,75 Z" />
+
+    <!-- Inner glow halo -->
+    <path
+        android:fillColor="#e8c97a"
+        android:fillAlpha="0.16"
+        android:pathData="M 63,75 A 27,27 0 1,0 117,75 A 27,27 0 1,0 63,75 Z" />
+
+    <!-- Rays — all identical triangle path rotated around the sun centre (90,75) -->
+    <group android:rotation="-15" android:pivotX="90" android:pivotY="75">
+
+        <group android:rotation="0" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.55"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="45" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.45"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="90" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.55"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="135" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.45"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="180" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.55"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="225" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.45"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="270" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.55"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+        <group android:rotation="315" android:pivotX="90" android:pivotY="75">
+            <path android:fillColor="#e8c97a" android:fillAlpha="0.45"
+                  android:pathData="M 88,47 L 90,31 L 92,47 Z" />
+        </group>
+
+    </group>
+
+    <!-- Sun disk — warm golden centre -->
+    <path
+        android:fillColor="#e8c97a"
+        android:fillAlpha="0.88"
+        android:pathData="M 70,75 A 20,20 0 1,0 110,75 A 20,20 0 1,0 70,75 Z" />
+
+</vector>

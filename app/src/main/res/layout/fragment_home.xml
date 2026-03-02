@@ -227,67 +227,98 @@
 
         <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
 
-            <!-- Avatar toggle: replaces bubble + CCTV icon. Sleeping (zzz) when preview off; awake/blinking when on. -->
+            <!-- Avatar toggle + sleep ambiance container. match_parent so ambiance fills the preview area.
+                 Toggled GONE/VISIBLE as one unit when camera preview starts/stops. -->
             <FrameLayout
                 android:id="@+id/fl_preview_avatar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center">
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
+                <!-- Crescent moon + stars: night/stealth mood behind the sleeping avatar.
+                     Hidden automatically when fl_preview_avatar is GONE. -->
                 <ImageView
-                    android:id="@+id/iv_preview_avatar"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/toggle_off"
+                    android:id="@+id/iv_sleep_ambiance"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_sleep_ambiance"
                     android:scaleType="fitCenter"
-                    android:contentDescription="@string/ui_preview_area" />
+                    android:contentDescription="@null" />
 
-                <!-- zzz badge: shown when preview is disabled (sleeping) -->
-                <LinearLayout
-                    android:id="@+id/zzz_home_badge_group"
+                <!-- Sun wake-up ambiance: shown when avatar wakes up before preview opens.
+                     Starts alpha=0; animated in by Java on applyHomeAvatarState(enabled=true). -->
+                <ImageView
+                    android:id="@+id/iv_wake_sun"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_wake_sun"
+                    android:scaleType="fitCenter"
+                    android:alpha="0"
+                    android:contentDescription="@null" />
+
+                <!-- Inner wrap-content container: avatar + zzZ badge positioned relative to each other,
+                     then centered in the full match_parent fl_preview_avatar. -->
+                <FrameLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="top|end"
-                    android:layout_marginEnd="4dp"
-                    android:orientation="horizontal"
-                    android:gravity="bottom"
-                    android:visibility="gone">
+                    android:layout_gravity="center">
 
-                    <TextView
-                        android:id="@+id/tv_home_zzz_1"
+                    <ImageView
+                        android:id="@+id/iv_preview_avatar"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/toggle_off"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="@string/ui_preview_area" />
+
+                    <!-- zzz badge: shown when preview is disabled (sleeping).
+                         layout_gravity=top|end positions it at top-right of the 120dp avatar. -->
+                    <LinearLayout
+                        android:id="@+id/zzz_home_badge_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:tag="preserve_color"
-                        android:text="z"
-                        android:textSize="9sp"
-                        android:textColor="#a8d8f0"
-                        android:fontFamily="sans-serif-black"
-                        android:textStyle="bold" />
+                        android:layout_gravity="top|end"
+                        android:layout_marginEnd="4dp"
+                        android:orientation="horizontal"
+                        android:gravity="bottom"
+                        android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/tv_home_zzz_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:tag="preserve_color"
-                        android:text="Z"
-                        android:textSize="13sp"
-                        android:textColor="#ceecf8"
-                        android:fontFamily="sans-serif-black"
-                        android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/tv_home_zzz_1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:tag="preserve_color"
+                            android:text="z"
+                            android:textSize="9sp"
+                            android:textColor="#a8d8f0"
+                            android:fontFamily="sans-serif-black"
+                            android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tv_home_zzz_3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:tag="preserve_color"
-                        android:text="Z"
-                        android:textSize="17sp"
-                        android:textColor="#e8f5fd"
-                        android:fontFamily="sans-serif-black"
-                        android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/tv_home_zzz_2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:tag="preserve_color"
+                            android:text="Z"
+                            android:textSize="13sp"
+                            android:textColor="#ceecf8"
+                            android:fontFamily="sans-serif-black"
+                            android:textStyle="bold" />
 
-                </LinearLayout>
+                        <TextView
+                            android:id="@+id/tv_home_zzz_3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:tag="preserve_color"
+                            android:text="Z"
+                            android:textSize="17sp"
+                            android:textColor="#e8f5fd"
+                            android:fontFamily="sans-serif-black"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </FrameLayout>
 
             </FrameLayout>
 
