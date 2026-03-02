@@ -33,7 +33,7 @@ import com.fadcam.motion.presentation.MotionLabViewState;
 import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
-import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.fadcam.ui.AvatarToggleView;
 
 import java.util.ArrayList;
 
@@ -55,8 +55,8 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueDebugMetrics;
     private ImageView imageDebugFrame;
     private View buttonDebugCopy;
-    private SwitchMaterial switchMotionEnabled;
-    private SwitchMaterial switchMotionAutoTorch;
+    private AvatarToggleView switchMotionEnabled;
+    private AvatarToggleView switchMotionAutoTorch;
     private String latestDebugSnapshot = "";
     private boolean motionDebugReceiverRegistered = false;
     private final BroadcastReceiver motionDebugReceiver = new BroadcastReceiver() {
@@ -120,6 +120,9 @@ public class MotionLabSettingsFragment extends Fragment {
 
         switchMotionEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onEnabledChanged(isChecked));
         switchMotionAutoTorch.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.onAutoTorchChanged(isChecked));
+        // Row click listeners — tapping anywhere on the row triggers the respective toggle.
+        view.findViewById(R.id.row_motion_enabled).setOnClickListener(v -> switchMotionEnabled.performClick());
+        view.findViewById(R.id.row_motion_auto_torch).setOnClickListener(v -> switchMotionAutoTorch.performClick());
 
         view.findViewById(R.id.row_motion_sensitivity).setOnClickListener(v -> showSensitivityInput());
         view.findViewById(R.id.row_motion_analysis_fps).setOnClickListener(v -> showAnalysisFpsPicker());

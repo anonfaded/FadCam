@@ -221,10 +221,11 @@
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp" />
                 </LinearLayout>
-                <androidx.appcompat.widget.SwitchCompat
+                <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/row_lab_hide_thumbnails_switch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
 
             <com.google.android.material.divider.MaterialDivider

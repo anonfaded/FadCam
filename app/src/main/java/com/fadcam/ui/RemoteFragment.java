@@ -19,7 +19,7 @@ import android.view.animation.AlphaAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Switch;
+import com.fadcam.ui.AvatarToggleView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,7 +55,7 @@ import java.util.List;
 public class RemoteFragment extends BaseFragment {
     private static final String TAG = "RemoteFragment";
     
-    private Switch streamingToggle;
+    private AvatarToggleView streamingToggle;
     private TextView statusText;
     private TextView rootUrlText;
     private ImageView copyRootButton;
@@ -84,7 +84,7 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout networkHealthRow;
     
     // Remote Security UI
-    private Switch remoteAuthToggle;
+    private AvatarToggleView remoteAuthToggle;
     private LinearLayout remoteAuthPasswordRow;
     private TextView remoteAuthPasswordValue;
     private LinearLayout remoteAuthAutoLockRow;
@@ -101,7 +101,7 @@ public class RemoteFragment extends BaseFragment {
     
     // Cloud Streaming UI
     private LinearLayout cloudStreamingRow;
-    private Switch cloudStreamingToggle;
+    private AvatarToggleView cloudStreamingToggle;
     private TextView cloudStreamingStatus;
     
     // Streaming Mode Selector UI
@@ -253,6 +253,8 @@ public class RemoteFragment extends BaseFragment {
                 stopStreaming();
             }
         });
+        // Start server row click — tapping anywhere on the row triggers the toggle.
+        view.findViewById(R.id.row_start_server).setOnClickListener(v -> streamingToggle.performClick());
         
         // Recording mode row click listener
         recordingModeRow.setOnClickListener(v -> showRecordingModePicker());
@@ -881,6 +883,11 @@ public class RemoteFragment extends BaseFragment {
                 showSetPasswordSheet();
             }
         });
+        // Auth enable row click — tapping anywhere on the row triggers the toggle.
+        View remoteAuthEnableRow = getView() != null ? getView().findViewById(R.id.remote_auth_enable_row) : null;
+        if (remoteAuthEnableRow != null) {
+            remoteAuthEnableRow.setOnClickListener(v -> remoteAuthToggle.performClick());
+        }
         
         // Set Password row
         remoteAuthPasswordRow.setOnClickListener(v -> {

@@ -153,10 +153,11 @@
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
 
-                    <Switch
+                    <com.fadcam.ui.AvatarToggleView
                         android:id="@+id/streaming_toggle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
 
                 <!-- Compact Metrics Grid -->

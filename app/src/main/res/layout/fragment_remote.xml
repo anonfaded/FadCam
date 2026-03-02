@@ -205,6 +205,7 @@
 
             <!-- Start Server Toggle Row -->
             <LinearLayout
+                android:id="@+id/row_start_server"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -225,10 +226,11 @@
                     android:textStyle="bold"
                     android:textColor="?attr/colorHeading" />
 
-                <Switch
+                <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/streaming_toggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
 
             <!-- Streaming Mode Row (opens bottom sheet picker) -->
@@ -318,10 +320,11 @@
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
 
-                <Switch
+                <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/cloud_streaming_toggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
 
             <!-- Metrics Grid -->
@@ -951,10 +954,11 @@
                             android:textColor="@android:color/darker_gray" />
                     </LinearLayout>
 
-                    <Switch
+                    <com.fadcam.ui.AvatarToggleView
                         android:id="@+id/remote_auth_toggle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
 
                 <!-- Set Password Row -->

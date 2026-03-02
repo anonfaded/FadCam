@@ -9,7 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SwitchCompat;
+import com.fadcam.ui.AvatarToggleView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -155,9 +155,9 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
     private static class LayerViewHolder extends RecyclerView.ViewHolder {
         TextView txtLayerName;
         TextView txtLayerInfo;
-        SwitchCompat switchVisible;
-        SwitchCompat switchLocked;
-        SwitchCompat switchPinned;
+        AvatarToggleView switchVisible;
+        AvatarToggleView switchLocked;
+        AvatarToggleView switchPinned;
         SeekBar seekOpacity;
         TextView txtOpacity;
         TextView btnDelete;

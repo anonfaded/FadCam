@@ -9,7 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SwitchCompat;
+import com.fadcam.ui.AvatarToggleView;
 import androidx.fragment.app.DialogFragment;
 
 import com.fadcam.R;
@@ -67,10 +67,11 @@ public class LabSidebarFragment extends DialogFragment {
         bindAction(view, R.id.row_lab_tape_style, resultKey, "open_tape_style");
 
         // Hide Thumbnails toggle (Classified Mode)
-        SwitchCompat hideSwitch = view.findViewById(R.id.row_lab_hide_thumbnails_switch);
+        AvatarToggleView hideSwitch = view.findViewById(R.id.row_lab_hide_thumbnails_switch);
         TextView hideState = view.findViewById(R.id.row_lab_hide_thumbnails_state);
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
         boolean currentHide = prefs.isLabHideThumbnailsEnabled();
+        View hideRow = view.findViewById(R.id.row_lab_hide_thumbnails);
         if (hideSwitch != null) {
             hideSwitch.setChecked(currentHide);
             if (hideState != null) {
@@ -86,6 +87,9 @@ public class LabSidebarFragment extends DialogFragment {
                 b.putBoolean("hide_thumbnails", isChecked);
                 getParentFragmentManager().setFragmentResult(resultKey, b);
             });
+            if (hideRow != null) {
+                hideRow.setOnClickListener(v -> hideSwitch.performClick());
+            }
         }
     }
 

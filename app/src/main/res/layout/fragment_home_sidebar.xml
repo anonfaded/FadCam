@@ -131,90 +131,13 @@
                         android:textAlignment="viewStart" />
                 </LinearLayout>
 
-                <!-- Custom avatar toggle: swaps between off/on, zzz badge shown when off -->
-                <FrameLayout
-                    android:layout_width="62dp"
-                    android:layout_height="62dp"
+                <!-- AvatarToggleView — consistent with all other toggle rows -->
+                <com.fadcam.ui.AvatarToggleView
+                    android:id="@+id/iv_preview_toggle"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
                     android:layout_marginStart="8dp"
-                    android:layout_gravity="center_vertical">
-
-                    <ImageView
-                        android:id="@+id/iv_preview_toggle"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/toggle_off"
-                        android:scaleType="fitCenter"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:contentDescription="@string/ui_preview_area" />
-
-                    <!--
-                      zzz badge: three Z letters animated in staggered pops.
-                      Positioned top-end of the FrameLayout.
-                      Each letter is individually animated by HomeSidebarFragment.
-                    -->
-                    <LinearLayout
-                        android:id="@+id/zzz_badge_group"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|end"
-                        android:orientation="horizontal"
-                        android:gravity="bottom"
-                        android:visibility="gone">
-
-                        <!-- Smallest z (first to appear) -->
-                        <TextView
-                            android:id="@+id/tv_zzz_1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="z"
-                            android:textSize="7sp"
-                            android:textColor="#a8d8f0"
-                            android:fontFamily="sans-serif-black"
-                            android:textStyle="bold" />
-
-                        <!-- Medium Z -->
-                        <TextView
-                            android:id="@+id/tv_zzz_2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Z"
-                            android:textSize="10sp"
-                            android:textColor="#ceecf8"
-                            android:fontFamily="sans-serif-black"
-                            android:textStyle="bold"
-                            android:layout_marginStart="1dp" />
-
-                        <!-- Large Z (last, lightest lavender-white) -->
-                        <TextView
-                            android:id="@+id/tv_zzz_3"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Z"
-                            android:textSize="14sp"
-                            android:textColor="#e8f5fd"
-                            android:fontFamily="sans-serif-black"
-                            android:textStyle="bold"
-                            android:layout_marginStart="1dp" />
-
-                    </LinearLayout>
-
-                    <!--
-                      Live dot: shown when preview is enabled (replaces zzz space).
-                      Pulsing teal circle, animated by HomeSidebarFragment.
-                    -->
-                    <ImageView
-                        android:id="@+id/iv_live_dot"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="2dp"
-                        android:src="@drawable/ic_preview_live_dot"
-                        android:visibility="gone"
-                        android:contentDescription="Preview live" />
-
-                </FrameLayout>
+                    android:layout_gravity="center_vertical" />
 
             </LinearLayout>
 
@@ -271,14 +194,12 @@
                         android:textAlignment="viewStart" />
                 </LinearLayout>
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/switch_preview_quick_actions_toggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_gravity="center_vertical"
-                    android:focusable="true"
-                    android:clickable="true" />
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_gravity="center_vertical" />
 
             </LinearLayout>
 

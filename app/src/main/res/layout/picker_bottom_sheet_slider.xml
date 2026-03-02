@@ -108,10 +108,11 @@
                             android:textSize="16sp"
                             android:textAlignment="viewStart" />
 
-                        <androidx.appcompat.widget.SwitchCompat
+                        <com.fadcam.ui.AvatarToggleView
                             android:id="@+id/picker_switch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:layout_gravity="center_vertical" />
                     </LinearLayout>
 
                     <!-- Divider below switch row to match settings dividers -->

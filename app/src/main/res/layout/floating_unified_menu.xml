@@ -220,11 +220,11 @@
                     android:textSize="12sp"
                     android:textColor="#FFFFFF" />
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/annotationSwitch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:theme="@style/SwitchTheme" />
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
 
             <!-- Snap Guides Switch -->
@@ -254,12 +254,11 @@
                     android:textSize="12sp"
                     android:textColor="#FFFFFF" />
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/snapGuidesSwitch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:theme="@style/SwitchTheme"
-                    android:checked="true" />
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
 
             <!-- Add Text Button -->

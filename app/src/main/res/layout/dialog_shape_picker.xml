@@ -60,7 +60,7 @@
 
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Fill Shape" android:textSize="14sp" android:textColor="#FFFFFF" />
 
-        <Switch android:id="@+id/switchFillShape" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="" android:textOn="" android:textOff="" />
+        <com.fadcam.ui.AvatarToggleView android:id="@+id/switchFillShape" android:layout_width="52dp" android:layout_height="52dp" android:layout_gravity="center_vertical" />
     </LinearLayout>
 
     <!-- Color picker -->

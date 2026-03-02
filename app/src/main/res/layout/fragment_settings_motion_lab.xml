@@ -245,10 +245,11 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.fadcam.ui.AvatarToggleView
                         android:id="@+id/switch_motion_enabled"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
 
                 <View style="@style/SettingsDivider" />
@@ -474,10 +475,11 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.fadcam.ui.AvatarToggleView
                         android:id="@+id/switch_motion_auto_torch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
             </LinearLayout>
 

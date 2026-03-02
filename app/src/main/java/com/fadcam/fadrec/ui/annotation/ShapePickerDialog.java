@@ -10,12 +10,12 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
-import android.widget.Switch;
 
 import androidx.annotation.NonNull;
 
 import com.fadcam.R;
 import com.fadcam.fadrec.ui.annotation.objects.ShapeObject;
+import com.fadcam.ui.AvatarToggleView;
 
 /**
  * Cute and user-friendly dialog for selecting shape type and properties.
@@ -34,7 +34,7 @@ public class ShapePickerDialog extends Dialog {
     
     private LinearLayout[] shapeButtons;
     private View[] colorViews;
-    private Switch switchFillShape;
+    private AvatarToggleView switchFillShape;
     
     public ShapePickerDialog(@NonNull Context context) {
         super(context);
@@ -96,6 +96,8 @@ public class ShapePickerDialog extends Dialog {
         };
         
         switchFillShape = findViewById(R.id.switchFillShape);
+        // Sync visual state: filled defaults to true, so start in awake/on state
+        if (switchFillShape != null) switchFillShape.setChecked(true, false);
     }
     
     private void setupListeners() {

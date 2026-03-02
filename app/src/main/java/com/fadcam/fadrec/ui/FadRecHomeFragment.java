@@ -153,7 +153,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     if (getView() != null) {
                         View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
                         if (cardFloatingControls != null) {
-                            androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                            com.fadcam.ui.AvatarToggleView switchFloatingControls = 
                                 cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
                             if (switchFloatingControls != null) {
                                 switchFloatingControls.setChecked(true);
@@ -228,7 +228,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         if (getView() != null) {
                             View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
                             if (cardFloatingControls != null) {
-                                androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                                com.fadcam.ui.AvatarToggleView switchFloatingControls = 
                                     cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
                                 if (switchFloatingControls != null) {
                                     switchFloatingControls.setChecked(false);
@@ -249,7 +249,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         if (getView() != null) {
                             View cardFloatingControls = getView().findViewById(com.fadcam.R.id.cardFloatingControls);
                             if (cardFloatingControls != null) {
-                                androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+                                com.fadcam.ui.AvatarToggleView switchFloatingControls = 
                                     cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
                                 if (switchFloatingControls != null) {
                                     switchFloatingControls.setChecked(false);
@@ -521,7 +521,7 @@ public class FadRecHomeFragment extends HomeFragment {
             tilesParent.addView(cardFloatingControls, 0);
             
             // Setup switch
-            androidx.appcompat.widget.SwitchCompat switchFloatingControls = 
+            com.fadcam.ui.AvatarToggleView switchFloatingControls = 
                 cardFloatingControls.findViewById(com.fadcam.R.id.switchFloatingControls);
             
             if (switchFloatingControls != null) {
@@ -537,7 +537,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             // Show permission dialog
                             requestOverlayPermission();
                             // Uncheck the switch until permission is granted
-                            buttonView.setChecked(false);
+                            switchFloatingControls.setChecked(false);
                         } else {
                             // Enable unified annotation overlay
                             sharedPreferencesManager.setFloatingControlsEnabled(true);

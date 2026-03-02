@@ -312,14 +312,14 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         label.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         row.addView(label, lp);
-        android.widget.Switch sw = new android.widget.Switch(requireContext());
+        AvatarToggleView sw = new AvatarToggleView(requireContext());
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
         sw.setChecked(prefs.isDebugLoggingEnabled());
         sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.sharedPreferences.edit().putBoolean(Constants.PREF_DEBUG_DATA, isChecked).apply();
             Log.setDebugEnabled(isChecked);
         });
-    row.addView(sw, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+    row.addView(sw, new LinearLayout.LayoutParams(dp(52), dp(52)));
     return row;
     }
 

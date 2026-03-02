@@ -23,6 +23,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
+import com.fadcam.ui.AvatarToggleView;
 import com.fadcam.fadrec.ScreenRecordingState;
 
 /**
@@ -45,8 +46,8 @@ public class FloatingControlsService extends Service {
     private View annotationsHeader;
     private TextView annotationsExpandIcon;
     private View annotationsContent;
-    private androidx.appcompat.widget.SwitchCompat annotationSwitch;
-    private androidx.appcompat.widget.SwitchCompat snapGuidesSwitch;
+    private AvatarToggleView annotationSwitch;
+    private AvatarToggleView snapGuidesSwitch;
     private View btnAddText, btnAddShape;
     
     private boolean isMenuExpanded = false;

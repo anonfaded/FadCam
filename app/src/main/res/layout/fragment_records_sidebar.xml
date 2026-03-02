@@ -230,11 +230,12 @@
                     android:textSize="12sp"
                     android:text="@string/universal_close"/>
             </LinearLayout>
-            <androidx.appcompat.widget.SwitchCompat
+            <com.fadcam.ui.AvatarToggleView
                 android:id="@+id/row_hide_thumbnails_switch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp" />
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="8dp" />
         </LinearLayout>
     </LinearLayout>
 

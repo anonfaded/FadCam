@@ -287,7 +287,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private boolean switchState;
     private ArrayList<String> switchDependentIds = new ArrayList<>();
     private LinearLayout containerLayoutRef;
-    private android.widget.CompoundButton switchRef;
+    private com.fadcam.ui.AvatarToggleView switchRef;
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
     private boolean hideCheck = false;
@@ -789,7 +789,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             View root = view;
             View switchRow = root.findViewById(R.id.picker_switch_row);
             View switchDivider = root.findViewById(R.id.picker_switch_divider);
-            androidx.appcompat.widget.SwitchCompat swc = root.findViewById(
+            com.fadcam.ui.AvatarToggleView swc = root.findViewById(
                 R.id.picker_switch
             );
             TextView switchLabel = root.findViewById(R.id.picker_switch_label);
@@ -871,7 +871,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 ImageView trailingIcon = row.findViewById(
                     R.id.picker_item_trailing_icon
                 );
-                androidx.appcompat.widget.SwitchCompat itemSwitch =
+                com.fadcam.ui.AvatarToggleView itemSwitch =
                     row.findViewById(R.id.picker_item_switch);
                 row.setTag(item.id); // tag row with its id for dependency handling
                 tvTitle.setText(item.title);
@@ -1469,7 +1469,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             View child = containerLayoutRef.getChildAt(i);
             Object tag = child.getTag();
             if ("show_date".equals(tag)) {
-                androidx.appcompat.widget.SwitchCompat dateSwitch =
+                com.fadcam.ui.AvatarToggleView dateSwitch =
                     child.findViewById(R.id.picker_item_switch);
                 if (dateSwitch != null) {
                     showDateEnabled = dateSwitch.isChecked();
@@ -1513,7 +1513,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             View child = containerLayoutRef.getChildAt(i);
             Object tag = child.getTag();
             if ("arabic_date".equals(tag)) {
-                androidx.appcompat.widget.SwitchCompat arabicDateSwitch =
+                com.fadcam.ui.AvatarToggleView arabicDateSwitch =
                     child.findViewById(R.id.picker_item_switch);
                 if (arabicDateSwitch != null) {
                     arabicDateEnabled = arabicDateSwitch.isChecked();
@@ -1526,26 +1526,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         updateArabicDateFormatDependency(arabicDateEnabled);
     }
 
-    private void applyThemedSwitchColors(@Nullable androidx.appcompat.widget.SwitchCompat swc) {
-        if (swc == null || getContext() == null) {
-            return;
-        }
-        int activated = resolveThemeColor(R.attr.colorButton, 0xFF33D17A);
-        int surface = resolveThemeColor(R.attr.colorDialog, 0xFF2A2A2A);
-        int offThumb = resolveThemeColor(R.attr.pickerTextPrimary, Color.WHITE);
-
-        int[][] states = new int[][] {
-            new int[] { android.R.attr.state_checked },
-            new int[] {}
-        };
-        swc.setTrackTintList(new ColorStateList(states, new int[] {
-            adjustAlpha(activated, 170),
-            adjustAlpha(surface, 185)
-        }));
-        swc.setThumbTintList(new ColorStateList(states, new int[] {
-            Color.WHITE,
-            offThumb
-        }));
+    /** No-op: AvatarToggleView uses avatar drawable, no theme tinting needed. */
+    private void applyThemedSwitchColors(@Nullable com.fadcam.ui.AvatarToggleView swc) {
+        // AvatarToggleView uses the eye/avatar drawable; no color tinting required.
     }
 
     private int resolveThemeColor(int attr, int fallback) {

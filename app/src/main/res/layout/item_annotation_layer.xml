@@ -21,21 +21,21 @@
         <!-- Visible toggle -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="visibility" android:textSize="16sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="4dp" />
 
-        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchVisible" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <com.fadcam.ui.AvatarToggleView android:id="@+id/switchVisible" android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="center_vertical" />
 
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
         <!-- Lock toggle -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="lock" android:textSize="16sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:layout_marginEnd="4dp" />
 
-        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchLocked" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <com.fadcam.ui.AvatarToggleView android:id="@+id/switchLocked" android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="center_vertical" />
 
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
         <!-- Pin toggle -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="push_pin" android:textSize="16sp" android:textColor="#FF9800" android:fontFamily="@font/materialicons" android:layout_marginEnd="4dp" />
 
-        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchPinned" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <com.fadcam.ui.AvatarToggleView android:id="@+id/switchPinned" android:layout_width="40dp" android:layout_height="40dp" android:layout_gravity="center_vertical" />
     </LinearLayout>
 
     <!-- Opacity slider -->

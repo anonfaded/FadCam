@@ -56,6 +56,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.ui.AvatarToggleView;
 import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ui.annotation.AnnotationState;
 import com.fadcam.fadrec.ui.annotation.ProjectFileManager;
@@ -138,7 +139,7 @@ public class AnnotationService extends Service {
     private TextView annotationsExpandIcon;
     private View annotationsContent;
     private TextView iconSnapGuides, labelSnapGuides;
-    private androidx.appcompat.widget.SwitchCompat snapGuidesSwitch;
+    private AvatarToggleView snapGuidesSwitch;
     private boolean isAnnotationsExpanded = false;
 
     // Annotation toolbar controls

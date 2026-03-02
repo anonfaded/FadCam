@@ -14,7 +14,7 @@
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
         <!-- Switch -->
-        <androidx.appcompat.widget.SwitchCompat android:id="@+id/switchFloatingControls" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" />
+        <com.fadcam.ui.AvatarToggleView android:id="@+id/switchFloatingControls" android:layout_width="52dp" android:layout_height="52dp" android:layout_gravity="center" />
 
     </LinearLayout>
 

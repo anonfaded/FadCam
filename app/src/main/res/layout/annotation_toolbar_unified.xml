@@ -594,7 +594,7 @@
 
                     <TextView android:id="@+id/labelSnapGuides" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/snap_guides" android:textSize="11sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" />
 
-                    <androidx.appcompat.widget.SwitchCompat android:id="@+id/snapGuidesSwitch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:theme="@style/SwitchTheme" android:checked="true" />
+                    <com.fadcam.ui.AvatarToggleView android:id="@+id/snapGuidesSwitch" android:layout_width="44dp" android:layout_height="44dp" android:layout_gravity="center_vertical" />
                 </LinearLayout>
 
                 <!-- Undo/Redo Row -->
