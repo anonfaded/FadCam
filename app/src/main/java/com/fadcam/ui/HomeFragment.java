@@ -263,6 +263,12 @@ public class HomeFragment extends BaseFragment {
      * ~50 ms after the animation starts and would otherwise kill it mid-reveal.
      */
     private boolean isPreviewCloseAnimating = false;
+    /**
+     * Tracks whether the header logo slide-up animation has already played this
+     * process session.  Static so it survives fragment recreation (e.g. switching
+     * app modes) but resets on cold-start — exactly the desired UX.
+     */
+    private static boolean sLogoAnimationPlayed = false;
     /** Slow alpha pulse on the moon/stars ambiance ImageView while avatar is sleeping. */
     private ObjectAnimator ambianceTwinkleAnim = null;
     /** Sun wake-up ambiance ImageView (ic_wake_sun) — shown when avatar wakes before preview opens. */
@@ -9025,10 +9031,19 @@ public class HomeFragment extends BaseFragment {
     private void startLogoRevealAnimation() {
         if (ivAppTitle == null) return;
 
+        // Only animate once per process session — skip if already played
+        // (e.g. returning after switching to FadRec/other mode).
+        if (sLogoAnimationPlayed) {
+            ivAppTitle.setAlpha(1f);
+            ivAppTitle.setTranslationY(0f);
+            return;
+        }
+
         // Respect system animation scale (accessibility)
         if (isAnimationDisabled(ivAppTitle)) {
             ivAppTitle.setAlpha(1f);
             ivAppTitle.setTranslationY(0f);
+            sLogoAnimationPlayed = true;
             return;
         }
 
@@ -9044,6 +9059,8 @@ public class HomeFragment extends BaseFragment {
 
             ivAppTitle.setTranslationY(slideY);
             ivAppTitle.setAlpha(0f);
+
+            sLogoAnimationPlayed = true; // Mark before starting — prevents double-fire
 
             ivAppTitle.animate()
                     .translationY(0f)
