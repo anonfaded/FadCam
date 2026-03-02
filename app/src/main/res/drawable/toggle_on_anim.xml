@@ -16,5 +16,9 @@
     <target android:name="left_eye" android:animation="@animator/anim_eye_brighten" />
     <target android:name="right_eye" android:animation="@animator/anim_eye_brighten" />
 
+    <!-- Eye glow groups fade in simultaneously with brightening (group alpha 0 → 1) -->
+    <target android:name="left_glow_group" android:animation="@animator/anim_glow_in" />
+    <target android:name="right_glow_group" android:animation="@animator/anim_glow_in" />
+
 </animated-vector>
 

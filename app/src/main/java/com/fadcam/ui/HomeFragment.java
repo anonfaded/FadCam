@@ -256,6 +256,13 @@ public class HomeFragment extends BaseFragment {
     private boolean homeAvatarLastEnabled = false;
     /** When true, the next updatePreviewVisibility() call will animate the avatar↔preview crossfade. */
     private boolean animateNextPreviewTransition = false;
+    /**
+     * True while the iris-close (Preview→Avatar) circular reveal is in flight.
+     * During this window, {@link #updatePreviewVisibility()} must NOT touch
+     * textureView or flAvatar — the service's "recording stopped" broadcast fires
+     * ~50 ms after the animation starts and would otherwise kill it mid-reveal.
+     */
+    private boolean isPreviewCloseAnimating = false;
     /** Slow alpha pulse on the moon/stars ambiance ImageView while avatar is sleeping. */
     private ObjectAnimator ambianceTwinkleAnim = null;
     /** Sun wake-up ambiance ImageView (ic_wake_sun) — shown when avatar wakes before preview opens. */
@@ -752,6 +759,12 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        // During the iris-close (Preview→Avatar) circular reveal (~480ms), ALL updatePreviewVisibility
+        // calls must be ignored.  The service's "recording stopped" broadcast fires ~50ms into the
+        // animation and would otherwise hide textureView (losing the camera background) and make
+        // flAvatar visible immediately — cancelling the reveal mid-flight.
+        if (isPreviewCloseAnimating) return;
+
         if (isRecording() || isPaused() || isPreviewOnlyActive) {
             if (isPreviewEnabled) {
                 // Show preview
@@ -834,7 +847,12 @@ public class HomeFragment extends BaseFragment {
                             .setDuration(280)
                             .setInterpolator(new android.view.animation.AccelerateInterpolator())
                             .withEndAction(() -> {
-                                capturedAvatar.setVisibility(View.GONE);
+                                // Use INVISIBLE (not GONE) so the view retains its layout
+                                // dimensions — required for createCircularReveal on the
+                                // reverse (Preview→Avatar) path.  Disable to avoid
+                                // intercepting touches on the preview beneath it.
+                                capturedAvatar.setVisibility(View.INVISIBLE);
+                                capturedAvatar.setEnabled(false);
                                 capturedAvatar.setAlpha(1f);
                                 capturedAvatar.setScaleX(1f);
                                 capturedAvatar.setScaleY(1f);
@@ -860,53 +878,97 @@ public class HomeFragment extends BaseFragment {
                         }
                     }, 480);
                 } else if (!livePreviewShowing && !avatarCurrentlyVisible) {
-                    // Preview → Avatar: iris-collapse textureView, then avatar rises in with overshoot
-                    if (textureView != null && textureView.getWidth() > 0 &&
-                            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                    // Preview → Avatar: mirror of the iris-open animation.
+                    //
+                    // IMPORTANT: textureView renders ON TOP of fl_preview_avatar in the
+                    // FrameLayout (declared after it in XML).  Running createCircularReveal
+                    // on fl_preview_avatar would be completely hidden.  Instead, contract
+                    // textureView from maxRadius→0 — the camera feed "closes like an iris",
+                    // revealing the sleeping avatar underneath.
+                    //
+                    // Guard: isPreviewCloseAnimating prevents the service's "stopped"
+                    // broadcast (~50ms later) from calling updatePreviewVisibility() and
+                    // hiding textureView/replacing flAvatar mid-animation.
+                    isPreviewCloseAnimating = true;
+
+                    final View capturedFlAvatar = flAvatar;
+
+                    // Pre-set sleeping state BEFORE making fl_preview_avatar visible so the
+                    // avatar shows the correct sleeping pose as soon as it becomes visible.
+                    stopBubbleRotation();
+                    applyHomeAvatarState(false, false); // immediate, non-animated
+
+                    // Show fl_preview_avatar now (on bottom layer) so avatar is ready
+                    capturedFlAvatar.setEnabled(true);
+                    capturedFlAvatar.setAlpha(1f);
+                    capturedFlAvatar.setScaleX(1f);
+                    capturedFlAvatar.setScaleY(1f);
+                    capturedFlAvatar.setVisibility(View.VISIBLE);
+
+                    // IMPORTANT: line 809 already set textureView INVISIBLE (the normal "not recording"
+                    // path runs before we get here).  Restore it to VISIBLE now so the camera's frozen
+                    // last frame is visible for the iris-close animation to contract over.
+                    if (textureView != null) {
                         textureView.setVisibility(View.VISIBLE);
                         textureView.setAlpha(1f);
-                        final int cx = textureView.getWidth() / 2;
-                        final int cy = textureView.getHeight() / 2;
-                        final float maxR = (float) Math.hypot(cx, cy);
-                        Animator collapse = android.view.ViewAnimationUtils.createCircularReveal(
-                                textureView, cx, cy, maxR, 0f);
-                        collapse.setDuration(420);
-                        collapse.setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f));
-                        collapse.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator a) {
-                                if (textureView != null) {
+                    }
+
+                    // Contract textureView from maxRadius → 0 (iris-close).
+                    if (textureView != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        final int tvW = textureView.getWidth();
+                        final int tvH = textureView.getHeight();
+                        if (tvW > 0) {
+                            final int cx = tvW / 2, cy = tvH / 2;
+                            final float maxR = (float) Math.hypot(cx, cy);
+                            Animator irisClose = android.view.ViewAnimationUtils.createCircularReveal(
+                                    textureView, cx, cy, maxR, 0f);
+                            irisClose.setDuration(480);
+                            irisClose.setInterpolator(new android.view.animation.AccelerateInterpolator(1.3f));
+                            irisClose.addListener(new AnimatorListenerAdapter() {
+                                @Override public void onAnimationEnd(Animator a) {
+                                    isPreviewCloseAnimating = false;
+                                    if (textureView != null) textureView.setVisibility(View.INVISIBLE);
+                                }
+                            });
+                            irisClose.start();
+                        } else {
+                            isPreviewCloseAnimating = false;
+                            textureView.setVisibility(View.INVISIBLE);
+                        }
+                    } else {
+                        // Fallback: fade textureView out
+                        if (textureView != null) {
+                            textureView.animate().alpha(0f).setDuration(340)
+                                .withEndAction(() -> {
+                                    isPreviewCloseAnimating = false;
                                     textureView.setVisibility(View.INVISIBLE);
                                     textureView.setAlpha(1f);
-                                }
-                            }
-                        });
-                        collapse.start();
+                                }).start();
+                        } else {
+                            isPreviewCloseAnimating = false;
+                        }
                     }
-                    // Avatar appears ~200ms after iris starts collapsing
-                    final View capturedFlAvatar = flAvatar;
-                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                        if (!isAdded() || capturedFlAvatar == null) return;
-                        capturedFlAvatar.setAlpha(0f);
-                        capturedFlAvatar.setScaleX(0.8f);
-                        capturedFlAvatar.setScaleY(0.8f);
-                        capturedFlAvatar.setVisibility(View.VISIBLE);
-                        capturedFlAvatar.animate()
-                            .alpha(1f).scaleX(1f).scaleY(1f)
-                            .setDuration(340)
-                            .setInterpolator(new android.view.animation.OvershootInterpolator(1.8f))
-                            .withEndAction(() -> {
-                                // Trigger sleep state: drooping eyes AVD + zzZ letters
-                                applyHomeAvatarState(false, true);
-                                startHomeBreathing();
-                            })
-                            .start();
-                    }, 200);
                 } else {
-                    flAvatar.setVisibility(livePreviewShowing ? View.GONE : View.VISIBLE);
+                    // Neither animated condition fired (e.g. state is already correct).
+                    // Use INVISIBLE (not GONE) so the view keeps its layout dimensions
+                    // for a future createCircularReveal on close.
+                    if (livePreviewShowing) {
+                        flAvatar.setVisibility(View.INVISIBLE);
+                        flAvatar.setEnabled(false);
+                    } else {
+                        flAvatar.setVisibility(View.VISIBLE);
+                        flAvatar.setEnabled(true);
+                    }
                 }
             } else {
-                flAvatar.setVisibility(livePreviewShowing ? View.GONE : View.VISIBLE);
+                // Non-animated path: same INVISIBLE rule.
+                if (livePreviewShowing) {
+                    flAvatar.setVisibility(View.INVISIBLE);
+                    flAvatar.setEnabled(false);
+                } else {
+                    flAvatar.setVisibility(View.VISIBLE);
+                    flAvatar.setEnabled(true);
+                }
             }
         }
 

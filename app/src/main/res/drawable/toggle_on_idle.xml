@@ -38,19 +38,21 @@
         android:pivotY="165"
         android:scaleY="1.0">
 
-        <!-- LEFT eye neon glow: 6 tightly-spaced halos with exponential falloff -->
-        <path android:pathData="M 62,165 A 68,68 0 0 0 198,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.02" />
-        <path android:pathData="M 70,165 A 60,60 0 0 0 190,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.05" />
-        <path android:pathData="M 76,165 A 54,54 0 0 0 184,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.10" />
-        <path android:pathData="M 81,165 A 49,49 0 0 0 179,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.18" />
-        <path android:pathData="M 85,165 A 45,45 0 0 0 175,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.28" />
-        <path android:pathData="M 88,165 A 42,42 0 0 0 172,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.38" />
+        <!-- LEFT eye neon glow.
+             5 semicircle (dome) halos: same shape as eye, slightly larger, sweepFlag=0 (upward arc).
+             3 flat-oval halos: below the chord (sweepFlag=1, downward arc), most visible against
+             the dark card background below the avatar.  Eye fill (alpha=1) on top. -->
+
+        <!-- Dome halos (sweepFlag=0 = same dome direction as eye) -->
+        <path android:pathData="M 89,165 A 41,41 0 0 0 171,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.16" />
+        <path android:pathData="M 87,165 A 43,43 0 0 0 173,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.10" />
+        <path android:pathData="M 84,165 A 46,46 0 0 0 176,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.05" />
+        <path android:pathData="M 80,165 A 50,50 0 0 0 180,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.02" />
+
+        <!-- Flat-bottom halos (sweepFlag=1 = downward arc below the chord) -->
+        <path android:pathData="M 90,165 A 40,6 0 0 1 170,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.22" />
+        <path android:pathData="M 88,165 A 42,11 0 0 1 172,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.12" />
+        <path android:pathData="M 84,165 A 46,18 0 0 1 176,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.05" />
 
         <!-- LEFT eye: solid bright core on top -->
         <path
@@ -59,19 +61,18 @@
             android:fillColor="#ffffff"
             android:fillAlpha="1" />
 
-        <!-- RIGHT eye neon glow: 6 tightly-spaced halos -->
-        <path android:pathData="M 202,165 A 68,68 0 0 0 338,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.02" />
-        <path android:pathData="M 210,165 A 60,60 0 0 0 330,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.05" />
-        <path android:pathData="M 216,165 A 54,54 0 0 0 324,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.10" />
-        <path android:pathData="M 221,165 A 49,49 0 0 0 319,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.18" />
-        <path android:pathData="M 225,165 A 45,45 0 0 0 315,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.28" />
-        <path android:pathData="M 228,165 A 42,42 0 0 0 312,165 Z"
-              android:fillColor="#ffffff" android:fillAlpha="0.38" />
+        <!-- RIGHT eye neon glow -->
+
+        <!-- Dome halos -->
+        <path android:pathData="M 229,165 A 41,41 0 0 0 311,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.16" />
+        <path android:pathData="M 227,165 A 43,43 0 0 0 313,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.10" />
+        <path android:pathData="M 224,165 A 46,46 0 0 0 316,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.05" />
+        <path android:pathData="M 220,165 A 50,50 0 0 0 320,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.02" />
+
+        <!-- Flat-bottom halos -->
+        <path android:pathData="M 230,165 A 40,6 0 0 1 310,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.22" />
+        <path android:pathData="M 228,165 A 42,11 0 0 1 312,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.12" />
+        <path android:pathData="M 224,165 A 46,18 0 0 1 316,165 Z" android:fillColor="#ffffff" android:fillAlpha="0.05" />
 
         <!-- RIGHT eye: solid bright core on top -->
         <path
