@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eye fillAlpha fades from 1.0 → 0.22 (sleeping dim) when toggling OFF -->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="290"
+    android:propertyName="fillAlpha"
+    android:valueFrom="1.0"
+    android:valueTo="0.22"
+    android:valueType="floatType"
+    android:interpolator="@android:interpolator/accelerate_decelerate" />

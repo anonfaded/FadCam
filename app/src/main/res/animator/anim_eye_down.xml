@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Eyes droop down for sleep (translateY 0→25).
+  fillColor white→dark is handled per-path in toggle_off_anim.xml simultaneously.
+-->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="340"
+    android:propertyName="translateY"
+    android:valueFrom="0"
+    android:valueTo="20"
+    android:valueType="floatType"
+    android:interpolator="@android:interpolator/accelerate_decelerate" />

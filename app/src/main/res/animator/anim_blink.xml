@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Quick blink while awake: eyes squint fully closed (scaleY 1→0.05) then reopen (0.05→1).
+  No translateY change — eyes stay in normal position (translateY=0) during a blink.
+  Total: ~230ms — natural blink speed.
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:ordering="sequentially">
+
+    <!-- Eyelid falls (eye closes): scaleY 1 → 0.05, 90ms -->
+    <objectAnimator
+        android:duration="90"
+        android:propertyName="scaleY"
+        android:valueFrom="1.0"
+        android:valueTo="0.05"
+        android:valueType="floatType"
+        android:interpolator="@android:interpolator/accelerate_quad" />
+
+    <!-- Eyelid rises (eye opens): scaleY 0.05 → 1, 140ms -->
+    <objectAnimator
+        android:duration="140"
+        android:propertyName="scaleY"
+        android:valueFrom="0.05"
+        android:valueTo="1.0"
+        android:valueType="floatType"
+        android:interpolator="@android:interpolator/decelerate_quad" />
+
+</set>

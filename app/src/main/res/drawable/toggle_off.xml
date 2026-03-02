@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OFF state (static): shown after toggle_off_anim finishes.
+  - Same sphere gradient as toggle_on_idle.xml (no flash on swap).
+  - eye_group: scaleY=0 (eyelids fully closed), translateY=+10 (droopy / heavy lids).
+  - pivotY=198 matches anim_eye_down final state exactly.
+  The breathing ValueAnimator dims the whole ImageView (alpha 0.55↔0.80).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="52dp"
+    android:height="52dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+
+    <!-- Head sphere: same gradient — no flash when swapping from off_anim -->
+    <path
+        android:name="head"
+        android:pathData="M 30,200 A 170,170 0 1,0 370,200 A 170,170 0 1,0 30,200 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="150"
+                android:centerY="100"
+                android:gradientRadius="280"
+                android:startColor="#c8c8c8"
+                android:endColor="#2e2e2e" />
+        </aapt:attr>
+    </path>
+
+    <!--
+      eye_group: scaleY=0 (fully closed) + translateY=+10 (droopy).
+      pivotY=198 ensures scaling is anchored at the chord (top of eye arc).
+    -->
+    <!--
+      Sleep state: eyes are FULL SIZE but dark and drooped down.
+      scaleY=1.0 (always visible), translateY=25 (heavy eyelids drooping), fillColor=#808080 (dark).
+    -->
+    <group
+        android:name="eye_group"
+        android:translateX="0"
+        android:translateY="20"
+        android:pivotX="200"
+        android:pivotY="165"
+        android:scaleY="1.0">
+
+        <!-- LEFT eye: perfect semicircle (A arc), r=40, dark for sleep -->
+        <path
+            android:name="left_eye"
+            android:pathData="M 90,165 A 40,40 0 0 0 170,165 Z"
+            android:fillColor="#2a2a2a"
+            android:fillAlpha="1" />
+
+        <!-- RIGHT eye: perfect semicircle, dark for sleep -->
+        <path
+            android:name="right_eye"
+            android:pathData="M 230,165 A 40,40 0 0 0 310,165 Z"
+            android:fillColor="#2a2a2a"
+            android:fillAlpha="1" />
+
+    </group>
+
+</vector>

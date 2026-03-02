@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Live indicator dot: shown when preview is enabled (replaces zzz badge).
+  Two-layer circle: outer glow ring + inner solid dot.
+  Animated pulse is applied via ValueAnimator (scale 0.85↔1.0, alpha 0.6↔1.0).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="12dp"
+    android:height="12dp"
+    android:viewportWidth="12"
+    android:viewportHeight="12">
+
+    <!-- Outer glow ring (semi-transparent) -->
+    <path
+        android:pathData="M 6,6 m -5.5,0 a 5.5,5.5 0 1,0 11,0 a 5.5,5.5 0 1,0 -11,0 Z"
+        android:fillColor="#4433ffcc" />
+
+    <!-- Inner solid dot -->
+    <path
+        android:pathData="M 6,6 m -3,0 a 3,3 0 1,0 6,0 a 3,3 0 1,0 -6,0 Z"
+        android:fillColor="#33ffcc" />
+
+</vector>

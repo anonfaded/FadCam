@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Eye dims: fillColor bright white (#ffffff) → near-black (#1a1a1a).
+  Plays on each eye path during sleep transition, synchronized with anim_eye_down (translateY).
+-->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="340"
+    android:propertyName="fillColor"
+    android:valueFrom="#ffffff"
+    android:valueTo="#2a2a2a"
+    android:valueType="colorType"
+    android:interpolator="@android:interpolator/accelerate_decelerate" />

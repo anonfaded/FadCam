@@ -227,11 +227,69 @@
 
         <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
 
-            <!-- Background bubble shape (darker, behind everything) -->
-            <ImageView android:id="@+id/ivBubbleBackground" android:layout_width="240dp" android:layout_height="240dp" android:layout_gravity="center" android:src="@drawable/bubble_shape" android:tint="?attr/colorHeading" android:alpha="0.15" android:scaleType="fitCenter" android:contentDescription="Bubble background shape" />
+            <!-- Avatar toggle: replaces bubble + CCTV icon. Sleeping (zzz) when preview off; awake/blinking when on. -->
+            <FrameLayout
+                android:id="@+id/fl_preview_avatar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center">
 
-            <!-- Camera CCTV icon (overlayed on top of bubble) -->
-            <ImageView android:id="@+id/ivCameraIconPreview" android:layout_width="140dp" android:layout_height="140dp" android:layout_gravity="center" android:src="@drawable/cctv" android:tint="?attr/colorHeading" android:alpha="0.3" android:scaleType="fitCenter" android:contentDescription="Camera icon" />
+                <ImageView
+                    android:id="@+id/iv_preview_avatar"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/toggle_off"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/ui_preview_area" />
+
+                <!-- zzz badge: shown when preview is disabled (sleeping) -->
+                <LinearLayout
+                    android:id="@+id/zzz_home_badge_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="4dp"
+                    android:orientation="horizontal"
+                    android:gravity="bottom"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tv_home_zzz_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:tag="preserve_color"
+                        android:text="z"
+                        android:textSize="9sp"
+                        android:textColor="#a8d8f0"
+                        android:fontFamily="sans-serif-black"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_home_zzz_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:tag="preserve_color"
+                        android:text="Z"
+                        android:textSize="13sp"
+                        android:textColor="#ceecf8"
+                        android:fontFamily="sans-serif-black"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_home_zzz_3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:tag="preserve_color"
+                        android:text="Z"
+                        android:textSize="17sp"
+                        android:textColor="#e8f5fd"
+                        android:fontFamily="sans-serif-black"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </FrameLayout>
 
             <!-- TextureView for live camera preview (shows on top when recording) -->
             <TextureView android:id="@+id/textureView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
@@ -240,7 +298,7 @@
             <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/colorOnSurface" android:textSize="24sp" android:visibility="gone" />
 
             <!-- Hint text for long press to enable preview (shown when recording with preview disabled) -->
-            <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="48dp" android:text="Long press to enable preview" android:textColor="?attr/colorHeading" android:textSize="12sp" android:alpha="0.6" android:visibility="gone" />
+            <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="48dp" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="13sp" android:alpha="0.75" android:letterSpacing="0.05" android:visibility="gone" />
 
             <LinearLayout
                 android:id="@+id/containerPreviewZoomHud"

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sleep AVD: plays when preview is disabled.
+  Base: toggle_on_idle.xml (white eyes at translateY=0 = fully awake).
+  Animation: eye_group droops (translateY 0→25) while each eye dims (#ffffff→#808080).
+  After finish: swap to toggle_off.xml (translateY=25, dark — exact match).
+-->
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_idle">
+
+    <!-- Eye group droops down to sleep position -->
+    <target android:name="eye_group" android:animation="@animator/anim_eye_down" />
+
+    <!-- Eyes dim from bright white to dark gray (simultaneous with droop) -->
+    <target android:name="left_eye" android:animation="@animator/anim_eye_dim" />
+    <target android:name="right_eye" android:animation="@animator/anim_eye_dim" />
+
+</animated-vector>
+

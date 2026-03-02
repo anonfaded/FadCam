@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Viewfinder corner brackets overlay for the home preview area.
+  4 L-shaped corner markers — classic camera/surveillance viewport aesthetic.
+  Designed for match_parent ImageView (scale type: fitXY) over any preview area.
+  Low opacity so it blends subtly without dominating.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+
+    <!-- corner stroke color: soft white, very subtle -->
+    <!-- Top-left corner bracket -->
+    <path
+        android:pathData="M 35,90 L 35,35 L 90,35"
+        android:strokeColor="#33ffffff"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+    <!-- Top-right corner bracket -->
+    <path
+        android:pathData="M 310,35 L 365,35 L 365,90"
+        android:strokeColor="#33ffffff"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+    <!-- Bottom-left corner bracket -->
+    <path
+        android:pathData="M 35,310 L 35,365 L 90,365"
+        android:strokeColor="#33ffffff"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+    <!-- Bottom-right corner bracket -->
+    <path
+        android:pathData="M 310,365 L 365,365 L 365,310"
+        android:strokeColor="#33ffffff"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+</vector>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Animates a group's translateY from 0 to -15 (eyes rise toward forehead) -->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="420"
+    android:propertyName="translateY"
+    android:valueFrom="0"
+    android:valueTo="-15"
+    android:valueType="floatType"
+    android:interpolator="@android:interpolator/fast_out_slow_in" />

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wake-up: eye group rises from drooped sleeping position (translateY 25→0).
+  fillColor dark→white is handled per-path in toggle_on_anim.xml simultaneously.
+-->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="420"
+    android:propertyName="translateY"
+    android:valueFrom="20"
+    android:valueTo="0"
+    android:valueType="floatType"
+    android:interpolator="@android:interpolator/decelerate_quint" />

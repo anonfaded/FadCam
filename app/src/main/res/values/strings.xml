@@ -1877,7 +1877,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="front_video_mirror_enable">Enable front video flip</string>
     <string name="front_video_mirror_disable">Disable front video flip</string>
     <string name="preview_dual_not_supported">Preview-only works on front/back cameras only</string>
-    <string name="preview_enable_hint">Long press to enable preview</string>
+    <string name="preview_enable_hint">Hold to wake up the camera</string>
     <string name="preview_starting">Starting live preview...</string>
     <string name="torch_unavailable">Torch unavailable for this camera</string>
 
