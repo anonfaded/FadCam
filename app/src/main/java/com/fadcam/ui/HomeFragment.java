@@ -893,10 +893,11 @@ public class HomeFragment extends BaseFragment {
 
                     final View capturedFlAvatar = flAvatar;
 
-                    // Pre-set sleeping state BEFORE making fl_preview_avatar visible so the
-                    // avatar shows the correct sleeping pose as soon as it becomes visible.
+                    // Show avatar in AWAKE state before fl_preview_avatar becomes visible —
+                    // keeps the "awake → asleep" narrative: the avatar wakes for the preview,
+                    // then the preview closes and the avatar falls asleep again.
                     stopBubbleRotation();
-                    applyHomeAvatarState(false, false); // immediate, non-animated
+                    applyHomeAvatarState(true, false); // instant awake (no animation)
 
                     // Show fl_preview_avatar now (on bottom layer) so avatar is ready
                     capturedFlAvatar.setEnabled(true);
@@ -928,6 +929,17 @@ public class HomeFragment extends BaseFragment {
                                 @Override public void onAnimationEnd(Animator a) {
                                     isPreviewCloseAnimating = false;
                                     if (textureView != null) textureView.setVisibility(View.INVISIBLE);
+                                    if (!isAdded()) return;
+                                    // Brief hold so user sees the awake avatar before sleeping.
+                                    // ~650ms matches the sun spin-in duration (520ms + small buffer).
+                                    final View anchor = ivPreviewAvatar;
+                                    if (anchor != null) {
+                                        anchor.postDelayed(() -> {
+                                            if (isAdded()) applyHomeAvatarState(false, true);
+                                        }, 650);
+                                    } else {
+                                        applyHomeAvatarState(false, true);
+                                    }
                                 }
                             });
                             irisClose.start();
@@ -943,6 +955,7 @@ public class HomeFragment extends BaseFragment {
                                     isPreviewCloseAnimating = false;
                                     textureView.setVisibility(View.INVISIBLE);
                                     textureView.setAlpha(1f);
+                                    if (isAdded()) applyHomeAvatarState(false, true);
                                 }).start();
                         } else {
                             isPreviewCloseAnimating = false;
