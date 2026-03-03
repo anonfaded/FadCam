@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wake-up AVD: plays when preview is enabled.
+  Base: toggle_on.xml (dark eyes drooped at translateY=25).
+  Animation: eye_group rises (translateY 25→0) while each eye brightens (#808080→#ffffff).
+  After finish: swap to toggle_on_idle.xml (translateY=0, white — exact match).
+-->
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_ruby">
+
+    <!-- Eye group rises from droop position -->
+    <target android:name="eye_group" android:animation="@animator/anim_eye_in" />
+
+    <!-- Eyes brighten from dark gray to bright white (simultaneous with rise) -->
+    <target android:name="left_eye" android:animation="@animator/anim_eye_brighten_ruby" />
+    <target android:name="right_eye" android:animation="@animator/anim_eye_brighten_ruby" />
+
+    <!-- Eye glow groups fade in simultaneously with brightening (group alpha 0 → 1) -->
+    <target android:name="left_glow_group" android:animation="@animator/anim_glow_in" />
+    <target android:name="right_glow_group" android:animation="@animator/anim_glow_in" />
+
+</animated-vector>
+

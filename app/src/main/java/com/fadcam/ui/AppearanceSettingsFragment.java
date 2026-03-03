@@ -8,13 +8,10 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -65,6 +62,7 @@ public class AppearanceSettingsFragment extends Fragment {
         setupThemeRow(view);
         setupLanguageRow(view);
         setupAppIconRow(view);
+        setupEyeColorRow(view);
         View backBtn = view.findViewById(R.id.back_button);
         if (backBtn != null) {
             backBtn.setOnClickListener(v ->
@@ -801,6 +799,129 @@ public class AppearanceSettingsFragment extends Fragment {
                 new com.fadcam.shortcuts.ShortcutsManager(requireContext());
             sm.refreshShortcuts();
         } catch (Exception ignored) {}
+    }
+
+    // -------------- Eye Color Picker -----------
+
+    /** Map of eye-color ID → ARGB int.  0 = white / no tint. */
+    private static final java.util.LinkedHashMap<String, Integer> EYE_COLORS = new java.util.LinkedHashMap<>();
+    static {
+        EYE_COLORS.put("white",    0);           // no tint (default)
+        EYE_COLORS.put("ruby",     0xFFFF1744);  // Material Red A400
+        EYE_COLORS.put("cyan",     0xFF00E5FF);  // Material Cyan A400
+        EYE_COLORS.put("violet",   0xFFD500F9);  // Material Purple A400
+        EYE_COLORS.put("cobalt",   0xFF2979FF);  // Material Blue A400
+        EYE_COLORS.put("amber",    0xFFFFD740);  // Material Amber A200
+        EYE_COLORS.put("lime",     0xFF00E676);  // Material Green A400
+        EYE_COLORS.put("magenta",  0xFFF50057);  // Material Pink A400
+    }
+
+    private void setupEyeColorRow(View root) {
+        View row = root.findViewById(R.id.row_eye_color);
+        TextView value = root.findViewById(R.id.value_eye_color);
+        View swatch = root.findViewById(R.id.eye_color_swatch);
+        if (row == null || value == null) return;
+
+        int current = sharedPreferencesManager.sharedPreferences.getInt(
+                Constants.PREF_AVATAR_EYE_COLOR, Constants.DEFAULT_AVATAR_EYE_COLOR);
+        updateEyeColorDisplay(value, swatch, current);
+        row.setOnClickListener(v -> showEyeColorPicker(value, swatch));
+    }
+
+    private void updateEyeColorDisplay(TextView value, @Nullable View swatch, int colorInt) {
+        // Find friendly name for color.
+        String label = "White";
+        for (java.util.Map.Entry<String, Integer> e : EYE_COLORS.entrySet()) {
+            if (e.getValue() == colorInt) {
+                label = capitalize(e.getKey());
+                break;
+            }
+        }
+        value.setText(label);
+        if (swatch != null) {
+            android.graphics.drawable.GradientDrawable bg =
+                    (android.graphics.drawable.GradientDrawable) swatch.getBackground().mutate();
+            bg.setColor(colorInt == 0 ? 0xFFFFFFFF : colorInt);
+            swatch.setBackground(bg);
+        }
+    }
+
+    private static String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    private void showEyeColorPicker(TextView valueView, @Nullable View swatch) {
+        final String resultKey = "picker_result_eye_color";
+        getParentFragmentManager().setFragmentResultListener(
+                resultKey, this, (k, b) -> {
+                    // Browse-mode preview: live-tint sidebar avatar without persisting.
+                    if (b.containsKey(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_PREVIEW_ID)) {
+                        String prevId = b.getString(
+                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_PREVIEW_ID);
+                        if (prevId != null && EYE_COLORS.containsKey(prevId)) {
+                            int previewColor = EYE_COLORS.get(prevId);
+                            applyEyeColorLivePreview(previewColor, valueView, swatch);
+                        }
+                        return; // don't persist yet
+                    }
+                    // Final selection (on dismiss).
+                    if (b.containsKey(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
+                        String id = b.getString(
+                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                        if (id != null && EYE_COLORS.containsKey(id)) {
+                            int color = EYE_COLORS.get(id);
+                            sharedPreferencesManager.sharedPreferences.edit()
+                                    .putInt(Constants.PREF_AVATAR_EYE_COLOR, color)
+                                    .apply();
+                            updateEyeColorDisplay(valueView, swatch, color);
+                        }
+                    }
+                });
+
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<String, Integer> e : EYE_COLORS.entrySet()) {
+            int c = e.getValue();
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    e.getKey(),
+                    capitalize(e.getKey()),
+                    null,
+                    c == 0 ? 0xFFFFFFFF : c));
+        }
+
+        int current = sharedPreferencesManager.sharedPreferences.getInt(
+                Constants.PREF_AVATAR_EYE_COLOR, Constants.DEFAULT_AVATAR_EYE_COLOR);
+        String currentId = "white";
+        for (java.util.Map.Entry<String, Integer> e : EYE_COLORS.entrySet()) {
+            if (e.getValue() == current) { currentId = e.getKey(); break; }
+        }
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.setting_eye_color_title),
+                        items,
+                        currentId,
+                        resultKey,
+                        getString(R.string.setting_eye_color_desc),
+                        true);
+        // Enable browse mode + avatar swatch rendering.
+        if (sheet.getArguments() != null) {
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BROWSE_MODE, true);
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_AVATAR_SWATCH, true);
+        }
+        sheet.show(getParentFragmentManager(), "eye_color_picker_sheet");
+    }
+
+    /**
+     * Applies the given eye color during browse-mode preview. Updates the settings
+     * row swatch so the user sees instant feedback while picking.
+     */
+    private void applyEyeColorLivePreview(int color, TextView valueView, @Nullable View swatch) {
+        updateEyeColorDisplay(valueView, swatch, color);
     }
 
     private void vibrateTouch() {

@@ -56,6 +56,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_SLIDER_INITIAL = "slider_initial";
     public static final String ARG_SLIDER_ZOOM_MODE = "slider_zoom_mode"; // Special zoom formatting
     public static final String BUNDLE_SLIDER_VALUE = "slider_value";
+    public static final String ARG_BROWSE_MODE = "browse_mode"; // tap doesn't dismiss; fires BUNDLE_PREVIEW_ID instead
+    public static final String BUNDLE_PREVIEW_ID = "preview_id";
+    public static final String ARG_AVATAR_SWATCH = "avatar_swatch_mode"; // show avatar preview instead of color circle
 
     public static PickerBottomSheetFragment newInstance(
         String title,
@@ -291,6 +294,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private boolean useGradientBg = true; // default enabled globally
     private boolean gridMode = false;
     private boolean hideCheck = false;
+    private boolean avatarSwatchMode = false; // render avatar previews instead of color circles
     private boolean sliderMode = false;
     private boolean sliderZoomMode = false;
     private float[] zoomRatios = null;
@@ -304,6 +308,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     private static android.graphics.Typeface MATERIAL_ICONS_TF = null; // cached
     private Integer previousActivityNavBarColor = null;
     private Boolean previousActivityNavContrastEnforced = null;
+    private String browseLastSelectedId = null; // last selected ID in browse mode
 
     @Nullable
     @Override
@@ -365,6 +370,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             }
             gridMode = args.getBoolean(ARG_GRID_MODE, false);
             hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
+            avatarSwatchMode = args.getBoolean(ARG_AVATAR_SWATCH, false);
             sliderMode = args.getBoolean(ARG_SLIDER_MODE, false);
             android.util.Log.d(
                 "PickerBottomSheet",
@@ -986,7 +992,48 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     }
                 }
                 if (colorSwatch != null) {
-                    if (item.colorInt != null) {
+                    if (avatarSwatchMode && item.colorInt != null && leadingIcon != null) {
+                        // ── Avatar swatch: show avatar with tinted eyes ──────
+                        // Uses Bitmap compositing: draw base avatar, then draw
+                        // eye-only overlay with SRC_IN tint on top.  This colors
+                        // ONLY the eye shapes, leaving the head sphere untouched.
+                        colorSwatch.setVisibility(View.GONE);
+                        float density = getResources().getDisplayMetrics().density;
+                        int avatarSize = (int) (40 * density);
+                        ViewGroup.LayoutParams lp = leadingIcon.getLayoutParams();
+                        lp.width = avatarSize;
+                        lp.height = avatarSize;
+                        leadingIcon.setLayoutParams(lp);
+
+                        int c = item.colorInt;
+                        android.graphics.drawable.Drawable baseAvatar =
+                                androidx.core.content.ContextCompat.getDrawable(
+                                        requireContext(), R.drawable.toggle_on_idle);
+                        if (c != 0 && c != 0xFFFFFFFF && baseAvatar != null) {
+                            android.graphics.drawable.Drawable eyeOverlay =
+                                    androidx.core.content.ContextCompat.getDrawable(
+                                            requireContext(), R.drawable.toggle_eyes_only);
+                            if (eyeOverlay != null) {
+                                eyeOverlay = eyeOverlay.mutate();
+                                eyeOverlay.setColorFilter(c, android.graphics.PorterDuff.Mode.SRC_IN);
+                            }
+                            // Composite onto a single Bitmap via Canvas.
+                            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(
+                                    avatarSize, avatarSize, android.graphics.Bitmap.Config.ARGB_8888);
+                            android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+                            baseAvatar.setBounds(0, 0, avatarSize, avatarSize);
+                            baseAvatar.draw(canvas);
+                            if (eyeOverlay != null) {
+                                eyeOverlay.setBounds(0, 0, avatarSize, avatarSize);
+                                eyeOverlay.draw(canvas);
+                            }
+                            leadingIcon.setImageBitmap(bmp);
+                        } else {
+                            leadingIcon.setImageDrawable(baseAvatar);
+                        }
+                        leadingIcon.setImageTintList(null);
+                        leadingIcon.setVisibility(View.VISIBLE);
+                    } else if (item.colorInt != null) {
                         android.graphics.drawable.GradientDrawable gd =
                             (android.graphics.drawable.GradientDrawable) colorSwatch.getBackground();
                         gd.setColor(item.colorInt);
@@ -1130,18 +1177,29 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         set.start();
                     }
                     // Post result then dismiss slightly later
+                    boolean browseMode = getArguments() != null && getArguments().getBoolean(ARG_BROWSE_MODE, false);
                     Bundle result = new Bundle();
-                    result.putString(BUNDLE_SELECTED_ID, item.id);
-                    getParentFragmentManager().setFragmentResult(
-                        resultKey,
-                        result
-                    );
-                    row.postDelayed(
-                        () -> {
-                            if (isAdded()) dismissAllowingStateLoss();
-                        },
-                        160
-                    );
+                    if (browseMode) {
+                        // Live preview: fire preview result but DON'T dismiss
+                        browseLastSelectedId = item.id;
+                        result.putString(BUNDLE_PREVIEW_ID, item.id);
+                        getParentFragmentManager().setFragmentResult(
+                            resultKey,
+                            result
+                        );
+                    } else {
+                        result.putString(BUNDLE_SELECTED_ID, item.id);
+                        getParentFragmentManager().setFragmentResult(
+                            resultKey,
+                            result
+                        );
+                        row.postDelayed(
+                            () -> {
+                                if (isAdded()) dismissAllowingStateLoss();
+                            },
+                            160
+                        );
+                    }
                 });
                 containerLayout.addView(row);
                 // Add divider between rows replicating settings group style
@@ -1684,6 +1742,17 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
 
     @Override
     public void onDismiss(@NonNull android.content.DialogInterface dialog) {
+        // In browse mode, fire final selection result on dismiss.
+        if (browseLastSelectedId != null && getArguments() != null) {
+            String resultKey = getArguments().getString(ARG_RESULT_KEY);
+            if (resultKey != null && getParentFragmentManager() != null) {
+                Bundle result = new Bundle();
+                result.putString(BUNDLE_SELECTED_ID, browseLastSelectedId);
+                try {
+                    getParentFragmentManager().setFragmentResult(resultKey, result);
+                } catch (Exception ignored) {}
+            }
+        }
         if (getActivity() != null && getActivity().getWindow() != null
                 && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP
                 && previousActivityNavBarColor != null) {

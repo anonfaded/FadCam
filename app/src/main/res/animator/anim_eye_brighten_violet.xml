@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Eye brightens: fillColor near-black (#1a1a1a) → bright white (#ffffff).
+  Plays on each eye path during wake-up, synchronized with anim_eye_in (translateY).
+-->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="420"
+    android:propertyName="fillColor"
+    android:valueFrom="#2a2a2a"
+    android:valueTo="#D500F9"
+    android:valueType="colorType"
+    android:interpolator="@android:interpolator/decelerate_quint" />

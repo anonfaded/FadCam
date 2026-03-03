@@ -271,6 +271,18 @@
                         android:scaleType="fitCenter"
                         android:contentDescription="@string/ui_preview_area" />
 
+                    <!-- Eye-color overlay: same size, sits on top of avatar.
+                         Only the eye shapes are drawn (toggle_eyes_only), tinted via SRC_IN. -->
+                    <ImageView
+                        android:id="@+id/iv_preview_eye_overlay"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/toggle_eyes_only"
+                        android:scaleType="fitCenter"
+                        android:alpha="0"
+                        android:contentDescription="@null" />
+
                     <!-- zzz badge: shown when preview is disabled (sleeping).
                          layout_gravity=top|end positions it at top-right of the 120dp avatar. -->
                     <LinearLayout

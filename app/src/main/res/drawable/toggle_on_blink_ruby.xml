@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Blink AVD: plays periodically while the toggle is ON/awake.
+  Base: toggle_on_idle.xml (eyes fully open).
+  Animation: eye_group translateY dips down and springs back up (natural blink).
+  Final state: translateY=0 — seamlessly returns to idle after blink.
+-->
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_idle_ruby">
+
+    <!-- Both eyes blink together via the group translate -->
+    <target
+        android:name="eye_group"
+        android:animation="@animator/anim_blink" />
+
+</animated-vector>

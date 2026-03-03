@@ -245,6 +245,7 @@ public class HomeFragment extends BaseFragment {
 
     // ── Preview Avatar (replaces bubble + CCTV icon) ──────────────────────────
     private ImageView ivPreviewAvatar;
+    private ImageView ivPreviewEyeOverlay;
     private View zzzHomeBadgeGroup;
     private View tvHomeZ1, tvHomeZ2, tvHomeZ3;
     private ValueAnimator homeBreathingAnimator;
@@ -9189,6 +9190,7 @@ public class HomeFragment extends BaseFragment {
 
         // Bind preview avatar views (replace bubble + CCTV icon)
         ivPreviewAvatar = view.findViewById(R.id.iv_preview_avatar);
+        ivPreviewEyeOverlay = view.findViewById(R.id.iv_preview_eye_overlay);
         ivWakeSun = view.findViewById(R.id.iv_wake_sun);
         zzzHomeBadgeGroup = view.findViewById(R.id.zzz_home_badge_group);
         tvHomeZ1 = view.findViewById(R.id.tv_home_zzz_1);
@@ -9284,14 +9286,14 @@ public class HomeFragment extends BaseFragment {
             }
             if (animate) {
                 // Wake-up AVD → idle + blink
-                ivPreviewAvatar.setImageResource(R.drawable.toggle_on_anim);
+                ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_WAKE));
                 android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
                 if (d instanceof android.graphics.drawable.Animatable2) {
                     ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
                         new android.graphics.drawable.Animatable2.AnimationCallback() {
                             @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
                                 if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
-                                    ivPreviewAvatar.setImageResource(R.drawable.toggle_on_idle);
+                                    ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                                     startHomeBlinkLoop();
                                 }
                             }
@@ -9301,13 +9303,13 @@ public class HomeFragment extends BaseFragment {
                     ((android.graphics.drawable.Animatable) d).start();
                     ivPreviewAvatar.postDelayed(() -> {
                         if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
-                            ivPreviewAvatar.setImageResource(R.drawable.toggle_on_idle);
+                            ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                             startHomeBlinkLoop();
                         }
                     }, 480);
                 }
             } else {
-                ivPreviewAvatar.setImageResource(R.drawable.toggle_on_idle);
+                ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                 startHomeBlinkLoop();
             }
 
@@ -9361,7 +9363,7 @@ public class HomeFragment extends BaseFragment {
             }
 
             if (animate) {
-                ivPreviewAvatar.setImageResource(R.drawable.toggle_off_anim);
+                ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_SLEEP));
                 android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
                 Runnable afterOff = () -> {
                     if (ivPreviewAvatar == null || !ivPreviewAvatar.isAttachedToWindow()) return;
@@ -9480,6 +9482,39 @@ public class HomeFragment extends BaseFragment {
         homeFloatingZAnims.clear();
     }
 
+    // ── Home Avatar Color Drawable Resolution ──────────────────────────────────
+
+    private static final int RES_IDLE = 0, RES_BLINK = 1, RES_WAKE = 2, RES_SLEEP = 3;
+    private static final int[] HOME_DEFAULT_DRAWABLES = {
+        R.drawable.toggle_on_idle, R.drawable.toggle_on_blink,
+        R.drawable.toggle_on_anim, R.drawable.toggle_off_anim
+    };
+    /** Maps eye-color ARGB ints → [idle, blink, wake, sleep] drawable resource IDs. */
+    private static final java.util.Map<Integer, int[]> HOME_EYE_COLOR_DRAWABLES;
+    static {
+        java.util.Map<Integer, int[]> m = new java.util.HashMap<>();
+        m.put(0xFFFF1744, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
+        m.put(0xFF00E5FF, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
+        m.put(0xFFD500F9, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
+        m.put(0xFF2979FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
+        m.put(0xFFFFD740, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
+        m.put(0xFF00E676, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
+        m.put(0xFFF50057, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
+        HOME_EYE_COLOR_DRAWABLES = java.util.Collections.unmodifiableMap(m);
+    }
+
+    /**
+     * Returns the drawable resource for the given animation state,
+     * choosing the color-specific variant when a custom eye color is set.
+     */
+    private int resolveHomeDrawable(int resIndex) {
+        if (sharedPreferencesManager == null) return HOME_DEFAULT_DRAWABLES[resIndex];
+        int eyeColor = sharedPreferencesManager.sharedPreferences.getInt(
+                Constants.PREF_AVATAR_EYE_COLOR, Constants.DEFAULT_AVATAR_EYE_COLOR);
+        int[] res = HOME_EYE_COLOR_DRAWABLES.get(eyeColor);
+        return res != null ? res[resIndex] : HOME_DEFAULT_DRAWABLES[resIndex];
+    }
+
     private void startHomeBlinkLoop() {
         stopHomeBlinkLoop();
         scheduleNextHomeBlink(2500 + homeBlinkRandom.nextInt(2000));
@@ -9488,14 +9523,14 @@ public class HomeFragment extends BaseFragment {
     private void scheduleNextHomeBlink(long delayMs) {
         homeBlinkRunnable = () -> {
             if (ivPreviewAvatar == null || !ivPreviewAvatar.isAttachedToWindow()) return;
-            ivPreviewAvatar.setImageResource(R.drawable.toggle_on_blink);
+            ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_BLINK));
             android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
             if (d instanceof android.graphics.drawable.Animatable2) {
                 ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
                     new android.graphics.drawable.Animatable2.AnimationCallback() {
                         @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
                             if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
-                                ivPreviewAvatar.setImageResource(R.drawable.toggle_on_idle);
+                                ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                                 scheduleNextHomeBlink(3000 + homeBlinkRandom.nextInt(2500));
                             }
                         }
@@ -9505,7 +9540,7 @@ public class HomeFragment extends BaseFragment {
                 ((android.graphics.drawable.Animatable) d).start();
                 ivPreviewAvatar.postDelayed(() -> {
                     if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
-                        ivPreviewAvatar.setImageResource(R.drawable.toggle_on_idle);
+                        ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                         scheduleNextHomeBlink(3000 + homeBlinkRandom.nextInt(2500));
                     }
                 }, 260);

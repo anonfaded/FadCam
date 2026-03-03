@@ -485,6 +485,12 @@ public abstract class Constants {
 
     // ----- App Icon Preference -----
     public static final String PREF_APP_ICON = "app_icon";
+
+    // ----- Avatar Eye Color Preference -----
+    /** Stored as an ARGB int; 0 = white / no tint (default). */
+    public static final String PREF_AVATAR_EYE_COLOR = "pref_avatar_eye_color";
+    public static final int DEFAULT_AVATAR_EYE_COLOR = 0;
+
     public static final String APP_ICON_DEFAULT = "default"; // Original icon
     public static final String APP_ICON_ALTERNATIVE = "alternative"; // Detective icon
     public static final String APP_ICON_FADED = "faded"; // Faded icon

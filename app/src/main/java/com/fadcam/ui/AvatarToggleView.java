@@ -3,11 +3,11 @@ package com.fadcam.ui;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Animatable2;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
@@ -24,10 +24,14 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
+import com.fadcam.Constants;
 import com.fadcam.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -62,11 +66,38 @@ public class AvatarToggleView extends FrameLayout {
     /** Duration for the sleep AVD; fallback when Animatable2 callback is unavailable. */
     private static final long SLEEP_AVD_DURATION_MS = 320L;
 
+    // ─── Color-specific drawable lookup ───────────────────────────────────────────
+
+    private static final int RES_IDLE = 0, RES_BLINK = 1, RES_WAKE = 2, RES_SLEEP = 3;
+    private static final int[] DEFAULT_DRAWABLES = {
+        R.drawable.toggle_on_idle, R.drawable.toggle_on_blink,
+        R.drawable.toggle_on_anim, R.drawable.toggle_off_anim
+    };
+    /** Maps eye-color ARGB ints → [idle, blink, wake, sleep] drawable resource IDs. */
+    private static final Map<Integer, int[]> EYE_COLOR_DRAWABLES;
+    static {
+        Map<Integer, int[]> m = new HashMap<>();
+        m.put(0xFFFF1744, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
+        m.put(0xFF00E5FF, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
+        m.put(0xFFD500F9, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
+        m.put(0xFF2979FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
+        m.put(0xFFFFD740, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
+        m.put(0xFF00E676, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
+        m.put(0xFFF50057, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
+        EYE_COLOR_DRAWABLES = Collections.unmodifiableMap(m);
+    }
+
     // ─── Views ───────────────────────────────────────────────────────────────
 
     private ImageView ivAvatar;
     private LinearLayout zzzGroup;
-    private View liveDot;
+    /** Small "ON"/"OFF" label — digital-clock style, bottom-end overlay. */
+    private TextView statusLabel;
+
+    // ─── Eye color tint ──────────────────────────────────────────────────────
+
+    /** 0 = white/no tint (default). Any other ARGB int is applied via SRC_IN on the eye overlay. */
+    private int eyeColor = 0;
 
     // ─── State ───────────────────────────────────────────────────────────────
 
@@ -81,7 +112,6 @@ public class AvatarToggleView extends FrameLayout {
     private final Random  blinkRandom      = new Random();
     @Nullable private Runnable       blinkRunnable;
     @Nullable private ValueAnimator  breathingAnimator;
-    @Nullable private ValueAnimator  liveDotPulseAnimator;
     private final List<ObjectAnimator> floatingZAnimators = new ArrayList<>();
 
     // ─── Constructors ────────────────────────────────────────────────────────
@@ -122,20 +152,31 @@ public class AvatarToggleView extends FrameLayout {
         ivAvatar.setFocusable(false);
         addView(ivAvatar);
 
-        // Live green dot — top-end corner, pulsing when awake.
-        liveDot = new View(context);
-        int dotSize = dpPx(context, 8);
-        FrameLayout.LayoutParams dotParams = new FrameLayout.LayoutParams(dotSize, dotSize);
-        dotParams.gravity = Gravity.TOP | Gravity.END;
-        dotParams.topMargin = dpPx(context, 2);
-        dotParams.rightMargin = dpPx(context, 2);
-        liveDot.setLayoutParams(dotParams);
-        GradientDrawable gd = new GradientDrawable();
-        gd.setShape(GradientDrawable.OVAL);
-        gd.setColor(0xFF4CAF50);
-        liveDot.setBackground(gd);
-        liveDot.setVisibility(View.GONE);
-        addView(liveDot);
+        // ── ON/OFF status label — digital-clock style, bottom-end corner. ──────
+        statusLabel = new TextView(context);
+        statusLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        statusLabel.setTextSize(7f);
+        statusLabel.setLetterSpacing(0.1f);
+        statusLabel.setIncludeFontPadding(false);
+        FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        statusParams.gravity = Gravity.BOTTOM | Gravity.END;
+        statusParams.bottomMargin = dpPx(context, -1);
+        statusParams.setMarginEnd(dpPx(context, -2));
+        statusLabel.setLayoutParams(statusParams);
+        statusLabel.setVisibility(View.GONE);
+        addView(statusLabel);
+
+        // ── Eye color tint — read from SharedPreferences. ──────────────────────
+        try {
+            SharedPreferences prefs = context.getSharedPreferences(
+                    Constants.PREFS_NAME, Context.MODE_PRIVATE);
+            int saved = prefs.getInt(Constants.PREF_AVATAR_EYE_COLOR,
+                    Constants.DEFAULT_AVATAR_EYE_COLOR);
+            if (saved != 0) eyeColor = saved;
+        } catch (Exception ignored) { /* defensive */ }
 
         // zzZ badge — three letters in a row, positioned top|end.
         zzzGroup = buildZzzBadge(context);
@@ -257,41 +298,34 @@ public class AvatarToggleView extends FrameLayout {
             // ── Wake path ────────────────────────────────────────────────────
             stopBreathing();
             ivAvatar.setAlpha(1f);
-            zzzGroup.setVisibility(View.GONE);
-            stopFloatingZ();
 
-            // Show live dot with fade-in then pulse.
-            liveDot.animate().cancel();
-            liveDot.setAlpha(0f);
-            liveDot.setVisibility(View.VISIBLE);
-            liveDot.animate().alpha(1f).setDuration(280)
-                    .withEndAction(() -> {
-                        if (isAttachedToWindow() && checked) startLiveDotPulse();
-                    }).start();
+            // Animated zzZ exit or instant hide.
+            if (animate && zzzGroup.getVisibility() == View.VISIBLE) {
+                hideZzz();
+            } else {
+                stopFloatingZ();
+                zzzGroup.setVisibility(View.GONE);
+            }
+
+            // Status label → "ON" (green).
+            showStatusLabel("ON", 0xFF4CAF50, animate);
 
             if (animate) {
-                startAvd(R.drawable.toggle_on_anim, WAKE_AVD_DURATION_MS, () -> {
-                    ivAvatar.setImageResource(R.drawable.toggle_on_idle);
+                startAvd(resolveDrawable(RES_WAKE), WAKE_AVD_DURATION_MS, () -> {
+                    ivAvatar.setImageResource(resolveDrawable(RES_IDLE));
                     startBlink();
                 });
             } else {
-                ivAvatar.setImageResource(R.drawable.toggle_on_idle);
+                ivAvatar.setImageResource(resolveDrawable(RES_IDLE));
                 startBlink();
             }
         } else {
             // ── Sleep path ───────────────────────────────────────────────────
-            stopLiveDotPulse();
-            if (liveDot.getVisibility() == View.VISIBLE) {
-                liveDot.animate().cancel();
-                liveDot.animate().alpha(0f).setDuration(220)
-                        .withEndAction(() -> {
-                            liveDot.setVisibility(View.GONE);
-                            liveDot.setAlpha(1f);
-                        }).start();
-            }
+            // Status label → "OFF" (red).
+            showStatusLabel("OFF", 0xFFE57373, animate);
 
             if (animate) {
-                startAvd(R.drawable.toggle_off_anim, SLEEP_AVD_DURATION_MS, () -> {
+                startAvd(resolveDrawable(RES_SLEEP), SLEEP_AVD_DURATION_MS, () -> {
                     ivAvatar.setImageResource(R.drawable.toggle_off);
                     startBreathing();
                     showZzz(true);
@@ -307,6 +341,7 @@ public class AvatarToggleView extends FrameLayout {
     /**
      * Starts an AVD drawable, then runs {@code onEnd} when it completes.
      * Handles both {@link Animatable2} (API 23+) and {@link Animatable} fallback.
+     * Callers are responsible for managing the eye-color overlay before/after the AVD.
      */
     private void startAvd(int drawableRes, long fallbackDurationMs, Runnable onEnd) {
         ivAvatar.setImageResource(drawableRes);
@@ -420,7 +455,7 @@ public class AvatarToggleView extends FrameLayout {
     private void scheduleNextBlink(long delayMs) {
         blinkRunnable = () -> {
             if (!isAttachedToWindow() || !checked || ivAvatar == null) return;
-            ivAvatar.setImageResource(R.drawable.toggle_on_blink);
+            ivAvatar.setImageResource(resolveDrawable(RES_BLINK));
             Drawable d = ivAvatar.getDrawable();
             if (d instanceof Animatable2) {
                 Animatable2 avd = (Animatable2) d;
@@ -428,7 +463,7 @@ public class AvatarToggleView extends FrameLayout {
                 avd.registerAnimationCallback(new Animatable2.AnimationCallback() {
                     @Override public void onAnimationEnd(Drawable drawable) {
                         if (isAttachedToWindow() && checked && ivAvatar != null) {
-                            ivAvatar.setImageResource(R.drawable.toggle_on_idle);
+                            ivAvatar.setImageResource(resolveDrawable(RES_IDLE));
                             scheduleNextBlink(3000 + blinkRandom.nextInt(2500));
                         }
                     }
@@ -438,7 +473,7 @@ public class AvatarToggleView extends FrameLayout {
                 ((Animatable) d).start();
                 ivAvatar.postDelayed(() -> {
                     if (isAttachedToWindow() && checked && ivAvatar != null) {
-                        ivAvatar.setImageResource(R.drawable.toggle_on_idle);
+                        ivAvatar.setImageResource(resolveDrawable(RES_IDLE));
                         scheduleNextBlink(3000 + blinkRandom.nextInt(2500));
                     }
                 }, 260);
@@ -485,31 +520,112 @@ public class AvatarToggleView extends FrameLayout {
         if (ivAvatar != null) ivAvatar.setAlpha(1f);
     }
 
-    // ─── Live dot pulse ───────────────────────────────────────────────────────
+    // ─── Status label (ON / OFF) ─────────────────────────────────────────────
 
-    private void startLiveDotPulse() {
-        stopLiveDotPulse();
-        liveDotPulseAnimator = ValueAnimator.ofFloat(1f, 0f);
-        liveDotPulseAnimator.setDuration(900);
-        liveDotPulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        liveDotPulseAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        liveDotPulseAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-        liveDotPulseAnimator.addUpdateListener(a -> {
-            if (liveDot != null && isAttachedToWindow()) {
-                float t = (float) a.getAnimatedValue();
-                liveDot.setAlpha(0.55f + 0.45f * t);
-                liveDot.setScaleX(0.85f + 0.15f * t);
-                liveDot.setScaleY(0.85f + 0.15f * t);
-            }
-        });
-        liveDotPulseAnimator.start();
+    /**
+     * Updates the status label text and color.
+     * If animate=true, plays a quick scale+fade entrance.
+     * Once shown, the label stays static (no blinking/pulsing).
+     */
+    private void showStatusLabel(String text, int color, boolean animate) {
+        statusLabel.animate().cancel();
+        statusLabel.setText(text);
+        statusLabel.setTextColor(color);
+        if (animate) {
+            statusLabel.setAlpha(0f);
+            statusLabel.setScaleX(0.4f);
+            statusLabel.setScaleY(0.4f);
+            statusLabel.setTranslationY(dpPx(getContext(), 4));
+            statusLabel.setVisibility(View.VISIBLE);
+            statusLabel.animate()
+                    .alpha(1f).scaleX(1f).scaleY(1f).translationY(0f)
+                    .setDuration(220)
+                    .setInterpolator(new OvershootInterpolator(1.2f))
+                    .start();
+        } else {
+            statusLabel.setAlpha(1f);
+            statusLabel.setScaleX(1f);
+            statusLabel.setScaleY(1f);
+            statusLabel.setTranslationY(0f);
+            statusLabel.setVisibility(View.VISIBLE);
+        }
     }
 
-    private void stopLiveDotPulse() {
-        if (liveDotPulseAnimator != null) {
-            liveDotPulseAnimator.cancel();
-            liveDotPulseAnimator = null;
+    // ─── zzZ animated exit ────────────────────────────────────────────────────
+
+    /**
+     * Reverse-staggered pop-out of the zzZ letters (largest first).
+     * After animation completes, hides the group and resets children.
+     */
+    private void hideZzz() {
+        if (zzzGroup.getVisibility() != View.VISIBLE) return;
+        stopFloatingZ();
+        int count = zzzGroup.getChildCount();
+        for (int i = 0; i < count; i++) {
+            // Reverse order: largest Z (last child) exits first.
+            final View v = zzzGroup.getChildAt(count - 1 - i);
+            v.animate()
+                    .alpha(0f).scaleX(0.2f).scaleY(0.2f).translationY(-10f)
+                    .setStartDelay(i * 70L).setDuration(150)
+                    .setInterpolator(new AccelerateDecelerateInterpolator())
+                    .start();
         }
+        long totalDuration = (count - 1) * 70L + 150L;
+        handler.postDelayed(() -> {
+            zzzGroup.setVisibility(View.GONE);
+            resetZzzChildren();
+        }, totalDuration + 20);
+    }
+
+    /** Resets zzZ children to default transform for the next showZzz() call. */
+    private void resetZzzChildren() {
+        for (int i = 0; i < zzzGroup.getChildCount(); i++) {
+            View v = zzzGroup.getChildAt(i);
+            v.animate().cancel();
+            v.setAlpha(1f);
+            v.setScaleX(1f);
+            v.setScaleY(1f);
+            v.setTranslationY(0f);
+        }
+    }
+
+    // ─── Eye color tint ──────────────────────────────────────────────────────
+
+    /**
+     * Sets a color tint for the avatar eyes. 0 = white/no tint (default).
+     * Re-applies the current state so dedicated colored drawables take effect.
+     */
+    public void setEyeColor(int color) {
+        this.eyeColor = color;
+        applyState(checked, false);
+    }
+
+    /** Returns the current eye color tint (0 = default/white). */
+    public int getEyeColor() {
+        return eyeColor;
+    }
+
+    /**
+     * Re-reads the eye color from SharedPreferences so the cached {@code eyeColor}
+     * field is always up-to-date (e.g. after the user changes the color in Settings).
+     */
+    private void refreshEyeColorFromPrefs() {
+        try {
+            SharedPreferences prefs = getContext().getSharedPreferences(
+                    Constants.PREFS_NAME, Context.MODE_PRIVATE);
+            eyeColor = prefs.getInt(Constants.PREF_AVATAR_EYE_COLOR,
+                    Constants.DEFAULT_AVATAR_EYE_COLOR);
+        } catch (Exception ignored) { /* defensive */ }
+    }
+
+    /**
+     * Returns the drawable resource ID for the given animation state,
+     * choosing the color-specific variant when a custom eye color is set.
+     */
+    private int resolveDrawable(int resIndex) {
+        refreshEyeColorFromPrefs();
+        int[] res = EYE_COLOR_DRAWABLES.get(eyeColor);
+        return res != null ? res[resIndex] : DEFAULT_DRAWABLES[resIndex];
     }
 
     // ─── Lifecycle ───────────────────────────────────────────────────────────
@@ -519,7 +635,6 @@ public class AvatarToggleView extends FrameLayout {
         super.onDetachedFromWindow();
         stopBlink();
         stopBreathing();
-        stopLiveDotPulse();
         stopFloatingZ();
         handler.removeCallbacksAndMessages(null);
         cancelAllChildAnimations();
@@ -543,7 +658,7 @@ public class AvatarToggleView extends FrameLayout {
             Drawable d = ivAvatar.getDrawable();
             if (d instanceof Animatable) ((Animatable) d).stop();
         }
-        if (liveDot != null) liveDot.animate().cancel();
+        if (statusLabel != null) statusLabel.animate().cancel();
         if (zzzGroup != null) {
             for (int i = 0; i < zzzGroup.getChildCount(); i++) {
                 zzzGroup.getChildAt(i).animate().cancel();
