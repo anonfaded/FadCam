@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Glow group fade-out for sleep: alpha 1 → 0, 420ms, decelerate_cubic. -->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:propertyName="alpha"
+    android:valueFrom="1"
+    android:valueTo="0"
+    android:duration="420"
+    android:valueType="floatType"
+    android:interpolator="@android:interpolator/decelerate_cubic" />

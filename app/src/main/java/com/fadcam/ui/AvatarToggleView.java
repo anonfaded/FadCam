@@ -64,7 +64,7 @@ public class AvatarToggleView extends FrameLayout {
     /** Duration for the wake-up AVD; fallback when Animatable2 callback is unavailable. */
     private static final long WAKE_AVD_DURATION_MS  = 480L;
     /** Duration for the sleep AVD; fallback when Animatable2 callback is unavailable. */
-    private static final long SLEEP_AVD_DURATION_MS = 320L;
+    private static final long SLEEP_AVD_DURATION_MS = 480L;
 
     // ─── Color-specific drawable lookup ───────────────────────────────────────────
 

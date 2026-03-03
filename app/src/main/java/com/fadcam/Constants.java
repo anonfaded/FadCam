@@ -491,6 +491,11 @@ public abstract class Constants {
     public static final String PREF_AVATAR_EYE_COLOR = "pref_avatar_eye_color";
     public static final int DEFAULT_AVATAR_EYE_COLOR = 0;
 
+    // ----- Header Logo Style Preference -----
+    public static final String PREF_HEADER_LOGO_STYLE = "pref_header_logo_style";
+    public static final String HEADER_LOGO_DEFAULT = "default";
+    public static final String HEADER_LOGO_AVATAR  = "avatar";
+
     public static final String APP_ICON_DEFAULT = "default"; // Original icon
     public static final String APP_ICON_ALTERNATIVE = "alternative"; // Detective icon
     public static final String APP_ICON_FADED = "faded"; // Faded icon

@@ -5,7 +5,7 @@
 -->
 <objectAnimator
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="340"
+    android:duration="420"
     android:propertyName="fillColor"
     android:valueFrom="#ffffff"
     android:valueTo="#2a2a2a"

@@ -63,6 +63,7 @@ public class AppearanceSettingsFragment extends Fragment {
         setupLanguageRow(view);
         setupAppIconRow(view);
         setupEyeColorRow(view);
+        setupLogoRow(view);
         View backBtn = view.findViewById(R.id.back_button);
         if (backBtn != null) {
             backBtn.setOnClickListener(v ->
@@ -799,6 +800,74 @@ public class AppearanceSettingsFragment extends Fragment {
                 new com.fadcam.shortcuts.ShortcutsManager(requireContext());
             sm.refreshShortcuts();
         } catch (Exception ignored) {}
+    }
+
+    // -------------- Header Logo Style Picker -----------
+
+    private void setupLogoRow(View root) {
+        View row = root.findViewById(R.id.row_header_logo);
+        TextView value = root.findViewById(R.id.value_header_logo);
+        if (row == null || value == null) return;
+
+        String current = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HEADER_LOGO_STYLE, Constants.HEADER_LOGO_DEFAULT);
+        value.setText(current.equals(Constants.HEADER_LOGO_AVATAR)
+                ? getString(R.string.header_logo_avatar)
+                : getString(R.string.header_logo_default));
+
+        row.setOnClickListener(v -> showLogoPicker(value));
+    }
+
+    private void showLogoPicker(TextView value) {
+        final String resultKey = "picker_result_header_logo";
+        getParentFragmentManager().setFragmentResultListener(
+                resultKey, this, (k, b) -> {
+                    if (b.containsKey(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
+                        String id = b.getString(
+                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                        if (id != null) {
+                            sharedPreferencesManager.sharedPreferences.edit()
+                                    .putString(Constants.PREF_HEADER_LOGO_STYLE, id)
+                                    .apply();
+                            value.setText(id.equals(Constants.HEADER_LOGO_AVATAR)
+                                    ? getString(R.string.header_logo_avatar)
+                                    : getString(R.string.header_logo_default));
+                        }
+                    }
+                });
+
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                Constants.HEADER_LOGO_DEFAULT,
+                getString(R.string.header_logo_default),
+                null,
+                null,
+                R.drawable.menu_icon_unknown));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                Constants.HEADER_LOGO_AVATAR,
+                getString(R.string.header_logo_avatar),
+                null,
+                null,
+                R.drawable.toggle_on_idle));
+
+        String currentId = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HEADER_LOGO_STYLE, Constants.HEADER_LOGO_DEFAULT);
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.setting_header_logo_title),
+                        items,
+                        currentId,
+                        resultKey,
+                        getString(R.string.setting_header_logo_desc),
+                        true);
+        // Enable avatar icon rendering; FadCam logo uses default static icon.
+        if (sheet.getArguments() != null) {
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BROWSE_MODE, true);
+        }
+        sheet.show(getParentFragmentManager(), "header_logo_picker_sheet");
     }
 
     // -------------- Eye Color Picker -----------

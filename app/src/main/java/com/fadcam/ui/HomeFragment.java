@@ -255,6 +255,11 @@ public class HomeFragment extends BaseFragment {
     private Runnable homeBlinkRunnable;
     private final Random homeBlinkRandom = new Random();
     private boolean homeAvatarLastEnabled = false;
+
+    // ── Header Logo Avatar blink loop ────────────────────────────────────────
+    private final Handler headerBlinkHandler = new Handler(Looper.getMainLooper());
+    private Runnable headerBlinkRunnable;
+    private final Random headerBlinkRandom = new Random();
     /** When true, the next updatePreviewVisibility() call will animate the avatar↔preview crossfade. */
     private boolean animateNextPreviewTransition = false;
     /**
@@ -1916,6 +1921,9 @@ public class HomeFragment extends BaseFragment {
         clearPreviewOnlyPendingState(true);
 
         registerBroadcastReceivers(); // Centralized registration
+
+        // Refresh header logo style in case user changed it in settings
+        applyHeaderLogoStyle();
 
         // Note: No need to restore recordingStartTime from SharedPreferences.
         // We'll fetch state from service which will broadcast the correct start time.
@@ -3635,6 +3643,9 @@ public class HomeFragment extends BaseFragment {
         if (savedInstanceState == null) {
             startLogoRevealAnimation();
         }
+
+        // Apply header logo style preference (default text vs animated avatar)
+        applyHeaderLogoStyle();
 
         // Initialize camera control state from saved preferences
         currentEvIndex =
@@ -8360,6 +8371,7 @@ public class HomeFragment extends BaseFragment {
 
         // Clean up preview avatar animators
         stopBubbleRotation(); // calls stopHomeBlinkLoop + breathing + floating
+        stopHeaderBlinkLoop(); // clean up header logo blink loop
         
         super.onDestroyView();
         TorchService.setHomeFragment(null);
@@ -9088,6 +9100,82 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    // ── Header Logo Style (Default FadCam text vs Animated Avatar) ──────────
+
+    /**
+     * Reads the header logo preference and swaps the header ImageView between
+     * the static FadCam logo and a small animated avatar that blinks.
+     * Safe to call repeatedly (e.g. on resume) — only mutates when the pref changes.
+     */
+    private void applyHeaderLogoStyle() {
+        if (ivAppTitle == null || sharedPreferencesManager == null) return;
+        String style = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HEADER_LOGO_STYLE, Constants.HEADER_LOGO_DEFAULT);
+
+        if (Constants.HEADER_LOGO_AVATAR.equals(style)) {
+            // Show the avatar idle drawable (respects eye color) and start blink loop.
+            ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            ivAppTitle.setImageResource(resolveHomeDrawable(RES_IDLE));
+            startHeaderBlinkLoop();
+        } else {
+            // Restore default FadCam text logo.
+            stopHeaderBlinkLoop();
+            ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            ivAppTitle.setImageResource(R.drawable.menu_icon_unknown);
+        }
+    }
+
+    /** Starts a random blink loop on the header logo avatar. */
+    private void startHeaderBlinkLoop() {
+        stopHeaderBlinkLoop();
+        // Initial delay before first blink
+        scheduleNextHeaderBlink(2000 + headerBlinkRandom.nextInt(2000));
+    }
+
+    private void scheduleNextHeaderBlink(long delayMs) {
+        headerBlinkRunnable = () -> {
+            if (ivAppTitle == null || !ivAppTitle.isAttachedToWindow()) return;
+            // Only blink when still in avatar mode
+            String style = (sharedPreferencesManager != null)
+                    ? sharedPreferencesManager.sharedPreferences.getString(
+                            Constants.PREF_HEADER_LOGO_STYLE, Constants.HEADER_LOGO_DEFAULT)
+                    : Constants.HEADER_LOGO_DEFAULT;
+            if (!Constants.HEADER_LOGO_AVATAR.equals(style)) return;
+
+            ivAppTitle.setImageResource(resolveHomeDrawable(RES_BLINK));
+            android.graphics.drawable.Drawable d = ivAppTitle.getDrawable();
+            if (d instanceof android.graphics.drawable.Animatable2) {
+                ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
+                    new android.graphics.drawable.Animatable2.AnimationCallback() {
+                        @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
+                            if (ivAppTitle != null && ivAppTitle.isAttachedToWindow()) {
+                                ivAppTitle.setImageResource(resolveHomeDrawable(RES_IDLE));
+                                scheduleNextHeaderBlink(3000 + headerBlinkRandom.nextInt(3000));
+                            }
+                        }
+                    });
+                ((android.graphics.drawable.Animatable2) d).start();
+            } else if (d instanceof android.graphics.drawable.Animatable) {
+                ((android.graphics.drawable.Animatable) d).start();
+                ivAppTitle.postDelayed(() -> {
+                    if (ivAppTitle != null && ivAppTitle.isAttachedToWindow()) {
+                        ivAppTitle.setImageResource(resolveHomeDrawable(RES_IDLE));
+                        scheduleNextHeaderBlink(3000 + headerBlinkRandom.nextInt(3000));
+                    }
+                }, 260);
+            }
+        };
+        headerBlinkHandler.postDelayed(headerBlinkRunnable, delayMs);
+    }
+
+    /** Stops the header blink loop. */
+    private void stopHeaderBlinkLoop() {
+        if (headerBlinkRunnable != null) {
+            headerBlinkHandler.removeCallbacks(headerBlinkRunnable);
+            headerBlinkRunnable = null;
+        }
+    }
+
     /**
      * Wires the "Stats" card to navigate to the Records tab.
      * Applies only to Home and is safe across configuration changes.
@@ -9378,7 +9466,7 @@ public class HomeFragment extends BaseFragment {
                     ((android.graphics.drawable.Animatable2) d).start();
                 } else if (d instanceof android.graphics.drawable.Animatable) {
                     ((android.graphics.drawable.Animatable) d).start();
-                    ivPreviewAvatar.postDelayed(afterOff, 320);
+                    ivPreviewAvatar.postDelayed(afterOff, 480);
                 } else {
                     afterOff.run();
                 }

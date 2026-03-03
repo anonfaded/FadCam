@@ -1267,6 +1267,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="eye_color_amber" translatable="false">Amber</string>
     <string name="eye_color_jade" translatable="false">Lime</string>
     <string name="eye_color_magenta" translatable="false">Magenta</string>
+
+    <!-- Header Logo Style Strings -->
+    <string name="setting_header_logo_title">Header Logo</string>
+    <string name="setting_header_logo_desc">Choose the header logo style</string>
+    <string name="header_logo_default" translatable="false">FadCam</string>
+    <string name="header_logo_avatar" translatable="false">Avatar</string>
+
     <string name="setting_app_icon_desc">Change the app\'s launcher icon and name</string>
     <string name="app_icon_dialog_title">Choose App Icon</string>
     <string name="app_icon_default" translatable="false">Legacy</string>
