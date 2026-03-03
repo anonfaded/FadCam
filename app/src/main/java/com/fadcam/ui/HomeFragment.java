@@ -9375,27 +9375,31 @@ public class HomeFragment extends BaseFragment {
             if (animate) {
                 // Wake-up AVD → idle + blink
                 ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_WAKE));
-                android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
-                if (d instanceof android.graphics.drawable.Animatable2) {
-                    ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
-                        new android.graphics.drawable.Animatable2.AnimationCallback() {
-                            @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
-                                if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
-                                    ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
-                                    startHomeBlinkLoop();
+                // Post-delay ensures drawable is fully loaded before animation starts
+                ivPreviewAvatar.post(() -> {
+                    android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
+                    if (d instanceof android.graphics.drawable.Animatable2) {
+                        ((android.graphics.drawable.Animatable2) d).clearAnimationCallbacks();
+                        ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
+                            new android.graphics.drawable.Animatable2.AnimationCallback() {
+                                @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
+                                    if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
+                                        ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
+                                        startHomeBlinkLoop();
+                                    }
                                 }
+                            });
+                        ((android.graphics.drawable.Animatable2) d).start();
+                    } else if (d instanceof android.graphics.drawable.Animatable) {
+                        ((android.graphics.drawable.Animatable) d).start();
+                        ivPreviewAvatar.postDelayed(() -> {
+                            if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
+                                ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
+                                startHomeBlinkLoop();
                             }
-                        });
-                    ((android.graphics.drawable.Animatable2) d).start();
-                } else if (d instanceof android.graphics.drawable.Animatable) {
-                    ((android.graphics.drawable.Animatable) d).start();
-                    ivPreviewAvatar.postDelayed(() -> {
-                        if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
-                            ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
-                            startHomeBlinkLoop();
-                        }
-                    }, 480);
-                }
+                        }, 480);
+                    }
+                });
             } else {
                 ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                 startHomeBlinkLoop();
@@ -9403,7 +9407,9 @@ public class HomeFragment extends BaseFragment {
 
         } else {
             stopHomeBlinkLoop();
-            startHomeBreathing();
+            // NOTE: startHomeBreathing() is intentionally NOT called here.
+            // It is called inside afterOff (after the sleep AVD finishes) so the breathing
+            // alpha-pulse does not immediately dim the avatar and mask the sleep animation.
             // Sun fades out (if visible), moon rises back in with slow twinkle
             if (getView() != null) {
                 View ivAmbiance = getView().findViewById(R.id.iv_sleep_ambiance);
@@ -9451,27 +9457,34 @@ public class HomeFragment extends BaseFragment {
             }
 
             if (animate) {
+                ivPreviewAvatar.setAlpha(1f); // ensure full brightness before sleep AVD plays
                 ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_SLEEP));
-                android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
-                Runnable afterOff = () -> {
-                    if (ivPreviewAvatar == null || !ivPreviewAvatar.isAttachedToWindow()) return;
-                    ivPreviewAvatar.setImageResource(R.drawable.toggle_off);
-                    showHomeZzzLetters(true);
-                };
-                if (d instanceof android.graphics.drawable.Animatable2) {
-                    ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
-                        new android.graphics.drawable.Animatable2.AnimationCallback() {
-                            @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) { afterOff.run(); }
-                        });
-                    ((android.graphics.drawable.Animatable2) d).start();
-                } else if (d instanceof android.graphics.drawable.Animatable) {
-                    ((android.graphics.drawable.Animatable) d).start();
-                    ivPreviewAvatar.postDelayed(afterOff, 480);
-                } else {
-                    afterOff.run();
-                }
+                // Post-delay ensures drawable is fully loaded before animation starts
+                ivPreviewAvatar.post(() -> {
+                    android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
+                    Runnable afterOff = () -> {
+                        if (ivPreviewAvatar == null || !ivPreviewAvatar.isAttachedToWindow()) return;
+                        ivPreviewAvatar.setImageResource(R.drawable.toggle_off);
+                        startHomeBreathing(); // start breathing AFTER animation completes
+                        showHomeZzzLetters(true);
+                    };
+                    if (d instanceof android.graphics.drawable.Animatable2) {
+                        ((android.graphics.drawable.Animatable2) d).clearAnimationCallbacks();
+                        ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
+                            new android.graphics.drawable.Animatable2.AnimationCallback() {
+                                @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) { afterOff.run(); }
+                            });
+                        ((android.graphics.drawable.Animatable2) d).start();
+                    } else if (d instanceof android.graphics.drawable.Animatable) {
+                        ((android.graphics.drawable.Animatable) d).start();
+                        ivPreviewAvatar.postDelayed(afterOff, 480);
+                    } else {
+                        afterOff.run();
+                    }
+                });
             } else {
                 ivPreviewAvatar.setImageResource(R.drawable.toggle_off);
+                startHomeBreathing();
                 showHomeZzzLetters(false);
             }
         }
@@ -9610,24 +9623,27 @@ public class HomeFragment extends BaseFragment {
 
     private void scheduleNextHomeBlink(long delayMs) {
         homeBlinkRunnable = () -> {
-            if (ivPreviewAvatar == null || !ivPreviewAvatar.isAttachedToWindow()) return;
+            if (ivPreviewAvatar == null || !ivPreviewAvatar.isAttachedToWindow() || !homeAvatarLastEnabled) return;
             ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_BLINK));
             android.graphics.drawable.Drawable d = ivPreviewAvatar.getDrawable();
             if (d instanceof android.graphics.drawable.Animatable2) {
-                ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
+                android.graphics.drawable.Animatable2 avd2 = (android.graphics.drawable.Animatable2) d;
+                avd2.clearAnimationCallbacks(); // prevent stale callback accumulation
+                avd2.registerAnimationCallback(
                     new android.graphics.drawable.Animatable2.AnimationCallback() {
                         @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
-                            if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
+                            // Guard: don't reset to idle if we've already transitioned to sleep
+                            if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow() && homeAvatarLastEnabled) {
                                 ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                                 scheduleNextHomeBlink(3000 + homeBlinkRandom.nextInt(2500));
                             }
                         }
                     });
-                ((android.graphics.drawable.Animatable2) d).start();
+                avd2.start();
             } else if (d instanceof android.graphics.drawable.Animatable) {
                 ((android.graphics.drawable.Animatable) d).start();
-                ivPreviewAvatar.postDelayed(() -> {
-                    if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow()) {
+                homeBlinkHandler.postDelayed(() -> {
+                    if (ivPreviewAvatar != null && ivPreviewAvatar.isAttachedToWindow() && homeAvatarLastEnabled) {
                         ivPreviewAvatar.setImageResource(resolveHomeDrawable(RES_IDLE));
                         scheduleNextHomeBlink(3000 + homeBlinkRandom.nextInt(2500));
                     }
@@ -9639,6 +9655,17 @@ public class HomeFragment extends BaseFragment {
 
     private void stopHomeBlinkLoop() {
         if (homeBlinkRunnable != null) { homeBlinkHandler.removeCallbacks(homeBlinkRunnable); homeBlinkRunnable = null; }
+        // Stop and clear any blink AVD currently playing so its onAnimationEnd cannot fire
+        // and reset the drawable back to idle after we've already transitioned to sleep.
+        if (ivPreviewAvatar != null) {
+            android.graphics.drawable.Drawable cur = ivPreviewAvatar.getDrawable();
+            if (cur instanceof android.graphics.drawable.Animatable2) {
+                ((android.graphics.drawable.Animatable2) cur).clearAnimationCallbacks();
+                ((android.graphics.drawable.Animatable2) cur).stop();
+            } else if (cur instanceof android.graphics.drawable.Animatable) {
+                ((android.graphics.drawable.Animatable) cur).stop();
+            }
+        }
     }
 
     // ── End Preview Avatar Animation Logic ───────────────────────────────────

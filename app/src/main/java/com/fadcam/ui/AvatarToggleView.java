@@ -344,30 +344,63 @@ public class AvatarToggleView extends FrameLayout {
      * Callers are responsible for managing the eye-color overlay before/after the AVD.
      */
     private void startAvd(int drawableRes, long fallbackDurationMs, Runnable onEnd) {
+        // DEBUG: Log which drawable we're  trying to start
+        String resName = getContext().getResources().getResourceEntryName(drawableRes);
+        com.fadcam.Log.d("AvatarToggleView", "=== START AVD: " + resName + " ===");
+        
         ivAvatar.setImageResource(drawableRes);
         Drawable d = ivAvatar.getDrawable();
+        
+        com.fadcam.Log.d("AvatarToggleView", "Drawable class: " + (d != null ? d.getClass().getName() : "NULL"));
+        com.fadcam.Log.d("AvatarToggleView", "Is Animatable2: " + (d instanceof Animatable2));
+        com.fadcam.Log.d("AvatarToggleView", "Is Animatable: " + (d instanceof Animatable));
+        
+        // Force fresh resolution in case drawable is cached
+        if (d == null || !(d instanceof Animatable)) {
+            com.fadcam.Log.d("AvatarToggleView", "WARNING: Not animatable! Trying ContextCompat...");
+            d = androidx.core.content.ContextCompat.getDrawable(getContext(), drawableRes);
+            if (d != null) {
+                com.fadcam.Log.d("AvatarToggleView", "ContextCompat resolved: " + d.getClass().getName());
+                ivAvatar.setImageDrawable(d);
+            }
+        }
+        
         if (d instanceof Animatable2) {
+            com.fadcam.Log.d("AvatarToggleView", "✓ Using Animatable2 path");
             Animatable2 avd = (Animatable2) d;
-            // Clear previous callbacks to avoid accumulation on repeated calls.
             avd.clearAnimationCallbacks();
             avd.registerAnimationCallback(new Animatable2.AnimationCallback() {
                 @Override
                 public void onAnimationEnd(Drawable drawable) {
+                    com.fadcam.Log.d("AvatarToggleView", "→ Animation END callback received");
                     if (ivAvatar != null && ivAvatar.isAttachedToWindow()) {
                         onEnd.run();
                     }
                 }
             });
             avd.start();
+            com.fadcam.Log.d("AvatarToggleView", "→ Animation started");
         } else if (d instanceof Animatable) {
+            com.fadcam.Log.d("AvatarToggleView", "❌ Using FALLBACK Animatable path (may not show)");
             ((Animatable) d).start();
             ivAvatar.postDelayed(() -> {
+                com.fadcam.Log.d("AvatarToggleView", "→ Fallback delay expired");
                 if (ivAvatar != null && ivAvatar.isAttachedToWindow()) {
                     onEnd.run();
                 }
             }, fallbackDurationMs);
         } else {
-            onEnd.run();
+            com.fadcam.Log.d("AvatarToggleView", "❌❌ Not animatable AT ALL! Using pure delay");
+            if (fallbackDurationMs > 0) {
+                ivAvatar.postDelayed(() -> {
+                    com.fadcam.Log.d("AvatarToggleView", "→ Delay expired, calling onEnd");
+                    if (ivAvatar != null && ivAvatar.isAttachedToWindow()) {
+                        onEnd.run();
+                    }
+                }, fallbackDurationMs);
+            } else {
+                onEnd.run();
+            }
         }
     }
 
@@ -459,7 +492,7 @@ public class AvatarToggleView extends FrameLayout {
             Drawable d = ivAvatar.getDrawable();
             if (d instanceof Animatable2) {
                 Animatable2 avd = (Animatable2) d;
-                avd.clearAnimationCallbacks();
+                avd.clearAnimationCallbacks(); // prevent stale callback accumulation
                 avd.registerAnimationCallback(new Animatable2.AnimationCallback() {
                     @Override public void onAnimationEnd(Drawable drawable) {
                         if (isAttachedToWindow() && checked && ivAvatar != null) {
@@ -471,7 +504,7 @@ public class AvatarToggleView extends FrameLayout {
                 avd.start();
             } else if (d instanceof Animatable) {
                 ((Animatable) d).start();
-                ivAvatar.postDelayed(() -> {
+                handler.postDelayed(() -> {
                     if (isAttachedToWindow() && checked && ivAvatar != null) {
                         ivAvatar.setImageResource(resolveDrawable(RES_IDLE));
                         scheduleNextBlink(3000 + blinkRandom.nextInt(2500));
@@ -487,10 +520,16 @@ public class AvatarToggleView extends FrameLayout {
             handler.removeCallbacks(blinkRunnable);
             blinkRunnable = null;
         }
-        // Restore idle if frozen mid-blink.
-        if (ivAvatar != null && checked) {
+        // Stop any currently-playing blink AVD and clear its callbacks so that
+        // its onAnimationEnd cannot fire after we transition to the sleep state.
+        if (ivAvatar != null) {
             Drawable d = ivAvatar.getDrawable();
-            if (d instanceof Animatable) ((Animatable) d).stop();
+            if (d instanceof Animatable2) {
+                ((Animatable2) d).clearAnimationCallbacks();
+                ((Animatable2) d).stop();
+            } else if (d instanceof Animatable) {
+                ((Animatable) d).stop();
+            }
         }
     }
 
