@@ -184,29 +184,157 @@ public class OnboardingActivity extends AppIntro {
                         super.onFragmentViewCreated(fm, f, v, savedInstanceState);
                         if (v == null)
                             return;
-                        View imageView = v.findViewById(R.id.onboardingWelcomeImage);
+                        final android.widget.ImageView ivOnboardingAvatar = v.findViewById(R.id.ivOnboardingAvatar);
+                        final TextView tvHiGreeting = v.findViewById(R.id.tvHiGreeting);
                         final TextView descView = v.findViewById(R.id.tvOnboardingDescription);
                         final LottieAnimationView lottieArrow = v.findViewById(R.id.lottieArrow);
                         final TextView swipeInstruction = v.findViewById(R.id.tvSwipeInstruction);
-                        if (imageView != null && descView != null) {
-                            imageView.setAlpha(0f);
-                            imageView.setVisibility(View.VISIBLE);
-                            imageView.animate().alpha(1f).setDuration(1200).withEndAction(() -> {
-                                // Only start text animation after image fade-in completes
-                                descView.setTypeface(android.graphics.Typeface.MONOSPACE);
+                        if (ivOnboardingAvatar != null && descView != null) {
+                            // ===== SLEEP STATE =====
+                            ivOnboardingAvatar.setImageResource(R.drawable.toggle_off);
+                            final Handler handler = new Handler();
+                            final boolean[] wakeDone = {false};
+                            final boolean[] blinkLoopActive = {false};
+                            final android.widget.TextView tvZ1 = v.findViewById(R.id.tvOnboardZ1);
+                            final android.widget.TextView tvZ2 = v.findViewById(R.id.tvOnboardZ2);
+                            final android.widget.TextView tvZ3 = v.findViewById(R.id.tvOnboardZ3);
+                            // ZzZ float-up-and-fade loop, staggered per letter
+                            if (tvZ1 != null && tvZ2 != null && tvZ3 != null) {
+                                final Runnable[] z1r = {null}, z2r = {null}, z3r = {null};
+                                z1r[0] = () -> { if (wakeDone[0]) return; tvZ1.setTranslationY(0f); tvZ1.setAlpha(0.85f); tvZ1.animate().translationY(-20f).alpha(0f).setDuration(1100).withEndAction(() -> { if (!wakeDone[0]) handler.postDelayed(z1r[0], 120); }).start(); };
+                                z2r[0] = () -> { if (wakeDone[0]) return; tvZ2.setTranslationY(0f); tvZ2.setAlpha(0.85f); tvZ2.animate().translationY(-24f).alpha(0f).setDuration(1300).withEndAction(() -> { if (!wakeDone[0]) handler.postDelayed(z2r[0], 120); }).start(); };
+                                z3r[0] = () -> { if (wakeDone[0]) return; tvZ3.setTranslationY(0f); tvZ3.setAlpha(0.85f); tvZ3.animate().translationY(-28f).alpha(0f).setDuration(1500).withEndAction(() -> { if (!wakeDone[0]) handler.postDelayed(z3r[0], 120); }).start(); };
+                                tvZ1.setVisibility(View.VISIBLE); tvZ2.setVisibility(View.VISIBLE); tvZ3.setVisibility(View.VISIBLE);
+                                tvZ1.setAlpha(0f); tvZ2.setAlpha(0f); tvZ3.setAlpha(0f);
+                                tvZ1.animate().alpha(1f).setDuration(220).withEndAction(() -> handler.post(z1r[0])).start();
+                                handler.postDelayed(() -> tvZ2.animate().alpha(1f).setDuration(220).withEndAction(() -> handler.post(z2r[0])).start(), 220);
+                                handler.postDelayed(() -> tvZ3.animate().alpha(1f).setDuration(220).withEndAction(() -> handler.post(z3r[0])).start(), 440);
+                            }
+                            // Dim-breathing while sleeping
+                            ValueAnimator sleepBreath = ValueAnimator.ofFloat(0f, 1f);
+                            sleepBreath.setDuration(2400);
+                            sleepBreath.setRepeatCount(ValueAnimator.INFINITE);
+                            sleepBreath.setRepeatMode(ValueAnimator.REVERSE);
+                            sleepBreath.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+                            sleepBreath.addUpdateListener(a -> {
+                                if (!ivOnboardingAvatar.isAttachedToWindow()) return;
+                                float t = (float) a.getAnimatedValue();
+                                ivOnboardingAvatar.setAlpha(0.52f + 0.30f * t);
+                                float sc = 0.96f + 0.04f * t;
+                                ivOnboardingAvatar.setScaleX(sc); ivOnboardingAvatar.setScaleY(sc);
+                            });
+                            sleepBreath.start();
+                            // ===== WAKE SEQUENCE =====
+                            handler.postDelayed(() -> {
+                                wakeDone[0] = true;
+                                sleepBreath.cancel();
+                                ivOnboardingAvatar.setAlpha(1f); ivOnboardingAvatar.setScaleX(1f); ivOnboardingAvatar.setScaleY(1f);
+                                if (tvZ1 != null) tvZ1.animate().alpha(0f).setDuration(200).withEndAction(() -> tvZ1.setVisibility(View.GONE)).start();
+                                if (tvZ2 != null) tvZ2.animate().alpha(0f).setDuration(200).withEndAction(() -> tvZ2.setVisibility(View.GONE)).start();
+                                if (tvZ3 != null) tvZ3.animate().alpha(0f).setDuration(200).withEndAction(() -> tvZ3.setVisibility(View.GONE)).start();
+                                // Play wake AVD immediately
+                                ivOnboardingAvatar.setImageResource(R.drawable.toggle_on_anim);
+                                ivOnboardingAvatar.post(() -> {
+                                        android.graphics.drawable.Drawable wakeDrawable = ivOnboardingAvatar.getDrawable();
+                                        // afterWake handles Hi! greeting — no pre-pop needed here
+                                        Runnable afterWake = () -> {
+                                            ivOnboardingAvatar.setImageResource(R.drawable.toggle_on_idle);
+                                            // Idle breathing (alpha + scale pulse)
+                                            ValueAnimator idleBreath = ValueAnimator.ofFloat(0f, 1f);
+                                            idleBreath.setDuration(2600);
+                                            idleBreath.setRepeatCount(ValueAnimator.INFINITE);
+                                            idleBreath.setRepeatMode(ValueAnimator.REVERSE);
+                                            idleBreath.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+                                            idleBreath.addUpdateListener(a2 -> {
+                                                if (!ivOnboardingAvatar.isAttachedToWindow()) return;
+                                                float t2 = (float) a2.getAnimatedValue();
+                                                ivOnboardingAvatar.setAlpha(0.85f + 0.15f * t2);
+                                                float sc2 = 0.97f + 0.03f * t2;
+                                                ivOnboardingAvatar.setScaleX(sc2); ivOnboardingAvatar.setScaleY(sc2);
+                                            });
+                                            idleBreath.start();
+                                            // Floating bob
+                                            android.animation.ObjectAnimator floatAnim = android.animation.ObjectAnimator
+                                                    .ofFloat(ivOnboardingAvatar, "translationY", 0f, -8f);
+                                            floatAnim.setDuration(3200);
+                                            floatAnim.setRepeatCount(android.animation.ObjectAnimator.INFINITE);
+                                            floatAnim.setRepeatMode(android.animation.ObjectAnimator.REVERSE);
+                                            floatAnim.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+                                            floatAnim.start();
+                                            // Blink loop
+                                            blinkLoopActive[0] = true;
+                                            final Runnable[] blinkRef = {null};
+                                            blinkRef[0] = () -> {
+                                                if (!blinkLoopActive[0]) return;
+                                                ivOnboardingAvatar.setImageResource(R.drawable.toggle_on_blink);
+                                                android.graphics.drawable.Drawable bd = ivOnboardingAvatar.getDrawable();
+                                                if (bd instanceof android.graphics.drawable.Animatable2) {
+                                                    android.graphics.drawable.Animatable2 blinkAvd = (android.graphics.drawable.Animatable2) bd;
+                                                    blinkAvd.clearAnimationCallbacks();
+                                                    blinkAvd.registerAnimationCallback(new android.graphics.drawable.Animatable2.AnimationCallback() {
+                                                        @Override
+                                                        public void onAnimationEnd(android.graphics.drawable.Drawable d2) {
+                                                            if (!blinkLoopActive[0]) return;
+                                                            ivOnboardingAvatar.post(() -> {
+                                                                ivOnboardingAvatar.setImageResource(R.drawable.toggle_on_idle);
+                                                                int nb = 2600 + new java.util.Random().nextInt(2200);
+                                                                handler.postDelayed(blinkRef[0], nb);
+                                                            });
+                                                        }
+                                                    });
+                                                    blinkAvd.start();
+                                                } else if (bd instanceof android.graphics.drawable.Animatable) {
+                                                    ((android.graphics.drawable.Animatable) bd).start();
+                                                    handler.postDelayed(() -> {
+                                                        if (!blinkLoopActive[0]) return;
+                                                        ivOnboardingAvatar.setImageResource(R.drawable.toggle_on_idle);
+                                                        handler.postDelayed(blinkRef[0], 3000);
+                                                    }, 280);
+                                                }
+                                            };
+                                            handler.postDelayed(blinkRef[0], 2400);
+                                            // Greeting cycle: Hi! <-> Arabic (parallel, non-blocking)
+                                            final int[] gCycleIdx = {0};
+                                            final Runnable[] greetingCycle = {null};
+                                            greetingCycle[0] = () -> {
+                                                if (tvHiGreeting == null || !tvHiGreeting.isAttachedToWindow()) return;
+                                                boolean isHi = (gCycleIdx[0] % 2 == 0);
+                                                tvHiGreeting.setText(isHi ? "Hi!"
+                                                        : "\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u064a\u0643\u0645\n\u0648\u0631\u062d\u0645\u0629 \u0627\u0644\u0644\u0647 \u0648\u0628\u0631\u0643\u0627\u062a\u0647");
+                                                tvHiGreeting.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isHi ? 32f : 11f);
+                                                tvHiGreeting.setRotation(isHi ? -10f : 4f);
+                                                tvHiGreeting.setTextDirection(isHi ? View.TEXT_DIRECTION_LTR : View.TEXT_DIRECTION_RTL);
+                                                tvHiGreeting.setAlpha(0f);
+                                                tvHiGreeting.setScaleX(isHi ? 0.4f : 0.7f);
+                                                tvHiGreeting.setScaleY(isHi ? 0.4f : 0.7f);
+                                                tvHiGreeting.animate().alpha(1f).scaleX(1f).scaleY(1f)
+                                                        .setDuration(280)
+                                                        .setInterpolator(new android.view.animation.OvershootInterpolator(isHi ? 2.2f : 1.5f))
+                                                        .withEndAction(() -> handler.postDelayed(() -> {
+                                                            tvHiGreeting.animate().alpha(0f).setDuration(220)
+                                                                    .withEndAction(() -> {
+                                                                        gCycleIdx[0]++;
+                                                                        handler.postDelayed(greetingCycle[0], 150);
+                                                                    }).start();
+                                                        }, 1200)).start();
+                                            };
+                                            tvHiGreeting.setVisibility(View.VISIBLE);
+                                            handler.post(greetingCycle[0]);
+                                            // ===== TEXT ANIMATION (starts immediately, alongside greeting) =====
+                                            descView.setTypeface(android.graphics.Typeface.MONOSPACE);
                                 descView.setGravity(android.view.Gravity.START);
                                 descView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                                 final String[] lines = {
                                         getString(R.string.onboarding_intro_line1),
                                         getString(R.string.onboarding_intro_line2),
-                                        getString(R.string.onboarding_intro_line3)
+                                        getString(R.string.onboarding_intro_line3),
+                                        getString(R.string.onboarding_intro_line4)
                                 };
                                 final String cursorChar = "▌";
                                 final int rowFadeDuration = 220;
                                 final int rowPauseDelay = 1200;
                                 final int blinkFrameDelay = 32;
                                 final int blinkDuration = 900;
-                                final Handler handler = new Handler();
                                 final Runnable[] blinkRunnable = new Runnable[1];
                                 final float[] cursorAlpha = { 1f };
                                 final boolean[] fadingOut = { true };
@@ -328,8 +456,27 @@ public class OnboardingActivity extends AppIntro {
                                     }
                                 }
                                 final RowFadeAnimator rowAnimator = new RowFadeAnimator(startBlinkingCursor);
-                                handler.postDelayed(rowAnimator::start, 200); // Short pause after image fade-in
-                            });
+                                            handler.postDelayed(rowAnimator::start, 200);
+                                        }; // closes afterWake
+                                        // Play wake AVD; call afterWake on completion
+                                        if (wakeDrawable instanceof android.graphics.drawable.Animatable2) {
+                                            android.graphics.drawable.Animatable2 avd2 = (android.graphics.drawable.Animatable2) wakeDrawable;
+                                            avd2.clearAnimationCallbacks();
+                                            avd2.registerAnimationCallback(new android.graphics.drawable.Animatable2.AnimationCallback() {
+                                                @Override
+                                                public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
+                                                    ivOnboardingAvatar.post(afterWake);
+                                                }
+                                            });
+                                            avd2.start();
+                                        } else if (wakeDrawable instanceof android.graphics.drawable.Animatable) {
+                                            ((android.graphics.drawable.Animatable) wakeDrawable).start();
+                                            handler.postDelayed(afterWake, 480);
+                                        } else {
+                                            afterWake.run();
+                                        }
+                                    });
+                            }, 600); // sleep display duration
                         }
                         // Slide 2 logic (language selection)
                         MaterialButton languageChooseButton = v.findViewById(R.id.language_choose_button);

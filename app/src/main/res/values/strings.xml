@@ -1512,9 +1512,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_or">OR</string>
     <string name="onboarding_and">AND</string>
     <string name="onboarding_open_settings">Open Settings</string>
-    <string name="onboarding_intro_line1">Open source,</string>
-    <string name="onboarding_intro_line2">ad-free,</string>
-    <string name="onboarding_intro_line3">and built for you—not for advertisers.</string>
+    <string name="onboarding_intro_line1">a multimedia recorder—</string>
+    <string name="onboarding_intro_line2">background video, screen &amp; live stream,</string>
+    <string name="onboarding_intro_line3">remote camera control,</string>
+    <string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
 
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sort By</string>

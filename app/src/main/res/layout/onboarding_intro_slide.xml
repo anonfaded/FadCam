@@ -4,11 +4,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:fillViewport="true"
     android:background="@color/black"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
         <com.fadcam.ui.IconRainView
             android:id="@+id/iconRainView"
@@ -20,30 +24,81 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <!-- Avatar: starts sleeping, wakes on-screen to greet the user -->
         <ImageView
-            android:id="@+id/onboardingWelcomeImage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/welcome_to_fadcam_png"
+            android:id="@+id/ivOnboardingAvatar"
+            android:layout_width="130dp"
+            android:layout_height="130dp"
+            android:src="@drawable/toggle_off"
             android:contentDescription="@string/app_name"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            android:visibility="invisible"
+            android:layout_marginTop="68dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lottieCamera"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            app:lottie_fileName="camera.json"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            app:layout_constraintTop_toBottomOf="@id/onboardingWelcomeImage"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="4dp" />
+        <!-- ZzZ floating letters above-right during sleep -->
+        <TextView
+            android:id="@+id/tvOnboardZ1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="z"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#CCFFFFFF"
+            android:fontFamily="monospace"
+            android:visibility="invisible"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="2dp"
+            app:layout_constraintEnd_toEndOf="@id/ivOnboardingAvatar"
+            app:layout_constraintBottom_toTopOf="@id/ivOnboardingAvatar" />
+
+        <TextView
+            android:id="@+id/tvOnboardZ2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#CCFFFFFF"
+            android:fontFamily="monospace"
+            android:visibility="invisible"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="14dp"
+            app:layout_constraintEnd_toEndOf="@id/ivOnboardingAvatar"
+            app:layout_constraintBottom_toTopOf="@id/ivOnboardingAvatar" />
+
+        <TextView
+            android:id="@+id/tvOnboardZ3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z"
+            android:textSize="23sp"
+            android:textStyle="bold"
+            android:textColor="#CCFFFFFF"
+            android:fontFamily="monospace"
+            android:visibility="invisible"
+            android:layout_marginEnd="-8dp"
+            android:layout_marginBottom="28dp"
+            app:layout_constraintEnd_toEndOf="@id/ivOnboardingAvatar"
+            app:layout_constraintBottom_toTopOf="@id/ivOnboardingAvatar" />
+
+        <!-- Greeting text: pops in on wake, cycles Hi -> سلام -->
+        <TextView
+            android:id="@+id/tvHiGreeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hi!"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="monospace"
+            android:rotation="-10"
+            android:elevation="4dp"
+            android:visibility="invisible"
+            android:layout_marginEnd="-16dp"
+            android:layout_marginTop="-10dp"
+            app:layout_constraintEnd_toEndOf="@id/ivOnboardingAvatar"
+            app:layout_constraintTop_toTopOf="@id/ivOnboardingAvatar" />
 
         <TextView
             android:id="@+id/tvOnboardingDescription"
@@ -56,7 +111,7 @@
             android:layout_marginTop="12dp"
             android:paddingLeft="@dimen/onboarding_margin"
             android:paddingRight="@dimen/onboarding_margin"
-            app:layout_constraintTop_toBottomOf="@id/lottieCamera"
+            app:layout_constraintTop_toBottomOf="@id/ivOnboardingAvatar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
