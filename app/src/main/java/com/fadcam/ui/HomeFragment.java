@@ -1571,9 +1571,9 @@ public class HomeFragment extends BaseFragment {
             buttonTorchSwitch.setAlpha(1.0f);
         }
 
-        // Restore preview visibility (may have shown placeholder during WAITING_FOR_CAMERA)
-        isPreviewEnabled = true;
-        savePreviewState();
+        // Restore preview visibility — respect the user's saved preference.
+        // Do NOT force-enable: if the user explicitly disabled preview before pausing,
+        // it should remain disabled after resuming.
         updatePreviewVisibility();
 
         startUpdatingInfo();
