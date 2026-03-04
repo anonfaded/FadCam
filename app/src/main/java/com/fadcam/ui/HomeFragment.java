@@ -9755,18 +9755,20 @@ public class HomeFragment extends BaseFragment {
                     });
 
     /**
-     * Update fullscreen button visibility based on recording + preview state.
-     * Button is shown only when both recording and preview are active.
+     * Update fullscreen button visibility based on the "preview quick actions" setting.
+     * When "always visible" is ON  → show regardless of recording state.
+     * When "always visible" is OFF → show only while recording/paused.
      */
     private void updateFullscreenButtonVisibility() {
         if (btnFullscreenPreview == null) return;
-        boolean show = true;
+        boolean alwaysVisible = false;
         try {
-            if (sharedPreferencesManager != null && sharedPreferencesManager.isPreviewQuickActionsAlwaysVisible()) {
-                show = true;
+            if (sharedPreferencesManager != null) {
+                alwaysVisible = sharedPreferencesManager.isPreviewQuickActionsAlwaysVisible();
             }
         } catch (Exception ignored) {
         }
+        boolean show = alwaysVisible || isRecordingOrPaused();
         btnFullscreenPreview.setVisibility(show ? View.VISIBLE : View.GONE);
         if (btnCaptureShotPreview != null) {
             btnCaptureShotPreview.setVisibility(show ? View.VISIBLE : View.GONE);
