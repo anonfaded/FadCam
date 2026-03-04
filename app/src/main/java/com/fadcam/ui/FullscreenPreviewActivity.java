@@ -132,6 +132,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private View zzzFullscreenBadgeGroup;
     private TextView tvFullscreenZzz1;
     private TextView tvFullscreenZzz2;
+    private TextView tvFullscreenZzz3;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
@@ -176,8 +177,11 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     // Avatar animation state
     private boolean fullscreenAvatarLastEnabled = false;
-    private boolean fullscreenAvatarWakingUp = false;  // Track if avatar is in wake-up animation
-    private Animator fullscreenIrisAnimator = null;  // Track iris reveal animation
+    private boolean fullscreenAvatarWakingUp = false;        // Guard against updatePreviewHintVisibility resetting during wake
+    private boolean isPreviewCloseAnimating = false;          // Guard iris-close transition from firing twice
+    private boolean fullscreenPreviewSurfaceWasShowing = false; // Track prev preview state to detect transitions
+    private boolean pendingIrisOpen = false;                    // Set when waiting for first camera frame before iris-open
+    private Animator fullscreenIrisAnimator = null;  // Track iris reveal animation (eye overlay)
     private java.util.Random fullscreenBlinkRandom = new java.util.Random();
     private Handler fullscreenBlinkHandler = new Handler(Looper.getMainLooper());
     private Runnable fullscreenBlinkRunnable;
@@ -186,8 +190,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private ObjectAnimator fullscreenAmbianceTwinkleAnim;
     private ObjectAnimator fullscreenFloatingZAnim1;
     private ObjectAnimator fullscreenFloatingZAnim2;
-
-    // ── Torch broadcast receiver ─────────────────────────────────────────────
+    private ObjectAnimator fullscreenFloatingZAnim3;
     private boolean torchReceiverRegistered = false;
     private final BroadcastReceiver torchReceiver = new BroadcastReceiver() {
         @Override
@@ -296,6 +299,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupZoomHud();
         setupSystemInsets();
         updatePreviewHintVisibility();
+        // Initialize avatar to sleeping state (shows zzz badge by default)
+        applyFullscreenAvatarState(false, false);
         registerTorchReceiver();
         registerRecordingStateReceiver();
         requestRecordingStateSync();
@@ -324,6 +329,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         autoHideHandler.removeCallbacks(autoHideRunnable);
+        // Reset so onResume doesn't mistakenly trigger an iris-close transition
+        fullscreenPreviewSurfaceWasShowing = false;
+        isPreviewCloseAnimating = false;
+        pendingIrisOpen = false;
     }
 
     @Override
@@ -412,6 +421,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         zzzFullscreenBadgeGroup = findViewById(R.id.zzz_fullscreen_badge_group);
         tvFullscreenZzz1 = findViewById(R.id.tv_fullscreen_zzz_1);
         tvFullscreenZzz2 = findViewById(R.id.tv_fullscreen_zzz_2);
+        tvFullscreenZzz3 = findViewById(R.id.tv_fullscreen_zzz_3);
     }
 
     private void setupCaptureShotButton() {
@@ -450,7 +460,34 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture st) { /* no-op */ }
+            public void onSurfaceTextureUpdated(@NonNull SurfaceTexture st) {
+                // Trigger iris-open once the first camera frame arrives — guarantees visible iris animation
+                if (!pendingIrisOpen) return;
+                pendingIrisOpen = false;
+                // createCircularReveal must run on the UI thread
+                fullscreenBlinkHandler.post(() -> {
+                    if (textureView == null) return;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        final int tcx = textureView.getWidth() / 2;
+                        final int tcy = textureView.getHeight() / 2;
+                        final float tmaxR = (float) Math.hypot(tcx, tcy);
+                        if (tmaxR > 0) {
+                            android.animation.Animator reveal =
+                                    android.view.ViewAnimationUtils.createCircularReveal(
+                                            textureView, tcx, tcy, 0f, tmaxR);
+                            reveal.setDuration(500);
+                            reveal.setInterpolator(
+                                    new android.view.animation.DecelerateInterpolator(1.5f));
+                            reveal.addListener(new android.animation.AnimatorListenerAdapter() {
+                                @Override public void onAnimationStart(android.animation.Animator a) {
+                                    if (textureView != null) textureView.setAlpha(1f);
+                                }
+                            });
+                            reveal.start();
+                        }
+                    }
+                });
+            }
         });
 
         if (textureView.isAvailable()) {
@@ -482,7 +519,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
         });
 
-        textureView.setOnTouchListener((v, event) -> {
+        // Attach to rootLayout (always VISIBLE) so touch works when textureView is invisible (idle state)
+        rootLayout.setOnTouchListener((v, event) -> {
             final int action = event.getActionMasked();
             final float touchSlop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
             final boolean zoomGestureLock = previewUiScale > 1.001f;
@@ -623,15 +661,48 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     intent.putExtra("SURFACE_WIDTH", textureView != null ? textureView.getWidth() : -1);
                     intent.putExtra("SURFACE_HEIGHT", textureView != null ? textureView.getHeight() : -1);
                 }
-                // Trigger avatar waking animation immediately when starting preview
+                // Step 1: Wake avatar with animation (eyes open, sun spins in)
                 if (flFullscreenPreviewAvatar != null) {
                     flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
-                    fullscreenAvatarWakingUp = true;  // Prevent updatePreviewHintVisibility from resetting
-                    applyFullscreenAvatarState(true, true); // Wake up with animation
-                    // Clear flag after animation completes (520ms wake anim + 200ms buffer)
+                    flFullscreenPreviewAvatar.setAlpha(1f);
+                    flFullscreenPreviewAvatar.setScaleX(1f);
+                    flFullscreenPreviewAvatar.setScaleY(1f);
+                    fullscreenAvatarWakingUp = true;
+                    applyFullscreenAvatarState(true, true);
+                    // Step 2: After wake anim (~480ms): shrink avatar out + iris-open camera
                     fullscreenBlinkHandler.postDelayed(() -> {
-                        fullscreenAvatarWakingUp = false;
-                    }, 720L);
+                        if (flFullscreenPreviewAvatar != null) {
+                            flFullscreenPreviewAvatar.animate().cancel();
+                            flFullscreenPreviewAvatar.animate()
+                                .alpha(0f).scaleX(0.72f).scaleY(0.72f)
+                                .setDuration(280)
+                                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                                .withEndAction(() -> {
+                                    if (flFullscreenPreviewAvatar != null) {
+                                        flFullscreenPreviewAvatar.setVisibility(View.INVISIBLE);
+                                        flFullscreenPreviewAvatar.setAlpha(1f);
+                                        flFullscreenPreviewAvatar.setScaleX(1f);
+                                        flFullscreenPreviewAvatar.setScaleY(1f);
+                                    }
+                                    fullscreenAvatarWakingUp = false;
+                                }).start();
+                        } else {
+                            fullscreenAvatarWakingUp = false;
+                        }
+                        // Iris-open: signal that we want it on the next camera frame
+                        // (avoids black-on-black invisible animation before first frame arrives)
+                        if (textureView != null) {
+                            pendingIrisOpen = true;
+                            textureView.setAlpha(0f);   // ensure transparent until iris begins (SurfaceTexture always exists)
+                            // Fallback: if no frame arrives within 1.5s, fade camera in directly
+                            fullscreenBlinkHandler.postDelayed(() -> {
+                                if (pendingIrisOpen) {
+                                    pendingIrisOpen = false;
+                                    if (textureView != null) textureView.setAlpha(1f);
+                                }
+                            }, 1500L);
+                        }
+                    }, 480L);
                 }
             }
             ServiceStartPolicy.startRecordingAction(this, intent);
@@ -1391,28 +1462,131 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void updatePreviewHintVisibility() {
         if (textFullscreenPreviewHint == null) return;
-        boolean showPreviewSurface = isPreviewOnlyActive || ((isRecordingActive || isRecordingPaused) && isPreviewAttachedInRecording);
-        if (viewFullscreenIdleMask != null) {
-            viewFullscreenIdleMask.setVisibility(showPreviewSurface ? View.GONE : View.VISIBLE);
-        }
+        boolean showPreviewSurface = isPreviewOnlyActive
+                || ((isRecordingActive || isRecordingPaused) && isPreviewAttachedInRecording);
         boolean showIdlePlaceholder = !showPreviewSurface;
-        textFullscreenPreviewHint.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
-        
-        // Show/hide avatar UI based on preview state
-        if (flFullscreenPreviewAvatar != null) {
-            if (showIdlePlaceholder) {
-                // Show sleeping avatar with zzz badge
-                flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
-                // Only update state if we're not already in a wake-up animation
-                if (!fullscreenAvatarWakingUp && fullscreenAvatarLastEnabled != false) {
-                    applyFullscreenAvatarState(false, false); // sleeping, no animation
+
+        // Detect transition: preview was showing and now it stopped
+        boolean transition = fullscreenPreviewSurfaceWasShowing && !showPreviewSurface;
+        fullscreenPreviewSurfaceWasShowing = showPreviewSurface;
+
+        if (viewFullscreenIdleMask != null) {
+            viewFullscreenIdleMask.setVisibility(View.GONE); // Mask not needed — avatar handles bg
+        }
+        setFullscreenHintVisibilityAnimated(showIdlePlaceholder);
+
+        if (showIdlePlaceholder) {
+            if (transition && !isPreviewCloseAnimating && !fullscreenAvatarWakingUp
+                    && textureView != null && textureView.getAlpha() > 0.1f) {
+                // ── Preview just stopped: mirror HomeFragment iris-close sequence ──────────
+                isPreviewCloseAnimating = true;
+
+                // 1. Reveal avatar container under textureView; set to instant-awake state
+                if (flFullscreenPreviewAvatar != null) {
+                    flFullscreenPreviewAvatar.setEnabled(true);
+                    flFullscreenPreviewAvatar.setAlpha(1f);
+                    flFullscreenPreviewAvatar.setScaleX(1f);
+                    flFullscreenPreviewAvatar.setScaleY(1f);
+                    flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
                 }
-            } else {
-                // Hide avatar when preview is active (after wake animation completes)
-                if (!fullscreenAvatarWakingUp) {
-                    flFullscreenPreviewAvatar.setVisibility(View.GONE);
+                applyFullscreenAvatarState(true, false); // instant awake
+
+                // Ensure textureView is fully opaque with last camera frame before we contract it
+                textureView.setAlpha(1f);
+
+                // 2. Iris-close: textureView contracts from full-screen to nothing
+                if (textureView.getWidth() > 0
+                        && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                    final int cx = textureView.getWidth() / 2;
+                    final int cy = textureView.getHeight() / 2;
+                    final float maxR = (float) Math.hypot(cx, cy);
+                    android.animation.Animator irisClose =
+                            android.view.ViewAnimationUtils.createCircularReveal(
+                                    textureView, cx, cy, maxR, 0f);
+                    irisClose.setDuration(480);
+                    irisClose.setInterpolator(
+                            new android.view.animation.AccelerateInterpolator(1.3f));
+                    irisClose.addListener(new android.animation.AnimatorListenerAdapter() {
+                        @Override public void onAnimationEnd(android.animation.Animator a) {
+                            isPreviewCloseAnimating = false;
+                            if (textureView != null) textureView.setAlpha(0f);
+                            // Brief hold → avatar falls asleep (mirrors HomeFragment's 650ms delay)
+                            final android.view.View anchor = ivFullscreenPreviewAvatar;
+                            if (anchor != null) {
+                                anchor.postDelayed(() -> applyFullscreenAvatarState(false, true), 650);
+                            } else {
+                                applyFullscreenAvatarState(false, true);
+                            }
+                        }
+                    });
+                    irisClose.start();
+                } else {
+                    // Fallback: fade camera out
+                    textureView.animate().alpha(0f).setDuration(340).withEndAction(() -> {
+                        isPreviewCloseAnimating = false;
+                        applyFullscreenAvatarState(false, true);
+                    }).start();
+                }
+
+            } else if (!isPreviewCloseAnimating && !fullscreenAvatarWakingUp) {
+                // ── No preview, no active transition: ensure correct steady-state ────────
+                if (flFullscreenPreviewAvatar != null) {
+                    flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
+                    flFullscreenPreviewAvatar.setEnabled(true);
+                }
+                if (textureView != null) {
+                    textureView.setAlpha(0f);
+                }
+                // Transition awake→sleep if needed (e.g. after onResume with no preview)
+                if (fullscreenAvatarLastEnabled) {
+                    applyFullscreenAvatarState(false, false);
                 }
             }
+        } else {
+            // ── Preview is active: textureView (on top) covers avatar below ──────────────
+            if (!fullscreenAvatarWakingUp && !isPreviewCloseAnimating) {
+                if (flFullscreenPreviewAvatar != null) {
+                    flFullscreenPreviewAvatar.setVisibility(View.INVISIBLE);
+                }
+                if (textureView != null) {
+                    textureView.setAlpha(1f);
+                }
+            }
+        }
+    }
+
+    /** Smoothly shows/hides the preview hint label with fade+scale — mirrors HomeFragment. */
+    private void setFullscreenHintVisibilityAnimated(boolean show) {
+        if (textFullscreenPreviewHint == null) return;
+        if (show) {
+            if (textFullscreenPreviewHint.getVisibility() == View.VISIBLE
+                    && textFullscreenPreviewHint.getAlpha() >= 0.99f) return;
+            textFullscreenPreviewHint.animate().cancel();
+            textFullscreenPreviewHint.setAlpha(0f);
+            textFullscreenPreviewHint.setScaleX(0.88f);
+            textFullscreenPreviewHint.setScaleY(0.88f);
+            textFullscreenPreviewHint.setVisibility(View.VISIBLE);
+            textFullscreenPreviewHint.animate()
+                .alpha(1f).scaleX(1f).scaleY(1f)
+                .setDuration(380)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                .start();
+        } else {
+            if (textFullscreenPreviewHint.getVisibility() != View.VISIBLE) return;
+            textFullscreenPreviewHint.animate().cancel();
+            textFullscreenPreviewHint.animate()
+                .alpha(0f).scaleX(0.88f).scaleY(0.88f)
+                .setDuration(260)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> {
+                    if (textFullscreenPreviewHint != null) {
+                        textFullscreenPreviewHint.setVisibility(View.GONE);
+                        textFullscreenPreviewHint.setAlpha(1f);
+                        textFullscreenPreviewHint.setScaleX(1f);
+                        textFullscreenPreviewHint.setScaleY(1f);
+                    }
+                })
+                .start();
         }
     }
 
@@ -1693,50 +1867,28 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     .start();
             }
             if (ivFullscreenWakeSun != null) {
+                // Cancel first, then post() the setup so ViewPropertyAnimator's cancel-reset
+                // doesn't override our initial state (known issue with immediate re-animation).
                 ivFullscreenWakeSun.animate().cancel();
-                ivFullscreenWakeSun.setAlpha(0f);
-                ivFullscreenWakeSun.setScaleX(0.2f);
-                ivFullscreenWakeSun.setScaleY(0.2f);
-                ivFullscreenWakeSun.setRotation(-30f);
-                ivFullscreenWakeSun.animate()
-                    .alpha(1f).scaleX(1f).scaleY(1f).rotation(0f)
-                    .setDuration(520)
-                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.5f))
-                    .start();
+                final View sun = ivFullscreenWakeSun;
+                sun.post(() -> {
+                    if (sun == null) return;
+                    sun.setAlpha(0f);
+                    sun.setScaleX(0.2f);
+                    sun.setScaleY(0.2f);
+                    sun.setRotation(-30f);
+                    sun.animate()
+                        .alpha(1f).scaleX(1f).scaleY(1f).rotation(0f)
+                        .setDuration(520)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.5f))
+                        .start();
+                });
             }
             
-            // Iris-open: circular reveal of eye overlay (happens during wake animation)
-            if (animate && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && ivFullscreenPreviewEyeOverlay != null) {
+            // Eye overlay: always alpha=0, consistent with HomeFragment (eye color shown via drawables)
+            if (ivFullscreenPreviewEyeOverlay != null) {
+                ivFullscreenPreviewEyeOverlay.animate().cancel();
                 ivFullscreenPreviewEyeOverlay.setAlpha(0f);
-                ivFullscreenPreviewEyeOverlay.post(() -> {
-                    if (ivFullscreenPreviewEyeOverlay == null) return;
-                    int w = ivFullscreenPreviewEyeOverlay.getWidth();
-                    int h = ivFullscreenPreviewEyeOverlay.getHeight();
-                    if (w <= 0 || h <= 0) {
-                        ivFullscreenPreviewEyeOverlay.measure(0, 0);
-                        w = ivFullscreenPreviewEyeOverlay.getMeasuredWidth();
-                        h = ivFullscreenPreviewEyeOverlay.getMeasuredHeight();
-                    }
-                    int cx = w / 2;
-                    int cy = h / 2;
-                    float maxR = (float) Math.hypot(cx, cy);
-                    if (fullscreenIrisAnimator != null) fullscreenIrisAnimator.cancel();
-                    fullscreenIrisAnimator = android.view.ViewAnimationUtils.createCircularReveal(
-                            ivFullscreenPreviewEyeOverlay, cx, cy, 0f, maxR);
-                    fullscreenIrisAnimator.setDuration(420);
-                    fullscreenIrisAnimator.setInterpolator(new android.view.animation.DecelerateInterpolator(1.3f));
-                    fullscreenIrisAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationStart(android.animation.Animator a) {
-                            if (ivFullscreenPreviewEyeOverlay != null) ivFullscreenPreviewEyeOverlay.setAlpha(0.6f);
-                        }
-                        @Override
-                        public void onAnimationEnd(android.animation.Animator a) {
-                            if (ivFullscreenPreviewEyeOverlay != null) ivFullscreenPreviewEyeOverlay.setAlpha(0.6f);
-                        }
-                    });
-                    fullscreenIrisAnimator.start();
-                });
             }
             
             // Hide zzz
@@ -1795,29 +1947,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 fullscreenIrisAnimator = null;
             }
             
-            // Iris-close: contract the eye overlay from full to 0 (Preview→Avatar transition mirror)
-            if (animate && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && ivFullscreenPreviewEyeOverlay != null && ivFullscreenPreviewEyeOverlay.getAlpha() > 0.1f) {
-                int w = ivFullscreenPreviewEyeOverlay.getWidth();
-                int h = ivFullscreenPreviewEyeOverlay.getHeight();
-                if (w <= 0 || h <= 0) {
-                    w = 140; // fallback to avatar size
-                    h = 140;
-                }
-                int cx = w / 2;
-                int cy = h / 2;
-                float maxR = (float) Math.hypot(cx, cy);
-                fullscreenIrisAnimator = android.view.ViewAnimationUtils.createCircularReveal(
-                        ivFullscreenPreviewEyeOverlay, cx, cy, maxR, 0f);
-                fullscreenIrisAnimator.setDuration(360);
-                fullscreenIrisAnimator.setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f));
-                fullscreenIrisAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(android.animation.Animator a) {
-                        if (ivFullscreenPreviewEyeOverlay != null) ivFullscreenPreviewEyeOverlay.setAlpha(0f);
-                    }
-                });
-                fullscreenIrisAnimator.start();
-            } else if (ivFullscreenPreviewEyeOverlay != null) {
+            // Eye overlay: keep at alpha=0 always (same as HomeFragment — never visible)
+            if (ivFullscreenPreviewEyeOverlay != null) {
+                if (fullscreenIrisAnimator != null) { fullscreenIrisAnimator.cancel(); fullscreenIrisAnimator = null; }
+                ivFullscreenPreviewEyeOverlay.animate().cancel();
                 ivFullscreenPreviewEyeOverlay.setAlpha(0f);
             }
             
@@ -1918,11 +2051,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             resetFullscreenZLetters();
             if (tvFullscreenZzz1 != null) { tvFullscreenZzz1.setAlpha(0f); tvFullscreenZzz1.setScaleX(0.1f); tvFullscreenZzz1.setScaleY(0.1f); tvFullscreenZzz1.setTranslationY(8f); }
             if (tvFullscreenZzz2 != null) { tvFullscreenZzz2.setAlpha(0f); tvFullscreenZzz2.setScaleX(0.1f); tvFullscreenZzz2.setScaleY(0.1f); tvFullscreenZzz2.setTranslationY(8f); }
+            if (tvFullscreenZzz3 != null) { tvFullscreenZzz3.setAlpha(0f); tvFullscreenZzz3.setScaleX(0.1f); tvFullscreenZzz3.setScaleY(0.1f); tvFullscreenZzz3.setTranslationY(8f); }
             
             zzzFullscreenBadgeGroup.setAlpha(1f);
             zzzFullscreenBadgeGroup.setVisibility(View.VISIBLE);
             long delay = 130;
-            for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2}) {
+            for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2, tvFullscreenZzz3}) {
                 if (z == null) continue;
                 z.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f)
                     .setStartDelay(delay).setDuration(290)
@@ -1940,7 +2074,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     /** Reset zzz letters to default state. */
     private void resetFullscreenZLetters() {
-        for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2}) {
+        for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2, tvFullscreenZzz3}) {
             if (z == null) continue;
             z.setAlpha(1f); z.setScaleX(1f); z.setScaleY(1f); z.setTranslationY(0f);
         }
@@ -1949,9 +2083,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     /** Start floating animations for zzz letters. */
     private void startFullscreenFloatingZAnims() {
         stopFullscreenFloatingZAnims();
-        View[] zs = {tvFullscreenZzz1, tvFullscreenZzz2};
-        long[] durations = {1600, 1900};
-        float[] amps = {5f, 6f};
+        View[] zs = {tvFullscreenZzz1, tvFullscreenZzz2, tvFullscreenZzz3};
+        long[] durations = {1600, 1900, 2200};
+        float[] amps = {5f, 6f, 7f};
         
         for (int i = 0; i < Math.min(zs.length, durations.length); i++) {
             final View z = zs[i];
@@ -1965,6 +2099,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             anim.start();
             if (idx == 0) fullscreenFloatingZAnim1 = anim;
             else if (idx == 1) fullscreenFloatingZAnim2 = anim;
+            else if (idx == 2) fullscreenFloatingZAnim3 = anim;
         }
     }
 
@@ -1972,6 +2107,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private void stopFullscreenFloatingZAnims() {
         if (fullscreenFloatingZAnim1 != null) { fullscreenFloatingZAnim1.cancel(); fullscreenFloatingZAnim1 = null; }
         if (fullscreenFloatingZAnim2 != null) { fullscreenFloatingZAnim2.cancel(); fullscreenFloatingZAnim2 = null; }
+        if (fullscreenFloatingZAnim3 != null) { fullscreenFloatingZAnim3.cancel(); fullscreenFloatingZAnim3 = null; }
     }
 
     /** Start blinking loop for awake avatar. */

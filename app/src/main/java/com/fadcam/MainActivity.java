@@ -148,6 +148,38 @@ public class MainActivity extends AppCompatActivity {
             // Keep status bar transparent so it always blends with dynamic headers/themes.
             getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         }
+        
+        // Update the status bar scrim color
+        View statusBarScrim = findViewById(R.id.status_bar_scrim);
+        if (statusBarScrim != null) {
+            if (color == 0) {
+                // Restore theme color (resolve TopBar color attribute)
+                int colorTopBar = resolveThemeColor(this, R.attr.colorTopBar);
+                statusBarScrim.setBackgroundColor(colorTopBar);
+                
+                // Restore theme-based icon tint (Snow Veil is light theme, others are dark)
+                String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences
+                        .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                if ("Snow Veil".equals(currentTheme) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    // Light theme -> dark icons
+                    getWindow().getDecorView().setSystemUiVisibility(
+                        getWindow().getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    // Dark theme -> light icons
+                    getWindow().getDecorView().setSystemUiVisibility(
+                        getWindow().getDecorView().getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                }
+            } else {
+                // Set custom color (e.g., black for Remote tab)
+                statusBarScrim.setBackgroundColor(color);
+                
+                // For dark backgrounds (like black), ensure icons are light (white)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    getWindow().getDecorView().setSystemUiVisibility(
+                        getWindow().getDecorView().getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                }
+            }
+        }
     }
 
     /**
@@ -159,6 +191,39 @@ public class MainActivity extends AppCompatActivity {
         if (getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             // Keep navigation bar transparent in edge-to-edge mode.
             getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        }
+        
+        // Update root layout background color to affect the navigation/gesture area background.
+        // This area is visible because of the fragment_container and nav_container paddings.
+        View root = findViewById(R.id.main_root_layout);
+        if (root != null) {
+            if (color == 0) {
+                // Restore original theme background color
+                int bgColor = resolveThemeColor(this, android.R.attr.colorBackground);
+                root.setBackgroundColor(bgColor);
+                
+                // Restore theme-based icon tint
+                String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences
+                        .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+                if ("Snow Veil".equals(currentTheme) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // Light theme -> dark icons
+                    getWindow().getDecorView().setSystemUiVisibility(
+                        getWindow().getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // Dark theme -> light icons
+                    getWindow().getDecorView().setSystemUiVisibility(
+                        getWindow().getDecorView().getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                }
+            } else {
+                // Set custom color
+                root.setBackgroundColor(color);
+                
+                // For dark backgrounds (like black), ensure icons are light (white)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    getWindow().getDecorView().setSystemUiVisibility(
+                        getWindow().getDecorView().getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                }
+            }
         }
     }
 
@@ -483,20 +548,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Save the original bottom nav background color for restoration later
-        // Get colorTopBar from theme (same color as header bar)
         try {
             android.util.TypedValue typedValue = new android.util.TypedValue();
-            int colorTopBarAttr = getResources().getIdentifier("colorTopBar", "attr", getPackageName());
-            if (colorTopBarAttr != 0 && getTheme().resolveAttribute(colorTopBarAttr, typedValue, true)) {
+            int colorBottomNavAttr = getResources().getIdentifier("colorBottomNav", "attr", getPackageName());
+            if (colorBottomNavAttr != 0 && getTheme().resolveAttribute(colorBottomNavAttr, typedValue, true)) {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                     originalBottomNavColor = getColor(typedValue.resourceId);
                 } else {
                     originalBottomNavColor = getResources().getColor(typedValue.resourceId);
                 }
-                Log.d("MainActivity", "Saved bottom nav color from colorTopBar: " + Integer.toHexString(originalBottomNavColor));
+                Log.d("MainActivity", "Saved bottom nav color from colorBottomNav: " + Integer.toHexString(originalBottomNavColor));
             }
         } catch (Exception e) {
-            Log.e("MainActivity", "Error getting bottom nav color from colorTopBar", e);
+            Log.e("MainActivity", "Error getting bottom nav color from colorBottomNav", e);
         }
 
         // Initialize badge visibility
@@ -577,22 +641,8 @@ public class MainActivity extends AppCompatActivity {
             createDynamicShortcuts();
         }
 
-        // After setContentView, apply theme colors
-        int colorTopBar = resolveThemeColor(this, R.attr.colorTopBar);
-        int colorBottomNav = resolveThemeColor(this, R.attr.colorBottomNav);
-        // Top bar color is applied via theme and layout backgrounds
-        // Bottom navigation
-        com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = findViewById(
-                R.id.bottom_navigation);
-        if (bottomNav != null)
-            bottomNav.setBackgroundColor(colorBottomNav);
-        View statusBarScrim = findViewById(R.id.status_bar_scrim);
-        if (statusBarScrim != null) {
-            statusBarScrim.setBackgroundColor(colorTopBar);
-        }
-        // Keep system bars transparent in edge-to-edge mode.
-        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
-        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        // The initial bar colors and transparency are now handled by switchFragment(0, false) 
+        // or restored from saved state via restoreBarColorsForCurrentTab() inside handleTabSelected.
 
         // theme change)-----------
         try {
@@ -1037,24 +1087,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Update badge visibility for new features
         updateFeatureBadgeVisibility();
-
-        // Update UI for current theme
-        String currentTheme = SharedPreferencesManager.getInstance(this).sharedPreferences
-                .getString(Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-
-        // Special handling for Snow Veil theme - set light status bar with dark icons
-        if ("Snow Veil".equals(currentTheme) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-
-            // Also set light navigation bar if API level is high enough
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                getWindow().getDecorView().setSystemUiVisibility(
-                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // For other themes, use dark status bar with light icons (default)
-            getWindow().getDecorView().setSystemUiVisibility(0);
-        }
 
         // Restore language settings
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);

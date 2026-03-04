@@ -4,12 +4,9 @@
     android:id="@+id/fullscreenRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
     android:background="@android:color/black">
-
-    <TextureView
-        android:id="@+id/fullscreenTextureView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 
     <View
         android:id="@+id/viewFullscreenIdleMask"
@@ -94,32 +91,53 @@
                     android:id="@+id/tv_fullscreen_zzz_1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/materialicons"
-                    android:text="zzz"
-                    android:textColor="@android:color/white"
-                    android:textSize="20sp"
-                    android:includeFontPadding="false" />
+                    android:tag="preserve_color"
+                    android:text="z"
+                    android:textSize="9sp"
+                    android:textColor="#a8d8f0"
+                    android:fontFamily="sans-serif-black"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tv_fullscreen_zzz_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="-8dp"
-                    android:fontFamily="@font/materialicons"
-                    android:text="zzz"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp"
-                    android:includeFontPadding="false" />
+                    android:tag="preserve_color"
+                    android:text="Z"
+                    android:textSize="13sp"
+                    android:textColor="#ceecf8"
+                    android:fontFamily="sans-serif-black"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_fullscreen_zzz_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:tag="preserve_color"
+                    android:text="Z"
+                    android:textSize="17sp"
+                    android:textColor="#e8f5fd"
+                    android:fontFamily="sans-serif-black"
+                    android:textStyle="bold" />
             </LinearLayout>
         </FrameLayout>
     </FrameLayout>
+
+    <!-- TextureView declared AFTER avatar container so it renders ON TOP (z-order).
+         Always VISIBLE (alpha=0 when idle) so its SurfaceTexture is always created,
+         ensuring camera can start on the very first long-press. -->
+    <TextureView
+        android:id="@+id/fullscreenTextureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0" />
 
     <TextView
         android:id="@+id/textFullscreenPreviewHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="64dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="160dp"
         android:text="@string/preview_enable_hint"
         android:textColor="#E6FFFFFF"
         android:textSize="13sp"
