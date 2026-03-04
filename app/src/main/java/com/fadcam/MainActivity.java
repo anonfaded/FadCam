@@ -1491,10 +1491,14 @@ public class MainActivity extends AppCompatActivity {
         View rootView = findViewById(android.R.id.content);
         View navContainer = findViewById(R.id.nav_container);
         View statusBarScrim = findViewById(R.id.status_bar_scrim);
+        View dockGradientScrim = findViewById(R.id.dock_focus_gradient_scrim);
         final int navBasePaddingStart = navContainer != null ? navContainer.getPaddingStart() : 0;
         final int navBasePaddingTop = navContainer != null ? navContainer.getPaddingTop() : 0;
         final int navBasePaddingEnd = navContainer != null ? navContainer.getPaddingEnd() : 0;
         final int navBasePaddingBottom = navContainer != null ? navContainer.getPaddingBottom() : 0;
+        // Base gradient height in pixels (180dp), extended by systemBars.bottom so it always
+        // peeks above the nav pill on API 35+ edge-to-edge devices.
+        final int dockGradientBaseHeightPx = Math.round(180 * getResources().getDisplayMetrics().density);
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
             androidx.core.graphics.Insets systemBars = insets
                     .getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
@@ -1525,6 +1529,17 @@ public class MainActivity extends AppCompatActivity {
                         navBasePaddingTop,
                         navBasePaddingEnd + systemBars.right,
                         navBasePaddingBottom + systemBars.bottom);
+            }
+
+            // Extend gradient scrim height by systemBars.bottom so it always peeks above
+            // the nav pill even on API 35+ where the window extends behind the nav bar.
+            if (dockGradientScrim != null) {
+                ViewGroup.LayoutParams lp = dockGradientScrim.getLayoutParams();
+                int requiredHeight = dockGradientBaseHeightPx + systemBars.bottom;
+                if (lp != null && lp.height != requiredHeight) {
+                    lp.height = requiredHeight;
+                    dockGradientScrim.setLayoutParams(lp);
+                }
             }
 
             if (overlayContainer != null) {

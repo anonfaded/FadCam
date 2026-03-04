@@ -11,6 +11,8 @@ import android.text.format.Formatter;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+import android.animation.ValueAnimator;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.animation.ObjectAnimator;
@@ -78,7 +80,10 @@ public class ForensicsGalleryFragment extends Fragment {
 
     private RecyclerView recycler;
     private SwipeRefreshLayout swipeRefresh;
-    private TextView empty;
+    private View emptyState;
+    private TextView emptySubtitle;
+    @Nullable
+    private ObjectAnimator emptyFloatAnimator;
     private TextView statCount;
     private TextView statSize;
     private ExtendedFloatingActionButton batchFab;
@@ -167,7 +172,8 @@ public class ForensicsGalleryFragment extends Fragment {
 
         recycler = view.findViewById(R.id.recycler_gallery);
         swipeRefresh = view.findViewById(R.id.swipe_gallery);
-        empty = view.findViewById(R.id.text_gallery_empty);
+        emptyState = view.findViewById(R.id.layout_gallery_empty_state);
+        emptySubtitle = view.findViewById(R.id.text_gallery_empty_subtitle);
         statCount = view.findViewById(R.id.text_gallery_stat_count);
         statSize = view.findViewById(R.id.text_gallery_stat_size);
         batchFab = view.findViewById(R.id.fab_gallery_batch);
@@ -178,6 +184,16 @@ public class ForensicsGalleryFragment extends Fragment {
         chipVehicle = view.findViewById(R.id.chip_gallery_vehicle);
         chipPet = view.findViewById(R.id.chip_gallery_pet);
         chipObject = view.findViewById(R.id.chip_gallery_object);
+
+        // Set up floating animation on the empty state icon
+        View iconAnim = view.findViewById(R.id.icon_gallery_empty_anim);
+        if (iconAnim != null) {
+            emptyFloatAnimator = ObjectAnimator.ofFloat(iconAnim, "translationY", 0f, -16f);
+            emptyFloatAnimator.setDuration(2400);
+            emptyFloatAnimator.setRepeatMode(ValueAnimator.REVERSE);
+            emptyFloatAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            emptyFloatAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        }
 
         View header = view.findViewById(R.id.header_bar);
         View back = view.findViewById(R.id.back_button);
@@ -342,6 +358,10 @@ public class ForensicsGalleryFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (emptyFloatAnimator != null) {
+            emptyFloatAnimator.cancel();
+            emptyFloatAnimator = null;
+        }
         if (fastScroller != null) {
             fastScroller.detach();
             fastScroller = null;
@@ -728,10 +748,10 @@ public class ForensicsGalleryFragment extends Fragment {
             requireActivity().runOnUiThread(() -> {
                 allRows.clear();
                 if (finalRows != null) allRows.addAll(finalRows);
-                applyFiltersAndRender();
-                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                 isLoading = false;
                 dataLoaded = true;
+                applyFiltersAndRender();
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                 if (pendingRealtimeRefresh) {
                     pendingRealtimeRefresh = false;
                     loadData(true);
@@ -751,9 +771,24 @@ public class ForensicsGalleryFragment extends Fragment {
         adapter.submit(filtered);
         // Don't flash empty state while still loading initial data
         if (isLoading && filtered.isEmpty()) {
-            empty.setVisibility(View.GONE);
+            if (emptyState != null) emptyState.setVisibility(View.GONE);
+            if (emptyFloatAnimator != null) emptyFloatAnimator.cancel();
+        } else if (filtered.isEmpty()) {
+            // Update subtitle: no data at all vs. filter mismatch
+            if (emptySubtitle != null) {
+                if (allRows.isEmpty()) {
+                    emptySubtitle.setText(R.string.forensics_gallery_empty_subtitle_no_data);
+                } else {
+                    emptySubtitle.setText(R.string.forensics_gallery_empty_subtitle_filtered);
+                }
+            }
+            if (emptyState != null) emptyState.setVisibility(View.VISIBLE);
+            if (emptyFloatAnimator != null && !emptyFloatAnimator.isRunning()) {
+                emptyFloatAnimator.start();
+            }
         } else {
-            empty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+            if (emptyState != null) emptyState.setVisibility(View.GONE);
+            if (emptyFloatAnimator != null) emptyFloatAnimator.cancel();
         }
         renderChipCounts(allRows);
         renderStats(filtered);

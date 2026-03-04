@@ -216,20 +216,63 @@
                     android:scrollbars="none" />
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        </FrameLayout>
+            <!-- Beautiful empty state: shown when no evidence items exist -->
+            <LinearLayout
+                android:id="@+id/layout_gallery_empty_state"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingBottom="100dp"
+                android:visibility="gone">
 
-        <TextView
-            android:id="@+id/text_gallery_empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingStart="16dp"
-            android:paddingTop="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="16dp"
-            android:text="@string/forensics_gallery_empty"
-            android:textColor="@android:color/darker_gray"
-            android:visibility="gone" />
+                <!-- Animated icon container -->
+                <FrameLayout
+                    android:layout_width="96dp"
+                    android:layout_height="96dp">
+
+                    <View
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:background="@drawable/forensics_empty_icon_bg" />
+
+                    <TextView
+                        android:id="@+id/icon_gallery_empty_anim"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="find_in_page"
+                        android:textColor="#C49A7C"
+                        android:textSize="52sp" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:text="@string/forensics_gallery_empty_title"
+                    android:textColor="#F5F5F5"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/text_gallery_empty_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginEnd="40dp"
+                    android:gravity="center"
+                    android:text="@string/forensics_gallery_empty_subtitle_no_data"
+                    android:textColor="#80FFFFFF"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+        </FrameLayout>
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton

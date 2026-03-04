@@ -1438,6 +1438,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_gallery_sort_event_type">Event type</string>
     <string name="forensics_export_title">Export Center</string>
     <string name="forensics_gallery_empty">No evidence snapshots for current filters.</string>
+    <string name="forensics_gallery_empty_title">Evidence Board Is Clear</string>
+    <string name="forensics_gallery_empty_subtitle_no_data">AI-detected frames from your recordings will appear here</string>
+    <string name="forensics_gallery_empty_subtitle_filtered">No evidence matches this filter</string>
     <string name="forensics_export_action">Export evidence package</string>
     <string name="forensics_export_subtitle">Creates JSON metadata + snapshots package from saved forensic evidence.</string>
     <string name="forensics_export_source_warning">Source video links are included for traceability. If media is moved or deleted from original location, playback links may fail and snapshots remain as primary evidence.</string>
