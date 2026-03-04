@@ -4824,10 +4824,10 @@ public class HomeFragment extends BaseFragment {
         }
 
         // -----
-        MaterialToolbar toolbar = view.findViewById(R.id.topAppBar);
-        if (toolbar != null) {
+        View headerBar = view.findViewById(R.id.header_bar);
+        if (headerBar != null) {
             int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
-            toolbar.setBackgroundColor(colorTopBar);
+            headerBar.setBackgroundColor(colorTopBar);
         }
         // If you have FABs or MaterialButtons, set their background tint to colorButton
         // here

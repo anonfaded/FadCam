@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,6 +33,7 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -77,6 +79,26 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private static final int ANIM_DURATION_MS = 200;
     /** Fraction of screen height reserved as top/bottom edge touch zones. */
     private static final float EDGE_ZONE_FRACTION = 0.15f;
+    
+    // Avatar animation constants (mirrored from HomeFragment)
+    private static final int RES_IDLE = 0, RES_BLINK = 1, RES_WAKE = 2, RES_SLEEP = 3;
+    private static final int[] FULLSCREEN_DEFAULT_DRAWABLES = {
+        R.drawable.toggle_on_idle, R.drawable.toggle_on_blink,
+        R.drawable.toggle_on_anim, R.drawable.toggle_off_anim
+    };
+    /** Maps eye-color ARGB ints → [idle, blink, wake, sleep] drawable resource IDs. */
+    private static final java.util.Map<Integer, int[]> FULLSCREEN_EYE_COLOR_DRAWABLES;
+    static {
+        java.util.Map<Integer, int[]> m = new java.util.HashMap<>();
+        m.put(0xFFFF1744, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
+        m.put(0xFF00E5FF, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
+        m.put(0xFFD500F9, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
+        m.put(0xFF2979FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
+        m.put(0xFFFFD740, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
+        m.put(0xFF00E676, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
+        m.put(0xFFF50057, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
+        FULLSCREEN_EYE_COLOR_DRAWABLES = java.util.Collections.unmodifiableMap(m);
+    }
 
     // ── Views ────────────────────────────────────────────────────────────────
     private FrameLayout rootLayout;
@@ -100,8 +122,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private View viewZoomMapViewport;
     private TextView textFullscreenPreviewHint;
     private View viewFullscreenIdleMask;
-    private View ivFullscreenBubbleBackground;
-    private View ivFullscreenCameraIcon;
+
+    // Avatar-related views for fullscreen preview
+    private FrameLayout flFullscreenPreviewAvatar;
+    private View ivFullscreenSleepAmbiance;
+    private View ivFullscreenWakeSun;
+    private ImageView ivFullscreenPreviewAvatar;
+    private View ivFullscreenPreviewEyeOverlay;
+    private View zzzFullscreenBadgeGroup;
+    private TextView tvFullscreenZzz1;
+    private TextView tvFullscreenZzz2;
 
     // Recording-tile views (from included layout)
     private TextView tileAfToggle;
@@ -143,6 +173,17 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private int currentEvIndex;
     private boolean aeLocked;
     private int afMode;
+
+    // Avatar animation state
+    private boolean fullscreenAvatarLastEnabled = false;
+    private java.util.Random fullscreenBlinkRandom = new java.util.Random();
+    private Handler fullscreenBlinkHandler = new Handler(Looper.getMainLooper());
+    private Runnable fullscreenBlinkRunnable;
+    private ValueAnimator fullscreenBreathingAnimator;
+    private ObjectAnimator fullscreenAvatarFloatAnim;
+    private ObjectAnimator fullscreenAmbianceTwinkleAnim;
+    private ObjectAnimator fullscreenFloatingZAnim1;
+    private ObjectAnimator fullscreenFloatingZAnim2;
 
     // ── Torch broadcast receiver ─────────────────────────────────────────────
     private boolean torchReceiverRegistered = false;
@@ -359,8 +400,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         viewZoomMapViewport = findViewById(R.id.viewZoomMapViewport);
         textFullscreenPreviewHint = findViewById(R.id.textFullscreenPreviewHint);
         viewFullscreenIdleMask = findViewById(R.id.viewFullscreenIdleMask);
-        ivFullscreenBubbleBackground = findViewById(R.id.ivFullscreenBubbleBackground);
-        ivFullscreenCameraIcon = findViewById(R.id.ivFullscreenCameraIcon);
+        
+        // Avatar UI elements for fullscreen preview
+        flFullscreenPreviewAvatar = findViewById(R.id.fl_fullscreen_preview_avatar);
+        ivFullscreenSleepAmbiance = findViewById(R.id.iv_fullscreen_sleep_ambiance);
+        ivFullscreenWakeSun = findViewById(R.id.iv_fullscreen_wake_sun);
+        ivFullscreenPreviewAvatar = findViewById(R.id.iv_fullscreen_preview_avatar);
+        ivFullscreenPreviewEyeOverlay = findViewById(R.id.iv_fullscreen_preview_eye_overlay);
+        zzzFullscreenBadgeGroup = findViewById(R.id.zzz_fullscreen_badge_group);
+        tvFullscreenZzz1 = findViewById(R.id.tv_fullscreen_zzz_1);
+        tvFullscreenZzz2 = findViewById(R.id.tv_fullscreen_zzz_2);
     }
 
     private void setupCaptureShotButton() {
@@ -1336,11 +1385,17 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         }
         boolean showIdlePlaceholder = !showPreviewSurface;
         textFullscreenPreviewHint.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
-        if (ivFullscreenBubbleBackground != null) {
-            ivFullscreenBubbleBackground.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
-        }
-        if (ivFullscreenCameraIcon != null) {
-            ivFullscreenCameraIcon.setVisibility(showIdlePlaceholder ? View.VISIBLE : View.GONE);
+        
+        // Show/hide avatar UI based on preview state
+        if (flFullscreenPreviewAvatar != null) {
+            if (showIdlePlaceholder) {
+                // Show sleeping avatar with zzz badge
+                flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
+                applyFullscreenAvatarState(false, false); // sleeping, no animation
+            } else {
+                // Hide avatar when preview is active
+                flFullscreenPreviewAvatar.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -1592,5 +1647,340 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) { }
         return false;
+    }
+
+    /**
+     * Apply avatar state for fullscreen preview (sleeping or awake with all animations).
+     * Mirrors HomeFragment's applyHomeAvatarState logic completely.
+     */
+    private void applyFullscreenAvatarState(boolean enabled, boolean animate) {
+        if (ivFullscreenPreviewAvatar == null) return;
+
+        if (enabled) {
+            // Awake state: sun rises, moon fades out, show blinking
+            stopFullscreenBreathing();
+            stopFullscreenBlinkLoop();
+            ivFullscreenPreviewAvatar.setAlpha(1.0f);
+            
+            // Cancel twinkle + animate moon out, spin sun in
+            if (fullscreenAmbianceTwinkleAnim != null) { 
+                fullscreenAmbianceTwinkleAnim.cancel(); 
+                fullscreenAmbianceTwinkleAnim = null; 
+            }
+            
+            if (ivFullscreenSleepAmbiance != null) {
+                ivFullscreenSleepAmbiance.animate().cancel();
+                ivFullscreenSleepAmbiance.animate().alpha(0f).scaleX(0.75f).scaleY(0.75f)
+                    .setDuration(280)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                    .start();
+            }
+            if (ivFullscreenWakeSun != null) {
+                ivFullscreenWakeSun.animate().cancel();
+                ivFullscreenWakeSun.setAlpha(0f);
+                ivFullscreenWakeSun.setScaleX(0.2f);
+                ivFullscreenWakeSun.setScaleY(0.2f);
+                ivFullscreenWakeSun.setRotation(-30f);
+                ivFullscreenWakeSun.animate()
+                    .alpha(1f).scaleX(1f).scaleY(1f).rotation(0f)
+                    .setDuration(520)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.5f))
+                    .start();
+            }
+            
+            // Hide zzz
+            if (zzzFullscreenBadgeGroup != null) {
+                if (animate && zzzFullscreenBadgeGroup.getVisibility() == View.VISIBLE) {
+                    zzzFullscreenBadgeGroup.animate().alpha(0f).setDuration(180).withEndAction(() -> {
+                        zzzFullscreenBadgeGroup.setVisibility(View.GONE);
+                        zzzFullscreenBadgeGroup.setAlpha(1f);
+                        resetFullscreenZLetters();
+                    }).start();
+                } else {
+                    zzzFullscreenBadgeGroup.setVisibility(View.GONE);
+                    resetFullscreenZLetters();
+                }
+            }
+            
+            if (animate) {
+                // Wake-up AVD → idle + blink
+                ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_WAKE));
+                // Post-delay ensures drawable is fully loaded before animation starts
+                ivFullscreenPreviewAvatar.post(() -> {
+                    android.graphics.drawable.Drawable d = ivFullscreenPreviewAvatar.getDrawable();
+                    if (d instanceof android.graphics.drawable.Animatable2) {
+                        ((android.graphics.drawable.Animatable2) d).clearAnimationCallbacks();
+                        ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
+                            new android.graphics.drawable.Animatable2.AnimationCallback() {
+                                @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
+                                    if (ivFullscreenPreviewAvatar != null && ivFullscreenPreviewAvatar.isAttachedToWindow()) {
+                                        ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_IDLE));
+                                        startFullscreenBlinkLoop();
+                                    }
+                                }
+                            });
+                        ((android.graphics.drawable.Animatable2) d).start();
+                    } else if (d instanceof android.graphics.drawable.Animatable) {
+                        ((android.graphics.drawable.Animatable) d).start();
+                        ivFullscreenPreviewAvatar.postDelayed(() -> {
+                            if (ivFullscreenPreviewAvatar != null && ivFullscreenPreviewAvatar.isAttachedToWindow()) {
+                                ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_IDLE));
+                                startFullscreenBlinkLoop();
+                            }
+                        }, 480);
+                    }
+                });
+            } else {
+                ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_IDLE));
+                startFullscreenBlinkLoop();
+            }
+
+        } else {
+            // Sleeping state: moon rises, sun fades, show zzz badge
+            stopFullscreenBlinkLoop();
+            
+            // Sun fades out (if visible)
+            if (ivFullscreenWakeSun != null && ivFullscreenWakeSun.getAlpha() > 0.02f) {
+                ivFullscreenWakeSun.animate().cancel();
+                ivFullscreenWakeSun.animate().alpha(0f).scaleX(0.4f).scaleY(0.4f).rotation(20f)
+                    .setDuration(220)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                    .start();
+            }
+            
+            // Moon rises back in (or starts twinkle directly if already visible)
+            if (ivFullscreenSleepAmbiance != null) {
+                ivFullscreenSleepAmbiance.animate().cancel();
+                if (ivFullscreenSleepAmbiance.getAlpha() < 0.1f) {
+                    // Was hidden by wake animation — animate back in
+                    ivFullscreenSleepAmbiance.setScaleX(0.8f);
+                    ivFullscreenSleepAmbiance.setScaleY(0.8f);
+                    ivFullscreenSleepAmbiance.animate().alpha(0.55f).scaleX(1f).scaleY(1f)
+                        .setDuration(380)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator(1.2f))
+                        .withEndAction(() -> {
+                            if (ivFullscreenSleepAmbiance != null && ivFullscreenSleepAmbiance.getAlpha() >= 0.1f) {
+                                if (fullscreenAmbianceTwinkleAnim != null) fullscreenAmbianceTwinkleAnim.cancel();
+                                fullscreenAmbianceTwinkleAnim = ObjectAnimator.ofFloat(ivFullscreenSleepAmbiance, "alpha", 0.55f, 1.0f);
+                                fullscreenAmbianceTwinkleAnim.setDuration(3500);
+                                fullscreenAmbianceTwinkleAnim.setRepeatCount(ObjectAnimator.INFINITE);
+                                fullscreenAmbianceTwinkleAnim.setRepeatMode(ObjectAnimator.REVERSE);
+                                fullscreenAmbianceTwinkleAnim.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+                                fullscreenAmbianceTwinkleAnim.start();
+                            }
+                        })
+                        .start();
+                } else {
+                    // Already visible — reset scale and just start twinkle
+                    ivFullscreenSleepAmbiance.setScaleX(1f);
+                    ivFullscreenSleepAmbiance.setScaleY(1f);
+                    if (fullscreenAmbianceTwinkleAnim != null) fullscreenAmbianceTwinkleAnim.cancel();
+                    fullscreenAmbianceTwinkleAnim = ObjectAnimator.ofFloat(ivFullscreenSleepAmbiance, "alpha", 0.55f, 1.0f);
+                    fullscreenAmbianceTwinkleAnim.setDuration(3500);
+                    fullscreenAmbianceTwinkleAnim.setRepeatCount(ObjectAnimator.INFINITE);
+                    fullscreenAmbianceTwinkleAnim.setRepeatMode(ObjectAnimator.REVERSE);
+                    fullscreenAmbianceTwinkleAnim.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+                    fullscreenAmbianceTwinkleAnim.start();
+                }
+            }
+
+            if (animate) {
+                ivFullscreenPreviewAvatar.setAlpha(1f); // ensure full brightness before sleep AVD plays
+                ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_SLEEP));
+                // Post-delay ensures drawable is fully loaded before animation starts
+                ivFullscreenPreviewAvatar.post(() -> {
+                    android.graphics.drawable.Drawable d = ivFullscreenPreviewAvatar.getDrawable();
+                    Runnable afterOff = () -> {
+                        if (ivFullscreenPreviewAvatar == null || !ivFullscreenPreviewAvatar.isAttachedToWindow()) return;
+                        ivFullscreenPreviewAvatar.setImageResource(R.drawable.toggle_off);
+                        startFullscreenBreathing(); // start breathing AFTER animation completes
+                        showFullscreenZzzLetters(true);
+                    };
+                    if (d instanceof android.graphics.drawable.Animatable2) {
+                        ((android.graphics.drawable.Animatable2) d).clearAnimationCallbacks();
+                        ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
+                            new android.graphics.drawable.Animatable2.AnimationCallback() {
+                                @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) { afterOff.run(); }
+                            });
+                        ((android.graphics.drawable.Animatable2) d).start();
+                    } else if (d instanceof android.graphics.drawable.Animatable) {
+                        ((android.graphics.drawable.Animatable) d).start();
+                        ivFullscreenPreviewAvatar.postDelayed(afterOff, 480);
+                    } else {
+                        afterOff.run();
+                    }
+                });
+            } else {
+                ivFullscreenPreviewAvatar.setImageResource(R.drawable.toggle_off);
+                startFullscreenBreathing();
+                showFullscreenZzzLetters(false);
+            }
+        }
+        
+        fullscreenAvatarLastEnabled = enabled;
+    }
+
+    /** Show zzz badge with optional animation and floating effects. */
+    private void showFullscreenZzzLetters(boolean animate) {
+        if (zzzFullscreenBadgeGroup == null) return;
+        stopFullscreenFloatingZAnims();
+        if (animate) {
+            resetFullscreenZLetters();
+            if (tvFullscreenZzz1 != null) { tvFullscreenZzz1.setAlpha(0f); tvFullscreenZzz1.setScaleX(0.1f); tvFullscreenZzz1.setScaleY(0.1f); tvFullscreenZzz1.setTranslationY(8f); }
+            if (tvFullscreenZzz2 != null) { tvFullscreenZzz2.setAlpha(0f); tvFullscreenZzz2.setScaleX(0.1f); tvFullscreenZzz2.setScaleY(0.1f); tvFullscreenZzz2.setTranslationY(8f); }
+            
+            zzzFullscreenBadgeGroup.setVisibility(View.VISIBLE);
+            long delay = 130;
+            for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2}) {
+                if (z == null) continue;
+                z.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f)
+                    .setStartDelay(delay).setDuration(290)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(2.5f)).start();
+                delay += 115;
+            }
+            zzzFullscreenBadgeGroup.postDelayed(() -> startFullscreenFloatingZAnims(), 700);
+        } else {
+            zzzFullscreenBadgeGroup.setVisibility(View.VISIBLE);
+            resetFullscreenZLetters();
+            startFullscreenFloatingZAnims();
+        }
+    }
+
+    /** Reset zzz letters to default state. */
+    private void resetFullscreenZLetters() {
+        for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2}) {
+            if (z == null) continue;
+            z.setAlpha(1f); z.setScaleX(1f); z.setScaleY(1f); z.setTranslationY(0f);
+        }
+    }
+
+    /** Start floating animations for zzz letters. */
+    private void startFullscreenFloatingZAnims() {
+        stopFullscreenFloatingZAnims();
+        View[] zs = {tvFullscreenZzz1, tvFullscreenZzz2};
+        long[] durations = {1600, 1900};
+        float[] amps = {5f, 6f};
+        
+        for (int i = 0; i < Math.min(zs.length, durations.length); i++) {
+            final View z = zs[i];
+            if (z == null) continue;
+            final int idx = i;
+            ObjectAnimator anim = ObjectAnimator.ofFloat(z, "translationY", 0f, -amps[idx]);
+            anim.setDuration(durations[idx]);
+            anim.setRepeatCount(ObjectAnimator.INFINITE);
+            anim.setRepeatMode(ObjectAnimator.REVERSE);
+            anim.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+            anim.start();
+            if (idx == 0) fullscreenFloatingZAnim1 = anim;
+            else if (idx == 1) fullscreenFloatingZAnim2 = anim;
+        }
+    }
+
+    /** Stop floating animations for zzz letters. */
+    private void stopFullscreenFloatingZAnims() {
+        if (fullscreenFloatingZAnim1 != null) { fullscreenFloatingZAnim1.cancel(); fullscreenFloatingZAnim1 = null; }
+        if (fullscreenFloatingZAnim2 != null) { fullscreenFloatingZAnim2.cancel(); fullscreenFloatingZAnim2 = null; }
+    }
+
+    /** Start blinking loop for awake avatar. */
+    private void startFullscreenBlinkLoop() {
+        stopFullscreenBlinkLoop();
+        scheduleNextFullscreenBlink(2500 + fullscreenBlinkRandom.nextInt(2000));
+    }
+
+    /** Schedule the next blink with animation callback. */
+    private void scheduleNextFullscreenBlink(long delayMs) {
+        fullscreenBlinkRunnable = () -> {
+            if (ivFullscreenPreviewAvatar == null || !ivFullscreenPreviewAvatar.isAttachedToWindow() || !fullscreenAvatarLastEnabled) return;
+            ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_BLINK));
+            android.graphics.drawable.Drawable d = ivFullscreenPreviewAvatar.getDrawable();
+            if (d instanceof android.graphics.drawable.Animatable2) {
+                android.graphics.drawable.Animatable2 avd2 = (android.graphics.drawable.Animatable2) d;
+                avd2.clearAnimationCallbacks();
+                avd2.registerAnimationCallback(
+                    new android.graphics.drawable.Animatable2.AnimationCallback() {
+                        @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) {
+                            if (ivFullscreenPreviewAvatar != null && ivFullscreenPreviewAvatar.isAttachedToWindow() && fullscreenAvatarLastEnabled) {
+                                ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_IDLE));
+                                scheduleNextFullscreenBlink(3000 + fullscreenBlinkRandom.nextInt(2500));
+                            }
+                        }
+                    });
+                avd2.start();
+            } else if (d instanceof android.graphics.drawable.Animatable) {
+                ((android.graphics.drawable.Animatable) d).start();
+                fullscreenBlinkHandler.postDelayed(() -> {
+                    if (ivFullscreenPreviewAvatar != null && ivFullscreenPreviewAvatar.isAttachedToWindow() && fullscreenAvatarLastEnabled) {
+                        ivFullscreenPreviewAvatar.setImageResource(resolveFullscreenDrawable(RES_IDLE));
+                        scheduleNextFullscreenBlink(3000 + fullscreenBlinkRandom.nextInt(2500));
+                    }
+                }, 260);
+            }
+        };
+        fullscreenBlinkHandler.postDelayed(fullscreenBlinkRunnable, delayMs);
+    }
+
+    /** Stop blink loop. */
+    private void stopFullscreenBlinkLoop() {
+        if (fullscreenBlinkRunnable != null) {
+            fullscreenBlinkHandler.removeCallbacks(fullscreenBlinkRunnable);
+            fullscreenBlinkRunnable = null;
+        }
+    }
+
+    /** Start breathing animation for sleeping avatar. */
+    private void startFullscreenBreathing() {
+        if (fullscreenBreathingAnimator != null) fullscreenBreathingAnimator.cancel();
+        if (ivFullscreenPreviewAvatar == null) return;
+
+        // Alpha + scale pulse: gentle "inhale/exhale" feel
+        fullscreenBreathingAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        fullscreenBreathingAnimator.setDuration(2600);
+        fullscreenBreathingAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        fullscreenBreathingAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        fullscreenBreathingAnimator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+        fullscreenBreathingAnimator.addUpdateListener(a -> {
+            if (ivFullscreenPreviewAvatar == null || !ivFullscreenPreviewAvatar.isAttachedToWindow()) return;
+            float t = (float) a.getAnimatedValue();
+            float alpha = 0.62f + 0.30f * t;
+            float scale = 0.96f + 0.04f * t;
+            ivFullscreenPreviewAvatar.setAlpha(alpha);
+            ivFullscreenPreviewAvatar.setScaleX(scale);
+            ivFullscreenPreviewAvatar.setScaleY(scale);
+        });
+        fullscreenBreathingAnimator.start();
+
+        // Gentle floating bob up/down
+        if (fullscreenAvatarFloatAnim != null) fullscreenAvatarFloatAnim.cancel();
+        fullscreenAvatarFloatAnim = ObjectAnimator.ofFloat(ivFullscreenPreviewAvatar, "translationY", 0f, -9f);
+        fullscreenAvatarFloatAnim.setDuration(3400);
+        fullscreenAvatarFloatAnim.setRepeatCount(ObjectAnimator.INFINITE);
+        fullscreenAvatarFloatAnim.setRepeatMode(ObjectAnimator.REVERSE);
+        fullscreenAvatarFloatAnim.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+        fullscreenAvatarFloatAnim.start();
+    }
+
+    /** Stop breathing animation. */
+    private void stopFullscreenBreathing() {
+        if (fullscreenBreathingAnimator != null) { fullscreenBreathingAnimator.cancel(); fullscreenBreathingAnimator = null; }
+        if (fullscreenAvatarFloatAnim != null) { fullscreenAvatarFloatAnim.cancel(); fullscreenAvatarFloatAnim = null; }
+        if (ivFullscreenPreviewAvatar != null) {
+            ivFullscreenPreviewAvatar.setAlpha(1.0f);
+            ivFullscreenPreviewAvatar.setScaleX(1.0f);
+            ivFullscreenPreviewAvatar.setScaleY(1.0f);
+            ivFullscreenPreviewAvatar.setTranslationY(0f);
+        }
+    }
+
+    /**
+     * Returns the drawable resource for the given animation state,
+     * choosing the color-specific variant when a custom eye color is set.
+     */
+    private int resolveFullscreenDrawable(int resIndex) {
+        if (prefs == null) return FULLSCREEN_DEFAULT_DRAWABLES[resIndex];
+        int eyeColor = prefs.sharedPreferences.getInt(
+                Constants.PREF_AVATAR_EYE_COLOR, Constants.DEFAULT_AVATAR_EYE_COLOR);
+        int[] res = FULLSCREEN_EYE_COLOR_DRAWABLES.get(eyeColor);
+        return res != null ? res[resIndex] : FULLSCREEN_DEFAULT_DRAWABLES[resIndex];
     }
 }

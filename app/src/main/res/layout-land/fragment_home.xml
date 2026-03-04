@@ -2,20 +2,56 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?android:attr/colorBackground">
 
-    <com.google.android.material.appbar.MaterialToolbar android:id="@+id/topAppBar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/gray" android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar" app:titleCentered="true" app:titleTextColor="@android:color/white" app:layout_constraintTop_toTopOf="parent">
+    <!-- Fixed Header with rounded corners (ConstraintLayout like portrait mode) -->
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/header_bar" android:layout_width="0dp" android:layout_height="wrap_content" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:background="@drawable/header_bar_rounded_bg" android:clipToOutline="true" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
 
         <!-- Hamburger menu button -->
-        <ImageView android:id="@+id/btnHamburgerMenu" android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="start|center_vertical" android:layout_marginStart="8dp" android:padding="2dp" android:src="@drawable/ic_home_hamburger" android:tint="@android:color/white" android:contentDescription="@string/home_menu" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" />
+        <FrameLayout
+            android:id="@+id/hamburgerBtnContainer"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-        <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:layout_gravity="center" android:layout_marginTop="0dp" android:src="@drawable/menu_icon_unknown" app:layout_constraintBottom_toBottomOf="@id/topAppBar" app:layout_constraintEnd_toEndOf="@id/topAppBar" app:layout_constraintStart_toStartOf="@id/topAppBar" app:layout_constraintTop_toTopOf="@id/topAppBar" />
+            <ImageView
+                android:id="@+id/btnHamburgerMenu"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_home_hamburger"
+                android:tint="@android:color/white"
+                android:contentDescription="@string/home_menu"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Hamburger Badge Dot -->
+            <View
+                android:id="@+id/hamburgerBadgeDot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="0dp"
+                android:background="@drawable/badge_dot_green"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+        <!-- App Title (centered) -->
+        <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:src="@drawable/menu_icon_unknown" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Golden Pro Button with Shimmer and Badge -->
         <FrameLayout
             android:id="@+id/proBtnContainer"
             android:layout_width="wrap_content"
             android:layout_height="26dp"
-            android:layout_gravity="end|center_vertical"
-            android:layout_marginEnd="8dp">
+            android:layout_marginStart="12dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <com.fadcam.ui.ShimmerTextView 
                 android:id="@+id/btnGetPro"
@@ -48,13 +84,13 @@
 
         </FrameLayout>
 
-    </com.google.android.material.appbar.MaterialToolbar>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Hidden layoutCards for compatibility -->
-    <LinearLayout android:id="@+id/layoutCards" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/topAppBar" app:layout_constraintBottom_toBottomOf="parent" />
+    <LinearLayout android:id="@+id/layoutCards" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar" app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Left Panel: Stats and Info (Half Screen) -->
-    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginTop="4dp" android:layout_marginEnd="3dp" android:layout_marginBottom="6dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/rightPanel" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/topAppBar">
+    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginTop="4dp" android:layout_marginEnd="3dp" android:layout_marginBottom="6dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/rightPanel" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Mode Switcher (FadCam, FadRec, FadMic) - Compact for landscape -->
         <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
@@ -187,27 +223,112 @@
     </LinearLayout>
 
     <!-- Right Panel: Camera Preview and Controls (Half Screen) -->
-    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="3dp" android:layout_marginTop="4dp" android:layout_marginEnd="6dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/leftPanel" app:layout_constraintTop_toBottomOf="@id/topAppBar">
+    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="3dp" android:layout_marginTop="4dp" android:layout_marginEnd="6dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/leftPanel" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Camera Preview Area -->
         <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:strokeColor="#4CAF50" app:strokeWidth="15dp">
 
             <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
 
-                <!-- Background bubble shape (darker, behind everything) - Smaller for landscape -->
-                <ImageView android:id="@+id/ivBubbleBackground" android:layout_width="160dp" android:layout_height="160dp" android:layout_gravity="center" android:src="@drawable/bubble_shape" android:tint="?attr/colorHeading" android:alpha="0.15" android:scaleType="fitCenter" android:contentDescription="Bubble background shape" />
+                <!-- Avatar toggle + sleep ambiance container. match_parent so ambiance fills the preview area.
+                     Toggled GONE/VISIBLE as one unit when camera preview starts/stops. -->
+                <FrameLayout
+                    android:id="@+id/fl_preview_avatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingStart="40dp"
+                    android:paddingEnd="40dp">
 
-                <!-- Camera CCTV icon (overlayed on top of bubble) - Smaller for landscape -->
-                <ImageView android:id="@+id/ivCameraIconPreview" android:layout_width="100dp" android:layout_height="100dp" android:layout_gravity="center" android:src="@drawable/cctv" android:tint="?attr/colorHeading" android:alpha="0.3" android:scaleType="fitCenter" android:contentDescription="Camera icon" />
+                    <!-- Crescent moon + stars: night/stealth mood behind the sleeping avatar.
+                         Hidden automatically when fl_preview_avatar is GONE. -->
+                    <ImageView
+                        android:id="@+id/iv_sleep_ambiance"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_sleep_ambiance"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="@null" />
+
+                    <!-- Sun wake-up ambiance: shown when avatar wakes up before preview opens.
+                         Starts alpha=0; animated in by Java on applyHomeAvatarState(enabled=true). -->
+                    <ImageView
+                        android:id="@+id/iv_wake_sun"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_wake_sun"
+                        android:scaleType="fitCenter"
+                        android:alpha="0"
+                        android:contentDescription="@null" />
+
+                    <!-- Inner wrap-content container: avatar + zzZ badge positioned relative to each other,
+                         then centered in the full match_parent fl_preview_avatar. -->
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center">
+
+                        <ImageView
+                            android:id="@+id/iv_preview_avatar"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/toggle_off"
+                            android:scaleType="fitCenter"
+                            android:contentDescription="@string/ui_preview_area" />
+
+                        <!-- Eye-color overlay: same size, sits on top of avatar.
+                             Only the eye shapes are drawn (toggle_eyes_only), tinted via SRC_IN. -->
+                        <ImageView
+                            android:id="@+id/iv_preview_eye_overlay"
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/toggle_eyes_only"
+                            android:scaleType="fitCenter"
+                            android:alpha="0"
+                            android:contentDescription="@null" />
+
+                        <!-- zzz badge: shown when preview is disabled (sleeping).
+                             layout_gravity=top|end positions it at top-right of the avatar. -->
+                        <LinearLayout
+                            android:id="@+id/zzz_home_badge_group"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|end"
+                            android:layout_marginEnd="4dp"
+                            android:orientation="horizontal"
+                            android:gravity="bottom"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/tv_home_zzz_1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/materialicons"
+                                android:text="zzz"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:includeFontPadding="false" />
+
+                            <TextView
+                                android:id="@+id/tv_home_zzz_2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="-8dp"
+                                android:fontFamily="@font/materialicons"
+                                android:text="zzz"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                android:includeFontPadding="false" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </FrameLayout>
 
                 <!-- TextureView for live camera preview (shows on top when recording) -->
                 <TextureView android:id="@+id/textureView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
 
                 <!-- Hidden placeholder text (replaced by icons) -->
                 <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/colorOnSurface" android:textSize="24sp" android:visibility="gone" />
-
-                <!-- Hint text for long press to enable preview (shown when recording with preview disabled) -->
-                <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="45dp" android:text="Long press to enable preview" android:textColor="?attr/colorHeading" android:textSize="10sp" android:alpha="0.6" android:visibility="gone" />
 
                 <!-- Fullscreen preview button (bottom-right corner overlay) -->
                 <TextView android:id="@+id/btnFullscreenPreview" android:layout_width="36dp" android:layout_height="36dp" android:layout_gravity="bottom|end" android:layout_margin="8dp" android:background="@drawable/fullscreen_icon_bg" android:clickable="true" android:focusable="true" android:fontFamily="@font/materialicons" android:gravity="center" android:text="fullscreen" android:textColor="@android:color/white" android:textSize="20sp" android:visibility="gone" />
@@ -300,8 +421,11 @@
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 
+        <!-- Hint text for long press to enable preview -->
+        <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="13sp" android:alpha="0.75" android:letterSpacing="0.05" />
+
         <!-- Main Action Buttons -->
-        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:layout_marginBottom="68dp" android:gravity="center" android:orientation="horizontal">
+        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:layout_marginBottom="72dp" android:gravity="center" android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="48dp" android:layout_height="41dp" android:layout_marginEnd="4dp" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="@android:color/transparent" app:backgroundTint="@android:color/transparent" android:enabled="false" app:cornerRadius="15dp" />
 

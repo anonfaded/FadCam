@@ -20,44 +20,110 @@
         android:focusable="false"
         android:visibility="gone" />
 
-    <ImageView
-        android:id="@+id/ivFullscreenBubbleBackground"
-        android:layout_width="260dp"
-        android:layout_height="260dp"
-        android:layout_gravity="center"
-        android:alpha="0.15"
-        android:contentDescription="Fullscreen bubble background"
-        android:scaleType="fitCenter"
-        android:src="@drawable/bubble_shape"
-        android:tint="#B3FFFFFF"
-        android:visibility="gone" />
+    <!-- Avatar container with sleep/wake ambiance and animations -->
+    <FrameLayout
+        android:id="@+id/fl_fullscreen_preview_avatar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/ivFullscreenCameraIcon"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:layout_gravity="center"
-        android:alpha="0.35"
-        android:contentDescription="Fullscreen camera icon"
-        android:scaleType="fitCenter"
-        android:src="@drawable/cctv"
-        android:tint="#B3FFFFFF"
-        android:visibility="gone" />
+        <!-- Crescent moon + stars: night/stealth mood behind the sleeping avatar.
+             Shown when avatar is sleeping. -->
+        <ImageView
+            android:id="@+id/iv_fullscreen_sleep_ambiance"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_sleep_ambiance"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null"
+            android:visibility="visible" />
+
+        <!-- Sun wake-up ambiance: shown when avatar wakes up before preview opens.
+             Starts alpha=0; animated in by Java on state changes. -->
+        <ImageView
+            android:id="@+id/iv_fullscreen_wake_sun"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_wake_sun"
+            android:scaleType="fitCenter"
+            android:alpha="0"
+            android:contentDescription="@null"
+            android:visibility="visible" />
+
+        <!-- Inner wrap-content container: avatar + eye overlay + zzz badge positioned relative to each other,
+             then centered in the full match_parent fl_fullscreen_preview_avatar. -->
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center">
+
+            <ImageView
+                android:id="@+id/iv_fullscreen_preview_avatar"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:src="@drawable/toggle_off"
+                android:scaleType="fitCenter"
+                android:contentDescription="@string/ui_preview_area" />
+
+            <!-- Eye-color overlay: same size, sits on top of avatar.
+                 Only the eye shapes are drawn (toggle_eyes_only), tinted via SRC_IN. -->
+            <ImageView
+                android:id="@+id/iv_fullscreen_preview_eye_overlay"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:src="@drawable/toggle_eyes_only"
+                android:scaleType="fitCenter"
+                android:alpha="0"
+                android:contentDescription="@null" />
+
+            <!-- zzz badge: shown when preview is disabled (sleeping).
+                 layout_gravity=top|end positions it at top-right of the avatar. -->
+            <LinearLayout
+                android:id="@+id/zzz_fullscreen_badge_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginEnd="4dp"
+                android:orientation="horizontal"
+                android:gravity="bottom"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_fullscreen_zzz_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/materialicons"
+                    android:text="zzz"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/tv_fullscreen_zzz_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="-8dp"
+                    android:fontFamily="@font/materialicons"
+                    android:text="zzz"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
 
     <TextView
         android:id="@+id/textFullscreenPreviewHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|center"
-        android:layout_marginTop="154dp"
-        android:background="@drawable/fullscreen_dock_bg"
-        android:paddingStart="10dp"
-        android:paddingTop="6dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="6dp"
-        android:text="Long press to start live preview"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="80dp"
+        android:text="@string/preview_enable_hint"
         android:textColor="#E6FFFFFF"
-        android:textSize="12sp" />
+        android:textSize="13sp"
+        android:alpha="0.75"
+        android:letterSpacing="0.05" />
 
     <LinearLayout
         android:id="@+id/containerZoomHud"

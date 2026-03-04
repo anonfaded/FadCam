@@ -580,10 +580,7 @@ public class MainActivity extends AppCompatActivity {
         // After setContentView, apply theme colors
         int colorTopBar = resolveThemeColor(this, R.attr.colorTopBar);
         int colorBottomNav = resolveThemeColor(this, R.attr.colorBottomNav);
-        // Top bar (if using Toolbar)
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.topAppBar);
-        if (toolbar != null)
-            toolbar.setBackgroundColor(colorTopBar);
+        // Top bar color is applied via theme and layout backgrounds
         // Bottom navigation
         com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = findViewById(
                 R.id.bottom_navigation);
