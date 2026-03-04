@@ -1503,8 +1503,10 @@ public class MainActivity extends AppCompatActivity {
             View fragmentContainer = findViewById(R.id.fragment_container);
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
             if (fragmentContainer != null) {
-                // Keep main content below status bar and above gesture/navigation area.
-                fragmentContainer.setPadding(0, systemBars.top, 0, systemBars.bottom);
+                // Apply all 4 sides: in landscape, nav bar moves to right (systemBars.right > 0).
+                fragmentContainer.setPadding(
+                        systemBars.left, systemBars.top,
+                        systemBars.right, systemBars.bottom);
             }
 
             if (statusBarScrim != null) {
@@ -1516,12 +1518,12 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (navContainer != null) {
-                // Apply bottom gesture inset to the dock container, not the BottomNavigationView
-                // itself (prevents icon/text clipping inside fixed-height nav card).
+                // In landscape, nav bar shifts to the right (systemBars.right > 0).
+                // Apply right inset alongside bottom so dock doesn't clip under the nav bar.
                 navContainer.setPadding(
-                        navBasePaddingStart,
+                        navBasePaddingStart + systemBars.left,
                         navBasePaddingTop,
-                        navBasePaddingEnd,
+                        navBasePaddingEnd + systemBars.right,
                         navBasePaddingBottom + systemBars.bottom);
             }
 
