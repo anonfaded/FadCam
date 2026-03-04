@@ -118,10 +118,15 @@
         <item name="cardBackgroundColor">@color/amoled_surface</item>
     </style>
 
-    <style name="Theme.FadCam.AmoledBottomNavigation" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+    <style name="Theme.FadCam.AmoledBottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:minHeight">64dp</item>
         <item name="android:background">@color/amoled_background</item>
         <item name="itemIconTint">@color/amoled_text_primary</item>
         <item name="itemTextColor">@color/amoled_text_primary</item>
+        <item name="itemActiveIndicatorStyle">@null</item>
+        <item name="labelVisibilityMode">selected</item>
+        <item name="itemPaddingTop">0dp</item>
+        <item name="itemPaddingBottom">0dp</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Amoled.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -620,10 +625,17 @@
         <item name="subtitleTextColor">@android:color/black</item>
     </style>
 
-    <style name="Widget.FadCam.BottomNavigationView.Light" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+    <style name="Widget.FadCam.BottomNavigationView.Light" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:minHeight">64dp</item>
         <item name="android:background">?attr/colorBottomNav</item>
         <item name="itemIconTint">@color/black</item>
         <item name="itemTextColor">@color/black</item>
+        <item name="itemActiveIndicatorStyle">@null</item>
+        <item name="labelVisibilityMode">selected</item>
+        <item name="itemPaddingTop">0dp</item>
+        <item name="itemPaddingBottom">0dp</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.FadCam.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.FadCam.BottomNav.Inactive</item>
     </style>
 
     <style name="Widget.FadCam.Toolbar" parent="Widget.MaterialComponents.Toolbar">
@@ -632,10 +644,29 @@
         <item name="subtitleTextColor">@android:color/white</item>
     </style>
 
-    <style name="Widget.FadCam.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+    <style name="Widget.FadCam.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:minHeight">64dp</item>
         <item name="android:background">?attr/colorBottomNav</item>
         <item name="itemIconTint">@color/white</item>
         <item name="itemTextColor">@color/white</item>
+        <item name="itemActiveIndicatorStyle">@null</item>
+        <item name="labelVisibilityMode">selected</item>
+        <item name="itemPaddingTop">0dp</item>
+        <item name="itemPaddingBottom">0dp</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.FadCam.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.FadCam.BottomNav.Inactive</item>
+    </style>
+
+    <style name="TextAppearance.FadCam.BottomNav.Active" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">true</item>
+    </style>
+
+    <style name="TextAppearance.FadCam.BottomNav.Inactive" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">true</item>
     </style>
 
     <!-- Fix Start: Add theme overlays for bottom sheets and dialogs for all themes -->

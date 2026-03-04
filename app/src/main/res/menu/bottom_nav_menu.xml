@@ -18,7 +18,7 @@
         android:title="@string/nav_faditor_mini" />
     <item
         android:id="@+id/navigation_settings"
-        android:icon="@drawable/settings"
+        android:icon="@drawable/ic_nav_settings"
         android:title="@string/nav_settings" />
     <item
         android:id="@+id/navigation_lab"

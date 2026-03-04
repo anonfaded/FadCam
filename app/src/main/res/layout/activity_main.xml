@@ -7,6 +7,15 @@
     android:background="?android:colorBackground">
 
     <!-- Fragment container for tab content -->
+    <View
+        android:id="@+id/status_bar_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="?attr/colorTopBar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
@@ -37,27 +46,19 @@
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
+            android:layout_height="64dp"
             android:layout_gravity="bottom"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="12dp"
-            app:cardBackgroundColor="?attr/colorTopBar">
-
-            <com.google.android.material.bottomnavigation.BottomNavigationView
-                android:id="@+id/bottom_navigation"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@android:color/transparent"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                app:itemIconSize="22dp"
-                app:itemIconTint="@color/bottom_nav_icon_tint"
-                app:itemTextColor="@android:color/white"
-                app:labelVisibilityMode="selected"
-                app:menu="@menu/bottom_nav_menu" />
-        </androidx.cardview.widget.CardView>
+            android:elevation="12dp"
+            android:background="?attr/colorBottomNav"
+            android:clipToOutline="true"
+            app:itemIconSize="22dp"
+            app:itemIconTint="@color/bottom_nav_icon_tint"
+            app:itemTextColor="@android:color/white"
+            app:itemActiveIndicatorStyle="@null"
+            app:menu="@menu/bottom_nav_menu" />
     </FrameLayout>
 
     <!-- ********************************************************** -->

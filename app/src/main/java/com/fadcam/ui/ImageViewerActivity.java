@@ -16,6 +16,11 @@ import android.graphics.Color;
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.GlideException;
@@ -75,7 +80,7 @@ public class ImageViewerActivity extends AppCompatActivity {
             setTheme(R.style.Base_Theme_FadCam);
         }
         super.onCreate(savedInstanceState);
-        enforceBlackStatusBar();
+        enableEdgeToEdge();
         setContentView(R.layout.activity_image_viewer);
 
         ImageView back = findViewById(R.id.imageViewerBack);
@@ -84,6 +89,7 @@ public class ImageViewerActivity extends AppCompatActivity {
         TextView metaView = findViewById(R.id.imageViewerMeta);
         topDock = findViewById(R.id.imageViewerTopDock);
         bottomDock = findViewById(R.id.imageViewerBottomDock);
+        applySystemInsets();
         if (back != null) {
             back.setOnClickListener(v -> finish());
         }
@@ -167,16 +173,86 @@ public class ImageViewerActivity extends AppCompatActivity {
                 .start();
     }
 
-    private void enforceBlackStatusBar() {
+    private void enableEdgeToEdge() {
         Window window = getWindow();
         if (window == null) return;
-        window.setStatusBarColor(Color.BLACK);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            View decor = window.getDecorView();
-            int flags = decor.getSystemUiVisibility();
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            decor.setSystemUiVisibility(flags);
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+        if (controller != null) {
+            controller.setAppearanceLightStatusBars(false);
+            controller.setAppearanceLightNavigationBars(false);
         }
+    }
+
+    private void applySystemInsets() {
+        final View root = findViewById(android.R.id.content);
+        if (root == null) {
+            return;
+        }
+        final View top = topDock;
+        final View bottom = bottomDock;
+        final int topBaseTopMargin = getTopMargin(top);
+        final int topBaseStartMargin = getStartMargin(top);
+        final int topBaseEndMargin = getEndMargin(top);
+        final int bottomBaseBottomMargin = getBottomMargin(bottom);
+        final int bottomBaseStartMargin = getStartMargin(bottom);
+        final int bottomBaseEndMargin = getEndMargin(bottom);
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            if (top != null && top.getLayoutParams() instanceof android.widget.FrameLayout.LayoutParams) {
+                android.widget.FrameLayout.LayoutParams lp =
+                        (android.widget.FrameLayout.LayoutParams) top.getLayoutParams();
+                lp.topMargin = topBaseTopMargin + systemBars.top;
+                lp.leftMargin = topBaseStartMargin + systemBars.left;
+                lp.rightMargin = topBaseEndMargin + systemBars.right;
+                top.setLayoutParams(lp);
+            }
+            if (bottom != null && bottom.getLayoutParams() instanceof android.widget.FrameLayout.LayoutParams) {
+                android.widget.FrameLayout.LayoutParams lp =
+                        (android.widget.FrameLayout.LayoutParams) bottom.getLayoutParams();
+                lp.bottomMargin = bottomBaseBottomMargin + systemBars.bottom;
+                lp.leftMargin = bottomBaseStartMargin + systemBars.left;
+                lp.rightMargin = bottomBaseEndMargin + systemBars.right;
+                bottom.setLayoutParams(lp);
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
+    }
+
+    private int getTopMargin(@Nullable View view) {
+        if (view == null) return 0;
+        if (view.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
+            return ((android.view.ViewGroup.MarginLayoutParams) view.getLayoutParams()).topMargin;
+        }
+        return 0;
+    }
+
+    private int getBottomMargin(@Nullable View view) {
+        if (view == null) return 0;
+        if (view.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
+            return ((android.view.ViewGroup.MarginLayoutParams) view.getLayoutParams()).bottomMargin;
+        }
+        return 0;
+    }
+
+    private int getStartMargin(@Nullable View view) {
+        if (view == null) return 0;
+        if (view.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
+            return ((android.view.ViewGroup.MarginLayoutParams) view.getLayoutParams()).leftMargin;
+        }
+        return 0;
+    }
+
+    private int getEndMargin(@Nullable View view) {
+        if (view == null) return 0;
+        if (view.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
+            return ((android.view.ViewGroup.MarginLayoutParams) view.getLayoutParams()).rightMargin;
+        }
+        return 0;
     }
 
     @Nullable

@@ -33,6 +33,7 @@ import com.fadcam.ui.SettingsHomeFragment;
 import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
 import com.fadcam.ui.utils.NewFeatureManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 
 import java.io.File;
 import java.util.Arrays;
@@ -144,28 +145,8 @@ public class MainActivity extends AppCompatActivity {
      */
     public void setStatusBarColor(int color) {
         if (getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            if (color == 0) {
-                // Restore status bar to match header/nav (colorTopBar)
-                try {
-                    android.util.TypedValue typedValue = new android.util.TypedValue();
-                    int colorTopBarAttr = getResources().getIdentifier("colorTopBar", "attr", getPackageName());
-                    if (colorTopBarAttr != 0 && getTheme().resolveAttribute(colorTopBarAttr, typedValue, true)) {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            int statusColor = getColor(typedValue.resourceId);
-                            getWindow().setStatusBarColor(statusColor);
-                        } else {
-                            int statusColor = getResources().getColor(typedValue.resourceId);
-                            getWindow().setStatusBarColor(statusColor);
-                        }
-                        Log.d("MainActivity", "Restored status bar color from colorTopBar: " + Integer.toHexString(typedValue.resourceId));
-                    }
-                } catch (Exception e) {
-                    Log.e("MainActivity", "Error restoring status bar color from colorTopBar", e);
-                }
-            } else {
-                // Set custom color
-                getWindow().setStatusBarColor(color);
-            }
+            // Keep status bar transparent so it always blends with dynamic headers/themes.
+            getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         }
     }
 
@@ -176,12 +157,8 @@ public class MainActivity extends AppCompatActivity {
      */
     public void setNavigationBarColor(int color) {
         if (getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            if (color == 0) {
-                int navColor = resolveThemeColor(this, R.attr.colorBottomNav);
-                getWindow().setNavigationBarColor(navColor);
-            } else {
-                getWindow().setNavigationBarColor(color);
-            }
+            // Keep navigation bar transparent in edge-to-edge mode.
+            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
     }
 
@@ -420,6 +397,38 @@ public class MainActivity extends AppCompatActivity {
 
         // Fragment container for tab navigation
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            // Prevent Material from applying its own window insets to the nav view.
+            // The parent nav_container already handles insets; letting Material add its own
+            // bottom padding causes icons to shift above-center on gesture-nav devices.
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
+                    bottomNavigationView, (v, insets) -> insets);
+            bottomNavigationView.setPadding(0, 0, 0, 0);
+
+            // Active-tab label mode: only the selected tab shows its label.
+            bottomNavigationView.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_SELECTED);
+            bottomNavigationView.setItemActiveIndicatorEnabled(false);
+            // Center content (icon + label) vertically within the 64dp dock.
+            bottomNavigationView.setItemGravity(NavigationBarView.ITEM_GRAVITY_CENTER);
+            try {
+                bottomNavigationView.setItemActiveIndicatorColor(
+                        android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
+            } catch (Exception ignored) { }
+
+            // Apply rounded corners (24dp) via ViewOutlineProvider so the background and
+            // elevation shadow both follow the rounded pill shape reliably across themes.
+            // The background color is resolved from the XML attribute; we only set the shape.
+            final float cornerPx = android.util.TypedValue.applyDimension(
+                    android.util.TypedValue.COMPLEX_UNIT_DIP, 24,
+                    getResources().getDisplayMetrics());
+            bottomNavigationView.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerPx);
+                }
+            });
+            bottomNavigationView.setClipToOutline(true);
+        }
         
         // Initialize SharedPreferencesManager before using it in fragments
         sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
@@ -571,7 +580,6 @@ public class MainActivity extends AppCompatActivity {
         // After setContentView, apply theme colors
         int colorTopBar = resolveThemeColor(this, R.attr.colorTopBar);
         int colorBottomNav = resolveThemeColor(this, R.attr.colorBottomNav);
-        int colorStatusBar = resolveThemeColor(this, R.attr.colorStatusBar);
         // Top bar (if using Toolbar)
         androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.topAppBar);
         if (toolbar != null)
@@ -581,9 +589,13 @@ public class MainActivity extends AppCompatActivity {
                 R.id.bottom_navigation);
         if (bottomNav != null)
             bottomNav.setBackgroundColor(colorBottomNav);
-        // Status bar
-        getWindow().setStatusBarColor(colorStatusBar);
-        getWindow().setNavigationBarColor(colorBottomNav);
+        View statusBarScrim = findViewById(R.id.status_bar_scrim);
+        if (statusBarScrim != null) {
+            statusBarScrim.setBackgroundColor(colorTopBar);
+        }
+        // Keep system bars transparent in edge-to-edge mode.
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
 
         // theme change)-----------
         try {
@@ -1441,26 +1453,47 @@ public class MainActivity extends AppCompatActivity {
         // Make system bars transparent
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            getWindow().setStatusBarContrastEnforced(false);
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
 
         // Handle window insets properly
         View rootView = findViewById(android.R.id.content);
+        View navContainer = findViewById(R.id.nav_container);
+        View statusBarScrim = findViewById(R.id.status_bar_scrim);
+        final int navBasePaddingStart = navContainer != null ? navContainer.getPaddingStart() : 0;
+        final int navBasePaddingTop = navContainer != null ? navContainer.getPaddingTop() : 0;
+        final int navBasePaddingEnd = navContainer != null ? navContainer.getPaddingEnd() : 0;
+        final int navBasePaddingBottom = navContainer != null ? navContainer.getPaddingBottom() : 0;
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
             androidx.core.graphics.Insets systemBars = insets
                     .getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
 
             // Apply insets to main content areas
-            View bottomNav = findViewById(R.id.bottom_navigation);
             View fragmentContainer = findViewById(R.id.fragment_container);
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
             if (fragmentContainer != null) {
-                // Apply top and side insets to main content, but not bottom (handled by bottom
-                // nav)
-                fragmentContainer.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+                // Keep main content below status bar and above gesture/navigation area.
+                fragmentContainer.setPadding(0, systemBars.top, 0, systemBars.bottom);
             }
 
-            if (bottomNav != null) {
-                // Apply bottom inset to bottom navigation
-                bottomNav.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
+            if (statusBarScrim != null) {
+                ViewGroup.LayoutParams lp = statusBarScrim.getLayoutParams();
+                if (lp != null && lp.height != systemBars.top) {
+                    lp.height = systemBars.top;
+                    statusBarScrim.setLayoutParams(lp);
+                }
+            }
+
+            if (navContainer != null) {
+                // Apply bottom gesture inset to the dock container, not the BottomNavigationView
+                // itself (prevents icon/text clipping inside fixed-height nav card).
+                navContainer.setPadding(
+                        navBasePaddingStart,
+                        navBasePaddingTop,
+                        navBasePaddingEnd,
+                        navBasePaddingBottom + systemBars.bottom);
             }
 
             if (overlayContainer != null) {
