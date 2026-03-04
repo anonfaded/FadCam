@@ -24,7 +24,8 @@
     <FrameLayout
         android:id="@+id/fl_fullscreen_preview_avatar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_gravity="center">
 
         <!-- Crescent moon + stars: night/stealth mood behind the sleeping avatar.
              Shown when avatar is sleeping. -->
@@ -118,7 +119,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="64dp"
         android:text="@string/preview_enable_hint"
         android:textColor="#E6FFFFFF"
         android:textSize="13sp"

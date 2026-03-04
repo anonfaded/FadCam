@@ -176,6 +176,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     // Avatar animation state
     private boolean fullscreenAvatarLastEnabled = false;
+    private boolean fullscreenAvatarWakingUp = false;  // Track if avatar is in wake-up animation
+    private Animator fullscreenIrisAnimator = null;  // Track iris reveal animation
     private java.util.Random fullscreenBlinkRandom = new java.util.Random();
     private Handler fullscreenBlinkHandler = new Handler(Looper.getMainLooper());
     private Runnable fullscreenBlinkRunnable;
@@ -620,6 +622,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     intent.putExtra("SURFACE", previewSurface);
                     intent.putExtra("SURFACE_WIDTH", textureView != null ? textureView.getWidth() : -1);
                     intent.putExtra("SURFACE_HEIGHT", textureView != null ? textureView.getHeight() : -1);
+                }
+                // Trigger avatar waking animation immediately when starting preview
+                if (flFullscreenPreviewAvatar != null) {
+                    flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
+                    fullscreenAvatarWakingUp = true;  // Prevent updatePreviewHintVisibility from resetting
+                    applyFullscreenAvatarState(true, true); // Wake up with animation
+                    // Clear flag after animation completes (520ms wake anim + 200ms buffer)
+                    fullscreenBlinkHandler.postDelayed(() -> {
+                        fullscreenAvatarWakingUp = false;
+                    }, 720L);
                 }
             }
             ServiceStartPolicy.startRecordingAction(this, intent);
@@ -1391,10 +1403,15 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             if (showIdlePlaceholder) {
                 // Show sleeping avatar with zzz badge
                 flFullscreenPreviewAvatar.setVisibility(View.VISIBLE);
-                applyFullscreenAvatarState(false, false); // sleeping, no animation
+                // Only update state if we're not already in a wake-up animation
+                if (!fullscreenAvatarWakingUp && fullscreenAvatarLastEnabled != false) {
+                    applyFullscreenAvatarState(false, false); // sleeping, no animation
+                }
             } else {
-                // Hide avatar when preview is active
-                flFullscreenPreviewAvatar.setVisibility(View.GONE);
+                // Hide avatar when preview is active (after wake animation completes)
+                if (!fullscreenAvatarWakingUp) {
+                    flFullscreenPreviewAvatar.setVisibility(View.GONE);
+                }
             }
         }
     }
@@ -1688,6 +1705,40 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     .start();
             }
             
+            // Iris-open: circular reveal of eye overlay (happens during wake animation)
+            if (animate && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && ivFullscreenPreviewEyeOverlay != null) {
+                ivFullscreenPreviewEyeOverlay.setAlpha(0f);
+                ivFullscreenPreviewEyeOverlay.post(() -> {
+                    if (ivFullscreenPreviewEyeOverlay == null) return;
+                    int w = ivFullscreenPreviewEyeOverlay.getWidth();
+                    int h = ivFullscreenPreviewEyeOverlay.getHeight();
+                    if (w <= 0 || h <= 0) {
+                        ivFullscreenPreviewEyeOverlay.measure(0, 0);
+                        w = ivFullscreenPreviewEyeOverlay.getMeasuredWidth();
+                        h = ivFullscreenPreviewEyeOverlay.getMeasuredHeight();
+                    }
+                    int cx = w / 2;
+                    int cy = h / 2;
+                    float maxR = (float) Math.hypot(cx, cy);
+                    if (fullscreenIrisAnimator != null) fullscreenIrisAnimator.cancel();
+                    fullscreenIrisAnimator = android.view.ViewAnimationUtils.createCircularReveal(
+                            ivFullscreenPreviewEyeOverlay, cx, cy, 0f, maxR);
+                    fullscreenIrisAnimator.setDuration(420);
+                    fullscreenIrisAnimator.setInterpolator(new android.view.animation.DecelerateInterpolator(1.3f));
+                    fullscreenIrisAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationStart(android.animation.Animator a) {
+                            if (ivFullscreenPreviewEyeOverlay != null) ivFullscreenPreviewEyeOverlay.setAlpha(0.6f);
+                        }
+                        @Override
+                        public void onAnimationEnd(android.animation.Animator a) {
+                            if (ivFullscreenPreviewEyeOverlay != null) ivFullscreenPreviewEyeOverlay.setAlpha(0.6f);
+                        }
+                    });
+                    fullscreenIrisAnimator.start();
+                });
+            }
+            
             // Hide zzz
             if (zzzFullscreenBadgeGroup != null) {
                 if (animate && zzzFullscreenBadgeGroup.getVisibility() == View.VISIBLE) {
@@ -1736,8 +1787,39 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
 
         } else {
-            // Sleeping state: moon rises, sun fades, show zzz badge
+            // Sleeping state: moon rises, sun fades, iris closes, show zzz badge
             stopFullscreenBlinkLoop();
+            stopFullscreenFloatingZAnims();
+            if (fullscreenIrisAnimator != null) {
+                fullscreenIrisAnimator.cancel();
+                fullscreenIrisAnimator = null;
+            }
+            
+            // Iris-close: contract the eye overlay from full to 0 (Preview→Avatar transition mirror)
+            if (animate && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP && ivFullscreenPreviewEyeOverlay != null && ivFullscreenPreviewEyeOverlay.getAlpha() > 0.1f) {
+                int w = ivFullscreenPreviewEyeOverlay.getWidth();
+                int h = ivFullscreenPreviewEyeOverlay.getHeight();
+                if (w <= 0 || h <= 0) {
+                    w = 140; // fallback to avatar size
+                    h = 140;
+                }
+                int cx = w / 2;
+                int cy = h / 2;
+                float maxR = (float) Math.hypot(cx, cy);
+                fullscreenIrisAnimator = android.view.ViewAnimationUtils.createCircularReveal(
+                        ivFullscreenPreviewEyeOverlay, cx, cy, maxR, 0f);
+                fullscreenIrisAnimator.setDuration(360);
+                fullscreenIrisAnimator.setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f));
+                fullscreenIrisAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(android.animation.Animator a) {
+                        if (ivFullscreenPreviewEyeOverlay != null) ivFullscreenPreviewEyeOverlay.setAlpha(0f);
+                    }
+                });
+                fullscreenIrisAnimator.start();
+            } else if (ivFullscreenPreviewEyeOverlay != null) {
+                ivFullscreenPreviewEyeOverlay.setAlpha(0f);
+            }
             
             // Sun fades out (if visible)
             if (ivFullscreenWakeSun != null && ivFullscreenWakeSun.getAlpha() > 0.02f) {
@@ -1800,13 +1882,20 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                         ((android.graphics.drawable.Animatable2) d).clearAnimationCallbacks();
                         ((android.graphics.drawable.Animatable2) d).registerAnimationCallback(
                             new android.graphics.drawable.Animatable2.AnimationCallback() {
-                                @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) { afterOff.run(); }
+                                @Override public void onAnimationEnd(android.graphics.drawable.Drawable drawable) { 
+                                    fullscreenAvatarWakingUp = false;
+                                    afterOff.run(); 
+                                }
                             });
                         ((android.graphics.drawable.Animatable2) d).start();
                     } else if (d instanceof android.graphics.drawable.Animatable) {
                         ((android.graphics.drawable.Animatable) d).start();
-                        ivFullscreenPreviewAvatar.postDelayed(afterOff, 480);
+                        ivFullscreenPreviewAvatar.postDelayed(() -> {
+                            fullscreenAvatarWakingUp = false;
+                            afterOff.run();
+                        }, 480);
                     } else {
+                        fullscreenAvatarWakingUp = false;
                         afterOff.run();
                     }
                 });
@@ -1814,6 +1903,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 ivFullscreenPreviewAvatar.setImageResource(R.drawable.toggle_off);
                 startFullscreenBreathing();
                 showFullscreenZzzLetters(false);
+                fullscreenAvatarWakingUp = false;
             }
         }
         
@@ -1829,6 +1919,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             if (tvFullscreenZzz1 != null) { tvFullscreenZzz1.setAlpha(0f); tvFullscreenZzz1.setScaleX(0.1f); tvFullscreenZzz1.setScaleY(0.1f); tvFullscreenZzz1.setTranslationY(8f); }
             if (tvFullscreenZzz2 != null) { tvFullscreenZzz2.setAlpha(0f); tvFullscreenZzz2.setScaleX(0.1f); tvFullscreenZzz2.setScaleY(0.1f); tvFullscreenZzz2.setTranslationY(8f); }
             
+            zzzFullscreenBadgeGroup.setAlpha(1f);
             zzzFullscreenBadgeGroup.setVisibility(View.VISIBLE);
             long delay = 130;
             for (View z : new View[]{tvFullscreenZzz1, tvFullscreenZzz2}) {
@@ -1840,9 +1931,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
             zzzFullscreenBadgeGroup.postDelayed(() -> startFullscreenFloatingZAnims(), 700);
         } else {
+            zzzFullscreenBadgeGroup.setAlpha(1f);
             zzzFullscreenBadgeGroup.setVisibility(View.VISIBLE);
             resetFullscreenZLetters();
-            startFullscreenFloatingZAnims();
+            zzzFullscreenBadgeGroup.postDelayed(() -> startFullscreenFloatingZAnims(), 100);
         }
     }
 

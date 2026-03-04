@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?android:attr/colorBackground">
 
     <!-- Fixed Header with rounded corners (ConstraintLayout like portrait mode) -->
-    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/header_bar" android:layout_width="0dp" android:layout_height="wrap_content" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:background="@drawable/header_bar_rounded_bg" android:clipToOutline="true" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/header_bar" android:layout_width="0dp" android:layout_height="wrap_content" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="8dp" android:paddingBottom="8dp" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
 
         <!-- Hamburger menu button -->
         <FrameLayout
@@ -304,22 +304,34 @@
                                 android:id="@+id/tv_home_zzz_1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/materialicons"
-                                android:text="zzz"
-                                android:textColor="@android:color/white"
-                                android:textSize="16sp"
-                                android:includeFontPadding="false" />
+                                android:tag="preserve_color"
+                                android:text="z"
+                                android:textSize="9sp"
+                                android:textColor="#a8d8f0"
+                                android:fontFamily="sans-serif-black"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/tv_home_zzz_2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="-8dp"
-                                android:fontFamily="@font/materialicons"
-                                android:text="zzz"
-                                android:textColor="@android:color/white"
-                                android:textSize="12sp"
-                                android:includeFontPadding="false" />
+                                android:tag="preserve_color"
+                                android:text="Z"
+                                android:textSize="13sp"
+                                android:textColor="#ceecf8"
+                                android:fontFamily="sans-serif-black"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_home_zzz_3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:tag="preserve_color"
+                                android:text="Z"
+                                android:textSize="17sp"
+                                android:textColor="#e8f5fd"
+                                android:fontFamily="sans-serif-black"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </FrameLayout>
                 </FrameLayout>

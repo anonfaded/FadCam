@@ -4826,8 +4826,13 @@ public class HomeFragment extends BaseFragment {
         // -----
         View headerBar = view.findViewById(R.id.header_bar);
         if (headerBar != null) {
+            // Use drawable background for consistency with other tabs (portrait home, records, etc)
             int colorTopBar = resolveThemeColor(R.attr.colorTopBar);
-            headerBar.setBackgroundColor(colorTopBar);
+            // Create drawable with correct color
+            android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
+            drawable.setColor(colorTopBar);
+            drawable.setCornerRadii(new float[]{0, 0, 0, 0, 24*getResources().getDisplayMetrics().density, 24*getResources().getDisplayMetrics().density, 24*getResources().getDisplayMetrics().density, 24*getResources().getDisplayMetrics().density});
+            headerBar.setBackground(drawable);
         }
         // If you have FABs or MaterialButtons, set their background tint to colorButton
         // here
