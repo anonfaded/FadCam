@@ -1498,6 +1498,15 @@ public class RemoteFragment extends BaseFragment {
             RemoteStreamManager.getInstance().clearLocalhostClients();
         }
         
+        // SECURITY FIX: Call updateStreamingMode on service to immediately stop/start HTTP server
+        // This ensures proper enforcement of cloud-only mode (no local access)
+        if (streamService != null && serviceBound) {
+            Log.i(TAG, "🔄 Updating streaming mode in service...");
+            streamService.updateStreamingMode();
+        } else {
+            Log.w(TAG, "⚠️ Service not bound, mode persisted but server state may not update immediately");
+        }
+        
         // Start/stop cloud status manager if server is already running
         CloudStatusManager statusManager = CloudStatusManager.getInstance(requireContext());
         if (cloudEnabled) {
