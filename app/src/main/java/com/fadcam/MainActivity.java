@@ -889,7 +889,7 @@ public class MainActivity extends AppCompatActivity {
         ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
                 .setShortLabel(getString(R.string.start_recording))
                 .setLongLabel(getString(R.string.start_recording))
-                .setIcon(Icon.createWithResource(this, R.drawable.start_shortcut))
+                .setIcon(Icon.createWithResource(this, R.drawable.start_back_shortcut))
                 .setIntent(startRecordIntent)
                 .build();
 
