@@ -37,6 +37,11 @@ import java.util.concurrent.Executors;
 public class CloudStatusManager {
     private static final String TAG = "CloudStatusManager";
     
+    // Listener interface for auth/credential errors
+    public interface AuthErrorListener {
+        void onAuthError(String reason);
+    }
+    
     // Push interval: 2 seconds for status, 1.5 seconds for commands (Realtime disabled), 30 seconds for viewers
     private static final long STATUS_PUSH_INTERVAL_MS = 2000;
     private static final long COMMAND_POLL_INTERVAL_MS = 1500; // Reduced from 3000 since Realtime is disabled
@@ -56,6 +61,14 @@ public class CloudStatusManager {
     private final CloudAuthManager authManager;
     private final Handler handler;
     private final ExecutorService executor;
+    
+    // Error listener for UI feedback
+    private AuthErrorListener authErrorListener;
+    private boolean authErrorShown = false;  // Track if error already shown to prevent toast spam
+    
+    // Stream token fetch cooldown to prevent hammering after repeated failures
+    private long lastStreamTokenFetchFailureTime = 0;
+    private static final long STREAM_TOKEN_FETCH_COOLDOWN_MS = 30000;  // Wait 30s after failure before retrying
     
     // State
     private boolean isRunning = false;
@@ -79,6 +92,27 @@ public class CloudStatusManager {
             instance = new CloudStatusManager(context);
         }
         return instance;
+    }
+    
+    /**
+     * Set listener for authentication/credential errors
+     * Called by RemoteFragment to display error messages to user
+     */
+    public void setAuthErrorListener(AuthErrorListener listener) {
+        this.authErrorListener = listener;
+    }
+    
+    /**
+     * Notify listener of authentication error (called on main thread)
+     * Only notifies once to avoid toast spam - subsequent errors are logged but not shown
+     */
+    private void notifyAuthError(String reason) {
+        if (!authErrorShown && authErrorListener != null) {
+            authErrorShown = true;  // Mark as shown - don't show again
+            handler.post(() -> authErrorListener.onAuthError(reason));
+        } else if (authErrorShown) {
+            Log.d(TAG, "☁️ Auth error already shown, suppressing additional notification: " + reason);
+        }
     }
     
     /**
@@ -278,6 +312,15 @@ public class CloudStatusManager {
         
         // If no stream token, try to fetch one
         if (streamToken == null || authManager.isStreamTokenNearExpiry()) {
+            // Check cooldown - don't hammer Supabase if fetch recently failed
+            long timeSinceLastFailure = System.currentTimeMillis() - lastStreamTokenFetchFailureTime;
+            if (timeSinceLastFailure < STREAM_TOKEN_FETCH_COOLDOWN_MS) {
+                long cooldownRemaining = STREAM_TOKEN_FETCH_COOLDOWN_MS - timeSinceLastFailure;
+                Log.d(TAG, "☁️ Stream token fetch on cooldown for " + (cooldownRemaining / 1000) + "s (waiting after recent failure)");
+                onPushFailure("Token fetch throttled (cooldown)");
+                return;
+            }
+            
             Log.i(TAG, "Stream token missing/expired, fetching new one...");
             authManager.getValidStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
                 @Override
@@ -290,7 +333,12 @@ public class CloudStatusManager {
                 @Override
                 public void onError(String error) {
                     Log.e(TAG, "Stream token fetch failed: " + error);
+                    lastStreamTokenFetchFailureTime = System.currentTimeMillis();  // Record failure time
                     onPushFailure("Token fetch failed: " + error);
+                    // Notify UI of auth error (only once)
+                    if (error.contains("401") || error.contains("Unauthorized")) {
+                        notifyAuthError("Cloud authentication failed. Device may not be properly linked. Try re-linking from Cloud Account.");
+                    }
                 }
             });
             return;
@@ -388,6 +436,11 @@ public class CloudStatusManager {
                 if (responseCode >= 200 && responseCode < 300) {
                     // Success - track recovery
                     onPushSuccess();
+                } else if (responseCode == 401) {
+                    // Unauthorized - authentication/credentials issue
+                    Log.e(TAG, "☁️ 📤 AUTH ERROR (401): Device not properly authenticated");
+                    onPushFailure("HTTP " + responseCode);
+                    notifyAuthError("Cloud authentication failed (401). Device may not be properly linked. Try re-linking from Cloud Account.");
                 } else {
                     onPushFailure("HTTP " + responseCode);
                 }

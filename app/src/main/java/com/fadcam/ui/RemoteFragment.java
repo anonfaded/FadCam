@@ -325,6 +325,12 @@ public class RemoteFragment extends BaseFragment {
                 healthUpdateHandler.postDelayed(this, 1000);
             }
         };
+        
+        // Set up cloud status error listener to show auth errors to user
+        CloudStatusManager.getInstance(requireContext()).setAuthErrorListener(reason -> {
+            Log.e(TAG, "Cloud auth error: " + reason);
+            Toast.makeText(requireContext(), "⚠️ " + reason, Toast.LENGTH_LONG).show();
+        });
     }
     
     /**
