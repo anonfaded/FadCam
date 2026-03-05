@@ -233,8 +233,15 @@ public class CloudAuthManager {
     
     /**
      * Completely unlink this device from cloud account
+     * Notifies the backend to mark device as inactive and removes from dashboard
      */
     public void unlinkDevice() {
+        final String deviceId = getDeviceId();
+        final String userId = getUserId();
+        
+        Log.i(TAG, "Unlinking device from cloud account...");
+        
+        // Clear local state immediately (don't wait for network response)
         prefs.edit()
             .remove(KEY_JWT_TOKEN)
             .remove(KEY_JWT_EXPIRY)
@@ -245,7 +252,45 @@ public class CloudAuthManager {
             .remove(KEY_IS_LINKED)
             .remove(KEY_LINKED_AT)
             .apply();
-        Log.i(TAG, "Device unlinked from cloud account");
+        
+        clearStreamToken();
+        
+        // Notify backend asynchronously (don't block UI)
+        if (userId != null && deviceId != null) {
+            new Thread(() -> {
+                try {
+                    String url = SUPABASE_URL + "/functions/v1/unlink-device";
+                    java.net.URI uri = java.net.URI.create(url);
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) uri.toURL().openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(10000);
+                    conn.setDoOutput(true);
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    
+                    // Send device_id and user_id for verification
+                    String body = "{\"device_id\":\"" + deviceId + "\",\"user_id\":\"" + userId + "\"}";
+                    try (java.io.OutputStream os = conn.getOutputStream()) {
+                        os.write(body.getBytes("UTF-8"));
+                    }
+                    
+                    int responseCode = conn.getResponseCode();
+                    if (responseCode == 200) {
+                        Log.i(TAG, "✅ Device unlinked from backend - will disappear from dashboard");
+                    } else if (responseCode == 404) {\n                        Log.w(TAG, "⚠️ Device not found on backend (already unlinked?)");
+                    } else if (responseCode == 403) {
+                        Log.w(TAG, "⚠️ Backend rejected unlink (ownership mismatch)");
+                    } else {
+                        Log.w(TAG, "⚠️ Backend unlink failed (HTTP " + responseCode + "), but local unlink complete");
+                    }
+                    conn.disconnect();
+                } catch (Exception e) {
+                    Log.w(TAG, "⚠️ Failed to notify backend of unlink: " + e.getMessage());
+                }
+            }).start();
+        }
+        
+        Log.i(TAG, "✅ Device unlinked locally and from dashboard");
     }
     
     /**

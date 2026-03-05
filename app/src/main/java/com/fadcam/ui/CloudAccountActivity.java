@@ -46,7 +46,8 @@ public class CloudAccountActivity extends AppCompatActivity {
             android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
             android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         
-        // Set navigation bar color to black
+        // Set status bar and navigation bar to black to match header
+        getWindow().setStatusBarColor(0xFF000000);
         getWindow().setNavigationBarColor(0xFF000000);
         
         setContentView(R.layout.activity_cloud_account);
