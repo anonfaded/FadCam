@@ -208,7 +208,50 @@
           return;
         }
         
-        // We have a stored session, use it
+        // CRITICAL SECURITY: Validate stored session with server before granting access
+        // This ensures users with revoked access cannot bypass tier restrictions
+        // If tier/beta status changed since last login, this will catch it
+        console.log('[FadCamRemote] 🔐 Validating stored session with server...');
+        try {
+          const validationResponse = await fetch(`${CLOUD_CONFIG.SUPABASE_URL}/functions/v1/verify-stream-token`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${storedStreamToken}`,
+              'X-Device-Id': deviceId,
+              'X-User-Id': session.user_id,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ device_id: deviceId, user_id: session.user_id })
+          });
+          
+          if (!validationResponse.ok) {
+            console.error(`[FadCamRemote] ❌ Session validation failed: HTTP ${validationResponse.status}`);
+            console.log('[FadCamRemote] User loses access: tier changed, beta revoked, or quota exceeded');
+            // Clear stored session - user no longer has access
+            localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
+            localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.USER);
+            localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
+            
+            showStreamOverlay('Access Revoked', 'Your streaming access has been revoked or expired. Please log in again from Lab.');
+            setTimeout(() => {
+              window.location.href = CLOUD_CONFIG.LAB_URL;
+            }, 3000);
+            return;
+          }
+          
+          console.log('[FadCamRemote] ✅ Session validated - user has current access');
+        } catch (validationError) {
+          console.error('[FadCamRemote] Session validation error:', validationError);
+          // Network error or server issue - fail safely by requiring re-auth
+          console.log('[FadCamRemote] 🛡️ Failing safe - network error, redirecting to login');
+          showStreamOverlay('Connection Failed', 'Unable to verify access. Please try again from Lab.');
+          setTimeout(() => {
+            window.location.href = CLOUD_CONFIG.LAB_URL;
+          }, 3000);
+          return;
+        }
+        
+        // We have a valid, server-verified stored session, use it
         streamContext = {
           deviceId: deviceId,
           deviceName: session.device_id === deviceId ? 'Your Device' : deviceId,
