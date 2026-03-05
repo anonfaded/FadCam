@@ -1980,5 +1980,6 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="privacy_black_gesture_triple">Triple Tap to Exit</string>
     <string name="privacy_black_gesture_long">Long Press to Exit</string>
     <string name="privacy_black_min_one_method">At least one exit method must remain enabled.</string>
+    <string name="privacy_black_enable_needed_hint">First enable Privacy Black Screen in Security Settings</string>
 
 </resources>

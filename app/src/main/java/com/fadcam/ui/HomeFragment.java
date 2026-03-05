@@ -9298,6 +9298,17 @@ public class HomeFragment extends BaseFragment {
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
+        // Set up header logo click handler for Privacy Black Mode
+        if (ivAppTitle != null) {
+            ivAppTitle.setOnClickListener(v -> {
+                if (sharedPreferencesManager.isPrivacyBlackModeEnabled()) {
+                    Intent intent = new Intent(requireContext(), PrivacyBlackActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(requireContext(), R.string.privacy_black_enable_needed_hint, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         // Update hamburger badge visibility
         updateHamburgerBadgeVisibility();
