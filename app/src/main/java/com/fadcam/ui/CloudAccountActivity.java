@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
 
 import com.fadcam.R;
 import com.fadcam.streaming.CloudAuthManager;
@@ -61,6 +62,16 @@ public class CloudAccountActivity extends AppCompatActivity {
         
         // Setup WebView
         setupWebView();
+        
+        // Apply window insets for proper edge-to-edge layout with notch/gesture support
+        ViewCompat.setOnApplyWindowInsetsListener(webView, (v, insets) -> {
+            int systemInsetLeft = insets.getSystemWindowInsetLeft();
+            int systemInsetRight = insets.getSystemWindowInsetRight();
+            int systemInsetBottom = insets.getSystemWindowInsetBottom();
+            
+            v.setPadding(systemInsetLeft, 0, systemInsetRight, systemInsetBottom);
+            return insets;
+        });
         
         // Load device link URL
         String url = cloudAuthManager.buildDeviceLinkUrl(deviceName);
