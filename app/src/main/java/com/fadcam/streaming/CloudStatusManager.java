@@ -416,6 +416,17 @@ public class CloudStatusManager {
         }
         Log.d(TAG, "☁️ 📤 Pushing status to: " + urlStr);
         
+        // Debug logging for token and device info
+        long tokenExpiry = android.content.SharedPreferences.class.isInstance(authManager) ? 0 : 0;
+        if (token != null && token.length() > 0) {
+            String tokenDebug = token.length() > 20 ? 
+                token.substring(0, 10) + "..." + token.substring(token.length() - 10) : 
+                "***";
+            Log.d(TAG, "☁️ 📤 Auth token: " + tokenDebug + 
+                    " | Device: " + deviceId + 
+                    " | User: " + userUuid.substring(0, 8) + "...");
+        }
+        
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
@@ -438,7 +449,31 @@ public class CloudStatusManager {
                     onPushSuccess();
                 } else if (responseCode == 401) {
                     // Unauthorized - authentication/credentials issue
-                    Log.e(TAG, "☁️ 📤 AUTH ERROR (401): Device not properly authenticated");
+                    // Try to get more details from response
+                    String errorDetail = "";
+                    try {
+                        java.io.InputStream errorStream = conn.getErrorStream();
+                        if (errorStream != null) {
+                            java.io.BufferedReader reader = new java.io.BufferedReader(
+                                new java.io.InputStreamReader(errorStream));
+                            StringBuilder sb = new StringBuilder();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                sb.append(line);
+                            }
+                            reader.close();
+                            errorDetail = " | Response: " + sb.toString();
+                        }
+                    } catch (Exception e) {
+                        // Ignore
+                    }
+                    
+                    Log.e(TAG, "☁️ 📤 AUTH ERROR (401): Device not properly authenticated" + errorDetail);
+                    Log.d(TAG, "☁️ 📤 DEBUG: Checking token validity...");
+                    Log.d(TAG, "☁️ 📤 Token present: " + (token != null && !token.isEmpty()) +
+                            " | User UUID: " + (userUuid != null) +
+                            " | Device ID: " + (deviceId != null));
+                    
                     onPushFailure("HTTP " + responseCode);
                     notifyAuthError("Cloud authentication failed (401). Device may not be properly linked. Try re-linking from Cloud Account.");
                 } else {

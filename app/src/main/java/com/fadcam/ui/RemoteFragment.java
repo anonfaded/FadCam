@@ -504,14 +504,18 @@ public class RemoteFragment extends BaseFragment {
     private void stopStreaming() {
         Log.i(TAG, "Stopping streaming");
         
-        if (streamService != null) {
+        // Guard unbind on serviceBound (not streamService != null).
+        // stopService() alone will NOT destroy a still-bound service — the service stays alive
+        // until ALL bindings are released. Unbinding here ensures the service is truly stopable.
+        if (serviceBound) {
             try {
                 requireContext().unbindService(serviceConnection);
             } catch (Exception e) {
                 Log.e(TAG, "Error unbinding service", e);
             }
-            streamService = null;
+            serviceBound = false;
         }
+        streamService = null;
         
         Intent intent = new Intent(requireContext(), RemoteStreamService.class);
         requireContext().stopService(intent);
@@ -544,8 +548,24 @@ public class RemoteFragment extends BaseFragment {
     
     private void updateUI() {
         streamingToggle.setOnCheckedChangeListener(null);
-        
-        boolean isStreaming = streamService != null && serviceBound && streamService.isServerRunning();
+
+        // In Cloud mode the HTTP server is intentionally not started (all traffic goes through
+        // the relay), so isServerRunning() always returns false. Use isStreamingEnabled() from
+        // RemoteStreamManager instead, which is set to true/false when the service starts/stops.
+        // IMPORTANT: Do NOT gate on serviceBound in cloud mode — serviceBound is false during
+        // the async window between bindService() and onServiceConnected() firing, which would
+        // incorrectly show the avatar as disabled even when the service is fully running.
+        android.content.SharedPreferences cloudPrefs =
+                requireContext().getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
+        boolean isCloudMode = cloudPrefs.getInt(KEY_STREAMING_MODE, MODE_LOCAL) == MODE_CLOUD;
+
+        boolean isStreaming;
+        if (isCloudMode) {
+            // Cloud: service state is authoritative — no direct server access needed
+            isStreaming = RemoteStreamManager.getInstance().isStreamingEnabled();
+        } else {
+            isStreaming = streamService != null && serviceBound && streamService.isServerRunning();
+        }
         
         if (isStreaming) {
                     streamingToggle.setChecked(true);
