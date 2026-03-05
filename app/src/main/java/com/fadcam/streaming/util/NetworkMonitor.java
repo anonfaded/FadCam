@@ -5,6 +5,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiInfo;
+import android.net.NetworkCapabilities;
+import android.net.Network;
+import android.os.Build;
 import android.util.Log;
 
 import com.fadcam.streaming.model.NetworkHealth;
@@ -118,18 +123,91 @@ public class NetworkMonitor {
                     // Estimate upload as 60% of download (typical asymmetric ratio)
                     double uploadMbps = mbps * 0.6;
                     
-                    networkHealth.updateMeasurements(mbps, uploadMbps, latency);
+                    // NEW: Get actual signal level if available
+                    int signalLevel = getSignalLevel();
                     
-                    Log.d(TAG, String.format(java.util.Locale.US, "Speed test: ↓%.2f Mbps ↑%.2f Mbps (Latency: %dms) - Status: %s",
-                        mbps, uploadMbps, latency, networkHealth.getStatusString()));
+                    networkHealth.updateMeasurements(mbps, uploadMbps, latency, signalLevel);
+                    
+                    Log.d(TAG, String.format(java.util.Locale.US, "Speed test: ↓%.2f Mbps ↑%.2f Mbps (Latency: %dms) - Status: %s (Signal: %d/4)",
+                        mbps, uploadMbps, latency, networkHealth.getStatusString(), signalLevel));
                 } else {
-                    networkHealth.updateMeasurements(0, 0, -1);
+                    int signalLevel = getSignalLevel();
+                    networkHealth.updateMeasurements(0, 0, -1, signalLevel);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Speed test failed", e);
-                networkHealth.updateMeasurements(0, 0, -1);
+                networkHealth.updateMeasurements(0, 0, -1, getSignalLevel());
             }
         });
+    }
+    
+    /**
+     * Get WiFi or Mobile signal level (0-4).
+     * Returns -1 if unknown or permission missing.
+     */
+    public int getSignalLevel() {
+        if (appContext == null) {
+            Log.w(TAG, "getSignalLevel: appContext is null");
+            return -1;
+        }
+        
+        try {
+            ConnectivityManager cm = (ConnectivityManager) 
+                appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return -1;
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Network activeNetwork = cm.getActiveNetwork();
+                if (activeNetwork != null) {
+                    NetworkCapabilities caps = cm.getNetworkCapabilities(activeNetwork);
+                    if (caps != null) {
+                        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                            WifiManager wm = (WifiManager) appContext.getSystemService(Context.WIFI_SERVICE);
+                            if (wm != null) {
+                                WifiInfo info = wm.getConnectionInfo();
+                                // RSSI of -127 means no signal or error
+                                if (info != null && info.getRssi() != -127) {
+                                    return WifiManager.calculateSignalLevel(info.getRssi(), 5); // 0-4
+                                }
+                            }
+                        } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                            // Try to get cellular signal level via TelephonyManager
+                            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) 
+                                appContext.getSystemService(Context.TELEPHONY_SERVICE);
+                            if (tm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                android.telephony.SignalStrength ss = tm.getSignalStrength();
+                                if (ss != null) {
+                                    return ss.getLevel(); // Returns 0-4
+                                }
+                            }
+                            return 2; // Fallback to moderate
+                        } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                            return 4; // Ethernet is always "full bars"
+                        }
+                    }
+                }
+            } else {
+                // Fallback for older devices
+                NetworkInfo ni = cm.getActiveNetworkInfo();
+                if (ni != null && ni.isConnected()) {
+                    if (ni.getType() == ConnectivityManager.TYPE_WIFI) {
+                        WifiManager wm = (WifiManager) appContext.getSystemService(Context.WIFI_SERVICE);
+                        if (wm != null) {
+                            WifiInfo info = wm.getConnectionInfo();
+                            if (info != null && info.getRssi() != -127) {
+                                return WifiManager.calculateSignalLevel(info.getRssi(), 5);
+                            }
+                        }
+                    } else if (ni.getType() == ConnectivityManager.TYPE_MOBILE) {
+                        return 2;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to get signal level: " + e.getMessage());
+        }
+        
+        return -1;
     }
     
     /**

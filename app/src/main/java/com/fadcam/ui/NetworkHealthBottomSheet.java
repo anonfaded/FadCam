@@ -29,6 +29,8 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
     private TextView latencyText;
     private TextView lastTestedText;
     private TextView testNowButton;
+    private TextView signalStrengthText;
+    private View bar1, bar2, bar3, bar4;
     
     @Nullable
     @Override
@@ -46,6 +48,11 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
         latencyText = view.findViewById(R.id.latency_text);
         lastTestedText = view.findViewById(R.id.last_tested_text);
         testNowButton = view.findViewById(R.id.test_now_button);
+        signalStrengthText = view.findViewById(R.id.signal_strength_text);
+        bar1 = view.findViewById(R.id.bar1);
+        bar2 = view.findViewById(R.id.bar2);
+        bar3 = view.findViewById(R.id.bar3);
+        bar4 = view.findViewById(R.id.bar4);
         
         // Test Now button
         testNowButton.setOnClickListener(v -> {
@@ -113,6 +120,29 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
         } else {
             lastTestedText.setText("Last tested: Never");
         }
+
+        // Signal Strength
+        int signalLevel = NetworkMonitor.getInstance().getSignalLevel();
+        if (signalLevel >= 0) {
+            signalStrengthText.setText(signalLevel + "/4 Bars");
+            updateSignalBars(signalLevel);
+        } else {
+            signalStrengthText.setText("Unknown");
+            updateSignalBars(-1);
+        }
+    }
+
+    private void updateSignalBars(int level) {
+        int activeColor = 0xFF4CAF50; // Green
+        if (level < 2) activeColor = 0xFFFF5252; // Red
+        else if (level < 3) activeColor = 0xFFFFA726; // Orange
+
+        int inactiveColor = 0xFF444444;
+
+        bar1.setBackgroundColor(level >= 1 ? activeColor : inactiveColor);
+        bar2.setBackgroundColor(level >= 2 ? activeColor : inactiveColor);
+        bar3.setBackgroundColor(level >= 3 ? activeColor : inactiveColor);
+        bar4.setBackgroundColor(level >= 4 ? activeColor : inactiveColor);
     }
     
     private String capitalize(String str) {

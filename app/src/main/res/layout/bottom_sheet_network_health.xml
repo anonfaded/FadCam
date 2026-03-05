@@ -136,6 +136,53 @@
         </LinearLayout>
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/settings_home_row_bg"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Signal Strength"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/signal_strength_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"
+                android:textColor="?attr/colorHeading" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/signal_bars_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="center_vertical"
+            android:gravity="bottom"
+            android:padding="4dp">
+            <View android:id="@+id/bar1" android:layout_width="3dp" android:layout_height="4dp" android:background="#444444" android:layout_marginEnd="2dp"/>
+            <View android:id="@+id/bar2" android:layout_width="3dp" android:layout_height="7dp" android:background="#444444" android:layout_marginEnd="2dp"/>
+            <View android:id="@+id/bar3" android:layout_width="3dp" android:layout_height="10dp" android:background="#444444" android:layout_marginEnd="2dp"/>
+            <View android:id="@+id/bar4" android:layout_width="3dp" android:layout_height="13dp" android:background="#444444" />
+        </LinearLayout>
+    </LinearLayout>
+
     <!-- Latency -->
     <LinearLayout
         android:layout_width="match_parent"

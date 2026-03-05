@@ -1353,12 +1353,18 @@
             
             networkValue.textContent = status.bitrate || '—';
             
-            wifiBars.classList.remove('good', 'moderate', 'poor');
+            // Remove all possible classes
+            wifiBars.classList.remove('good', 'moderate', 'poor', 'level-0', 'level-1', 'level-2', 'level-3', 'level-4');
+            
+            // Set bars based on actual signal level if available
+            if (status.networkSignalLevel !== undefined && status.networkSignalLevel !== -1) {
+                wifiBars.classList.add('level-' + status.networkSignalLevel);
+            }
             
             const health = status.networkHealth || 'unknown';
-            if (health === 'good') {
+            if (health === 'excellent' || health === 'good') {
                 wifiBars.classList.add('good');
-                networkStatus.textContent = 'Good';
+                networkStatus.textContent = health.charAt(0).toUpperCase() + health.slice(1);
             } else if (health === 'moderate') {
                 wifiBars.classList.add('moderate');
                 networkStatus.textContent = 'Moderate';
@@ -1787,12 +1793,18 @@
                 lastTested = lastMeasureDate.toLocaleTimeString();
             }
             
+            const signalStr = currentStatus.networkSignalLevel !== -1 ? currentStatus.networkSignalLevel + '/4 Bars' : 'Unknown';
+            
             const content = `
                 <div class="modal-section">
                     <div class="modal-rows-group">
                         <div class="modal-row-container">
                             <div class="modal-row-label">Status</div>
                             <div class="modal-row-value">${currentStatus.networkHealth.charAt(0).toUpperCase() + currentStatus.networkHealth.slice(1)}</div>
+                        </div>
+                        <div class="modal-row-container">
+                            <div class="modal-row-label">Signal Strength</div>
+                            <div class="modal-row-value">${signalStr}</div>
                         </div>
                     </div>
                 </div>

@@ -7,7 +7,7 @@ class ServerStatus {
     constructor(data = {}) {
         this.update(data);
     }
-    
+
     /**
      * Update model with new data
      * @param {Object} data - Raw status data from API
@@ -18,7 +18,7 @@ class ServerStatus {
         this.serverVersion = data.serverVersion || '1.0.0';  // For compatibility checks
         this.receivedAt = Date.now();  // When dashboard received this status
         this.cloudMode = data.cloudMode || false;  // Whether this is from relay/cloud
-        
+
         // Core status
         this.state = data.state || 'offline';
         this.mode = data.mode || 'disabled';
@@ -26,11 +26,11 @@ class ServerStatus {
         this.isRecording = data.isRecording || false;
         this.isPaused = data.isPaused || false;
         this.streaming = data.streaming || false;
-        
+
         // Uptime details (nested object)
         this.uptimeDetails = data.uptimeDetails || {};
         this.uptimeSeconds = this.uptimeDetails.seconds || data.uptimeSeconds || 0;
-        
+
         // Format uptime from the details if available
         if (!this.uptimeDetails.formattedUptime && this.uptimeDetails.formatted) {
             this.uptimeDetails.formattedUptime = this.uptimeDetails.formatted;
@@ -42,7 +42,7 @@ class ServerStatus {
             const date = new Date(this.uptimeDetails.startTimestamp);
             this.uptimeDetails.sessionStartedDate = date.toLocaleDateString();
         }
-        
+
         // Stream quality (nested object)
         if (data.streamQuality && typeof data.streamQuality === 'object') {
             this.qualityPreset = (data.streamQuality.preset || 'high').toUpperCase();
@@ -53,31 +53,33 @@ class ServerStatus {
             this.bitrate = '0 Mbps';
             this.fps = 0;
         }
-        
+
         // Resolution from message or construct from width/height
         this.resolution = data.resolution || '0x0';
         this.videoCodec = data.videoCodec || 'unknown';
         this.isHevcCodec = this.videoCodec && this.videoCodec.toUpperCase().includes('HEVC');
-        
+
         // Buffer info
         this.fragmentsBuffered = data.fragmentsBuffered || 0;
         this.bufferSizeMb = data.bufferSizeMb || 0;
-        
+
         // Network (handle both object and string)
         if (data.networkHealth && typeof data.networkHealth === 'object') {
             this.networkHealth = data.networkHealth.status || 'unknown';
             this.networkDownloadMbps = data.networkHealth.downloadMbps ?? null;
             this.networkUploadMbps = data.networkHealth.uploadMbps ?? null;
             this.networkLatencyMs = data.networkHealth.latencyMs ?? null;
+            this.networkSignalLevel = data.networkHealth.signalLevel ?? -1;
             this.networkLastMeasurementMs = data.networkHealth.lastMeasurementMs ?? 0;
         } else {
             this.networkHealth = data.networkHealth || 'unknown';
             this.networkDownloadMbps = null;
             this.networkUploadMbps = null;
             this.networkLatencyMs = null;
+            this.networkSignalLevel = -1;
             this.networkLastMeasurementMs = 0;
         }
-        
+
         // Battery (nested object)
         if (data.batteryDetails && typeof data.batteryDetails === 'object') {
             this.battery = {
@@ -98,35 +100,35 @@ class ServerStatus {
                 warningThreshold: 20
             };
         }
-        
+
         // Connections
         this.activeConnections = data.activeConnections || 0;
         this.clientIps = data.clients ? data.clients.map(c => c.ip) : [];
-        
+
         // Cloud viewers (viewers connected via relay, not directly to phone)
         // This is separate from activeConnections which counts direct connections
         this.cloudViewers = data.cloudViewers || 0;
-        
+
         // Total viewers = local clients + cloud viewers
         this.totalConnectedClients = this.activeConnections + this.cloudViewers;
-        
+
         // Store full clients array for modal display
         this.clients = data.clients || [];
-        
+
         // Events/logs
         this.events = data.events || [];
-        
+
         // Segments/buffer info
         this.hasInitSegment = data.hasInitSegment || false;
-        
+
         // Torch state
         this.torchOn = data.torchState || false;
-        
+
         // Volume state
         this.volume = data.volume ?? 0;
         this.maxVolume = data.maxVolume ?? 15;
         this.volumePercentage = data.volumePercentage ?? 0;
-        
+
         // Alarm state (nested object)
         if (data.alarm && typeof data.alarm === 'object') {
             this.alarm = {
@@ -143,11 +145,11 @@ class ServerStatus {
                 remainingMs: 0
             };
         }
-        
+
         // Stats
         this.dataTransferredMb = data.totalDataTransferredMb || 0;
         this.uptimeSeconds = data.uptimeSeconds || 0;
-        
+
         // Parse uptime details (nested object)
         if (data.uptimeDetails && typeof data.uptimeDetails === 'object') {
             this.uptimeFormatted = data.uptimeDetails.formatted || '0s';
@@ -160,20 +162,20 @@ class ServerStatus {
             this.uptimeStartDate = 'Not started';
             this.uptimeStartTimestamp = 0;
         }
-        
+
         // Authentication state
         this.authEnabled = data.authEnabled || false;
         this.authTimeoutMs = data.authTimeoutMs || 0;  // 0 means never auto-lock
         this.authSessionsCount = data.authSessionsCount || 0;
         this.authSessionsCleared = data.authSessionsCleared || false;  // Flag for logout all
-        
+
         // Parse memory and storage from strings
         // Memory format from backend: "75% (1024/1366 MB)"
         if (data.memoryUsage) {
             // Extract percentage: "75% (1024/1366 MB)" → 75
             const percentMatch = data.memoryUsage.match(/(\d+)%/);
             this.memoryPercent = percentMatch ? parseInt(percentMatch[1]) : 0;
-            
+
             // Extract used/total: "75% (1024/1366 MB)" → [1024, 1366]
             const memMatch = data.memoryUsage.match(/\((\d+)\/(\d+)\s*MB\)/);
             if (memMatch) {
@@ -188,7 +190,7 @@ class ServerStatus {
             this.memoryUsedMb = 0;
             this.memoryTotalMb = 0;
         }
-        
+
         if (data.storage) {
             // Parse "1.4/50.3 GB" format
             const parts = data.storage.split('/');
@@ -203,14 +205,14 @@ class ServerStatus {
             this.storageUsedGb = 0;
             this.storageTotalGb = 0;
         }
-        
+
         // Store raw memory string for display
         this.memory = data.memoryUsage || '—';
-        
+
         // Timestamp
         this.lastUpdate = Date.now();
     }
-    
+
     /**
      * Check if status is ready for streaming
      * @returns {boolean}
@@ -218,16 +220,16 @@ class ServerStatus {
     isReady() {
         return this.state === CONFIG.STATES.READY;
     }
-    
+
     /**
      * Check if status indicates buffering/initializing
      * @returns {boolean}
      */
     isLoading() {
-        return this.state === CONFIG.STATES.BUFFERING || 
-               this.state === CONFIG.STATES.INITIALIZING;
+        return this.state === CONFIG.STATES.BUFFERING ||
+            this.state === CONFIG.STATES.INITIALIZING;
     }
-    
+
     /**
      * Get formatted uptime - calculates real-time uptime from startTimestamp
      * This eliminates the delay between phone status push and dashboard display
@@ -243,7 +245,7 @@ class ServerStatus {
         // Fallback to server-provided uptime if no timestamp available
         return Formatter.formatUptime(this.uptimeSeconds);
     }
-    
+
     /**
      * Get real-time uptime in seconds (calculated from startTimestamp)
      * @returns {number}
@@ -254,7 +256,7 @@ class ServerStatus {
         }
         return this.uptimeSeconds;
     }
-    
+
     /**
      * Get formatted data transferred
      * @returns {string}
@@ -262,7 +264,7 @@ class ServerStatus {
     getFormattedDataTransferred() {
         return Formatter.formatBytes(this.dataTransferredMb * 1024 * 1024);
     }
-    
+
     /**
      * Get formatted storage (used/total)
      * @returns {string}
@@ -273,7 +275,7 @@ class ServerStatus {
         }
         return '—';
     }
-    
+
     /**
      * Get formatted memory usage
      * @returns {string}
@@ -286,22 +288,22 @@ class ServerStatus {
         }
         return '—';
     }
-    
+
     /**
      * Get battery percentage formatted
      * @returns {string}
      */
     getFormattedBattery() {
         if (this.battery.percent < 0) return 'N/A';
-        
+
         // Show warning indicator if battery is low
         if (this.battery.warning && this.battery.warning.length > 0) {
             return '⚠️ ' + this.battery.percent + '%';
         }
-        
+
         return this.battery.percent + '%';
     }
-    
+
     /**
      * Get status CSS class for styling
      * @returns {string}
@@ -316,11 +318,11 @@ class ServerStatus {
         };
         return stateMap[this.state] || 'offline';
     }
-    
+
     // =========================================================================
     // Staleness Detection (Step 6.11)
     // =========================================================================
-    
+
     /**
      * Staleness thresholds in milliseconds
      */
@@ -332,7 +334,7 @@ class ServerStatus {
             OFFLINE: 30000    // > 30s = red (offline)
         };
     }
-    
+
     /**
      * Get age of status in milliseconds (time since phone generated it)
      * @returns {number} Age in ms
@@ -350,7 +352,7 @@ class ServerStatus {
         }
         return Date.now() - this.lastUpdated;
     }
-    
+
     /**
      * Get staleness state for UI indicators
      * @returns {'fresh'|'delayed'|'stale'|'offline'}
@@ -358,13 +360,13 @@ class ServerStatus {
     getStalenessState() {
         const age = this.getStatusAge();
         const t = ServerStatus.STALENESS_THRESHOLDS;
-        
+
         if (age < t.FRESH) return 'fresh';
         if (age < t.DELAYED) return 'delayed';
         if (age < t.STALE) return 'stale';
         return 'offline';
     }
-    
+
     /**
      * Check if status is stale (> 30 seconds old)
      * @returns {boolean}
@@ -372,7 +374,7 @@ class ServerStatus {
     isStale() {
         return this.getStatusAge() > ServerStatus.STALENESS_THRESHOLDS.OFFLINE;
     }
-    
+
     /**
      * Check if status is considered online (< 30 seconds old)
      * @returns {boolean}
@@ -380,7 +382,7 @@ class ServerStatus {
     isOnline() {
         return !this.isStale();
     }
-    
+
     /**
      * Get formatted age string for tooltips
      * @returns {string} e.g., "2s ago", "45s ago", "2m ago"
@@ -388,12 +390,12 @@ class ServerStatus {
     getFormattedAge() {
         const ageMs = this.getStatusAge();
         const ageSec = Math.floor(ageMs / 1000);
-        
+
         if (ageSec < 60) return `${ageSec}s ago`;
         if (ageSec < 3600) return `${Math.floor(ageSec / 60)}m ago`;
         return `${Math.floor(ageSec / 3600)}h ago`;
     }
-    
+
     /**
      * Get LED color class based on staleness
      * @returns {string} CSS class name
@@ -402,13 +404,13 @@ class ServerStatus {
         const state = this.getStalenessState();
         const classMap = {
             'fresh': 'led-green',
-            'delayed': 'led-yellow', 
+            'delayed': 'led-yellow',
             'stale': 'led-orange',
             'offline': 'led-red'
         };
         return classMap[state] || 'led-red';
     }
-    
+
     /**
      * Get staleness status text for UI
      * @returns {string}
@@ -423,7 +425,7 @@ class ServerStatus {
         };
         return textMap[state] || 'Offline';
     }
-    
+
     /**
      * Convert to JSON
      * @returns {Object}

@@ -584,6 +584,21 @@
                                 android:textColor="@android:color/darker_gray" />
                         </LinearLayout>
 
+                        <LinearLayout
+                            android:id="@+id/network_wifi_bars"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_gravity="center_vertical"
+                            android:gravity="bottom"
+                            android:padding="2dp"
+                            android:layout_marginEnd="8dp">
+                            <View android:id="@+id/wifi_bar1" android:layout_width="2dp" android:layout_height="3dp" android:background="#444444" android:layout_marginEnd="1dp"/>
+                            <View android:id="@+id/wifi_bar2" android:layout_width="2dp" android:layout_height="5dp" android:background="#444444" android:layout_marginEnd="1dp"/>
+                            <View android:id="@+id/wifi_bar3" android:layout_width="2dp" android:layout_height="7dp" android:background="#444444" android:layout_marginEnd="1dp"/>
+                            <View android:id="@+id/wifi_bar4" android:layout_width="2dp" android:layout_height="9dp" android:background="#444444" />
+                        </LinearLayout>
+
                         <ImageView
                             android:layout_width="14dp"
                             android:layout_height="14dp"

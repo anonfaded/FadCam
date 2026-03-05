@@ -41,6 +41,7 @@ import com.fadcam.streaming.RemoteAuthManager;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
 import com.fadcam.streaming.model.StreamQuality;
+import com.fadcam.streaming.util.NetworkMonitor;
 import com.fadcam.ui.bottomsheet.BatteryInfoBottomSheet;
 import com.fadcam.ui.bottomsheet.QualityPresetBottomSheet;
 import com.fadcam.ui.bottomsheet.UptimeInfoBottomSheet;
@@ -107,6 +108,9 @@ public class RemoteFragment extends BaseFragment {
     // Streaming Mode Selector UI
     private LinearLayout streamingModeRow;
     private TextView streamingModeValue;
+    
+    // WiFi Signal bars
+    private View wifiBar1, wifiBar2, wifiBar3, wifiBar4;
     
     private RemoteStreamService streamService;
     private boolean serviceBound = false;
@@ -202,6 +206,12 @@ public class RemoteFragment extends BaseFragment {
         dataSentRow = view.findViewById(R.id.data_sent_row);
         segmentsRow = view.findViewById(R.id.segments_row);
         networkHealthRow = view.findViewById(R.id.network_health_row);
+        
+        // WiFi Signal bars
+        wifiBar1 = view.findViewById(R.id.wifi_bar1);
+        wifiBar2 = view.findViewById(R.id.wifi_bar2);
+        wifiBar3 = view.findViewById(R.id.wifi_bar3);
+        wifiBar4 = view.findViewById(R.id.wifi_bar4);
         
         // Initialize Remote Security views
         remoteAuthToggle = view.findViewById(R.id.remote_auth_toggle);
@@ -683,6 +693,7 @@ public class RemoteFragment extends BaseFragment {
         com.fadcam.streaming.model.NetworkHealth networkHealth = manager.getNetworkHealth();
         networkHealthText.setText(capitalize(networkHealth.getStatusString()));
         networkHealthText.setTextColor(networkHealth.getStatusColorInt());
+        updateRemoteWifiBars(NetworkMonitor.getInstance().getSignalLevel());
         
         String memoryUsage = manager.getMemoryUsage(requireContext());
         memoryText.setText(memoryUsage);
@@ -692,6 +703,21 @@ public class RemoteFragment extends BaseFragment {
         
         long dataMb = manager.getTotalDataTransferred() / (1024 * 1024);
         dataTransferredText.setText(String.format("%d MB", dataMb));
+    }
+
+    private void updateRemoteWifiBars(int level) {
+        if (wifiBar1 == null) return;
+        
+        int activeColor = 0xFF4CAF50; // Green
+        if (level < 2) activeColor = 0xFFFF5252; // Red
+        else if (level < 3) activeColor = 0xFFFFA726; // Orange
+
+        int inactiveColor = 0xFF444444;
+
+        wifiBar1.setBackgroundColor(level >= 1 ? activeColor : inactiveColor);
+        wifiBar2.setBackgroundColor(level >= 2 ? activeColor : inactiveColor);
+        wifiBar3.setBackgroundColor(level >= 3 ? activeColor : inactiveColor);
+        wifiBar4.setBackgroundColor(level >= 4 ? activeColor : inactiveColor);
     }
     
     private String capitalize(String str) {
