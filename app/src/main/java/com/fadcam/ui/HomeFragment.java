@@ -269,6 +269,14 @@ public class HomeFragment extends BaseFragment {
      * ~50 ms after the animation starts and would otherwise kill it mid-reveal.
      */
     private boolean isPreviewCloseAnimating = false;
+    /** True while the Avatar→Preview iris-open animation is playing (~980 ms). Blocks re-entrant
+     *  updatePreviewVisibility() calls (e.g. the service's "started" broadcast arriving ~50 ms
+     *  later) from resetting textureView alpha or avatar visibility mid-animation. */
+    private boolean isPreviewOpenAnimating = false;
+    /** True once the iris-open postDelayed fires and we are waiting for the first camera frame
+     *  to arrive in onSurfaceTextureUpdated before performing the circular reveal.  This avoids
+     *  revealing a blank/black TextureView during the first-start service-init hitch. */
+    private volatile boolean pendingIrisOpenReveal = false;
     /**
      * Tracks whether the header logo slide-up animation has already played this
      * process session.  Static so it survives fragment recreation (e.g. switching
@@ -771,11 +779,18 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        android.util.Log.w(TAG, "👁 updatePreviewVisibility: animateNext=" + animateNextPreviewTransition
+                + " openAnim=" + isPreviewOpenAnimating
+                + " closeAnim=" + isPreviewCloseAnimating
+                + " isRecording=" + isRecording()
+                + " previewEnabled=" + isPreviewEnabled);
+
         // During the iris-close (Preview→Avatar) circular reveal (~480ms), ALL updatePreviewVisibility
         // calls must be ignored.  The service's "recording stopped" broadcast fires ~50ms into the
         // animation and would otherwise hide textureView (losing the camera background) and make
         // flAvatar visible immediately — cancelling the reveal mid-flight.
-        if (isPreviewCloseAnimating) return;
+        if (isPreviewCloseAnimating) { android.util.Log.w(TAG, "👁 updatePreviewVisibility: BLOCKED by isPreviewCloseAnimating"); return; }
+        if (isPreviewOpenAnimating) { android.util.Log.w(TAG, "👁 updatePreviewVisibility: BLOCKED by isPreviewOpenAnimating"); return; }
 
         if (isRecording() || isPaused() || isPreviewOnlyActive) {
             if (isPreviewEnabled) {
@@ -846,7 +861,21 @@ public class HomeFragment extends BaseFragment {
             if (animateNextPreviewTransition) {
                 animateNextPreviewTransition = false;
                 boolean avatarCurrentlyVisible = flAvatar.getVisibility() == View.VISIBLE;
-                if (livePreviewShowing && avatarCurrentlyVisible) {
+                if (livePreviewShowing) {
+                    // Ensure avatar is in a fully visible/reset state before wake animation,
+                    // even if it was previously hidden (INVISIBLE) by a prior enable cycle.
+                    if (!avatarCurrentlyVisible) {
+                        flAvatar.setVisibility(View.VISIBLE);
+                        flAvatar.setAlpha(1f);
+                        flAvatar.setScaleX(1f);
+                        flAvatar.setScaleY(1f);
+                        flAvatar.setEnabled(true);
+                    }
+                    // Guard: isPreviewOpenAnimating blocks the service's "started" broadcast
+                    // (~50ms later) from calling updatePreviewVisibility() and overwriting
+                    // textureView alpha / avatar visibility mid-animation.
+                    isPreviewOpenAnimating = true;
+                    android.util.Log.w(TAG, "🎬 iris-open animation STARTED, isPreviewOpenAnimating=true");
                     // Step 1: Wake the avatar (wake-up AVD ~420ms: eyes open + brighten)
                     applyHomeAvatarState(true, true);
                     // Step 2: After wake animation, shrink avatar out + iris-open camera
@@ -869,25 +898,18 @@ public class HomeFragment extends BaseFragment {
                                 capturedAvatar.setScaleX(1f);
                                 capturedAvatar.setScaleY(1f);
                             }).start();
-                        // Iris-open circular reveal on TextureView
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                            int cx = textureView.getWidth() / 2;
-                            int cy = textureView.getHeight() / 2;
-                            float maxR = (float) Math.hypot(cx, cy);
-                            Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(
-                                    textureView, cx, cy, 0f, maxR);
-                            reveal.setDuration(500);
-                            reveal.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
-                            reveal.addListener(new AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationStart(Animator a) {
-                                    if (textureView != null) textureView.setAlpha(1f);
-                                }
-                            });
-                            reveal.start();
-                        } else {
-                            textureView.animate().alpha(1f).setDuration(450).start();
-                        }
+                        // Iris-open circular reveal on TextureView.
+                        // We wait for the first actual camera frame via onSurfaceTextureUpdated
+                        // rather than revealing immediately — avoids showing a blank TextureView
+                        // during the first-start service-init hitch.
+                        pendingIrisOpenReveal = true;
+                        // Fallback: if no camera frame arrives within 2.5 s, reveal anyway.
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            if (pendingIrisOpenReveal && isAdded()) {
+                                pendingIrisOpenReveal = false;
+                                performIrisOpenReveal();
+                            }
+                        }, 2500);
                     }, 480);
                 } else if (!livePreviewShowing && !avatarCurrentlyVisible) {
                     // Preview → Avatar: mirror of the iris-open animation.
@@ -999,6 +1021,41 @@ public class HomeFragment extends BaseFragment {
 
         // Show fullscreen button only when preview is active and recording
         updateFullscreenButtonVisibility();
+    }
+
+    /**
+     * Performs the iris-open circular reveal on textureView.
+     * Called from onSurfaceTextureUpdated (first camera frame) or from a timeout fallback,
+     * so the reveal only starts when the camera feed is actually available.
+     */
+    private void performIrisOpenReveal() {
+        if (textureView == null || !isAdded()) {
+            isPreviewOpenAnimating = false;
+            return;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            int cx = textureView.getWidth() / 2;
+            int cy = textureView.getHeight() / 2;
+            float maxR = (float) Math.hypot(cx, cy);
+            Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(
+                    textureView, cx, cy, 0f, maxR);
+            reveal.setDuration(500);
+            reveal.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
+            reveal.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator a) {
+                    if (textureView != null) textureView.setAlpha(1f);
+                }
+                @Override
+                public void onAnimationEnd(Animator a) {
+                    isPreviewOpenAnimating = false;
+                }
+            });
+            reveal.start();
+        } else {
+            textureView.animate().alpha(1f).setDuration(450)
+                    .withEndAction(() -> isPreviewOpenAnimating = false).start();
+        }
     }
 
     /**
@@ -1460,6 +1517,7 @@ public class HomeFragment extends BaseFragment {
 
     private void onRecordingStarted(boolean toast) {
         Log.d(TAG, "📍 onRecordingStarted(toast=" + toast + ") - Timer managed by service in SharedPreferences");
+        android.util.Log.w(TAG, "📍 onRecordingStarted: BEFORE setUIForRecordingActive - animateNext=" + animateNextPreviewTransition + " openAnim=" + isPreviewOpenAnimating);
 
         // Note: Timer value (recordingStartTime) is managed by RecordingService
         // Fragment reads it from SharedPreferences when calculating elapsed time
@@ -1484,6 +1542,8 @@ public class HomeFragment extends BaseFragment {
         // Always force preview enabled on first recording start
         isPreviewEnabled = true;
         savePreviewState();
+        android.util.Log.w(TAG, "📍 onRecordingStarted: BEFORE animateNext=true - openAnim=" + isPreviewOpenAnimating);
+        animateNextPreviewTransition = true;
         updatePreviewVisibility();
 
         // When recording starts, ensure we have a valid surface
@@ -1632,7 +1692,15 @@ public class HomeFragment extends BaseFragment {
             resetUIButtonsToIdleState();
 
             // Handle visual elements for preview and timers
-            updatePreviewVisibility(); // Show placeholder text instead of preview
+            // If preview was showing during recording, animate the iris-close transition
+            // (camera feed contracts like an iris, revealing the sleeping avatar).
+            if (isPreviewEnabled && textureView != null
+                    && textureView.getVisibility() == View.VISIBLE) {
+                pendingIrisOpenReveal = false; // cancel any pending iris-open
+                isPreviewOpenAnimating = false; // ensure open guard doesn't block the close anim
+                animateNextPreviewTransition = true;
+            }
+            updatePreviewVisibility(); // Triggers iris-close or direct hide
             stopUpdatingInfo(); // Stop updating storage info
 
             Log.d(
@@ -2532,11 +2600,19 @@ public class HomeFragment extends BaseFragment {
         );
 
         // Update the local recording state variable
+        RecordingState previousState = recordingState;
         recordingState = reportedState;
 
         // Update UI elements based on the state
         switch (reportedState) {
             case IN_PROGRESS:
+                // On a fresh recording start (not re-delivering the same state), force preview
+                // on and flag the transition for the avatar → preview animation.
+                if (previousState != RecordingState.IN_PROGRESS) {
+                    isPreviewEnabled = true;
+                    savePreviewState();
+                    animateNextPreviewTransition = true;
+                }
                 setUIForRecordingActive(); // Call helper to set Stop/Pause buttons etc.
                 break;
             case PAUSED:
@@ -2622,6 +2698,7 @@ public class HomeFragment extends BaseFragment {
             }
 
             // Manage preview and timers
+            android.util.Log.w(TAG, "🔵 setUIForRecordingActive: calling updatePreviewVisibility - animateNext=" + animateNextPreviewTransition + " openAnim=" + isPreviewOpenAnimating);
             updatePreviewVisibility();
             startUpdatingInfo();
         } catch (Exception e) {
@@ -5285,7 +5362,14 @@ public class HomeFragment extends BaseFragment {
                 public void onSurfaceTextureUpdated(
                     @NonNull SurfaceTexture surface
                 ) {
-                    // This gets called every frame, so don't log here
+                    // Trigger the deferred iris-open reveal on the first camera frame.
+                    if (pendingIrisOpenReveal) {
+                        pendingIrisOpenReveal = false; // atomic-enough: one thread reads, sets back
+                        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                            if (isAdded()) performIrisOpenReveal();
+                            else isPreviewOpenAnimating = false;
+                        });
+                    }
                 }
             }
         );
