@@ -210,6 +210,7 @@ public class GLRecordingPipeline {
     // Pause/resume tracking fields
     private long pauseStartTimeNanos = -1;           // System.nanoTime() when pause starts
     private long totalPauseDurationNanos = 0;        // Accumulated pause duration
+    private volatile long currentPauseOffsetUs = 0;  // µs to subtract from sample PTS so timeline is contiguous after pause/resume
     private long lastVideoPtsBeforePauseUs = 0;      // Last video PTS before pause
     private long lastAudioPtsBeforePauseUs = 0;      // Last audio PTS before pause
     private boolean isCameraSwitchPause = false;     // Flag to indicate if pause is due to camera switch
@@ -945,6 +946,9 @@ public class GLRecordingPipeline {
                         try {
                             encodedData.position(bufferInfo.offset);
                             encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                            // PTS is already contiguous — getSynchronizedVideoTimestamp() subtracts
+                            // totalPauseDurationNanos before feeding frames to the encoder, so no
+                            // additional correction is needed here.
                             mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                             segmentBytesWritten += bufferInfo.size;
                         } catch (Exception e) {
@@ -1007,6 +1011,9 @@ public class GLRecordingPipeline {
                         try {
                             encodedData.position(bufferInfo.offset);
                             encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                            // PTS is already contiguous — the audio thread subtracts
+                            // totalPauseDurationNanos when computing ptsUs, so no
+                            // additional correction is needed here.
                             mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
                             
                             audioSamplesWritten++;
@@ -1578,6 +1585,9 @@ public class GLRecordingPipeline {
                             try {
                                 encodedData.position(bufferInfo.offset);
                                 encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                // PTS is already contiguous — getSynchronizedVideoTimestamp() subtracts
+                                // totalPauseDurationNanos before feeding frames to the encoder, so no
+                                // additional correction is needed here.
                                 mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                 
                                 videoSamplesWritten++;
@@ -2188,12 +2198,17 @@ public class GLRecordingPipeline {
         Log.i(TAG, "========== RESUME RECORDING ===========");
         
         synchronized (timestampLock) {
-            // Calculate pause duration for logging
+            // Calculate pause duration — getSynchronizedVideoTimestamp() and the audio thread
+            // BOTH already subtract totalPauseDurationNanos from System.nanoTime(), producing
+            // a correct contiguous timeline without any extra correction at write time.
+            // We only accumulate totalPauseDurationNanos here so those timestamp computations
+            // remain accurate. Do NOT set currentPauseOffsetUs — that would double-subtract.
             if (pauseStartTimeNanos > 0) {
                 long pauseDuration = System.nanoTime() - pauseStartTimeNanos;
                 totalPauseDurationNanos += pauseDuration;
                 Log.i(TAG, "[RESUME] This pause duration: " + (pauseDuration / 1_000_000L) + "ms");
                 Log.i(TAG, "[RESUME] Total pause duration: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
+                Log.i(TAG, "[RESUME] PTS are self-correcting — no extra write-time offset needed");
             }
             
             isPaused = false;
@@ -2214,6 +2229,20 @@ public class GLRecordingPipeline {
 
         // Set recording flag to true to resume encoding frames
         isRecording = true;
+
+        // Force an IDR (keyframe) on the very next video frame so that ExoPlayer
+        // can seek into the post-resume segment without showing a still frame.
+        if (videoEncoder != null) {
+            try {
+                android.os.Bundle params = new android.os.Bundle();
+                params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+                videoEncoder.setParameters(params);
+                Log.i(TAG, "[RESUME] Requested sync (IDR keyframe) from video encoder");
+            } catch (Exception e) {
+                Log.w(TAG, "[RESUME] Failed to request sync frame from encoder", e);
+            }
+        }
+
         // Resume periodic watermark updates and force an immediate refresh.
         ensureWatermarkUpdaterRunning();
         updateWatermark();
@@ -2876,6 +2905,9 @@ public class GLRecordingPipeline {
                             try {
                                 encodedData.position(bufferInfo.offset);
                                 encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                // PTS is already contiguous — the audio thread subtracts
+                                // totalPauseDurationNanos when computing ptsUs, so no
+                                // additional correction is needed here.
                                 mediaMuxer.writeSampleData(audioTrackIndex, encodedData, bufferInfo);
                                 
                                 audioSamplesWritten++;

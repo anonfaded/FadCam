@@ -1345,11 +1345,34 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                            "ms, actual=" + actualPos + "ms (keyframe alignment)");
                                 lastSeekPositionMs = -1; // Clear to use actual player position
                             }
-                            // When ready, log player audio state
+                            // When ready, log player audio state and validate resume position
                             if (state == Player.STATE_READY && player != null) {
                                 Log.i(TAG, "  Player READY - volume=" + player.getVolume() + 
                                            ", audioSessionId=" + player.getAudioSessionId() +
                                            ", playWhenReady=" + player.getPlayWhenReady());
+                                // Guard: if the restored resume position exceeds the actual
+                                // file duration (e.g., old files recorded before the pause-gap
+                                // fix that had inflated container durations), seek back to 0
+                                // and wipe the stale saved position so the user isn't dropped
+                                // past the end of the real content.
+                                try {
+                                    long actualDur = player.getDuration();
+                                    long curPos = player.getCurrentPosition();
+                                    if (actualDur > 0 && actualDur != C.TIME_UNSET && curPos > actualDur) {
+                                        Log.w(TAG, "  Stale resume position (" + curPos + "ms) exceeds" +
+                                                   " actual duration (" + actualDur + "ms)" +
+                                                   " — resetting to start and clearing saved position");
+                                        player.seekTo(0);
+                                        if (videoUri != null && spm != null) {
+                                            String uriStr = videoUri.toString();
+                                            String fname = getFileName(videoUri);
+                                            spm.setSavedPlaybackPositionMs(uriStr, 0);
+                                            spm.setSavedPlaybackPositionMsByFilename(fname, 0);
+                                        }
+                                    }
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "Error validating resume position", ex);
+                                }
                             }
                         }
                         @Override

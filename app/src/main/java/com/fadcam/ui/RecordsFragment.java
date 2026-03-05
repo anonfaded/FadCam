@@ -4503,6 +4503,18 @@ public class RecordsFragment extends BaseFragment implements
 
         final com.fadcam.data.VideoIndexRepository repository =
                 com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+
+        // One-time cleanup: clear stale MMR-based video durations from DB.
+        // MMR returns incorrect values for FadCam's fragmented MP4 files (e.g. 26s for a 4s
+        // recording). This async call resets them so the adapter's FFprobe path re-probes
+        // and stores correct values. Runs once per app process, has no effect on next calls.
+        repository.clearStaleMMRDurationsOnce();
+        // Also clear the adapter's in-memory duration cache so the stale disk values loaded
+        // on construction are flushed and FFprobe gets a chance to re-probe this session.
+        if (recordsAdapter != null) {
+            recordsAdapter.invalidateDurationCache();
+        }
+
         final int indexedCount = repository.getIndexedCount();
 
         // ═══════════════════════════════════════════════════════════════════════

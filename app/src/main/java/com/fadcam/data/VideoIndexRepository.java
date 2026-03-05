@@ -70,6 +70,14 @@ public class VideoIndexRepository {
      */
     private final ConcurrentHashMap<String, Long> durationCache = new ConcurrentHashMap<>();
 
+    /**
+     * One-time flag: set to true after stale MMR-based durations have been cleared.
+     * MMR is unreliable for fragmented MP4 (FadCam's recording format) — it reads the
+     * mvhd box duration which is often wrong. This clears them so the adapter's FFprobe
+     * path can re-probe and persist correct values.
+     */
+    private static volatile boolean staleMMRDurationsClearedOnce = false;
+
     /** Callback for metadata enrichment progress (duration resolved for an item). */
     public interface EnrichmentCallback {
         /**
@@ -341,29 +349,26 @@ public class VideoIndexRepository {
                 for (VideoIndexEntity entity : unresolved) {
                     try {
                         if ("IMAGE".equals(entity.mediaType)) {
-                            // Images don't have duration
+                            // Images don't have duration — mark resolved with 0.
                             dao.updateDuration(entity.uriString, 0);
+                            if (callback != null) callback.onItemEnriched(entity.uriString, 0);
                             continue;
                         }
 
-                        long duration = computeDuration(Uri.parse(entity.uriString));
-                        if (duration > 0) {
-                            // Only mark as resolved if we actually got a valid duration.
-                            // If MMR returns 0, leave durationResolved=false so the adapter
-                            // can try FFprobe and write the result back via persistDurationToDb().
-                            dao.updateDuration(entity.uriString, duration);
-                            durationCache.put(entity.uriString, duration);
-                        } else {
-                            Log.d(TAG, "Enrichment: MMR returned 0 for " + entity.displayName + ", leaving unresolved for FFprobe fallback");
-                        }
+                        // IMPORTANT: Do NOT use MediaMetadataRetriever (MMR) for video duration here.
+                        // FadCam records in fragmented MP4 (fMP4) format via FragmentedMp4MuxerWrapper.
+                        // MMR reads the `mvhd` duration box, which is often wrong or zero for fMP4
+                        // (e.g., returns 26s for a 4s clip). FFprobe, on the other hand, reads actual
+                        // frame PTS timestamps and returns the correct "real" duration.
+                        //
+                        // Leaving items as `durationResolved=false` here causes the adapter to fall
+                        // through to its FFprobe path (getVideoDuration) which correctly probes the file
+                        // and persists the result via persistDurationToDb().
+                        Log.d(TAG, "Enrichment: skipping " + entity.displayName + " (VIDEO) — FFprobe in adapter will handle it");
+                        if (callback != null) callback.onItemEnriched(entity.uriString, -1);
 
-                        if (callback != null) {
-                            callback.onItemEnriched(entity.uriString, duration);
-                        }
                     } catch (Exception e) {
                         Log.w(TAG, "Failed to enrich: " + entity.displayName);
-                        // Don't mark as resolved — leave for FFprobe fallback
-                        Log.d(TAG, "Enrichment: leaving " + entity.displayName + " unresolved for FFprobe fallback");
                     }
                 }
 
@@ -451,6 +456,40 @@ public class VideoIndexRepository {
         cachedCount.set(0);
         durationCache.clear();
         Log.i(TAG, "Index marked for invalidation (flag set)");
+    }
+
+    /**
+     * One-time cleanup: resets stale MMR-based video durations from DB so they
+     * can be re-probed by the adapter's FFprobe path.
+     * <p>
+     * MediaMetadataRetriever (MMR) is unreliable for fragmented MP4 — it reads the
+     * {@code mvhd} box duration which is often incorrect (e.g. returns 26s for a 4s
+     * recording). FFprobe, used by the adapter, reads actual frame PTS and is correct.
+     * <p>
+     * This is safe to call from any thread. Runs once per app process lifetime.
+     */
+    public void clearStaleMMRDurationsOnce() {
+        if (staleMMRDurationsClearedOnce) return;
+        synchronized (VideoIndexRepository.class) {
+            if (staleMMRDurationsClearedOnce) return;
+            staleMMRDurationsClearedOnce = true;
+        }
+        enrichmentExecutor.submit(() -> {
+            try {
+                dao.clearAllVideoDurations();
+                durationCache.clear();
+                // Also wipe the adapter's disk-based duration cache so stale MMR values
+                // already persisted to duration_cache.json are not reloaded on next bind.
+                java.io.File adapterDiskCache = new java.io.File(appContext.getCacheDir(), "duration_cache.json");
+                if (adapterDiskCache.exists()) {
+                    boolean deleted = adapterDiskCache.delete();
+                    Log.i(TAG, "clearStaleMMRDurationsOnce: duration_cache.json " + (deleted ? "deleted" : "delete failed"));
+                }
+                Log.i(TAG, "clearStaleMMRDurationsOnce: reset video durations — will be re-probed via FFprobe");
+            } catch (Exception e) {
+                Log.w(TAG, "clearStaleMMRDurationsOnce failed (non-fatal)", e);
+            }
+        });
     }
 
     /**

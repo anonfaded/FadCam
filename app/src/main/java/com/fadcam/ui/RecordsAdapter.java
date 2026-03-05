@@ -21,7 +21,7 @@ import android.provider.OpenableColumns;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
-import android.util.SparseArray;
+import java.util.concurrent.ConcurrentHashMap;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -126,7 +126,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private static final SimpleDateFormat MONTH_FORMAT = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
 
     // Keep the cache for thumbnails but optimize it
-    private final SparseArray<String> loadedThumbnailCache = new SparseArray<>();
+    // Keyed by URI string (not position) to survive list reorders/sorts without serving stale data.
+    private final ConcurrentHashMap<String, String> loadedThumbnailCache = new ConcurrentHashMap<>();
     private static final int THUMBNAIL_SIZE = 200; // Standard size for all thumbnails
     private static final int SAFE_THUMBNAIL_SIZE = 140;
     private static final int SAFE_SCROLL_THUMBNAIL_SIZE = 80;
@@ -357,6 +358,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         final String uriString = videoUri.toString();
         final boolean isImage = videoItem.mediaType == VideoItem.MediaType.IMAGE;
 
+        // Tag the holder with its current URI so async callbacks can detect stale ViewHolder reuse.
+        holder.currentUri = uriString;
+
         // --- 2. Determine Item States ---
         final boolean isCurrentlySelected = this.currentSelectedUris.contains(videoUri);
         final boolean isProcessing = this.currentlyProcessingUris.contains(videoUri);
@@ -485,8 +489,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         holder.recordMetaRowSize.setLayoutParams(gridLayoutParams);
                     }
                 }
-                // Check in-memory position cache first (avoids even DB read on rebind)
-                String cachedDuration = loadedThumbnailCache.get(position);
+                // Check in-memory URI cache first (avoids even DB read on rebind)
+                String cachedDuration = loadedThumbnailCache.get(uriString);
                 if (cachedDuration != null) {
                     holder.textViewFileTime.setText(cachedDuration);
                 } else {
@@ -530,11 +534,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             }
 
                             String formattedDuration = formatVideoDuration(duration);
-                            loadedThumbnailCache.put(position, formattedDuration);
+                            // Cache by URI (thread-safe ConcurrentHashMap) — survives list reorders.
+                            loadedThumbnailCache.put(uriString, formattedDuration);
 
-                            // Update UI on main thread
+                            // Update UI on main thread — re-check that the holder still shows THIS video.
                             new Handler(Looper.getMainLooper()).post(() -> {
-                                if (holder.getAdapterPosition() == position && holder.textViewFileTime != null) {
+                                if (uriString.equals(holder.currentUri) && holder.textViewFileTime != null) {
                                     holder.textViewFileTime.setText(formattedDuration);
                                 }
                             });
@@ -2686,6 +2691,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     // --- ViewHolder ---
     // --- Updated ViewHolder ---
     static class RecordViewHolder extends RecyclerView.ViewHolder {
+        /** The URI of the item currently bound to this holder — used to detect stale async callbacks. */
+        String currentUri;
         ImageView imageViewThumbnail;
         FrameLayout thumbnailContainer;
         TextView textViewRecord;
@@ -3131,6 +3138,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      * Clears all internal caches to reduce memory footprint
      * Should be called on low memory conditions
      */
+    /**
+     * Clears only the in-memory duration cache without affecting thumbnails or positions.
+     * Call this when stale durations must be re-probed (e.g. after MMR cleanup).
+     * Does NOT delete the disk cache file; use {@link VideoIndexRepository#clearStaleMMRDurationsOnce()}
+     * to coordinate disk deletion.
+     */
+    public void invalidateDurationCache() {
+        // Clear the numeric Long cache (used for progress bar).
+        synchronized (durationCache) {
+            durationCache.clear();
+        }
+        // Also clear the formatted-string duration cache (loadedThumbnailCache stores
+        // the duration badge text, e.g. "00:26", keyed by URI — must be flushed so the
+        // stale value isn't served at bind time before FFprobe can re-probe).
+        loadedThumbnailCache.clear();
+        Log.d(TAG, "invalidateDurationCache: cleared durationCache + loadedThumbnailCache — FFprobe will re-probe");
+    }
+
     public void clearCaches() {
         loadedThumbnailCache.clear();
         // Also clear duration cache to prevent stale duration data for new videos

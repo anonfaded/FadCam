@@ -167,4 +167,12 @@ public interface VideoIndexDao {
      */
     @Query("DELETE FROM video_index")
     void deleteAll();
+
+    /**
+     * Reset duration data for all VIDEO/SCREEN_RECORD items (not images).
+     * Used as a one-time migration to re-probe with FFprobe after switching away from
+     * MMR-based enrichment (which returns incorrect values for fragmented MP4 files).
+     */
+    @Query("UPDATE video_index SET duration_ms = 0, duration_resolved = 0 WHERE media_type != 'IMAGE'")
+    void clearAllVideoDurations();
 }
