@@ -114,7 +114,7 @@ public class StreamQuality {
     }
     
     public String toJson() {
-        return String.format(
+        return String.format(java.util.Locale.US,
             "{\"preset\": \"%s\", \"bitrate\": \"%s\", \"fpsCap\": %d, \"note\": \"resolution uses normal recording settings\"}",
             currentPreset.name().toLowerCase(),
             currentPreset.getBitrateString(),

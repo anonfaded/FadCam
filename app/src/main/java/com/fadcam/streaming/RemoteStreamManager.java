@@ -800,7 +800,7 @@ public class RemoteStreamManager {
             
             // Get uptime details
             java.util.Map<String, Object> uptimeDetailsMap = getUptimeDetails();
-            String uptimeDetailsJson = String.format(
+            String uptimeDetailsJson = String.format(java.util.Locale.US,
                 "{\"seconds\": %d, \"formatted\": \"%s\", \"startTime\": \"%s\", \"startTimestamp\": %d}",
                 uptimeDetailsMap.get("seconds"),
                 uptimeDetailsMap.get("formatted"),
@@ -846,7 +846,7 @@ public class RemoteStreamManager {
             long lastUpdatedTimestamp = System.currentTimeMillis();
             String serverVersion = "2.0.0";  // Bump when status schema changes
             
-            String result = String.format(
+            String result = String.format(java.util.Locale.US,
                 "{\"streaming\": %s, \"mode\": %s, \"state\": %s, \"message\": %s, " +
                 "\"lastUpdated\": %d, \"serverVersion\": %s, " +
                 "\"isRecording\": %s, \"isPaused\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
@@ -1403,7 +1403,7 @@ public class RemoteStreamManager {
         String warningJson = warning.isEmpty() ? "\"\"" : com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(warning);
         String chargingStatus = isCharging ? "Charging" : "Discharging";
         
-        String result = String.format(
+        String result = String.format(java.util.Locale.US,
             "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remainingHours\": %.1f, \"warning\": %s, \"warningThreshold\": %d}",
             currentLevel, chargingStatus, consumed, remainingHours, warningJson, warningThreshold
         );
@@ -1453,7 +1453,7 @@ public class RemoteStreamManager {
                     if (consumptionRate > 0) {
                         double remainingHours = currentLevel / consumptionRate;
                         if (remainingHours < 500) { // Only show if reasonable
-                            info.append(", ~").append(String.format("%.1f", remainingHours)).append("h remaining");
+                            info.append(", ~").append(String.format(java.util.Locale.US, "%.1f", remainingHours)).append("h remaining");
                         }
                     } else {
                         // No consumption yet, estimate based on current level
@@ -1739,7 +1739,7 @@ public class RemoteStreamManager {
             long usedBytes = totalBytes - availBytes;  // Calculate used space correctly
             float usedGB = usedBytes / (1024.0f * 1024.0f * 1024.0f);
             float totalGB = totalBytes / (1024.0f * 1024.0f * 1024.0f);
-            return String.format("%.1f/%.1f GB", usedGB, totalGB);
+            return String.format(java.util.Locale.US, "%.1f/%.1f GB", usedGB, totalGB);
         } catch (Exception e) {
             return "unknown";
         }

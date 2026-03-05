@@ -297,7 +297,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             // Add fragments to playlist
             for (RemoteStreamManager.FragmentData fragment : liveEdge) {
-                m3u8.append("#EXTINF:").append(String.format("%.3f", fragment.getDurationSeconds())).append(",\n");
+                m3u8.append("#EXTINF:").append(String.format(java.util.Locale.US, "%.3f", fragment.getDurationSeconds())).append(",\n");
                 m3u8.append("/seg-").append(fragment.sequenceNumber).append(".m4s\n");
             }
             
@@ -354,7 +354,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             // DEBUG: Log first few bytes of init segment to verify ftyp box
             if (initSegment.length > 8) {
-                String firstBytes = String.format("%02X %02X %02X %02X %02X %02X %02X %02X",
+                String firstBytes = String.format(java.util.Locale.US, "%02X %02X %02X %02X %02X %02X %02X %02X",
                     initSegment[0] & 0xFF, initSegment[1] & 0xFF, initSegment[2] & 0xFF, initSegment[3] & 0xFF,
                     initSegment[4] & 0xFF, initSegment[5] & 0xFF, initSegment[6] & 0xFF, initSegment[7] & 0xFF);
                 Log.d(TAG, "📋 Init segment header (hex): " + firstBytes + " (should start with ftyp signature)");
@@ -433,7 +433,7 @@ import fi.iki.elonen.NanoHTTPD;
                 
                 // DEBUG: Log first few bytes of fragment to verify moof box
                 if (fragment.data.length > 8) {
-                    String firstBytes = String.format("%02X %02X %02X %02X %02X %02X %02X %02X",
+                    String firstBytes = String.format(java.util.Locale.US, "%02X %02X %02X %02X %02X %02X %02X %02X",
                         fragment.data[0] & 0xFF, fragment.data[1] & 0xFF, fragment.data[2] & 0xFF, fragment.data[3] & 0xFF,
                         fragment.data[4] & 0xFF, fragment.data[5] & 0xFF, fragment.data[6] & 0xFF, fragment.data[7] & 0xFF);
                     Log.d(TAG, "📦 Fragment #" + sequenceNumber + " header (hex): " + firstBytes + " (should start with moof)");
@@ -535,7 +535,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             Log.i(TAG, "✅ Torch toggle intent sent. New state: " + newState);
             
-            String responseJson = String.format("{\"status\": \"success\", \"torch_state\": %s}", newState);
+            String responseJson = String.format(java.util.Locale.US, "{\"status\": \"success\", \"torch_state\": %s}", newState);
             return jsonResponse(Response.Status.OK, responseJson);
         } catch (Exception e) {
             Log.e(TAG, "Error toggling torch", e);
@@ -565,7 +565,7 @@ import fi.iki.elonen.NanoHTTPD;
             RemoteStreamManager manager = RemoteStreamManager.getInstance();
             manager.setMediaVolume(currentVolume);
             
-            String responseJson = String.format(
+            String responseJson = String.format(java.util.Locale.US,
                 "{\"status\": \"success\", \"volume\": %d, \"max_volume\": %d, \"percentage\": %.1f}",
                 currentVolume, maxVolume, (currentVolume * 100.0f / maxVolume)
             );
@@ -640,9 +640,9 @@ import fi.iki.elonen.NanoHTTPD;
             int actualVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
             float actualPercentage = actualVolume * 100.0f / maxVolume;
             
-            Log.i(TAG, "✅ Volume set to: " + actualVolume + "/" + maxVolume + " (" + String.format("%.1f", actualPercentage) + "%)");
+            Log.i(TAG, "✅ Volume set to: " + actualVolume + "/" + maxVolume + " (" + String.format(java.util.Locale.US, "%.1f", actualPercentage) + "%)");
             
-            String responseJson = String.format(
+            String responseJson = String.format(java.util.Locale.US,
                 "{\"status\": \"success\", \"volume\": %d, \"max_volume\": %d, \"percentage\": %.1f}",
                 actualVolume, maxVolume, actualPercentage
             );
@@ -697,7 +697,7 @@ import fi.iki.elonen.NanoHTTPD;
             ServiceStartPolicy.startRecordingAction(context, intent);
             
             String action = isRecording ? "stop" : "start";
-            String responseJson = String.format("{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s, \"isPaused\": false}", 
+            String responseJson = String.format(java.util.Locale.US, "{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s, \"isPaused\": false}", 
                 action, !isRecording);
             
             Log.i(TAG, "✅ Recording " + action + " intent sent");
@@ -1128,7 +1128,7 @@ import fi.iki.elonen.NanoHTTPD;
                 tokenValid = sessionToken != null && sessionToken.isValid();
             }
             
-            String json = String.format(
+            String json = String.format(java.util.Locale.US,
                 "{\"authEnabled\":%b,\"authenticated\":%b,\"tokenValid\":%b}",
                 authEnabled, !authEnabled || tokenValid, tokenValid
             );

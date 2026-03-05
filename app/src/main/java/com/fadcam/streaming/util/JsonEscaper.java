@@ -47,7 +47,7 @@ public class JsonEscaper {
                     // Escape control characters and non-ASCII characters that might cause encoding issues
                     if (ch < 0x20 || (ch >= 0x7F && ch < 0xA0)) {
                         // Control character - escape as unicode
-                        sb.append(String.format("\\u%04x", (int) ch));
+                        sb.append(String.format(java.util.Locale.US, "\\u%04x", (int) ch));
                     } else {
                         sb.append(ch);
                     }

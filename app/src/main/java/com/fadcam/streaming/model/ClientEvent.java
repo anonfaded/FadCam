@@ -48,7 +48,7 @@ public class ClientEvent {
      * Convert to JSON string.
      */
     public String toJson() {
-        return String.format(
+        return String.format(java.util.Locale.US,
             "{\"ip\": \"%s\", \"event\": \"%s\", \"timestamp\": %d, \"details\": \"%s\"}",
             clientIP,
             getEventTypeString(),

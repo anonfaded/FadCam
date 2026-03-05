@@ -433,7 +433,7 @@ public class CloudStreamUploader {
      * Get upload statistics
      */
     public String getStats() {
-        return String.format("Uploads: %d success, %d failed, %.2f MB total",
+        return String.format(java.util.Locale.US, "Uploads: %d success, %d failed, %.2f MB total",
             successfulUploads, failedUploads, totalBytesUploaded / (1024.0 * 1024.0));
     }
     

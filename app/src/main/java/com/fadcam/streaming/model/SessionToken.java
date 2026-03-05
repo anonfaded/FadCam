@@ -49,7 +49,7 @@ public class SessionToken {
      * Convert to JSON string for storage
      */
     public String toJson() {
-        return String.format(
+        return String.format(java.util.Locale.US,
             "{\"token\":\"%s\",\"createdAt\":%d,\"expiresAt\":%d,\"deviceInfo\":\"%s\"}",
             token, createdAtMs, expiresAtMs, deviceInfo
         );

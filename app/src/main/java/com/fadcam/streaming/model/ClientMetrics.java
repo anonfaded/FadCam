@@ -111,7 +111,7 @@ public class ClientMetrics {
      * Uses camelCase to match dashboard expectations (Step 6.11 standardization).
      */
     public String toJson() {
-        return String.format(
+        return String.format(java.util.Locale.US,
             "{\"ip\": \"%s\", \"bytesServed\": %d, \"mbServed\": %d, " +
             "\"fragmentsServed\": %d, \"getRequests\": %d, \"postRequests\": %d, \"totalApiCalls\": %d, " +
             "\"sessionDurationSeconds\": %d, \"averageBitrateMbps\": %.2f, \"isActive\": %s, \"lastActivityMs\": %d}",

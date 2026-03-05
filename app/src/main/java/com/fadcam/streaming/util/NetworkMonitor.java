@@ -120,7 +120,7 @@ public class NetworkMonitor {
                     
                     networkHealth.updateMeasurements(mbps, uploadMbps, latency);
                     
-                    Log.d(TAG, String.format("Speed test: ↓%.2f Mbps ↑%.2f Mbps (Latency: %dms) - Status: %s",
+                    Log.d(TAG, String.format(java.util.Locale.US, "Speed test: ↓%.2f Mbps ↑%.2f Mbps (Latency: %dms) - Status: %s",
                         mbps, uploadMbps, latency, networkHealth.getStatusString()));
                 } else {
                     networkHealth.updateMeasurements(0, 0, -1);

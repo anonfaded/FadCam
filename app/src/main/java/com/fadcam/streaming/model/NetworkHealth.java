@@ -103,7 +103,7 @@ public class NetworkHealth {
         if (status == Status.UNKNOWN) {
             return "Testing...";
         }
-        return String.format("↑%.1f Mbps ↓%.1f Mbps", uploadSpeedMbps, downloadSpeedMbps);
+        return String.format(java.util.Locale.US, "↑%.1f Mbps ↓%.1f Mbps", uploadSpeedMbps, downloadSpeedMbps);
     }
     
     // Getters
@@ -131,7 +131,7 @@ public class NetworkHealth {
      * Convert to JSON string.
      */
     public String toJson() {
-        return String.format(
+        return String.format(java.util.Locale.US,
             "{\"status\": \"%s\", \"downloadMbps\": %.2f, \"uploadMbps\": %.2f, " +
             "\"latencyMs\": %d, \"lastMeasurementMs\": %d, \"isStale\": %s}",
             getStatusString(),
