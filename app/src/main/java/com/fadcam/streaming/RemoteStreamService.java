@@ -152,6 +152,9 @@ public class RemoteStreamService extends Service {
         // Disable streaming in RemoteStreamManager (clears buffer automatically)
         RemoteStreamManager.getInstance().setStreamingEnabled(false);
         
+        // Cancel notification when service stops
+        stopForeground(true);
+        
         super.onDestroy();
     }
     
@@ -470,33 +473,40 @@ public class RemoteStreamService extends Service {
      * Shows cloud dashboard URL if in cloud mode, local dashboard URL if in local mode.
      */
     private void updateNotification() {
-        if (activePort == -1) {
-            return;
-        }
-        
         // Check if cloud mode is enabled
         android.content.SharedPreferences cloudPrefs = getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
         int streamingMode = cloudPrefs.getInt("streaming_mode", 0); // 0 = local, 1 = cloud
         boolean isCloudMode = streamingMode == 1;
         
         String dashboardUrl;
-        if (isCloudMode) {
-            // Cloud mode - show cloud dashboard URL with device ID
-            String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-            dashboardUrl = "https://fadcam.fadseclab.com/stream/" + deviceId + "/";
-        } else {
-            // Local mode - show local dashboard URL (root, not /live.m3u8)
-            String ipAddress = getLocalIpAddress();
-            dashboardUrl = "http://" + ipAddress + ":" + activePort + "/";
-        }
-        
-        // Check if we have fragments
         int fragmentCount = RemoteStreamManager.getInstance().getBufferedCount();
         String contentText;
-        if (fragmentCount > 0) {
-            contentText = "Streaming: " + dashboardUrl + " (" + fragmentCount + " fragments)";
+        
+        if (isCloudMode) {
+            // Cloud mode - show cloud dashboard URL with device ID (even if activePort == -1)
+            String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            dashboardUrl = "https://fadcam.fadseclab.com/stream/" + deviceId + "/";
+            
+            if (fragmentCount > 0) {
+                contentText = "Cloud Streaming: " + dashboardUrl + " (" + fragmentCount + " fragments)";
+            } else {
+                contentText = "Cloud Streaming: " + dashboardUrl;
+            }
         } else {
-            contentText = dashboardUrl + " • Start recording to stream";
+            // Local mode - only show if server is running (activePort != -1)
+            if (activePort == -1) {
+                Log.d(TAG, "Local mode but server not running, skipping notification update");
+                return;
+            }
+            
+            String ipAddress = getLocalIpAddress();
+            dashboardUrl = "http://" + ipAddress + ":" + activePort + "/";
+            
+            if (fragmentCount > 0) {
+                contentText = "Streaming: " + dashboardUrl + " (" + fragmentCount + " fragments)";
+            } else {
+                contentText = dashboardUrl + " • Start recording to stream";
+            }
         }
         
         Notification notification = buildNotification(contentText, dashboardUrl);

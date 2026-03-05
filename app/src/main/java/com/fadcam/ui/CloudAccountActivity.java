@@ -40,6 +40,15 @@ public class CloudAccountActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Enable edge-to-edge display (extends behind status bar and navigation bar)
+        getWindow().getDecorView().setSystemUiVisibility(
+            android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+            android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        
+        // Set navigation bar color to black
+        getWindow().setNavigationBarColor(0xFF000000);
+        
         setContentView(R.layout.activity_cloud_account);
         
         cloudAuthManager = CloudAuthManager.getInstance(this);
@@ -64,6 +73,22 @@ public class CloudAccountActivity extends AppCompatActivity {
         setupWebView();
         
         // Apply window insets for proper edge-to-edge layout with notch/gesture support
+        android.view.View headerBar = findViewById(R.id.cloud_header_bar);
+        
+        ViewCompat.setOnApplyWindowInsetsListener(headerBar, (v, insets) -> {
+            int systemInsetTop = insets.getSystemWindowInsetTop();
+            int systemInsetLeft = insets.getSystemWindowInsetLeft();
+            int systemInsetRight = insets.getSystemWindowInsetRight();
+            
+            v.setPadding(
+                systemInsetLeft + v.getPaddingStart(),
+                systemInsetTop + 16,  // 16dp + status bar height
+                systemInsetRight + v.getPaddingEnd(),
+                v.getPaddingBottom()
+            );
+            return insets;
+        });
+        
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, insets) -> {
             int systemInsetLeft = insets.getSystemWindowInsetLeft();
             int systemInsetRight = insets.getSystemWindowInsetRight();
