@@ -92,7 +92,7 @@ public class FragmentedMp4Remuxer {
     
     /**
      * Gets the path for the remuxed version of a file.
-     * The remuxed file is stored in a cache directory.
+     * The remuxed file is stored in a cache directory with a clean name.
      *
      * @param originalFile The original file.
      * @return Path to the remuxed file (may not exist yet).
@@ -103,11 +103,12 @@ public class FragmentedMp4Remuxer {
             cacheDir.mkdirs();
         }
         
-        // Use original filename + hash of path to handle duplicates
-        String hash = String.valueOf(originalFile.getAbsolutePath().hashCode());
         String name = originalFile.getName();
         String baseName = name.substring(0, name.lastIndexOf('.'));
-        return new File(cacheDir, baseName + "_" + hash + "_seekable.mp4");
+        
+        // Use a hash of the full path to handle duplicate filenames from different directories
+        String hash = String.valueOf(Math.abs(originalFile.getAbsolutePath().hashCode() % 10000));
+        return new File(cacheDir, baseName + "-remuxed-" + hash + ".mp4");
     }
     
     /**
@@ -293,5 +294,108 @@ public class FragmentedMp4Remuxer {
         if (deleted > 0) {
             Log.i(TAG, "Cleaned up " + deleted + " cached remuxed files");
         }
+    }
+    
+    /**
+     * Gets the total size of all cached remuxed files in bytes.
+     *
+     * @return Size in bytes, or 0 if cache directory doesn't exist.
+     */
+    public long getTotalCacheSize() {
+        File cacheDir = new File(context.getCacheDir(), "remuxed");
+        if (!cacheDir.exists()) return 0;
+        
+        long totalSize = 0;
+        File[] files = cacheDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    totalSize += file.length();
+                }
+            }
+        }
+        return totalSize;
+    }
+    
+    /**
+     * Gets the size of cached files matching a specific filename prefix.
+     * Used to calculate cache size for a specific project/video.
+     *
+     * @param prefix The filename prefix to match (e.g., "clip_001").
+     * @return Size in bytes of matching cached files.
+     */
+    public long getCacheSizeForPrefix(String prefix) {
+        File cacheDir = new File(context.getCacheDir(), "remuxed");
+        if (!cacheDir.exists()) return 0;
+        
+        long totalSize = 0;
+        File[] files = cacheDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().startsWith(prefix)) {
+                    totalSize += file.length();
+                }
+            }
+        }
+        return totalSize;
+    }
+    
+    /**
+     * Delete all cached remuxed files matching a specific filename prefix.
+     * Call this when a project or clip is deleted to clean up orphaned cache files.
+     *
+     * @param prefix The filename prefix to match (e.g., "clip_001").
+     * @return Number of files deleted.
+     */
+    public int deleteCacheForPrefix(String prefix) {
+        File cacheDir = new File(context.getCacheDir(), "remuxed");
+        if (!cacheDir.exists()) return 0;
+        
+        int deleted = 0;
+        File[] files = cacheDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().startsWith(prefix)) {
+                    if (file.delete()) {
+                        Log.d(TAG, "Deleted cache file: " + file.getName());
+                        deleted++;
+                    }
+                }
+            }
+        }
+        
+        if (deleted > 0) {
+            Log.i(TAG, "Deleted " + deleted + " cached files for prefix: " + prefix);
+        }
+        
+        return deleted;
+    }
+    
+    /**
+     * Clear all remuxed cache files.
+     *
+     * @return Number of files deleted.
+     */
+    public int clearAllCache() {
+        File cacheDir = new File(context.getCacheDir(), "remuxed");
+        if (!cacheDir.exists()) return 0;
+        
+        int deleted = 0;
+        File[] files = cacheDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.delete()) {
+                    deleted++;
+                }
+            }
+        }
+        
+        // Try to delete the cache directory itself if empty
+        if (cacheDir.listFiles() != null && cacheDir.listFiles().length == 0) {
+            cacheDir.delete();
+        }
+        
+        Log.i(TAG, "Cleared cache: deleted " + deleted + " files");
+        return deleted;
     }
 }

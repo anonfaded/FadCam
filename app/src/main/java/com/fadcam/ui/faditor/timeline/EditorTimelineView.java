@@ -326,7 +326,9 @@ public class EditorTimelineView extends View {
         void onSegmentSelected(int index);
         void onTrimChanged(int segmentIndex, float startFraction, float endFraction, boolean isLeft);
         void onTrimFinished(int segmentIndex, float startFraction, float endFraction);
-        void onPlayheadSeeked(int segmentIndex, float fractionInSegment);
+        /** Called when playhead is seeked. isDragging=true means user is actively dragging,
+         *  so don't load new clips yet; isDragging=false means this is a discrete seek or drag end. */
+        void onPlayheadSeeked(int segmentIndex, float fractionInSegment, boolean isDragging);
         void onPlayheadDragFinished();
         void onSegmentReordered(int fromIndex, int toIndex);
         void onReorderModeChanged(boolean entering);
@@ -544,6 +546,23 @@ public class EditorTimelineView extends View {
         playheadPositionMs = positionMs;
         centerPlayhead();
         invalidate();
+    }
+
+    /**
+     * Returns the segment index that contains the current playhead position.
+     * Scans through segments and returns the index of the segment containing playheadPositionMs.
+     * Returns -1 if no segment contains the playhead (e.g., playhead is past all segments).
+     */
+    public int getSegmentAtPlayhead() {
+        long cumulMs = 0;
+        for (int i = 0; i < segments.size(); i++) {
+            SegmentData sd = segments.get(i);
+            if (playheadPositionMs >= cumulMs && playheadPositionMs < cumulMs + sd.effectiveMs) {
+                return i;
+            }
+            cumulMs += sd.effectiveMs;
+        }
+        return segments.isEmpty() ? -1 : segments.size() - 1;
     }
 
     /**
@@ -872,6 +891,54 @@ public class EditorTimelineView extends View {
             long msPastVideo = timeMs - totalEffectiveMs;
             return lastRight + (msPastVideo / 1000f) * dpPerSecondPx;
         }
+        return 0;
+    }
+
+    /**
+     * Inverse of {@link #timeToX(long)}: convert an X coordinate to timeline milliseconds.
+     * Handles times within video segments, gaps between clips, and audio-only regions.
+     * 
+     * @param x the X coordinate on the timeline
+     * @return the corresponding timeline position in milliseconds
+     */
+    private long xToTime(float x) {
+        if (segments.isEmpty() || segRects.isEmpty()) return 0;
+        
+        // Try to find which segment rect contains this X
+        long cumulative = 0;
+        for (int i = 0; i < segments.size(); i++) {
+            RectF rect = segRects.get(i);
+            SegmentData sd = segments.get(i);
+            
+            // If x is within this segment's rect
+            if (x >= rect.left && x <= rect.right) {
+                float frac = rect.width() > 0 ? (x - rect.left) / rect.width() : 0f;
+                long localMs = (long)(frac * sd.effectiveMs);
+                return cumulative + localMs;
+            }
+            
+            // If x is between this segment and the next, interpolate
+            if (i < segments.size() - 1) {
+                RectF nextRect = segRects.get(i + 1);
+                if (x > rect.right && x < nextRect.left) {
+                    // x is in a gap between segments
+                    // Assign it to the next segment at position 0 (start of next segment)
+                    return cumulative + sd.effectiveMs;
+                }
+            }
+            
+            cumulative += sd.effectiveMs;
+        }
+        
+        // x is past the last segment's rect
+        RectF lastRect = segRects.get(segRects.size() - 1);
+        if (x > lastRect.right) {
+            float distPastVideo = x - lastRect.right;
+            long msPastVideo = (long)((distPastVideo / dpPerSecondPx) * 1000f);
+            return totalEffectiveMs + msPastVideo;
+        }
+        
+        // x is before first segment — return 0
         return 0;
     }
 
@@ -2064,101 +2131,84 @@ public class EditorTimelineView extends View {
     }
 
     /** Maps tap/drag x to playhead position. x should be in timeline coordinates. */
+    /**
+     * Update playhead position from an X coordinate.
+     * Allows free movement across the entire timeline, including gaps between clips.
+     * 
+     * CRITICAL: Only changes segments when X visually crosses into a different clip's rectangle.
+     * This prevents the "snapping" behavior users experience when dragging near split points.
+     */
     private void updatePlayheadFromX(float x) {
-        float playheadX = x;  // Use the provided x position
+        float playheadX = x;
+        Log.d(TAG, "updatePlayheadFromX: x=" + x);
         
-        Log.d(TAG, "updatePlayheadFromX: x=" + x + " playheadX=" + playheadX);
+        long timelineEndMs = getTimelineEndMs();
+        long newPlayheadMs = xToTime(playheadX);
+        newPlayheadMs = Math.max(0, Math.min(newPlayheadMs, timelineEndMs));
+        playheadPositionMs = newPlayheadMs;
         
-        // Find which segment the playhead is in
-        long cumulative = 0;
-        for (int i = 0; i < segments.size(); i++) {
-            RectF rect = segRects.get(i);
-            if (playheadX >= rect.left && playheadX <= rect.right) {
-                float frac = (playheadX - rect.left) / rect.width();
-                SegmentData sd = segments.get(i);
-                long localMs = (long)(frac * sd.effectiveMs);
-                playheadPositionMs = cumulative + localMs;
-                
-                Log.d(TAG, "updatePlayheadFromX: segment=" + i + " frac=" + frac + " localMs=" + localMs + " playheadPositionMs=" + playheadPositionMs);
-                
-                // Notify listener with fraction within segment's SOURCE duration
-                if (listener != null) {
-                    long sourceMs = sd.inPointMs + (long)(localMs * sd.speed);
-                    float sourceFrac = sd.sourceDurationMs > 0 ? (float)sourceMs / sd.sourceDurationMs : 0f;
-                    Log.d(TAG, "updatePlayheadFromX: calling onPlayheadSeeked segment=" + i + " sourceFrac=" + sourceFrac);
-                    listener.onPlayheadSeeked(i, sourceFrac);
-                }
-                
-                // Auto-scroll to center the new playhead position (like during playback)
-                centerPlayhead();
-                invalidate();
-                return;
-            }
-            cumulative += segments.get(i).effectiveMs;
-        }
-        Log.d(TAG, "updatePlayheadFromX: playhead outside all segments");
-        // Check if playhead is past the last video segment and audio extends beyond
-        if (!segments.isEmpty() && !segRects.isEmpty()) {
-            RectF lastRect = segRects.get(segRects.size() - 1);
-            long timelineEndMs = getTimelineEndMs();
-
-            if (playheadX > lastRect.right && timelineEndMs > totalEffectiveMs) {
-                // Playhead is in the audio-only region past video
-                float distPastVideo = playheadX - lastRect.right;
-                long msPastVideo = (long) ((distPastVideo / dpPerSecondPx) * 1000f);
-                playheadPositionMs = Math.min(totalEffectiveMs + msPastVideo, timelineEndMs);
-
-                Log.d(TAG, "updatePlayheadFromX: audio-only region, playheadMs=" + playheadPositionMs);
-
-                // Seek video to end of last segment
-                if (listener != null) {
-                    int lastIdx = segments.size() - 1;
-                    SegmentData sd = segments.get(lastIdx);
-                    float sourceFrac = sd.sourceDurationMs > 0
-                            ? (float) sd.outPointMs / sd.sourceDurationMs : 1f;
-                    listener.onPlayheadSeeked(lastIdx, sourceFrac);
-                }
-                centerPlayhead();
-                invalidate();
-                return;
-            }
-
-            // Before video start or in gaps — snap to nearest segment
-            int nearestSeg = 0;
-            float nearestDist = Float.MAX_VALUE;
+        Log.d(TAG, "updatePlayheadFromX: playheadPositionMs=" + playheadPositionMs + "ms");
+        
+        if (listener != null && !segments.isEmpty()) {
+            // Find which segment's RECTANGLE this X falls into (visually, not time-based)
+            // This is the key: we use rect-based detection, not time-based
+            int targetSegment = -1;
+            
             for (int i = 0; i < segRects.size(); i++) {
-                RectF r = segRects.get(i);
-                float dist;
-                if (playheadX < r.left) {
-                    dist = r.left - playheadX;
-                } else if (playheadX > r.right) {
-                    dist = playheadX - r.right;
-                } else {
-                    dist = 0;
-                }
-                if (dist < nearestDist) {
-                    nearestDist = dist;
-                    nearestSeg = i;
+                RectF rect = segRects.get(i);
+                if (playheadX >= rect.left && playheadX <= rect.right) {
+                    targetSegment = i;
+                    break;
                 }
             }
-            // Clamp to nearest segment boundary
-            RectF nearestRect = segRects.get(nearestSeg);
-            float clampedX = Math.max(nearestRect.left, Math.min(playheadX, nearestRect.right));
-            float frac = nearestRect.width() > 0 ? (clampedX - nearestRect.left) / nearestRect.width() : 0f;
-            SegmentData sd = segments.get(nearestSeg);
-            long localMs = (long)(frac * sd.effectiveMs);
+            
+            // If X is in a gap between rectangles, snap to the nearest rectangle edge
+            // but DON'T trigger a segment change yet
+            if (targetSegment < 0 && !segRects.isEmpty()) {
+                float minDist = Float.MAX_VALUE;
+                for (int i = 0; i < segRects.size(); i++) {
+                    RectF rect = segRects.get(i);
+                    float dist;
+                    if (playheadX < rect.left) {
+                        dist = rect.left - playheadX;
+                    } else {
+                        dist = playheadX - rect.right;
+                    }
+                    if (dist < minDist) {
+                        minDist = dist;
+                        targetSegment = i;
+                    }
+                }
+            }
+            
+            // Bounds check
+            if (targetSegment < 0) targetSegment = 0;
+            if (targetSegment >= segments.size()) targetSegment = segments.size() - 1;
+            
+            // NOW compute position within the target segment using ABSOLUTE time
+            SegmentData sd = segments.get(targetSegment);
             long cumulMs = 0;
-            for (int j = 0; j < nearestSeg; j++) cumulMs += segments.get(j).effectiveMs;
-            playheadPositionMs = cumulMs + localMs;
-            if (listener != null) {
-                long sourceMs = sd.inPointMs + (long)(localMs * sd.speed);
-                float sourceFrac = sd.sourceDurationMs > 0 ? (float) sourceMs / sd.sourceDurationMs : 0f;
-                Log.d(TAG, "updatePlayheadFromX: snapped to segment=" + nearestSeg + " frac=" + frac + " localMs=" + localMs);
-                listener.onPlayheadSeeked(nearestSeg, sourceFrac);
+            for (int i = 0; i < targetSegment; i++) {
+                cumulMs += segments.get(i).effectiveMs;
             }
-            centerPlayhead();
-            invalidate();
+            
+            long posInSegmentMs = newPlayheadMs - cumulMs;
+            posInSegmentMs = Math.max(0, Math.min(posInSegmentMs, sd.effectiveMs));
+            
+            long sourceMs = sd.inPointMs + (long)(posInSegmentMs * sd.speed);
+            float sourceFrac = sd.sourceDurationMs > 0 ? (float)sourceMs / sd.sourceDurationMs : 0f;
+            sourceFrac = Math.max(0f, Math.min(sourceFrac, 1f));
+            
+            Log.d(TAG, "updatePlayheadFromX: targetSegment=" + targetSegment 
+                    + " posInSegmentMs=" + posInSegmentMs + " sourceFrac=" + sourceFrac);
+            
+            // Pass isDragging=true to prevent loading new clips during active drag
+            // The FaditorEditorActivity will only seek within current clip, then load new one on drag end
+            listener.onPlayheadSeeked(targetSegment, sourceFrac, true);
         }
+        
+        centerPlayhead();
+        invalidate();
     }
 
     private int findDrop(float x) {

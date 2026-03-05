@@ -55,6 +55,9 @@ public class ProjectStorage {
 
     @NonNull
     private final Gson gson;
+    
+    @NonNull
+    private final Context context;
 
     /**
      * Create a ProjectStorage instance.
@@ -62,6 +65,7 @@ public class ProjectStorage {
      * @param context application or activity context
      */
     public ProjectStorage(@NonNull Context context) {
+        this.context = context.getApplicationContext();
         this.projectsRoot = new File(context.getFilesDir(), PROJECTS_DIR);
         if (!projectsRoot.exists()) {
             projectsRoot.mkdirs();
@@ -173,11 +177,66 @@ public class ProjectStorage {
 
     /**
      * Delete a saved project.
+     * Also cleans up any cached remuxed files for clips in this project.
      *
      * @param projectId the project ID to delete
      * @return true if deleted, false otherwise
      */
     public boolean delete(@NonNull String projectId) {
+        // First, try to load the project to get clip info for cache cleanup
+        FaditorProject project = null;
+        try {
+            project = load(projectId);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not load project for cache cleanup: " + projectId, e);
+        }
+        
+        // Clean up cache files for all clips in this project
+        if (project != null && project.getTimeline() != null) {
+            Timeline timeline = project.getTimeline();
+            
+            // Clean cache for video clips
+            for (int i = 0; i < timeline.getClipCount(); i++) {
+                Clip clip = timeline.getClip(i);
+                if (clip != null) {
+                    android.net.Uri sourceUri = clip.getSourceUri();
+                    if (sourceUri != null) {
+                        // Extract filename from URI to use as cache prefix
+                        String filename = extractFilename(sourceUri.toString());
+                        if (filename != null) {
+                            String baseName = filename.substring(0, Math.max(filename.lastIndexOf('.'), filename.length()));
+                            com.fadcam.playback.FragmentedMp4Remuxer remuxer =
+                                    new com.fadcam.playback.FragmentedMp4Remuxer(context);
+                            int deleted = remuxer.deleteCacheForPrefix(baseName);
+                            if (deleted > 0) {
+                                Log.d(TAG, "Cleared " + deleted + " cache files for clip: " + filename);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Clean cache for audio clips
+            List<AudioClip> audioClips = timeline.getAudioClips();
+            if (audioClips != null) {
+                for (AudioClip audioClip : audioClips) {
+                    if (audioClip != null && audioClip.getSourceUri() != null) {
+                        String filename = extractFilename(audioClip.getSourceUri().toString());
+                        if (filename != null) {
+                            String baseName = filename.substring(0, Math.max(filename.lastIndexOf('.'), filename.length()));
+                            com.fadcam.playback.FragmentedMp4Remuxer remuxer =
+                                    new com.fadcam.playback.FragmentedMp4Remuxer(context);
+                            int deleted = remuxer.deleteCacheForPrefix(baseName);
+                            if (deleted > 0) {
+                                Log.d(TAG, "Cleared " + deleted + " cache files for audio: " + filename);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Now delete the project directory
         File dir = getProjectDir(projectId);
         if (!dir.exists()) return false;
 
@@ -188,7 +247,42 @@ public class ProjectStorage {
                 f.delete();
             }
         }
-        return dir.delete();
+        boolean deleted = dir.delete();
+        if (deleted) {
+            Log.i(TAG, "Project deleted: " + projectId);
+        }
+        return deleted;
+    }
+    
+    /**
+     * Extract filename from a URI (file path or content URI).
+     *
+     * @param uri the URI string
+     * @return the filename, or null if extraction failed
+     */
+    @Nullable
+    private String extractFilename(@NonNull String uri) {
+        try {
+            if (uri.startsWith("file://")) {
+                uri = uri.substring(7);  // Remove "file://" prefix
+            } else if (uri.startsWith("content://")) {
+                // For content URIs, try to extract the last path segment
+                int lastSlash = uri.lastIndexOf('/');
+                if (lastSlash >= 0) {
+                    return uri.substring(lastSlash + 1);
+                }
+                return null;
+            }
+            
+            int lastSlash = uri.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                return uri.substring(lastSlash + 1);
+            }
+            return uri;
+        } catch (Exception e) {
+            Log.w(TAG, "Could not extract filename from URI: " + uri, e);
+            return null;
+        }
     }
 
     /**

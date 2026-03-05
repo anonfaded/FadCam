@@ -32,6 +32,10 @@ import com.fadcam.R;
 import com.fadcam.ui.faditor.FaditorEditorActivity;
 import com.fadcam.ui.faditor.FaditorInfoBottomSheet;
 import com.fadcam.ui.faditor.VideoSourceBottomSheet;
+import com.fadcam.ui.faditor.model.AudioClip;
+import com.fadcam.ui.faditor.model.Clip;
+import com.fadcam.ui.faditor.model.FaditorProject;
+import com.fadcam.ui.faditor.model.Timeline;
 import com.fadcam.ui.faditor.project.ProjectStorage;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -410,18 +414,71 @@ public class FaditorMiniFragment extends BaseFragment {
         name.setEllipsize(android.text.TextUtils.TruncateAt.END);
         textSection.addView(name);
 
-        // Last modified date
-        TextView date = new TextView(requireContext());
-        date.setText(dateFormat.format(new Date(summary.lastModified)));
-        date.setTextColor(0xFF777777);
-        date.setTextSize(11);
-        date.setMaxLines(1);
-        LinearLayout.LayoutParams dateLp = new LinearLayout.LayoutParams(
+        // Last modified date with icon
+        LinearLayout dateRow = new LinearLayout(requireContext());
+        dateRow.setOrientation(LinearLayout.HORIZONTAL);
+        dateRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams dateRowLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        dateLp.topMargin = (int) (2 * dp);
-        date.setLayoutParams(dateLp);
-        textSection.addView(date);
+        dateRowLp.topMargin = (int) (3 * dp);
+        dateRow.setLayoutParams(dateRowLp);
+
+        // Date icon (Material icon)
+        TextView dateIcon = new TextView(requireContext());
+        dateIcon.setTypeface(iconFont);
+        dateIcon.setText("event");
+        dateIcon.setTextColor(0xFF777777);
+        dateIcon.setTextSize(14);
+        dateIcon.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams dateIconLp = new LinearLayout.LayoutParams(
+                (int) (12 * dp), (int) (12 * dp));
+        dateIconLp.setMarginEnd((int) (4 * dp));
+        dateIcon.setLayoutParams(dateIconLp);
+        dateRow.addView(dateIcon);
+
+        // Date text
+        TextView date = new TextView(requireContext());
+        date.setText(dateFormat.format(new Date(summary.lastModified)));
+        date.setTextColor(0xFF999999);
+        date.setTextSize(12);
+        date.setTypeface(null, Typeface.BOLD);
+        date.setMaxLines(1);
+        dateRow.addView(date);
+
+        textSection.addView(dateRow);
+
+        // Cache size (remuxed files for this project's clips) with icon
+        LinearLayout cacheRow = new LinearLayout(requireContext());
+        cacheRow.setOrientation(LinearLayout.HORIZONTAL);
+        cacheRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams cacheRowLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        cacheRowLp.topMargin = (int) (3 * dp);
+        cacheRow.setLayoutParams(cacheRowLp);
+
+        // Cache icon (drawable matching Records tab)
+        ImageView cacheIcon = new ImageView(requireContext());
+        cacheIcon.setImageResource(R.drawable.database_24px);
+        cacheIcon.setColorFilter(0xFF666666, android.graphics.PorterDuff.Mode.SRC_IN);
+        LinearLayout.LayoutParams cacheIconLp = new LinearLayout.LayoutParams(
+                (int) (12 * dp), (int) (12 * dp));
+        cacheIconLp.setMarginEnd((int) (4 * dp));
+        cacheIcon.setLayoutParams(cacheIconLp);
+        cacheRow.addView(cacheIcon);
+
+        // Cache size text
+        TextView cacheSize = new TextView(requireContext());
+        String cacheSizeText = getCacheSizeText(summary);
+        cacheSize.setText(cacheSizeText);
+        cacheSize.setTextColor(0xFF666666);
+        cacheSize.setTextSize(12);
+        cacheSize.setTypeface(null, Typeface.BOLD);
+        cacheSize.setMaxLines(1);
+        cacheRow.addView(cacheSize);
+
+        textSection.addView(cacheRow);
 
         row.addView(textSection);
 
@@ -646,5 +703,97 @@ public class FaditorMiniFragment extends BaseFragment {
             intent.putExtra(FaditorEditorActivity.EXTRA_PROJECT_ID, projectId);
         }
         editorLauncher.launch(intent);
+    }
+
+    /**
+     * Calculate cache size for a project and format it as a human-readable string.
+     * Cache includes remuxed video files created for seeking support.
+     */
+    @NonNull
+    private String getCacheSizeText(@NonNull ProjectStorage.ProjectSummary summary) {
+        try {
+            // Load project to get all clip source URIs
+            FaditorProject project = projectStorage.load(summary.id);
+            if (project == null || project.getTimeline() == null) {
+                return "Cache: 0 KB";
+            }
+
+            long totalCacheSize = 0;
+            com.fadcam.playback.FragmentedMp4Remuxer remuxer =
+                    new com.fadcam.playback.FragmentedMp4Remuxer(requireContext());
+
+            // Sum cache for all video clips
+            Timeline timeline = project.getTimeline();
+            for (int i = 0; i < timeline.getClipCount(); i++) {
+                Clip clip = timeline.getClip(i);
+                if (clip != null) {
+                    android.net.Uri sourceUri = clip.getSourceUri();
+                    if (sourceUri != null) {
+                        String filename = extractFilenameFromUri(sourceUri.toString());
+                        if (filename != null) {
+                            String baseName = filename.substring(0,
+                                    Math.max(filename.lastIndexOf('.'), filename.length()));
+                            totalCacheSize += remuxer.getCacheSizeForPrefix(baseName);
+                        }
+                    }
+                }
+            }
+
+            // Sum cache for all audio clips
+            List<AudioClip> audioClips = timeline.getAudioClips();
+            if (audioClips != null) {
+                for (AudioClip audioClip : audioClips) {
+                    if (audioClip != null && audioClip.getSourceUri() != null) {
+                        String filename = extractFilenameFromUri(audioClip.getSourceUri().toString());
+                        if (filename != null) {
+                            String baseName = filename.substring(0,
+                                    Math.max(filename.lastIndexOf('.'), filename.length()));
+                            totalCacheSize += remuxer.getCacheSizeForPrefix(baseName);
+                        }
+                    }
+                }
+            }
+
+            // Format size as KB or MB
+            if (totalCacheSize == 0) {
+                return "Cache: 0 KB";
+            } else if (totalCacheSize < 1024_000) {
+                long kb = totalCacheSize / 1024;
+                return "Cache: " + kb + " KB";
+            } else {
+                double mb = totalCacheSize / 1024.0 / 1024.0;
+                return String.format("Cache: %.1f MB", mb);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Could not calculate cache size: " + e.getMessage());
+            return "Cache: unknown";
+        }
+    }
+
+    /**
+     * Extract filename from a URI (file path or content URI).
+     */
+    @Nullable
+    private String extractFilenameFromUri(@NonNull String uri) {
+        try {
+            if (uri.startsWith("file://")) {
+                uri = uri.substring(7);  // Remove "file://" prefix
+            } else if (uri.startsWith("content://")) {
+                int lastSlash = uri.lastIndexOf('/');
+                if (lastSlash >= 0) {
+                    return uri.substring(lastSlash + 1);
+                }
+                return null;
+            }
+
+            int lastSlash = uri.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                return uri.substring(lastSlash + 1);
+            }
+            return uri;
+        } catch (Exception e) {
+            Log.w(TAG, "Could not extract filename from URI: " + uri, e);
+            return null;
+        }
     }
 }

@@ -567,7 +567,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onPlayheadSeeked(int segmentIndex, float fractionInSegment) {
+            public void onPlayheadSeeked(int segmentIndex, float fractionInSegment, boolean isDragging) {
                 userDragging = true;
                 audioTailActive = false;  // Cancel audio-tail on seek
                 // Get clip directly — DON'T call selectSegment() during scrubbing.
@@ -579,9 +579,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 Clip clip = tl.getClip(segmentIndex);
                 if (clip == null) return;
 
-                // If crossing to a different segment, load the new clip in the player
-                // (needed for correct seek bounds) but skip all scroll-altering calls
-                if (segmentIndex != selectedClipIndex) {
+                // If crossing to a different segment and NOT actively dragging,
+                // load the new clip in the player (needed for correct seek bounds).
+                // During drag, we skip loading to prevent snapping at split points.
+                // When the drag ends, onPlayheadDragFinished() will load the new clip.
+                if (segmentIndex != selectedClipIndex && !isDragging) {
                     selectedClipIndex = segmentIndex;
                     if (clip.isImageClip()) {
                         // Image clip: show image preview instead of loading into ExoPlayer
@@ -612,21 +614,47 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     // For image clips: store the seek position for playback resumption
                     imagePlaybackStartOffsetMs = seekPosition;
                 }
-                // Update both timeline playhead position AND time display during drag
-                // This ensures play() will resume from the correct position when user taps play
-                editorTimeline.setPlayheadFraction(fractionInSegment);
+                // Update both timeline playhead position AND time display
+                // Only update playhead fraction when NOT dragging to avoid calculated-position jumping
+                // During drag, updatePlayheadFromX already set correct playheadPositionMs
+                if (!isDragging) {
+                    editorTimeline.setPlayheadFraction(fractionInSegment);
+                }
                 updateCurrentTimeDisplay(seekPosition);
             }
 
             @Override
             public void onPlayheadDragFinished() {
                 userDragging = false;
-                // Don't auto-select segment here — let the user control selection
-                // via explicit taps. Just sync the toolbar state to the current segment.
-                if (selectedClipIndex >= 0 && selectedClipIndex < project.getTimeline().getClipCount()) {
+                
+                // Now that drag is finished, check if we crossed into a different segment
+                // If so, load that clip now (we skipped it during the drag to avoid snapping)
+                Timeline tl = project.getTimeline();
+                int segmentAtPlayhead = editorTimeline.getSegmentAtPlayhead();
+                if (segmentAtPlayhead >= 0 && segmentAtPlayhead != selectedClipIndex) {
+                    selectedClipIndex = segmentAtPlayhead;
+                    Clip clip = tl.getClip(segmentAtPlayhead);
+                    if (clip != null) {
+                        if (clip.isImageClip()) {
+                            showImagePreview(clip.getSourceUri());
+                            stopImagePlayback();
+                        } else {
+                            hideImagePreview();
+                            playerManager.loadClip(clip);
+                            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+                            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+                            updatePreviewTransforms();
+                        }
+                    }
+                }
+                
+                // Update toolbar UI to match the current segment
+                if (selectedClipIndex >= 0 && selectedClipIndex < tl.getClipCount()) {
                     Clip clip = getSelectedClip();
-                    updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
-                    updateSpeedUI(clip.getSpeedMultiplier());
+                    if (clip != null) {
+                        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
+                        updateSpeedUI(clip.getSpeedMultiplier());
+                    }
                 }
             }
 
