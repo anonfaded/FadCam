@@ -277,7 +277,8 @@ public class CloudAuthManager {
                     int responseCode = conn.getResponseCode();
                     if (responseCode == 200) {
                         Log.i(TAG, "✅ Device unlinked from backend - will disappear from dashboard");
-                    } else if (responseCode == 404) {\n                        Log.w(TAG, "⚠️ Device not found on backend (already unlinked?)");
+                    } else if (responseCode == 404) {
+                        Log.w(TAG, "⚠️ Device not found on backend (already unlinked?)");
                     } else if (responseCode == 403) {
                         Log.w(TAG, "⚠️ Backend rejected unlink (ownership mismatch)");
                     } else {
