@@ -779,18 +779,12 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
-        android.util.Log.w(TAG, "👁 updatePreviewVisibility: animateNext=" + animateNextPreviewTransition
-                + " openAnim=" + isPreviewOpenAnimating
-                + " closeAnim=" + isPreviewCloseAnimating
-                + " isRecording=" + isRecording()
-                + " previewEnabled=" + isPreviewEnabled);
-
         // During the iris-close (Preview→Avatar) circular reveal (~480ms), ALL updatePreviewVisibility
         // calls must be ignored.  The service's "recording stopped" broadcast fires ~50ms into the
         // animation and would otherwise hide textureView (losing the camera background) and make
         // flAvatar visible immediately — cancelling the reveal mid-flight.
-        if (isPreviewCloseAnimating) { android.util.Log.w(TAG, "👁 updatePreviewVisibility: BLOCKED by isPreviewCloseAnimating"); return; }
-        if (isPreviewOpenAnimating) { android.util.Log.w(TAG, "👁 updatePreviewVisibility: BLOCKED by isPreviewOpenAnimating"); return; }
+        if (isPreviewCloseAnimating) return;
+        if (isPreviewOpenAnimating) return;
 
         if (isRecording() || isPaused() || isPreviewOnlyActive) {
             if (isPreviewEnabled) {
@@ -875,7 +869,6 @@ public class HomeFragment extends BaseFragment {
                     // (~50ms later) from calling updatePreviewVisibility() and overwriting
                     // textureView alpha / avatar visibility mid-animation.
                     isPreviewOpenAnimating = true;
-                    android.util.Log.w(TAG, "🎬 iris-open animation STARTED, isPreviewOpenAnimating=true");
                     // Step 1: Wake the avatar (wake-up AVD ~420ms: eyes open + brighten)
                     applyHomeAvatarState(true, true);
                     // Step 2: After wake animation, shrink avatar out + iris-open camera
@@ -1517,8 +1510,6 @@ public class HomeFragment extends BaseFragment {
 
     private void onRecordingStarted(boolean toast) {
         Log.d(TAG, "📍 onRecordingStarted(toast=" + toast + ") - Timer managed by service in SharedPreferences");
-        android.util.Log.w(TAG, "📍 onRecordingStarted: BEFORE setUIForRecordingActive - animateNext=" + animateNextPreviewTransition + " openAnim=" + isPreviewOpenAnimating);
-
         // Note: Timer value (recordingStartTime) is managed by RecordingService
         // Fragment reads it from SharedPreferences when calculating elapsed time
         // This method only updates UI state
@@ -1542,7 +1533,6 @@ public class HomeFragment extends BaseFragment {
         // Always force preview enabled on first recording start
         isPreviewEnabled = true;
         savePreviewState();
-        android.util.Log.w(TAG, "📍 onRecordingStarted: BEFORE animateNext=true - openAnim=" + isPreviewOpenAnimating);
         animateNextPreviewTransition = true;
         updatePreviewVisibility();
 
@@ -2698,7 +2688,6 @@ public class HomeFragment extends BaseFragment {
             }
 
             // Manage preview and timers
-            android.util.Log.w(TAG, "🔵 setUIForRecordingActive: calling updatePreviewVisibility - animateNext=" + animateNextPreviewTransition + " openAnim=" + isPreviewOpenAnimating);
             updatePreviewVisibility();
             startUpdatingInfo();
         } catch (Exception e) {
