@@ -1272,6 +1272,46 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    public static final String PREF_PRIVACY_BLACK_MODE_ENABLED = "privacy_black_mode_enabled";
+    public static final String PREF_PRIVACY_BLACK_SWIPE_UP = "privacy_black_swipe_up";
+    public static final String PREF_PRIVACY_BLACK_TRIPLE_TAP = "privacy_black_triple_tap";
+    public static final String PREF_PRIVACY_BLACK_LONG_PRESS = "privacy_black_long_press";
+
+    public boolean isPrivacyBlackModeEnabled() {
+        return sharedPreferences.getBoolean(PREF_PRIVACY_BLACK_MODE_ENABLED, false);
+    }
+
+    public void setPrivacyBlackModeEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(PREF_PRIVACY_BLACK_MODE_ENABLED, enabled)
+            .apply();
+    }
+
+    public boolean isPrivacyBlackSwipeUpEnabled() {
+        return sharedPreferences.getBoolean(PREF_PRIVACY_BLACK_SWIPE_UP, true);
+    }
+
+    public void setPrivacyBlackSwipeUpEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_PRIVACY_BLACK_SWIPE_UP, enabled).apply();
+    }
+
+    public boolean isPrivacyBlackTripleTapEnabled() {
+        return sharedPreferences.getBoolean(PREF_PRIVACY_BLACK_TRIPLE_TAP, true);
+    }
+
+    public void setPrivacyBlackTripleTapEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_PRIVACY_BLACK_TRIPLE_TAP, enabled).apply();
+    }
+
+    public boolean isPrivacyBlackLongPressEnabled() {
+        return sharedPreferences.getBoolean(PREF_PRIVACY_BLACK_LONG_PRESS, true);
+    }
+
+    public void setPrivacyBlackLongPressEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_PRIVACY_BLACK_LONG_PRESS, enabled).apply();
+    }
+
 
     // (SharedPreferencesManager_notification_customization) -----
     // Notification customization constants

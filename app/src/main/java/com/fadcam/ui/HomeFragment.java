@@ -236,8 +236,8 @@ public class HomeFragment extends BaseFragment {
     private MaterialButton btnPreviewZoomReset;
 
     private View cardPreview;
-    private TextView btnFullscreenPreview;
-    private TextView btnCaptureShotPreview;
+    private View btnFullscreenPreview;
+    private View btnCaptureShotPreview;
     private boolean isLaunchingPhotoCapture = false;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon (legacy, null after layout update)
@@ -1593,7 +1593,7 @@ public class HomeFragment extends BaseFragment {
         buttonPauseResume.setIcon(
             AppCompatResources.getDrawable(
                 requireContext(),
-                R.drawable.ic_pause
+                R.drawable.pause_rounded
             )
         );
         buttonPauseResume.setEnabled(true);
@@ -1605,7 +1605,7 @@ public class HomeFragment extends BaseFragment {
         );
         buttonStartStop.setText(getString(R.string.button_stop));
         buttonStartStop.setIcon(
-            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop)
+            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded)
         );
         buttonStartStop.setEnabled(true);
 
@@ -1633,7 +1633,7 @@ public class HomeFragment extends BaseFragment {
         recordingState = RecordingState.PAUSED;
 
         buttonPauseResume.setIcon(
-            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)
+            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded)
         );
         buttonPauseResume.setEnabled(true);
 
@@ -1647,7 +1647,7 @@ public class HomeFragment extends BaseFragment {
         );
         buttonStartStop.setText(getString(R.string.button_stop));
         buttonStartStop.setIcon(
-            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_stop)
+            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded)
         );
     }
 
@@ -1753,7 +1753,7 @@ public class HomeFragment extends BaseFragment {
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(
                         getContext(),
-                        R.drawable.ic_play
+                        R.drawable.play_button_rounded
                     )
                 );
                 // Always use green color for start button regardless of theme
@@ -1773,7 +1773,7 @@ public class HomeFragment extends BaseFragment {
                 buttonPauseResume.setIcon(
                     AppCompatResources.getDrawable(
                         getContext(),
-                        R.drawable.ic_pause
+                        R.drawable.pause_rounded
                     )
                 );
             }
@@ -2657,7 +2657,7 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setIcon(
                 AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_stop
+                    R.drawable.stop_rounded
                 )
             );
 
@@ -2665,7 +2665,7 @@ public class HomeFragment extends BaseFragment {
             buttonPauseResume.setIcon(
                 AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_pause
+                    R.drawable.pause_rounded
                 )
             );
             buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
@@ -2713,7 +2713,7 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setIcon(
                 AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_stop
+                    R.drawable.stop_rounded
                 )
             );
 
@@ -2721,7 +2721,7 @@ public class HomeFragment extends BaseFragment {
             buttonPauseResume.setIcon(
                 AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_play
+                    R.drawable.play_button_rounded
                 )
             ); // Show
             // Play
@@ -2775,7 +2775,7 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setIcon(
                 AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_stop
+                    R.drawable.stop_rounded
                 )
             );
 
@@ -2785,7 +2785,7 @@ public class HomeFragment extends BaseFragment {
             buttonPauseResume.setIcon(
                 AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_pause
+                    R.drawable.pause_rounded
                 )
             );
 
@@ -5654,7 +5654,7 @@ public class HomeFragment extends BaseFragment {
     private void pauseDualRecording() {
         Log.d(TAG, "pauseDualRecording: Pausing dual video recording");
         buttonPauseResume.setIcon(
-                AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play));
+                AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded));
         buttonPauseResume.setEnabled(false);
 
         Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
@@ -5668,7 +5668,7 @@ public class HomeFragment extends BaseFragment {
     private void resumeDualRecording() {
         Log.d(TAG, "resumeDualRecording: Resuming dual video recording");
         buttonPauseResume.setIcon(
-                AppCompatResources.getDrawable(requireContext(), R.drawable.ic_pause));
+                AppCompatResources.getDrawable(requireContext(), R.drawable.pause_rounded));
         buttonPauseResume.setEnabled(false);
 
         Intent intent = new Intent(getContext(), DualCameraRecordingService.class);
@@ -7462,7 +7462,7 @@ public class HomeFragment extends BaseFragment {
         }
 
         buttonPauseResume.setIcon(
-            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_play)
+            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded)
         );
         buttonPauseResume.setEnabled(false);
 
@@ -7486,7 +7486,7 @@ public class HomeFragment extends BaseFragment {
         buttonPauseResume.setIcon(
             AppCompatResources.getDrawable(
                 requireContext(),
-                R.drawable.ic_pause
+                R.drawable.pause_rounded
             )
         );
         buttonPauseResume.setEnabled(false);

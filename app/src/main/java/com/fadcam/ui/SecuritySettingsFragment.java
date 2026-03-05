@@ -33,6 +33,7 @@ public class SecuritySettingsFragment extends Fragment {
     private SharedPreferencesManager sharedPreferencesManager;
     private TextView valueTabLock;
     private TextView valueCloakRecents;
+    private TextView valuePrivacyBlackMode;
     private Boolean pendingToggleDesiredState; // track attempted switch state for rollback on cancel
 
     @Nullable
@@ -47,8 +48,10 @@ public class SecuritySettingsFragment extends Fragment {
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         valueTabLock = view.findViewById(R.id.value_tab_lock_status);
     valueCloakRecents = view.findViewById(R.id.value_cloak_recents_status);
+        valuePrivacyBlackMode = view.findViewById(R.id.value_privacy_black_status);
         refreshAppLockValue();
     refreshCloakRecentsValue();
+        refreshPrivacyBlackModeValue();
 
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
@@ -56,13 +59,17 @@ public class SecuritySettingsFragment extends Fragment {
         }
 
         // Configure row click opens the config dialog (replaces legacy configure button)
-        View row = view.findViewById(R.id.row_tab_lock);
-        if (row != null) {
-            row.setOnClickListener(v -> showAppLockConfigDialog());
+        View rowTabLock = view.findViewById(R.id.row_tab_lock);
+        if (rowTabLock != null) {
+            rowTabLock.setOnClickListener(v -> showAppLockConfigDialog());
         }
         View rowCloak = view.findViewById(R.id.row_cloak_recents);
         if (rowCloak != null) {
             rowCloak.setOnClickListener(v -> showCloakRecentsConfig());
+        }
+        View rowPrivacyBlack = view.findViewById(R.id.row_privacy_black);
+        if (rowPrivacyBlack != null) {
+            rowPrivacyBlack.setOnClickListener(v -> showPrivacyBlackConfig());
         }
     }
 
@@ -80,6 +87,13 @@ public class SecuritySettingsFragment extends Fragment {
         if (valueCloakRecents != null) {
             boolean enabled = sharedPreferencesManager.isCloakRecentsEnabled();
             valueCloakRecents.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
+        }
+    }
+
+    private void refreshPrivacyBlackModeValue() {
+        if (valuePrivacyBlackMode != null) {
+            boolean enabled = sharedPreferencesManager.isPrivacyBlackModeEnabled();
+            valuePrivacyBlackMode.setText(enabled ? getString(R.string.universal_enable) : getString(R.string.universal_disable));
         }
     }
 
@@ -196,6 +210,94 @@ public class SecuritySettingsFragment extends Fragment {
                 .newInstanceWithSwitch(getString(R.string.setting_cloak_recents_title), items, null, resultKey, helper,
                         getString(R.string.setting_cloak_recents_switch), enabled);
         sheet.show(getParentFragmentManager(), "cloak_recents_sheet");
+    }
+
+    private void showPrivacyBlackConfig() {
+        String resultKey = "privacy_black_sheet_result";
+        String helper = getString(R.string.privacy_black_mode_helper);
+        boolean enabled = sharedPreferencesManager.isPrivacyBlackModeEnabled();
+
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("exit_methods", getString(R.string.privacy_black_gestures_title), null, null, null, R.drawable.ic_arrow_right, false, false, null));
+
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, bundle) -> {
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                sharedPreferencesManager.setPrivacyBlackModeEnabled(state);
+                refreshPrivacyBlackModeValue();
+                Toast.makeText(requireContext(), state ? R.string.setting_enabled_msg : R.string.setting_disabled_msg, Toast.LENGTH_SHORT).show();
+            }
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String action = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if ("exit_methods".equals(action)) {
+                    showPrivacyBlackGesturesConfig();
+                }
+            }
+        });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
+                .newInstanceWithSwitch(getString(R.string.privacy_black_mode_title), items, null, resultKey, helper,
+                        getString(R.string.privacy_black_mode_enable_title), enabled, true);
+        sheet.show(getParentFragmentManager(), "privacy_black_sheet");
+    }
+
+    private void showPrivacyBlackGesturesConfig() {
+        String resultKey = "privacy_black_gestures_result";
+        String helper = getString(R.string.privacy_black_gestures_helper);
+
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("gesture_swipe", getString(R.string.privacy_black_gesture_swipe), null, null, null, null, true, sharedPreferencesManager.isPrivacyBlackSwipeUpEnabled(), null));
+        items.add(new com.fadcam.ui.picker.OptionItem("gesture_triple", getString(R.string.privacy_black_gesture_triple), null, null, null, null, true, sharedPreferencesManager.isPrivacyBlackTripleTapEnabled(), null));
+        items.add(new com.fadcam.ui.picker.OptionItem("gesture_long", getString(R.string.privacy_black_gesture_long), null, null, null, null, true, sharedPreferencesManager.isPrivacyBlackLongPressEnabled(), null));
+
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, bundle) -> {
+            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String action = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                
+                int enabledCount = 0;
+                if (sharedPreferencesManager.isPrivacyBlackSwipeUpEnabled()) enabledCount++;
+                if (sharedPreferencesManager.isPrivacyBlackTripleTapEnabled()) enabledCount++;
+                if (sharedPreferencesManager.isPrivacyBlackLongPressEnabled()) enabledCount++;
+
+                boolean blocked = false;
+                if ("gesture_swipe".equals(action)) {
+                    boolean current = sharedPreferencesManager.isPrivacyBlackSwipeUpEnabled();
+                    if (current && enabledCount <= 1) {
+                        blocked = true;
+                    } else {
+                        sharedPreferencesManager.setPrivacyBlackSwipeUpEnabled(!current);
+                    }
+                } else if ("gesture_triple".equals(action)) {
+                    boolean current = sharedPreferencesManager.isPrivacyBlackTripleTapEnabled();
+                    if (current && enabledCount <= 1) {
+                        blocked = true;
+                    } else {
+                        sharedPreferencesManager.setPrivacyBlackTripleTapEnabled(!current);
+                    }
+                } else if ("gesture_long".equals(action)) {
+                    boolean current = sharedPreferencesManager.isPrivacyBlackLongPressEnabled();
+                    if (current && enabledCount <= 1) {
+                        blocked = true;
+                    } else {
+                        sharedPreferencesManager.setPrivacyBlackLongPressEnabled(!current);
+                    }
+                }
+
+                if (blocked) {
+                    Toast.makeText(requireContext(), R.string.privacy_black_min_one_method, Toast.LENGTH_SHORT).show();
+                    // Refresh current sheet to revert the visual switch toggle by dismissing and showing again
+                    androidx.fragment.app.Fragment f = getParentFragmentManager().findFragmentByTag("privacy_black_gestures_sheet");
+                    if (f instanceof androidx.fragment.app.DialogFragment) {
+                        ((androidx.fragment.app.DialogFragment) f).dismiss();
+                    }
+                    showPrivacyBlackGesturesConfig();
+                }
+            }
+        });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
+                .newInstance(getString(R.string.privacy_black_gestures_title), items, null, resultKey, helper, true);
+        sheet.show(getParentFragmentManager(), "privacy_black_gestures_sheet");
     }
 
     private void row_tab_lock_postRefreshOpen(){

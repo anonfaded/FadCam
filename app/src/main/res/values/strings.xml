@@ -1968,4 +1968,17 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="home_sidebar_discord_sub">Join the community</string>
     <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
 
+    <!-- Privacy Black Mode Settings -->
+    <string name="privacy_black_mode_title">Privacy Black Screen</string>
+    <string name="privacy_black_mode_helper">If your device kills the app in the background, you can use this feature to keep the app running in the foreground.\n\nA black screen overlay appears, making it look like the screen is off while recording continues.\n\nTap the FadCam icon in the top header of the Home tab to activate it.</string>
+    <string name="privacy_black_mode_enable_title">Enable Privacy Black Mode</string>
+    <string name="privacy_black_mode_enabled_toast">Privacy Mode Enabled</string>
+    <string name="privacy_black_mode_disabled_toast">Privacy Mode Disabled</string>
+    <string name="privacy_black_gestures_title">Exit Methods</string>
+    <string name="privacy_black_gestures_helper">Choose which gestures can be used to exit Privacy Black Mode.\n\nNote: At least one exit method should remain enabled to prevent getting stuck!</string>
+    <string name="privacy_black_gesture_swipe">Swipe Up to Exit</string>
+    <string name="privacy_black_gesture_triple">Triple Tap to Exit</string>
+    <string name="privacy_black_gesture_long">Long Press to Exit</string>
+    <string name="privacy_black_min_one_method">At least one exit method must remain enabled.</string>
+
 </resources>

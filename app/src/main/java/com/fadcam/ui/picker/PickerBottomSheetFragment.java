@@ -83,6 +83,17 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         String resultKey,
         String helper
     ) {
+        return newInstance(title, items, selectedId, resultKey, helper, false);
+    }
+
+    public static PickerBottomSheetFragment newInstance(
+        String title,
+        ArrayList<OptionItem> items,
+        String selectedId,
+        String resultKey,
+        String helper,
+        boolean hideCheck
+    ) {
         PickerBottomSheetFragment f = newInstance(
             title,
             items,
@@ -91,6 +102,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         );
         if (f.getArguments() != null) {
             f.getArguments().putString(ARG_HELPER_TEXT, helper);
+            f.getArguments().putBoolean(ARG_HIDE_CHECK, hideCheck);
         }
         return f;
     }
@@ -104,14 +116,28 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         String switchTitle,
         boolean switchState
     ) {
+        return newInstanceWithSwitch(title, items, selectedId, resultKey, helper, switchTitle, switchState, false);
+    }
+
+    public static PickerBottomSheetFragment newInstanceWithSwitch(
+        String title,
+        ArrayList<OptionItem> items,
+        String selectedId,
+        String resultKey,
+        String helper,
+        String switchTitle,
+        boolean switchState,
+        boolean hideCheck
+    ) {
         PickerBottomSheetFragment f = newInstance(
             title,
             items,
             selectedId,
-            resultKey
+            resultKey,
+            helper,
+            hideCheck
         );
         if (f.getArguments() != null) {
-            f.getArguments().putString(ARG_HELPER_TEXT, helper);
             f.getArguments().putBoolean(ARG_SWITCH_PRESENT, true);
             f.getArguments().putString(ARG_SWITCH_TITLE, switchTitle);
             f.getArguments().putBoolean(ARG_SWITCH_STATE, switchState);
@@ -1097,8 +1123,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 }
 
                 row.setOnClickListener(v -> {
-                    // Don't handle click for switch items - they handle their own toggle
+                    // Make click toggle the switch for switch items
                     if (item.hasSwitch != null && item.hasSwitch) {
+                        itemSwitch.performClick();
                         return;
                     }
                     // If disabled, show a subtle bounce and optional toast via subtitle, but don't select

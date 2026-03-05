@@ -4279,7 +4279,7 @@ public class RecordingService extends Service {
             if (!hideStopButton) {
                 fullNotificationBuilder.clearActions()
                         .addAction(new NotificationCompat.Action(
-                                R.drawable.ic_stop,
+                                R.drawable.stop_rounded,
                                 getString(R.string.button_stop),
                                 createStopRecordingIntent()));
             }
@@ -4308,14 +4308,14 @@ public class RecordingService extends Service {
 
         // Add resume action
         builder.addAction(new NotificationCompat.Action(
-                R.drawable.ic_play, // Use Play icon for Resume action
+                R.drawable.play_button_rounded, // Use Play icon for Resume action
                 getString(R.string.button_resume),
                 createResumeRecordingIntent()));
 
         // Add stop action only if not hidden
         if (!hideStopButton) {
             builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_stop,
+                    R.drawable.stop_rounded,
                     getString(R.string.button_stop),
                     createStopRecordingIntent()));
         }
@@ -6212,7 +6212,7 @@ public class RecordingService extends Service {
         boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
         if (!hideStopButton) {
             builder.addAction(new NotificationCompat.Action(
-                    R.drawable.ic_stop,
+                    R.drawable.stop_rounded,
                     getString(R.string.button_stop),
                     createStopRecordingIntent()));
         }

@@ -314,7 +314,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (buttonStartStop != null) {
                     buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);  // ALWAYS use full text
                     buttonStartStop.setIcon(
-                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.play_button_rounded)
                     );
                     buttonStartStop.setBackgroundTintList(
                         android.content.res.ColorStateList.valueOf(
@@ -330,7 +330,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (buttonStartStop != null) {
                     buttonStartStop.setText(com.fadcam.R.string.button_stop);
                     buttonStartStop.setIcon(
-                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_stop)
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.stop_rounded)
                     );
                     buttonStartStop.setBackgroundTintList(
                         android.content.res.ColorStateList.valueOf(
@@ -361,11 +361,11 @@ public class FadRecHomeFragment extends HomeFragment {
                 // Icon-only, no text label (like FadCam)
                 if (currentState == ScreenRecordingState.PAUSED) {
                     buttonPauseResume.setIcon(
-                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_play)
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.play_button_rounded)
                     );
                 } else {
                     buttonPauseResume.setIcon(
-                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.ic_pause)
+                        AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.pause_rounded)
                     );
                 }
             }
@@ -1253,7 +1253,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 // IDLE STATE: Green start button
                 buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
                 buttonStartStop.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.play_button_rounded)
                 );
                 // Green color for start button
                 animateButtonColor(buttonStartStop, android.graphics.Color.parseColor("#4CAF50"));
@@ -1261,7 +1261,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 // RECORDING STATE: Red stop button
                 buttonStartStop.setText(com.fadcam.R.string.button_stop);
                 buttonStartStop.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_stop)
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.stop_rounded)
                 );
                 // Red color for stop button
                 animateButtonColor(buttonStartStop, 
@@ -1279,21 +1279,21 @@ public class FadRecHomeFragment extends HomeFragment {
                 buttonPauseResume.setEnabled(false);
                 buttonPauseResume.setAlpha(0.5f);
                 buttonPauseResume.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.pause_rounded)
                 );
             } else if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
                 // Recording: Enable with pause icon (no text label)
                 buttonPauseResume.setEnabled(true);
                 buttonPauseResume.setAlpha(1.0f);
                 buttonPauseResume.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_pause)
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.pause_rounded)
                 );
             } else if (screenRecordingState == ScreenRecordingState.PAUSED) {
                 // Paused: Enable with resume/play icon (no text label)
                 buttonPauseResume.setEnabled(true);
                 buttonPauseResume.setAlpha(1.0f);
                 buttonPauseResume.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.ic_play)
+                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.play_button_rounded)
                 );
             }
         }

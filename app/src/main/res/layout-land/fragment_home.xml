@@ -149,7 +149,7 @@
                         <!-- Elapsed Time Row -->
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="4dp">
 
-                            <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="play_arrow" android:textColor="#4CAF50" android:textSize="20sp" android:gravity="center" />
+                            <ImageView android:layout_width="28dp" android:layout_height="28dp" android:layout_marginEnd="4dp" android:padding="7dp" android:src="@drawable/play_button_rounded" android:tint="#4CAF50" android:contentDescription="Elapsed time icon" android:scaleType="centerInside" />
 
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
@@ -343,9 +343,9 @@
                 <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/colorOnSurface" android:textSize="24sp" android:visibility="gone" />
 
                 <!-- Fullscreen preview button (bottom-right corner overlay) -->
-                <TextView android:id="@+id/btnFullscreenPreview" android:layout_width="36dp" android:layout_height="36dp" android:layout_gravity="bottom|end" android:layout_margin="8dp" android:background="@drawable/fullscreen_icon_bg" android:clickable="true" android:focusable="true" android:fontFamily="@font/materialicons" android:gravity="center" android:text="fullscreen" android:textColor="@android:color/white" android:textSize="20sp" android:visibility="gone" />
+                <ImageView android:id="@+id/btnFullscreenPreview" android:layout_width="36dp" android:layout_height="36dp" android:layout_gravity="bottom|end" android:layout_margin="8dp" android:background="@drawable/fullscreen_icon_bg" android:clickable="true" android:focusable="true" android:src="@drawable/fullscreen_rounded" android:tint="@android:color/white" android:scaleType="centerInside" android:padding="10dp" android:contentDescription="Fullscreen" android:visibility="gone" />
 
-                <TextView
+                <ImageView
                     android:id="@+id/btnCaptureShotPreview"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
@@ -356,11 +356,10 @@
                     android:clickable="true"
                     android:contentDescription="@string/shortcut_take_photo"
                     android:focusable="true"
-                    android:fontFamily="@font/materialicons"
-                    android:gravity="center"
-                    android:text="photo_camera"
-                    android:textColor="@android:color/white"
-                    android:textSize="19sp"
+                    android:src="@drawable/camera_rounded"
+                    android:tint="@android:color/white"
+                    android:scaleType="centerInside"
+                    android:padding="10dp"
                     android:visibility="gone" />
 
                 <LinearLayout
@@ -441,9 +440,9 @@
 
             <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="48dp" android:layout_height="41dp" android:layout_marginEnd="4dp" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="@android:color/transparent" app:backgroundTint="@android:color/transparent" android:enabled="false" app:cornerRadius="15dp" />
 
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonStartStop" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" app:icon="@drawable/ic_play" android:enabled="false" app:backgroundTint="@color/button_start" app:iconTint="@color/white" android:textColor="@color/white" android:text="@string/button_start" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/buttonStartStop" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" app:icon="@drawable/play_button_rounded" app:iconSize="14dp" android:enabled="false" app:backgroundTint="@color/button_start" app:iconTint="@color/white" android:textColor="@color/white" android:text="@string/button_start" />
 
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_pause" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" />
 
             <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:cornerRadius="15dp" />
 

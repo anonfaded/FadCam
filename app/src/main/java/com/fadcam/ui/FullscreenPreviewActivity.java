@@ -1004,10 +1004,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         int iconRes;
         int labelRes;
         if (!isRecordingActive) {
-            iconRes = R.drawable.ic_play;
+            iconRes = R.drawable.play_button_rounded;
             labelRes = R.string.button_start;
         } else {
-            iconRes = isRecordingPaused ? R.drawable.ic_play : R.drawable.ic_pause;
+            iconRes = isRecordingPaused ? R.drawable.play_button_rounded : R.drawable.pause_rounded;
             labelRes = isRecordingPaused ? R.string.button_resume : R.string.button_pause;
         }
         btnFullscreenPauseResume.setIconResource(iconRes);

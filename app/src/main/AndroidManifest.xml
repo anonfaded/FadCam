@@ -380,6 +380,9 @@
         <!-- Transparent dialog activity for project selection -->
         <activity android:name=".fadrec.ui.ProjectSelectionDialogActivity" android:theme="@style/Theme.FadCam.TransparentDialog" android:excludeFromRecents="true" android:exported="false" />
 
+        <!-- Privacy Black Screen Activity -->
+        <activity android:name=".ui.PrivacyBlackActivity" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:screenOrientation="portrait" android:excludeFromRecents="true" android:exported="false" />
+
         <service android:name=".services.TorchService" android:foregroundServiceType="camera" android:exported="true">
         </service>
         

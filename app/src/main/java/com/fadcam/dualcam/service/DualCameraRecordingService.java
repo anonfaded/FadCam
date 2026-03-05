@@ -1373,7 +1373,7 @@ public class DualCameraRecordingService extends Service {
                 .setContentText("Dual camera recording…")
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .addAction(R.drawable.ic_stop, getString(R.string.stop_recording), stopPendingIntent);
+                .addAction(R.drawable.stop_rounded, getString(R.string.stop_recording), stopPendingIntent);
 
         Notification notification = builder.build();
 
