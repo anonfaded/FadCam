@@ -36,16 +36,58 @@ public class FragmentedMp4Remuxer {
     
     /**
      * Checks if a file is a fragmented MP4 that needs remuxing.
-     * This is a simple heuristic based on file structure.
+     *
+     * <p>Inspects the first 64 KB of the file for the presence of a
+     * {@code moof} (movie fragment) box, which is the definitive marker
+     * of a fragmented MP4 container. Fragmented MP4 files recorded by
+     * FadCam (or any other recorder using Media3's FragmentedMp4Muxer)
+     * lack sidx boxes, so ExoPlayer cannot seek within them.</p>
      *
      * @param file The file to check.
      * @return true if the file appears to be a fragmented MP4.
      */
     public boolean needsRemux(File file) {
-        // For now, assume all FadCam recordings are fMP4
-        // A more sophisticated check would parse the file header
+        if (file == null || !file.exists() || !file.canRead()) return false;
         String name = file.getName().toLowerCase();
-        return name.startsWith("fadcam_") && name.endsWith(".mp4");
+        if (!name.endsWith(".mp4")) return false;
+
+        // Scan the first 64 KB of the file for the 'moof' box type.
+        // MP4 box structure: [4-byte size][4-byte type] — we look for ASCII "moof" (0x6D6F6F66).
+        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r")) {
+            int scanLimit = (int) Math.min(raf.length(), 65536);
+            byte[] buf = new byte[scanLimit];
+            raf.readFully(buf);
+
+            // Search for the 'moof' box type in the buffer
+            byte m = (byte) 'm', o = (byte) 'o', f = (byte) 'f';
+            for (int i = 0; i <= buf.length - 4; i++) {
+                if (buf[i] == m && buf[i + 1] == o && buf[i + 2] == o && buf[i + 3] == f) {
+                    // Verify this looks like a valid box: the 4 bytes before 'moof'
+                    // should be the box size (> 8). If i >= 4, check it.
+                    if (i >= 4) {
+                        int boxSize = ((buf[i - 4] & 0xFF) << 24)
+                                    | ((buf[i - 3] & 0xFF) << 16)
+                                    | ((buf[i - 2] & 0xFF) << 8)
+                                    | (buf[i - 1] & 0xFF);
+                        if (boxSize >= 8) {
+                            Log.d(TAG, "Detected fragmented MP4 (moof box at offset "
+                                    + (i - 4) + ", size=" + boxSize + "): " + file.getName());
+                            return true;
+                        }
+                    } else {
+                        // 'moof' at very start — unlikely but still fragmented
+                        Log.d(TAG, "Detected fragmented MP4 (moof at offset 0): " + file.getName());
+                        return true;
+                    }
+                }
+            }
+            Log.d(TAG, "Not a fragmented MP4 (no moof in first " + scanLimit + " bytes): " + file.getName());
+            return false;
+        } catch (IOException e) {
+            Log.w(TAG, "Could not check file for fMP4 structure: " + file.getName(), e);
+            // Fallback: assume FadCam-named files are fragmented
+            return name.startsWith("fadcam_");
+        }
     }
     
     /**

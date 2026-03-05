@@ -420,12 +420,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 initViews();
                 project = loaded;
                 Uri playUri = project.getTimeline().getClip(0).getSourceUri();
-                // Check if the video needs remuxing
+                // Resolve to file:// and check remux
                 File sourceFile = resolveToFile(playUri);
-                if (sourceFile != null && remuxer.needsRemux(sourceFile)) {
-                    if (remuxer.hasRemuxedVersion(sourceFile)) {
-                        File remuxed = remuxer.getRemuxedFile(sourceFile);
-                        playUri = Uri.fromFile(remuxed);
+                if (sourceFile != null) {
+                    if (remuxer.needsRemux(sourceFile) && remuxer.hasRemuxedVersion(sourceFile)) {
+                        playUri = Uri.fromFile(remuxer.getRemuxedFile(sourceFile));
+                    } else {
+                        // Always prefer file:// URI for reliable seeking
+                        playUri = Uri.fromFile(sourceFile);
                     }
                 }
                 continueLoadFromSavedProject(playUri);
@@ -601,13 +603,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 long trimDuration = clip.getOutPointMs() - clip.getInPointMs();
                 long seekPosition = Math.max(0, Math.min(sourceMs - clip.getInPointMs(), trimDuration));
                 if (!clip.isImageClip()) {
-                    // Only seek ExoPlayer for video clips
+                    // Only seek ExoPlayer for video clips.
+                    // Pause FIRST so ExoPlayer renders the decoded frame to TextureView
+                    // (frame only becomes visible when playWhenReady=false and seek completes)
+                    playerManager.pause();
                     playerManager.seekTo(seekPosition);
                 } else {
                     // For image clips: store the seek position for playback resumption
                     imagePlaybackStartOffsetMs = seekPosition;
                 }
-                // Update time display during drag (show absolute project position)
+                // Update both timeline playhead position AND time display during drag
+                // This ensures play() will resume from the correct position when user taps play
+                editorTimeline.setPlayheadFraction(fractionInSegment);
                 updateCurrentTimeDisplay(seekPosition);
             }
 
@@ -790,6 +797,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void attemptRemuxAndLoad(@NonNull Uri videoUri) {
         File sourceFile = resolveToFile(videoUri);
 
+        // Build a file:// URI when the source resolves to a readable file.
+        // This ensures ExoPlayer uses FileDataSource (supports random-access
+        // seeking) instead of ContentDataSource (limited seeking).
+        Uri fileUri = (sourceFile != null) ? Uri.fromFile(sourceFile) : videoUri;
+
         if (sourceFile != null && remuxer.needsRemux(sourceFile)) {
             // Already remuxed?
             if (remuxer.hasRemuxedVersion(sourceFile)) {
@@ -814,7 +826,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                                     Uri.fromFile(new File(outputPath)), videoUri);
                         } else {
                             Log.w(TAG, "Remux failed, loading original (seeking may not work)");
-                            continueLoadWithUri(videoUri, videoUri);
+                            continueLoadWithUri(fileUri, videoUri);
                         }
                     });
                 }
@@ -830,8 +842,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 }
             });
         } else {
-            // No remux needed / not a local file
-            continueLoadWithUri(videoUri, videoUri);
+            // No remux needed — still use file:// URI when available for
+            // reliable seeking and duration extraction.
+            continueLoadWithUri(fileUri, videoUri);
         }
     }
 
@@ -892,28 +905,62 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /**
      * Try to resolve a URI to a local {@link File}.
-     * Handles file:// URIs and SAF content:// URIs (best-effort reconstruction).
+     * Handles file:// URIs and SAF content:// URIs from both internal storage
+     * ("primary") and SD card (e.g. "ABCD-1234") mount points.
      *
-     * @return the File if resolvable, or null
+     * @return the File if resolvable and readable, or null
      */
     @Nullable
     private File resolveToFile(@NonNull Uri uri) {
         if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
             return new File(uri.getPath());
         }
-        // Best-effort: reconstruct from SAF content:// path
-        String path = uri.getPath();
-        if (path != null && path.contains(":")) {
-            int lastColon = path.lastIndexOf(':');
-            if (lastColon >= 0 && lastColon < path.length() - 1) {
-                String rel = path.substring(lastColon + 1);
-                File f = new File("/storage/emulated/0/" + rel);
-                if (f.exists() && f.canRead()) {
-                    return f;
-                }
-            }
+        String resolved = resolveSafPath(uri);
+        if (resolved != null) {
+            File f = new File(resolved);
+            if (f.exists() && f.canRead()) return f;
         }
         return null;
+    }
+
+    /**
+     * Derive an absolute file-system path from a SAF content:// URI.
+     *
+     * <p>SAF document/tree URIs embed the storage ID and relative path in
+     * the URI path segment, separated by a colon, e.g.:<br>
+     * {@code /document/primary:DCIM/Camera/video.mp4}  → internal storage<br>
+     * {@code /document/ABCD-1234:DCIM/Camera/video.mp4} → SD card</p>
+     *
+     * @return absolute path string, or null if the URI cannot be parsed
+     */
+    @Nullable
+    private String resolveSafPath(@NonNull Uri uri) {
+        String uriPath = uri.getPath();
+        if (uriPath == null || !uriPath.contains(":")) return null;
+        try {
+            int lastColon = uriPath.lastIndexOf(':');
+            String encodedRel = uriPath.substring(lastColon + 1);
+            String relativePath = java.net.URLDecoder.decode(encodedRel, "UTF-8");
+
+            // Extract storage ID: the path segment immediately before the colon
+            String beforeColon = uriPath.substring(0, lastColon);
+            int lastSlash = beforeColon.lastIndexOf('/');
+            String encodedId = lastSlash >= 0
+                    ? beforeColon.substring(lastSlash + 1) : beforeColon;
+            String storageId = java.net.URLDecoder.decode(encodedId, "UTF-8");
+
+            // Map storage ID to mount point
+            String mountPoint = "primary".equalsIgnoreCase(storageId)
+                    ? "/storage/emulated/0"
+                    : "/storage/" + storageId;
+
+            String fullPath = mountPoint + "/" + relativePath;
+            Log.d(TAG, "resolveSafPath: storageId='" + storageId + "' → " + fullPath);
+            return fullPath;
+        } catch (Exception e) {
+            Log.w(TAG, "resolveSafPath failed for " + uri, e);
+            return null;
+        }
     }
 
     private void showRemuxProgress() {
@@ -1055,6 +1102,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         playheadHandler.post(playheadUpdater);
                         Log.d(TAG, "Play from audio-tail region: playhead=" + playheadMs + " videoEnd=" + videoEndMs);
                     } else {
+                        // CRITICAL: Ensure player position matches timeline playhead before play
+                        // This fixes the "jumps to start" issue when resuming from a seeked position
+                        long segmentStartMs = editorTimeline.getSegmentStartTimeMs(selectedClipIndex);
+                        long relativePlayheadMs = Math.max(0, playheadMs - segmentStartMs);
+                        playerManager.seekTo(relativePlayheadMs);
+                        
                         playerManager.play();
                         syncAndPlayAudioPlayer();
                     }
@@ -2116,6 +2169,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
             try {
                 if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
                     long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+                    // Guard against seeking past the audio file's actual duration
+                    int mediaDuration = mp.getDuration();
+                    if (mediaDuration > 0 && seekPos >= mediaDuration) {
+                        Log.w(TAG, "AudioPlayer[" + i + "] seekPos=" + seekPos
+                                + " exceeds mediaDuration=" + mediaDuration + ", clamping");
+                        seekPos = Math.max(0, mediaDuration - 100); // seek near end
+                    }
                     mp.seekTo((int) seekPos);
                     float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
                     mp.setVolume(vol, vol);
@@ -2157,6 +2217,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (playheadMs >= audioStartMs && playheadMs < audioEndMs) {
                     if (!mp.isPlaying()) {
                         long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
+                        int mediaDuration = mp.getDuration();
+                        if (mediaDuration > 0 && seekPos >= mediaDuration) {
+                            Log.w(TAG, "AudioSync[" + i + "] seekPos=" + seekPos
+                                    + " exceeds mediaDuration=" + mediaDuration + ", clamping");
+                            seekPos = Math.max(0, mediaDuration - 100);
+                        }
                         mp.seekTo((int) seekPos);
                         float vol = ac.isMuted() ? 0f : ac.getVolumeLevel();
                         mp.setVolume(vol, vol);
@@ -2524,14 +2590,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
             clip.setInPointMs(0);
             clip.setOutPointMs(playerDurationMs);
 
-            // Refresh UI with corrected duration
+            // Refresh UI with corrected duration — but DO NOT reset playhead or player position.
+            // Resetting here caused 'plays from start' because this fires right when the user
+            // presses play (the first STATE_READY after load), overriding the user's seeked position.
             refreshTotalTimeDisplay();
-            updateCurrentTimeDisplay(0);
             editorTimeline.setTrimFromClip(clip);
-            editorTimeline.setPlayheadFraction(0f);
-
-            // Update player trim bounds (no re-prepare needed)
-            playerManager.updateTrimBounds(clip);
+            // Only update player's internal trim bounds (no seek, no playWhenReady change)
+            playerManager.updateTrimEndOnly(playerDurationMs);
         } else {
             Log.d(TAG, "Duration OK: stored=" + storedDuration
                     + "ms, ExoPlayer=" + playerDurationMs + "ms (keeping stored)");
@@ -3182,7 +3247,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
             if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
                 retriever.setDataSource(videoUri.getPath());
             } else {
-                retriever.setDataSource(this, videoUri);
+                // For content:// URIs, try to resolve to a file path first
+                // (ContentResolver-based setDataSource can fail on SD card)
+                String resolvedPath = resolveSafPath(videoUri);
+                if (resolvedPath != null) {
+                    java.io.File f = new java.io.File(resolvedPath);
+                    if (f.exists() && f.canRead()) {
+                        retriever.setDataSource(resolvedPath);
+                    } else {
+                        retriever.setDataSource(this, videoUri);
+                    }
+                } else {
+                    retriever.setDataSource(this, videoUri);
+                }
             }
             String durationStr = retriever.extractMetadata(
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
@@ -3204,24 +3281,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /**
      * Build a file path suitable for FFprobeKit.
-     * Reconstructs /storage/emulated/0 path for SAF content:// URIs.
+     * Uses {@link #resolveSafPath(Uri)} for SAF content:// URIs from
+     * both internal storage and SD card.
      */
     @NonNull
-    private static String getFFprobePathForUri(@NonNull Uri uri) {
+    private String getFFprobePathForUri(@NonNull Uri uri) {
         if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
             return uri.getPath();
         }
-        String path = uri.getPath();
-        if (path != null && path.contains(":")) {
-            int lastColon = path.lastIndexOf(':');
-            if (lastColon >= 0 && lastColon < path.length() - 1) {
-                String rel = path.substring(lastColon + 1);
-                String reconstructed = "/storage/emulated/0/" + rel;
-                java.io.File f = new java.io.File(reconstructed);
-                if (f.exists() && f.canRead()) {
-                    Log.d(TAG, "FFprobe using reconstructed path: " + reconstructed);
-                    return reconstructed;
-                }
+        String resolved = resolveSafPath(uri);
+        if (resolved != null) {
+            java.io.File f = new java.io.File(resolved);
+            if (f.exists() && f.canRead()) {
+                Log.d(TAG, "FFprobe using resolved path: " + resolved);
+                return resolved;
             }
         }
         return "saf:" + uri.toString();
@@ -3385,8 +3458,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             playerManager.pause();
 
-            long currentPositionMs = playerManager.getCurrentPosition();
-            long absoluteSplitMs = clip.getInPointMs() + currentPositionMs;
+            // Derive the split point from the VISUAL timeline playhead (authoritative)
+            // rather than playerManager.getCurrentPosition(), which may not have settled
+            // yet if a seek was still in-flight when the user tapped the split button.
+            long playheadMs = editorTimeline.getPlayheadPositionMs();
+            long segStartMs = editorTimeline.getSegmentStartTimeMs(selectedClipIndex);
+            long localEffectiveMs = Math.max(0, playheadMs - segStartMs);
+            // Convert effective (timeline) time → absolute source position (accounts for speed)
+            long absoluteSplitMs = clip.getInPointMs()
+                    + (long)(localEffectiveMs * clip.getSpeedMultiplier());
+            absoluteSplitMs = Math.max(clip.getInPointMs(),
+                    Math.min(absoluteSplitMs, clip.getOutPointMs()));
+
+            Log.d(TAG, "splitAtPlayhead: playhead=" + playheadMs + " segStart=" + segStartMs
+                    + " local=" + localEffectiveMs + " absoluteSplit=" + absoluteSplitMs);
 
             // Save reference to original clip before split
             Clip originalClip = clip;
@@ -3404,6 +3489,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
             Clip clipB = timeline.getClip(newIndex + 1);
             undoManager.recordAction(new EditActions.SplitClipAction(
                     timeline, originalIndex, originalClip, clipA, clipB));
+
+            // Update the player's trim end to match clip A's new out-point.
+            // Use updateTrimEndOnly so we DON'T trigger an unwanted seekTo(0).
+            // Then park the player 1 ms before the trim end (avoids the edge case where
+            // pos == trimEndMs would let play() think we're out of bounds).
+            playerManager.updateTrimEndOnly(clipA.getOutPointMs());
+            long trimmedMs = clipA.getOutPointMs() - clipA.getInPointMs();
+            if (trimmedMs > 1) {
+                playerManager.seekTo(trimmedMs - 1);
+            }
 
             selectSegment(selectedClipIndex);
             saveProjectNow();

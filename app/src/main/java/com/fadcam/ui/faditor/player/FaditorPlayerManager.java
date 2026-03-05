@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.ui.PlayerView;
 
 import com.fadcam.ui.faditor.model.Clip;
@@ -181,11 +182,31 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         }
     }
 
+    /**
+     * Update ONLY the trim-end bound without seeking or pausing the player.
+     *
+     * <p>Used by duration correction so the corrected end-point is respected
+     * going forward, without disrupting the current playback position.
+     * Contrast with {@link #updateTrimBounds} which also seeks to trimStart.</p>
+     *
+     * @param newTrimEndMs the corrected out-point in absolute source milliseconds
+     */
+    public void updateTrimEndOnly(long newTrimEndMs) {
+        this.trimEndMs = newTrimEndMs;
+        if (currentClip != null) {
+            this.currentClip.setOutPointMs(newTrimEndMs);
+        }
+        Log.d(TAG, "Trim end updated (no seek): trimEnd=" + newTrimEndMs + "ms");
+    }
+
     public void play() {
         if (player != null) {
             long pos = player.getCurrentPosition();
-            // Ensure we start from trim start if at/beyond trim end
-            if (pos < trimStartMs || pos >= trimEndMs) {
+            // Restart from trim start only if strictly BEFORE start or AFTER end.
+            // Using > (not >=) so that a position exactly at trimEndMs (which happens
+            // after a split where the playhead sits on the cut boundary) does NOT
+            // incorrectly reset to position 0.
+            if (pos < trimStartMs || pos > trimEndMs) {
                 player.seekTo(trimStartMs);
             }
             player.play();
@@ -277,10 +298,19 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         absoluteMs = Math.max(trimStartMs, Math.min(absoluteMs, trimEndMs));
 
         int state = player.getPlaybackState();
-        if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
+        // Seek is valid in READY, BUFFERING, and ENDED.
+        // In ENDED, calling seekTo() revives the player back to BUFFERING → READY
+        // so the new frame renders.  Previously we only queued a pendingSeekMs here,
+        // which never fired (STATE_READY never fires again from ENDED without a new
+        // seekTo), leaving the player stuck at the last frame and causing
+        // "plays from 0" when play() was pressed after the user scrubbed.
+        if (state == Player.STATE_READY
+                || state == Player.STATE_BUFFERING
+                || state == Player.STATE_ENDED) {
             player.seekTo(absoluteMs);
             pendingSeekMs = -1;
-            Log.d(TAG, "Seek to " + positionMs + "ms (rel) / " + absoluteMs + "ms (abs)");
+            Log.d(TAG, "Seek to " + positionMs + "ms (rel) / " + absoluteMs + "ms (abs)"
+                    + " state=" + state);
         } else {
             pendingSeekMs = absoluteMs;
             Log.d(TAG, "Seek to " + positionMs + "ms (queued, state=" + state + ")");
@@ -299,7 +329,9 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         absoluteMs = Math.max(0, absoluteMs);
 
         int state = player.getPlaybackState();
-        if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
+        if (state == Player.STATE_READY
+                || state == Player.STATE_BUFFERING
+                || state == Player.STATE_ENDED) {
             player.seekTo(absoluteMs);
             pendingSeekMs = -1;
         } else {
@@ -388,6 +420,10 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         try {
             player = new ExoPlayer.Builder(context).build();
             player.setRepeatMode(Player.REPEAT_MODE_OFF);
+            // Use keyframe-accurate seeking for scrubbing: jumps to the nearest
+            // sync frame instantly instead of decoding every intermediate frame.
+            // This makes live preview during timeline drag fast and responsive.
+            player.setSeekParameters(SeekParameters.CLOSEST_SYNC);
             player.addListener(internalListener);
 
             if (playerView != null) {
@@ -460,6 +496,9 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
      * recorded by FadCam, this means seeks silently fail. Converting to
      * file:// enables {@code FileDataSource} with proper seeking.</p>
      *
+     * <p>Handles both internal storage ("primary" → /storage/emulated/0)
+     * and SD card ("ABCD-1234" → /storage/ABCD-1234) mount points.</p>
+     *
      * @param uri the original URI (may be content://, file://, or other)
      * @return file:// URI if the file exists on disk, otherwise the original URI
      */
@@ -470,19 +509,38 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             return uri;
         }
 
-        // Try to reconstruct a file path from SAF content:// URI
-        String path = uri.getPath();
-        if (path != null && path.contains(":")) {
-            int lastColon = path.lastIndexOf(':');
-            if (lastColon >= 0 && lastColon < path.length() - 1) {
-                String rel = path.substring(lastColon + 1);
-                String reconstructed = "/storage/emulated/0/" + rel;
-                java.io.File f = new java.io.File(reconstructed);
+        // Parse SAF content:// URI — handles both primary and SD card storage IDs
+        // URI path format: /document/STORAGE_ID:relative/path/to/file.mp4
+        // STORAGE_ID is "primary" for internal storage or e.g. "ABCD-1234" for SD card
+        String uriPath = uri.getPath();
+        if (uriPath != null && uriPath.contains(":")) {
+            try {
+                int lastColon = uriPath.lastIndexOf(':');
+                String encodedRel = uriPath.substring(lastColon + 1);
+                String relativePath = java.net.URLDecoder.decode(encodedRel, "UTF-8");
+
+                // Storage ID is the path segment immediately before the colon
+                String beforeColon = uriPath.substring(0, lastColon);
+                int lastSlash = beforeColon.lastIndexOf('/');
+                String encodedId = lastSlash >= 0
+                        ? beforeColon.substring(lastSlash + 1) : beforeColon;
+                String storageId = java.net.URLDecoder.decode(encodedId, "UTF-8");
+
+                // Map storage ID → mount point
+                String mountPoint = "primary".equalsIgnoreCase(storageId)
+                        ? "/storage/emulated/0"
+                        : "/storage/" + storageId;
+
+                java.io.File f = new java.io.File(mountPoint + "/" + relativePath);
                 if (f.exists() && f.canRead()) {
                     Uri fileUri = Uri.fromFile(f);
-                    Log.d(TAG, "Resolved content:// → file:// : " + fileUri);
+                    Log.d(TAG, "Resolved content:// → file:// (storageId='" + storageId + "'): " + fileUri);
                     return fileUri;
+                } else {
+                    Log.w(TAG, "Resolved path does not exist: " + f.getAbsolutePath());
                 }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to parse SAF URI path: " + uri, e);
             }
         }
 
