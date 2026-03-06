@@ -32,6 +32,7 @@ import com.fadcam.ui.FaditorMiniFragment;
 import com.fadcam.ui.SettingsHomeFragment;
 import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
 import com.fadcam.ui.utils.NewFeatureManager;
+import com.fadcam.utils.RuntimeCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -398,8 +399,13 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             } else {
                 // User HAS completed onboarding - show What's New screen instead
-                Intent intent = new Intent(this, com.fadcam.ui.WhatsNewActivity.class);
-                startActivity(intent);
+                // Skip WhatsNewActivity on Wear OS: WebView is not supported
+                if (!RuntimeCompat.isWatchDevice(this)) {
+                    Intent intent = new Intent(this, com.fadcam.ui.WhatsNewActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return;
+                }
             }
             finish(); // Finish this activity so it's not in the back stack
             return;

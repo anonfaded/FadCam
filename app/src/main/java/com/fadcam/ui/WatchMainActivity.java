@@ -1,0 +1,133 @@
+package com.fadcam.ui;
+
+import android.os.Bundle;
+import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
+
+import com.fadcam.Constants;
+import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
+
+/**
+ * Watch-optimized main activity for Wear OS smartwatch devices.
+ *
+ * <p>4-page swipe navigation:</p>
+ * <ol>
+ *   <li>Camera — {@link WatchCameraFragment}</li>
+ *   <li>Records — {@link WatchRecordsFragment}</li>
+ *   <li>Remote  — {@link WatchRemoteFragment}</li>
+ *   <li>Settings — {@link WatchSettingsFragment}</li>
+ * </ol>
+ *
+ * <p>An overlay FrameLayout ({@code R.id.overlay_fragment_container}) allows
+ * full-screen overlay fragments (e.g. {@link TrashFragment}) to be shown via
+ * {@link OverlayNavUtil}.</p>
+ */
+public class WatchMainActivity extends AppCompatActivity {
+
+    private static final int PAGE_COUNT = 4;
+
+    private ViewPager2 viewPager;
+    private final View[] dots = new View[PAGE_COUNT];
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        applyTheme(); // Must be called before setContentView()
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_watch_main);
+
+        viewPager = findViewById(R.id.watch_viewpager);
+        dots[0]   = findViewById(R.id.dot_0);
+        dots[1]   = findViewById(R.id.dot_1);
+        dots[2]   = findViewById(R.id.dot_2);
+        dots[3]   = findViewById(R.id.dot_3);
+
+        viewPager.setAdapter(new WatchPagerAdapter(this));
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                updateDots(position);
+            }
+        });
+
+        updateDots(0);
+    }
+
+    /** Disable viewpager swiping while an overlay is showing. */
+    public void setSwipeEnabled(boolean enabled) {
+        viewPager.setUserInputEnabled(enabled);
+    }
+
+    private void updateDots(int selectedPage) {
+        for (int i = 0; i < PAGE_COUNT; i++) {
+            if (dots[i] != null) {
+                dots[i].setBackgroundResource(
+                        i == selectedPage
+                                ? R.drawable.watch_dot_selected
+                                : R.drawable.watch_dot_unselected);
+            }
+        }
+    }
+
+    private static final class WatchPagerAdapter extends FragmentStateAdapter {
+        WatchPagerAdapter(@NonNull FragmentActivity fa) {
+            super(fa);
+        }
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            switch (position) {
+                case 1:  return new WatchRecordsFragment();
+                case 2:  return new WatchRemoteFragment();
+                case 3:  return new WatchSettingsFragment();
+                default: return new WatchCameraFragment();
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return PAGE_COUNT;
+        }
+    }
+
+    /**
+     * Applies the user-selected theme before any views are created.
+     * Mirrors the logic in {@link com.fadcam.MainActivity#applyTheme()}.
+     * Must be called BEFORE {@link #setContentView}.
+     */
+    private void applyTheme() {
+        SharedPreferencesManager sp = SharedPreferencesManager.getInstance(this);
+        String themeName = sp.sharedPreferences.getString(
+                Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
+        if (themeName == null || themeName.isEmpty()) {
+            themeName = Constants.DEFAULT_APP_THEME;
+        }
+        if ("Faded Night".equals(themeName) || "AMOLED".equals(themeName) || "amoled".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_Amoled);
+        } else if ("Crimson Bloom".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_Red);
+        } else if ("Premium Gold".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_Gold);
+        } else if ("Silent Forest".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_SilentForest);
+        } else if ("Shadow Alloy".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_ShadowAlloy);
+        } else if ("Pookie Pink".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_PookiePink);
+        } else if ("Snow Veil".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_SnowVeil);
+        } else if ("Midnight Dusk".equals(themeName)) {
+            setTheme(R.style.Theme_FadCam_MidnightDusk);
+        } else {
+            // Default fallback — matches Constants.DEFAULT_APP_THEME
+            setTheme(R.style.Theme_FadCam_Red);
+        }
+    }
+}

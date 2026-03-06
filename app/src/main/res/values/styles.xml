@@ -165,4 +165,18 @@
         <item name="pickerGradientMid">#FF1A1A1A</item>
         <item name="pickerGradientEnd">#FF2A2A2A</item>
     </style>
+
+    <!-- Dark delete confirmation dialog with red action buttons.
+         Extends AppCompat dark dialog to always show dark background regardless of device theme. -->
+    <style name="WatchDeleteConfirmDialog" parent="Theme.AppCompat.Dialog.Alert">
+        <!-- Panel / window background — force dark -->
+        <item name="android:background">#1A1A1A</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- Text colors to white -->
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <!-- Button text color via accent -->
+        <item name="colorAccent">#CC2222</item>
+    </style>
+
 </resources>

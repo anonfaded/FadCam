@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_watch_trash.xml
+    Single row in the watch "Recently Deleted" list.
+    Thumbnail (left) + name / date (right) + action icons.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="52dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/settings_home_row_bg"
+    android:layout_marginBottom="4dp"
+    android:paddingHorizontal="6dp">
+
+    <!-- Thumbnail with rounded corners (smaller to give more text space) -->
+    <ImageView
+        android:id="@+id/iv_watch_trash_thumb"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:scaleType="centerCrop"
+        android:background="@null"
+        android:contentDescription="thumbnail" />
+
+    <!-- Name + date -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:id="@+id/tv_watch_trash_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/tv_watch_trash_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#888888"
+            android:textSize="8sp"
+            android:layout_marginTop="2dp" />
+
+    </LinearLayout>
+
+    <!-- Restore icon -->
+    <TextView
+        android:id="@+id/btn_watch_trash_restore"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:fontFamily="@font/materialicons"
+        android:text="restore"
+        android:textColor="#4CAF50"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:layout_marginEnd="2dp"
+        android:contentDescription="@string/universal_restore" />
+
+    <!-- Delete icon -->
+    <TextView
+        android:id="@+id/btn_watch_trash_delete"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:fontFamily="@font/materialicons"
+        android:text="delete_forever"
+        android:textColor="#FF5252"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:contentDescription="@string/watch_trash_delete_one" />
+
+</LinearLayout>

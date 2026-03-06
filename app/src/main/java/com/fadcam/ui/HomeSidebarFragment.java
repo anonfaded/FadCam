@@ -249,7 +249,10 @@ public class HomeSidebarFragment extends DialogFragment {
     }
 
     private void openWhatsNew() {
-        // Open WhatsNewActivity
+        // WhatsNewActivity uses WebView which is not supported on Wear OS — skip on watch.
+        try {
+            if (com.fadcam.utils.RuntimeCompat.isWatchDevice(requireContext())) return;
+        } catch (Exception ignored) {}
         android.content.Intent intent = new android.content.Intent(requireContext(), com.fadcam.ui.WhatsNewActivity.class);
         startActivity(intent);
     }

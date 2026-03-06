@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- Page title -->
+    <TextView
+        android:id="@+id/tv_watch_remote_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/watch_remote_title"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="22dp" />
+
+    <!-- Streaming toggle -->
+    <com.fadcam.ui.AvatarToggleView
+        android:id="@+id/watch_remote_toggle"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_watch_remote_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/tv_watch_remote_status"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Streaming status label -->
+    <TextView
+        android:id="@+id/tv_watch_remote_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/watch_remote_stream_off"
+        android:textColor="#AAAAAA"
+        android:textSize="10sp"
+        android:gravity="center"
+        app:layout_constraintBottom_toTopOf="@id/tv_watch_remote_url"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Stream URL (truncated) -->
+    <TextView
+        android:id="@+id/tv_watch_remote_url"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#666666"
+        android:textSize="8sp"
+        android:gravity="center"
+        android:maxLines="2"
+        android:ellipsize="middle"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="24dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

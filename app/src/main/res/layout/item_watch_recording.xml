@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Watch recording list item — thumbnail + title + relative date + size + 3-dot menu -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="7dp"
+    android:paddingBottom="7dp"
+    android:paddingStart="2dp"
+    android:paddingEnd="2dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Video thumbnail with rounded corners  -->
+    <ImageView
+        android:id="@+id/iv_watch_rec_thumb"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:scaleType="centerCrop"
+        android:background="@null"
+        android:contentDescription="@string/watch_records_title" />
+
+    <!-- Text group -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="4dp">
+
+        <!-- File name (no extension) -->
+        <TextView
+            android:id="@+id/tv_watch_rec_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <!-- Relative date -->
+        <TextView
+            android:id="@+id/tv_watch_rec_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#AAAAAA"
+            android:textSize="9sp"
+            android:layout_marginTop="1dp"
+            android:singleLine="true" />
+
+        <!-- File size -->
+        <TextView
+            android:id="@+id/tv_watch_rec_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#666666"
+            android:textSize="9sp"
+            android:singleLine="true" />
+
+    </LinearLayout>
+
+    <!-- 3-dot menu button -->
+    <ImageView
+        android:id="@+id/btn_watch_rec_menu"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_more_vert"
+        android:tint="#FFFFFF"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="2dp"
+        android:contentDescription="@string/watch_video_menu_desc" />
+
+</LinearLayout>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    fragment_watch_trash.xml
+    Watch-optimised "Recently Deleted" screen.
+    Round-safe: all content is horizontally centred.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/black">
+
+    <!-- Header: balanced row centred on-screen so back button stays inside inscribed circle -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="28dp"
+        android:layout_marginBottom="6dp">
+
+        <!-- Back button — left balanced by right spacer -->
+        <ImageView
+            android:id="@+id/btn_watch_trash_back"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_close"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/watch_back_desc" />
+
+        <Space android:layout_width="8dp" android:layout_height="1dp" />
+
+        <!-- Title centred within the row -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_trash_title"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:letterSpacing="0.06" />
+
+        <Space android:layout_width="8dp" android:layout_height="1dp" />
+
+        <!-- Balancing right spacer -->
+        <View android:layout_width="16dp" android:layout_height="16dp" />
+
+    </LinearLayout>
+
+    <!-- Item list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_watch_trash"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="12dp"
+        android:clipToPadding="false" />
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/tv_watch_trash_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="@string/watch_trash_empty"
+        android:textColor="#666666"
+        android:textSize="10sp"
+        android:gravity="center"
+        android:visibility="gone" />
+
+    <!-- Delete All button -->
+    <TextView
+        android:id="@+id/btn_watch_trash_delete_all"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:text="@string/watch_trash_delete_all"
+        android:textColor="#FF5252"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:background="@drawable/settings_home_row_bg"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="20dp"
+        android:layout_marginTop="6dp" />
+
+</LinearLayout>

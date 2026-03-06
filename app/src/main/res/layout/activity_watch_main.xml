@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Watch-optimized activity layout.
+    ViewPager2 for swipe navigation; overlay FrameLayout for TrashFragment etc.
+    Dots at bottom indicate current page.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Swipeable pages: Camera / Records / Remote / Settings -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/watch_viewpager"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Page dot indicator — 4 dots -->
+    <LinearLayout
+        android:id="@+id/watch_page_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="5dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <View android:id="@+id/dot_0" android:layout_width="5dp" android:layout_height="5dp"
+            android:layout_marginEnd="3dp" android:background="@drawable/watch_dot_selected" />
+        <View android:id="@+id/dot_1" android:layout_width="5dp" android:layout_height="5dp"
+            android:layout_marginEnd="3dp" android:background="@drawable/watch_dot_unselected" />
+        <View android:id="@+id/dot_2" android:layout_width="5dp" android:layout_height="5dp"
+            android:layout_marginEnd="3dp" android:background="@drawable/watch_dot_unselected" />
+        <View android:id="@+id/dot_3" android:layout_width="5dp" android:layout_height="5dp"
+            android:background="@drawable/watch_dot_unselected" />
+
+    </LinearLayout>
+
+    <!-- Overlay container for TrashFragment and other full-screen overlays -->
+    <FrameLayout
+        android:id="@+id/overlay_fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Minimal watch-optimised video player layout.
+    Full-screen black background; controls overlay tap-to-show/hide.
+    Designed for round watch screens with all content within safe zone.
+-->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- ExoPlayer surface — fills full screen -->
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/watch_player_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        app:use_controller="false"
+        app:resize_mode="fit" />
+
+    <!-- Controls overlay (alpha-animated, tap anywhere to toggle) -->
+    <FrameLayout
+        android:id="@+id/watch_player_controls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000">
+
+        <!-- Back button — within round screen safe zone -->
+        <ImageView
+            android:id="@+id/watch_player_back"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_close"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_gravity="top|start"
+            android:layout_marginTop="32dp"
+            android:layout_marginStart="36dp"
+            android:contentDescription="@string/back" />
+
+        <!-- Video title at top center -->
+        <TextView
+            android:id="@+id/watch_player_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="34dp"
+            android:layout_marginStart="68dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:gravity="start" />
+
+        <!-- Play / Pause button — centred -->
+        <ImageView
+            android:id="@+id/watch_player_play_pause"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_pause"
+            android:tint="#FFFFFF"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="4dp"
+            android:layout_gravity="center" />
+
+        <!-- Seek bar — above bottom position text -->
+        <SeekBar
+            android:id="@+id/watch_player_seek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="40dp"
+            android:layout_marginStart="44dp"
+            android:layout_marginEnd="44dp"
+            android:max="1000"
+            android:progress="0"
+            android:progressTint="#FFFFFF"
+            android:thumbTint="#FFFFFF"
+            android:progressBackgroundTint="#44FFFFFF" />
+
+        <!-- Position text — bottom center -->
+        <TextView
+            android:id="@+id/watch_player_position"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="20dp"
+            android:textColor="#CCCCCC"
+            android:textSize="9sp"
+            android:fontFamily="monospace"
+            android:text="0:00 / 0:00" />
+
+    </FrameLayout>
+
+</FrameLayout>

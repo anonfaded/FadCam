@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Watch camera home screen.
+    All elements positioned within the inscribed circle of round watch displays.
+    Hamburger + logo share a centered header row, storage shows icon + text,
+    icon columns use fixed widths so label text never shifts icons.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- ── Header: logo only, centred at top of safe zone ── -->
+    <LinearLayout
+        android:id="@+id/ll_watch_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_watch_app_title"
+            android:layout_width="68dp"
+            android:layout_height="16dp"
+            android:src="@drawable/menu_icon_unknown"
+            android:scaleType="fitCenter"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/app_name" />
+
+    </LinearLayout>
+
+    <!-- ── Hamburger: aligned with mic icon column (outer-left) ── -->
+    <!-- Quick row has 4 columns × 38dp = 152dp, centered. First column center is at 19dp from quick_row start -->
+    <!-- Constrain hamburger between quick_row start and its center (19dp) to center it in first column -->
+    <ImageView
+        android:id="@+id/btn_watch_hamburger"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:src="@drawable/ic_home_hamburger"
+        android:tint="@android:color/white"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/watch_hamburger_desc"
+        app:layout_constraintTop_toBottomOf="@id/ll_watch_header"
+        app:layout_constraintStart_toStartOf="@id/ll_watch_quick_row"
+        app:layout_constraintEnd_toEndOf="@id/ll_watch_quick_row"
+        app:layout_constraintHorizontal_bias="0.132" />
+
+    <!-- ── Storage row: storage icon + free space text ── -->
+    <LinearLayout
+        android:id="@+id/ll_watch_storage_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="3dp"
+        app:layout_constraintTop_toBottomOf="@id/btn_watch_hamburger"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/watch_avatar_toggle"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="0.45">
+
+        <ImageView
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:src="@drawable/database_24px"
+            android:tint="#2196F3"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/watch_storage_desc" />
+
+        <Space android:layout_width="3dp" android:layout_height="1dp" />
+
+        <TextView
+            android:id="@+id/tv_watch_storage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="&#x2014;"
+            android:textColor="#555555"
+            android:textSize="8sp"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+    </LinearLayout>
+
+    <!-- ── Central avatar toggle ── -->
+    <com.fadcam.ui.AvatarToggleView
+        android:id="@+id/watch_avatar_toggle"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintTop_toBottomOf="@id/ll_watch_storage_row"
+        app:layout_constraintBottom_toTopOf="@id/tv_watch_timer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="4dp" />
+
+    <!-- ── Recording timer (hidden until recording starts) ── -->
+    <TextView
+        android:id="@+id/tv_watch_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textColor="#FF5252"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/watch_avatar_toggle"
+        app:layout_constraintBottom_toTopOf="@id/ll_watch_quick_row"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp" />
+
+    <!-- ── Quick-action arc row: outer icons (Audio, Shot) float higher; inner stay at bottom ──
+         Arc effect: outer cols have layout_marginBottom=22dp, inner have 4dp. -->
+    <LinearLayout
+        android:id="@+id/ll_watch_quick_row"
+        android:layout_width="wrap_content"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Audio column — outer-left: raised via marginBottom -->
+        <LinearLayout
+            android:layout_width="38dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="22dp">
+
+            <ImageView
+                android:id="@+id/iv_watch_audio_toggle"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_mic"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="1dp"
+                android:contentDescription="@string/watch_audio_toggle_desc" />
+
+            <TextView
+                android:id="@+id/tv_watch_audio_label"
+                android:layout_width="38dp"
+                android:layout_height="wrap_content"
+                android:text="@string/watch_audio_on"
+                android:textColor="#FFFFFF"
+                android:textSize="7sp"
+                android:gravity="center"
+                android:singleLine="true"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Pause / Resume column — inner-left: stays at bottom -->
+        <LinearLayout
+            android:layout_width="38dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="4dp">
+
+            <ImageView
+                android:id="@+id/iv_watch_pause_resume"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_pause"
+                android:tint="#444444"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="1dp"
+                android:contentDescription="@string/watch_pause_desc" />
+
+            <TextView
+                android:id="@+id/tv_watch_pause_label"
+                android:layout_width="38dp"
+                android:layout_height="wrap_content"
+                android:text="@string/watch_pause_label"
+                android:textColor="#888888"
+                android:textSize="7sp"
+                android:gravity="center"
+                android:singleLine="true"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Fullscreen column — inner-right: stays at bottom -->
+        <LinearLayout
+            android:layout_width="38dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:id="@+id/iv_watch_fullscreen"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:fontFamily="@font/materialicons"
+                android:text="fullscreen"
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/watch_fullscreen_desc" />
+
+            <TextView
+                android:layout_width="38dp"
+                android:layout_height="wrap_content"
+                android:text="@string/watch_fullscreen_label"
+                android:textColor="#888888"
+                android:textSize="7sp"
+                android:gravity="center"
+                android:singleLine="true"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- FadShot column — outer-right: raised via marginBottom -->
+        <LinearLayout
+            android:layout_width="38dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="22dp">
+
+            <TextView
+                android:id="@+id/iv_watch_fadshot"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:fontFamily="@font/materialicons"
+                android:text="add_a_photo"
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/watch_fadshot_desc" />
+
+            <TextView
+                android:layout_width="38dp"
+                android:layout_height="wrap_content"
+                android:text="@string/watch_fadshot_label"
+                android:textColor="#888888"
+                android:textSize="7sp"
+                android:gravity="center"
+                android:singleLine="true"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

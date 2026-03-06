@@ -160,6 +160,15 @@
     <string name="video_menu_save_move">Move to Gallery</string>
     <string name="video_menu_save_move_desc">Move file to Downloads/FadCam (saves storage space)</string>
     <string name="video_menu_save_longpress_helper">Long press "Save to Gallery" to choose between copy or move</string>
+    <string name="watch_video_saved_toast">Saved to Downloads/FadCam</string>
+    <string name="watch_delete_confirm_title">Move to Trash?</string>
+    <string name="watch_delete_confirm_msg">"%s" will be moved to trash.</string>
+    <string name="watch_delete_confirm_action">Move to Trash</string>
+    <string name="watch_perm_delete_title">Permanently Delete?</string>
+    <string name="watch_perm_delete_msg">"%s" will be permanently deleted and cannot be recovered.</string>
+    <string name="watch_perm_delete_action">Delete Forever</string>
+    <string name="watch_perm_delete_all_title">Delete All?</string>
+    <string name="watch_perm_delete_all_msg">All %d item(s) in trash will be permanently deleted and cannot be recovered.</string>
 
     <!-- File Operation Completion Messages -->
     <string name="file_operation_copied_to_gallery">%1$s copied to Gallery</string>
@@ -1981,5 +1990,45 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="privacy_black_gesture_long">Long Press to Exit</string>
     <string name="privacy_black_min_one_method">At least one exit method must remain enabled.</string>
     <string name="privacy_black_enable_needed_hint">First enable Privacy Black Screen in Security Settings</string>
+
+    <!-- Watch (Wear OS) UI strings -->
+    <string name="watch_status_recording">● REC</string>
+    <string name="watch_status_paused">⏸ PAUSED</string>
+    <string name="watch_audio_toggle_desc">Toggle audio recording</string>
+    <string name="watch_cam_flip_desc">Flip camera</string>
+    <string name="watch_hamburger_desc">Open menu</string>
+    <string name="watch_video_menu_desc">Video options</string>
+    <string name="watch_storage_desc">Storage</string>
+    <string name="watch_back_desc">Back</string>
+    <string name="watch_audio_label">Audio</string>
+    <string name="watch_cam_label">Camera</string>
+    <string name="watch_cam_front">Front</string>
+    <string name="watch_cam_back">Back</string>
+    <string name="watch_remote_title">Remote</string>
+    <string name="watch_remote_stream_on">Streaming ON</string>
+    <string name="watch_remote_stream_off">Tap to stream</string>
+    <string name="watch_settings_title">Settings</string>
+    <string name="watch_settings_camera">Camera</string>
+    <string name="watch_settings_audio">Audio</string>
+    <string name="watch_settings_video">Video</string>
+    <string name="watch_settings_security">Security</string>
+    <string name="watch_records_title">Recordings</string>
+    <string name="watch_records_empty">No recordings yet</string>
+    <string name="watch_audio_on">Mic On</string>
+    <string name="watch_audio_muted">Muted</string>
+    <string name="watch_pause_label">Pause</string>
+    <string name="watch_resume_label">Resume</string>
+    <string name="watch_pause_desc">Pause or resume recording</string>
+    <string name="watch_fullscreen_label">View</string>
+    <string name="watch_fullscreen_desc">Fullscreen</string>
+    <string name="watch_fadshot_label">Shot</string>
+    <string name="watch_fadshot_desc">Take photo</string>
+    <string name="watch_trash_title">Recently Deleted</string>
+    <string name="watch_trash_empty">Nothing deleted</string>
+    <string name="watch_trash_delete_all">Delete All</string>
+    <string name="watch_trash_delete_one">Delete permanently</string>
+    <string name="video_moved_to_trash">Video moved to trash</string>
+    <string name="watch_fullscreen_hint">Camera is recording</string>
+    <string name="watch_fullscreen_not_recording">Not recording</string>
 
 </resources>

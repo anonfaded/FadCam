@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- Root external storage -->
     <external-path name="external" path="." />
+    
+    <!-- App-specific external files directory (getExternalFilesDir()) -->
     <external-files-path name="external_files" path="." />
+    <external-files-path name="fadcam_files" path="FadCam" />
+    
+    <!-- Cache directories -->
     <cache-path name="cache" path="." />
     <external-cache-path name="external_cache" path="." />
+    
+    <!-- Internal files directory -->
     <files-path name="internal_files" path="." />
+    
+    <!-- Root of all storage for broader access -->
+    <root-path name="root" path="" />
 </paths>

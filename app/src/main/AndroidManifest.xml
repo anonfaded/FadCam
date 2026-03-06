@@ -95,6 +95,14 @@
 
         <activity android:name=".MainActivity" android:launchMode="singleTop" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" android:exported="false" />
 
+        <!-- Watch-optimized activity for Wear OS round-screen devices -->
+        <activity
+            android:name=".ui.WatchMainActivity"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:theme="@style/Base.Theme.FadCam"
+            android:exported="false" />
+
         <!-- Transparent editor activities for proper keyboard handling -->
         <activity android:name="com.fadcam.fadrec.ui.overlay.TextEditorActivity" android:theme="@style/TransparentEditorTheme" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:windowSoftInputMode="adjustResize" android:exported="false" />
 
@@ -238,6 +246,16 @@
         </activity-alias>
 
         <activity android:name=".ui.VideoPlayerActivity" android:theme="@style/Base.Theme.FadCam" />
+        <activity
+            android:name=".ui.WatchVideoPlayerActivity"
+            android:theme="@style/Base.Theme.FadCam"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize" />
+        <activity
+            android:name=".ui.WatchFullscreenActivity"
+            android:theme="@style/Base.Theme.FadCam"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize" />
         <activity android:name=".ui.ImageViewerActivity" android:theme="@style/Base.Theme.FadCam" />
         <activity
             android:name=".ui.FullscreenPreviewActivity"
