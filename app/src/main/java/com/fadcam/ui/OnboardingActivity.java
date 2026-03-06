@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter;
 
 import com.fadcam.MainActivity;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.utils.RuntimeCompat;
 import com.github.appintro.AppIntro;
 import com.github.appintro.AppIntroFragment;
 import com.fadcam.R;
@@ -995,8 +996,11 @@ public class OnboardingActivity extends AppIntro {
         // START: Navigate to What's New screen after onboarding completes
         // Show What's New screen if onboarding display is enabled (which it should be on first install)
         // This ensures the What's New screen appears right after onboarding completes
-        Intent intent = new Intent(this, WhatsNewActivity.class);
-        startActivity(intent);
+        // Skip WhatsNewActivity on Wear OS: WebView is not supported
+        if (!com.fadcam.utils.RuntimeCompat.isWatchDevice(this)) {
+            Intent intent = new Intent(this, WhatsNewActivity.class);
+            startActivity(intent);
+        }
         finish();
         // END: Navigate to What's New screen after onboarding completes
     }

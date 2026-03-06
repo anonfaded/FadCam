@@ -1,5 +1,6 @@
 package com.fadcam.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
@@ -35,11 +36,66 @@ public class WatchMainActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
     private final View[] dots = new View[PAGE_COUNT];
+    private boolean uiInitialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        applyTheme(); // Must be called before setContentView()
         super.onCreate(savedInstanceState);
+
+        // Check for onboarding BEFORE applying theme or setting content view
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+
+        // Check if this is a first install
+        boolean firstInstallChecked = sharedPreferencesManager.sharedPreferences
+                .getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
+
+        if (!firstInstallChecked) {
+            // This is definitely a first install or app data was cleared
+            // Force onboarding to show by setting the flag to false
+            android.util.Log.d("WatchMainActivity", "First install detected! Forcing onboarding to show.");
+            sharedPreferencesManager.sharedPreferences.edit()
+                    .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
+                    .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
+                    .commit(); // Use commit() for immediate effect
+        }
+
+        // Check for onboarding
+        boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
+        boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
+        android.util.Log.d("WatchMainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
+        android.util.Log.d("WatchMainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
+        android.util.Log.d("WatchMainActivity", "Should show onboarding: " + showOnboarding);
+
+        if (showOnboarding) {
+            // User has NOT completed onboarding yet - show full onboarding first
+            Intent intent = new Intent(this, OnboardingActivity.class);
+            startActivity(intent);
+            // Don't finish - let OnboardingActivity return here when completed
+            return;
+        }
+
+        // Onboarding completed, initialize UI
+        initializeUI();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Check if onboarding was completed while we were paused
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
+
+        if (completedOnboarding && !uiInitialized) {
+            // Onboarding just completed, initialize UI now
+            initializeUI();
+        }
+    }
+
+    private void initializeUI() {
+        if (uiInitialized) return; // Already initialized
+
+        applyTheme(); // Must be called before setContentView()
         setContentView(R.layout.activity_watch_main);
 
         viewPager = findViewById(R.id.watch_viewpager);
@@ -57,6 +113,7 @@ public class WatchMainActivity extends AppCompatActivity {
         });
 
         updateDots(0);
+        uiInitialized = true;
     }
 
     /** Disable viewpager swiping while an overlay is showing. */
