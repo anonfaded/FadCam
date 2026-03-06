@@ -2153,6 +2153,72 @@ video {
     transform: scale(0.95);
 }
 
+/* -------- CAMERA SWITCH CARD -------- */
+
+.camera-card {
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    min-height: 38px;
+    transition: border-color 200ms ease;
+}
+
+.camera-card:hover {
+    border-color: #3d4349;
+}
+
+/* Camera Fill – teal when FRONT camera is active */
+.camera-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #00c9ff 0%, #0077cc 100%);
+    opacity: 0;
+    transition: opacity 400ms ease-in-out;
+    z-index: 1;
+}
+
+.camera-card.front .camera-fill {
+    opacity: 1;
+}
+
+/* Camera icon */
+.camera-icon-fa {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    flex-shrink: 0;
+    color: #8b949e;
+    transition: color 300ms ease, transform 500ms ease;
+    line-height: 20px;
+    text-align: center;
+}
+
+.camera-card.front .camera-icon-fa {
+    color: #ffffff;
+    transform: rotate(180deg);
+    text-shadow: 0 0 8px rgba(0, 201, 255, 0.8), 0 0 4px rgba(0, 119, 204, 0.6);
+}
+
+.camera-card.switching .camera-icon-fa {
+    animation: spin-once 400ms ease-in-out;
+}
+
+@keyframes spin-once {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Value text */
+.camera-card.front .torch-value {
+    color: #ffffff;
+}
+
 /* Pulsing animation for recording indicator */
 @keyframes pulse-recording {
     0%, 100% {

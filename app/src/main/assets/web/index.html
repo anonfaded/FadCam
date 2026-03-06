@@ -351,6 +351,24 @@
                     </div>
                 </div>
 
+                <!-- Camera Switch Card -->
+                <div class="torch-card camera-card" id="cameraCard" onclick="toggleCamera()">
+                    <div class="torch-card-inner">
+                        <!-- Background Fill -->
+                        <div class="camera-fill" id="cameraFill"></div>
+                        <!-- Content -->
+                        <div class="torch-content">
+                            <!-- Camera Icon -->
+                            <i class="fas fa-camera-rotate camera-icon-fa" id="cameraIcon"></i>
+                            <!-- Text -->
+                            <div class="torch-text">
+                                <div class="torch-label">Camera</div>
+                                <div class="torch-value" id="cameraState">BACK</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Volume Control Card -->
                 <div class="card-sm card-battery-ios volume-card">
                     <div class="card-clickable battery-card-display" style="cursor: default;">
@@ -2192,6 +2210,27 @@
         }
 
         /**
+         * Toggle camera (BACK ↔ FRONT).
+         * Mirrors how HomeFragment.switchCamera() works:
+         * – Active recording: live camera swap inside RecordingService
+         * – Not recording: updates the camera_selection preference
+         */
+        async function toggleCamera() {
+            console.log('[Camera] Switch requested');
+            const cameraCard = document.getElementById('cameraCard');
+            if (cameraCard) cameraCard.classList.add('switching');
+            setTimeout(() => { if (cameraCard) cameraCard.classList.remove('switching'); }, 450);
+
+            try {
+                await dashboardViewModel.toggleCamera();
+                // State reflects in the next status poll
+            } catch (error) {
+                console.error('[Camera] Failed to switch:', error);
+                showToast('Failed to switch camera');
+            }
+        }
+
+        /**
          * Show codec compatibility dialog when recording with streaming enabled.
          * H.265/HEVC is not supported for HLS streaming in browsers.
          */
@@ -2574,6 +2613,12 @@
                 recordingCard.classList.remove('on');
                 recordingCard.classList.add('off');
             }
+
+            // Camera - reset to BACK when offline
+            const cameraStateEl = document.getElementById('cameraState');
+            const cameraCardEl = document.getElementById('cameraCard');
+            if (cameraStateEl) cameraStateEl.textContent = 'BACK';
+            if (cameraCardEl) cameraCardEl.classList.remove('front');
             
             // Alarm - reset to READY state when offline
             const alarmValueEl = document.getElementById('alarmValue');
@@ -3052,6 +3097,19 @@
                 // REMOVED: Alarm state is already updated earlier in the status sync section (lines 2603-2627)
                 // That section correctly uses remainingMs, not durationMs.
                 // Duplicate code here was overwriting with durationMs (always 30s), causing countdown to never update.
+
+                // Update camera card state
+                const cameraStateEl = document.getElementById('cameraState');
+                const cameraCardEl = document.getElementById('cameraCard');
+                const cameraIconEl = document.getElementById('cameraIcon');
+                if (cameraStateEl && cameraCardEl) {
+                    const isFront = status.cameraType === 'front';
+                    cameraStateEl.textContent = isFront ? 'FRONT' : 'BACK';
+                    cameraCardEl.classList.toggle('front', isFront);
+                    if (cameraIconEl) {
+                        cameraIconEl.title = isFront ? 'Switch to back camera' : 'Switch to front camera';
+                    }
+                }
             }
             
             const serverUrlEl = document.getElementById('serverUrl');

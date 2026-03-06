@@ -364,8 +364,33 @@ class DashboardViewModel {
     }
 
     /**
-     * Toggle server on/off
+     * Switch active camera. If target is omitted the camera toggles BACK ↔ FRONT.
+     * While recording the switch is performed live; otherwise the preference is updated.
+     * @param {string|null} target - 'back', 'front', or null to toggle
+     * @returns {Promise<Object>}
      */
+    async switchCamera(target = null) {
+        try {
+            const result = await apiService.switchCamera(target);
+            console.log('[DashboardViewModel] Camera switched to:', target || 'toggle', result);
+            eventBus.emit('camera-switched', { target, result });
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to switch camera:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Toggle camera (BACK ↔ FRONT) – convenience alias for switchCamera()
+     * @returns {Promise<Object>}
+     */
+    async toggleCamera() {
+        return this.switchCamera(null);
+    }
+
+    /**
     async toggleServer() {
         try {
             const result = await apiService.post('/server/toggle', {});

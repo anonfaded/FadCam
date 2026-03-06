@@ -826,6 +826,10 @@ public class RemoteStreamManager {
             // Get video codec
             String codecName = context != null ? 
                 SharedPreferencesManager.getInstance(context).getVideoCodec().toString() : "unknown";
+
+            // Get active camera type (BACK / FRONT)
+            String cameraTypeName = context != null ?
+                SharedPreferencesManager.getInstance(context).getCameraSelection().toString().toLowerCase() : "back";
             
             // Calculate volume percentage
             float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
@@ -859,6 +863,7 @@ public class RemoteStreamManager {
                 "\"networkHealth\": %s, " +
                 "\"streamQuality\": %s, " +
                 "\"videoCodec\": %s, " +
+                "\"cameraType\": %s, " +
                 "\"torchState\": %s, " +
                 "\"volume\": %d, \"maxVolume\": %d, \"volumePercentage\": %.1f, " +
                 "\"alarm\": {\"isRinging\": %s, \"sound\": %s, \"durationMs\": %d, \"remainingMs\": %d}, " +
@@ -890,6 +895,7 @@ public class RemoteStreamManager {
                 networkHealthJson,
                 qualityJson,
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(codecName),
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(cameraTypeName),
                 isTorchOn(),  // Read from SharedPreferences to get current actual state
                 mediaVolume,
                 maxMediaVolume,

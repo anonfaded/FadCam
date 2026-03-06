@@ -346,6 +346,25 @@ class ApiService {
     }
 
     /**
+     * POST /camera/switch - Switch the active camera (BACK ↔ FRONT).
+     * During active recording the switch happens live; otherwise the preference is saved.
+     * @param {string|null} target - 'back', 'front', or null to toggle
+     * @returns {Promise<Object>} Response data
+     */
+    async switchCamera(target = null) {
+        const params = target ? { to: target.toUpperCase() } : {};
+        return this.post('/camera/switch', params);
+    }
+
+    /**
+     * Toggle camera (BACK ↔ FRONT) – convenience alias for switchCamera()
+     * @returns {Promise<Object>}
+     */
+    async toggleCamera() {
+        return this.switchCamera(null);
+    }
+
+    /**
      * Generic POST request
      * @param {string} endpoint - API endpoint path
      * @param {Object} data - Request body data

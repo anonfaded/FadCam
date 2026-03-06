@@ -124,6 +124,9 @@ class ServerStatus {
         // Torch state
         this.torchOn = data.torchState || false;
 
+        // Camera selection (back / front)
+        this.cameraType = (data.cameraType || 'back').toLowerCase();
+
         // Volume state
         this.volume = data.volume ?? 0;
         this.maxVolume = data.maxVolume ?? 15;

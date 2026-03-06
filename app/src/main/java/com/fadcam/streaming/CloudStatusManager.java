@@ -2,6 +2,7 @@ package com.fadcam.streaming;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -616,38 +617,252 @@ public class CloudStatusManager {
     }
     
     /**
-     * Execute a command by calling the local LiveM3U8Server endpoint.
-     * 
-     * Dashboard converts endpoint to action: "/audio/volume" → "audio_volume"
-     * We convert back: "audio_volume" → "/audio/volume"
-     * 
-     * This ensures dashboard and local streaming use the SAME endpoint paths.
+     * Execute a command by calling Android services directly.
+     * The HTTP server (LiveM3U8Server) is disabled in cloud mode for security,
+     * so all commands must be dispatched via intents/direct method calls.
      */
     private void executeCommand(String cmdId, JSONObject command) {
         try {
             String action = command.getString("action");
             Log.i(TAG, "☁️ Executing cloud command: " + action);
-            
-            // Convert action back to endpoint path
-            // Dashboard did: "/audio/volume" → "audio_volume"
-            // We undo it:    "audio_volume" → "/audio/volume"
-            String endpoint = "/" + action.replace("_", "/");
-            
-            // Build request body from params (if present)
-            // LiveM3U8Server expects JSON bodies for most endpoints
-            String requestBody = null;
-            if (command.has("params")) {
-                JSONObject params = command.getJSONObject("params");
-                if (params.length() > 0) {
-                    // Pass params as JSON - server will parse it
-                    requestBody = params.toString();
+
+            RemoteStreamManager manager = RemoteStreamManager.getInstance();
+            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
+
+            if ("torch_toggle".equals(action)) {
+                // Update state in RemoteStreamManager so the dashboard reflects it
+                boolean newState = !manager.isTorchOn();
+                manager.setTorchState(newState);
+
+                // Always delegate to TorchService. It already has the correct routing:
+                //   - if recording is in progress → delegates to RecordingService (CaptureRequest)
+                //   - otherwise → CameraManager.setTorchMode() directly
+                // Sending to RecordingService directly fails when not recording because
+                // RecordingService has no active camera session in stream_only mode.
+                android.content.Intent intent = new android.content.Intent(
+                        context, com.fadcam.services.TorchService.class);
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_TORCH);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent);
+                } else {
+                    context.startService(intent);
                 }
+                Log.i(TAG, "✅ Cloud torch toggle sent to TorchService. New state: " + newState);
+
+            } else if ("recording_toggle".equals(action)) {
+                // Start / stop / resume-if-paused – mirrors LiveM3U8Server.toggleRecording()
+                boolean isRecording = spManager.isRecordingInProgress();
+                boolean isPaused = manager.isPaused();
+
+                android.content.Intent intent = new android.content.Intent(
+                        context, com.fadcam.services.RecordingService.class);
+                if (isPaused) {
+                    intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
+                    Log.d(TAG, "☁️ recording_toggle: recording paused → RESUME");
+                } else if (isRecording) {
+                    intent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_RECORDING);
+                    Log.d(TAG, "☁️ recording_toggle: recording active → STOP");
+                } else {
+                    intent.setAction(com.fadcam.Constants.INTENT_ACTION_START_RECORDING);
+                    Log.d(TAG, "☁️ recording_toggle: not recording → START");
+                }
+                com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+                Log.i(TAG, "✅ Cloud recording toggle executed");
+
+            } else if ("recording_pause".equals(action)) {
+                if (!spManager.isRecordingInProgress()) {
+                    Log.w(TAG, "☁️ recording_pause: not recording, ignoring");
+                } else {
+                    android.content.Intent intent = new android.content.Intent(
+                            context, com.fadcam.services.RecordingService.class);
+                    intent.setAction(com.fadcam.Constants.INTENT_ACTION_PAUSE_RECORDING);
+                    com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+                    Log.i(TAG, "✅ Cloud recording pause sent");
+                }
+
+            } else if ("recording_resume".equals(action)) {
+                if (!manager.isPaused()) {
+                    Log.w(TAG, "☁️ recording_resume: not paused, ignoring");
+                } else {
+                    android.content.Intent intent = new android.content.Intent(
+                            context, com.fadcam.services.RecordingService.class);
+                    intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
+                    com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+                    Log.i(TAG, "✅ Cloud recording resume sent");
+                }
+
+            } else if ("alarm_ring".equals(action)) {
+                // Ring alarm – mirrors LiveM3U8Server.ringAlarm()
+                String soundFile = "office_phone.mp3";
+                long durationMs = -1;
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    soundFile = params.optString("sound", soundFile);
+                    durationMs = params.optLong("duration_ms", durationMs);
+                }
+                manager.setSelectedAlarmSound(soundFile);
+                manager.setAlarmDurationMs(durationMs);
+                manager.setAlarmRinging(true);
+
+                android.content.Intent alarmIntent = new android.content.Intent(
+                        context, com.fadcam.services.AlarmService.class);
+                alarmIntent.setAction("com.fadcam.action.RING_ALARM");
+                alarmIntent.putExtra("sound", soundFile);
+                alarmIntent.putExtra("duration_ms", durationMs);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(alarmIntent);
+                } else {
+                    context.startService(alarmIntent);
+                }
+                Log.i(TAG, "✅ Cloud alarm ring sent: " + soundFile + " for " + durationMs + "ms");
+
+            } else if ("alarm_stop".equals(action)) {
+                // Stop alarm – mirrors LiveM3U8Server.stopAlarm()
+                manager.setAlarmRinging(false);
+                android.content.Intent alarmIntent = new android.content.Intent(
+                        context, com.fadcam.services.AlarmService.class);
+                alarmIntent.setAction("com.fadcam.action.STOP_ALARM");
+                context.startService(alarmIntent);
+                Log.i(TAG, "✅ Cloud alarm stop sent");
+
+            } else if ("audio_volume".equals(action)) {
+                // Set volume
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    if (params.has("percentage")) {
+                        float percentage = (float) params.getDouble("percentage");
+                        
+                        // Set system volume like LiveM3U8Server does
+                        android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
+                        if (audioManager != null) {
+                            int maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                            int targetVolume = Math.round(percentage * maxVolume / 100.0f);
+                            targetVolume = Math.max(0, Math.min(targetVolume, maxVolume));
+                            
+                            audioManager.setStreamVolume(
+                                android.media.AudioManager.STREAM_MUSIC, 
+                                targetVolume, 
+                                0  // No UI flags (silent change)
+                            );
+                            
+                            // Update RemoteStreamManager state
+                            manager.setMediaVolume(targetVolume);
+                            
+                            Log.i(TAG, "✅ Cloud volume set to " + percentage + "% (" + targetVolume + "/" + maxVolume + ")");
+                        } else {
+                            Log.e(TAG, "AudioManager not available for volume change");
+                        }
+                    }
+                }
+                
+            } else if ("config_recordingMode".equals(action)) {
+                // Set stream/recording mode – mirrors LiveM3U8Server.setRecordingMode()
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    String mode = params.optString("mode", "");
+                    RemoteStreamManager.StreamingMode streamingMode;
+                    if ("stream_only".equals(mode)) {
+                        streamingMode = RemoteStreamManager.StreamingMode.STREAM_ONLY;
+                    } else if ("stream_and_save".equals(mode)) {
+                        streamingMode = RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+                    } else {
+                        Log.w(TAG, "☁️ config_recordingMode: invalid mode: " + mode);
+                        deleteCommand(cmdId);
+                        return;
+                    }
+                    spManager.setStreamingMode(streamingMode);
+                    manager.setStreamingMode(streamingMode);
+                    Log.i(TAG, "✅ Cloud recording mode set to: " + mode);
+                }
+
+            } else if ("config_streamQuality".equals(action)) {
+                // Set stream quality preset – mirrors LiveM3U8Server.setStreamQuality()
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    String quality = params.optString("quality", "").trim().toUpperCase();
+                    try {
+                        com.fadcam.streaming.model.StreamQuality.Preset preset =
+                                com.fadcam.streaming.model.StreamQuality.Preset.valueOf(quality);
+                        manager.setStreamQuality(preset, context);
+                        Log.i(TAG, "✅ Cloud stream quality set to: " + quality);
+                    } catch (IllegalArgumentException e) {
+                        Log.w(TAG, "☁️ config_streamQuality: invalid preset: " + quality);
+                    }
+                }
+
+            } else if ("config_batteryWarning".equals(action)) {
+                // Set battery warning threshold – mirrors LiveM3U8Server.setBatteryWarning()
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    int threshold = params.optInt("threshold", 20);
+                    if (threshold >= 5 && threshold <= 100) {
+                        spManager.setBatteryWarningThreshold(threshold);
+                        Log.i(TAG, "✅ Cloud battery warning threshold set to: " + threshold + "%");
+                    } else {
+                        Log.w(TAG, "☁️ config_batteryWarning: invalid threshold (must be 5–100): " + threshold);
+                    }
+                }
+
+            } else if ("config_videoCodec".equals(action)) {
+                // Set video codec – mirrors LiveM3U8Server.setVideoCodec()
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    String codec = params.optString("codec", "").trim().toUpperCase();
+                    if ("AVC".equals(codec) || "HEVC".equals(codec)) {
+                        spManager.sharedPreferences.edit()
+                                .putString(com.fadcam.Constants.PREF_VIDEO_CODEC, codec)
+                                .apply();
+                        Log.i(TAG, "✅ Cloud video codec set to: " + codec);
+                    } else {
+                        Log.w(TAG, "☁️ config_videoCodec: invalid codec (must be AVC or HEVC): " + codec);
+                    }
+                }
+
+            } else if ("camera_switch".equals(action)) {
+                // Switch active camera – mirrors HomeFragment.switchCamera() exactly.
+                // If recording is active the switch is performed live via RecordingService;
+                // otherwise the preference is updated so the next recording uses the new camera.
+                com.fadcam.CameraType currentType = spManager.getCameraSelection();
+
+                // Determine target: explicit "to" param wins; otherwise toggle.
+                com.fadcam.CameraType targetType;
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    String targetStr = params.optString("to", "").trim().toUpperCase();
+                    com.fadcam.CameraType parsed = null;
+                    try {
+                        parsed = com.fadcam.CameraType.valueOf(targetStr);
+                    } catch (IllegalArgumentException ignored) { }
+                    targetType = (parsed != null) ? parsed :
+                            (currentType == com.fadcam.CameraType.BACK
+                                    ? com.fadcam.CameraType.FRONT
+                                    : com.fadcam.CameraType.BACK);
+                } else {
+                    targetType = (currentType == com.fadcam.CameraType.BACK)
+                            ? com.fadcam.CameraType.FRONT
+                            : com.fadcam.CameraType.BACK;
+                }
+
+                if (spManager.isRecordingInProgress()) {
+                    // Live switch during active recording
+                    android.content.Intent switchIntent = new android.content.Intent(
+                            context, com.fadcam.services.RecordingService.class);
+                    switchIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SWITCH_CAMERA);
+                    switchIntent.putExtra(com.fadcam.Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH,
+                            targetType.toString());
+                    com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, switchIntent);
+                    Log.i(TAG, "✅ Cloud camera switch (live): " + currentType + " → " + targetType);
+                } else {
+                    // Not recording – persist the preference for next session
+                    spManager.sharedPreferences.edit()
+                            .putString(com.fadcam.Constants.PREF_CAMERA_SELECTION, targetType.toString())
+                            .apply();
+                    Log.i(TAG, "✅ Cloud camera switch (preference): " + currentType + " → " + targetType);
+                }
+
+            } else {
+                Log.w(TAG, "☁️ Unknown command action: " + action);
             }
-            
-            Log.d(TAG, "☁️ Mapped action '" + action + "' → endpoint '" + endpoint + "', body=" + requestBody);
-            
-            // Execute command via localhost
-            executeLocalCommand(endpoint, "POST", requestBody);
             
             // Delete command after execution
             deleteCommand(cmdId);

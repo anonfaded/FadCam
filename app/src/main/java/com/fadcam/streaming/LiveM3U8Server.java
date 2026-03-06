@@ -508,17 +508,17 @@ import fi.iki.elonen.NanoHTTPD;
             android.content.Intent intent;
             boolean recordingServiceIntent;
             
-            if (spManager.isRecordingInProgress()) {
-                // Recording active: send to RecordingService
+            if (manager.isStreamingEnabled()) {
+                // Streaming active: send to RecordingService (controls camera torch)
                 intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
-                Log.d(TAG, "Recording active - routing torch toggle to RecordingService");
+                Log.d(TAG, "Streaming active - routing torch toggle to RecordingService");
                 recordingServiceIntent = true;
             } else {
-                // Not recording: send to TorchService for idle torch control
+                // Not streaming: send to TorchService for idle torch control
                 intent = new android.content.Intent(context, com.fadcam.services.TorchService.class);
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_TORCH);
-                Log.d(TAG, "Not recording - routing torch toggle to TorchService");
+                Log.d(TAG, "Not streaming - routing torch toggle to TorchService");
                 recordingServiceIntent = false;
             }
             
