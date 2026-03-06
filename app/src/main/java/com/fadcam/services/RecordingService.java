@@ -673,35 +673,106 @@ public class RecordingService extends Service {
 
     /**
      * Apply zoom ratio to the current capture session.
+     * Reads saved pan offsets so zoom + pan are always applied together.
      * Also saves the zoom ratio to preferences for the current camera type.
      */
     private void applyZoomRatio(float zoomRatio) {
-        Log.d(TAG, "Applying zoom ratio: " + zoomRatio);
+        CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+        float panX = sharedPreferencesManager.getSpecificPanX(currentCamera);
+        float panY = sharedPreferencesManager.getSpecificPanY(currentCamera);
+        applyZoomAndPan(zoomRatio, panX, panY);
+    }
+
+    /**
+     * Apply zoom + 2-D pan to the capture session via SCALER_CROP_REGION.
+     * <p>
+     * Computes a crop rectangle that achieves the requested zoom ratio and
+     * offsets its centre by the normalised pan values (−1…+1 → full sensor
+     * edge in each direction, 0 = centre).
+     * <p>
+     * On API ≥ 30 CONTROL_ZOOM_RATIO is reset to 1.0 so that the crop region
+     * alone controls both zoom and pan without double-zooming.
+     *
+     * @param zoomRatio zoom magnification (≥ 1.0)
+     * @param panX      horizontal pan, −1.0 (left) … +1.0 (right), 0 = centre
+     * @param panY      vertical pan,   −1.0 (top)  … +1.0 (bottom), 0 = centre
+     */
+    private void applyZoomAndPan(float zoomRatio, float panX, float panY) {
+        Log.d(TAG, "applyZoomAndPan: ratio=" + zoomRatio + " panX=" + panX + " panY=" + panY);
 
         if (captureRequestBuilder == null || captureSession == null) {
-            Log.w(TAG, "Cannot apply zoom - captureRequestBuilder or captureSession is null");
+            Log.w(TAG, "Cannot apply zoom/pan - capture session not ready");
             return;
         }
 
         try {
-            // Apply zoom ratio to capture request
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                captureRequestBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
-            } else {
-                // For older API levels, fall back to digital zoom via crop region
-                Log.d(TAG, "Using crop region for zoom on API < 30");
+            float clampedZoom = Math.max(1.0f, zoomRatio);
+            float clampedPanX = Math.max(-1.0f, Math.min(1.0f, panX));
+            float clampedPanY = Math.max(-1.0f, Math.min(1.0f, panY));
+
+            if (currentCameraCharacteristics != null) {
+                android.graphics.Rect activeArray = currentCameraCharacteristics
+                        .get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                if (activeArray != null) {
+                    int sensorW = activeArray.width();
+                    int sensorH = activeArray.height();
+
+                    // Crop size that achieves the requested zoom
+                    int cropW = Math.round(sensorW / clampedZoom);
+                    int cropH = Math.round(sensorH / clampedZoom);
+
+                    // Maximum pan range from centre (so the crop stays inside the sensor)
+                    int maxOffX = (sensorW - cropW) / 2;
+                    int maxOffY = (sensorH - cropH) / 2;
+
+                    // Crop centre with pan offset
+                    int cx = activeArray.left + sensorW / 2 + Math.round(clampedPanX * maxOffX);
+                    int cy = activeArray.top  + sensorH / 2 + Math.round(clampedPanY * maxOffY);
+
+                    int cropLeft  = Math.max(activeArray.left,  cx - cropW / 2);
+                    int cropTop   = Math.max(activeArray.top,   cy - cropH / 2);
+                    int cropRight = Math.min(activeArray.right,  cropLeft + cropW);
+                    int cropBottom = Math.min(activeArray.bottom, cropTop  + cropH);
+
+                    android.graphics.Rect cropRegion = new android.graphics.Rect(
+                            cropLeft, cropTop, cropRight, cropBottom);
+                    captureRequestBuilder.set(
+                            android.hardware.camera2.CaptureRequest.SCALER_CROP_REGION, cropRegion);
+
+                    // On API ≥ 30 reset zoom ratio to 1 so crop is the sole zoom/pan mechanism
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        captureRequestBuilder.set(
+                                android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO, 1.0f);
+                    }
+
+                    captureSession.setRepeatingRequest(
+                            captureRequestBuilder.build(), null, backgroundHandler);
+
+                    // Persist both zoom and pan
+                    CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                    sharedPreferencesManager.setSpecificZoomRatio(currentCamera, clampedZoom);
+                    sharedPreferencesManager.setSpecificPan(currentCamera, clampedPanX, clampedPanY);
+
+                    Log.d(TAG, "applyZoomAndPan OK – crop=" + cropRegion + " zoom=" + clampedZoom);
+                    return;
+                }
             }
 
-            // Update the repeating request
-            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            // Fallback: API ≥ 30 zoom-ratio only (no pan), or warn for older APIs
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                captureRequestBuilder.set(
+                        android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO, clampedZoom);
+                captureSession.setRepeatingRequest(
+                        captureRequestBuilder.build(), null, backgroundHandler);
+                CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                sharedPreferencesManager.setSpecificZoomRatio(currentCamera, clampedZoom);
+                Log.d(TAG, "applyZoomAndPan: CONTROL_ZOOM_RATIO fallback (no sensor info) ratio=" + clampedZoom);
+            } else {
+                Log.w(TAG, "applyZoomAndPan: no sensor characteristics available; zoom not applied");
+            }
 
-            // Save to preferences for persistence
-            CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
-            sharedPreferencesManager.setSpecificZoomRatio(currentCamera, zoomRatio);
-
-            Log.d(TAG, "Successfully applied zoom ratio " + zoomRatio + " for " + currentCamera + " camera");
-        } catch (CameraAccessException | IllegalStateException e) {
-            Log.e(TAG, "Failed to apply zoom ratio: " + e.getMessage());
+        } catch (android.hardware.camera2.CameraAccessException | IllegalStateException e) {
+            Log.e(TAG, "applyZoomAndPan failed: " + e.getMessage());
         }
     }
 
@@ -1163,7 +1234,14 @@ public class RecordingService extends Service {
         } else if (Constants.INTENT_ACTION_SET_ZOOM_RATIO.equals(action)) {
             if (intent.hasExtra(Constants.EXTRA_ZOOM_RATIO)) {
                 float zoomRatio = intent.getFloatExtra(Constants.EXTRA_ZOOM_RATIO, 1.0f);
-                applyZoomRatio(zoomRatio);
+                // Accept optional pan offsets; if absent, preserve the currently-saved pan
+                if (intent.hasExtra(Constants.EXTRA_PAN_X) || intent.hasExtra(Constants.EXTRA_PAN_Y)) {
+                    float panX = intent.getFloatExtra(Constants.EXTRA_PAN_X, 0.0f);
+                    float panY = intent.getFloatExtra(Constants.EXTRA_PAN_Y, 0.0f);
+                    applyZoomAndPan(zoomRatio, panX, panY);
+                } else {
+                    applyZoomRatio(zoomRatio); // preserves saved pan internally
+                }
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR.equals(action)) {

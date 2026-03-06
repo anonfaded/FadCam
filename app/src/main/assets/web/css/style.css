@@ -2219,6 +2219,226 @@ video {
     color: #ffffff;
 }
 
+/* -------- ZOOM + PAN + EXPOSURE CONTROLS -------- */
+
+.camera-controls-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+/* Zoom row: slider + label */
+.zoom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.zoom-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 54px;
+}
+
+.zoom-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.zoom-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #8b949e;
+    transition: color 200ms;
+}
+
+.zoom-row:has(input:focus) .zoom-value,
+.zoom-value.active {
+    color: #00bfff;
+}
+
+input[type="range"].zoom-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: #30363d;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"].zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00bfff;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 191, 255, 0.6);
+}
+
+/* Pan joystick */
+.pan-container {
+    display: none; /* shown only when zoom > 1 */
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pan-container.visible {
+    display: flex;
+}
+
+.pan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pan-header-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.pan-reset-btn {
+    font-size: 11px;
+    color: #8b949e;
+    background: none;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: color 150ms, border-color 150ms;
+}
+
+.pan-reset-btn:hover {
+    color: #ffffff;
+    border-color: #8b949e;
+}
+
+.pan-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 120px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+    align-self: center;
+    overflow: hidden;
+}
+
+/* crosshair lines */
+.pan-area::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 1px;
+    background: #30363d;
+    transform: translateX(-50%);
+}
+
+.pan-area::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 1px;
+    background: #30363d;
+    transform: translateY(-50%);
+}
+
+.pan-thumb {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #00bfff;
+    box-shadow: 0 0 6px rgba(0, 191, 255, 0.7);
+    transform: translate(-50%, -50%);
+    left: 50%;
+    top: 50%;
+    pointer-events: none;
+    transition: left 80ms, top 80ms;
+}
+
+/* Exposure row */
+.exposure-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #171717;
+    border: 1px solid #2d3439;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.exposure-label-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 54px;
+}
+
+.exposure-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.exposure-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #8b949e;
+}
+
+.exposure-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.exposure-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms, border-color 150ms;
+    line-height: 1;
+}
+
+.exposure-btn:hover {
+    background: #21262d;
+    border-color: #8b949e;
+}
+
+.exposure-btn:active {
+    transform: scale(0.9);
+}
+
 /* Pulsing animation for recording indicator */
 @keyframes pulse-recording {
     0%, 100% {

@@ -860,6 +860,80 @@ public class CloudStatusManager {
                     Log.i(TAG, "✅ Cloud camera switch (preference): " + currentType + " → " + targetType);
                 }
 
+            } else if ("config_zoom".equals(action)) {
+                // Set zoom ratio (+ optional pan) – dispatched to RecordingService if active,
+                // otherwise saved to prefs for next recording session.
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    float ratio = (float) params.optDouble("ratio", 1.0);
+                    ratio = Math.max(1.0f, ratio);
+
+                    if (spManager.isRecordingInProgress()) {
+                        android.content.Intent zoomIntent = new android.content.Intent(
+                                context, com.fadcam.services.RecordingService.class);
+                        zoomIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_ZOOM_RATIO);
+                        zoomIntent.putExtra(com.fadcam.Constants.EXTRA_ZOOM_RATIO, ratio);
+                        if (params.has("panX") || params.has("panY")) {
+                            float panX = (float) params.optDouble("panX", 0.0);
+                            float panY = (float) params.optDouble("panY", 0.0);
+                            zoomIntent.putExtra(com.fadcam.Constants.EXTRA_PAN_X,
+                                    Math.max(-1.0f, Math.min(1.0f, panX)));
+                            zoomIntent.putExtra(com.fadcam.Constants.EXTRA_PAN_Y,
+                                    Math.max(-1.0f, Math.min(1.0f, panY)));
+                        }
+                        com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, zoomIntent);
+                        Log.i(TAG, "✅ Cloud zoom dispatched (live): ratio=" + ratio);
+                    } else {
+                        // Persist for next recording session
+                        com.fadcam.CameraType cam = spManager.getCameraSelection();
+                        spManager.setSpecificZoomRatio(cam, ratio);
+                        if (params.has("panX") || params.has("panY")) {
+                            float panX = (float) params.optDouble("panX", 0.0);
+                            float panY = (float) params.optDouble("panY", 0.0);
+                            spManager.setSpecificPan(cam, panX, panY);
+                        }
+                        Log.i(TAG, "✅ Cloud zoom saved (preference): ratio=" + ratio);
+                    }
+                }
+
+            } else if ("config_exposure".equals(action)) {
+                // Set exposure compensation – dispatched live to RecordingService.
+                // CONTROL_AE_EXPOSURE_COMPENSATION range is device-dependent; clamp −5…+5.
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    int ev = params.optInt("ev", 0);
+                    ev = Math.max(-5, Math.min(5, ev));
+
+                    android.content.Intent evIntent = new android.content.Intent(
+                            context, com.fadcam.services.RecordingService.class);
+                    evIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION);
+                    evIntent.putExtra(com.fadcam.Constants.EXTRA_EXPOSURE_COMPENSATION, ev);
+                    com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, evIntent);
+                    Log.i(TAG, "✅ Cloud exposure compensation set to: " + ev);
+                }
+
+            } else if ("config_mirror".equals(action)) {
+                // Toggle or explicitly set front-camera mirror flip.
+                boolean enabled;
+                if (command.has("params")) {
+                    org.json.JSONObject params = command.getJSONObject("params");
+                    // "enabled" param wins; default toggles current value
+                    if (params.has("enabled")) {
+                        enabled = params.optBoolean("enabled", false);
+                    } else {
+                        enabled = !spManager.isFrontVideoMirrorEnabled();
+                    }
+                } else {
+                    enabled = !spManager.isFrontVideoMirrorEnabled();
+                }
+
+                android.content.Intent mirrorIntent = new android.content.Intent(
+                        context, com.fadcam.services.RecordingService.class);
+                mirrorIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR);
+                mirrorIntent.putExtra(com.fadcam.Constants.EXTRA_FRONT_VIDEO_MIRROR_ENABLED, enabled);
+                com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, mirrorIntent);
+                Log.i(TAG, "✅ Cloud front mirror set to: " + enabled);
+
             } else {
                 Log.w(TAG, "☁️ Unknown command action: " + action);
             }

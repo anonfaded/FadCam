@@ -421,6 +421,59 @@
 
             <!-- Removed duplicate Alarm card grid that was here -->
 
+            <!-- Camera Controls: Zoom, Pan, Exposure, Mirror -->
+            <div class="camera-controls-section">
+
+                <!-- Mirror toggle card (shown only for front camera) -->
+                <div id="mirrorCard" class="torch-card camera-card" onclick="toggleMirror()" style="display:none;">
+                    <div class="torch-card-inner">
+                        <div class="camera-fill" id="mirrorFill"></div>
+                        <div class="torch-content">
+                            <i class="fas fa-arrows-left-right camera-icon-fa" id="mirrorIcon"></i>
+                            <div class="torch-text">
+                                <div class="torch-label">Mirror</div>
+                                <div class="torch-value" id="mirrorState">OFF</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zoom slider row -->
+                <div class="zoom-row">
+                    <div class="zoom-label-group">
+                        <div class="zoom-label">Zoom</div>
+                        <div class="zoom-value" id="zoomValue">1.0×</div>
+                    </div>
+                    <input type="range" class="zoom-slider" id="zoomSlider"
+                           min="1.0" max="10.0" step="0.1" value="1.0"
+                           oninput="onZoomSliderInput(this.value)"
+                           onchange="onZoomSliderCommit(this.value)">
+                </div>
+
+                <!-- Pan joystick (shown only when zoom > 1) -->
+                <div class="pan-container" id="panContainer">
+                    <div class="pan-header">
+                        <span class="pan-header-label">Pan</span>
+                        <button class="pan-reset-btn" onclick="resetPan()">Reset</button>
+                    </div>
+                    <div class="pan-area" id="panArea">
+                        <div class="pan-thumb" id="panThumb"></div>
+                    </div>
+                </div>
+
+                <!-- Exposure row -->
+                <div class="exposure-row">
+                    <div class="exposure-label-group">
+                        <div class="exposure-label">Exposure</div>
+                        <div class="exposure-value" id="exposureValue">EV 0</div>
+                    </div>
+                    <div class="exposure-btn-group">
+                        <button class="exposure-btn" onclick="adjustExposure(-1)" title="Decrease exposure">−</button>
+                        <button class="exposure-btn" onclick="adjustExposure(+1)" title="Increase exposure">+</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- End Sidebar Scrollable Content -->
             </div>
 
@@ -2230,6 +2283,110 @@
             }
         }
 
+        // ─── Zoom + Pan ────────────────────────────────────────────────────────
+
+        let _zoomDebounce = null;
+        let _pendingPanX = 0, _pendingPanY = 0;
+
+        /** Called continuously while slider is dragged – just updates the label. */
+        function onZoomSliderInput(value) {
+            const v = parseFloat(value);
+            const el = document.getElementById('zoomValue');
+            if (el) el.textContent = v.toFixed(1) + '×';
+            document.getElementById('panContainer')?.classList.toggle('visible', v > 1.0);
+        }
+
+        /** Called on slider mouseup/touchend – sends the API call. */
+        function onZoomSliderCommit(value) {
+            const ratio = parseFloat(value);
+            clearTimeout(_zoomDebounce);
+            _zoomDebounce = setTimeout(async () => {
+                try {
+                    await dashboardViewModel.setZoom(ratio, _pendingPanX, _pendingPanY);
+                } catch (e) {
+                    showToast('Failed to set zoom');
+                }
+            }, 120);
+        }
+
+        /** Pan joystick init – called once on page load. */
+        (function initPanJoystick() {
+            const area = document.getElementById('panArea');
+            const thumb = document.getElementById('panThumb');
+            if (!area || !thumb) return;
+
+            let dragging = false;
+
+            function applyPosFromEvent(e) {
+                const rect = area.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const rx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                const ry = Math.max(0, Math.min(1, (clientY - rect.top)  / rect.height));
+                const panX = (rx * 2 - 1);
+                const panY = (ry * 2 - 1);
+
+                // Update thumb position
+                thumb.style.left = (rx * 100) + '%';
+                thumb.style.top  = (ry * 100) + '%';
+                _pendingPanX = panX;
+                _pendingPanY = panY;
+            }
+
+            function onDragEnd() {
+                if (!dragging) return;
+                dragging = false;
+                // Commit zoom + pan
+                const ratio = parseFloat(document.getElementById('zoomSlider')?.value || 1);
+                dashboardViewModel.setZoom(ratio, _pendingPanX, _pendingPanY).catch(() => showToast('Failed to set pan'));
+            }
+
+            area.addEventListener('mousedown',  e => { dragging = true; applyPosFromEvent(e); });
+            area.addEventListener('mousemove',  e => { if (dragging) applyPosFromEvent(e); });
+            area.addEventListener('touchstart', e => { dragging = true; applyPosFromEvent(e); e.preventDefault(); }, { passive: false });
+            area.addEventListener('touchmove',  e => { if (dragging) applyPosFromEvent(e); e.preventDefault(); }, { passive: false });
+            window.addEventListener('mouseup',  onDragEnd);
+            window.addEventListener('touchend', onDragEnd);
+        })();
+
+        /** Reset pan to centre. */
+        async function resetPan() {
+            _pendingPanX = 0; _pendingPanY = 0;
+            const thumb = document.getElementById('panThumb');
+            if (thumb) { thumb.style.left = '50%'; thumb.style.top = '50%'; }
+            const ratio = parseFloat(document.getElementById('zoomSlider')?.value || 1);
+            try {
+                await dashboardViewModel.setZoom(ratio, 0, 0);
+            } catch (e) {
+                showToast('Failed to reset pan');
+            }
+        }
+
+        // ─── Exposure ──────────────────────────────────────────────────────────
+
+        let _currentEv = 0;
+
+        async function adjustExposure(delta) {
+            _currentEv = Math.max(-5, Math.min(5, _currentEv + delta));
+            const el = document.getElementById('exposureValue');
+            if (el) el.textContent = 'EV ' + (_currentEv > 0 ? '+' : '') + _currentEv;
+            try {
+                await dashboardViewModel.setExposure(_currentEv);
+            } catch (e) {
+                showToast('Failed to set exposure');
+            }
+        }
+
+        // ─── Mirror ────────────────────────────────────────────────────────────
+
+        async function toggleMirror() {
+            try {
+                await dashboardViewModel.setMirror(null); // null = toggle
+            } catch (e) {
+                showToast('Failed to toggle mirror');
+            }
+        }
+
         /**
          * Show codec compatibility dialog when recording with streaming enabled.
          * H.265/HEVC is not supported for HLS streaming in browsers.
@@ -2619,6 +2776,21 @@
             const cameraCardEl = document.getElementById('cameraCard');
             if (cameraStateEl) cameraStateEl.textContent = 'BACK';
             if (cameraCardEl) cameraCardEl.classList.remove('front');
+
+            // Zoom / Pan / Exposure / Mirror – reset when offline
+            const sliderEl = document.getElementById('zoomSlider');
+            if (sliderEl) sliderEl.value = 1.0;
+            const zoomValEl = document.getElementById('zoomValue');
+            if (zoomValEl) zoomValEl.textContent = '1.0×';
+            document.getElementById('panContainer')?.classList.remove('visible');
+            const panThumbEl = document.getElementById('panThumb');
+            if (panThumbEl) { panThumbEl.style.left = '50%'; panThumbEl.style.top = '50%'; }
+            _pendingPanX = 0; _pendingPanY = 0;
+            _currentEv = 0;
+            const evEl = document.getElementById('exposureValue');
+            if (evEl) evEl.textContent = 'EV 0';
+            const mirrorCardOfflineEl = document.getElementById('mirrorCard');
+            if (mirrorCardOfflineEl) mirrorCardOfflineEl.style.display = 'none';
             
             // Alarm - reset to READY state when offline
             const alarmValueEl = document.getElementById('alarmValue');
@@ -3102,12 +3274,50 @@
                 const cameraStateEl = document.getElementById('cameraState');
                 const cameraCardEl = document.getElementById('cameraCard');
                 const cameraIconEl = document.getElementById('cameraIcon');
+                const isFront = status.cameraType === 'front';
                 if (cameraStateEl && cameraCardEl) {
-                    const isFront = status.cameraType === 'front';
                     cameraStateEl.textContent = isFront ? 'FRONT' : 'BACK';
                     cameraCardEl.classList.toggle('front', isFront);
                     if (cameraIconEl) {
                         cameraIconEl.title = isFront ? 'Switch to back camera' : 'Switch to front camera';
+                    }
+                }
+
+                // Sync zoom slider
+                if (status.zoomRatio !== undefined) {
+                    const sliderEl = document.getElementById('zoomSlider');
+                    const zoomValEl = document.getElementById('zoomValue');
+                    if (sliderEl) sliderEl.value = status.zoomRatio;
+                    if (zoomValEl) zoomValEl.textContent = parseFloat(status.zoomRatio).toFixed(1) + '×';
+                    document.getElementById('panContainer')?.classList.toggle('visible', status.zoomRatio > 1.0);
+                }
+
+                // Sync pan thumb
+                if (status.panX !== undefined && status.panY !== undefined) {
+                    _pendingPanX = status.panX;
+                    _pendingPanY = status.panY;
+                    const thumb = document.getElementById('panThumb');
+                    if (thumb) {
+                        thumb.style.left = ((status.panX + 1) / 2 * 100) + '%';
+                        thumb.style.top  = ((status.panY + 1) / 2 * 100) + '%';
+                    }
+                }
+
+                // Sync exposure display
+                if (status.exposureCompensation !== undefined) {
+                    _currentEv = status.exposureCompensation;
+                    const evEl = document.getElementById('exposureValue');
+                    if (evEl) evEl.textContent = 'EV ' + (_currentEv > 0 ? '+' : '') + _currentEv;
+                }
+
+                // Mirror card – only visible for front camera
+                const mirrorCardEl = document.getElementById('mirrorCard');
+                if (mirrorCardEl) {
+                    mirrorCardEl.style.display = isFront ? '' : 'none';
+                    if (isFront && status.mirrorEnabled !== undefined) {
+                        const mirrorStateEl = document.getElementById('mirrorState');
+                        if (mirrorStateEl) mirrorStateEl.textContent = status.mirrorEnabled ? 'ON' : 'OFF';
+                        mirrorCardEl.classList.toggle('active', !!status.mirrorEnabled);
                     }
                 }
             }

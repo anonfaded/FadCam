@@ -391,6 +391,59 @@ class DashboardViewModel {
     }
 
     /**
+     * Set zoom ratio and optional 2-D pan.
+     * @param {number} ratio    Zoom ≥ 1.0
+     * @param {number} [panX=0] Horizontal pan -1.0…+1.0
+     * @param {number} [panY=0] Vertical pan   -1.0…+1.0
+     */
+    async setZoom(ratio, panX = 0, panY = 0) {
+        try {
+            const result = await apiService.setZoom(ratio, panX, panY);
+            console.log('[DashboardViewModel] Zoom set:', ratio, panX, panY);
+            eventBus.emit('zoom-changed', { ratio, panX, panY });
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to set zoom:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set exposure compensation (EV steps).
+     * @param {number} ev  Integer −5…+5
+     */
+    async setExposure(ev) {
+        try {
+            const result = await apiService.setExposure(ev);
+            console.log('[DashboardViewModel] Exposure set to EV', ev);
+            eventBus.emit('exposure-changed', { ev });
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to set exposure:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Set or toggle the front-camera mirror.
+     * @param {boolean|null} enabled  true/false to set, null to toggle
+     */
+    async setMirror(enabled = null) {
+        try {
+            const result = await apiService.setMirror(enabled);
+            console.log('[DashboardViewModel] Mirror set to:', enabled);
+            eventBus.emit('mirror-changed', { enabled });
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to set mirror:', error);
+            throw error;
+        }
+    }
+
+    /**
     async toggleServer() {
         try {
             const result = await apiService.post('/server/toggle', {});

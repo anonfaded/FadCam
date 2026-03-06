@@ -830,6 +830,15 @@ public class RemoteStreamManager {
             // Get active camera type (BACK / FRONT)
             String cameraTypeName = context != null ?
                 SharedPreferencesManager.getInstance(context).getCameraSelection().toString().toLowerCase() : "back";
+
+            // Get zoom, pan, exposure, mirror state for the active camera
+            SharedPreferencesManager spMgr = context != null ? SharedPreferencesManager.getInstance(context) : null;
+            com.fadcam.CameraType activeCam = spMgr != null ? spMgr.getCameraSelection() : com.fadcam.CameraType.BACK;
+            float zoomRatio = spMgr != null ? spMgr.getSpecificZoomRatio(activeCam) : 1.0f;
+            float panX = spMgr != null ? spMgr.getSpecificPanX(activeCam) : 0.0f;
+            float panY = spMgr != null ? spMgr.getSpecificPanY(activeCam) : 0.0f;
+            int exposureCompensation = spMgr != null ? spMgr.getSavedExposureCompensation() : 0;
+            boolean mirrorEnabled = spMgr != null && spMgr.isFrontVideoMirrorEnabled();
             
             // Calculate volume percentage
             float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
@@ -864,6 +873,8 @@ public class RemoteStreamManager {
                 "\"streamQuality\": %s, " +
                 "\"videoCodec\": %s, " +
                 "\"cameraType\": %s, " +
+                "\"zoomRatio\": %.2f, \"panX\": %.3f, \"panY\": %.3f, " +
+                "\"exposureCompensation\": %d, \"mirrorEnabled\": %s, " +
                 "\"torchState\": %s, " +
                 "\"volume\": %d, \"maxVolume\": %d, \"volumePercentage\": %.1f, " +
                 "\"alarm\": {\"isRinging\": %s, \"sound\": %s, \"durationMs\": %d, \"remainingMs\": %d}, " +
@@ -896,6 +907,11 @@ public class RemoteStreamManager {
                 qualityJson,
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(codecName),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(cameraTypeName),
+                zoomRatio,
+                panX,
+                panY,
+                exposureCompensation,
+                mirrorEnabled,
                 isTorchOn(),  // Read from SharedPreferences to get current actual state
                 mediaVolume,
                 maxMediaVolume,

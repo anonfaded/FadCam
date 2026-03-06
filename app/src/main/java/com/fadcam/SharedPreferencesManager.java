@@ -519,6 +519,25 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putFloat(specificKey, zoomRatio).commit();
     }
 
+    /** Returns the saved pan-X offset (-1.0…+1.0) for the given camera. Default: 0.0 (centre). */
+    public float getSpecificPanX(CameraType cameraType) {
+        String key = (cameraType == CameraType.FRONT) ? Constants.PREF_PAN_X_FRONT : Constants.PREF_PAN_X_BACK;
+        return sharedPreferences.getFloat(key, 0.0f);
+    }
+
+    /** Returns the saved pan-Y offset (-1.0…+1.0) for the given camera. Default: 0.0 (centre). */
+    public float getSpecificPanY(CameraType cameraType) {
+        String key = (cameraType == CameraType.FRONT) ? Constants.PREF_PAN_Y_FRONT : Constants.PREF_PAN_Y_BACK;
+        return sharedPreferences.getFloat(key, 0.0f);
+    }
+
+    /** Persists pan offsets for the given camera. */
+    public void setSpecificPan(CameraType cameraType, float panX, float panY) {
+        String keyX = (cameraType == CameraType.FRONT) ? Constants.PREF_PAN_X_FRONT : Constants.PREF_PAN_X_BACK;
+        String keyY = (cameraType == CameraType.FRONT) ? Constants.PREF_PAN_Y_FRONT : Constants.PREF_PAN_Y_BACK;
+        sharedPreferences.edit().putFloat(keyX, panX).putFloat(keyY, panY).apply();
+    }
+
     // --- End New Zoom Ratio Methods ---
 
     public VideoCodec getVideoCodec() {

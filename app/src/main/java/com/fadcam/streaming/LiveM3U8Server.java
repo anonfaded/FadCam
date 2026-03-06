@@ -185,6 +185,14 @@ import fi.iki.elonen.NanoHTTPD;
                 response = stopAlarm();
             } else if ("/alarm/schedule".equals(uri)) {
                 response = scheduleAlarm(session);
+            } else if ("/camera/switch".equals(uri)) {
+                response = switchCamera(session);
+            } else if ("/config/zoom".equals(uri)) {
+                response = setZoom(session);
+            } else if ("/config/exposure".equals(uri)) {
+                response = setExposure(session);
+            } else if ("/config/mirror".equals(uri)) {
+                response = setMirror(session);
             } else if ("/api/notifications".equals(uri)) {
                 response = handleNotifications(session);
             } else {
@@ -497,43 +505,27 @@ import fi.iki.elonen.NanoHTTPD;
     private Response toggleTorch() {
         try {
             Log.i(TAG, "🔦 Torch toggle requested via web interface");
-            
+
             // Toggle state in RemoteStreamManager
             RemoteStreamManager manager = RemoteStreamManager.getInstance();
             boolean newState = !manager.isTorchOn();
             manager.setTorchState(newState);
-            
-            // Use same logic as TorchToggleActivity
-            com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
-            android.content.Intent intent;
-            boolean recordingServiceIntent;
-            
-            if (manager.isStreamingEnabled()) {
-                // Streaming active: send to RecordingService (controls camera torch)
-                intent = new android.content.Intent(context, com.fadcam.services.RecordingService.class);
-                intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
-                Log.d(TAG, "Streaming active - routing torch toggle to RecordingService");
-                recordingServiceIntent = true;
+
+            // Always delegate to TorchService.
+            // TorchService internally routes to RecordingService (CaptureRequest) if recording
+            // is active, and falls back to CameraManager.setTorchMode() otherwise.
+            // Sending TOGGLE_RECORDING_TORCH directly to RecordingService fails when there is
+            // no active capture session (e.g. stream_only mode without recording).
+            android.content.Intent intent = new android.content.Intent(
+                    context, com.fadcam.services.TorchService.class);
+            intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_TORCH);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
             } else {
-                // Not streaming: send to TorchService for idle torch control
-                intent = new android.content.Intent(context, com.fadcam.services.TorchService.class);
-                intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_TORCH);
-                Log.d(TAG, "Not streaming - routing torch toggle to TorchService");
-                recordingServiceIntent = false;
+                context.startService(intent);
             }
-            
-            // RecordingService control actions should never use foreground start.
-            if (recordingServiceIntent) {
-                ServiceStartPolicy.startRecordingAction(context, intent);
-            } else {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent);
-                } else {
-                    context.startService(intent);
-                }
-            }
-            
-            Log.i(TAG, "✅ Torch toggle intent sent. New state: " + newState);
+
+            Log.i(TAG, "✅ Torch toggle intent sent to TorchService. New state: " + newState);
             
             String responseJson = String.format(java.util.Locale.US, "{\"status\": \"success\", \"torch_state\": %s}", newState);
             return jsonResponse(Response.Status.OK, responseJson);
@@ -998,6 +990,187 @@ import fi.iki.elonen.NanoHTTPD;
         }
     }
     // END: VideoCodec Config Endpoint
+
+    /** POST /camera/switch – switch active camera (BACK ↔ FRONT or explicit target). */
+    @NonNull
+    private Response switchCamera(IHTTPSession session) {
+        try {
+            com.fadcam.SharedPreferencesManager spManager =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            com.fadcam.CameraType current = spManager.getCameraSelection();
+
+            // Parse optional body for explicit "to" target
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            try { session.parseBody(files); } catch (Exception ignored) {}
+            String body = files.get("postData");
+
+            com.fadcam.CameraType target;
+            if (body != null && !body.isEmpty()) {
+                try {
+                    org.json.JSONObject json = new org.json.JSONObject(body);
+                    String toStr = json.optString("to", "").trim().toUpperCase();
+                    com.fadcam.CameraType parsed = null;
+                    try { parsed = com.fadcam.CameraType.valueOf(toStr); }
+                    catch (IllegalArgumentException ignored) {}
+                    target = (parsed != null) ? parsed
+                            : (current == com.fadcam.CameraType.BACK
+                                    ? com.fadcam.CameraType.FRONT
+                                    : com.fadcam.CameraType.BACK);
+                } catch (Exception e) {
+                    target = (current == com.fadcam.CameraType.BACK)
+                            ? com.fadcam.CameraType.FRONT
+                            : com.fadcam.CameraType.BACK;
+                }
+            } else {
+                target = (current == com.fadcam.CameraType.BACK)
+                        ? com.fadcam.CameraType.FRONT
+                        : com.fadcam.CameraType.BACK;
+            }
+
+            if (spManager.isRecordingInProgress()) {
+                android.content.Intent intent = new android.content.Intent(
+                        context, com.fadcam.services.RecordingService.class);
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_SWITCH_CAMERA);
+                intent.putExtra(com.fadcam.Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH, target.toString());
+                com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+                Log.i(TAG, "✅ Camera switch (live): " + current + " → " + target);
+            } else {
+                spManager.sharedPreferences.edit()
+                        .putString(com.fadcam.Constants.PREF_CAMERA_SELECTION, target.toString())
+                        .apply();
+                Log.i(TAG, "✅ Camera switch (preference): " + current + " → " + target);
+            }
+
+            return jsonResponse(Response.Status.OK,
+                    "{\"status\": \"success\", \"camera\": \"" + target.toString().toLowerCase() + "\"}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error switching camera", e);
+            return jsonResponse(Response.Status.INTERNAL_ERROR,
+                    "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /** POST /config/zoom – set zoom ratio and optional pan {ratio, panX, panY}. */
+    @NonNull
+    private Response setZoom(IHTTPSession session) {
+        try {
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            String body = files.get("postData");
+            if (body == null || body.isEmpty()) {
+                return jsonResponse(Response.Status.BAD_REQUEST, "{\"error\": \"No body\"}");
+            }
+
+            org.json.JSONObject json = new org.json.JSONObject(body);
+            float ratio = (float) json.optDouble("ratio", 1.0);
+            ratio = Math.max(1.0f, ratio);
+
+            com.fadcam.SharedPreferencesManager spManager =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+
+            if (spManager.isRecordingInProgress()) {
+                android.content.Intent intent = new android.content.Intent(
+                        context, com.fadcam.services.RecordingService.class);
+                intent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_ZOOM_RATIO);
+                intent.putExtra(com.fadcam.Constants.EXTRA_ZOOM_RATIO, ratio);
+                if (json.has("panX") || json.has("panY")) {
+                    float panX = Math.max(-1f, Math.min(1f, (float) json.optDouble("panX", 0.0)));
+                    float panY = Math.max(-1f, Math.min(1f, (float) json.optDouble("panY", 0.0)));
+                    intent.putExtra(com.fadcam.Constants.EXTRA_PAN_X, panX);
+                    intent.putExtra(com.fadcam.Constants.EXTRA_PAN_Y, panY);
+                }
+                com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+                Log.i(TAG, "✅ Zoom dispatched (live): ratio=" + ratio);
+            } else {
+                com.fadcam.CameraType cam = spManager.getCameraSelection();
+                spManager.setSpecificZoomRatio(cam, ratio);
+                if (json.has("panX") || json.has("panY")) {
+                    float panX = Math.max(-1f, Math.min(1f, (float) json.optDouble("panX", 0.0)));
+                    float panY = Math.max(-1f, Math.min(1f, (float) json.optDouble("panY", 0.0)));
+                    spManager.setSpecificPan(cam, panX, panY);
+                }
+                Log.i(TAG, "✅ Zoom saved (preference): ratio=" + ratio);
+            }
+
+            return jsonResponse(Response.Status.OK, "{\"status\": \"success\", \"ratio\": " + ratio + "}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting zoom", e);
+            return jsonResponse(Response.Status.INTERNAL_ERROR,
+                    "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /** POST /config/exposure – set exposure compensation {ev: int -5..5}. */
+    @NonNull
+    private Response setExposure(IHTTPSession session) {
+        try {
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            session.parseBody(files);
+            String body = files.get("postData");
+            if (body == null || body.isEmpty()) {
+                return jsonResponse(Response.Status.BAD_REQUEST, "{\"error\": \"No body\"}");
+            }
+
+            org.json.JSONObject json = new org.json.JSONObject(body);
+            int ev = Math.max(-5, Math.min(5, json.optInt("ev", 0)));
+
+            android.content.Intent intent = new android.content.Intent(
+                    context, com.fadcam.services.RecordingService.class);
+            intent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION);
+            intent.putExtra(com.fadcam.Constants.EXTRA_EXPOSURE_COMPENSATION, ev);
+            com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+            Log.i(TAG, "✅ Exposure compensation set to: " + ev);
+
+            return jsonResponse(Response.Status.OK, "{\"status\": \"success\", \"ev\": " + ev + "}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting exposure", e);
+            return jsonResponse(Response.Status.INTERNAL_ERROR,
+                    "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /** POST /config/mirror – toggle or set front-camera mirror {enabled: bool}. */
+    @NonNull
+    private Response setMirror(IHTTPSession session) {
+        try {
+            com.fadcam.SharedPreferencesManager spManager =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+
+            boolean enabled;
+            java.util.Map<String, String> files = new java.util.HashMap<>();
+            try { session.parseBody(files); } catch (Exception ignored) {}
+            String body = files.get("postData");
+
+            if (body != null && !body.isEmpty()) {
+                try {
+                    org.json.JSONObject json = new org.json.JSONObject(body);
+                    if (json.has("enabled")) {
+                        enabled = json.getBoolean("enabled");
+                    } else {
+                        enabled = !spManager.isFrontVideoMirrorEnabled();
+                    }
+                } catch (Exception e) {
+                    enabled = !spManager.isFrontVideoMirrorEnabled();
+                }
+            } else {
+                enabled = !spManager.isFrontVideoMirrorEnabled();
+            }
+
+            android.content.Intent intent = new android.content.Intent(
+                    context, com.fadcam.services.RecordingService.class);
+            intent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR);
+            intent.putExtra(com.fadcam.Constants.EXTRA_FRONT_VIDEO_MIRROR_ENABLED, enabled);
+            com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+            Log.i(TAG, "✅ Front mirror set to: " + enabled);
+
+            return jsonResponse(Response.Status.OK,
+                    "{\"status\": \"success\", \"mirrorEnabled\": " + enabled + "}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting mirror", e);
+            return jsonResponse(Response.Status.INTERNAL_ERROR,
+                    "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
 
     @NonNull
     private Response serveStatus() {
