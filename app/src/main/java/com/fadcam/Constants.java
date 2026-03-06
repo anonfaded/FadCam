@@ -132,6 +132,16 @@ public abstract class Constants {
         "com.fadcam.ON_TORCH_STATE_CHANGED";
     public static final String BROADCAST_ON_TORCH_STATE_REQUEST =
         "ON_TORCH_STATE_REQUEST";
+    /** Sent via LocalBroadcastManager when mirror state changes (from web or RecordingService). */
+    public static final String BROADCAST_ON_MIRROR_CHANGED =
+        "com.fadcam.ON_MIRROR_CHANGED";
+    public static final String EXTRA_MIRROR_ENABLED = "com.fadcam.EXTRA_MIRROR_ENABLED";
+    /** Sent via LocalBroadcastManager when zoom / pan state changes (from web or RecordingService). */
+    public static final String BROADCAST_ON_ZOOM_CHANGED =
+        "com.fadcam.ON_ZOOM_CHANGED";
+    public static final String EXTRA_BROADCAST_ZOOM_RATIO = "com.fadcam.EXTRA_BROADCAST_ZOOM_RATIO";
+    public static final String EXTRA_BROADCAST_PAN_X = "com.fadcam.EXTRA_BROADCAST_PAN_X";
+    public static final String EXTRA_BROADCAST_PAN_Y = "com.fadcam.EXTRA_BROADCAST_PAN_Y";
     public static final String BROADCAST_MOTION_LAB_DEBUG =
         "com.fadcam.MOTION_LAB_DEBUG";
     public static final String EXTRA_MOTION_DEBUG_SCORE = "motion_debug_score";

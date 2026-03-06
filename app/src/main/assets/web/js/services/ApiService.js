@@ -370,8 +370,14 @@ class ApiService {
      * @param {number} [panX=0]   Horizontal pan -1.0…+1.0 (0 = centre)
      * @param {number} [panY=0]   Vertical pan   -1.0…+1.0 (0 = centre)
      */
-    async setZoom(ratio, panX = 0, panY = 0) {
-        return this.post('/config/zoom', { ratio, panX, panY });
+    async setZoom(ratio, panX = null, panY = null) {
+        const body = { ratio };
+        // Only include pan when explicitly provided – avoids wiping phone's saved pan
+        if (panX !== null && panY !== null) {
+            body.panX = panX;
+            body.panY = panY;
+        }
+        return this.post('/config/zoom', body);
     }
 
     /**
@@ -389,6 +395,13 @@ class ApiService {
     async setMirror(enabled = null) {
         const params = (enabled !== null) ? { enabled } : {};
         return this.post('/config/mirror', params);
+    }
+
+    /**
+     * POST /config/aeLock – Toggle AE (Auto-Exposure) lock.
+     */
+    async toggleAeLock() {
+        return this.post('/config/aeLock', {});
     }
 
     /**

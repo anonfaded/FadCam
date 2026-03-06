@@ -193,6 +193,8 @@ import fi.iki.elonen.NanoHTTPD;
                 response = setExposure(session);
             } else if ("/config/mirror".equals(uri)) {
                 response = setMirror(session);
+            } else if ("/config/aeLock".equals(uri)) {
+                response = toggleAeLock(session);
             } else if ("/api/notifications".equals(uri)) {
                 response = handleNotifications(session);
             } else {
@@ -1038,7 +1040,16 @@ import fi.iki.elonen.NanoHTTPD;
                 spManager.sharedPreferences.edit()
                         .putString(com.fadcam.Constants.PREF_CAMERA_SELECTION, target.toString())
                         .apply();
-                Log.i(TAG, "✅ Camera switch (preference): " + current + " → " + target);
+                // Notify HomeFragment so it can restart preview and update mirror button
+                android.content.Intent broadcastIntent = new android.content.Intent(
+                        com.fadcam.Constants.BROADCAST_ON_CAMERA_SWITCH_COMPLETE);
+                broadcastIntent.putExtra(com.fadcam.Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM,
+                        current.toString());
+                broadcastIntent.putExtra(com.fadcam.Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO,
+                        target.toString());
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context)
+                        .sendBroadcast(broadcastIntent);
+                Log.i(TAG, "✅ Camera switch (preference + broadcast): " + current + " → " + target);
             }
 
             return jsonResponse(Response.Status.OK,
@@ -1084,12 +1095,22 @@ import fi.iki.elonen.NanoHTTPD;
             } else {
                 com.fadcam.CameraType cam = spManager.getCameraSelection();
                 spManager.setSpecificZoomRatio(cam, ratio);
+                float broadcastPanX = spManager.getSpecificPanX(cam);
+                float broadcastPanY = spManager.getSpecificPanY(cam);
                 if (json.has("panX") || json.has("panY")) {
                     float panX = Math.max(-1f, Math.min(1f, (float) json.optDouble("panX", 0.0)));
                     float panY = Math.max(-1f, Math.min(1f, (float) json.optDouble("panY", 0.0)));
                     spManager.setSpecificPan(cam, panX, panY);
+                    broadcastPanX = panX;
+                    broadcastPanY = panY;
                 }
                 Log.i(TAG, "✅ Zoom saved (preference): ratio=" + ratio);
+                // Notify HomeFragment so pan overlay + zoom label refresh even when not recording
+                android.content.Intent zoomBcast = new android.content.Intent(com.fadcam.Constants.BROADCAST_ON_ZOOM_CHANGED);
+                zoomBcast.putExtra(com.fadcam.Constants.EXTRA_BROADCAST_ZOOM_RATIO, ratio);
+                zoomBcast.putExtra(com.fadcam.Constants.EXTRA_BROADCAST_PAN_X, broadcastPanX);
+                zoomBcast.putExtra(com.fadcam.Constants.EXTRA_BROADCAST_PAN_Y, broadcastPanY);
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).sendBroadcast(zoomBcast);
             }
 
             return jsonResponse(Response.Status.OK, "{\"status\": \"success\", \"ratio\": " + ratio + "}");
@@ -1167,6 +1188,30 @@ import fi.iki.elonen.NanoHTTPD;
                     "{\"status\": \"success\", \"mirrorEnabled\": " + enabled + "}");
         } catch (Exception e) {
             Log.e(TAG, "Error setting mirror", e);
+            return jsonResponse(Response.Status.INTERNAL_ERROR,
+                    "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /** POST /config/aeLock – toggle AE lock on/off. */
+    @NonNull
+    private Response toggleAeLock(IHTTPSession session) {
+        try {
+            com.fadcam.SharedPreferencesManager spManager =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            boolean newLocked = !spManager.isAeLockedSaved();
+
+            android.content.Intent intent = new android.content.Intent(
+                    context, com.fadcam.services.RecordingService.class);
+            intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_AE_LOCK);
+            intent.putExtra(com.fadcam.Constants.EXTRA_AE_LOCK, newLocked);
+            com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
+            Log.i(TAG, "✅ AE lock set to: " + newLocked);
+
+            return jsonResponse(Response.Status.OK,
+                    "{\"status\": \"success\", \"aeLockEnabled\": " + newLocked + "}");
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling AE lock", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR,
                     "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }

@@ -396,7 +396,7 @@ class DashboardViewModel {
      * @param {number} [panX=0] Horizontal pan -1.0…+1.0
      * @param {number} [panY=0] Vertical pan   -1.0…+1.0
      */
-    async setZoom(ratio, panX = 0, panY = 0) {
+    async setZoom(ratio, panX = null, panY = null) {
         try {
             const result = await apiService.setZoom(ratio, panX, panY);
             console.log('[DashboardViewModel] Zoom set:', ratio, panX, panY);
@@ -439,6 +439,21 @@ class DashboardViewModel {
             return result;
         } catch (error) {
             console.error('[DashboardViewModel] Failed to set mirror:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Toggle AE (Auto-Exposure) lock on/off.
+     */
+    async toggleAeLock() {
+        try {
+            const result = await apiService.toggleAeLock();
+            console.log('[DashboardViewModel] AE lock toggled');
+            await this.updateStatus();
+            return result;
+        } catch (error) {
+            console.error('[DashboardViewModel] Failed to toggle AE lock:', error);
             throw error;
         }
     }

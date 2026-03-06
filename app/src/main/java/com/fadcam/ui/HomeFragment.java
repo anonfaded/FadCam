@@ -337,6 +337,8 @@ public class HomeFragment extends BaseFragment {
     private BroadcastReceiver broadcastOnCameraSwitchStarted;
     private BroadcastReceiver broadcastOnCameraSwitchComplete;
     private BroadcastReceiver broadcastOnCameraSwitchFailed;
+    private BroadcastReceiver broadcastOnMirrorChanged;
+    private BroadcastReceiver broadcastOnZoomChanged;
     private volatile boolean isCameraSwitchInProgress = false;
     private volatile long lastCameraSwitchCompleteTime = 0; // Debounce duplicate toasts
     private volatile long lastCameraSwitchTime = 0; // Track when switch completed to prevent button disable
@@ -3238,6 +3240,31 @@ public class HomeFragment extends BaseFragment {
                 }
             }
         };
+
+        // Receiver: mirror state changed from web dashboard
+        broadcastOnMirrorChanged = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "📡 BROADCAST_ON_MIRROR_CHANGED received");
+                updateMirrorButtonVisibilityAndState();
+            }
+        };
+
+        // Receiver: zoom / pan changed from web dashboard
+        broadcastOnZoomChanged = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                float ratio = intent.getFloatExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, -1f);
+                float panX  = intent.getFloatExtra(Constants.EXTRA_BROADCAST_PAN_X, 0f);
+                float panY  = intent.getFloatExtra(Constants.EXTRA_BROADCAST_PAN_Y, 0f);
+                Log.d(TAG, "📡 BROADCAST_ON_ZOOM_CHANGED ratio=" + ratio + " pan=" + panX + "," + panY);
+                if (ratio > 0f) {
+                    previewPinchZoomRatio = ratio;
+                }
+                previewUiPanX = panX;
+                previewUiPanY = panY;
+            }
+        };
     }
 
     /**
@@ -3255,35 +3282,17 @@ public class HomeFragment extends BaseFragment {
             IntentFilter startFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_STARTED);
             IntentFilter completeFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_COMPLETE);
             IntentFilter failedFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_FAILED);
+            IntentFilter mirrorFilter = new IntentFilter(Constants.BROADCAST_ON_MIRROR_CHANGED);
+            IntentFilter zoomFilter = new IntentFilter(Constants.BROADCAST_ON_ZOOM_CHANGED);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
-                    broadcastOnCameraSwitchStarted,
-                    startFilter
-                );
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
-                    broadcastOnCameraSwitchComplete,
-                    completeFilter
-                );
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
-                    broadcastOnCameraSwitchFailed,
-                    failedFilter
-                );
-            } else {
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
-                    broadcastOnCameraSwitchStarted,
-                    startFilter
-                );
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
-                    broadcastOnCameraSwitchComplete,
-                    completeFilter
-                );
-                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).registerReceiver(
-                    broadcastOnCameraSwitchFailed,
-                    failedFilter
-                );
-            }
-            Log.d(TAG, "Camera switch receivers registered successfully");
+            androidx.localbroadcastmanager.content.LocalBroadcastManager lbm =
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context);
+            lbm.registerReceiver(broadcastOnCameraSwitchStarted, startFilter);
+            lbm.registerReceiver(broadcastOnCameraSwitchComplete, completeFilter);
+            lbm.registerReceiver(broadcastOnCameraSwitchFailed, failedFilter);
+            lbm.registerReceiver(broadcastOnMirrorChanged, mirrorFilter);
+            lbm.registerReceiver(broadcastOnZoomChanged, zoomFilter);
+            Log.d(TAG, "Camera switch + control receivers registered successfully");
         } catch (Exception e) {
             Log.e(TAG, "Error registering camera switch receivers", e);
         }
@@ -3303,7 +3312,13 @@ public class HomeFragment extends BaseFragment {
             if (broadcastOnCameraSwitchFailed != null) {
                 androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnCameraSwitchFailed);
             }
-            Log.d(TAG, "Camera switch receivers unregistered");
+            if (broadcastOnMirrorChanged != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnMirrorChanged);
+            }
+            if (broadcastOnZoomChanged != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnZoomChanged);
+            }
+            Log.d(TAG, "Camera switch + control receivers unregistered");
         } catch (Exception e) {
             Log.w(TAG, "Error unregistering camera switch receivers: " + e.getMessage());
         }

@@ -934,6 +934,17 @@ public class CloudStatusManager {
                 com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, mirrorIntent);
                 Log.i(TAG, "✅ Cloud front mirror set to: " + enabled);
 
+            } else if ("config_aeLock".equals(action)) {
+                // Toggle AE lock on/off.
+                boolean currentLocked = spManager.isAeLockedSaved();
+                boolean newLocked = !currentLocked;
+                android.content.Intent aeLockIntent = new android.content.Intent(
+                        context, com.fadcam.services.RecordingService.class);
+                aeLockIntent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_AE_LOCK);
+                aeLockIntent.putExtra(com.fadcam.Constants.EXTRA_AE_LOCK, newLocked);
+                com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, aeLockIntent);
+                Log.i(TAG, "✅ Cloud AE lock set to: " + newLocked);
+
             } else {
                 Log.w(TAG, "☁️ Unknown command action: " + action);
             }

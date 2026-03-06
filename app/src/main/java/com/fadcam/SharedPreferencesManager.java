@@ -1017,6 +1017,25 @@ public class SharedPreferencesManager {
             .commit();
     }
 
+    // ----- Exposure compensation range (populated when camera opens) -----
+    private static final String PREF_EXPOSURE_COMP_MIN = "pref_exposure_comp_min";
+    private static final String PREF_EXPOSURE_COMP_MAX = "pref_exposure_comp_max";
+
+    public int getExposureCompensationMin() {
+        return sharedPreferences.getInt(PREF_EXPOSURE_COMP_MIN, -12);
+    }
+
+    public int getExposureCompensationMax() {
+        return sharedPreferences.getInt(PREF_EXPOSURE_COMP_MAX, 12);
+    }
+
+    public void setExposureCompensationRange(int min, int max) {
+        sharedPreferences.edit()
+            .putInt(PREF_EXPOSURE_COMP_MIN, min)
+            .putInt(PREF_EXPOSURE_COMP_MAX, max)
+            .apply();
+    }
+
     // --- End Other methods ---
 
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists

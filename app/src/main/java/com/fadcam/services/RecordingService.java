@@ -315,6 +315,12 @@ public class RecordingService extends Service {
         if (currentCameraCharacteristics != null) {
             Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
             if (range != null) {
+                // Persist the device's actual range so RemoteStreamManager can surface it
+                try {
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.setExposureCompensationRange(range.getLower(), range.getUpper());
+                    }
+                } catch (Exception ignored) {}
                 clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evIndex));
             }
         }
@@ -1239,8 +1245,23 @@ public class RecordingService extends Service {
                     float panX = intent.getFloatExtra(Constants.EXTRA_PAN_X, 0.0f);
                     float panY = intent.getFloatExtra(Constants.EXTRA_PAN_Y, 0.0f);
                     applyZoomAndPan(zoomRatio, panX, panY);
+                    // Notify HomeFragment so pan overlay updates in real time
+                    android.content.Intent zoomBcast = new android.content.Intent(Constants.BROADCAST_ON_ZOOM_CHANGED);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, zoomRatio);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_X, panX);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, panY);
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(zoomBcast);
                 } else {
                     applyZoomRatio(zoomRatio); // preserves saved pan internally
+                    // Notify HomeFragment; read effective pan from SharedPreferences
+                    CameraType cam = sharedPreferencesManager.getCameraSelection();
+                    float broadcastPanX = sharedPreferencesManager.getSpecificPanX(cam);
+                    float broadcastPanY = sharedPreferencesManager.getSpecificPanY(cam);
+                    android.content.Intent zoomBcast = new android.content.Intent(Constants.BROADCAST_ON_ZOOM_CHANGED);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, zoomRatio);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_X, broadcastPanX);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, broadcastPanY);
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(zoomBcast);
                 }
             }
             return START_STICKY;
@@ -1250,6 +1271,10 @@ public class RecordingService extends Service {
                     sharedPreferencesManager.isFrontVideoMirrorEnabled());
             sharedPreferencesManager.setFrontVideoMirrorEnabled(enabled);
             applyFrontVideoMirror(enabled);
+            // Notify HomeFragment so mirror button visual state updates
+            android.content.Intent mirrorBcast = new android.content.Intent(Constants.BROADCAST_ON_MIRROR_CHANGED);
+            mirrorBcast.putExtra(Constants.EXTRA_MIRROR_ENABLED, enabled);
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(mirrorBcast);
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_CAPTURE_PHOTO.equals(action)) {
             capturePhotoFromRecording();

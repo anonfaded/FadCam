@@ -838,7 +838,10 @@ public class RemoteStreamManager {
             float panX = spMgr != null ? spMgr.getSpecificPanX(activeCam) : 0.0f;
             float panY = spMgr != null ? spMgr.getSpecificPanY(activeCam) : 0.0f;
             int exposureCompensation = spMgr != null ? spMgr.getSavedExposureCompensation() : 0;
+            int exposureCompensationMin = spMgr != null ? spMgr.getExposureCompensationMin() : -12;
+            int exposureCompensationMax = spMgr != null ? spMgr.getExposureCompensationMax() : 12;
             boolean mirrorEnabled = spMgr != null && spMgr.isFrontVideoMirrorEnabled();
+            boolean aeLockEnabled = spMgr != null && spMgr.isAeLockedSaved();
             
             // Calculate volume percentage
             float volumePercentage = maxMediaVolume > 0 ? (mediaVolume * 100.0f / maxMediaVolume) : 0;
@@ -874,7 +877,8 @@ public class RemoteStreamManager {
                 "\"videoCodec\": %s, " +
                 "\"cameraType\": %s, " +
                 "\"zoomRatio\": %.2f, \"panX\": %.3f, \"panY\": %.3f, " +
-                "\"exposureCompensation\": %d, \"mirrorEnabled\": %s, " +
+                "\"exposureCompensation\": %d, \"exposureCompensationMin\": %d, \"exposureCompensationMax\": %d, " +
+                "\"mirrorEnabled\": %s, \"aeLockEnabled\": %s, " +
                 "\"torchState\": %s, " +
                 "\"volume\": %d, \"maxVolume\": %d, \"volumePercentage\": %.1f, " +
                 "\"alarm\": {\"isRinging\": %s, \"sound\": %s, \"durationMs\": %d, \"remainingMs\": %d}, " +
@@ -911,7 +915,10 @@ public class RemoteStreamManager {
                 panX,
                 panY,
                 exposureCompensation,
+                exposureCompensationMin,
+                exposureCompensationMax,
                 mirrorEnabled,
+                aeLockEnabled,
                 isTorchOn(),  // Read from SharedPreferences to get current actual state
                 mediaVolume,
                 maxMediaVolume,
