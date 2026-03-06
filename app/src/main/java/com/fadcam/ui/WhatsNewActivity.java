@@ -47,7 +47,8 @@ public class WhatsNewActivity extends AppCompatActivity {
 
         // Set edge-to-edge display and status bar color
         getWindow().setDecorFitsSystemWindows(false);
-        getWindow().setStatusBarColor(0xFF0d0d0d); // Match gradient bottom color
+        getWindow().setStatusBarColor(0xFF000000); // Full black
+        getWindow().setNavigationBarColor(0xFF000000); // Full black
 
         // Initialize views
         changelogWebView = findViewById(R.id.changelogWebView);
