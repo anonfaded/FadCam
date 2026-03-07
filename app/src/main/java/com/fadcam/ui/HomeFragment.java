@@ -7781,6 +7781,10 @@ public class HomeFragment extends BaseFragment {
             // AE lock control moved into Exposure slider sheet (handled below)
 
             tileExp.setOnClickListener(v -> {
+                // Reload exposure value from SharedPreferences before showing picker
+                // This ensures UI reflects any changes made by web/RecordingService
+                currentEvIndex =
+                    sharedPreferencesManager.getSavedExposureCompensation();
                 com.fadcam.Log.d(
                     TAG,
                     "Exposure tile clicked. Opening slider exposure picker"
@@ -7812,6 +7816,13 @@ public class HomeFragment extends BaseFragment {
                         if (stepRat != null) {
                             stepFloat = stepRat.floatValue();
                         }
+                        sharedPreferencesManager.setExposureCompensationRange(
+                            min,
+                            max
+                        );
+                        sharedPreferencesManager.setExposureCompensationStep(
+                            stepFloat
+                        );
                     }
                 } catch (Exception ignored) {}
                 com.fadcam.ui.picker.PickerBottomSheetFragment evSlider =

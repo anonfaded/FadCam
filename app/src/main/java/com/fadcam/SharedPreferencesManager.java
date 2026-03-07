@@ -1036,6 +1036,20 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // ----- Exposure compensation step (EV per index) -----
+    private static final String PREF_EXPOSURE_COMP_STEP = "pref_exposure_comp_step";
+
+    public float getExposureCompensationStep() {
+        // Default to 1/3 EV step (most common)
+        return sharedPreferences.getFloat(PREF_EXPOSURE_COMP_STEP, 0.33f);
+    }
+
+    public void setExposureCompensationStep(float step) {
+        sharedPreferences.edit()
+            .putFloat(PREF_EXPOSURE_COMP_STEP, step)
+            .apply();
+    }
+
     // --- End Other methods ---
 
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled"; // Check constant exists

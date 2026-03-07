@@ -1138,6 +1138,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         // ── Exposure click ──
         if (tileExp != null) {
             tileExp.setOnClickListener(v -> {
+                // Reload exposure value from SharedPreferences before showing picker
+                // This ensures UI reflects any changes made by web/RecordingService
+                currentEvIndex = prefs.getSavedExposureCompensation();
                 int min = -4, max = 4, step = 1;
                 float stepFloat = 1f;
                 try {
@@ -1149,6 +1152,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                         if (range != null) { min = range.getLower(); max = range.getUpper(); }
                         Rational stepRat = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
                         if (stepRat != null) stepFloat = stepRat.floatValue();
+                        prefs.setExposureCompensationRange(min, max);
+                        prefs.setExposureCompensationStep(stepFloat);
                     }
                 } catch (Exception ignored) { }
                 PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceSliderWithSwitch(

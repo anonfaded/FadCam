@@ -323,6 +323,14 @@ public class RecordingService extends Service {
                 } catch (Exception ignored) {}
                 clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evIndex));
             }
+            // Get and persist the EV step factor for web dashboard
+            try {
+                android.util.Rational stepRational = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                if (stepRational != null && sharedPreferencesManager != null) {
+                    float stepFloat = stepRational.floatValue();
+                    sharedPreferencesManager.setExposureCompensationStep(stepFloat);
+                }
+            } catch (Exception ignored) {}
         }
         // Persist immediately so the next recording session always starts from the latest value.
         // This also protects against stale saved EV when runtime overrides are cleared.

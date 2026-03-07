@@ -2410,25 +2410,37 @@
 
         // ─── Exposure ──────────────────────────────────────────────────────────
 
-        let _currentEv = 0;
-        let _evMin = -12;  // Updated from status when device reports range
-        let _evMax = 12;
+        let _currentEv = 0;           // Current index for state tracking only
+        let _evMin = -5;              // Min index (updated from status)
+        let _evMax = 5;               // Max index (updated from status)
+        let _evStep = 0.33;           // EV per index (updated from status)
+        let _currentDisplayEv = 0;    // Current display value from server (this is what we display)
 
         async function adjustExposure(delta) {
             // Compute target EV (don’t write to _currentEv yet – wait for backend confirmation)
-            const targetEv = Math.max(_evMin, Math.min(_evMax, _currentEv + delta));
+            const targetIndex = Math.max(_evMin, Math.min(_evMax, _currentEv + delta));
             const el = document.getElementById('exposureValue');
-            // Show target value as visual feedback (like torch shows intended state)
-            if (el) el.textContent = (targetEv > 0 ? '+' : '') + targetEv;
-            executingState.start('exposureCompensation', targetEv, '#exposureCard');
+            // Show loading state while waiting for server
+            if (el) el.textContent = '...';
+            executingState.start('exposureCompensation', targetIndex, '#exposureCard');
             try {
-                await dashboardViewModel.setExposure(targetEv);
-                _currentEv = targetEv; // Mark confirmed locally too
+                const result = await dashboardViewModel.setExposure(targetIndex);
+                // Server response is authoritative - use display value directly
+                if (result && result.evDisplay !== undefined) {
+                    _currentDisplayEv = parseFloat(result.evDisplay);
+                    _currentEv = targetIndex;
+                    executingState.stop('exposureCompensation');
+                    if (el) el.textContent = (_currentDisplayEv > 0 ? '+' : '') + _currentDisplayEv.toFixed(1);
+                    console.log('[Exposure] Display from POST response: ' + _currentDisplayEv.toFixed(1) + ' EV');
+                } else {
+                    _currentEv = targetIndex;
+                    if (el) el.textContent = '?';
+                    console.warn('[Exposure] Waiting for status poll...');
+                }
             } catch (e) {
-                // Revert label display on failure
-                if (el) el.textContent = (_currentEv > 0 ? '+' : '') + _currentEv;
+                if (el) el.textContent = _currentDisplayEv > 0 ? '+' + _currentDisplayEv.toFixed(1) : _currentDisplayEv.toFixed(1);
                 executingState.stop('exposureCompensation');
-                showToast('Failed to set exposure');
+                showToast('Failed to adjust exposure');
             }
         }
 
@@ -2450,9 +2462,25 @@
 
         async function toggleAeLock() {
             const newState = !currentStatus?.aeLockEnabled;
-            executingState.start('aeLockEnabled', newState, '#aeLockBtn');
+            // Show overlay on the main exposure card (not just the lock icon button)
+            executingState.start('aeLockEnabled', newState, '#exposureCard');
             try {
-                await dashboardViewModel.toggleAeLock();
+                const result = await dashboardViewModel.toggleAeLock();
+                
+                // If server returned actual state in response, use it immediately (avoids 8s timeout)
+                // This matches how toggleTorch works - no need to wait for status poll
+                if (result && result.aeLockEnabled !== undefined) {
+                    const actualState = result.aeLockEnabled;
+                    executingState.stop('aeLockEnabled');
+                    if (currentStatus) {
+                        currentStatus.aeLockEnabled = actualState;
+                    }
+                    console.log('[AE Lock] Server confirmed:', actualState);
+                    updateUI(currentStatus);
+                } else {
+                    // No state in response - will wait for status poll confirmation
+                    console.log('[AE Lock] No aeLockEnabled in response, waiting for status poll...');
+                }
             } catch (e) {
                 executingState.stop('aeLockEnabled');
                 showToast('Failed to toggle AE lock');
@@ -2860,7 +2888,7 @@
             _pendingPanX = 0; _pendingPanY = 0;
             _currentEv = 0;
             const evEl = document.getElementById('exposureValue');
-            if (evEl) evEl.textContent = 'EV 0';
+            if (evEl) evEl.textContent = '+0.0';
             const mirrorBtnOffline = document.getElementById('mirrorBtn');
             if (mirrorBtnOffline) { mirrorBtnOffline.style.display = 'none'; mirrorBtnOffline.classList.remove('active'); }
             // AE lock – reset
@@ -3415,13 +3443,22 @@
                     }
                 }
 
-                // Sync exposure — always update EV range; skip display if still executing
+                // Sync exposure — always update EV range and step; use backend display value directly
                 if (status.exposureCompensationMin !== undefined) _evMin = status.exposureCompensationMin;
                 if (status.exposureCompensationMax !== undefined) _evMax = status.exposureCompensationMax;
+                if (status.exposureCompensationStep !== undefined) _evStep = status.exposureCompensationStep;
                 if (status.exposureCompensation !== undefined && !executingState.isExecuting('exposureCompensation')) {
                     _currentEv = status.exposureCompensation;
+                    _currentDisplayEv = status.exposureCompensationDisplay || 0;  // Store the display value from server
                     const evEl = document.getElementById('exposureValue');
-                    if (evEl) evEl.textContent = (_currentEv > 0 ? '+' : '') + _currentEv;
+                    // CRITICAL: Use ONLY what server sends - no client-side conversion
+                    if (status.exposureCompensationDisplay !== undefined) {
+                        const displayEv = status.exposureCompensationDisplay;
+                        if (evEl) evEl.textContent = (displayEv > 0 ? '+' : '') + displayEv.toFixed(1);
+                        console.log('[Exposure] Status tells us: Display=' + displayEv.toFixed(1) + ' EV');
+                    } else {
+                        console.warn('[Exposure] WARNING: Server did not send exposureCompensationDisplay! Using Index=' + _currentEv);
+                    }
                 }
 
                 // AE lock button (in exposure row)

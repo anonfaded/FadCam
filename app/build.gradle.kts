@@ -177,8 +177,9 @@ android {
             java.srcDir("libs/AppLockLibrary/src/main/java")
             res.srcDir("libs/AppLockLibrary/src/main/res")
         }
-        getByName("test").java.setSrcDirs(emptyList<String>())
-        getByName("androidTest").java.setSrcDirs(emptyList<String>())
+        // NOTE: Removed setSrcDirs(emptyList()) to enable test source detection
+        // getByName("test").java.setSrcDirs(emptyList<String>())
+        // getByName("androidTest").java.setSrcDirs(emptyList<String>())
         
         // Flavor-specific resources (icons override main icons)
         getByName("notesPro") {
@@ -293,4 +294,14 @@ dependencies {
     implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
     implementation(libs.smart.exception.java)
     implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
+
+    // Unit Testing Dependencies (Local JVM tests - fast, no device needed)
+    testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:5.2.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("org.json:json:20240303")
+    
+    // Android Instrumented Testing (runs on device/emulator)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }
