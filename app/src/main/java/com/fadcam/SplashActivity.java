@@ -25,7 +25,7 @@ public class SplashActivity extends Activity {
         setContentView(R.layout.activity_splash);
         ImageView iv = findViewById(R.id.splash_image);
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Class<?> destination = RuntimeCompat.isWatchDevice(SplashActivity.this)
+            Class<?> destination = RuntimeCompat.shouldUseWatchUi(SplashActivity.this)
                     ? WatchMainActivity.class
                     : MainActivity.class;
             startActivity(new Intent(SplashActivity.this, destination));
