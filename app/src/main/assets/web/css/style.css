@@ -2669,7 +2669,7 @@ video {
     align-items: center;
     cursor: pointer;
     min-width: 0;
-    padding: 4px 2px;
+    padding: 4px 0;
 }
 
 input[type="range"].zoom-slider {
@@ -2759,13 +2759,11 @@ input[type="range"].zoom-slider::-moz-range-progress {
 }
 
 .zoom-slider-preset.is-edge-start {
-    left: 0 !important;
     transform: none;
     align-items: flex-start;
 }
 
 .zoom-slider-preset.is-edge-end {
-    left: 100% !important;
     transform: translateX(-100%);
     align-items: flex-end;
 }
@@ -2784,11 +2782,6 @@ input[type="range"].zoom-slider::-moz-range-progress {
     line-height: 1;
     letter-spacing: 0.01em;
     white-space: nowrap;
-    transform: translateX(var(--label-shift-x, 0));
-}
-
-.zoom-slider-preset-label.is-shifted {
-    text-align: left;
 }
 
 .zoom-slider-preset:hover,
@@ -2844,24 +2837,44 @@ input[type="range"].zoom-slider::-moz-range-progress {
     inset: 0 auto 0 0;
     width: 0;
     opacity: 1;
-    background: linear-gradient(90deg, rgba(110, 118, 129, 0.24), rgba(139, 148, 158, 0.14));
+    background: linear-gradient(90deg, #6e7681 0%, #8b949e 100%);
     transition: width 180ms ease, background 180ms ease;
 }
 
+.cam-ctrl-card.volume-card {
+    background: linear-gradient(135deg, #24292f 0%, #30363d 100%);
+}
+
 .cam-ctrl-card.volume-card.muted .cam-ctrl-fill {
-    background: linear-gradient(90deg, rgba(110, 118, 129, 0.24), rgba(139, 148, 158, 0.14));
+    background: linear-gradient(90deg, #6e7681 0%, #8b949e 100%);
 }
 
 .cam-ctrl-card.volume-card.low .cam-ctrl-fill {
-    background: linear-gradient(90deg, rgba(46, 160, 67, 0.28), rgba(46, 160, 67, 0.14));
+    background: linear-gradient(90deg, #3fb950 0%, #56d364 100%);
 }
 
 .cam-ctrl-card.volume-card.medium .cam-ctrl-fill {
-    background: linear-gradient(90deg, rgba(251, 188, 5, 0.28), rgba(251, 188, 5, 0.14));
+    background: linear-gradient(90deg, #fb8500 0%, #ffb703 100%);
 }
 
 .cam-ctrl-card.volume-card.high .cam-ctrl-fill {
-    background: linear-gradient(90deg, rgba(239, 83, 80, 0.28), rgba(239, 83, 80, 0.14));
+    background: linear-gradient(90deg, #f85149 0%, #ff7b72 100%);
+}
+
+.cam-ctrl-card.volume-card.muted {
+    background: linear-gradient(135deg, #24292f 0%, #30363d 100%) !important;
+}
+
+.cam-ctrl-card.volume-card.low {
+    background: linear-gradient(135deg, #1a4d2e 0%, #2d5a3d 100%) !important;
+}
+
+.cam-ctrl-card.volume-card.medium {
+    background: linear-gradient(135deg, #4d3a1a 0%, #5d4a2d 100%) !important;
+}
+
+.cam-ctrl-card.volume-card.high {
+    background: linear-gradient(135deg, #4d1a1a 0%, #5d2d2d 100%) !important;
 }
 
 .volume-compact-icon {
@@ -2879,13 +2892,18 @@ input[type="range"].zoom-slider::-moz-range-progress {
 
 .cam-ctrl-card.volume-card .volume-label,
 .cam-ctrl-card.volume-card .volume-percentage {
-    color: inherit !important;
-    text-shadow: none !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .cam-ctrl-card.volume-card .volume-percentage {
-    font-size: 12px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
+}
+
+.cam-ctrl-card.volume-card .volume-compact-icon {
+    color: #ffffff;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 @media (max-width: 640px) {

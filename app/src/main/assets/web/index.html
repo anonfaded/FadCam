@@ -439,7 +439,7 @@
                         <div class="zoom-slider-track">
                             <input type="range" class="zoom-slider" id="zoomSlider"
                                    data-static-min="0.5"
-                                   min="0.5" max="10.0" step="0.1" value="1.0"
+                                   min="0" max="100" step="0.1" value="24.0"
                                    oninput="onZoomSliderInput(this.value)"
                                    onchange="onZoomSliderCommit(this.value)">
                         </div>
@@ -2334,17 +2334,148 @@
                 .sort((left, right) => left - right);
         }
 
+        function getZoomPresetLayout(min, max) {
+            const presetValues = getZoomPresetValues(min, max);
+            let presetPositions = presetValues.map((value) => ({
+                value,
+                pct: max > min ? ((value - min) / (max - min) * 100) : 0
+            }));
+
+            if (
+                presetValues.length === 4 &&
+                Math.abs(presetValues[0] - 0.5) < 0.001 &&
+                Math.abs(presetValues[1] - 1.0) < 0.001
+            ) {
+                const anchorPositions = [0, 24, 64, 100];
+                presetPositions = presetValues.map((value, index) => ({
+                    value,
+                    pct: anchorPositions[index]
+                }));
+            } else if (presetPositions.length > 1) {
+                const minGapPct = 14;
+                presetPositions[0].pct = 0;
+                presetPositions[presetPositions.length - 1].pct = 100;
+
+                for (let index = 1; index < presetPositions.length; index += 1) {
+                    presetPositions[index].pct = Math.max(
+                        presetPositions[index].pct,
+                        presetPositions[index - 1].pct + minGapPct
+                    );
+                }
+
+                for (let index = presetPositions.length - 2; index >= 0; index -= 1) {
+                    presetPositions[index].pct = Math.min(
+                        presetPositions[index].pct,
+                        presetPositions[index + 1].pct - minGapPct
+                    );
+                }
+
+                presetPositions[0].pct = 0;
+                presetPositions[presetPositions.length - 1].pct = 100;
+            }
+
+            return presetPositions;
+        }
+
+        function mapSliderPositionToZoomValue(position, min, max) {
+            const layout = getZoomPresetLayout(min, max);
+            const clampedPosition = Math.max(0, Math.min(100, position));
+
+            if (layout.length === 0) {
+                return min;
+            }
+
+            if (clampedPosition <= layout[0].pct) {
+                return layout[0].value;
+            }
+
+            for (let index = 1; index < layout.length; index += 1) {
+                const previous = layout[index - 1];
+                const current = layout[index];
+                if (clampedPosition <= current.pct) {
+                    if (
+                        index === 1 &&
+                        Math.abs(previous.value - 0.5) < 0.001 &&
+                        Math.abs(current.value - 1.0) < 0.001
+                    ) {
+                        const midPoint = previous.pct + ((current.pct - previous.pct) / 2);
+                        return clampedPosition < midPoint ? previous.value : current.value;
+                    }
+                    const pctRange = Math.max(0.001, current.pct - previous.pct);
+                    const t = (clampedPosition - previous.pct) / pctRange;
+                    return previous.value + (current.value - previous.value) * t;
+                }
+            }
+
+            return layout[layout.length - 1].value;
+        }
+
+        function mapZoomValueToSliderPosition(value, min, max) {
+            const layout = getZoomPresetLayout(min, max);
+            const clampedValue = Math.max(min, Math.min(max, value));
+
+            if (layout.length === 0) {
+                return 0;
+            }
+
+            if (clampedValue <= layout[0].value) {
+                return layout[0].pct;
+            }
+
+            for (let index = 1; index < layout.length; index += 1) {
+                const previous = layout[index - 1];
+                const current = layout[index];
+                if (clampedValue <= current.value) {
+                    const valueRange = Math.max(0.001, current.value - previous.value);
+                    const t = (clampedValue - previous.value) / valueRange;
+                    return previous.pct + (current.pct - previous.pct) * t;
+                }
+            }
+
+            return layout[layout.length - 1].pct;
+        }
+
+        function getZoomMarkerLeftCss(pct) {
+            const thumbWidthPx = 16;
+            const centerOffsetPx = (thumbWidthPx / 2) - ((pct / 100) * thumbWidthPx);
+            return 'calc(' + pct.toFixed(1) + '% + ' + centerOffsetPx.toFixed(1) + 'px)';
+        }
+
         function normalizeZoomSliderValue(value, snapToPreset = false) {
             const slider = document.getElementById('zoomSlider');
-            const min = parseFloat(slider?.min) || 1.0;
-            const max = parseFloat(slider?.max) || 10.0;
-            let normalized = Math.max(min, Math.min(max, parseFloat(value) || min));
+            const min = parseFloat(slider?.dataset.staticMin || '0.5') || 0.5;
+            const max = parseFloat(slider?.dataset.zoomMax || '10') || 10.0;
+            const sliderPosition = Math.max(0, Math.min(100, parseFloat(value) || 0));
+            let normalized = mapSliderPositionToZoomValue(sliderPosition, min, max);
 
             if (snapToPreset) {
-                const snapThreshold = Math.max(0.05, (max - min) * 0.01);
-                for (const preset of getZoomPresetValues(min, max)) {
-                    if (Math.abs(normalized - preset) <= snapThreshold) {
-                        normalized = preset;
+                const snapThreshold = 4;
+                for (const preset of getZoomPresetLayout(min, max)) {
+                    if (Math.abs(sliderPosition - preset.pct) <= snapThreshold) {
+                        normalized = preset.value;
+                        break;
+                    }
+                }
+            }
+
+            return Math.round(normalized * 10) / 10;
+        }
+
+        function normalizeActualZoomValue(value, snapToPreset = false) {
+            const slider = document.getElementById('zoomSlider');
+            const min = parseFloat(slider?.dataset.staticMin || '0.5') || 0.5;
+            const max = parseFloat(slider?.dataset.zoomMax || '10') || 10.0;
+            let normalized = Math.max(min, Math.min(max, parseFloat(value) || min));
+
+            if (normalized < 1.0) {
+                normalized = normalized < 0.75 ? 0.5 : 1.0;
+            }
+
+            if (snapToPreset) {
+                const snapThreshold = 0.05;
+                for (const preset of getZoomPresetLayout(min, max)) {
+                    if (Math.abs(normalized - preset.value) <= snapThreshold) {
+                        normalized = preset.value;
                         break;
                     }
                 }
@@ -2363,7 +2494,7 @@
 
         function updateZoomSliderVisuals(value, snapToPreset = false) {
             const slider = document.getElementById('zoomSlider');
-            const normalized = normalizeZoomSliderValue(value, snapToPreset);
+            const normalized = normalizeActualZoomValue(value, snapToPreset);
             const zoomValueEl = document.getElementById('zoomValue');
             const resetBtn = document.querySelector('.zoom-reset-btn');
 
@@ -2378,11 +2509,11 @@
             }
 
             if (slider) {
-                const min = parseFloat(slider.min) || 1.0;
-                const max = parseFloat(slider.max) || 10.0;
-                const pct = max > min ? ((normalized - min) / (max - min) * 100).toFixed(1) : '0.0';
-                slider.value = normalized.toFixed(1);
-                slider.style.setProperty('--zoom-pct', pct + '%');
+                const min = parseFloat(slider.dataset.staticMin || '0.5') || 0.5;
+                const max = parseFloat(slider.dataset.zoomMax || '10') || 10.0;
+                const sliderPosition = mapZoomValueToSliderPosition(normalized, min, max);
+                slider.value = sliderPosition.toFixed(1);
+                slider.style.setProperty('--zoom-pct', sliderPosition.toFixed(1) + '%');
             }
 
             updateZoomPresetState(normalized);
@@ -2396,22 +2527,14 @@
                 return;
             }
 
-            const min = parseFloat(slider.min) || 1.0;
-            const max = parseFloat(slider.max) || 10.0;
-            const presetValues = getZoomPresetValues(min, max);
-            const presetPositions = presetValues.map((value) => ({
-                value,
-                pct: max > min ? ((value - min) / (max - min) * 100) : 0
-            }));
+            const min = parseFloat(slider.dataset.staticMin || '0.5') || 0.5;
+            const max = parseFloat(slider.dataset.zoomMax || '10') || 10.0;
+            const presetPositions = getZoomPresetLayout(min, max);
 
             presets.innerHTML = presetPositions
                 .map((preset, index) => {
                     const edgeClass = preset.pct <= 0.1 ? ' is-edge-start' : (preset.pct >= 99.9 ? ' is-edge-end' : '');
-                    const previous = index > 0 ? presetPositions[index - 1] : null;
-                    const crowdedStart = previous && (preset.pct - previous.pct) < 9;
-                    const labelShiftX = crowdedStart ? 18 : 0;
-                    const labelClass = crowdedStart ? ' is-shifted' : '';
-                    return '<button type="button" class="zoom-slider-preset' + edgeClass + '" data-value="' + preset.value.toFixed(1) + '" style="left:' + preset.pct.toFixed(1) + '%; --label-shift-x:' + labelShiftX + 'px" onclick="setZoomPreset(' + preset.value.toFixed(1) + ')"><span class="zoom-slider-preset-tick"></span><span class="zoom-slider-preset-label' + labelClass + '">' + preset.value.toFixed(1) + '×</span></button>';
+                    return '<button type="button" class="zoom-slider-preset' + edgeClass + '" data-value="' + preset.value.toFixed(1) + '" style="left:' + getZoomMarkerLeftCss(preset.pct) + '" onclick="setZoomPreset(' + preset.value.toFixed(1) + ')"><span class="zoom-slider-preset-tick"></span><span class="zoom-slider-preset-label">' + preset.value.toFixed(1) + '×</span></button>';
                 })
                 .join('');
 
@@ -2425,12 +2548,12 @@
 
         /** Called continuously while slider is dragged – just updates label/track, no API call. */
         function onZoomSliderInput(value) {
-            updateZoomSliderVisuals(value, true);
+            updateZoomSliderVisuals(normalizeZoomSliderValue(value, true), true);
         }
 
         /** Called on slider mouseup/touchend – commits ONLY zoom (no pan – preserves phone’s saved pan). */
         async function onZoomSliderCommit(value) {
-            const ratio = updateZoomSliderVisuals(value, true);
+            const ratio = updateZoomSliderVisuals(normalizeZoomSliderValue(value, true), true);
             clearTimeout(_zoomDebounce);
             _zoomDebounce = null;
             // Wait for server confirmation before allowing updateUI to overwrite slider
@@ -2472,7 +2595,7 @@
                 if (!dragging) return;
                 dragging = false;
                 // Commit zoom + pan together; executingState guards against updateUI snapback
-                const ratio = parseFloat(document.getElementById('zoomSlider')?.value || 1);
+                const ratio = normalizeZoomSliderValue(document.getElementById('zoomSlider')?.value || 0, false);
                 executingState.start('zoomRatio', { ratio, panX: _pendingPanX, panY: _pendingPanY }, '.zoom-row');
                 dashboardViewModel.setZoom(ratio, _pendingPanX, _pendingPanY)
                     .catch(() => {
@@ -2494,7 +2617,7 @@
             _pendingPanX = 0; _pendingPanY = 0;
             const thumb = document.getElementById('panThumb');
             if (thumb) { thumb.style.left = '50%'; thumb.style.top = '50%'; }
-            const ratio = parseFloat(document.getElementById('zoomSlider')?.value || 1);
+            const ratio = normalizeZoomSliderValue(document.getElementById('zoomSlider')?.value || 0, false);
             executingState.start('zoomRatio', { ratio, panX: 0, panY: 0 }, '.zoom-row');
             try {
                 await dashboardViewModel.setZoom(ratio, 0, 0);
@@ -3532,12 +3655,19 @@
                 if (status.zoomRatio !== undefined && !executingState.isExecuting('zoomRatio')) {
                     const sliderEl = document.getElementById('zoomSlider');
                     if (sliderEl) {
-                        const staticMin = parseFloat(sliderEl.dataset.staticMin || sliderEl.min) || 0.5;
-                        const nextMin = staticMin.toFixed(1);
-                        const nextMax = Number.isFinite(Number(status.zoomRatioMax)) ? Number(status.zoomRatioMax).toFixed(1) : sliderEl.max;
-                        if (sliderEl.min !== nextMin || sliderEl.max !== nextMax) {
-                            sliderEl.min = nextMin;
-                            sliderEl.max = nextMax;
+                        const nextSliderMin = '0';
+                        const nextSliderMax = '100';
+                        const nextZoomMax = Number.isFinite(Number(status.zoomRatioMax))
+                            ? Number(status.zoomRatioMax).toFixed(1)
+                            : (sliderEl.dataset.zoomMax || '10.0');
+                        if (
+                            sliderEl.min !== nextSliderMin ||
+                            sliderEl.max !== nextSliderMax ||
+                            sliderEl.dataset.zoomMax !== nextZoomMax
+                        ) {
+                            sliderEl.min = nextSliderMin;
+                            sliderEl.max = nextSliderMax;
+                            sliderEl.dataset.zoomMax = nextZoomMax;
                             renderZoomSliderPresets();
                         }
                         updateZoomSliderVisuals(parseFloat(status.zoomRatio));
@@ -4697,8 +4827,12 @@
                 return;
             }
 
+            const zoomSlider = document.getElementById('zoomSlider');
+            if (zoomSlider) {
+                zoomSlider.dataset.zoomMax = '10.0';
+            }
             renderZoomSliderPresets();
-            updateZoomSliderVisuals(document.getElementById('zoomSlider')?.value || 1.0);
+            updateZoomSliderVisuals(1.0);
             dashboardViewModel = new DashboardViewModel();
             
             // Track last activity time for auto-lock timeout
