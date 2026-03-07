@@ -2240,7 +2240,7 @@ video {
     background: #171717;
     border: 1px solid #2d3439;
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 12px;
 }
 
 .zoom-label-group {
@@ -2248,6 +2248,14 @@ video {
     flex-direction: column;
     gap: 1px;
     min-width: 54px;
+}
+
+.zoom-slider-group {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .zoom-label {
@@ -2372,26 +2380,34 @@ video {
 /* Exposure compact card - match other cards (horizontal layout) */
 .exposure-card {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
     padding: 10px 12px;
-    min-height: 48px;
+    min-height: 0;
 }
 
 .exp-top-row {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    width: 100%;
     min-width: 0;
+}
+
+.exposure-card .cam-ctrl-text {
+    min-width: 0;
+    flex: 1;
 }
 
 /* Buttons should be aligned right, match torch-value spacing */
 .exp-btn-row {
     display: flex;
     align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+    flex-wrap: wrap;
 }
 
 .exposure-icon-fa {
@@ -2432,8 +2448,8 @@ video {
 }
 
 .exposure-btn {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1px solid #30363d;
     background: #0d1117;
@@ -2488,7 +2504,7 @@ video {
 /* -------- CAM-CTRL CARDS (Camera compact toggle) -------- */
 .cam-ctrl-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
 }
 
@@ -2506,6 +2522,10 @@ video {
     transition: border-color 200ms, background 200ms;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+}
+
+.camera-utility-card {
+    min-height: 72px;
 }
 
 .cam-ctrl-card:hover {
@@ -2554,7 +2574,8 @@ video {
     font-size: 11px;
     font-weight: 600;
     color: #e6edf3;
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.15;
 }
 
 .cam-ctrl-value {
@@ -2568,7 +2589,6 @@ video {
     color: #ef5350;
 }
 
-/* Camera card special: switching animation */
 .cam-ctrl-card.switching .cam-ctrl-icon {
     animation: spin-once 400ms ease-in-out;
 }
@@ -2580,23 +2600,23 @@ video {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border: none;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #30363d;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.10);
+    background: #0d1117;
     color: #8b949e;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
-    transition: background 200ms ease, transform 100ms ease, color 200ms ease;
+    transition: background 150ms, border-color 150ms, color 150ms, transform 100ms;
     flex-shrink: 0;
     margin-left: auto;
 }
 
 .cam-ctrl-sub-btn:hover {
-    background: rgba(255, 255, 255, 0.22);
+    background: #21262d;
+    border-color: #8b949e;
     color: #ffffff;
-    transform: scale(1.08);
 }
 
 .cam-ctrl-sub-btn:active {
@@ -2604,14 +2624,15 @@ video {
 }
 
 .cam-ctrl-sub-btn.active {
-    background: rgba(239, 83, 80, 0.18);
+    border-color: #ef5350;
+    background: rgba(239, 83, 80, 0.12);
     color: #ef5350;
 }
 
 /* AE Lock button inside exposure row */
 .ae-lock-btn {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1px solid #30363d;
     background: #0d1117;
@@ -2642,84 +2663,145 @@ video {
 }
 
 /* -------- MATERIAL 3 ZOOM SLIDER -------- */
-/* Outer wrapper provides the 44px touch target (M3 spec) without distorting the track */
 .zoom-slider-track {
-    flex: 1;
-    height: 44px;
+    height: 60px;
     display: flex;
     align-items: center;
     cursor: pointer;
     min-width: 0;
+    padding: 4px 2px;
 }
 
 input[type="range"].zoom-slider {
     width: 100%;
     -webkit-appearance: none;
     appearance: none;
-    height: 4px;
-    background: linear-gradient(to right, #ef5350 var(--zoom-pct, 5.6%), #2d333b var(--zoom-pct, 5.6%));
-    border-radius: 2px;
+    height: 40px;
+    background: linear-gradient(to right, #ef5350 var(--zoom-pct, 0%), #2d333b var(--zoom-pct, 0%)) center / 100% 10px no-repeat;
+    border-radius: 999px;
     outline: none;
     cursor: pointer;
     margin: 0;
     padding: 0;
+    touch-action: pan-x;
 }
 
-/* M3 thumb – 16dp bar/pill (Material 3 label slider style), elevation shadow, no border */
 input[type="range"].zoom-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 4px;
-    height: 16px;
-    border-radius: 2px;
+    width: 16px;
+    height: 30px;
+    border-radius: 999px;
     background: #ef5350;
     cursor: pointer;
+    border: 2px solid #0d1117;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.35);
     transition: box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* M3 hover state layer (bar style) */
 input[type="range"].zoom-slider:hover::-webkit-slider-thumb {
-    width: 6px;
     box-shadow: 0 0 0 6px rgba(239, 83, 80, 0.12),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* M3 focus state layer (bar style) */
 input[type="range"].zoom-slider:focus::-webkit-slider-thumb {
-    width: 6px;
     box-shadow: 0 0 0 8px rgba(239, 83, 80, 0.14),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* M3 pressed state layer (bar style) */
 input[type="range"].zoom-slider:active::-webkit-slider-thumb {
-    width: 6px;
     box-shadow: 0 0 0 10px rgba(239, 83, 80, 0.18),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* Firefox – M3 bar style */
 input[type="range"].zoom-slider::-moz-range-thumb {
-    width: 4px;
-    height: 16px;
-    border-radius: 2px;
+    width: 16px;
+    height: 30px;
+    border-radius: 999px;
     background: #ef5350;
     cursor: pointer;
-    border: none;
+    border: 2px solid #0d1117;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 input[type="range"].zoom-slider::-moz-range-track {
-    height: 4px;
-    border-radius: 2px;
+    height: 10px;
+    border-radius: 999px;
     background: #2d333b;
 }
 
 input[type="range"].zoom-slider::-moz-range-progress {
-    height: 4px;
-    border-radius: 2px;
+    height: 10px;
+    border-radius: 999px;
     background: #ef5350;
+}
+
+.zoom-slider-presets {
+    position: relative;
+    height: 30px;
+}
+
+.zoom-slider-preset {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    border: none;
+    background: none;
+    padding: 2px 4px;
+    min-width: 34px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: #8b949e;
+    transition: color 160ms ease;
+}
+
+.zoom-slider-preset.is-edge-start {
+    left: 0 !important;
+    transform: none;
+    align-items: flex-start;
+}
+
+.zoom-slider-preset.is-edge-end {
+    left: 100% !important;
+    transform: translateX(-100%);
+    align-items: flex-end;
+}
+
+.zoom-slider-preset-tick {
+    width: 2px;
+    height: 8px;
+    border-radius: 999px;
+    background: #3b4248;
+    transition: background 160ms ease, transform 160ms ease;
+}
+
+.zoom-slider-preset-label {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    transform: translateX(var(--label-shift-x, 0));
+}
+
+.zoom-slider-preset-label.is-shifted {
+    text-align: left;
+}
+
+.zoom-slider-preset:hover,
+.zoom-slider-preset:focus-visible,
+.zoom-slider-preset.is-active {
+    color: #ef5350;
+}
+
+.zoom-slider-preset:hover .zoom-slider-preset-tick,
+.zoom-slider-preset:focus-visible .zoom-slider-preset-tick,
+.zoom-slider-preset.is-active .zoom-slider-preset-tick {
+    background: #ef5350;
+    transform: scaleY(1.15);
 }
 
 /* Zoom reset icon button */
@@ -2752,6 +2834,130 @@ input[type="range"].zoom-slider::-moz-range-progress {
     color: #443d3d;
     border-color: transparent;
     background: #0d1117;
+}
+
+.cam-ctrl-card.volume-card {
+    position: relative;
+}
+
+.cam-ctrl-card.volume-card .cam-ctrl-fill {
+    inset: 0 auto 0 0;
+    width: 0;
+    opacity: 1;
+    background: linear-gradient(90deg, rgba(110, 118, 129, 0.24), rgba(139, 148, 158, 0.14));
+    transition: width 180ms ease, background 180ms ease;
+}
+
+.cam-ctrl-card.volume-card.muted .cam-ctrl-fill {
+    background: linear-gradient(90deg, rgba(110, 118, 129, 0.24), rgba(139, 148, 158, 0.14));
+}
+
+.cam-ctrl-card.volume-card.low .cam-ctrl-fill {
+    background: linear-gradient(90deg, rgba(46, 160, 67, 0.28), rgba(46, 160, 67, 0.14));
+}
+
+.cam-ctrl-card.volume-card.medium .cam-ctrl-fill {
+    background: linear-gradient(90deg, rgba(251, 188, 5, 0.28), rgba(251, 188, 5, 0.14));
+}
+
+.cam-ctrl-card.volume-card.high .cam-ctrl-fill {
+    background: linear-gradient(90deg, rgba(239, 83, 80, 0.28), rgba(239, 83, 80, 0.14));
+}
+
+.volume-compact-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.volume-compact-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.cam-ctrl-card.volume-card .volume-label,
+.cam-ctrl-card.volume-card .volume-percentage {
+    color: inherit !important;
+    text-shadow: none !important;
+}
+
+.cam-ctrl-card.volume-card .volume-percentage {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+@media (max-width: 640px) {
+    .cam-ctrl-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .zoom-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "label reset"
+            "slider slider";
+        row-gap: 10px;
+        align-items: start;
+    }
+
+    .zoom-label-group {
+        grid-area: label;
+        min-width: 0;
+    }
+
+    .zoom-slider-group {
+        grid-area: slider;
+    }
+
+    .zoom-reset-btn {
+        grid-area: reset;
+        justify-self: end;
+    }
+
+    .zoom-slider-track {
+        height: 56px;
+        padding: 0;
+    }
+
+    .zoom-slider-presets {
+        height: 28px;
+    }
+
+    .exp-btn-row {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .zoom-row {
+        padding: 12px;
+    }
+
+    .zoom-label {
+        font-size: 13px;
+    }
+
+    .zoom-value {
+        font-size: 13px;
+    }
+
+    .exposure-card {
+        padding: 12px;
+    }
+
+    .exp-btn-row {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .exposure-btn,
+    .ae-lock-btn {
+        width: 32px;
+        height: 32px;
+    }
 }
 
 /* -------- NETWORK CARD -------- */
@@ -3227,7 +3433,7 @@ input[type="range"].zoom-slider::-moz-range-progress {
 /* Volume Card Styling */
 .volume-card {
     position: relative;
-    min-height: 60px;
+    min-height: 0;
 }
 
 .volume-card .card-clickable {
@@ -3440,23 +3646,23 @@ input[type="range"].zoom-slider::-moz-range-progress {
     position: relative;
     z-index: 15;
     pointer-events: auto;
-    margin-left: auto;
+    margin-left: 0;
 }
 
 .volume-btn {
     width: 32px;
     height: 32px;
-    border-radius: 6px;
-    border: 1.5px solid #3d4349;
-    background: rgba(29, 30, 32, 0.95);
-    color: #e6edf3;
+    border-radius: 50%;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    color: #ffffff;
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 120ms ease;
+    transition: background 150ms, border-color 150ms, color 150ms, transform 100ms;
     padding: 0;
     line-height: 1;
     position: relative;
@@ -3465,23 +3671,13 @@ input[type="range"].zoom-slider::-moz-range-progress {
 }
 
 .volume-btn:hover {
-    background: rgba(248, 81, 73, 0.15);
-    border-color: #f85149;
-    color: #f85149;
-    transform: scale(1.08);
+    background: #21262d;
+    border-color: #8b949e;
+    color: #ffffff;
 }
 
 .volume-btn:active {
-    transform: scale(0.92);
-    background: rgba(248, 81, 73, 0.25);
-}
-
-.volume-btn-minus:hover {
-    color: #f85149;
-}
-
-.volume-btn-plus:hover {
-    color: #f85149;
+    transform: scale(0.90);
 }
 
 

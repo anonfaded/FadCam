@@ -351,41 +351,22 @@
                     </div>
                 </div>
 
-                <!-- Volume Control Card -->
-                <div class="card-sm card-battery-ios volume-card">
-                    <div class="card-clickable battery-card-display" style="cursor: default;">
-                        <!-- Background Fill -->
-                        <div class="card-ios-fill" id="volumeFill"></div>
-                        
-                        <!-- Content Layer -->
-                        <div class="card-ios-content">
-                            <!-- Volume Icon -->
-                            <div class="card-ios-icon volume-icon">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <!-- Speaker -->
-                                    <path d="M11 5 6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round"/>
-                                    <!-- Sound waves -->
-                                    <path class="volume-wave volume-wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                    <path class="volume-wave volume-wave-2" d="M18.37 5.63a9 9 0 0 1 0 12.73" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                            </div>
-                            
-                            <!-- Volume Info -->
-                            <div class="battery-info-container">
-                                <div class="battery-label volume-label">Volume</div>
-                                <div class="battery-percentage volume-percentage" id="volumePercentage">0%</div>
-                            </div>
-                            
-                            <!-- Volume Control Buttons (right-aligned) -->
-                            <div class="volume-button-group">
-                                <button id="volumeMinus" class="volume-btn volume-btn-minus" onclick="volumeDecrease()" title="Decrease volume">−</button>
-                                <button id="volumePlus" class="volume-btn volume-btn-plus" onclick="volumeIncrease()" title="Increase volume">+</button>
-                            </div>
-                        </div>
+                <!-- Camera Control Card -->
+                <div class="cam-ctrl-card camera-utility-card" id="cameraCard" onclick="toggleCamera()">
+                    <div class="cam-ctrl-fill" id="cameraFill"></div>
+                    <i class="fas fa-camera-rotate cam-ctrl-icon" id="cameraIcon"></i>
+                    <div class="cam-ctrl-text">
+                        <div class="cam-ctrl-label">Camera</div>
+                        <div class="cam-ctrl-value" id="cameraState">BACK</div>
                     </div>
+                    <button class="cam-ctrl-sub-btn" id="mirrorBtn"
+                            onclick="event.stopPropagation(); toggleMirror();"
+                            style="display:none;" title="Toggle mirror">
+                        <i class="fas fa-arrows-left-right" id="mirrorIcon"></i>
+                    </button>
                 </div>
 
-                <!-- Alarm Control Card (moved to same row) -->
+                <!-- Alarm Control Card -->
                 <div class="card-sm" onclick="showAlarmModal()" id="alarmCard" style="transition: all 300ms ease; cursor: pointer;">
                     <div class="card-clickable">
                         <i class="fas fa-bell card-icon-sm" style="color: #ef4444; font-size: 18px;" id="alarmIcon"></i>
@@ -404,22 +385,28 @@
             <!-- Camera Controls: Camera Switch, Mirror, AE Lock, Zoom, Pan, Exposure -->
             <div class="camera-controls-section">
 
-                <!-- 2-column: Camera toggle card + Exposure compact card -->
+                <!-- 2-column: Volume compact card + Exposure compact card -->
                 <div class="cam-ctrl-grid">
-                    <!-- Camera toggle card -->
-                    <div class="cam-ctrl-card" id="cameraCard" onclick="toggleCamera()">
-                        <div class="cam-ctrl-fill" id="cameraFill"></div>
-                        <i class="fas fa-camera-rotate cam-ctrl-icon" id="cameraIcon"></i>
-                        <div class="cam-ctrl-text">
-                            <div class="cam-ctrl-label">Camera</div>
-                            <div class="cam-ctrl-value" id="cameraState">BACK</div>
+                    <!-- Volume compact card -->
+                    <div class="cam-ctrl-card exposure-card volume-card" id="volumeCard">
+                        <div class="cam-ctrl-fill" id="volumeFill"></div>
+                        <div class="exp-top-row">
+                            <div class="cam-ctrl-icon volume-compact-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M11 5 6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round"/>
+                                    <path class="volume-wave volume-wave-1" d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path class="volume-wave volume-wave-2" d="M18.37 5.63a9 9 0 0 1 0 12.73" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="cam-ctrl-text">
+                                <div class="cam-ctrl-label volume-label">Volume</div>
+                                <div class="cam-ctrl-value volume-percentage" id="volumePercentage">0%</div>
+                            </div>
                         </div>
-                        <!-- Mirror sub-button (front camera only, like pause inside recording card) -->
-                        <button class="cam-ctrl-sub-btn" id="mirrorBtn"
-                                onclick="event.stopPropagation(); toggleMirror();"
-                                style="display:none;" title="Toggle mirror">
-                            <i class="fas fa-arrows-left-right" id="mirrorIcon"></i>
-                        </button>
+                        <div class="exp-btn-row volume-button-group">
+                            <button id="volumeMinus" class="volume-btn volume-btn-minus" onclick="event.stopPropagation(); volumeDecrease()" title="Decrease volume">−</button>
+                            <button id="volumePlus" class="volume-btn volume-btn-plus" onclick="event.stopPropagation(); volumeIncrease()" title="Increase volume">+</button>
+                        </div>
                     </div>
 
                     <!-- Exposure compact card (2-row: icon+label top, buttons bottom) -->
@@ -448,11 +435,15 @@
                         <div class="zoom-label">Zoom</div>
                         <div class="zoom-value" id="zoomValue">1.0×</div>
                     </div>
-                    <div class="zoom-slider-track">
-                        <input type="range" class="zoom-slider" id="zoomSlider"
-                               min="0.5" max="10.0" step="0.1" value="1.0"
-                               oninput="onZoomSliderInput(this.value)"
-                               onchange="onZoomSliderCommit(this.value)">
+                    <div class="zoom-slider-group">
+                        <div class="zoom-slider-track">
+                            <input type="range" class="zoom-slider" id="zoomSlider"
+                                   data-static-min="0.5"
+                                   min="0.5" max="10.0" step="0.1" value="1.0"
+                                   oninput="onZoomSliderInput(this.value)"
+                                   onchange="onZoomSliderCommit(this.value)">
+                        </div>
+                        <div class="zoom-slider-presets" id="zoomSliderPresets"></div>
                     </div>
                     <button class="zoom-reset-btn" onclick="resetZoom()" title="Reset zoom">
                         <i class="fas fa-undo"></i>
@@ -1221,15 +1212,49 @@
             checkConfirmation(field, incomingValue) {
                 const entry = this.entries[field];
                 if (!entry) return false;
-                
-                // For percentages, allow small tolerance (±5%)
-                const tolerance = typeof entry.expectedValue === 'number' ? 5 : 0;
-                const matches = typeof entry.expectedValue === 'number' 
-                    ? Math.abs(incomingValue - entry.expectedValue) <= tolerance
-                    : incomingValue === entry.expectedValue;
+
+                const getTolerance = (targetField, key = null) => {
+                    if (targetField === 'volumePercentage') return 5;
+                    if (targetField === 'zoomRatio') {
+                        return key === 'ratio' ? 0.05 : 0.05;
+                    }
+                    return 0;
+                };
+
+                let matches = false;
+                if (typeof entry.expectedValue === 'number' && typeof incomingValue === 'number') {
+                    matches = Math.abs(incomingValue - entry.expectedValue) <= getTolerance(field);
+                } else if (
+                    typeof entry.expectedValue === 'number' &&
+                    incomingValue &&
+                    typeof incomingValue === 'object' &&
+                    typeof incomingValue.ratio === 'number'
+                ) {
+                    matches = Math.abs(incomingValue.ratio - entry.expectedValue) <= getTolerance(field, 'ratio');
+                } else if (
+                    entry.expectedValue &&
+                    typeof entry.expectedValue === 'object' &&
+                    incomingValue &&
+                    typeof incomingValue === 'object'
+                ) {
+                    const expected = entry.expectedValue;
+                    matches = true;
+
+                    if (typeof expected.ratio === 'number') {
+                        matches = matches && Math.abs((incomingValue.ratio ?? NaN) - expected.ratio) <= getTolerance(field, 'ratio');
+                    }
+                    if (typeof expected.panX === 'number') {
+                        matches = matches && Math.abs((incomingValue.panX ?? NaN) - expected.panX) <= getTolerance(field, 'panX');
+                    }
+                    if (typeof expected.panY === 'number') {
+                        matches = matches && Math.abs((incomingValue.panY ?? NaN) - expected.panY) <= getTolerance(field, 'panY');
+                    }
+                } else {
+                    matches = incomingValue === entry.expectedValue;
+                }
                 
                 if (matches) {
-                    console.log(`[Executing] ${field} CONFIRMED! Expected: ${entry.expectedValue}, Got: ${incomingValue}`);
+                    console.log(`[Executing] ${field} CONFIRMED! Expected:`, entry.expectedValue, 'Got:', incomingValue);
                     this.stop(field);
                     return true;
                 }
@@ -2289,30 +2314,123 @@
         let _zoomDebounce = null;
         let _pendingPanX = 0, _pendingPanY = 0;
 
-        /** Called continuously while slider is dragged – just updates label/track, no API call. */
-        function onZoomSliderInput(value) {
-            const v = parseFloat(value);
-            // Show target value during drag (not sent to server yet)
-            const el = document.getElementById('zoomValue');
-            if (el) el.textContent = v.toFixed(1) + '×';
-            // Pan container visible only when zoom > 1
-            document.getElementById('panContainer')?.classList.toggle('visible', v > 1.0);
-            // Reset button only enabled when zoom !== 1.0
-            const resetBtn = document.querySelector('.zoom-reset-btn');
-            if (resetBtn) resetBtn.disabled = (Math.abs(v - 1.0) < 0.01); // Account for float precision
-            // Update filled-track CSS variable
+        function getZoomPresetValues(min, max) {
+            const midpoint = Math.round((((min + max) / 2) * 2)) / 2;
+            const candidates = [min];
+
+            if (min < 1 && max >= 1) {
+                candidates.push(1.0);
+            }
+
+            if (midpoint > min + 0.001 && midpoint < max - 0.001) {
+                candidates.push(midpoint);
+            }
+
+            candidates.push(max);
+
+            return [...new Set(candidates
+                .map(value => Number(value.toFixed(1)))
+                .filter(value => value >= min - 0.001 && value <= max + 0.001))]
+                .sort((left, right) => left - right);
+        }
+
+        function normalizeZoomSliderValue(value, snapToPreset = false) {
             const slider = document.getElementById('zoomSlider');
+            const min = parseFloat(slider?.min) || 1.0;
+            const max = parseFloat(slider?.max) || 10.0;
+            let normalized = Math.max(min, Math.min(max, parseFloat(value) || min));
+
+            if (snapToPreset) {
+                const snapThreshold = Math.max(0.05, (max - min) * 0.01);
+                for (const preset of getZoomPresetValues(min, max)) {
+                    if (Math.abs(normalized - preset) <= snapThreshold) {
+                        normalized = preset;
+                        break;
+                    }
+                }
+            }
+
+            return Math.round(normalized * 10) / 10;
+        }
+
+        function updateZoomPresetState(value) {
+            const normalized = Number(value.toFixed(1));
+            document.querySelectorAll('.zoom-slider-preset').forEach((button) => {
+                const presetValue = parseFloat(button.dataset.value || '0');
+                button.classList.toggle('is-active', Math.abs(presetValue - normalized) < 0.05);
+            });
+        }
+
+        function updateZoomSliderVisuals(value, snapToPreset = false) {
+            const slider = document.getElementById('zoomSlider');
+            const normalized = normalizeZoomSliderValue(value, snapToPreset);
+            const zoomValueEl = document.getElementById('zoomValue');
+            const resetBtn = document.querySelector('.zoom-reset-btn');
+
+            if (zoomValueEl) {
+                zoomValueEl.textContent = normalized.toFixed(1) + '×';
+            }
+
+            document.getElementById('panContainer')?.classList.toggle('visible', normalized > 1.0);
+
+            if (resetBtn) {
+                resetBtn.disabled = Math.abs(normalized - 1.0) < 0.01;
+            }
+
             if (slider) {
-                const min = parseFloat(slider.min) || 0.5;
+                const min = parseFloat(slider.min) || 1.0;
                 const max = parseFloat(slider.max) || 10.0;
-                const pct = ((v - min) / (max - min) * 100).toFixed(1);
+                const pct = max > min ? ((normalized - min) / (max - min) * 100).toFixed(1) : '0.0';
+                slider.value = normalized.toFixed(1);
                 slider.style.setProperty('--zoom-pct', pct + '%');
             }
+
+            updateZoomPresetState(normalized);
+            return normalized;
+        }
+
+        function renderZoomSliderPresets() {
+            const slider = document.getElementById('zoomSlider');
+            const presets = document.getElementById('zoomSliderPresets');
+            if (!slider || !presets) {
+                return;
+            }
+
+            const min = parseFloat(slider.min) || 1.0;
+            const max = parseFloat(slider.max) || 10.0;
+            const presetValues = getZoomPresetValues(min, max);
+            const presetPositions = presetValues.map((value) => ({
+                value,
+                pct: max > min ? ((value - min) / (max - min) * 100) : 0
+            }));
+
+            presets.innerHTML = presetPositions
+                .map((preset, index) => {
+                    const edgeClass = preset.pct <= 0.1 ? ' is-edge-start' : (preset.pct >= 99.9 ? ' is-edge-end' : '');
+                    const previous = index > 0 ? presetPositions[index - 1] : null;
+                    const crowdedStart = previous && (preset.pct - previous.pct) < 9;
+                    const labelShiftX = crowdedStart ? 18 : 0;
+                    const labelClass = crowdedStart ? ' is-shifted' : '';
+                    return '<button type="button" class="zoom-slider-preset' + edgeClass + '" data-value="' + preset.value.toFixed(1) + '" style="left:' + preset.pct.toFixed(1) + '%; --label-shift-x:' + labelShiftX + 'px" onclick="setZoomPreset(' + preset.value.toFixed(1) + ')"><span class="zoom-slider-preset-tick"></span><span class="zoom-slider-preset-label' + labelClass + '">' + preset.value.toFixed(1) + '×</span></button>';
+                })
+                .join('');
+
+            updateZoomPresetState(normalizeZoomSliderValue(slider.value, false));
+        }
+
+        async function setZoomPreset(value) {
+            const ratio = updateZoomSliderVisuals(value, true);
+            await onZoomSliderCommit(ratio);
+        }
+
+        /** Called continuously while slider is dragged – just updates label/track, no API call. */
+        function onZoomSliderInput(value) {
+            updateZoomSliderVisuals(value, true);
         }
 
         /** Called on slider mouseup/touchend – commits ONLY zoom (no pan – preserves phone’s saved pan). */
         async function onZoomSliderCommit(value) {
-            const ratio = parseFloat(value);
+            const ratio = updateZoomSliderVisuals(value, true);
             clearTimeout(_zoomDebounce);
             _zoomDebounce = null;
             // Wait for server confirmation before allowing updateUI to overwrite slider
@@ -2355,7 +2473,7 @@
                 dragging = false;
                 // Commit zoom + pan together; executingState guards against updateUI snapback
                 const ratio = parseFloat(document.getElementById('zoomSlider')?.value || 1);
-                executingState.start('zoomRatio', ratio, '.zoom-row');
+                executingState.start('zoomRatio', { ratio, panX: _pendingPanX, panY: _pendingPanY }, '.zoom-row');
                 dashboardViewModel.setZoom(ratio, _pendingPanX, _pendingPanY)
                     .catch(() => {
                         executingState.stop('zoomRatio');
@@ -2377,7 +2495,7 @@
             const thumb = document.getElementById('panThumb');
             if (thumb) { thumb.style.left = '50%'; thumb.style.top = '50%'; }
             const ratio = parseFloat(document.getElementById('zoomSlider')?.value || 1);
-            executingState.start('zoomRatio', ratio, '.zoom-row');
+            executingState.start('zoomRatio', { ratio, panX: 0, panY: 0 }, '.zoom-row');
             try {
                 await dashboardViewModel.setZoom(ratio, 0, 0);
             } catch (e) {
@@ -2389,17 +2507,10 @@
         /** Reset zoom to 1× and centre pan. */
         async function resetZoom() {
             _pendingPanX = 0; _pendingPanY = 0;
-            const slider = document.getElementById('zoomSlider');
             const thumb = document.getElementById('panThumb');
-            if (slider) {
-                slider.value = 1.0;
-                slider.style.setProperty('--zoom-pct', '5.6%');
-            }
-            const zoomValEl = document.getElementById('zoomValue');
-            if (zoomValEl) zoomValEl.textContent = '1.0×';
+            updateZoomSliderVisuals(1.0);
             if (thumb) { thumb.style.left = '50%'; thumb.style.top = '50%'; }
-            document.getElementById('panContainer')?.classList.remove('visible');
-            executingState.start('zoomRatio', 1.0, '.zoom-row');
+            executingState.start('zoomRatio', { ratio: 1.0, panX: 0, panY: 0 }, '.zoom-row');
             try {
                 await dashboardViewModel.setZoom(1.0, 0, 0);
             } catch (e) {
@@ -2879,10 +2990,7 @@
 
             // Zoom / Pan / Exposure / Mirror / AE Lock – reset when offline
             const sliderEl = document.getElementById('zoomSlider');
-            if (sliderEl) { sliderEl.value = 1.0; sliderEl.style.setProperty('--zoom-pct', '10.5%'); }
-            const zoomValEl = document.getElementById('zoomValue');
-            if (zoomValEl) zoomValEl.textContent = '1.0×';
-            document.getElementById('panContainer')?.classList.remove('visible');
+            if (sliderEl) { updateZoomSliderVisuals(1.0); }
             const panThumbEl = document.getElementById('panThumb');
             if (panThumbEl) { panThumbEl.style.left = '50%'; panThumbEl.style.top = '50%'; }
             _pendingPanX = 0; _pendingPanY = 0;
@@ -3002,7 +3110,11 @@
                 }
             }
             if (executingState.isExecuting('zoomRatio')) {
-                if (executingState.checkConfirmation('zoomRatio', parseFloat(status.zoomRatio))) {
+                if (executingState.checkConfirmation('zoomRatio', {
+                    ratio: parseFloat(status.zoomRatio),
+                    panX: parseFloat(status.panX),
+                    panY: parseFloat(status.panY)
+                })) {
                     console.log('[Status] Zoom CONFIRMED by server poll');
                 }
             }
@@ -3419,17 +3531,17 @@
                 // Sync zoom slider — skip if we're still waiting for server confirmation
                 if (status.zoomRatio !== undefined && !executingState.isExecuting('zoomRatio')) {
                     const sliderEl = document.getElementById('zoomSlider');
-                    const zoomValEl = document.getElementById('zoomValue');
                     if (sliderEl) {
-                        sliderEl.value = status.zoomRatio;
-                        // Update Material fill via CSS variable
-                        const min = parseFloat(sliderEl.min) || 0.5;
-                        const max = parseFloat(sliderEl.max) || 10.0;
-                        const pct = ((parseFloat(status.zoomRatio) - min) / (max - min) * 100).toFixed(1);
-                        sliderEl.style.setProperty('--zoom-pct', pct + '%');
+                        const staticMin = parseFloat(sliderEl.dataset.staticMin || sliderEl.min) || 0.5;
+                        const nextMin = staticMin.toFixed(1);
+                        const nextMax = Number.isFinite(Number(status.zoomRatioMax)) ? Number(status.zoomRatioMax).toFixed(1) : sliderEl.max;
+                        if (sliderEl.min !== nextMin || sliderEl.max !== nextMax) {
+                            sliderEl.min = nextMin;
+                            sliderEl.max = nextMax;
+                            renderZoomSliderPresets();
+                        }
+                        updateZoomSliderVisuals(parseFloat(status.zoomRatio));
                     }
-                    if (zoomValEl) zoomValEl.textContent = parseFloat(status.zoomRatio).toFixed(1) + '×';
-                    document.getElementById('panContainer')?.classList.toggle('visible', status.zoomRatio > 1.0);
                 }
 
                 // Sync pan thumb — skip while zoom is executing (pan could also be in-flight)
@@ -4585,6 +4697,8 @@
                 return;
             }
 
+            renderZoomSliderPresets();
+            updateZoomSliderVisuals(document.getElementById('zoomSlider')?.value || 1.0);
             dashboardViewModel = new DashboardViewModel();
             
             // Track last activity time for auto-lock timeout

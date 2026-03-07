@@ -46,4 +46,11 @@ public final class RecordingControlIntents {
         i.putExtra(Constants.EXTRA_ZOOM_RATIO, zoomRatio);
         return i;
     }
+
+    public static Intent setZoomRatio(Context ctx, float zoomRatio, float panX, float panY) {
+        Intent i = setZoomRatio(ctx, zoomRatio);
+        i.putExtra(Constants.EXTRA_PAN_X, panX);
+        i.putExtra(Constants.EXTRA_PAN_Y, panY);
+        return i;
+    }
 }

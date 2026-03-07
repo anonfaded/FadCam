@@ -129,6 +129,8 @@ class ServerStatus {
 
         // Zoom and pan state
         this.zoomRatio = data.zoomRatio ?? 1.0;
+        this.zoomRatioMin = Number.isFinite(data.zoomRatioMin) ? data.zoomRatioMin : undefined;
+        this.zoomRatioMax = Number.isFinite(data.zoomRatioMax) ? data.zoomRatioMax : undefined;
         this.panX = data.panX ?? 0.0;
         this.panY = data.panY ?? 0.0;
 

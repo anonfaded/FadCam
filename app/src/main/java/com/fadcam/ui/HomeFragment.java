@@ -339,6 +339,7 @@ public class HomeFragment extends BaseFragment {
     private BroadcastReceiver broadcastOnCameraSwitchFailed;
     private BroadcastReceiver broadcastOnMirrorChanged;
     private BroadcastReceiver broadcastOnZoomChanged;
+    private BroadcastReceiver broadcastOnExposureChanged;
     private volatile boolean isCameraSwitchInProgress = false;
     private volatile long lastCameraSwitchCompleteTime = 0; // Debounce duplicate toasts
     private volatile long lastCameraSwitchTime = 0; // Track when switch completed to prevent button disable
@@ -3260,9 +3261,23 @@ public class HomeFragment extends BaseFragment {
                 Log.d(TAG, "📡 BROADCAST_ON_ZOOM_CHANGED ratio=" + ratio + " pan=" + panX + "," + panY);
                 if (ratio > 0f) {
                     previewPinchZoomRatio = ratio;
+                    previewUiScale = Math.max(1.0f, Math.min(4.0f, ratio));
                 }
-                previewUiPanX = panX;
-                previewUiPanY = panY;
+                applyNormalizedPreviewPan(panX, panY);
+                applyPreviewTransform();
+                updatePreviewZoomHudUi(previewPinchZoomRatio);
+                refreshZoomTileTintFromState();
+            }
+        };
+
+        broadcastOnExposureChanged = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                currentEvIndex = intent.getIntExtra(
+                    Constants.EXTRA_BROADCAST_EXPOSURE_COMPENSATION,
+                    sharedPreferencesManager.getSavedExposureCompensation()
+                );
+                refreshExposureTileTintFromState();
             }
         };
     }
@@ -3284,6 +3299,7 @@ public class HomeFragment extends BaseFragment {
             IntentFilter failedFilter = new IntentFilter(Constants.BROADCAST_ON_CAMERA_SWITCH_FAILED);
             IntentFilter mirrorFilter = new IntentFilter(Constants.BROADCAST_ON_MIRROR_CHANGED);
             IntentFilter zoomFilter = new IntentFilter(Constants.BROADCAST_ON_ZOOM_CHANGED);
+            IntentFilter exposureFilter = new IntentFilter(Constants.BROADCAST_ON_EXPOSURE_CHANGED);
 
             androidx.localbroadcastmanager.content.LocalBroadcastManager lbm =
                     androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context);
@@ -3292,6 +3308,7 @@ public class HomeFragment extends BaseFragment {
             lbm.registerReceiver(broadcastOnCameraSwitchFailed, failedFilter);
             lbm.registerReceiver(broadcastOnMirrorChanged, mirrorFilter);
             lbm.registerReceiver(broadcastOnZoomChanged, zoomFilter);
+            lbm.registerReceiver(broadcastOnExposureChanged, exposureFilter);
             Log.d(TAG, "Camera switch + control receivers registered successfully");
         } catch (Exception e) {
             Log.e(TAG, "Error registering camera switch receivers", e);
@@ -3317,6 +3334,9 @@ public class HomeFragment extends BaseFragment {
             }
             if (broadcastOnZoomChanged != null) {
                 androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnZoomChanged);
+            }
+            if (broadcastOnExposureChanged != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnExposureChanged);
             }
             Log.d(TAG, "Camera switch + control receivers unregistered");
         } catch (Exception e) {
@@ -5171,6 +5191,7 @@ public class HomeFragment extends BaseFragment {
                         }
                         if (isPanningPreview) {
                             isPanningPreview = false;
+                            dispatchCurrentPreviewZoomPan();
                             return true;
                         }
                         if ((isRecordingOrPaused() || isPreviewOnlyActive) && textureView != null) {
@@ -7898,7 +7919,6 @@ public class HomeFragment extends BaseFragment {
         List<Float> list = new ArrayList<>();
         float max = getHardwareSupportedMaxZoomRatio(cam);
 
-        // Add from 0.5x up to max in 0.5 increments; ensure 1.0 included
         for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
             list.add(((float) Math.round(z * 10)) / 10f);
         }
@@ -7955,6 +7975,74 @@ public class HomeFragment extends BaseFragment {
         matrix.postTranslate(previewUiPanX, previewUiPanY);
         textureView.setTransform(matrix);
         updatePreviewZoomMapUi();
+    }
+
+    private void applyNormalizedPreviewPan(float normalizedPanX, float normalizedPanY) {
+        float clampedPanX = Math.max(-1.0f, Math.min(1.0f, normalizedPanX));
+        float clampedPanY = Math.max(-1.0f, Math.min(1.0f, normalizedPanY));
+        if (textureView == null || previewUiScale <= 1.001f) {
+            previewUiPanX = 0f;
+            previewUiPanY = 0f;
+            return;
+        }
+
+        float width = textureView.getWidth();
+        float height = textureView.getHeight();
+        float maxPanX = (width * (previewUiScale - 1f)) / 2f;
+        float maxPanY = (height * (previewUiScale - 1f)) / 2f;
+        previewUiPanX = -clampedPanX * maxPanX;
+        previewUiPanY = -clampedPanY * maxPanY;
+    }
+
+    private float getCurrentNormalizedPreviewPanX() {
+        if (textureView == null || previewUiScale <= 1.001f) {
+            return 0f;
+        }
+        float maxPanX = (textureView.getWidth() * (previewUiScale - 1f)) / 2f;
+        if (maxPanX <= 0f) {
+            return 0f;
+        }
+        return Math.max(-1.0f, Math.min(1.0f, -previewUiPanX / maxPanX));
+    }
+
+    private float getCurrentNormalizedPreviewPanY() {
+        if (textureView == null || previewUiScale <= 1.001f) {
+            return 0f;
+        }
+        float maxPanY = (textureView.getHeight() * (previewUiScale - 1f)) / 2f;
+        if (maxPanY <= 0f) {
+            return 0f;
+        }
+        return Math.max(-1.0f, Math.min(1.0f, -previewUiPanY / maxPanY));
+    }
+
+    private void dispatchCurrentPreviewZoomPan() {
+        if (sharedPreferencesManager == null) {
+            return;
+        }
+
+        CameraType cam = sharedPreferencesManager.getCameraSelection();
+        float normalizedPanX = getCurrentNormalizedPreviewPanX();
+        float normalizedPanY = getCurrentNormalizedPreviewPanY();
+        sharedPreferencesManager.setSpecificZoomRatio(cam, previewPinchZoomRatio);
+        sharedPreferencesManager.setSpecificPan(cam, normalizedPanX, normalizedPanY);
+        refreshZoomTileTintFromState();
+
+        if (!isMyServiceRunning(com.fadcam.services.RecordingService.class)) {
+            return;
+        }
+
+        try {
+            Intent zoomIntent = com.fadcam.RecordingControlIntents.setZoomRatio(
+                requireContext(),
+                previewPinchZoomRatio,
+                normalizedPanX,
+                normalizedPanY
+            );
+            requireActivity().startService(zoomIntent);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to dispatch preview pan update: " + e.getMessage());
+        }
     }
 
     private void resetPreviewTransform() {
@@ -8162,6 +8250,8 @@ public class HomeFragment extends BaseFragment {
         CameraType cam = sharedPreferencesManager.getCameraSelection();
         if (cam == null) return;
         float savedZoom = sharedPreferencesManager.getSpecificZoomRatio(cam);
+        float savedPanX = sharedPreferencesManager.getSpecificPanX(cam);
+        float savedPanY = sharedPreferencesManager.getSpecificPanY(cam);
         previewPinchZoomRatio = savedZoom;
         previewUiScale = Math.max(1.0f, Math.min(4.0f, savedZoom));
         if (forceResetPan || previewUiScale <= 1.001f) {
@@ -8170,9 +8260,75 @@ public class HomeFragment extends BaseFragment {
             isPanningPreview = false;
             previewLongPressTriggered = false;
             updateMainSwipeGestureGate(false);
+        } else {
+            applyNormalizedPreviewPan(savedPanX, savedPanY);
         }
         applyPreviewTransform();
         updatePreviewZoomHudUi(previewPinchZoomRatio);
+        refreshZoomTileTintFromState();
+    }
+
+    private void refreshExposureTileTintFromState() {
+        if (tileExp == null || !isAdded()) {
+            return;
+        }
+
+        boolean isSnowVeilTheme = "Snow Veil".equals(
+            sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME
+            )
+        );
+
+        if (aeLocked || currentEvIndex != 0) {
+            tileExp.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.orange_accent)
+            );
+        } else if (isSnowVeilTheme) {
+            tileExp.setTextColor(Color.parseColor("#424242"));
+        } else {
+            android.util.TypedValue typedValue = new android.util.TypedValue();
+            requireContext().getTheme().resolveAttribute(
+                com.google.android.material.R.attr.colorOnSurface,
+                typedValue,
+                true
+            );
+            tileExp.setTextColor(typedValue.data);
+        }
+
+        tileExp.setScaleX(aeLocked ? 1.05f : 1f);
+        tileExp.setScaleY(aeLocked ? 1.05f : 1f);
+    }
+
+    private void refreshZoomTileTintFromState() {
+        if (tileZoom == null || !isAdded() || sharedPreferencesManager == null) {
+            return;
+        }
+
+        CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+        float currentZoom = sharedPreferencesManager.getSpecificZoomRatio(currentCamera);
+        boolean isSnowVeilTheme = "Snow Veil".equals(
+            sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_APP_THEME,
+                Constants.DEFAULT_APP_THEME
+            )
+        );
+
+        if (Math.abs(currentZoom - 1.0f) > 0.01f) {
+            tileZoom.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.orange_accent)
+            );
+        } else if (isSnowVeilTheme) {
+            tileZoom.setTextColor(Color.parseColor("#424242"));
+        } else {
+            android.util.TypedValue typedValue = new android.util.TypedValue();
+            requireContext().getTheme().resolveAttribute(
+                com.google.android.material.R.attr.colorOnSurface,
+                typedValue,
+                true
+            );
+            tileZoom.setTextColor(typedValue.data);
+        }
     }
 
     /**

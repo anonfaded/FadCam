@@ -866,7 +866,9 @@ public class CloudStatusManager {
                 if (command.has("params")) {
                     org.json.JSONObject params = command.getJSONObject("params");
                     float ratio = (float) params.optDouble("ratio", 1.0);
-                    ratio = Math.max(1.0f, ratio);
+                    com.fadcam.CameraType zoomCameraType = spManager.getCameraSelection();
+                    float maxZoomRatio = spManager.getMaxSupportedZoomRatio(zoomCameraType);
+                    ratio = Math.max(0.5f, Math.min(maxZoomRatio, ratio));
 
                     if (spManager.isRecordingInProgress()) {
                         android.content.Intent zoomIntent = new android.content.Intent(
@@ -874,8 +876,8 @@ public class CloudStatusManager {
                         zoomIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_ZOOM_RATIO);
                         zoomIntent.putExtra(com.fadcam.Constants.EXTRA_ZOOM_RATIO, ratio);
                         if (params.has("panX") || params.has("panY")) {
-                            float panX = (float) params.optDouble("panX", 0.0);
-                            float panY = (float) params.optDouble("panY", 0.0);
+                        float panX = ratio <= 1.0f ? 0.0f : (float) params.optDouble("panX", 0.0);
+                        float panY = ratio <= 1.0f ? 0.0f : (float) params.optDouble("panY", 0.0);
                             zoomIntent.putExtra(com.fadcam.Constants.EXTRA_PAN_X,
                                     Math.max(-1.0f, Math.min(1.0f, panX)));
                             zoomIntent.putExtra(com.fadcam.Constants.EXTRA_PAN_Y,
@@ -888,8 +890,8 @@ public class CloudStatusManager {
                         com.fadcam.CameraType cam = spManager.getCameraSelection();
                         spManager.setSpecificZoomRatio(cam, ratio);
                         if (params.has("panX") || params.has("panY")) {
-                            float panX = (float) params.optDouble("panX", 0.0);
-                            float panY = (float) params.optDouble("panY", 0.0);
+                            float panX = ratio <= 1.0f ? 0.0f : (float) params.optDouble("panX", 0.0);
+                            float panY = ratio <= 1.0f ? 0.0f : (float) params.optDouble("panY", 0.0);
                             spManager.setSpecificPan(cam, panX, panY);
                         }
                         Log.i(TAG, "✅ Cloud zoom saved (preference): ratio=" + ratio);

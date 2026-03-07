@@ -472,6 +472,115 @@ public class SharedPreferencesManager {
         return Constants.DEFAULT_ZOOM_RATIO;
     }
 
+    public float getMinSupportedZoomRatio(CameraType cameraType) {
+        CameraType resolvedCameraType = (cameraType != null && cameraType.isDual())
+            ? CameraType.BACK
+            : cameraType;
+        String selectedCameraId = resolvedCameraType == CameraType.BACK
+            ? getSelectedBackCameraId()
+            : null;
+        boolean preferWideAngleMin =
+            resolvedCameraType == CameraType.BACK &&
+            selectedCameraId != null &&
+            !selectedCameraId.equals(Constants.DEFAULT_BACK_CAMERA_ID) &&
+            isWideAngleCamera(selectedCameraId);
+
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.hardware.camera2.CameraManager manager =
+                    (android.hardware.camera2.CameraManager) context.getSystemService(
+                        Context.CAMERA_SERVICE
+                    );
+                String cameraId = resolveCameraIdForZoom(resolvedCameraType, manager);
+                if (manager != null && cameraId != null) {
+                    android.hardware.camera2.CameraCharacteristics characteristics =
+                        manager.getCameraCharacteristics(cameraId);
+                    android.util.Range<Float> range = characteristics.get(
+                        android.hardware.camera2.CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE
+                    );
+                    if (range != null && range.getLower() != null) {
+                        float minZoomRatio = range.getLower();
+                        if (preferWideAngleMin && minZoomRatio >= 1.0f) {
+                            return 0.5f;
+                        }
+                        return minZoomRatio;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("SharedPrefs", "Error reading zoom min", e);
+        }
+
+        if (preferWideAngleMin) {
+            return 0.5f;
+        }
+
+        return Constants.DEFAULT_ZOOM_RATIO;
+    }
+
+    public float getMaxSupportedZoomRatio(CameraType cameraType) {
+        CameraType resolvedCameraType = (cameraType != null && cameraType.isDual())
+            ? CameraType.BACK
+            : cameraType;
+
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.hardware.camera2.CameraManager manager =
+                    (android.hardware.camera2.CameraManager) context.getSystemService(
+                        Context.CAMERA_SERVICE
+                    );
+                String cameraId = resolveCameraIdForZoom(resolvedCameraType, manager);
+                if (manager != null && cameraId != null) {
+                    android.hardware.camera2.CameraCharacteristics characteristics =
+                        manager.getCameraCharacteristics(cameraId);
+                    android.util.Range<Float> range = characteristics.get(
+                        android.hardware.camera2.CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE
+                    );
+                    if (range != null && range.getUpper() != null) {
+                        return range.getUpper();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("SharedPrefs", "Error reading zoom max", e);
+        }
+
+        return 5.0f;
+    }
+
+    private String resolveCameraIdForZoom(
+        CameraType cameraType,
+        android.hardware.camera2.CameraManager manager
+    ) {
+        if (cameraType == CameraType.BACK) {
+            return getSelectedBackCameraId();
+        }
+
+        if (manager == null) {
+            return null;
+        }
+
+        try {
+            for (String cameraId : manager.getCameraIdList()) {
+                android.hardware.camera2.CameraCharacteristics characteristics =
+                    manager.getCameraCharacteristics(cameraId);
+                Integer lensFacing = characteristics.get(
+                    android.hardware.camera2.CameraCharacteristics.LENS_FACING
+                );
+                if (
+                    lensFacing != null &&
+                    lensFacing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT
+                ) {
+                    return cameraId;
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w("SharedPrefs", "Error resolving zoom camera ID", e);
+        }
+
+        return null;
+    }
+
     /**
      * Checks if the given camera ID corresponds to a wide-angle or ultra-wide
      * camera

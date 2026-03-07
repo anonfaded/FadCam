@@ -142,6 +142,10 @@ public abstract class Constants {
     public static final String EXTRA_BROADCAST_ZOOM_RATIO = "com.fadcam.EXTRA_BROADCAST_ZOOM_RATIO";
     public static final String EXTRA_BROADCAST_PAN_X = "com.fadcam.EXTRA_BROADCAST_PAN_X";
     public static final String EXTRA_BROADCAST_PAN_Y = "com.fadcam.EXTRA_BROADCAST_PAN_Y";
+    public static final String BROADCAST_ON_EXPOSURE_CHANGED =
+        "com.fadcam.ON_EXPOSURE_CHANGED";
+    public static final String EXTRA_BROADCAST_EXPOSURE_COMPENSATION =
+        "com.fadcam.EXTRA_BROADCAST_EXPOSURE_COMPENSATION";
     public static final String BROADCAST_MOTION_LAB_DEBUG =
         "com.fadcam.MOTION_LAB_DEBUG";
     public static final String EXTRA_MOTION_DEBUG_SCORE = "motion_debug_score";

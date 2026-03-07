@@ -720,9 +720,41 @@ public class RecordingService extends Service {
         }
 
         try {
-            float clampedZoom = Math.max(1.0f, zoomRatio);
+            android.util.Range<Float> zoomRatioRange = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && currentCameraCharacteristics != null) {
+                zoomRatioRange = currentCameraCharacteristics.get(
+                        android.hardware.camera2.CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+            }
+
+            float minSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getLower() : 1.0f;
+            float maxSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getUpper() : Math.max(1.0f, zoomRatio);
+            float clampedZoom = Math.max(minSupportedZoom, Math.min(maxSupportedZoom, zoomRatio));
             float clampedPanX = Math.max(-1.0f, Math.min(1.0f, panX));
             float clampedPanY = Math.max(-1.0f, Math.min(1.0f, panY));
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && zoomRatioRange != null && clampedZoom < 1.0f) {
+                if (currentCameraCharacteristics != null) {
+                    android.graphics.Rect activeArray = currentCameraCharacteristics
+                            .get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                    if (activeArray != null) {
+                        captureRequestBuilder.set(
+                                android.hardware.camera2.CaptureRequest.SCALER_CROP_REGION,
+                                activeArray);
+                    }
+                }
+
+                captureRequestBuilder.set(
+                        android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO,
+                        clampedZoom);
+                captureSession.setRepeatingRequest(
+                        captureRequestBuilder.build(), null, backgroundHandler);
+
+                CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                sharedPreferencesManager.setSpecificZoomRatio(currentCamera, clampedZoom);
+                sharedPreferencesManager.setSpecificPan(currentCamera, 0.0f, 0.0f);
+                Log.d(TAG, "applyZoomAndPan: CONTROL_ZOOM_RATIO ultra-wide ratio=" + clampedZoom);
+                return;
+            }
 
             if (currentCameraCharacteristics != null) {
                 android.graphics.Rect activeArray = currentCameraCharacteristics
@@ -1221,6 +1253,15 @@ public class RecordingService extends Service {
             if (intent.hasExtra(Constants.EXTRA_EXPOSURE_COMPENSATION)) {
                 int ev = intent.getIntExtra(Constants.EXTRA_EXPOSURE_COMPENSATION, 0);
                 applyExposureCompensation(ev);
+            android.content.Intent exposureBroadcast = new android.content.Intent(
+                Constants.BROADCAST_ON_EXPOSURE_CHANGED);
+            exposureBroadcast.putExtra(
+                Constants.EXTRA_BROADCAST_EXPOSURE_COMPENSATION,
+                sharedPreferencesManager.getSavedExposureCompensation());
+            androidx.localbroadcastmanager.content.LocalBroadcastManager
+                .getInstance(this)
+                .sendBroadcast(exposureBroadcast);
+            com.fadcam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_TOGGLE_AE_LOCK.equals(action)) {
@@ -1255,9 +1296,10 @@ public class RecordingService extends Service {
                     applyZoomAndPan(zoomRatio, panX, panY);
                     // Notify HomeFragment so pan overlay updates in real time
                     android.content.Intent zoomBcast = new android.content.Intent(Constants.BROADCAST_ON_ZOOM_CHANGED);
-                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, zoomRatio);
-                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_X, panX);
-                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, panY);
+                    CameraType cam = sharedPreferencesManager.getCameraSelection();
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, sharedPreferencesManager.getSpecificZoomRatio(cam));
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_X, sharedPreferencesManager.getSpecificPanX(cam));
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, sharedPreferencesManager.getSpecificPanY(cam));
                     androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(zoomBcast);
                 } else {
                     applyZoomRatio(zoomRatio); // preserves saved pan internally
@@ -1271,6 +1313,7 @@ public class RecordingService extends Service {
                     zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, broadcastPanY);
                     androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(zoomBcast);
                 }
+                com.fadcam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR.equals(action)) {

@@ -1226,7 +1226,6 @@ public class VideoSettingsFragment extends Fragment {
     private List<Float> buildZoomRatioOptions(CameraType cam) {
         List<Float> list = new ArrayList<>();
         float max = getHardwareSupportedMaxZoomRatio(cam);
-        // Add from 0.5x up to max in 0.5 increments; ensure 1.0 included
         for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
             list.add(((float) Math.round(z * 10)) / 10f);
         }

@@ -845,8 +845,14 @@ public class RemoteStreamManager {
             SharedPreferencesManager spMgr = context != null ? SharedPreferencesManager.getInstance(context) : null;
             com.fadcam.CameraType activeCam = spMgr != null ? spMgr.getCameraSelection() : com.fadcam.CameraType.BACK;
             float zoomRatio = spMgr != null ? spMgr.getSpecificZoomRatio(activeCam) : 1.0f;
+            float zoomRatioMin = 0.5f;
+            float zoomRatioMax = spMgr != null ? spMgr.getMaxSupportedZoomRatio(activeCam) : 5.0f;
             float panX = spMgr != null ? spMgr.getSpecificPanX(activeCam) : 0.0f;
             float panY = spMgr != null ? spMgr.getSpecificPanY(activeCam) : 0.0f;
+            if (zoomRatio <= 1.0f) {
+                panX = 0.0f;
+                panY = 0.0f;
+            }
             int exposureCompensation = spMgr != null ? spMgr.getSavedExposureCompensation() : 0;
             float exposureCompensationStep = spMgr != null ? spMgr.getExposureCompensationStep() : 0.33f;
             // Compute display EV for web dashboard (backend is single source of truth)
@@ -891,7 +897,7 @@ public class RemoteStreamManager {
                 "\"streamQuality\": %s, " +
                 "\"videoCodec\": %s, " +
                 "\"cameraType\": %s, " +
-                "\"zoomRatio\": %.2f, \"panX\": %.3f, \"panY\": %.3f, " +
+                "\"zoomRatio\": %.2f, \"zoomRatioMin\": %.2f, \"zoomRatioMax\": %.2f, \"panX\": %.3f, \"panY\": %.3f, " +
                 "\"exposureCompensation\": %d, \"exposureCompensationDisplay\": %.2f, \"exposureCompensationMin\": %d, \"exposureCompensationMax\": %d, \"exposureCompensationStep\": %.2f, " +
                 "\"mirrorEnabled\": %s, \"aeLockEnabled\": %s, " +
                 "\"torchState\": %s, " +
@@ -927,6 +933,8 @@ public class RemoteStreamManager {
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(codecName),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(cameraTypeName),
                 zoomRatio,
+                zoomRatioMin,
+                zoomRatioMax,
                 panX,
                 panY,
                 exposureCompensation,
