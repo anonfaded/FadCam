@@ -455,7 +455,7 @@
                                onchange="onZoomSliderCommit(this.value)">
                     </div>
                     <button class="zoom-reset-btn" onclick="resetZoom()" title="Reset zoom">
-                        <i class="fas fa-compress-alt"></i>
+                        <i class="fas fa-undo"></i>
                     </button>
                 </div>
 
@@ -2297,6 +2297,9 @@
             if (el) el.textContent = v.toFixed(1) + '×';
             // Pan container visible only when zoom > 1
             document.getElementById('panContainer')?.classList.toggle('visible', v > 1.0);
+            // Reset button only enabled when zoom !== 1.0
+            const resetBtn = document.querySelector('.zoom-reset-btn');
+            if (resetBtn) resetBtn.disabled = (Math.abs(v - 1.0) < 0.01); // Account for float precision
             // Update filled-track CSS variable
             const slider = document.getElementById('zoomSlider');
             if (slider) {
@@ -2417,7 +2420,7 @@
             const el = document.getElementById('exposureValue');
             // Show target value as visual feedback (like torch shows intended state)
             if (el) el.textContent = (targetEv > 0 ? '+' : '') + targetEv;
-            executingState.start('exposureCompensation', targetEv, '.exposure-card');
+            executingState.start('exposureCompensation', targetEv, '#exposureCard');
             try {
                 await dashboardViewModel.setExposure(targetEv);
                 _currentEv = targetEv; // Mark confirmed locally too

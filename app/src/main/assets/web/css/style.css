@@ -1975,7 +1975,7 @@ video {
     overflow: hidden;
     cursor: pointer;
     position: relative;
-    min-height: 38px;
+    min-height: 48px;
     transition: border-color 200ms ease;
 }
 
@@ -1987,6 +1987,9 @@ video {
     position: relative;
     padding: 10px 12px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* Background Fill - Yellow when ON */
@@ -2016,15 +2019,15 @@ video {
     gap: 10px;
 }
 
-/* Icon Container */
+/* Icon Container – proportional to card height */
 .torch-icon-fa {
-    width: 20px;
-    height: 20px;
-    font-size: 20px;
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
     flex-shrink: 0;
     color: #8b949e;
     transition: color 300ms ease;
-    line-height: 20px;
+    line-height: 24px;
     text-align: center;
 }
 
@@ -2033,12 +2036,13 @@ video {
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 0 0 4px rgba(255, 215, 0, 0.6);
 }
 
-/* Text Container */
+/* Text Container – ensure text doesn't wrap */
 .torch-text {
     display: flex;
     flex-direction: column;
     gap: 2px;
     flex: 1;
+    min-width: 0;
 }
 
 .torch-label {
@@ -2365,26 +2369,40 @@ video {
     padding: 10px 12px;
 }
 
-/* Exposure compact card (2-row: icon+label top, buttons bottom) */
+/* Exposure compact card - match other cards (horizontal layout) */
 .exposure-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-    cursor: default;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    min-height: 48px;
 }
 
 .exp-top-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
 }
 
-/* Align +/- buttons under the text (icon 18px + gap 8px = 26px indent) */
+/* Buttons should be aligned right, match torch-value spacing */
 .exp-btn-row {
     display: flex;
     align-items: center;
     gap: 5px;
-    padding-left: 26px;
+    flex-shrink: 0;
+}
+
+.exposure-icon-fa {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    flex-shrink: 0;
+    color: #8b949e;
+    transition: color 200ms ease;
+    line-height: 24px;
+    text-align: center;
 }
 
 .exposure-label-group {
@@ -2647,42 +2665,45 @@ input[type="range"].zoom-slider {
     padding: 0;
 }
 
-/* M3 thumb – 20dp circle, elevation shadow, no border */
+/* M3 thumb – 16dp bar/pill (Material 3 label slider style), elevation shadow, no border */
 input[type="range"].zoom-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
+    width: 4px;
+    height: 16px;
+    border-radius: 2px;
     background: #ef5350;
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.35);
     transition: box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* M3 hover state layer */
+/* M3 hover state layer (bar style) */
 input[type="range"].zoom-slider:hover::-webkit-slider-thumb {
-    box-shadow: 0 0 0 8px rgba(239, 83, 80, 0.12),
+    width: 6px;
+    box-shadow: 0 0 0 6px rgba(239, 83, 80, 0.12),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* M3 focus state layer */
+/* M3 focus state layer (bar style) */
 input[type="range"].zoom-slider:focus::-webkit-slider-thumb {
-    box-shadow: 0 0 0 10px rgba(239, 83, 80, 0.14),
+    width: 6px;
+    box-shadow: 0 0 0 8px rgba(239, 83, 80, 0.14),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* M3 pressed state layer */
+/* M3 pressed state layer (bar style) */
 input[type="range"].zoom-slider:active::-webkit-slider-thumb {
-    box-shadow: 0 0 0 12px rgba(239, 83, 80, 0.18),
+    width: 6px;
+    box-shadow: 0 0 0 10px rgba(239, 83, 80, 0.18),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* Firefox */
+/* Firefox – M3 bar style */
 input[type="range"].zoom-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
+    width: 4px;
+    height: 16px;
+    border-radius: 2px;
     background: #ef5350;
     cursor: pointer;
     border: none;
@@ -2724,6 +2745,13 @@ input[type="range"].zoom-slider::-moz-range-progress {
 }
 .zoom-reset-btn:active {
     transform: scale(0.90);
+}
+.zoom-reset-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: #443d3d;
+    border-color: transparent;
+    background: #0d1117;
 }
 
 /* -------- NETWORK CARD -------- */
