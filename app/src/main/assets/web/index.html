@@ -403,7 +403,7 @@
                                 <div class="cam-ctrl-value volume-percentage" id="volumePercentage">0%</div>
                             </div>
                         </div>
-                        <div class="exp-btn-row volume-button-group">
+                        <div class="volume-button-group">
                             <button id="volumeMute" class="volume-btn volume-btn-mute" onclick="event.stopPropagation(); toggleVolumeMute()" title="Mute/Unmute">
                                 <i class="fas fa-volume-mute" id="volumeMuteIcon"></i>
                             </button>
@@ -423,11 +423,11 @@
                             </div>
                         </div>
                         <div class="exp-btn-row">
-                            <button class="exposure-btn" onclick="event.stopPropagation(); adjustExposure(-1)" title="Decrease exposure">−</button>
-                            <button class="exposure-btn" onclick="event.stopPropagation(); adjustExposure(+1)" title="Increase exposure">+</button>
                             <button class="ae-lock-btn" id="aeLockBtn" onclick="event.stopPropagation(); toggleAeLock()" title="AE Lock">
                                 <i class="fas fa-lock-open" id="aeLockIcon"></i>
                             </button>
+                            <button class="exposure-btn" onclick="event.stopPropagation(); adjustExposure(-1)" title="Decrease exposure">−</button>
+                            <button class="exposure-btn" onclick="event.stopPropagation(); adjustExposure(+1)" title="Increase exposure">+</button>
                         </div>
                     </div>
                 </div>
