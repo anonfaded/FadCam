@@ -1214,7 +1214,15 @@
                     android:layout_height="wrap_content"
                     android:text="@string/stream_notes_cellular"
                     android:textSize="12sp"
-                    android:textColor="#FF6B6B" />
+                    android:textColor="#FF6B6B"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stream_notes_android14_screen"
+                    android:textSize="12sp"
+                    android:textColor="#FF9800" />
             </LinearLayout>
 
             </LinearLayout> <!-- Close Server Room Section -->
