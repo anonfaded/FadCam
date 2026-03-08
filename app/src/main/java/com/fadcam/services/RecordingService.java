@@ -4388,9 +4388,28 @@ public class RecordingService extends Service {
                             .setContentTitle(getString(R.string.app_name))
                             .setSmallIcon(R.drawable.ic_notification_icon);
 
-                    startForeground(NOTIFICATION_ID, minimalBuilder.build(),
-                            ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
-                                    | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+                    // Check CAMERA and RECORD_AUDIO permissions before declaring service types
+                    int foregroundServiceType = 0;
+                    if (ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+                    } else {
+                        Log.w(TAG, "CAMERA permission not granted, starting foreground without CAMERA type");
+                    }
+                    if (ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+                    } else {
+                        Log.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
+                    }
+
+                    if (foregroundServiceType == 0) {
+                        Log.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
+                        stopSelf();
+                        return;
+                    }
+
+                    startForeground(NOTIFICATION_ID, minimalBuilder.build(), foregroundServiceType);
                     Log.d(TAG, "Started foreground without notification permission (Tiramisu+).");
                 } catch (Exception e) {
                     Log.e(TAG, "Error starting foreground on Tiramisu+ without permission", e);
@@ -4411,8 +4430,28 @@ public class RecordingService extends Service {
                 .setContentText("Initializing...");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, immediateBuilder.build(),
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+            // Check CAMERA and RECORD_AUDIO permissions before declaring service types (Android 14+ requirement)
+            int foregroundServiceType = 0;
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+            } else {
+                Log.w(TAG, "CAMERA permission not granted, starting foreground without CAMERA type");
+            }
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            } else {
+                Log.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
+            }
+
+            if (foregroundServiceType == 0) {
+                Log.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
+                stopSelf();
+                return;
+            }
+
+            startForeground(NOTIFICATION_ID, immediateBuilder.build(), foregroundServiceType);
         } else {
             startForeground(NOTIFICATION_ID, immediateBuilder.build());
         }
