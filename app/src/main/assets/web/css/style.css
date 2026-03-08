@@ -2070,6 +2070,16 @@ video {
     color: #ffffff;
 }
 
+/* Torch card press effect */
+.torch-card {
+    transition: transform 100ms ease, border-color 200ms ease;
+    cursor: pointer;
+}
+
+.torch-card:active {
+    transform: scale(0.97);
+}
+
 /* -------- RECORDING CARD -------- */
 
 .recording-card {
@@ -2135,9 +2145,16 @@ video {
 }
 
 /* Pause/Resume button on recording card */
-.recording-pause-btn {
+.recording-card {
     position: relative;
-    z-index: 2;
+}
+
+.recording-pause-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2151,16 +2168,15 @@ video {
     cursor: pointer;
     transition: background 200ms ease, transform 100ms ease, opacity 200ms ease;
     flex-shrink: 0;
-    margin-left: auto;
 }
 
 .recording-pause-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.08);
+    transform: translateY(-50%) scale(1.08);
 }
 
 .recording-pause-btn:active:not(:disabled) {
-    transform: scale(0.95);
+    transform: translateY(-50%) scale(0.95);
 }
 
 .recording-pause-btn:disabled {
@@ -2397,58 +2413,50 @@ video {
     touch-action: none;
     align-self: center;
     overflow: hidden;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* crosshair lines with enhanced rulers */
+/* Grid pattern for pan area - helps visualize position */
 .pan-area::before {
     content: '';
     position: absolute;
-    left: 50%; top: 0; bottom: 0;
-    width: 1.5px;
-    background: linear-gradient(to bottom,
-        #30363d 0px, #30363d 4px,
-        #1a1e24 4px, #1a1e24 6px,
-        #30363d 6px, #30363d 10px,
-        #1a1e24 10px, #1a1e24 12px,
-        #30363d 12px, #30363d 20px,
-        #1a1e24 20px, #1a1e24 22px,
-        #30363d 22px, #30363d 40px,
-        #1a1e24 40px, #1a1e24 42px,
-        #30363d 42px, #30363d 50px,
-        #1a1e24 50px, #1a1e24 52px,
-        #30363d 52px, #30363d 56px,
-        #1a1e24 56px, #1a1e24 58px,
-        #30363d 58px, #30363d 62px,
-        #1a1e24 62px, #1a1e24 64px,
-        #30363d 64px);
-    transform: translateX(-50%);
-    z-index: 10;
+    inset: 0;
+    background-image: 
+        /* Vertical center line */
+        linear-gradient(to right, transparent 49.5%, rgba(239, 83, 80, 0.6) 49.5%, rgba(239, 83, 80, 0.6) 50.5%, transparent 50.5%),
+        /* Horizontal center line */
+        linear-gradient(to bottom, transparent 49.5%, rgba(239, 83, 80, 0.6) 49.5%, rgba(239, 83, 80, 0.6) 50.5%, transparent 50.5%),
+        /* Grid lines - vertical */
+        repeating-linear-gradient(to right, 
+            rgba(139, 148, 158, 0.15) 0px, 
+            rgba(139, 148, 158, 0.15) 1px, 
+            transparent 1px, 
+            transparent 20px),
+        /* Grid lines - horizontal */
+        repeating-linear-gradient(to bottom, 
+            rgba(139, 148, 158, 0.15) 0px, 
+            rgba(139, 148, 158, 0.15) 1px, 
+            transparent 1px, 
+            transparent 20px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    pointer-events: none;
+    z-index: 5;
 }
 
+/* Center point indicator */
 .pan-area::after {
     content: '';
     position: absolute;
-    top: 50%; left: 0; right: 0;
-    height: 1.5px;
-    background: linear-gradient(to right,
-        #30363d 0px, #30363d 4px,
-        #1a1e24 4px, #1a1e24 6px,
-        #30363d 6px, #30363d 10px,
-        #1a1e24 10px, #1a1e24 12px,
-        #30363d 12px, #30363d 20px,
-        #1a1e24 20px, #1a1e24 22px,
-        #30363d 22px, #30363d 40px,
-        #1a1e24 40px, #1a1e24 42px,
-        #30363d 42px, #30363d 50px,
-        #1a1e24 50px, #1a1e24 52px,
-        #30363d 52px, #30363d 56px,
-        #1a1e24 56px, #1a1e24 58px,
-        #30363d 58px, #30363d 62px,
-        #1a1e24 62px, #1a1e24 64px,
-        #30363d 64px);
-    transform: translateY(-50%);
-    z-index: 10;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: rgba(239, 83, 80, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(239, 83, 80, 0.6);
+    z-index: 8;
+    pointer-events: none;
 }
 
 .pan-thumb {
@@ -2471,6 +2479,96 @@ video {
     box-shadow: 0 0 12px rgba(239, 83, 80, 1),
                 0 0 20px rgba(239, 83, 80, 0.4),
                 inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Direction labels for pan area - positioned outside the grid */
+.pan-label {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 700;
+    color: #f0f6fc;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 20;
+    transition: color 200ms ease, transform 200ms ease;
+    opacity: 0.8;
+}
+
+/* -------- PRESS/CLICK EFFECTS FOR ALL SIDEBAR BUTTONS -------- */
+/* Torch card press effect */
+.torch-card:active {
+    transform: scale(0.96);
+    transition: transform 100ms ease;
+}
+
+/* Recording card press effect */
+.recording-card:active {
+    transform: scale(0.96);
+    transition: transform 100ms ease;
+}
+
+/* Camera control card press effect */
+.camera-card:active,
+.cam-ctrl-card:active {
+    transform: scale(0.96);
+    transition: transform 100ms ease;
+}
+
+/* Small card press effect */
+.card-sm:active {
+    transform: scale(0.97);
+    transition: transform 100ms ease;
+}
+
+/* Exposure card press effect */
+.exposure-card:active {
+    transform: scale(0.96);
+    transition: transform 100ms ease;
+}
+
+/* Volume card press effect */
+.volume-card:active {
+    transform: scale(0.96);
+    transition: transform 100ms ease;
+}
+
+/* Zoom row press effect */
+.zoom-row:active {
+    transform: scale(0.98);
+    transition: transform 100ms ease;
+}
+
+/* iOS-style cards press effect */
+.card-storage-ios:active,
+.card-memory-ios:active,
+.card-network-ios:active,
+.card-battery-ios:active {
+    transform: scale(0.97);
+    transition: transform 100ms ease;
+}
+
+.pan-label-up {
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.pan-label-down {
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.pan-label-left {
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.pan-label-right {
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 /* Exposure row */
@@ -2796,90 +2894,108 @@ input[type="range"].zoom-slider {
     -webkit-appearance: none;
     appearance: none;
     height: 40px;
-    background: linear-gradient(to right, #ef5350 var(--zoom-pct, 0%), #2d333b var(--zoom-pct, 0%)) center / 100% 12px no-repeat;
-    border-radius: 0;
+    background: transparent;
+    border-radius: 999px;
     outline: none;
     cursor: pointer;
     margin: 0;
     padding: 0;
     touch-action: pan-x;
-    background-size: 100% 8px;
-    background-position: center;
+    overflow: visible;
 }
 
+/* WebKit track styling */
+input[type="range"].zoom-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, #ef5350 var(--zoom-pct, 0%), #2d333b var(--zoom-pct, 0%));
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+/* WebKit thumb styling */
 input[type="range"].zoom-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 2px;
-    height: 24px;
+    width: 4px;
+    height: 32px;
     border-radius: 999px;
     background: #ef5350;
     cursor: pointer;
-    border: 2px solid #0d1117;
+    border: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.35);
-    transition: width 200ms cubic-bezier(0.2, 0, 0, 1), 
+    transition: width 200ms cubic-bezier(0.2, 0, 0, 1),
                 box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
                 height 200ms cubic-bezier(0.2, 0, 0, 1);
-    margin-left: 0px;
+    margin-top: -12px; /* Center thumb on track */
 }
 
 input[type="range"].zoom-slider:hover::-webkit-slider-thumb {
-    width: 1px;
-    height: 20px;
+    width: 2px;
+    height: 32px;
     box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.2),
                 0 1px 3px rgba(0, 0, 0, 0.55);
+    margin-top: -12px;
 }
 
 input[type="range"].zoom-slider:focus::-webkit-slider-thumb {
     width: 2px;
-    height: 26px;
+    height: 32px;
     box-shadow: 0 0 0 6px rgba(239, 83, 80, 0.2),
                 0 0 0 10px rgba(239, 83, 80, 0.1),
                 0 1px 3px rgba(0, 0, 0, 0.55);
+    margin-top: -12px;
 }
 
 input[type="range"].zoom-slider:active::-webkit-slider-thumb {
-    width: 2px;
-    height: 24px;
+    width: 4px;
+    height: 32px;
     box-shadow: 0 0 0 8px rgba(239, 83, 80, 0.15),
                 0 0 0 12px rgba(239, 83, 80, 0.08),
                 0 1px 3px rgba(0, 0, 0, 0.55);
+    margin-top: -12px;
 }
 
+/* Firefox track styling */
+input[type="range"].zoom-slider::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, #ef5350 var(--zoom-pct, 0%), #2d333b var(--zoom-pct, 0%));
+    border-radius: 999px;
+}
+
+/* Firefox thumb styling */
 input[type="range"].zoom-slider::-moz-range-thumb {
-    width: 6px;
-    height: 30px;
+    width: 4px;
+    height: 32px;
     border-radius: 999px;
     background: #ef5350;
     cursor: pointer;
-    border: 2px solid #0d1117;
+    border: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
     transition: width 200ms cubic-bezier(0.2, 0, 0, 1),
                 box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 input[type="range"].zoom-slider:hover::-moz-range-thumb {
-    width: 4px;
-    box-shadow: 0 0 0 8px rgba(239, 83, 80, 0.15);
+    width: 2px;
+    height: 32px;
+    box-shadow: 0 0 0 8px rgba(239, 83, 80, 0.15),
+                0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 input[type="range"].zoom-slider:active::-moz-range-thumb {
     width: 4px;
-    box-shadow: 0 0 0 16px rgba(239, 83, 80, 0.18),
-                0 0 0 20px rgba(239, 83, 80, 0.1),
+    height: 32px;
+    box-shadow: 0 0 0 12px rgba(239, 83, 80, 0.12),
                 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-input[type="range"].zoom-slider::-moz-range-track {
-    height: 10px;
-    border-radius: 0;
-    background: #2d333b;
-}
-
+/* Firefox progress fill */
 input[type="range"].zoom-slider::-moz-range-progress {
-    height: 12px;
-    border-radius: 0;
+    height: 8px;
     background: #ef5350;
+    border-radius: 999px;
 }
 
 .zoom-slider-presets {
@@ -3674,47 +3790,52 @@ input[type="range"].zoom-slider::-moz-range-progress {
 }
 
 .volume-btn-mute.is-muted {
-    border-color: #f85149;
-    color: #f85149;
-    background: rgba(248, 81, 73, 0.15);
+    border-color: #30363d;
+    color: #f0f6fc;
+    background: rgba(10, 15, 20, 0.8);
 }
 
 .volume-btn-mute.is-muted:hover {
-    background: rgba(248, 81, 73, 0.25);
+    background: rgba(20, 25, 30, 0.9);
+    border-color: #404850;
 }
 
-/* Muted State - Dark Gray with Badge */
+/* Muted State - Dark with Badge (matching battery card style) */
 .volume-card.muted {
-    background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%) !important;
+    background: linear-gradient(135deg, #0a0f14 0%, #121820 100%) !important;
     position: relative;
 }
 
 .volume-card.muted::after {
     content: 'MUTED';
     position: absolute;
-    top: 8px;
+    top: 6px;
     right: 8px;
-    background: rgba(248, 81, 73, 0.25);
-    color: #ff6b5e;
+    background: rgba(0, 0, 0, 0.5);
+    color: #f0f6fc;
     padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 9px;
+    border-radius: 4px;
+    font-size: 8px;
     font-weight: 700;
-    letter-spacing: 0.5px;
-    border: 1px solid rgba(248, 81, 73, 0.4);
+    letter-spacing: 0.4px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .volume-card.muted .cam-ctrl-fill {
-    background: linear-gradient(135deg, rgba(100, 100, 100, 0.1), rgba(80, 80, 80, 0.07)) !important;
+    background: linear-gradient(135deg, rgba(30, 35, 40, 0.3), rgba(20, 25, 30, 0.2)) !important;
+    opacity: 0.5;
 }
 
 .volume-card.muted .battery-label {
-    color: #9ca3af !important;
+    color: #8b949e !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .volume-card.muted .battery-percentage {
-    color: #9ca3af !important;
+    color: #8b949e !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 

@@ -462,6 +462,10 @@
                         </button>
                     </div>
                     <div class="pan-area" id="panArea">
+                        <div class="pan-label pan-label-up">↑</div>
+                        <div class="pan-label pan-label-down">↓</div>
+                        <div class="pan-label pan-label-left">←</div>
+                        <div class="pan-label pan-label-right">→</div>
                         <div class="pan-thumb" id="panThumb"></div>
                     </div>
                 </div>
@@ -2334,6 +2338,11 @@
 
             const currentIsFront = currentStatus?.cameraType?.toLowerCase() === 'front';
             const expectedNew = currentIsFront ? 'back' : 'front';
+            
+            // Add switching animation class
+            cameraCard.classList.add('switching');
+            setTimeout(() => cameraCard.classList.remove('switching'), 400);
+            
             executingState.start('cameraType', expectedNew, '#cameraCard');
 
             try {
@@ -2342,6 +2351,7 @@
             } catch (error) {
                 console.error('[Camera] Failed to switch:', error);
                 executingState.stop('cameraType');
+                cameraCard.classList.remove('switching');
                 showToast('Failed to switch camera');
             }
         }
