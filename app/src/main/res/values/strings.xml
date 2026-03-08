@@ -1848,8 +1848,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
     <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) controls FPS cap and bitrate to prevent network issues</string>
     <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
-    <string name="stream_notes_cellular">⚠️ On cellular networks: ISPs mostly block incoming connections. Streaming will very likely NOT work. Use WiFi for reliable streaming</string>
-    <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. For CCTV use without manual interaction: enable "Black Screen Mode" in Settings → Security. This keeps the display technically active so remote recording works seamlessly</string>
+    <string name="stream_notes_cellular">⚠️ WiFi-only limitation: Cellular networks block incoming connections. For seamless streaming from any network (WiFi, LTE, anywhere), upgrade to FadCam Pro+. Stream from anywhere globally with a private generated link—no port forwarding, no router changes, no network restrictions</string>
+    <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. Workarounds: (1) Enable "Black Screen Mode" in Settings → Security, or (2) Disable screen lock (no PIN/password/fingerprint). Both allow seamless remote recording</string>
     
     <!-- FadSec Cloud / Remote Streaming -->
     <string name="cloud_account_button_desc">FadSec Cloud</string>
