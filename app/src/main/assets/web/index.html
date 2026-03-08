@@ -343,8 +343,8 @@
                                 <div class="torch-label">Recording</div>
                                 <div class="torch-value" id="recordingState">STOPPED</div>
                             </div>
-                            <!-- Pause/Resume Button (visible only when recording or paused) -->
-                            <button class="recording-pause-btn" id="recordingPauseBtn" onclick="event.stopPropagation(); togglePauseRecording();" style="display: none;">
+                            <!-- Pause/Resume Button (always visible, disabled when not recording) -->
+                            <button class="recording-pause-btn" id="recordingPauseBtn" onclick="event.stopPropagation(); togglePauseRecording();" disabled title="Pause recording">
                                 <i class="fas fa-pause" id="recordingPauseBtnIcon"></i>
                             </button>
                         </div>
@@ -404,6 +404,9 @@
                             </div>
                         </div>
                         <div class="exp-btn-row volume-button-group">
+                            <button id="volumeMute" class="volume-btn volume-btn-mute" onclick="event.stopPropagation(); toggleVolumeMute()" title="Mute/Unmute">
+                                <i class="fas fa-volume-mute" id="volumeMuteIcon"></i>
+                            </button>
                             <button id="volumeMinus" class="volume-btn volume-btn-minus" onclick="event.stopPropagation(); volumeDecrease()" title="Decrease volume">−</button>
                             <button id="volumePlus" class="volume-btn volume-btn-plus" onclick="event.stopPropagation(); volumeIncrease()" title="Increase volume">+</button>
                         </div>
@@ -1479,6 +1482,8 @@
             const volumeFill = document.getElementById('volumeFill');
             const volumePercentage = document.getElementById('volumePercentage');
             const volumeWaves = document.querySelectorAll('.volume-wave');
+            const muteBtnIcon = document.getElementById('volumeMuteIcon');
+            const muteBtn = document.getElementById('volumeMute');
             
             // Return early if elements don't exist yet
             if (!volumeFill || !volumePercentage) {
@@ -1493,6 +1498,17 @@
             
             // Update text displays
             volumePercentage.textContent = Math.round(percent) + '%';
+            
+            // Update mute button icon and state
+            if (muteBtn && muteBtnIcon) {
+                if (percent === 0) {
+                    muteBtnIcon.className = 'fas fa-volume-off';
+                    muteBtn.classList.add('is-muted');
+                } else {
+                    muteBtnIcon.className = 'fas fa-volume-mute';
+                    muteBtn.classList.remove('is-muted');
+                }
+            }
             
             // Determine color based on volume level: Green (0-33%) → Orange (33-66%) → Red (66%+)
             const volumeCard = document.querySelector('.volume-card');
@@ -1834,6 +1850,25 @@
             const currentPercent = parseInt(volumePercentageEl.textContent) || 0;
             const newPercent = Math.min(100, currentPercent + 5);
             setVolume(newPercent);
+        }
+
+        /**
+         * Toggle volume mute - saves previous volume or restores it
+         */
+        let lastNonZeroVolume = 50; // Default to medium if not set
+        async function toggleVolumeMute() {
+            const volumePercentageEl = document.getElementById('volumePercentage');
+            if (!volumePercentageEl) return;
+            const currentPercent = parseInt(volumePercentageEl.textContent) || 0;
+            
+            if (currentPercent === 0) {
+                // Unmute - restore last non-zero volume or use default
+                setVolume(lastNonZeroVolume);
+            } else {
+                // Mute - save current volume and set to 0
+                lastNonZeroVolume = currentPercent;
+                setVolume(0);
+            }
         }
 
         async function setBatteryWarning() {
@@ -2315,6 +2350,18 @@
 
         let _zoomDebounce = null;
         let _pendingPanX = 0, _pendingPanY = 0;
+        let _lastConfirmedPanX = 0, _lastConfirmedPanY = 0;
+
+        /**
+         * Update pan reset button disabled state based on whether pan has changed from center
+         */
+        function updatePanResetButtonState() {
+            const panResetBtn = document.querySelector('.pan-reset-btn');
+            if (panResetBtn) {
+                const isPanChanged = Math.abs(_pendingPanX) > 0.01 || Math.abs(_pendingPanY) > 0.01;
+                panResetBtn.disabled = !isPanChanged;
+            }
+        }
 
         function getZoomPresetValues(min, max) {
             const midpoint = Math.round((((min + max) / 2) * 2)) / 2;
@@ -2504,7 +2551,19 @@
                 zoomValueEl.textContent = normalized.toFixed(1) + '×';
             }
 
-            document.getElementById('panContainer')?.classList.toggle('visible', normalized > 1.0);
+            // Toggle pan container visibility and auto-scroll to it when it appears
+            const panContainer = document.getElementById('panContainer');
+            const wasHidden = panContainer && !panContainer.classList.contains('visible');
+            const shouldShow = normalized > 1.0;
+            
+            panContainer?.classList.toggle('visible', shouldShow);
+            
+            // Auto-scroll to pan container when it becomes visible
+            if (wasHidden && shouldShow && panContainer) {
+                setTimeout(() => {
+                    panContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
 
             if (resetBtn) {
                 resetBtn.disabled = Math.abs(normalized - 1.0) < 0.01;
@@ -2591,6 +2650,7 @@
                 thumb.style.top  = (ry * 100) + '%';
                 _pendingPanX = panX;
                 _pendingPanY = panY;
+                updatePanResetButtonState();
             }
 
             function onDragEnd() {
@@ -2619,6 +2679,7 @@
             _pendingPanX = 0; _pendingPanY = 0;
             const thumb = document.getElementById('panThumb');
             if (thumb) { thumb.style.left = '50%'; thumb.style.top = '50%'; }
+            updatePanResetButtonState();
             const ratio = normalizeZoomSliderValue(document.getElementById('zoomSlider')?.value || 0, false);
             executingState.start('zoomRatio', { ratio, panX: 0, panY: 0 }, '.zoom-row');
             try {
@@ -3598,9 +3659,9 @@
                         if (recordingIcon) {
                             recordingIcon.className = 'fas fa-pause recording-icon-fa';
                         }
-                        // Show resume button
+                        // Enable resume button
                         if (pauseBtn) {
-                            pauseBtn.style.display = '';
+                            pauseBtn.disabled = false;
                             pauseBtn.title = 'Resume recording';
                         }
                         if (pauseBtnIcon) {
@@ -3613,9 +3674,9 @@
                         if (recordingIcon) {
                             recordingIcon.className = 'fas fa-circle recording-icon-fa';
                         }
-                        // Show pause button
+                        // Enable pause button
                         if (pauseBtn) {
-                            pauseBtn.style.display = '';
+                            pauseBtn.disabled = false;
                             pauseBtn.title = 'Pause recording';
                         }
                         if (pauseBtnIcon) {
@@ -3628,9 +3689,9 @@
                         if (recordingIcon) {
                             recordingIcon.className = 'fas fa-circle recording-icon-fa';
                         }
-                        // Hide pause button when not recording
+                        // Disable pause button when not recording
                         if (pauseBtn) {
-                            pauseBtn.style.display = 'none';
+                            pauseBtn.disabled = true;
                         }
                     }
                 }
