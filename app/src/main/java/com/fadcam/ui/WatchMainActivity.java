@@ -166,25 +166,36 @@ public class WatchMainActivity extends AppCompatActivity {
         if (themeName == null || themeName.isEmpty()) {
             themeName = Constants.DEFAULT_APP_THEME;
         }
+        
+        // Apply theme and set window colors to prevent red overlay on small watch screens
         if ("Faded Night".equals(themeName) || "AMOLED".equals(themeName) || "amoled".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Amoled);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.amoled_background, getTheme()));
         } else if ("Crimson Bloom".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Red);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
         } else if ("Premium Gold".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_Gold);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.gold_theme_background_dark, getTheme()));
         } else if ("Silent Forest".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_SilentForest);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.silentforest_theme_background_dark, getTheme()));
         } else if ("Shadow Alloy".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_ShadowAlloy);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.shadowalloy_theme_background_dark, getTheme()));
         } else if ("Pookie Pink".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_PookiePink);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.pookiepink_theme_background_dark, getTheme()));
         } else if ("Snow Veil".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_SnowVeil);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.snowveil_theme_background_light, getTheme()));
         } else if ("Midnight Dusk".equals(themeName)) {
             setTheme(R.style.Theme_FadCam_MidnightDusk);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.gray, getTheme()));
         } else {
             // Default fallback — matches Constants.DEFAULT_APP_THEME
             setTheme(R.style.Theme_FadCam_Red);
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
         }
     }
 }
