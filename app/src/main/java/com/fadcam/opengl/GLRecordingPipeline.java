@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -53,6 +54,7 @@ public class GLRecordingPipeline {
     private boolean isStopped = false;
     private HandlerThread renderThread;
     private Handler handler;
+    private final AtomicBoolean renderRunnableQueued = new AtomicBoolean(false);
     private final int videoWidth;
     private final int videoHeight;
     private int videoBitrate;
@@ -657,7 +659,8 @@ public class GLRecordingPipeline {
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
                     @Override
                     public void onFrameAvailable() {
-                        if ((isRecording || previewOnlyRendering) && handler != null) {
+                        if ((isRecording || previewOnlyRendering) && handler != null
+                                && renderRunnableQueued.compareAndSet(false, true)) {
                             handler.post(renderRunnable);
                         }
                     }
@@ -1394,11 +1397,11 @@ public class GLRecordingPipeline {
     private final Runnable renderRunnable = new Runnable() {
         @Override
         public void run() {
-            if ((!isRecording && !previewOnlyRendering) || released) {
-                return;
-            }
-
             try {
+                if ((!isRecording && !previewOnlyRendering) || released) {
+                    return;
+                }
+
                 if (previewOnlyRendering && !isRecording) {
                     Runnable action;
                     while ((action = rendererActions.poll()) != null) {
@@ -1449,6 +1452,8 @@ public class GLRecordingPipeline {
                 // Avoid self-posting to reduce CPU load and sustain high FPS.
             } catch (Exception e) {
                 Log.e(TAG, "Error in render loop", e);
+            } finally {
+                renderRunnableQueued.set(false);
             }
         }
     };
