@@ -1,5 +1,6 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
@@ -33,7 +34,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.Constants;
-import com.fadcam.Log;
+import com.fadcam.FLog;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.button.MaterialButton;
@@ -743,7 +744,7 @@ public class AboutFragment extends BaseFragment {
             }
             
         } catch (Exception e) {
-            Log.e("AboutFragment", "Error applying Snow Veil theme to cards: " + e.getMessage());
+            FLog.e("AboutFragment", "Error applying Snow Veil theme to cards: " + e.getMessage());
         }
     }
     

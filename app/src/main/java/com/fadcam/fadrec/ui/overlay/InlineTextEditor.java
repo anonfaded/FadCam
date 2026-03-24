@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.overlay;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -20,7 +22,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
-import android.util.Log;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.fadcam.R;
@@ -646,7 +647,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
     private void resetEditor() {
         // Safety check - views must be initialized
         if (editText == null) {
-            Log.e(TAG, "resetEditor called but views not initialized");
+            FLog.e(TAG, "resetEditor called but views not initialized");
             return;
         }
 
@@ -679,7 +680,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
     private void loadTextObject(TextObject textObject) {
         // Safety check - views must be initialized
         if (editText == null) {
-            Log.e(TAG, "loadTextObject called but views not initialized");
+            FLog.e(TAG, "loadTextObject called but views not initialized");
             return;
         }
 

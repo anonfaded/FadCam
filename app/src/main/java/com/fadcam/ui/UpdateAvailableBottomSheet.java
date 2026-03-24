@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Color;
@@ -7,7 +9,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,11 +57,11 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
                 @Override
                 public void onClick(View v) {
                     try {
-                        Log.d(TAG, "Close button clicked, attempting to dismiss");
+                        FLog.d(TAG, "Close button clicked, attempting to dismiss");
                         dismissAllowingStateLoss();
-                        Log.d(TAG, "Bottom sheet dismissed");
+                        FLog.d(TAG, "Bottom sheet dismissed");
                     } catch (Exception e) {
-                        Log.e(TAG, "Error dismissing bottom sheet", e);
+                        FLog.e(TAG, "Error dismissing bottom sheet", e);
                         // Try alternative dismiss methods
                         try {
                             if (getDialog() != null) {
@@ -69,7 +70,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
                                 dismiss();
                             }
                         } catch (Exception ex) {
-                            Log.e(TAG, "All dismiss methods failed", ex);
+                            FLog.e(TAG, "All dismiss methods failed", ex);
                         }
                     }
                 }
@@ -183,7 +184,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
                 }
             });
         }).exceptionally(e -> {
-            Log.e(TAG, "Error fetching changelog", e);
+            FLog.e(TAG, "Error fetching changelog", e);
             return null;
         });
     }

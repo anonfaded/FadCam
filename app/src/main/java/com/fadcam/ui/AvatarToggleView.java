@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -346,54 +348,54 @@ public class AvatarToggleView extends FrameLayout {
     private void startAvd(int drawableRes, long fallbackDurationMs, Runnable onEnd) {
         // DEBUG: Log which drawable we're  trying to start
         String resName = getContext().getResources().getResourceEntryName(drawableRes);
-        com.fadcam.Log.d("AvatarToggleView", "=== START AVD: " + resName + " ===");
+        FLog.d("AvatarToggleView", "=== START AVD: " + resName + " ===");
         
         ivAvatar.setImageResource(drawableRes);
         Drawable d = ivAvatar.getDrawable();
         
-        com.fadcam.Log.d("AvatarToggleView", "Drawable class: " + (d != null ? d.getClass().getName() : "NULL"));
-        com.fadcam.Log.d("AvatarToggleView", "Is Animatable2: " + (d instanceof Animatable2));
-        com.fadcam.Log.d("AvatarToggleView", "Is Animatable: " + (d instanceof Animatable));
+        FLog.d("AvatarToggleView", "Drawable class: " + (d != null ? d.getClass().getName() : "NULL"));
+        FLog.d("AvatarToggleView", "Is Animatable2: " + (d instanceof Animatable2));
+        FLog.d("AvatarToggleView", "Is Animatable: " + (d instanceof Animatable));
         
         // Force fresh resolution in case drawable is cached
         if (d == null || !(d instanceof Animatable)) {
-            com.fadcam.Log.d("AvatarToggleView", "WARNING: Not animatable! Trying ContextCompat...");
+            FLog.d("AvatarToggleView", "WARNING: Not animatable! Trying ContextCompat...");
             d = androidx.core.content.ContextCompat.getDrawable(getContext(), drawableRes);
             if (d != null) {
-                com.fadcam.Log.d("AvatarToggleView", "ContextCompat resolved: " + d.getClass().getName());
+                FLog.d("AvatarToggleView", "ContextCompat resolved: " + d.getClass().getName());
                 ivAvatar.setImageDrawable(d);
             }
         }
         
         if (d instanceof Animatable2) {
-            com.fadcam.Log.d("AvatarToggleView", "✓ Using Animatable2 path");
+            FLog.d("AvatarToggleView", "✓ Using Animatable2 path");
             Animatable2 avd = (Animatable2) d;
             avd.clearAnimationCallbacks();
             avd.registerAnimationCallback(new Animatable2.AnimationCallback() {
                 @Override
                 public void onAnimationEnd(Drawable drawable) {
-                    com.fadcam.Log.d("AvatarToggleView", "→ Animation END callback received");
+                    FLog.d("AvatarToggleView", "→ Animation END callback received");
                     if (ivAvatar != null && ivAvatar.isAttachedToWindow()) {
                         onEnd.run();
                     }
                 }
             });
             avd.start();
-            com.fadcam.Log.d("AvatarToggleView", "→ Animation started");
+            FLog.d("AvatarToggleView", "→ Animation started");
         } else if (d instanceof Animatable) {
-            com.fadcam.Log.d("AvatarToggleView", "❌ Using FALLBACK Animatable path (may not show)");
+            FLog.d("AvatarToggleView", "❌ Using FALLBACK Animatable path (may not show)");
             ((Animatable) d).start();
             ivAvatar.postDelayed(() -> {
-                com.fadcam.Log.d("AvatarToggleView", "→ Fallback delay expired");
+                FLog.d("AvatarToggleView", "→ Fallback delay expired");
                 if (ivAvatar != null && ivAvatar.isAttachedToWindow()) {
                     onEnd.run();
                 }
             }, fallbackDurationMs);
         } else {
-            com.fadcam.Log.d("AvatarToggleView", "❌❌ Not animatable AT ALL! Using pure delay");
+            FLog.d("AvatarToggleView", "❌❌ Not animatable AT ALL! Using pure delay");
             if (fallbackDurationMs > 0) {
                 ivAvatar.postDelayed(() -> {
-                    com.fadcam.Log.d("AvatarToggleView", "→ Delay expired, calling onEnd");
+                    FLog.d("AvatarToggleView", "→ Delay expired, calling onEnd");
                     if (ivAvatar != null && ivAvatar.isAttachedToWindow()) {
                         onEnd.run();
                     }

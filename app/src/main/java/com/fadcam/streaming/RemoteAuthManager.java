@@ -1,9 +1,9 @@
 package com.fadcam.streaming;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
-
 import com.fadcam.Constants;
 import com.fadcam.streaming.model.SessionToken;
 
@@ -59,7 +59,7 @@ public class RemoteAuthManager {
         if (!enabled) {
             clearAllSessions();
         }
-        Log.i(TAG, "Authentication " + (enabled ? "enabled" : "disabled"));
+        FLog.i(TAG, "Authentication " + (enabled ? "enabled" : "disabled"));
     }
     
     /**
@@ -67,7 +67,7 @@ public class RemoteAuthManager {
      */
     public boolean setPassword(String password) {
         if (password == null) {
-            Log.w(TAG, "Password is null");
+            FLog.w(TAG, "Password is null");
             return false;
         }
         
@@ -76,7 +76,7 @@ public class RemoteAuthManager {
         
         if (password.length() < Constants.REMOTE_AUTH_MIN_PASSWORD_LENGTH ||
             password.length() > Constants.REMOTE_AUTH_MAX_PASSWORD_LENGTH) {
-            Log.w(TAG, "Invalid password length: " + password.length());
+            FLog.w(TAG, "Invalid password length: " + password.length());
             return false;
         }
         
@@ -86,7 +86,7 @@ public class RemoteAuthManager {
         }
         
         prefs.edit().putString(Constants.PREF_REMOTE_AUTH_PASSWORD_HASH, hash).apply();
-        Log.i(TAG, "Password updated successfully");
+        FLog.i(TAG, "Password updated successfully");
         
         // Invalidate all existing sessions when password changes
         clearAllSessions();
@@ -98,7 +98,7 @@ public class RemoteAuthManager {
      */
     public boolean verifyPassword(String password) {
         if (password == null) {
-            Log.w(TAG, "Password is null");
+            FLog.w(TAG, "Password is null");
             return false;
         }
         
@@ -107,7 +107,7 @@ public class RemoteAuthManager {
         
         String storedHash = prefs.getString(Constants.PREF_REMOTE_AUTH_PASSWORD_HASH, null);
         if (storedHash == null) {
-            Log.w(TAG, "No password set");
+            FLog.w(TAG, "No password set");
             return false;
         }
         
@@ -115,7 +115,7 @@ public class RemoteAuthManager {
         boolean isValid = storedHash.equals(inputHash);
         
         if (!isValid) {
-            Log.d(TAG, "Password verification failed: hash mismatch");
+            FLog.d(TAG, "Password verification failed: hash mismatch");
         }
         
         return isValid;
@@ -141,7 +141,7 @@ public class RemoteAuthManager {
         activeSessions.put(token, session);
         saveSessionsToStorage();
         
-        Log.i(TAG, "New session created: " + token.substring(0, 8) + "... (expires in 24h)");
+        FLog.i(TAG, "New session created: " + token.substring(0, 8) + "... (expires in 24h)");
         return session;
     }
     
@@ -155,12 +155,12 @@ public class RemoteAuthManager {
         
         SessionToken session = activeSessions.get(token);
         if (session == null) {
-            Log.d(TAG, "Token not found in active sessions");
+            FLog.d(TAG, "Token not found in active sessions");
             return null;
         }
         
         if (session.isExpired()) {
-            Log.d(TAG, "Token expired");
+            FLog.d(TAG, "Token expired");
             activeSessions.remove(token);
             saveSessionsToStorage();
             return null;
@@ -175,7 +175,7 @@ public class RemoteAuthManager {
     public void revokeSession(String token) {
         if (activeSessions.remove(token) != null) {
             saveSessionsToStorage();
-            Log.i(TAG, "Session revoked: " + token.substring(0, 8) + "...");
+            FLog.i(TAG, "Session revoked: " + token.substring(0, 8) + "...");
         }
     }
     
@@ -187,7 +187,7 @@ public class RemoteAuthManager {
         activeSessions.clear();
         saveSessionsToStorage();
         sessionsJustCleared = true;  // Set flag for real-time detection
-        Log.i(TAG, "Cleared " + count + " session(s)");
+        FLog.i(TAG, "Cleared " + count + " session(s)");
     }
     
     /**
@@ -221,7 +221,7 @@ public class RemoteAuthManager {
      */
     public void setAutoLockTimeout(int minutes) {
         prefs.edit().putInt(Constants.PREF_REMOTE_AUTH_AUTO_LOCK_TIMEOUT, minutes).apply();
-        Log.i(TAG, "Auto-lock timeout set to: " + (minutes == 0 ? "Never" : minutes + " minutes"));
+        FLog.i(TAG, "Auto-lock timeout set to: " + (minutes == 0 ? "Never" : minutes + " minutes"));
     }
     
     /**
@@ -248,7 +248,7 @@ public class RemoteAuthManager {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, "SHA-256 not available", e);
+            FLog.e(TAG, "SHA-256 not available", e);
             return null;
         }
     }
@@ -302,9 +302,9 @@ public class RemoteAuthManager {
                 }
             }
             
-            Log.i(TAG, "Loaded " + activeSessions.size() + " active session(s)");
+            FLog.i(TAG, "Loaded " + activeSessions.size() + " active session(s)");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to load sessions from storage", e);
+            FLog.e(TAG, "Failed to load sessions from storage", e);
             activeSessions.clear();
         }
     }

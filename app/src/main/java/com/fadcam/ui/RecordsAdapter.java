@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -20,7 +22,6 @@ import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import java.util.concurrent.ConcurrentHashMap;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -263,7 +264,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     new android.content.IntentFilter("com.fadcam.ACTION_PLAYBACK_POSITION_UPDATED"));
         } catch (Exception ignored) {
         }
-        Log.i(TAG, "init safe_media_probe=" + safeMediaProbeMode
+        FLog.i(TAG, "init safe_media_probe=" + safeMediaProbeMode
                 + ", sdk=" + Build.VERSION.SDK_INT
                 + ", watch=" + RuntimeCompat.isWatchDevice(this.context)
                 + ", lowRam=" + RuntimeCompat.isLowRamDevice(this.context));
@@ -307,7 +308,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         boolean changed = !this.currentlyProcessingUris.equals(processingUris);
         if (changed) {
             this.currentlyProcessingUris = new HashSet<>(processingUris); // Use a copy
-            Log.d(TAG, "Adapter processing URIs updated: " + this.currentlyProcessingUris.size() + " items.");
+            FLog.d(TAG, "Adapter processing URIs updated: " + this.currentlyProcessingUris.size() + " items.");
             // TODO: Consider optimizing this? Maybe only notify items that changed state?
             // For simplicity now, refresh all potentially affected items (though maybe
             // slow)
@@ -344,13 +345,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // --- 1. Basic Checks & Get Data ---
         if (entries == null || position < 0 || position >= entries.size()
                 || !(entries.get(position) instanceof VideoItemEntry)) {
-            Log.e(TAG, "onBindViewHolder: Invalid item/data at position " + position);
+            FLog.e(TAG, "onBindViewHolder: Invalid item/data at position " + position);
             return;
         }
         final VideoItemEntry entry = (VideoItemEntry) entries.get(position);
         final VideoItem videoItem = entry.item;
         if (videoItem == null || videoItem.uri == null) {
-            Log.e(TAG, "onBindViewHolder: Null videoItem or uri at position " + position);
+            FLog.e(TAG, "onBindViewHolder: Null videoItem or uri at position " + position);
             return;
         }
         final Uri videoUri = videoItem.uri;
@@ -372,7 +373,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         // Only log for debugging specific positions to reduce spam
         if (position < 3 || position % 20 == 0) {
-            Log.v(TAG, "onBindViewHolder Pos " + position + ": Name=" + displayName);
+            FLog.v(TAG, "onBindViewHolder Pos " + position + ": Name=" + displayName);
         }
 
         // --- 3. Bind Standard Data, optimized for fewer UI operations ---
@@ -393,7 +394,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 cardView.setCardBackgroundColor(Color.WHITE);
 
                 // Log for debugging
-                Log.d(TAG, "Setting WHITE card background for Snow Veil theme at position " + position);
+                FLog.d(TAG, "Setting WHITE card background for Snow Veil theme at position " + position);
             }
 
             // Apply black tint to the three-dot menu icon for better contrast on white
@@ -413,7 +414,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.gray));
 
                 // Log for debugging
-                Log.d(TAG, "Setting GRAY card background for other theme at position " + position);
+                FLog.d(TAG, "Setting GRAY card background for other theme at position " + position);
             }
 
             // Clear any tint for other themes
@@ -507,7 +508,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                         com.fadcam.data.VideoIndexRepository.getInstance(context);
                                 duration = repo.getCachedDuration(videoUri.toString());
                             } catch (Exception e) {
-                                Log.w(TAG, "DB duration lookup failed", e);
+                                FLog.w(TAG, "DB duration lookup failed", e);
                             }
 
                             // Slow path: fall back to FFprobe/MMR only if DB has no data
@@ -618,7 +619,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                 final long fDur = durationMs;
                                 mainHandler.post(() -> applyProgressToView(progressBg, progressFill, fSaved, fDur));
                             } catch (Exception e) {
-                                Log.w(TAG, "Error computing thumbnail progress", e);
+                                FLog.w(TAG, "Error computing thumbnail progress", e);
                                 mainHandler.post(() -> progressFill.setVisibility(View.GONE));
                             }
                         });
@@ -686,7 +687,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             if (holder.menuButton != null)
                 holder.menuButton.setAlpha(allowMenuClick ? 1.0f : 0.4f); // Dim if disabled
         } else {
-            Log.w(TAG, "menuButtonContainer is null at pos " + position);
+            FLog.w(TAG, "menuButtonContainer is null at pos " + position);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -797,7 +798,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public int getItemCount() {
         int count = entries == null ? 0 : entries.size();
         if (count == 0) {
-            Log.d(TAG, "getItemCount returning 0 - entries is " + (entries == null ? "null" : "empty") +
+            FLog.d(TAG, "getItemCount returning 0 - entries is " + (entries == null ? "null" : "empty") +
                     ", skeleton mode: " + isSkeletonMode);
         }
         return count;
@@ -822,7 +823,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to load duration cache", e);
+            FLog.w(TAG, "Failed to load duration cache", e);
         }
     }
 
@@ -842,7 +843,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 fos.getFD().sync();
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to persist duration cache", e);
+            FLog.w(TAG, "Failed to persist duration cache", e);
         }
     }
 
@@ -873,7 +874,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 progressFill.setContentDescription(null);
             }
         } catch (Exception e) {
-            Log.w(TAG, "applyProgressToView error", e);
+            FLog.w(TAG, "applyProgressToView error", e);
         }
     }
 
@@ -996,11 +997,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 if (bitmap != null) {
                     holder.imageViewThumbnail.setImageBitmap(bitmap);
                     holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    Log.v(TAG, "Loaded thumbnail from cache for: " + uriString);
+                    FLog.v(TAG, "Loaded thumbnail from cache for: " + uriString);
                     return;
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Error loading cached thumbnail", e);
+                FLog.w(TAG, "Error loading cached thumbnail", e);
             }
         }
 
@@ -1052,9 +1053,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                 com.fadcam.utils.VideoSessionCache.saveThumbnailToDisk(context, uriString,
                                         thumbnailData);
 
-                                Log.v(TAG, "Cached new thumbnail for: " + uriString);
+                                FLog.v(TAG, "Cached new thumbnail for: " + uriString);
                             } catch (Exception e) {
-                                Log.w(TAG, "Error caching thumbnail", e);
+                                FLog.w(TAG, "Error caching thumbnail", e);
                             }
                         });
                     }
@@ -1150,7 +1151,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // EMERGENCY FIX: Force apply Snow Veil card color after normal binding
         if (isSnowVeilTheme && holder.itemView instanceof CardView) {
             ((CardView) holder.itemView).setCardBackgroundColor(Color.WHITE);
-            Log.d(TAG, "🔴 EMERGENCY: Forced WHITE card for Snow Veil at position " + position);
+            FLog.d(TAG, "🔴 EMERGENCY: Forced WHITE card for Snow Veil at position " + position);
 
             // Force black text on all text elements
             if (holder.textViewRecord != null)
@@ -1180,7 +1181,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (position != -1) {
             notifyItemChanged(position, "SELECTION_TOGGLE"); // Update specific item with payload to animate
         } else {
-            Log.w(TAG, "Could not find position for URI: " + videoUri + " during toggle. List size: " + records.size());
+            FLog.w(TAG, "Could not find position for URI: " + videoUri + " during toggle. List size: " + records.size());
             // Maybe list was updated concurrently? Do a full refresh as fallback.
             // notifyDataSetChanged(); // Use this cautiously
         }
@@ -1190,7 +1191,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     // Make this public so the Fragment can call it after marking an item opened
     public int findPositionByUri(Uri uri) { // <-- *** CHANGED to public ***
         if (uri == null || entries == null) {
-            Log.w(TAG, "findPositionByUri called with null uri or null entries list.");
+            FLog.w(TAG, "findPositionByUri called with null uri or null entries list.");
             return -1;
         }
         for (int i = 0; i < entries.size(); i++) {
@@ -1202,7 +1203,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         }
-        Log.v(TAG, "URI not found in adapter entries: " + uri); // Use v for verbose logs
+        FLog.v(TAG, "URI not found in adapter entries: " + uri); // Use v for verbose logs
         return -1; // Not found
     }
 
@@ -1516,7 +1517,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     boolean.class);
             setForceShowIcon.invoke(menuPopupHelper, true);
         } catch (Exception e) {
-            Log.w(TAG, "Could not force show popup menu icons: " + e.getMessage());
+            FLog.w(TAG, "Could not force show popup menu icons: " + e.getMessage());
         }
         // Handle all menu actions
         popup.setOnMenuItemClickListener(item -> {
@@ -1638,7 +1639,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 return;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to show TextInputBottomSheetFragment, falling back to dialog", e);
+            FLog.e(TAG, "Failed to show TextInputBottomSheetFragment, falling back to dialog", e);
         }
 
         // Fallback: if we cannot show the bottom sheet, keep the existing Material
@@ -1654,7 +1655,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         int position = findPositionByUri(videoUri);
 
         if (position == -1) {
-            Log.e(TAG, "Cannot rename, item not found in adapter list: " + videoUri);
+            FLog.e(TAG, "Cannot rename, item not found in adapter list: " + videoUri);
             if (context instanceof Activity) {
                 ((Activity) context).runOnUiThread(() -> Toast.makeText(context,
                         context.getString(R.string.toast_rename_failed) + " (Item not found)", Toast.LENGTH_SHORT)
@@ -1667,7 +1668,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         Uri newUri = null;
 
         try {
-            Log.d(TAG, "Attempting rename. URI: " + videoUri + ", Scheme: " + videoUri.getScheme() + ", New Name: "
+            FLog.d(TAG, "Attempting rename. URI: " + videoUri + ", Scheme: " + videoUri.getScheme() + ", New Name: "
                     + newFullName);
 
             if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
@@ -1680,14 +1681,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 String uniqueName = getUniqueFileNameInDirectory(parentDir, newFullName);
                 File newFile = new File(parentDir, uniqueName);
                 
-                Log.d(TAG, "Original name: " + newFullName + ", Unique name: " + uniqueName);
+                FLog.d(TAG, "Original name: " + newFullName + ", Unique name: " + uniqueName);
 
                 if (oldFile.renameTo(newFile)) {
                     renameSuccess = true;
                     newUri = Uri.fromFile(newFile);
-                    Log.i(TAG, "Renamed file system file successfully to: " + uniqueName);
+                    FLog.i(TAG, "Renamed file system file successfully to: " + uniqueName);
                 } else {
-                    Log.e(TAG, "File.renameTo() failed for " + oldFile.getPath());
+                    FLog.e(TAG, "File.renameTo() failed for " + oldFile.getPath());
                 }
             } else if ("content".equals(videoUri.getScheme())) {
                 // For SAF documents, check parent for existing files with same name
@@ -1701,16 +1702,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     if (existingFile != null && existingFile.exists() && !existingFile.getUri().equals(videoUri)) {
                         // Generate unique name to prevent overwriting
                         finalName = getUniqueFileNameForSAF(parentDoc, newFullName);
-                        Log.d(TAG, "SAF file already exists. Generated unique name: " + finalName);
+                        FLog.d(TAG, "SAF file already exists. Generated unique name: " + finalName);
                     }
                 }
                 
                 newUri = DocumentsContract.renameDocument(context.getContentResolver(), videoUri, finalName);
                 if (newUri != null) {
                     renameSuccess = true;
-                    Log.i(TAG, "Renamed SAF document successfully to: " + finalName + ", New URI: " + newUri);
+                    FLog.i(TAG, "Renamed SAF document successfully to: " + finalName + ", New URI: " + newUri);
                 } else {
-                    Log.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + finalName
+                    FLog.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + finalName
                             + "'.");
                     // Check if rename actually happened (some providers might return null on
                     // success if name didn't change or already exists)
@@ -1718,7 +1719,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                                                                            // might have been renamed in
                                                                                            // place
                     if (checkDoc != null && finalName.equals(checkDoc.getName())) {
-                        Log.w(TAG, "Rename check: File with new name exists under original URI. Assuming success.");
+                        FLog.w(TAG, "Rename check: File with new name exists under original URI. Assuming success.");
                         newUri = checkDoc.getUri();
                         renameSuccess = true;
                     } else { // Check if a new file with the new name exists in the parent
@@ -1726,7 +1727,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         if (parent != null) {
                             DocumentFile renamedFile = parent.findFile(finalName);
                             if (renamedFile != null && renamedFile.exists()) {
-                                Log.w(TAG, "Rename check: File with new name exists in parent. Assuming success.");
+                                FLog.w(TAG, "Rename check: File with new name exists in parent. Assuming success.");
                                 newUri = renamedFile.getUri();
                                 renameSuccess = true;
                             }
@@ -1734,7 +1735,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     }
                 }
             } else {
-                Log.e(TAG, "Unsupported URI scheme for renaming: " + videoUri.getScheme());
+                FLog.e(TAG, "Unsupported URI scheme for renaming: " + videoUri.getScheme());
             }
 
             if (renameSuccess && newUri != null) {
@@ -1751,9 +1752,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     com.fadcam.data.VideoIndexRepository repo =
                             com.fadcam.data.VideoIndexRepository.getInstance(context);
                     repo.removeFromIndex(videoItem.uri.toString());
-                    Log.d(TAG, "Removed old URI from index after rename: " + videoItem.uri);
+                    FLog.d(TAG, "Removed old URI from index after rename: " + videoItem.uri);
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to update index after rename", e);
+                    FLog.w(TAG, "Failed to update index after rename", e);
                 }
 
                 if (context instanceof Activity) {
@@ -1767,7 +1768,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             notifyItemChanged(position);
                             Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
                         } else {
-                            Log.e(TAG, "Rename success but position " + position + " is invalid for records list size "
+                            FLog.e(TAG, "Rename success but position " + position + " is invalid for records list size "
                                     + records.size());
                             Toast.makeText(context, "Rename successful, but list update failed.", Toast.LENGTH_LONG)
                                     .show();
@@ -1782,7 +1783,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Exception during rename for " + videoUri + " to " + newFullName, e);
+            FLog.e(TAG, "Exception during rename for " + videoUri + " to " + newFullName, e);
             if (context instanceof Activity) {
                 ((Activity) context).runOnUiThread(() -> Toast.makeText(context,
                         context.getString(R.string.toast_rename_failed) + " (Error)", Toast.LENGTH_SHORT).show());
@@ -1806,7 +1807,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     ((Activity) context).runOnUiThread(
                             () -> actionListener.onSaveToGalleryFinished(false, "Invalid video data.", null));
                 } else { // No activity context, just log
-                    Log.e(TAG, "saveVideoToGalleryInternal: Invalid video data or context null before starting save.");
+                    FLog.e(TAG, "saveVideoToGalleryInternal: Invalid video data or context null before starting save.");
                 }
             }
             return;
@@ -1827,7 +1828,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             File fadCamDir = new File(downloadsDir, Constants.RECORDING_DIRECTORY); // Use Constant
             if (!fadCamDir.exists()) {
                 if (!fadCamDir.mkdirs()) {
-                    Log.e(TAG, "Failed to create FadCam directory in Downloads.");
+                    FLog.e(TAG, "Failed to create FadCam directory in Downloads.");
                     message = "Save Failed: Cannot create directory.";
                     final String finalMessageForLambda = message;
                     // Notify listener on UI thread
@@ -1879,17 +1880,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             File originalFile = new File(sourceUri.getPath());
                             if (originalFile.exists()) {
                                 deleted = originalFile.delete();
-                                Log.d(TAG, "Attempted File.delete() on: " + originalFile.getAbsolutePath() + ", success: " + deleted);
+                                FLog.d(TAG, "Attempted File.delete() on: " + originalFile.getAbsolutePath() + ", success: " + deleted);
                             }
                         } else {
                             // Fallback to ContentResolver for other URI schemes
                             deleted = context.getContentResolver().delete(sourceUri, null, null) > 0;
-                            Log.d(TAG, "Attempted ContentResolver.delete() on: " + sourceUri + ", success: " + deleted);
+                            FLog.d(TAG, "Attempted ContentResolver.delete() on: " + sourceUri + ", success: " + deleted);
                         }
                         
                         if (deleted) {
                             message = "Video moved to Downloads/FadCam";
-                            Log.i(TAG, "Original file deleted after move to: " + destFile.getAbsolutePath());
+                            FLog.i(TAG, "Original file deleted after move to: " + destFile.getAbsolutePath());
                             // Notify the adapter to refresh the list
                             if (context instanceof Activity) {
                                 ((Activity) context).runOnUiThread(() -> {
@@ -1899,20 +1900,20 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             }
                         } else {
                             message = "Video copied to Downloads/FadCam (original could not be deleted)";
-                            Log.w(TAG, "Could not delete original file after copy: " + sourceUri);
+                            FLog.w(TAG, "Could not delete original file after copy: " + sourceUri);
                         }
                     } catch (Exception moveEx) {
-                        Log.e(TAG, "Error deleting original file after copy: " + moveEx.getMessage());
+                        FLog.e(TAG, "Error deleting original file after copy: " + moveEx.getMessage());
                         message = "Video copied to Downloads/FadCam (original could not be deleted)";
                     }
                 } else {
                     message = "Video saved to Downloads/FadCam";
                 }
                 
-                Log.i(TAG, "Video " + (moveFile ? "moved" : "copied") + " successfully to: " + destFile.getAbsolutePath());
+                FLog.i(TAG, "Video " + (moveFile ? "moved" : "copied") + " successfully to: " + destFile.getAbsolutePath());
 
             } catch (Exception e) {
-                Log.e(TAG, "Error saving video to gallery", e);
+                FLog.e(TAG, "Error saving video to gallery", e);
                 message = "Save Failed: " + e.getMessage();
                 if (destFile.exists()) { // Clean up partial file
                     destFile.delete();
@@ -2002,18 +2003,18 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private void showVideoInfoDialog(VideoItem videoItem) {
         // Pre-checks
         if (context == null) {
-            Log.e(TAG, "Cannot show info bottom sheet, context is null.");
+            FLog.e(TAG, "Cannot show info bottom sheet, context is null.");
             return;
         }
         if (videoItem == null || videoItem.uri == null) {
-            Log.e(TAG, "Cannot show info bottom sheet, videoItem or its URI is null.");
+            FLog.e(TAG, "Cannot show info bottom sheet, videoItem or its URI is null.");
             Toast.makeText(context, context.getString(R.string.toast_video_not_found), Toast.LENGTH_SHORT).show();
             return;
         }
 
         // Ensure we have a FragmentActivity to show the bottom sheet
         if (!(context instanceof FragmentActivity)) {
-            Log.e(TAG, "Context is not a FragmentActivity, cannot show bottom sheet.");
+            FLog.e(TAG, "Context is not a FragmentActivity, cannot show bottom sheet.");
             return;
         }
 
@@ -2022,7 +2023,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             VideoInfoBottomSheet bottomSheet = VideoInfoBottomSheet.newInstance(videoItem);
             bottomSheet.show(activity.getSupportFragmentManager(), "video_info_bottom_sheet");
         } catch (Exception e) {
-            Log.e(TAG, "Error showing video info bottom sheet", e);
+            FLog.e(TAG, "Error showing video info bottom sheet", e);
             Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -2041,7 +2042,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             ctx.startActivity(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to launch Faditor Mini", e);
+            FLog.e(TAG, "Failed to launch Faditor Mini", e);
             Toast.makeText(ctx, "Could not open editor", Toast.LENGTH_SHORT).show();
         }
     }
@@ -2055,14 +2056,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (context == null || videoItem == null || videoItem.uri == null)
             return;
 
-        Log.d(TAG, "===== START YOUTUBE UPLOAD DEBUG =====");
-        Log.d(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
-        Log.d(TAG, "Video URI: " + videoItem.uri);
+        FLog.d(TAG, "===== START YOUTUBE UPLOAD DEBUG =====");
+        FLog.d(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
+        FLog.d(TAG, "Video URI: " + videoItem.uri);
 
         try {
             // Get proper content:// URI that can be shared with other apps
             Uri shareUri = getShareableUri(videoItem.uri);
-            Log.d(TAG, "Converted share URI: " + shareUri);
+            FLog.d(TAG, "Converted share URI: " + shareUri);
 
             // Direct YouTube upload intent: try package-targeted intent first, fall back to
             // chooser on failure
@@ -2081,7 +2082,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     context.startActivity(intent);
                 } catch (android.content.ActivityNotFoundException anf2) {
                     // Final fallback: generic chooser
-                    Log.d(TAG, "YouTube package-targeted intents failed, falling back to generic share");
+                    FLog.d(TAG, "YouTube package-targeted intents failed, falling back to generic share");
                     Intent chooserIntent = Intent.createChooser(
                             new Intent(Intent.ACTION_SEND)
                                     .setType("video/*")
@@ -2092,7 +2093,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error opening YouTube upload: " + videoItem.uri + " (" + e.getMessage() + ")", e);
+            FLog.e(TAG, "Error opening YouTube upload: " + videoItem.uri + " (" + e.getMessage() + ")", e);
 
             // Fallback to generic share intent
             try {
@@ -2105,12 +2106,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         "Upload to YouTube");
                 context.startActivity(chooserIntent);
             } catch (Exception ex) {
-                Log.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
+                FLog.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
                 Toast.makeText(context, "Could not share video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
 
-        Log.d(TAG, "===== END YOUTUBE UPLOAD DEBUG =====");
+        FLog.d(TAG, "===== END YOUTUBE UPLOAD DEBUG =====");
     }
 
     /**
@@ -2122,14 +2123,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (context == null || videoItem == null || videoItem.uri == null)
             return;
 
-        Log.d(TAG, "===== START DRIVE UPLOAD DEBUG =====");
-        Log.d(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
-        Log.d(TAG, "Video URI: " + videoItem.uri);
+        FLog.d(TAG, "===== START DRIVE UPLOAD DEBUG =====");
+        FLog.d(TAG, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
+        FLog.d(TAG, "Video URI: " + videoItem.uri);
 
         try {
             // Get proper content:// URI that can be shared with other apps
             Uri shareUri = getShareableUri(videoItem.uri);
-            Log.d(TAG, "Converted share URI: " + shareUri);
+            FLog.d(TAG, "Converted share URI: " + shareUri);
 
             // Use ShareCompat to create the intent; try package-targeted Drive first, fall
             // back to chooser on failure
@@ -2148,7 +2149,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 try {
                     context.startActivity(intent);
                 } catch (android.content.ActivityNotFoundException anf2) {
-                    Log.d(TAG, "Drive package-targeted intents failed, falling back to generic share");
+                    FLog.d(TAG, "Drive package-targeted intents failed, falling back to generic share");
                     Intent chooserIntent = Intent.createChooser(
                             ShareCompat.IntentBuilder.from((Activity) context)
                                     .setStream(shareUri)
@@ -2160,7 +2161,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error opening Google Drive: " + videoItem.uri + " (" + e.getMessage() + ")", e);
+            FLog.e(TAG, "Error opening Google Drive: " + videoItem.uri + " (" + e.getMessage() + ")", e);
 
             // Fallback to generic share intent
             try {
@@ -2173,12 +2174,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         "Upload to Drive");
                 context.startActivity(chooserIntent);
             } catch (Exception ex) {
-                Log.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
+                FLog.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
                 Toast.makeText(context, "Could not share video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
 
-        Log.d(TAG, "===== END DRIVE UPLOAD DEBUG =====");
+        FLog.d(TAG, "===== END DRIVE UPLOAD DEBUG =====");
     }
 
     /**
@@ -2205,7 +2206,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         context.getApplicationContext().getPackageName() + ".provider",
                         file);
             } catch (Exception e) {
-                Log.e(TAG, "Error converting file URI to content URI: " + e.getMessage(), e);
+                FLog.e(TAG, "Error converting file URI to content URI: " + e.getMessage(), e);
             }
         }
 
@@ -2233,7 +2234,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             Intent chooser = Intent.createChooser(intent, context.getString(R.string.chooser_open_with));
             context.startActivity(chooser);
         } catch (Exception e) {
-            Log.e(TAG, "Error opening external player for: " + videoItem.uri, e);
+            FLog.e(TAG, "Error opening external player for: " + videoItem.uri, e);
             try {
                 // final fallback: generic SEND chooser
                 Uri shareUri = getShareableUri(videoItem.uri);
@@ -2245,7 +2246,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         context.getString(R.string.chooser_open_with));
                 context.startActivity(chooserIntent);
             } catch (Exception ex) {
-                Log.e(TAG, "Fallback share failed", ex);
+                FLog.e(TAG, "Fallback share failed", ex);
                 Toast.makeText(context, "Could not open video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
@@ -2274,12 +2275,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 resolution = width + " x " + height;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error retrieving video resolution for URI: " + videoUri, e);
+            FLog.e(TAG, "Error retrieving video resolution for URI: " + videoUri, e);
         } finally {
             try {
                 retriever.release();
             } catch (IOException e) {
-                Log.e(TAG, "Error releasing MMD retriever for resolution", e);
+                FLog.e(TAG, "Error releasing MMD retriever for resolution", e);
             }
         }
         return resolution;
@@ -2291,21 +2292,21 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @SuppressLint("NotifyDataSetChanged") // Suppress only for fallback case
     public void updateRecords(List<VideoItem> newRecords) {
         if (newRecords == null) {
-            Log.w(TAG, "updateRecords called with null list");
+            FLog.w(TAG, "updateRecords called with null list");
             return;
         }
 
-        Log.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) +
+        FLog.d(TAG, "updateRecords: Updating from " + (records == null ? 0 : records.size()) +
                 " to " + newRecords.size() + " records");
 
         // Check if we're updating with skeleton data or real data
         boolean isSkeletonData = !newRecords.isEmpty() && newRecords.get(0).isSkeleton;
 
         if (isSkeletonMode && !isSkeletonData) {
-            Log.d(TAG, "updateRecords: Transitioning from skeleton to real data - disabling skeleton mode");
+            FLog.d(TAG, "updateRecords: Transitioning from skeleton to real data - disabling skeleton mode");
             setSkeletonMode(false);
         } else if (isSkeletonMode && isSkeletonData) {
-            Log.d(TAG, "updateRecords: Updating skeleton data - keeping skeleton mode enabled");
+            FLog.d(TAG, "updateRecords: Updating skeleton data - keeping skeleton mode enabled");
         }
 
         // Build new entries from the new records
@@ -2371,7 +2372,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             notifyItemRangeChanged(0, newSize, "SERIAL_UPDATE");
         }
 
-        Log.d(TAG, "updateRecords completed. Final entries: " + entries.size() +
+        FLog.d(TAG, "updateRecords completed. Final entries: " + entries.size() +
                 ", records: " + records.size() + ", skeleton mode: " + isSkeletonMode);
     }
 
@@ -2511,11 +2512,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
         
         if (safeMediaProbeMode) {
-            Log.d(TAG, "probe_mode=safe_mmr uri=" + videoUri);
+            FLog.d(TAG, "probe_mode=safe_mmr uri=" + videoUri);
             return getVideoDurationWithMmr(videoUri, "safe_mmr");
         }
 
-        Log.d(TAG, "probe_mode=ffprobe uri=" + videoUri);
+        FLog.d(TAG, "probe_mode=ffprobe uri=" + videoUri);
         // Get file path for FFprobe - try multiple approaches for content:// URIs
         String filePath = getFFprobePathForUri(videoUri);
         
@@ -2531,12 +2532,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     if (durationStr != null) {
                         double durationSec = Double.parseDouble(durationStr);
                         long durationMs = (long) (durationSec * 1000);
-                        Log.d(TAG, "Duration from FFprobe (path): " + durationMs + "ms");
+                        FLog.d(TAG, "Duration from FFprobe (path): " + durationMs + "ms");
                         return durationMs;
                     }
                 }
             } catch (Throwable e) {
-                Log.e(TAG, "Error getting duration from FFprobe for path: " + filePath, e);
+                FLog.e(TAG, "Error getting duration from FFprobe for path: " + filePath, e);
             }
         }
 
@@ -2554,7 +2555,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         if (info != null && info.getDuration() != null) {
                             double durationSec = Double.parseDouble(info.getDuration());
                             long durationMs = (long) (durationSec * 1000);
-                            Log.d(TAG, "Duration from FFprobe (fd): " + durationMs + "ms");
+                            FLog.d(TAG, "Duration from FFprobe (fd): " + durationMs + "ms");
                             return durationMs;
                         }
                     } finally {
@@ -2562,7 +2563,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     }
                 }
             } catch (Throwable e) {
-                Log.w(TAG, "FFprobe FD-based duration failed for: " + videoUri, e);
+                FLog.w(TAG, "FFprobe FD-based duration failed for: " + videoUri, e);
             }
         }
 
@@ -2577,17 +2578,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             String durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 long durationMs = Long.parseLong(durationStr);
-                Log.d(TAG, "duration_source=" + source + " durationMs=" + durationMs + " uri=" + videoUri);
+                FLog.d(TAG, "duration_source=" + source + " durationMs=" + durationMs + " uri=" + videoUri);
                 return durationMs;
             }
         } catch (Throwable e) {
-            Log.w(TAG, "duration_source=" + source + " failed uri=" + videoUri, e);
+            FLog.w(TAG, "duration_source=" + source + " failed uri=" + videoUri, e);
         } finally {
             if (retriever != null) {
                 try {
                     retriever.release();
                 } catch (Exception e) {
-                    Log.w(TAG, "Error releasing MediaMetadataRetriever", e);
+                    FLog.w(TAG, "Error releasing MediaMetadataRetriever", e);
                 }
             }
         }
@@ -2613,14 +2614,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 // Try all mounted storage volumes (internal + SD cards)
                 String resolved = resolveRelativePathOnVolumes(relativePath);
                 if (resolved != null) {
-                    Log.d(TAG, "Using reconstructed file path for FFprobe: " + resolved);
+                    FLog.d(TAG, "Using reconstructed file path for FFprobe: " + resolved);
                     return resolved;
                 }
             }
         }
         
         // Fall back to SAF protocol
-        Log.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
+        FLog.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
         return "saf:" + videoUri.toString();
     }
 
@@ -2649,7 +2650,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error resolving storage volumes: " + e.getMessage());
+            FLog.w(TAG, "Error resolving storage volumes: " + e.getMessage());
         }
         return null;
     }
@@ -2668,11 +2669,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     if (nameIndex != -1) {
                         result = cursor.getString(nameIndex);
                     } else {
-                        Log.w(TAG, OpenableColumns.DISPLAY_NAME + " column not found for URI: " + uri);
+                        FLog.w(TAG, OpenableColumns.DISPLAY_NAME + " column not found for URI: " + uri);
                     }
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Could not query display name for content URI: " + uri, e);
+                FLog.w(TAG, "Could not query display name for content URI: " + uri, e);
             }
         }
         // Fallback to path if name query fails or scheme is 'file'
@@ -2763,7 +2764,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             if (textViewRecord != null) {
                 defaultTextColor = textViewRecord.getCurrentTextColor();
             } else {
-                Log.e(TAG, "ViewHolder: textViewRecord is NULL, cannot get default text color!");
+                FLog.e(TAG, "ViewHolder: textViewRecord is NULL, cannot get default text color!");
                 // Set a fallback default color?
                 defaultTextColor = Color.WHITE; // Example fallback
             }
@@ -2794,7 +2795,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.currentSelectedUris = new ArrayList<>(currentSelection); // Update internal copy
 
         if (modeChanged) {
-            Log.d(TAG, "setSelectionModeActive: mode changed, payload refresh");
+            FLog.d(TAG, "setSelectionModeActive: mode changed, payload refresh");
             notifyItemRangeChanged(0, getItemCount(), "SELECTION_MODE");
         }
 
@@ -2818,7 +2819,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         } else {
-            Log.d(TAG, "setSelectionModeActive: Mode and selection unchanged, no refresh needed.");
+            FLog.d(TAG, "setSelectionModeActive: Mode and selection unchanged, no refresh needed.");
         }
     }
 
@@ -2841,7 +2842,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public void setSkeletonMode(boolean skeletonMode) {
         if (this.isSkeletonMode != skeletonMode) {
             this.isSkeletonMode = skeletonMode;
-            Log.d(TAG, "Skeleton mode " + (skeletonMode ? "enabled" : "disabled"));
+            FLog.d(TAG, "Skeleton mode " + (skeletonMode ? "enabled" : "disabled"));
             notifyDataSetChanged(); // Refresh all views
         }
     }
@@ -2971,7 +2972,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (skeletonItems == null)
             return;
 
-        Log.d(TAG, "setSkeletonData: Setting " + skeletonItems.size() + " skeleton items");
+        FLog.d(TAG, "setSkeletonData: Setting " + skeletonItems.size() + " skeleton items");
         this.records = new ArrayList<>(skeletonItems);
         this.entries = buildEntries(this.records);
         notifyDataSetChanged();
@@ -3055,7 +3056,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             holder.menuButtonContainer.setOnClickListener(null);
         }
 
-        Log.v(TAG, "Professional shimmer skeleton bound at position " + position);
+        FLog.v(TAG, "Professional shimmer skeleton bound at position " + position);
 
     }
 
@@ -3104,7 +3105,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // Step 7: Restore normal item appearance
         holder.itemView.setAlpha(1.0f);
 
-        Log.v(TAG, "Skeleton effects cleared for data binding");
+        FLog.v(TAG, "Skeleton effects cleared for data binding");
 
     }
 
@@ -3115,7 +3116,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     /*
      * private boolean deleteVideoUri(Uri uri) {
      * if (context == null || uri == null) return false;
-     * Log.d(TAG, "Adapter attempting to delete URI: " + uri +
+     * FLog.d(TAG, "Adapter attempting to delete URI: " + uri +
      * " (This should be handled by Fragment now)");
      * 
      * // The actual file deletion logic (file vs content URI) was complex and is
@@ -3127,7 +3128,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      * // If for some reason this was called, it should delegate to the fragment or
      * fail.
      * // For now, let's just log and return false to indicate it didn't handle it.
-     * Log.e(TAG,
+     * FLog.e(TAG,
      * "deleteVideoUri in adapter was called. This is deprecated. Deletion should be handled by the fragment."
      * );
      * return false;
@@ -3153,7 +3154,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // the duration badge text, e.g. "00:26", keyed by URI — must be flushed so the
         // stale value isn't served at bind time before FFprobe can re-probe).
         loadedThumbnailCache.clear();
-        Log.d(TAG, "invalidateDurationCache: cleared durationCache + loadedThumbnailCache — FFprobe will re-probe");
+        FLog.d(TAG, "invalidateDurationCache: cleared durationCache + loadedThumbnailCache — FFprobe will re-probe");
     }
 
     public void clearCaches() {
@@ -3165,7 +3166,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         synchronized (savedPositionCache) {
             savedPositionCache.clear();
         }
-        Log.d(TAG, "Cleared all adapter caches including duration and position caches");
+        FLog.d(TAG, "Cleared all adapter caches including duration and position caches");
     }
 
     // For dialogs, use themed MaterialAlertDialogBuilder as in SettingsFragment
@@ -3262,7 +3263,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     }
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Failed to copy SAF video for repair", e);
+                FLog.e(TAG, "Failed to copy SAF video for repair", e);
                 Toast.makeText(context, context.getString(R.string.fix_video_saf_copy_fail), Toast.LENGTH_LONG).show();
                 if (safTempInput != null && safTempInput.exists())
                     safTempInput.delete();
@@ -3326,7 +3327,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             });
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Failed to write repaired file to SAF folder", e);
+                        FLog.e(TAG, "Failed to write repaired file to SAF folder", e);
                         new Handler(Looper.getMainLooper()).post(() -> {
                             Toast.makeText(context, context.getString(R.string.fix_video_saf_write_fail),
                                     Toast.LENGTH_LONG).show();
@@ -3375,7 +3376,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     private String getUniqueFileNameInDirectory(File directory, String originalName) {
         if (directory == null || !directory.exists()) {
-            Log.w(TAG, "getUniqueFileNameInDirectory: Target directory doesn't exist: " 
+            FLog.w(TAG, "getUniqueFileNameInDirectory: Target directory doesn't exist: " 
                     + (directory != null ? directory.getAbsolutePath() : "null"));
             return originalName;
         }
@@ -3399,7 +3400,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             String newName = namePart + " (" + count + ")" + extPart;
             file = new File(directory, newName);
             if (!file.exists()) {
-                Log.d(TAG, "Generated unique filename: " + newName);
+                FLog.d(TAG, "Generated unique filename: " + newName);
                 return newName;
             }
             count++;
@@ -3416,7 +3417,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     private String getUniqueFileNameForSAF(DocumentFile parentDir, String originalName) {
         if (parentDir == null || !parentDir.exists()) {
-            Log.w(TAG, "getUniqueFileNameForSAF: Parent directory doesn't exist or is null");
+            FLog.w(TAG, "getUniqueFileNameForSAF: Parent directory doesn't exist or is null");
             return originalName;
         }
 
@@ -3439,7 +3440,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             String newName = namePart + " (" + count + ")" + extPart;
             DocumentFile checkFile = parentDir.findFile(newName);
             if (checkFile == null || !checkFile.exists()) {
-                Log.d(TAG, "Generated unique SAF filename: " + newName);
+                FLog.d(TAG, "Generated unique SAF filename: " + newName);
                 return newName;
             }
             count++;

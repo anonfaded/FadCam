@@ -1,9 +1,10 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,7 +61,7 @@ public class StorageSettingsFragment extends Fragment {
                     success = true;
                     sendStorageChangedBroadcast();
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to persist custom storage URI", e);
+                    FLog.e(TAG, "Failed to persist custom storage URI", e);
                     prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
                     prefs.setCustomStorageUri(null);
                 }
@@ -168,7 +169,7 @@ public class StorageSettingsFragment extends Fragment {
         try {
             openDocumentTreeLauncher.launch(null);
         } catch (Exception e) {
-            Log.e(TAG, "Error launching directory picker", e);
+            FLog.e(TAG, "Error launching directory picker", e);
         }
     }
 
@@ -185,7 +186,7 @@ public class StorageSettingsFragment extends Fragment {
                 return getString(R.string.storage_value_selected_folder);
             }
         } catch (Exception e) {
-            Log.e(TAG, "buildDisplayPath error", e);
+            FLog.e(TAG, "buildDisplayPath error", e);
         }
         return getString(R.string.storage_value_selected_folder);
     }
@@ -212,7 +213,7 @@ public class StorageSettingsFragment extends Fragment {
                 return decoded;
             }
         } catch (Exception e) {
-            Log.e(TAG, "decodeTreeUriToReadablePath error", e);
+            FLog.e(TAG, "decodeTreeUriToReadablePath error", e);
         }
         return uriString;
         // method(decodeTreeUriToReadablePath)-----------
@@ -225,12 +226,12 @@ public class StorageSettingsFragment extends Fragment {
         try {
             Intent intent = new Intent(Constants.ACTION_STORAGE_LOCATION_CHANGED);
             requireContext().sendBroadcast(intent);
-            Log.i(TAG, "Successfully sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
+            FLog.i(TAG, "Successfully sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
 
             // Also try a direct refresh approach as fallback
             refreshRecordsFragmentDirect();
         } catch (Exception e) {
-            Log.e(TAG, "Broadcast error", e);
+            FLog.e(TAG, "Broadcast error", e);
         }
         // method(sendStorageChangedBroadcast)-----------
     }
@@ -254,7 +255,7 @@ public class StorageSettingsFragment extends Fragment {
                                 .findFragmentByTag(tag);
                         if (fragment instanceof com.fadcam.ui.RecordsFragment) {
                             ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
-                            Log.i(TAG, "Successfully refreshed RecordsFragment after storage change with tag: " + tag);
+                            FLog.i(TAG, "Successfully refreshed RecordsFragment after storage change with tag: " + tag);
                             refreshSuccess = true;
                             break;
                         }
@@ -266,7 +267,7 @@ public class StorageSettingsFragment extends Fragment {
                                 .getFragments()) {
                             if (fragment instanceof com.fadcam.ui.RecordsFragment) {
                                 ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
-                                Log.i(TAG, "Successfully refreshed RecordsFragment after storage change by iteration.");
+                                FLog.i(TAG, "Successfully refreshed RecordsFragment after storage change by iteration.");
                                 refreshSuccess = true;
                                 break;
                             }
@@ -274,7 +275,7 @@ public class StorageSettingsFragment extends Fragment {
                     }
 
                     if (!refreshSuccess) {
-                        Log.w(TAG, "Could not find RecordsFragment to refresh after storage change.");
+                        FLog.w(TAG, "Could not find RecordsFragment to refresh after storage change.");
                     }
                     
                     // Also refresh HomeFragment stats
@@ -282,7 +283,7 @@ public class StorageSettingsFragment extends Fragment {
                 }
             }, 200); // 200ms delay to ensure storage change is processed
         } catch (Exception e) {
-            Log.e(TAG, "Failed to refresh RecordsFragment directly after storage change", e);
+            FLog.e(TAG, "Failed to refresh RecordsFragment directly after storage change", e);
         }
     }
 
@@ -299,7 +300,7 @@ public class StorageSettingsFragment extends Fragment {
                 androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
                 if (fragment instanceof com.fadcam.ui.HomeFragment) {
                     ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
-                    Log.i(TAG, "Successfully refreshed HomeFragment stats with tag: " + tag);
+                    FLog.i(TAG, "Successfully refreshed HomeFragment stats with tag: " + tag);
                     refreshSuccess = true;
                     break;
                 }
@@ -310,7 +311,7 @@ public class StorageSettingsFragment extends Fragment {
                 for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
                     if (fragment instanceof com.fadcam.ui.HomeFragment) {
                         ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
-                        Log.i(TAG, "Successfully refreshed HomeFragment stats by iteration.");
+                        FLog.i(TAG, "Successfully refreshed HomeFragment stats by iteration.");
                         refreshSuccess = true;
                         break;
                     }
@@ -318,10 +319,10 @@ public class StorageSettingsFragment extends Fragment {
             }
             
             if (!refreshSuccess) {
-                Log.w(TAG, "Could not find HomeFragment to refresh stats after storage change.");
+                FLog.w(TAG, "Could not find HomeFragment to refresh stats after storage change.");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to refresh HomeFragment stats", e);
+            FLog.e(TAG, "Failed to refresh HomeFragment stats", e);
         }
     }
 }

@@ -1,9 +1,10 @@
 package com.fadcam.playback;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -59,21 +60,21 @@ public class FallbackMediaPlayer {
     private void setupListeners() {
         mediaPlayer.setOnPreparedListener(mp -> {
             isPrepared = true;
-            Log.d(TAG, "MediaPlayer prepared, duration=" + mp.getDuration() + "ms");
+            FLog.d(TAG, "MediaPlayer prepared, duration=" + mp.getDuration() + "ms");
             if (onPreparedListener != null) {
                 onPreparedListener.onPrepared(this);
             }
         });
         
         mediaPlayer.setOnCompletionListener(mp -> {
-            Log.d(TAG, "Playback completed");
+            FLog.d(TAG, "Playback completed");
             if (onCompletionListener != null) {
                 onCompletionListener.onCompletion(this);
             }
         });
         
         mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-            Log.e(TAG, "MediaPlayer error: what=" + what + ", extra=" + extra);
+            FLog.e(TAG, "MediaPlayer error: what=" + what + ", extra=" + extra);
             if (onErrorListener != null) {
                 return onErrorListener.onError(this, what, extra);
             }
@@ -81,7 +82,7 @@ public class FallbackMediaPlayer {
         });
         
         mediaPlayer.setOnSeekCompleteListener(mp -> {
-            Log.d(TAG, "Seek completed, position=" + mp.getCurrentPosition() + "ms");
+            FLog.d(TAG, "Seek completed, position=" + mp.getCurrentPosition() + "ms");
             if (onSeekCompleteListener != null) {
                 onSeekCompleteListener.onSeekComplete(this);
             }
@@ -89,12 +90,12 @@ public class FallbackMediaPlayer {
     }
     
     public void setDataSource(Context context, Uri uri) throws IOException {
-        Log.d(TAG, "Setting data source: " + uri);
+        FLog.d(TAG, "Setting data source: " + uri);
         mediaPlayer.setDataSource(context, uri);
     }
     
     public void setDataSource(String path) throws IOException {
-        Log.d(TAG, "Setting data source path: " + path);
+        FLog.d(TAG, "Setting data source path: " + path);
         mediaPlayer.setDataSource(path);
     }
     
@@ -107,33 +108,33 @@ public class FallbackMediaPlayer {
     }
     
     public void prepareAsync() {
-        Log.d(TAG, "Preparing async...");
+        FLog.d(TAG, "Preparing async...");
         mediaPlayer.prepareAsync();
     }
     
     public void prepare() throws IOException {
-        Log.d(TAG, "Preparing sync...");
+        FLog.d(TAG, "Preparing sync...");
         mediaPlayer.prepare();
         isPrepared = true;
     }
     
     public void start() {
         if (isPrepared && !isReleased) {
-            Log.d(TAG, "Starting playback");
+            FLog.d(TAG, "Starting playback");
             mediaPlayer.start();
         }
     }
     
     public void pause() {
         if (isPrepared && !isReleased && mediaPlayer.isPlaying()) {
-            Log.d(TAG, "Pausing playback");
+            FLog.d(TAG, "Pausing playback");
             mediaPlayer.pause();
         }
     }
     
     public void stop() {
         if (!isReleased) {
-            Log.d(TAG, "Stopping playback");
+            FLog.d(TAG, "Stopping playback");
             mediaPlayer.stop();
             isPrepared = false;
         }
@@ -141,7 +142,7 @@ public class FallbackMediaPlayer {
     
     public void seekTo(long positionMs) {
         if (isPrepared && !isReleased) {
-            Log.d(TAG, "Seeking to " + positionMs + "ms");
+            FLog.d(TAG, "Seeking to " + positionMs + "ms");
             // Use SEEK_CLOSEST for most accurate seeking (API 26+)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 mediaPlayer.seekTo(positionMs, MediaPlayer.SEEK_CLOSEST);
@@ -198,7 +199,7 @@ public class FallbackMediaPlayer {
                     mediaPlayer.pause();
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Failed to set playback speed", e);
+                FLog.w(TAG, "Failed to set playback speed", e);
             }
         }
     }
@@ -214,14 +215,14 @@ public class FallbackMediaPlayer {
     }
     
     public void release() {
-        Log.d(TAG, "Releasing MediaPlayer");
+        FLog.d(TAG, "Releasing MediaPlayer");
         isReleased = true;
         isPrepared = false;
         if (mediaPlayer != null) {
             try {
                 mediaPlayer.release();
             } catch (Exception e) {
-                Log.w(TAG, "Error releasing MediaPlayer", e);
+                FLog.w(TAG, "Error releasing MediaPlayer", e);
             }
             mediaPlayer = null;
         }
@@ -229,7 +230,7 @@ public class FallbackMediaPlayer {
     
     public void reset() {
         if (!isReleased && mediaPlayer != null) {
-            Log.d(TAG, "Resetting MediaPlayer");
+            FLog.d(TAG, "Resetting MediaPlayer");
             mediaPlayer.reset();
             isPrepared = false;
         }

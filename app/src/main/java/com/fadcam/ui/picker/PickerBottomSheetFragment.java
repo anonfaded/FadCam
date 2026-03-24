@@ -1,11 +1,12 @@
 package com.fadcam.ui.picker;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -365,11 +366,11 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     // reuse items from a previously created fragment instance. This ensures
     // the fragment displays only the context-provided items (if any).
     items = new ArrayList<>();
-        android.util.Log.d(
+        FLog.d(
             "PickerBottomSheet",
             "onViewCreated called, args=" + args
         );
-        com.fadcam.Log.d(
+        FLog.d(
             "PickerBottomSheet",
             "onViewCreated called, args=" + args
         );
@@ -398,7 +399,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             hideCheck = args.getBoolean(ARG_HIDE_CHECK, false);
             avatarSwatchMode = args.getBoolean(ARG_AVATAR_SWATCH, false);
             sliderMode = args.getBoolean(ARG_SLIDER_MODE, false);
-            android.util.Log.d(
+            FLog.d(
                 "PickerBottomSheet",
                 "Slider mode detected: " +
                 sliderMode +
@@ -407,7 +408,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 ", resultKey: " +
                 resultKey
             );
-            com.fadcam.Log.d(
+            FLog.d(
                 "PickerBottomSheet",
                 "Slider mode detected: " +
                 sliderMode +
@@ -501,7 +502,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     R.id.picker_slider_reset_icon
                 );
                 if (slider != null) {
-                    android.util.Log.d(
+                    FLog.d(
                         "PickerBottomSheet",
                         "Setting up slider: min=" +
                         sliderMin +
@@ -512,7 +513,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         ", initial=" +
                         sliderInitial
                     );
-                    com.fadcam.Log.d(
+                    FLog.d(
                         "PickerBottomSheet",
                         "Setting up slider: min=" +
                         sliderMin +
@@ -536,7 +537,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     if (startPos < 0f) startPos = 0f;
                     if (startPos > steps) startPos = (float) steps;
                     slider.setValue(startPos);
-                    com.fadcam.Log.d(
+                    FLog.d(
                         "PickerBottomSheet",
                         "Slider configured: steps=" +
                         steps +
@@ -662,25 +663,25 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         }
                     });
 
-                    android.util.Log.d(
+                    FLog.d(
                         "PickerBottomSheet",
                         "Attaching OnChangeListener to slider, resultKey=" +
                         resultKey
                     );
-                    com.fadcam.Log.d(
+                    FLog.d(
                         "PickerBottomSheet",
                         "Attaching OnChangeListener to slider, resultKey=" +
                         resultKey
                     );
                     slider.addOnChangeListener((s, value, fromUser) -> {
-                        android.util.Log.d(
+                        FLog.d(
                             "PickerBottomSheet",
                             "Slider onChange triggered: value=" +
                                 value +
                                 ", fromUser=" +
                             fromUser
                         );
-                        com.fadcam.Log.d(
+                        FLog.d(
                             "PickerBottomSheet",
                             "Slider onChange triggered: value=" +
                             value +
@@ -688,7 +689,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             fromUser
                         );
                         int intVal = sliderMin + Math.round(value) * sliderStep;
-                        com.fadcam.Log.d(
+                        FLog.d(
                             "PickerBottomSheet",
                             "Calculated intVal=" +
                             intVal +
@@ -714,21 +715,21 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         // Live update: post result so callers can react immediately while recording
                         Bundle result = new Bundle();
                         result.putInt(BUNDLE_SLIDER_VALUE, intVal);
-                        android.util.Log.d(
+                        FLog.d(
                             "PickerBottomSheet",
                             "Picker sending fragment result: key=" +
                             resultKey +
                             ", sliderValue=" +
                             intVal
                         );
-                        android.util.Log.d(
+                        FLog.d(
                             "PickerBottomSheet",
                             "Using FragmentManager: " +
                             getParentFragmentManager() +
                             ", this fragment: " +
                             this
                         );
-                        com.fadcam.Log.d(
+                        FLog.d(
                             "PickerBottomSheet",
                             "Picker sending fragment result: key=" +
                             resultKey +
@@ -825,9 +826,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 R.id.picker_switch
             );
             TextView switchLabel = root.findViewById(R.id.picker_switch_label);
-            Log.d("PickerBottomSheet", "DEBUG: Switch setup - swc=" + swc + ", switchLabel=" + switchLabel + ", switchRow=" + switchRow);
+            FLog.d("PickerBottomSheet", "DEBUG: Switch setup - swc=" + swc + ", switchLabel=" + switchLabel + ", switchRow=" + switchRow);
             if (switchRow != null && swc != null && switchLabel != null) {
-                Log.d("PickerBottomSheet", "DEBUG: Setting up switch with title: " + switchTitle + ", state: " + switchState);
+                FLog.d("PickerBottomSheet", "DEBUG: Setting up switch with title: " + switchTitle + ", state: " + switchState);
                 switchRow.setVisibility(View.VISIBLE);
                 if (switchDivider != null && !items.isEmpty()) switchDivider.setVisibility(View.VISIBLE);
                 switchLabel.setText(switchTitle);
@@ -837,13 +838,13 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
 
                 // Ensure row click triggers the switch's native toggle (keeps internal animations + accessibility)
                 switchRow.setOnClickListener(v -> {
-                    Log.d("PickerBottomSheet", "Row clicked -> performing switch click (prev state=" + swc.isChecked() + ")");
+                    FLog.d("PickerBottomSheet", "Row clicked -> performing switch click (prev state=" + swc.isChecked() + ")");
                     swc.performClick();
                 });
 
                 // Single listener for state changes
                 swc.setOnCheckedChangeListener((button, checked) -> {
-                    Log.d("PickerBottomSheet", "Switch changed -> " + checked + " (title=" + switchTitle + ")");
+                    FLog.d("PickerBottomSheet", "Switch changed -> " + checked + " (title=" + switchTitle + ")");
                     
                     // For AE Lock, dependent rows should be DISABLED when lock is ENABLED (inverted logic)
                     boolean enableDependentRows = checked;
@@ -859,10 +860,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                         } else if ("Lock AE".equals(switchTitle)) {
                             // Also persist AE lock state directly for immediate consistency
                             com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setSavedAeLock(checked);
-                            Log.d("PickerBottomSheet", "Saved AE lock state to prefs: " + checked);
+                            FLog.d("PickerBottomSheet", "Saved AE lock state to prefs: " + checked);
                         }
                     } catch (Exception e) {
-                        Log.w("PickerBottomSheet", "Failed to persist switch state", e);
+                        FLog.w("PickerBottomSheet", "Failed to persist switch state", e);
                     }
                     Bundle result = new Bundle();
                     result.putBoolean(BUNDLE_SWITCH_STATE, checked);
@@ -1684,7 +1685,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             fixTextViewsRecursively(view);
         } catch (Exception e) {
             // Silently handle any errors to avoid crashes
-            android.util.Log.w(
+            FLog.w(
                 "PickerBottomSheet",
                 "Error applying Snow Veil theme fixes",
                 e

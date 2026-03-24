@@ -1,8 +1,9 @@
 package com.fadcam.dualcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -318,7 +319,7 @@ public class DualCameraSettingsFragment extends Fragment {
                     configBuilder.pipPosition(pos);
                     onSettingChanged();
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "Invalid PiP position: " + sel, e);
+                    FLog.w(TAG, "Invalid PiP position: " + sel, e);
                 }
             }
         });
@@ -348,7 +349,7 @@ public class DualCameraSettingsFragment extends Fragment {
                     configBuilder.pipSize(size);
                     onSettingChanged();
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "Invalid PiP size: " + sel, e);
+                    FLog.w(TAG, "Invalid PiP size: " + sel, e);
                 }
             }
         });
@@ -378,7 +379,7 @@ public class DualCameraSettingsFragment extends Fragment {
                     configBuilder.primaryCamera(cam);
                     onSettingChanged();
                 } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "Invalid primary camera: " + sel, e);
+                    FLog.w(TAG, "Invalid primary camera: " + sel, e);
                 }
             }
         });
@@ -470,7 +471,7 @@ public class DualCameraSettingsFragment extends Fragment {
     private void saveConfig() {
         DualCameraConfig config = configBuilder.build();
         prefs.saveDualCameraConfig(config);
-        Log.d(TAG, "Config saved: " + config);
+        FLog.d(TAG, "Config saved: " + config);
     }
 
     // ── Formatting Helpers ─────────────────────────────────────────────

@@ -1,13 +1,13 @@
 package com.fadcam.data;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.DocumentsContract;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
@@ -80,15 +80,15 @@ public class FastFileScanner {
             if (hasPermission) {
                 List<VideoIndexEntity> safResults = scanSaf(safUri);
                 long elapsed = System.currentTimeMillis() - start;
-                Log.i(TAG, "SAF scan complete: " + safResults.size() + " files in " + elapsed + "ms");
+                FLog.i(TAG, "SAF scan complete: " + safResults.size() + " files in " + elapsed + "ms");
                 return safResults;
             }
-            Log.w(TAG, "SAF URI set but no read permission, falling back to internal");
+            FLog.w(TAG, "SAF URI set but no read permission, falling back to internal");
         }
 
         List<VideoIndexEntity> internalResults = scanInternal();
         long elapsed = System.currentTimeMillis() - start;
-        Log.i(TAG, "Internal scan complete: " + internalResults.size() + " files in " + elapsed + "ms");
+        FLog.i(TAG, "Internal scan complete: " + internalResults.size() + " files in " + elapsed + "ms");
         return internalResults;
     }
 
@@ -100,13 +100,13 @@ public class FastFileScanner {
     private List<VideoIndexEntity> scanInternal() {
         File recordsDir = context.getExternalFilesDir(null);
         if (recordsDir == null) {
-            Log.e(TAG, "ExternalFilesDir is null");
+            FLog.e(TAG, "ExternalFilesDir is null");
             return new ArrayList<>();
         }
 
         File baseDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
         if (!baseDir.exists() || !baseDir.isDirectory()) {
-            Log.i(TAG, "Base directory does not exist: " + baseDir.getAbsolutePath());
+            FLog.i(TAG, "Base directory does not exist: " + baseDir.getAbsolutePath());
             return new ArrayList<>();
         }
 
@@ -184,7 +184,7 @@ public class FastFileScanner {
             latch.await(30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            Log.w(TAG, "Scan interrupted");
+            FLog.w(TAG, "Scan interrupted");
         }
         scanner.shutdown();
 
@@ -335,7 +335,7 @@ public class FastFileScanner {
             // creates Camera/, Screen/, etc. subdirectories directly inside it).
             DocumentFile treeDoc = DocumentFile.fromTreeUri(context, treeUri);
             if (treeDoc == null) {
-                Log.e(TAG, "Failed to open tree URI");
+                FLog.e(TAG, "Failed to open tree URI");
                 return results;
             }
 
@@ -345,10 +345,10 @@ public class FastFileScanner {
             DocumentFile recordingRoot = treeDoc;
             DocumentFile fadCamChild = treeDoc.findFile(Constants.RECORDING_DIRECTORY);
             if (fadCamChild != null && fadCamChild.isDirectory()) {
-                Log.d(TAG, "Found FadCam subdirectory under tree, using it as root");
+                FLog.d(TAG, "Found FadCam subdirectory under tree, using it as root");
                 recordingRoot = fadCamChild;
             } else {
-                Log.d(TAG, "Using SAF tree root directly as recording root");
+                FLog.d(TAG, "Using SAF tree root directly as recording root");
             }
 
             // Scan each known subdirectory
@@ -365,7 +365,7 @@ public class FastFileScanner {
                     true);
 
         } catch (Exception e) {
-            Log.e(TAG, "SAF scan error", e);
+            FLog.e(TAG, "SAF scan error", e);
         }
 
         return results;
@@ -440,7 +440,7 @@ public class FastFileScanner {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error scanning SAF subdirectories for " + category, e);
+            FLog.e(TAG, "Error scanning SAF subdirectories for " + category, e);
         }
     }
 
@@ -507,7 +507,7 @@ public class FastFileScanner {
                 if (entity != null) out.add(entity);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error listing SAF directory files", e);
+            FLog.e(TAG, "Error listing SAF directory files", e);
         }
     }
 

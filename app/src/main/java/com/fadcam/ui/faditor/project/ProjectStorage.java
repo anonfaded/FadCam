@@ -1,9 +1,9 @@
 package com.fadcam.ui.faditor.project;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -84,7 +84,7 @@ public class ProjectStorage {
     public boolean save(@NonNull FaditorProject project) {
         File projectDir = getProjectDir(project.getId());
         if (!projectDir.exists() && !projectDir.mkdirs()) {
-            Log.e(TAG, "Failed to create project directory: " + projectDir);
+            FLog.e(TAG, "Failed to create project directory: " + projectDir);
             return false;
         }
 
@@ -93,7 +93,7 @@ public class ProjectStorage {
             gson.toJson(project, writer);
             return true;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to save project: " + project.getId(), e);
+            FLog.e(TAG, "Failed to save project: " + project.getId(), e);
             return false;
         }
     }
@@ -108,14 +108,14 @@ public class ProjectStorage {
     public FaditorProject load(@NonNull String projectId) {
         File file = new File(getProjectDir(projectId), PROJECT_FILE);
         if (!file.exists()) {
-            Log.d(TAG, "No saved project found: " + projectId);
+            FLog.d(TAG, "No saved project found: " + projectId);
             return null;
         }
 
         try (FileReader reader = new FileReader(file)) {
             return gson.fromJson(reader, FaditorProject.class);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to load project: " + projectId, e);
+            FLog.e(TAG, "Failed to load project: " + projectId, e);
             return null;
         }
     }
@@ -166,7 +166,7 @@ public class ProjectStorage {
 
                 result.add(new ProjectSummary(id, name, createdAt, lastModified, videoUri));
             } catch (Exception e) {
-                Log.w(TAG, "Skipping corrupt project: " + dir.getName(), e);
+                FLog.w(TAG, "Skipping corrupt project: " + dir.getName(), e);
             }
         }
 
@@ -188,7 +188,7 @@ public class ProjectStorage {
         try {
             project = load(projectId);
         } catch (Exception e) {
-            Log.w(TAG, "Could not load project for cache cleanup: " + projectId, e);
+            FLog.w(TAG, "Could not load project for cache cleanup: " + projectId, e);
         }
         
         // Clean up cache files for all clips in this project
@@ -209,7 +209,7 @@ public class ProjectStorage {
                                     new com.fadcam.playback.FragmentedMp4Remuxer(context);
                             int deleted = remuxer.deleteCacheForPrefix(baseName);
                             if (deleted > 0) {
-                                Log.d(TAG, "Cleared " + deleted + " cache files for clip: " + filename);
+                                FLog.d(TAG, "Cleared " + deleted + " cache files for clip: " + filename);
                             }
                         }
                     }
@@ -228,7 +228,7 @@ public class ProjectStorage {
                                     new com.fadcam.playback.FragmentedMp4Remuxer(context);
                             int deleted = remuxer.deleteCacheForPrefix(baseName);
                             if (deleted > 0) {
-                                Log.d(TAG, "Cleared " + deleted + " cache files for audio: " + filename);
+                                FLog.d(TAG, "Cleared " + deleted + " cache files for audio: " + filename);
                             }
                         }
                     }
@@ -249,7 +249,7 @@ public class ProjectStorage {
         }
         boolean deleted = dir.delete();
         if (deleted) {
-            Log.i(TAG, "Project deleted: " + projectId);
+            FLog.i(TAG, "Project deleted: " + projectId);
         }
         return deleted;
     }
@@ -280,7 +280,7 @@ public class ProjectStorage {
             }
             return uri;
         } catch (Exception e) {
-            Log.w(TAG, "Could not extract filename from URI: " + uri, e);
+            FLog.w(TAG, "Could not extract filename from URI: " + uri, e);
             return null;
         }
     }
@@ -318,7 +318,7 @@ public class ProjectStorage {
         try {
             return gson.fromJson(json, FaditorProject.class);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to deserialize project from JSON snapshot", e);
+            FLog.e(TAG, "Failed to deserialize project from JSON snapshot", e);
             return null;
         }
     }
@@ -341,7 +341,7 @@ public class ProjectStorage {
                                    @NonNull List<String> snapshots) {
         File projectDir = getProjectDir(projectId);
         if (!projectDir.exists() && !projectDir.mkdirs()) {
-            Log.e(TAG, "Failed to create project directory for undo history");
+            FLog.e(TAG, "Failed to create project directory for undo history");
             return false;
         }
 
@@ -356,10 +356,10 @@ public class ProjectStorage {
                 historyArray.add(entry);
             }
             gson.toJson(historyArray, writer);
-            Log.d(TAG, "Saved " + count + " undo history entries for: " + projectId);
+            FLog.d(TAG, "Saved " + count + " undo history entries for: " + projectId);
             return true;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to save undo history: " + projectId, e);
+            FLog.e(TAG, "Failed to save undo history: " + projectId, e);
             return false;
         }
     }
@@ -377,7 +377,7 @@ public class ProjectStorage {
                                    @NonNull List<String> outSnapshots) {
         File file = new File(getProjectDir(projectId), UNDO_HISTORY_FILE);
         if (!file.exists()) {
-            Log.d(TAG, "No undo history found for: " + projectId);
+            FLog.d(TAG, "No undo history found for: " + projectId);
             return false;
         }
 
@@ -396,11 +396,11 @@ public class ProjectStorage {
                     outSnapshots.add(snap);
                 }
             }
-            Log.d(TAG, "Loaded " + outDescriptions.size()
+            FLog.d(TAG, "Loaded " + outDescriptions.size()
                     + " undo history entries for: " + projectId);
             return !outDescriptions.isEmpty();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to load undo history: " + projectId, e);
+            FLog.e(TAG, "Failed to load undo history: " + projectId, e);
             return false;
         }
     }

@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Typeface;
@@ -7,7 +9,6 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -285,7 +286,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(ctx);
         String storageMode = prefs.getStorageMode();
 
-        Log.d(TAG, "Storage mode: " + storageMode);
+        FLog.d(TAG, "Storage mode: " + storageMode);
 
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // ── Custom SAF storage ──────────────────────────────
@@ -295,15 +296,15 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     Uri treeUri = Uri.parse(safUri);
                     if (hasSafPermission(ctx, treeUri)) {
                         items.addAll(scanSafDir(ctx, treeUri));
-                        Log.d(TAG, "Scanned custom (SAF) storage: " + items.size() + " videos");
+                        FLog.d(TAG, "Scanned custom (SAF) storage: " + items.size() + " videos");
                     } else {
-                        Log.w(TAG, "No SAF permission for: " + safUri);
+                        FLog.w(TAG, "No SAF permission for: " + safUri);
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error scanning SAF storage", e);
+                    FLog.e(TAG, "Error scanning SAF storage", e);
                 }
             } else {
-                Log.w(TAG, "Custom storage mode but no URI set");
+                FLog.w(TAG, "Custom storage mode but no URI set");
             }
         } else {
             // ── Internal storage (default) ──────────────────────
@@ -327,10 +328,10 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     items.addAll(scanFileDir(
                             new File(base, Constants.RECORDING_SUBDIR_STREAM),
                             getString(R.string.faditor_fadrec_source)));
-                    Log.d(TAG, "Scanned internal storage: " + items.size() + " videos");
+                    FLog.d(TAG, "Scanned internal storage: " + items.size() + " videos");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error scanning internal storage", e);
+                FLog.e(TAG, "Error scanning internal storage", e);
             }
         }
 
@@ -415,7 +416,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
             addSafNestedDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_FADITOR, getString(R.string.faditor_fadcam_source));
             addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_STREAM, getString(R.string.faditor_fadrec_source));
         } catch (Exception e) {
-            Log.e(TAG, "Error listing SAF files", e);
+            FLog.e(TAG, "Error listing SAF files", e);
         }
         return items;
     }
@@ -516,7 +517,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                 if (perm.getUri().equals(treeUri) && perm.isReadPermission()) return true;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error checking SAF permission", e);
+            FLog.e(TAG, "Error checking SAF permission", e);
         }
         return false;
     }
@@ -596,7 +597,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     .thumbnail(0.1f)
                     .into(thumbView);
         } catch (Exception e) {
-            Log.w(TAG, "Error loading thumbnail for: " + item.name, e);
+            FLog.w(TAG, "Error loading thumbnail for: " + item.name, e);
         }
 
         row.addView(thumbCard);
@@ -724,12 +725,12 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                 if (durationStr != null) {
                     double durationSec = Double.parseDouble(durationStr);
                     long durationMs = (long) (durationSec * 1000);
-                    Log.d(TAG, "Duration from FFprobe: " + durationMs + "ms for " + uri.getLastPathSegment());
+                    FLog.d(TAG, "Duration from FFprobe: " + durationMs + "ms for " + uri.getLastPathSegment());
                     return durationMs;
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "FFprobe duration failed for: " + uri, e);
+            FLog.e(TAG, "FFprobe duration failed for: " + uri, e);
         }
 
         // ── MediaMetadataRetriever fallback ──────────────────────
@@ -747,11 +748,11 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 long durationMs = Long.parseLong(durationStr);
-                Log.d(TAG, "Duration from MMR fallback: " + durationMs + "ms for " + uri.getLastPathSegment());
+                FLog.d(TAG, "Duration from MMR fallback: " + durationMs + "ms for " + uri.getLastPathSegment());
                 return durationMs;
             }
         } catch (Exception e) {
-            Log.w(TAG, "MMR fallback failed for: " + uri, e);
+            FLog.w(TAG, "MMR fallback failed for: " + uri, e);
         } finally {
             if (retriever != null) {
                 try {
@@ -760,7 +761,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
             }
         }
 
-        Log.w(TAG, "Could not determine duration for: " + uri);
+        FLog.w(TAG, "Could not determine duration for: " + uri);
         return 0;
     }
 
@@ -783,14 +784,14 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                 String reconstructedPath = "/storage/emulated/0/" + relativePath;
                 java.io.File file = new java.io.File(reconstructedPath);
                 if (file.exists() && file.canRead()) {
-                    Log.d(TAG, "FFprobe using reconstructed path: " + reconstructedPath);
+                    FLog.d(TAG, "FFprobe using reconstructed path: " + reconstructedPath);
                     return reconstructedPath;
                 }
             }
         }
 
         // Fall back to SAF protocol
-        Log.d(TAG, "FFprobe using SAF protocol: saf:" + uri);
+        FLog.d(TAG, "FFprobe using SAF protocol: saf:" + uri);
         return "saf:" + uri.toString();
     }
 

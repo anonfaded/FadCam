@@ -1,5 +1,7 @@
 package com.fadcam.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.BroadcastReceiver;
@@ -14,7 +16,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.Display;
 import android.view.accessibility.AccessibilityEvent;
 
@@ -39,7 +40,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
             if (intent == null || !Constants.ACTION_TRIGGER_FADREC_SCREENSHOT.equals(intent.getAction())) {
                 return;
             }
-            Log.d(TAG, "Trigger broadcast received in accessibility service.");
+            FLog.d(TAG, "Trigger broadcast received in accessibility service.");
             captureNow();
         }
     };
@@ -48,7 +49,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "Accessibility screenshot service created.");
+        FLog.d(TAG, "Accessibility screenshot service created.");
         ensureReceiverRegistered();
     }
 
@@ -57,7 +58,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
         super.onServiceConnected();
         ensureReceiverRegistered();
         if (consumePendingCapture()) {
-            Log.d(TAG, "Pending screenshot request consumed on service connected.");
+            FLog.d(TAG, "Pending screenshot request consumed on service connected.");
             captureNow();
         }
     }
@@ -74,9 +75,9 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
                 registerReceiver(triggerReceiver, filter);
             }
             receiverRegistered = true;
-            Log.d(TAG, "Screenshot trigger receiver registered.");
+            FLog.d(TAG, "Screenshot trigger receiver registered.");
         } catch (Exception e) {
-            Log.w(TAG, "Failed to register screenshot trigger receiver", e);
+            FLog.w(TAG, "Failed to register screenshot trigger receiver", e);
         }
     }
 
@@ -100,24 +101,24 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
             receiverRegistered = false;
         }
         super.onDestroy();
-        Log.d(TAG, "Accessibility screenshot service destroyed.");
+        FLog.d(TAG, "Accessibility screenshot service destroyed.");
     }
 
     private void captureNow() {
-        Log.d(TAG, "captureNow invoked");
+        FLog.d(TAG, "captureNow invoked");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Log.d(TAG, "Using takeScreenshot API (R+).");
+            FLog.d(TAG, "Using takeScreenshot API (R+).");
             takeScreenshot(Display.DEFAULT_DISPLAY, Executors.newSingleThreadExecutor(),
                     new TakeScreenshotCallback() {
                         @Override
                         public void onSuccess(@NonNull ScreenshotResult screenshotResult) {
-                            Log.d(TAG, "takeScreenshot success callback.");
+                            FLog.d(TAG, "takeScreenshot success callback.");
                             saveScreenshotResult(screenshotResult);
                         }
 
                         @Override
                         public void onFailure(int errorCode) {
-                            Log.e(TAG, "takeScreenshot failed. errorCode=" + errorCode);
+                            FLog.e(TAG, "takeScreenshot failed. errorCode=" + errorCode);
                             showToast(R.string.screenshot_capture_failed);
                         }
                     });
@@ -126,7 +127,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
 
         // API 28-29 fallback: system screenshot action without direct bitmap callback.
         boolean triggered = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-        Log.d(TAG, "Using GLOBAL_ACTION_TAKE_SCREENSHOT fallback. triggered=" + triggered);
+        FLog.d(TAG, "Using GLOBAL_ACTION_TAKE_SCREENSHOT fallback. triggered=" + triggered);
         showToast(triggered ? R.string.screenshot_capture_system_saved : R.string.screenshot_capture_failed);
     }
 
@@ -155,7 +156,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
                     false,
                     PhotoStorageHelper.ShotSource.FADREC);
             if (savedUri != null) {
-                Log.i(TAG, "Screenshot saved successfully. uri=" + savedUri);
+                FLog.i(TAG, "Screenshot saved successfully. uri=" + savedUri);
                 clearPendingCapture();
                 Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
                 updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
@@ -163,11 +164,11 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
                 sendBroadcast(updateIntent);
                 showToast(R.string.screenshot_capture_saved);
             } else {
-                Log.e(TAG, "Screenshot save failed: PhotoStorageHelper returned null URI.");
+                FLog.e(TAG, "Screenshot save failed: PhotoStorageHelper returned null URI.");
                 showToast(R.string.screenshot_capture_failed);
             }
         } catch (Exception e) {
-            Log.e(TAG, "saveScreenshotResult exception", e);
+            FLog.e(TAG, "saveScreenshotResult exception", e);
             showToast(R.string.screenshot_capture_failed);
         } finally {
             if (copyBitmap != null && !copyBitmap.isRecycled()) {
@@ -208,10 +209,10 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
             }
             ComponentName componentName = new ComponentName(context, FadRecScreenshotAccessibilityService.class);
             boolean enabledForApp = enabledServices.contains(componentName.flattenToString());
-            Log.d(TAG, "isServiceEnabled=" + enabledForApp + ", enabledServices=" + enabledServices);
+            FLog.d(TAG, "isServiceEnabled=" + enabledForApp + ", enabledServices=" + enabledServices);
             return enabledForApp;
         } catch (Exception e) {
-            Log.w(TAG, "isServiceEnabled check failed", e);
+            FLog.w(TAG, "isServiceEnabled check failed", e);
             return false;
         }
     }

@@ -1,5 +1,7 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.ValueAnimator;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -7,8 +9,6 @@ import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
-import android.util.Log;
-
 /**
  * Professional shimmer effect utility for skeleton loading states
  * Following industry standards used by YouTube, Instagram, etc.
@@ -36,10 +36,10 @@ public class ShimmerEffectHelper {
             view.setTag(com.fadcam.R.id.shimmer_animator_tag, shimmerAnimator);
             shimmerAnimator.start();
             
-            Log.d(TAG, "Shimmer effect applied to view: " + view.getClass().getSimpleName());
+            FLog.d(TAG, "Shimmer effect applied to view: " + view.getClass().getSimpleName());
             
         } catch (Exception e) {
-            Log.e(TAG, "Error applying shimmer effect", e);
+            FLog.e(TAG, "Error applying shimmer effect", e);
         }
     }
     
@@ -60,10 +60,10 @@ public class ShimmerEffectHelper {
             // Clear foreground
             view.setForeground(null);
             
-            Log.d(TAG, "Shimmer effect removed from view: " + view.getClass().getSimpleName());
+            FLog.d(TAG, "Shimmer effect removed from view: " + view.getClass().getSimpleName());
             
         } catch (Exception e) {
-            Log.e(TAG, "Error removing shimmer effect", e);
+            FLog.e(TAG, "Error removing shimmer effect", e);
         }
     }
     

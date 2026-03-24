@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -22,7 +24,6 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.DocumentsContract;
 import android.text.format.Formatter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -155,7 +156,7 @@ public class RecordsFragment extends BaseFragment implements
                 if (!isAdded())
                     return;
 
-                Log.d(TAG, "Showing skeleton loading with " + estimatedCount + " items");
+                FLog.d(TAG, "Showing skeleton loading with " + estimatedCount + " items");
 
                 // Create skeleton items
                 List<VideoItem> skeletonItems = new ArrayList<>();
@@ -202,7 +203,7 @@ public class RecordsFragment extends BaseFragment implements
                 if (!isAdded())
                     return;
 
-                Log.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size()
+                FLog.d(TAG, "Replacing " + allLoadedItems.size() + " skeletons with " + actualItems.size()
                         + " actual videos");
 
                 // ordering -----------
@@ -216,7 +217,7 @@ public class RecordsFragment extends BaseFragment implements
                 allLoadedItems.clear();
                 allLoadedItems.addAll(normalizeVideoCategories(actualItems));
                 applyActiveFilterToUi();
-                Log.d(TAG, "Applied active filter to " + actualItems.size() + " loaded videos");
+                FLog.d(TAG, "Applied active filter to " + actualItems.size() + " loaded videos");
 
                 // Update UI visibility
                 updateUiVisibility();
@@ -235,10 +236,10 @@ public class RecordsFragment extends BaseFragment implements
                 // Ensure refresh indicator is stopped
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
-                    Log.d(TAG, "Refresh indicator stopped in replaceSkeletonsWithData");
+                    FLog.d(TAG, "Refresh indicator stopped in replaceSkeletonsWithData");
                 }
 
-                Log.d(TAG, "Skeleton replacement complete - proper positioning and ordering achieved");
+                FLog.d(TAG, "Skeleton replacement complete - proper positioning and ordering achieved");
 
 
             });
@@ -281,7 +282,7 @@ public class RecordsFragment extends BaseFragment implements
                 // Ensure refresh indicator is stopped on error/empty state
                 if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
-                    Log.d(TAG, "Refresh indicator stopped in hideSkeletonLoading");
+                    FLog.d(TAG, "Refresh indicator stopped in hideSkeletonLoading");
                 }
 
             });
@@ -302,10 +303,10 @@ public class RecordsFragment extends BaseFragment implements
                     // Use progressive method but without callbacks for silent loading
                     return getSafRecordsListProgressive(treeUri, null);
                 } else {
-                    Log.w(TAG, "No persistent permission for SAF URI: " + safUriString);
+                    FLog.w(TAG, "No persistent permission for SAF URI: " + safUriString);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error processing SAF URI", e);
+                FLog.e(TAG, "Error processing SAF URI", e);
             }
         }
 
@@ -399,13 +400,13 @@ public class RecordsFragment extends BaseFragment implements
 
     @Override
     public void onDeletionFinishedCheckEmptyState() {
-        Log.d(TAG, "Adapter signaled deletion finished. Checking empty state...");
+        FLog.d(TAG, "Adapter signaled deletion finished. Checking empty state...");
         // This method is called AFTER the adapter has removed the item
         // and notified itself. Now, we update the Fragment's overall UI visibility.
         if (getView() != null) { // Ensure view is available
             getActivity().runOnUiThread(this::updateUiVisibility); // Use the existing helper
         } else {
-            Log.w(TAG, "onDeletionFinishedCheckEmptyState called but view is null.");
+            FLog.w(TAG, "onDeletionFinishedCheckEmptyState called but view is null.");
         }
     }
 
@@ -413,7 +414,7 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onMoveToTrashRequested(VideoItem videoItem) {
         if (videoItem == null || videoItem.uri == null) {
-            Log.e(TAG, "onMoveToTrashRequested: Received null videoItem or URI.");
+            FLog.e(TAG, "onMoveToTrashRequested: Received null videoItem or URI.");
             if (getContext() != null) {
                 Toast.makeText(getContext(), getString(R.string.delete_video_error_null_toast), Toast.LENGTH_SHORT)
                         .show();
@@ -422,7 +423,7 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
 
-        Log.i(TAG, "Delete requested for: " + videoItem.displayName);
+        FLog.i(TAG, "Delete requested for: " + videoItem.displayName);
 
         // Show confirm-only bottom sheet (no typing). Proceed on confirm.
         InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newConfirm(
@@ -454,7 +455,7 @@ public class RecordsFragment extends BaseFragment implements
                                         .removeFromIndex(videoItem.uri.toString());
 
                                 // Perform a complete refresh to ensure serial numbers are updated
-                                Log.d(TAG, "Single video deleted, performing full refresh to update serial numbers");
+                                FLog.d(TAG, "Single video deleted, performing full refresh to update serial numbers");
                                 if (recordsAdapter != null) {
                                     recordsAdapter.clearCaches();
                                 }
@@ -521,7 +522,7 @@ public class RecordsFragment extends BaseFragment implements
         if (success) {
             // Invalidate stats cache when videos are deleted — index will delta-sync on next load
             com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
-            Log.d(TAG, "Invalidated video stats cache after successful video deletion");
+            FLog.d(TAG, "Invalidated video stats cache after successful video deletion");
         }
 
         if (getActivity() == null)
@@ -535,7 +536,7 @@ public class RecordsFragment extends BaseFragment implements
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             }
         });
-        Log.d(TAG, "onMoveToTrashFinished. Success: " + success + ", Msg: " + message);
+        FLog.d(TAG, "onMoveToTrashFinished. Success: " + success + ", Msg: " + message);
     }
 
     // *** Register in onStart ***
@@ -619,7 +620,7 @@ public class RecordsFragment extends BaseFragment implements
                         }
 
                         if (Constants.ACTION_STORAGE_LOCATION_CHANGED.equals(intent.getAction())) {
-                            Log.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED broadcast. Refreshing records list.");
+                            FLog.i(TAG, "Received ACTION_STORAGE_LOCATION_CHANGED broadcast. Refreshing records list.");
                             // Wipe index since storage location changed — completely different files
                             com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                             if (recordsAdapter != null) {
@@ -628,7 +629,7 @@ public class RecordsFragment extends BaseFragment implements
                             // If storage location changed, we should definitely reload the list.
                             loadRecordsList();
                         } else if (Constants.ACTION_FILES_RESTORED.equals(intent.getAction())) {
-                            Log.i(TAG, "Received ACTION_FILES_RESTORED broadcast. Invalidating index and refreshing.");
+                            FLog.i(TAG, "Received ACTION_FILES_RESTORED broadcast. Invalidating index and refreshing.");
                             // Invalidate index so restored files are discovered on full re-scan
                             com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                             if (recordsAdapter != null) {
@@ -646,7 +647,7 @@ public class RecordsFragment extends BaseFragment implements
             ContextCompat.registerReceiver(requireContext(), storageLocationChangedReceiver, filter,
                     ContextCompat.RECEIVER_NOT_EXPORTED);
             isStorageReceiverRegistered = true;
-            Log.d(TAG, "Storage and file restore broadcast receiver registered for actions: " + 
+            FLog.d(TAG, "Storage and file restore broadcast receiver registered for actions: " + 
                   Constants.ACTION_STORAGE_LOCATION_CHANGED + ", " + Constants.ACTION_FILES_RESTORED);
         }
     }
@@ -657,9 +658,9 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 requireContext().unregisterReceiver(storageLocationChangedReceiver);
                 isStorageReceiverRegistered = false;
-                Log.d(TAG, "Storage and file restore broadcast receiver unregistered.");
+                FLog.d(TAG, "Storage and file restore broadcast receiver unregistered.");
             } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Attempted to unregister storage receiver but it wasn't registered?");
+                FLog.w(TAG, "Attempted to unregister storage receiver but it wasn't registered?");
                 isStorageReceiverRegistered = false;
             }
         }
@@ -677,13 +678,13 @@ public class RecordsFragment extends BaseFragment implements
                         if (intent == null || !Constants.ACTION_RECORDING_COMPLETE.equals(intent.getAction())) {
                             return;
                         }
-                        Log.d(TAG, "Received ACTION_RECORDING_COMPLETE broadcast. Current items: " + videoItems.size());
+                        FLog.d(TAG, "Received ACTION_RECORDING_COMPLETE broadcast. Current items: " + videoItems.size());
                         boolean success = intent.getBooleanExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
                         String finalUriString = intent.getStringExtra(Constants.EXTRA_RECORDING_URI_STRING);
                         String originalTempSafUriString = intent
                                 .getStringExtra(Constants.EXTRA_ORIGINAL_TEMP_SAF_URI_STRING);
 
-                        Log.d(TAG, "  Success: " + success + ", Final URI: " + finalUriString + ", OriginalTempSAF: "
+                        FLog.d(TAG, "  Success: " + success + ", Final URI: " + finalUriString + ", OriginalTempSAF: "
                                 + originalTempSafUriString);
 
                         if (originalTempSafUriString != null) {
@@ -693,7 +694,7 @@ public class RecordsFragment extends BaseFragment implements
                                 if (videoItems.get(i).uri.equals(originalTempSafUri)) {
                                     videoItems.remove(i);
                                     foundAndRemoved = true;
-                                    Log.d(TAG, "Removed temporary SAF VideoItem: " + originalTempSafUri);
+                                    FLog.d(TAG, "Removed temporary SAF VideoItem: " + originalTempSafUri);
                                     break;
                                 }
                             }
@@ -716,12 +717,12 @@ public class RecordsFragment extends BaseFragment implements
                                     newItem.isNew = true;
                                     videoItems.add(0, newItem); // Add to top, assuming latest
                                     allLoadedItems.add(0, newItem);
-                                    Log.d(TAG, "Added final SAF VideoItem: " + finalUriString);
+                                    FLog.d(TAG, "Added final SAF VideoItem: " + finalUriString);
                                 } else {
-                                    Log.w(TAG, "Final SAF DocumentFile does not exist or is null: " + finalUriString);
+                                    FLog.w(TAG, "Final SAF DocumentFile does not exist or is null: " + finalUriString);
                                 }
                             } else if (!success) {
-                                Log.w(TAG, "Processing failed for original temp SAF URI: " + originalTempSafUriString
+                                FLog.w(TAG, "Processing failed for original temp SAF URI: " + originalTempSafUriString
                                         + ". It was removed from list if present.");
                                 // If processing failed, the temp SAF item (if it was ever added) is removed.
                                 // The actual temp file on disk might still be there if deletion in service
@@ -739,37 +740,37 @@ public class RecordsFragment extends BaseFragment implements
 
                         // Existing logic for non-SAF replacement (mostly internal storage)
                         if (success && finalUriString != null) {
-                            Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString
+                            FLog.d(TAG, "ACTION_RECORDING_COMPLETE: Success, URI: " + finalUriString
                                     + ". Refreshing list.");
                             // Clear adapter caches to prevent stale duration data
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
-                                Log.d(TAG, "Cleared adapter caches for new recording");
+                                FLog.d(TAG, "Cleared adapter caches for new recording");
                             }
                             // Invalidate cache so loadRecordsList will load fresh data including the new video
-                            Log.d(TAG, "New recording complete, delta scan will pick it up");
+                            FLog.d(TAG, "New recording complete, delta scan will pick it up");
                             // Delta scan will pick up the new file automatically
                             loadRecordsList(); // This will delta-scan and find the new video.
                         } else if (!success) {
-                            Log.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
+                            FLog.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
                                     + ". Refreshing list.");
                             // Clear adapter caches to prevent stale data
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
-                                Log.d(TAG, "Cleared adapter caches for failed recording");
+                                FLog.d(TAG, "Cleared adapter caches for failed recording");
                             }
-                            Log.d(TAG, "Failed recording, refreshing via delta scan");
+                            FLog.d(TAG, "Failed recording, refreshing via delta scan");
                             // Still refresh, as a temp file might need its processing state cleared
                             loadRecordsList();
                         } else if (success && finalUriString == null) {
                             // Recording was successful but no specific URI provided - refresh anyway
-                            Log.d(TAG, "ACTION_RECORDING_COMPLETE: Success without URI. Refreshing list to detect new video.");
+                            FLog.d(TAG, "ACTION_RECORDING_COMPLETE: Success without URI. Refreshing list to detect new video.");
                             // Clear adapter caches to prevent stale duration data
                             if (recordsAdapter != null) {
                                 recordsAdapter.clearCaches();
-                                Log.d(TAG, "Cleared adapter caches for successful recording without URI");
+                                FLog.d(TAG, "Cleared adapter caches for successful recording without URI");
                             }
-                            Log.d(TAG, "Successful recording without URI, delta scan will find it");
+                            FLog.d(TAG, "Successful recording without URI, delta scan will find it");
                             loadRecordsList(); // This will delta-scan and find the new video
                         }
                     }
@@ -781,7 +782,7 @@ public class RecordsFragment extends BaseFragment implements
                     new IntentFilter(Constants.ACTION_RECORDING_COMPLETE), ContextCompat.RECEIVER_NOT_EXPORTED);
 
             isReceiverRegistered = true;
-            Log.d(TAG, "RecordingCompleteReceiver registered.");
+            FLog.d(TAG, "RecordingCompleteReceiver registered.");
         }
     }
 
@@ -790,9 +791,9 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 requireContext().unregisterReceiver(recordingCompleteReceiver);
                 isReceiverRegistered = false; // Mark as unregistered
-                Log.d(TAG, "ACTION_RECORDING_COMPLETE receiver unregistered.");
+                FLog.d(TAG, "ACTION_RECORDING_COMPLETE receiver unregistered.");
             } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Attempted to unregister recording complete receiver but it wasn't registered?");
+                FLog.w(TAG, "Attempted to unregister recording complete receiver but it wasn't registered?");
                 isReceiverRegistered = false; // Ensure flag is reset even on error
             }
         }
@@ -814,9 +815,9 @@ public class RecordsFragment extends BaseFragment implements
         if (sharedPreferencesManager == null) {
             try {
                 sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-                Log.d(TAG, "SharedPreferencesManager initialized in onCreate.");
+                FLog.d(TAG, "SharedPreferencesManager initialized in onCreate.");
             } catch (IllegalStateException e) {
-                Log.e(TAG, "Error getting context in onCreate: Fragment not attached?", e);
+                FLog.e(TAG, "Error getting context in onCreate: Fragment not attached?", e);
                 // Handle error appropriately - maybe defer init to onViewCreated?
             }
         }
@@ -824,7 +825,7 @@ public class RecordsFragment extends BaseFragment implements
         // Initialize ExecutorService if needed early
         if (executorService == null || executorService.isShutdown()) {
             executorService = Executors.newSingleThreadExecutor();
-            Log.d(TAG, "ExecutorService initialized in onCreate.");
+            FLog.d(TAG, "ExecutorService initialized in onCreate.");
         }
 
         if (customExportTreePickerLauncher == null) {
@@ -866,7 +867,7 @@ public class RecordsFragment extends BaseFragment implements
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView: Inflating layout R.layout.fragment_records");
+        FLog.d(TAG, "onCreateView: Inflating layout R.layout.fragment_records");
         // --- ONLY INFLATE AND RETURN ---
         View view = inflater.inflate(R.layout.fragment_records, container, false);
         return view;
@@ -878,7 +879,7 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
+        FLog.d(TAG, "onViewCreated: View hierarchy created. Finding views and setting up.");
 
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
 
@@ -1039,7 +1040,7 @@ public class RecordsFragment extends BaseFragment implements
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                Log.d(TAG, "Swipe to refresh triggered — silent background refresh (no skeleton)");
+                FLog.d(TAG, "Swipe to refresh triggered — silent background refresh (no skeleton)");
 
                 // Production pattern: keep existing data visible, refresh silently
                 // in background, swap data when ready. No skeleton, no UI thrashing.
@@ -1084,15 +1085,15 @@ public class RecordsFragment extends BaseFragment implements
                             if (swipeRefreshLayout != null) {
                                 swipeRefreshLayout.setRefreshing(false);
                             }
-                            Log.i(TAG, "Silent refresh complete: " + deltaNormalized.size() + " items");
+                            FLog.i(TAG, "Silent refresh complete: " + deltaNormalized.size() + " items");
                         });
 
                         // Enrich any new unresolved durations
                         repo.startBackgroundEnrichment((uri, dur) ->
-                            Log.d(TAG, "Duration enriched: " + uri + " → " + dur + "ms"));
+                            FLog.d(TAG, "Duration enriched: " + uri + " → " + dur + "ms"));
 
                     } catch (Exception e) {
-                        Log.w(TAG, "Silent refresh failed: " + e.getMessage());
+                        FLog.w(TAG, "Silent refresh failed: " + e.getMessage());
                         new Handler(Looper.getMainLooper()).post(() -> {
                             if (swipeRefreshLayout != null) {
                                 swipeRefreshLayout.setRefreshing(false);
@@ -1103,7 +1104,7 @@ public class RecordsFragment extends BaseFragment implements
 
             });
         } else {
-            Log.e(TAG, "SwipeRefreshLayout is null after findViewById!");
+            FLog.e(TAG, "SwipeRefreshLayout is null after findViewById!");
         }
 
         // --- Initial Data Load ---
@@ -1125,13 +1126,13 @@ public class RecordsFragment extends BaseFragment implements
                 if (getActivity() instanceof com.fadcam.MainActivity) {
                     currentPos = ((com.fadcam.MainActivity) getActivity()).getCurrentFragmentPosition();
                 }
-                Log.d(TAG,
+                FLog.d(TAG,
                         "onViewCreated: Fragment not currently visible, deferring load until user navigates here. Fragment position: "
                                 + currentPos);
                 return; // Don't load anything yet
             }
 
-            Log.d(TAG, "onViewCreated: Fragment is visible, initiating loadRecordsList.");
+            FLog.d(TAG, "onViewCreated: Fragment is visible, initiating loadRecordsList.");
 
             // loadRecordsList() handles everything:
             // - If DB has data → synchronous fast path (~26ms), no skeleton
@@ -1142,7 +1143,7 @@ public class RecordsFragment extends BaseFragment implements
             isInitialLoad = true; // Mark as initial load
             loadRecordsList();
         } else {
-            Log.d(TAG, "onViewCreated: Existing data found (" + videoItems.size() + " items), updating UI visibility.");
+            FLog.d(TAG, "onViewCreated: Existing data found (" + videoItems.size() + " items), updating UI visibility.");
             // If data exists (e.g., fragment recreated), ensure source list + active filter are applied.
             if (allLoadedItems.isEmpty()) {
                 allLoadedItems.addAll(videoItems);
@@ -1177,15 +1178,15 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "lifecycle onResume: activeFilter=" + activeFilter + ", loadedItems=" + allLoadedItems.size());
-        Log.i(TAG, "LOG_LIFECYCLE: onResume called.");
+        FLog.d(TAG, "lifecycle onResume: activeFilter=" + activeFilter + ", loadedItems=" + allLoadedItems.size());
+        FLog.i(TAG, "LOG_LIFECYCLE: onResume called.");
 
         // Check if an external event (e.g. Faditor export, FadShot capture) requested a refresh
         boolean needsForceReload = false;
         if (sPendingRefresh) {
             sPendingRefresh = false;
             needsForceReload = true;
-            Log.i(TAG, "onResume: Pending refresh flag set, invalidating index and forcing reload");
+            FLog.i(TAG, "onResume: Pending refresh flag set, invalidating index and forcing reload");
             com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
             if (recordsAdapter != null) {
                 recordsAdapter.clearCaches();
@@ -1202,9 +1203,9 @@ public class RecordsFragment extends BaseFragment implements
         // Update title text
         if (titleText != null) {
             titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
-            Log.d(TAG, "Title text updated in onResume.");
+            FLog.d(TAG, "Title text updated in onResume.");
         } else {
-            Log.w(TAG, "Could not update title in onResume - titleText is null.");
+            FLog.w(TAG, "Could not update title in onResume - titleText is null.");
         }
         if (sharedPreferencesManager == null && getContext() != null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
@@ -1215,7 +1216,7 @@ public class RecordsFragment extends BaseFragment implements
                     .getString(com.fadcam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
             boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
             recordsAdapter.setSnowVeilTheme(isSnowVeilTheme);
-            Log.d(TAG, "onResume: Updated Snow Veil theme flag on adapter: " + isSnowVeilTheme);
+            FLog.d(TAG, "onResume: Updated Snow Veil theme flag on adapter: " + isSnowVeilTheme);
         }
 
         // -----------
@@ -1231,12 +1232,12 @@ public class RecordsFragment extends BaseFragment implements
         }
 
         if (!isCurrentlyVisible) {
-            Log.d(TAG, "onResume: Fragment not currently visible to user, skipping load. Fragment position: "
+            FLog.d(TAG, "onResume: Fragment not currently visible to user, skipping load. Fragment position: "
                     + currentPos + ", isVisible: " + isVisible());
             return;
         }
 
-        Log.d(TAG, "onResume: Fragment is visible to user, proceeding with load check");
+        FLog.d(TAG, "onResume: Fragment is visible to user, proceeding with load check");
 
 
         // Only reload if we actually need to (no data or cache invalidated)
@@ -1244,16 +1245,16 @@ public class RecordsFragment extends BaseFragment implements
         boolean hasDbIndex = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount() > 0;
 
         if (needsForceReload && !isLoading) {
-            Log.i(TAG, "LOG_REFRESH: Force reload from onResume (pending refresh consumed)");
+            FLog.i(TAG, "LOG_REFRESH: Force reload from onResume (pending refresh consumed)");
             loadRecordsList(true);
         } else if (hasData && (hasDbIndex || !videoItems.isEmpty()) && !isLoading) {
-            Log.d(TAG, "onResume: Already have " + videoItems.size() + " videos loaded, skipping duplicate load");
+            FLog.d(TAG, "onResume: Already have " + videoItems.size() + " videos loaded, skipping duplicate load");
             updateUiVisibility(); // Just update visibility state
         } else if (!isLoading) {
-            Log.i(TAG, "LOG_REFRESH: Loading from onResume - hasData: " + hasData + ", hasDbIndex: " + hasDbIndex);
+            FLog.i(TAG, "LOG_REFRESH: Loading from onResume - hasData: " + hasData + ", hasDbIndex: " + hasDbIndex);
             loadRecordsList();
         } else {
-            Log.d(TAG, "onResume: Already loading, skipping duplicate request");
+            FLog.d(TAG, "onResume: Already loading, skipping duplicate request");
         }
 
 
@@ -1271,15 +1272,15 @@ public class RecordsFragment extends BaseFragment implements
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        Log.d(TAG, "onHiddenChanged: hidden=" + hidden + ", isResumed=" + isResumed());
+        FLog.d(TAG, "onHiddenChanged: hidden=" + hidden + ", isResumed=" + isResumed());
         
         if (!hidden && isResumed() && isAdded() && getContext() != null) {
-            Log.d(TAG, "onHiddenChanged: Fragment shown, checking for data refresh");
+            FLog.d(TAG, "onHiddenChanged: Fragment shown, checking for data refresh");
             
             // Check pending refresh (e.g., Faditor export)
             if (sPendingRefresh) {
                 sPendingRefresh = false;
-                Log.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating index");
+                FLog.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating index");
                 com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                 if (recordsAdapter != null) {
                     recordsAdapter.clearCaches();
@@ -1299,10 +1300,10 @@ public class RecordsFragment extends BaseFragment implements
             boolean hasDbIndex = com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).getIndexedCount() > 0;
             
             if (hasData && hasDbIndex && !isLoading) {
-                Log.d(TAG, "onHiddenChanged: Data valid, updating UI visibility only");
+                FLog.d(TAG, "onHiddenChanged: Data valid, updating UI visibility only");
                 updateUiVisibility();
             } else if (!isLoading) {
-                Log.i(TAG, "onHiddenChanged: Need to refresh data");
+                FLog.i(TAG, "onHiddenChanged: Need to refresh data");
                 loadRecordsList();
             }
         }
@@ -1314,14 +1315,14 @@ public class RecordsFragment extends BaseFragment implements
      * or when they navigate back to it. This handles lazy loading.
      */
     public void onFragmentBecameVisible() {
-        Log.d(TAG, "onFragmentBecameVisible: Fragment is now visible to user");
+        FLog.d(TAG, "onFragmentBecameVisible: Fragment is now visible to user");
         boolean shouldLoadData = (videoItems == null || videoItems.isEmpty()) && !isLoading;
-        Log.d(TAG, "visibility_event: shouldLoadData=" + shouldLoadData + ", currentCount="
+        FLog.d(TAG, "visibility_event: shouldLoadData=" + shouldLoadData + ", currentCount="
                 + (videoItems == null ? 0 : videoItems.size()));
 
         // Check if we need to load data for the first time
         if ((videoItems == null || videoItems.isEmpty()) && !isLoading) {
-            Log.d(TAG, "onFragmentBecameVisible: No data loaded yet, starting initial load");
+            FLog.d(TAG, "onFragmentBecameVisible: No data loaded yet, starting initial load");
 
             if (videoItems == null) {
                 videoItems = new ArrayList<>();
@@ -1333,7 +1334,7 @@ public class RecordsFragment extends BaseFragment implements
             isInitialLoad = true;
             loadRecordsList();
         } else {
-            Log.d(TAG, "onFragmentBecameVisible: Data already loaded (" + videoItems.size() + " items)");
+            FLog.d(TAG, "onFragmentBecameVisible: Data already loaded (" + videoItems.size() + " items)");
             updateUiVisibility();
         }
     }
@@ -1380,7 +1381,7 @@ public class RecordsFragment extends BaseFragment implements
 
         progressDialog = builder.create();
         progressDialog.show();
-        Log.d(TAG, "Showing progress dialog for saving: " + fileName);
+        FLog.d(TAG, "Showing progress dialog for saving: " + fileName);
     }
 
     @Override
@@ -1390,7 +1391,7 @@ public class RecordsFragment extends BaseFragment implements
             progressDialog.dismiss();
             progressDialog = null; // Clear reference
         }
-        Log.d(TAG, "Save finished. Success: " + success + ", Message: " + message);
+        FLog.d(TAG, "Save finished. Success: " + success + ", Message: " + message);
 
         // Show result Toast
         if (getContext() != null) {
@@ -1408,7 +1409,7 @@ public class RecordsFragment extends BaseFragment implements
     // ** In RecordsFragment.java **
 
     private void setupRecyclerView() {
-        Log.d(TAG, "Setting up RecyclerView...");
+        FLog.d(TAG, "Setting up RecyclerView...");
 
         // Initialize view components
         emptyStateContainer = getView().findViewById(R.id.empty_state_container);
@@ -1609,40 +1610,40 @@ public class RecordsFragment extends BaseFragment implements
     // ** In RecordsFragment.java **
 
     private void setupFabListeners() {
-        Log.d(TAG, "Setting up FAB listeners.");
+        FLog.d(TAG, "Setting up FAB listeners.");
         // Ensure FABs are not null before setting listeners
         // removed FAB toggle; use side sheet's View mode row
 
         if (fabDeleteSelected != null) {
             fabDeleteSelected.setOnClickListener(v -> {
                 // *** ADD LOGGING to confirm click registration ***
-                Log.d(TAG, "fabDeleteSelected CLICKED!");
+                FLog.d(TAG, "fabDeleteSelected CLICKED!");
                 // Check fragment state and context just before acting
                 if (!isAdded() || getContext() == null) {
-                    Log.e(TAG, "fabDeleteSelected clicked but fragment not ready!");
+                    FLog.e(TAG, "fabDeleteSelected clicked but fragment not ready!");
                     return;
                 }
                 showBatchActionsSheet();
             });
-            Log.d(TAG, "FAB Delete listener set.");
+            FLog.d(TAG, "FAB Delete listener set.");
         } else {
-            Log.w(TAG, "fabDeleteSelected is null in setupFabListeners (Might be initially GONE).");
+            FLog.w(TAG, "fabDeleteSelected is null in setupFabListeners (Might be initially GONE).");
         }
 
         // -----------
 
         if (fabScrollNavigation != null) {
             fabScrollNavigation.setOnClickListener(v -> {
-                Log.d(TAG, "fabScrollNavigation CLICKED!");
+                FLog.d(TAG, "fabScrollNavigation CLICKED!");
                 if (!isAdded() || getContext() == null || recyclerView == null) {
-                    Log.e(TAG, "fabScrollNavigation clicked but fragment/view not ready!");
+                    FLog.e(TAG, "fabScrollNavigation clicked but fragment/view not ready!");
                     return;
                 }
                 handleNavigationFabClick();
             });
-            Log.d(TAG, "FAB Navigation listener set.");
+            FLog.d(TAG, "FAB Navigation listener set.");
         } else {
-            Log.w(TAG, "fabScrollNavigation is null in setupFabListeners.");
+            FLog.w(TAG, "fabScrollNavigation is null in setupFabListeners.");
         }
 
     }
@@ -1756,17 +1757,17 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private List<VideoItem> getInternalRecordsList() {
-        Log.d(TAG, "LOG_GET_INTERNAL: getInternalRecordsList START.");
+        FLog.d(TAG, "LOG_GET_INTERNAL: getInternalRecordsList START.");
         List<VideoItem> items = new ArrayList<>();
         File recordsDir = getContext() != null ? getContext().getExternalFilesDir(null) : null;
         if (recordsDir == null) {
-            Log.e(TAG, "LOG_GET_INTERNAL: Could not get ExternalFilesDir for internal storage.");
+            FLog.e(TAG, "LOG_GET_INTERNAL: Could not get ExternalFilesDir for internal storage.");
             return items;
         }
         
         File baseDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
         if (!baseDir.exists() || !baseDir.isDirectory()) {
-            Log.i(TAG, "LOG_GET_INTERNAL: Base directory does not exist yet: " + baseDir.getAbsolutePath());
+            FLog.i(TAG, "LOG_GET_INTERNAL: Base directory does not exist yet: " + baseDir.getAbsolutePath());
             return items;
         }
 
@@ -1782,7 +1783,7 @@ public class RecordsFragment extends BaseFragment implements
         // Backward compatibility: include legacy root-level files under FadCam.
         scanLegacyRootInternal(items, baseDir);
         
-        Log.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " total internal records. END.");
+        FLog.i(TAG, "LOG_GET_INTERNAL: Found " + items.size() + " total internal records. END.");
         return items;
     }
     
@@ -1790,7 +1791,7 @@ public class RecordsFragment extends BaseFragment implements
      * Helper method to scan a directory for video files.
      */
     private void scanCategoryDirectoryInternal(List<VideoItem> out, File directory, VideoItem.Category category) {
-        Log.d(TAG, "LOG_GET_INTERNAL: Checking category dir: " + directory.getAbsolutePath() + " (" + category + ")");
+        FLog.d(TAG, "LOG_GET_INTERNAL: Checking category dir: " + directory.getAbsolutePath() + " (" + category + ")");
         if (!directory.exists() || !directory.isDirectory()) {
             return;
         }
@@ -2011,19 +2012,19 @@ public class RecordsFragment extends BaseFragment implements
      * Progressive SAF loading with chunked processing to avoid main thread blocking
      */
     private List<VideoItem> getSafRecordsListProgressive(Uri treeUri, ProgressCallback callback) {
-        Log.d(TAG, "LOG_GET_SAF: getSafRecordsList START for URI: " + treeUri);
+        FLog.d(TAG, "LOG_GET_SAF: getSafRecordsList START for URI: " + treeUri);
         List<VideoItem> safVideoItems = new ArrayList<>();
         if (getContext() == null || treeUri == null) {
-            Log.w(TAG, "LOG_GET_SAF: Context or Tree URI is null, returning empty list.");
+            FLog.w(TAG, "LOG_GET_SAF: Context or Tree URI is null, returning empty list.");
             return safVideoItems;
         }
 
         DocumentFile targetDir = DocumentFile.fromTreeUri(getContext(), treeUri);
         if (targetDir == null || !targetDir.isDirectory() || !targetDir.canRead()) {
-            Log.e(TAG, "LOG_GET_SAF: Cannot access or read from SAF directory: " + treeUri);
+            FLog.e(TAG, "LOG_GET_SAF: Cannot access or read from SAF directory: " + treeUri);
             return safVideoItems;
         }
-        Log.d(TAG, "LOG_GET_SAF: SAF Directory " + targetDir.getName() + " is accessible. Listing files.");
+        FLog.d(TAG, "LOG_GET_SAF: SAF Directory " + targetDir.getName() + " is accessible. Listing files.");
 
         List<SafCandidate> bucketedFiles = new ArrayList<>();
         addSafCategoryFiles(bucketedFiles, targetDir, Constants.RECORDING_SUBDIR_CAMERA, VideoItem.Category.CAMERA);
@@ -2067,13 +2068,13 @@ public class RecordsFragment extends BaseFragment implements
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    Log.w(TAG, "LOG_GET_SAF: Progressive loading interrupted");
+                    FLog.w(TAG, "LOG_GET_SAF: Progressive loading interrupted");
                     break;
                 }
             }
         }
 
-        Log.d(TAG, "LOG_GET_SAF: Found " + safVideoItems.size() + " SAF records. END.");
+        FLog.d(TAG, "LOG_GET_SAF: Found " + safVideoItems.size() + " SAF records. END.");
         return safVideoItems;
     }
 
@@ -2104,7 +2105,7 @@ public class RecordsFragment extends BaseFragment implements
             }
 
             if (!permissionFound) {
-                Log.w(TAG, "No persisted R/W permission found for URI: " + treeUri);
+                FLog.w(TAG, "No persisted R/W permission found for URI: " + treeUri);
                 return false;
             }
 
@@ -2113,12 +2114,12 @@ public class RecordsFragment extends BaseFragment implements
             if (docDir != null && docDir.canRead()) {
                 return true; // Both permission entry exists and basic read check passes
             } else {
-                Log.w(TAG, "Persisted permission found, but DocumentFile check failed (cannot read or null). URI: "
+                FLog.w(TAG, "Persisted permission found, but DocumentFile check failed (cannot read or null). URI: "
                         + treeUri);
                 return false;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error checking SAF permission for URI: " + treeUri, e);
+            FLog.e(TAG, "Error checking SAF permission for URI: " + treeUri, e);
             return false;
         }
     }
@@ -2134,11 +2135,11 @@ public class RecordsFragment extends BaseFragment implements
 
         if (isInSelectionMode) {
             // Mode ACTIVE: Click toggles selection
-            Log.d(TAG, "Fragment onVideoClick: Toggling selection for " + videoItem.displayName);
+            FLog.d(TAG, "Fragment onVideoClick: Toggling selection for " + videoItem.displayName);
             toggleSelection(videoItem.uri); // Toggle the item
         } else {
             // Mode INACTIVE: Click opens media
-            Log.d(TAG, "Fragment onVideoClick: Opening media " + videoItem.displayName);
+            FLog.d(TAG, "Fragment onVideoClick: Opening media " + videoItem.displayName);
             String uriString = videoItem.uri.toString();
             sharedPreferencesManager.addOpenedVideoUri(uriString);
             if (recordsAdapter != null) {
@@ -2154,7 +2155,7 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 startActivity(intent);
             } catch (Exception e) {
-                Log.e(TAG, "Failed to start player", e);
+                FLog.e(TAG, "Failed to start player", e);
                 Toast.makeText(getContext(), "Error opening media", Toast.LENGTH_SHORT).show();
             }
         }
@@ -2172,17 +2173,17 @@ public class RecordsFragment extends BaseFragment implements
                     if (intent != null && intent.getAction() != null) {
                         String uriString = intent.getStringExtra(Constants.EXTRA_PROCESSING_URI_STRING);
                         if (uriString == null) {
-                            Log.w(TAG, "Received processing broadcast without URI.");
+                            FLog.w(TAG, "Received processing broadcast without URI.");
                             return;
                         }
                         Uri fileUri = Uri.parse(uriString);
                         boolean changed = false;
 
                         if (Constants.ACTION_PROCESSING_STARTED.equals(intent.getAction())) {
-                            Log.i(TAG, "Processing started for: " + fileUri);
+                            FLog.i(TAG, "Processing started for: " + fileUri);
                             changed = currentlyProcessingUris.add(fileUri);
                         } else if (Constants.ACTION_PROCESSING_FINISHED.equals(intent.getAction())) {
-                            Log.i(TAG, "Processing finished for: " + fileUri);
+                            FLog.i(TAG, "Processing finished for: " + fileUri);
                             changed = currentlyProcessingUris.remove(fileUri);
 
                             // Clear our current cache and force a complete refresh of the view
@@ -2214,7 +2215,7 @@ public class RecordsFragment extends BaseFragment implements
 
                         // If processing started/stopped and the set changed, update adapter state
                         if (changed && recordsAdapter != null) {
-                            Log.d(TAG, "Updating adapter processing state. Processing count: "
+                            FLog.d(TAG, "Updating adapter processing state. Processing count: "
                                     + currentlyProcessingUris.size());
                             recordsAdapter.updateProcessingUris(currentlyProcessingUris);
                             // Note: updateProcessingUris in adapter calls notifyDataSetChanged,
@@ -2230,7 +2231,7 @@ public class RecordsFragment extends BaseFragment implements
             ContextCompat.registerReceiver(requireContext(), processingStateReceiver, filter,
                     ContextCompat.RECEIVER_NOT_EXPORTED);
             isProcessingReceiverRegistered = true;
-            Log.d(TAG, "Processing state receivers registered.");
+            FLog.d(TAG, "Processing state receivers registered.");
         }
     }
 
@@ -2241,7 +2242,7 @@ public class RecordsFragment extends BaseFragment implements
             } catch (Exception e) {
                 /* ignore */}
             isProcessingReceiverRegistered = false;
-            Log.d(TAG, "Processing state receivers unregistered.");
+            FLog.d(TAG, "Processing state receivers unregistered.");
         }
     }
 
@@ -2250,7 +2251,7 @@ public class RecordsFragment extends BaseFragment implements
                                                                                      // relevant here
         if (videoItem == null || videoItem.uri == null)
             return;
-        Log.d(TAG, "Fragment onVideoLongClick: " + videoItem.displayName);
+        FLog.d(TAG, "Fragment onVideoLongClick: " + videoItem.displayName);
 
         if (!isInSelectionMode) {
             enterSelectionMode(); // Enter selection mode on the FIRST long press
@@ -2299,11 +2300,11 @@ public class RecordsFragment extends BaseFragment implements
     private void confirmDeleteSelected() {
         vibrate();
         if (!isAdded() || getContext() == null || selectedUris.isEmpty()) {
-            Log.w(TAG, "confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
+            FLog.w(TAG, "confirmDeleteSelected called but cannot proceed (not attached, context null, or selection empty).");
             return;
         }
         int count = selectedUris.size();
-        Log.d(TAG, "Showing confirm delete bottom sheet for " + count + " items.");
+        FLog.d(TAG, "Showing confirm delete bottom sheet for " + count + " items.");
 
         // Title reflects count; helper contains the previous note text.
         String title = getResources().getString(R.string.dialog_multi_video_del_title) + " (" + count + ")";
@@ -2329,7 +2330,7 @@ public class RecordsFragment extends BaseFragment implements
     /** Updates Title, FABs based on whether selection mode is active */
     private void updateUiForSelectionMode() {
         if (!isAdded() || titleText == null || getActivity() == null) {
-            Log.w(TAG, "Cannot update selection UI - not ready");
+            FLog.w(TAG, "Cannot update selection UI - not ready");
             return;
         }
 
@@ -3571,12 +3572,12 @@ public class RecordsFragment extends BaseFragment implements
     private void deleteSelectedVideos() {
         final List<Uri> itemsToDeleteUris = new ArrayList<>(selectedUris);
         if (itemsToDeleteUris.isEmpty()) {
-            Log.d(TAG, "Deletion requested but selectedUris is empty.");
+            FLog.d(TAG, "Deletion requested but selectedUris is empty.");
             exitSelectionMode();
             return;
         }
 
-        Log.i(TAG, getString(R.string.delete_videos_log, itemsToDeleteUris.size()));
+        FLog.i(TAG, getString(R.string.delete_videos_log, itemsToDeleteUris.size()));
         exitSelectionMode();
 
         // Show progress dialog for batch deletion with count information
@@ -3601,7 +3602,7 @@ public class RecordsFragment extends BaseFragment implements
                         failCount++;
                     }
                 } else {
-                    Log.w(TAG, "Could not find VideoItem for URI: " + uri + " to move to trash.");
+                    FLog.w(TAG, "Could not find VideoItem for URI: " + uri + " to move to trash.");
                     failCount++;
                 }
             }
@@ -3611,13 +3612,13 @@ public class RecordsFragment extends BaseFragment implements
                 try {
                     com.fadcam.data.VideoIndexRepository.getInstance(requireContext())
                             .removeFromIndex(trashedUris);
-                    Log.d(TAG, "Removed " + trashedUris.size() + " trashed items from index");
+                    FLog.d(TAG, "Removed " + trashedUris.size() + " trashed items from index");
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to remove trashed items from index: " + e.getMessage());
+                    FLog.w(TAG, "Failed to remove trashed items from index: " + e.getMessage());
                 }
             }
 
-            Log.d(TAG, "BG Trash Operation Finished. Success: " + successCount + ", Fail: " + failCount);
+            FLog.d(TAG, "BG Trash Operation Finished. Success: " + successCount + ", Fail: " + failCount);
             // Post results and UI refresh back to main thread
             final int finalSuccessCount = successCount;
             final int finalFailCount = failCount;
@@ -3632,7 +3633,7 @@ public class RecordsFragment extends BaseFragment implements
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
 
                     // Perform a complete refresh of the data to ensure proper serial numbers
-                    Log.d(TAG, "Performing full refresh after deletion to update serial numbers");
+                    FLog.d(TAG, "Performing full refresh after deletion to update serial numbers");
                     if (recordsAdapter != null) {
                         recordsAdapter.clearCaches(); // Clear any cached data
                     }
@@ -3681,7 +3682,7 @@ public class RecordsFragment extends BaseFragment implements
 
         // Create a copy of videoItems to avoid concurrent modification issues
         List<VideoItem> itemsToTrash = new ArrayList<>(videoItems);
-        Log.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
+        FLog.i(TAG, "Moving all " + itemsToTrash.size() + " videos to trash...");
 
         // Show progress dialog for deleting all videos with count information
         onMoveToTrashStarted("all " + itemsToTrash.size() + " videos");
@@ -3703,7 +3704,7 @@ public class RecordsFragment extends BaseFragment implements
                         failCount++;
                     }
                 } else {
-                    Log.w(TAG, "Encountered a null item or item with null URI in deleteAllVideos list.");
+                    FLog.w(TAG, "Encountered a null item or item with null URI in deleteAllVideos list.");
                     failCount++;
                 }
             }
@@ -3713,9 +3714,9 @@ public class RecordsFragment extends BaseFragment implements
                 try {
                     com.fadcam.data.VideoIndexRepository.getInstance(requireContext())
                             .removeFromIndex(trashedUris);
-                    Log.d(TAG, "Removed " + trashedUris.size() + " trashed items from index (deleteAll)");
+                    FLog.d(TAG, "Removed " + trashedUris.size() + " trashed items from index (deleteAll)");
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to remove trashed items from index (deleteAll): " + e.getMessage());
+                    FLog.w(TAG, "Failed to remove trashed items from index (deleteAll): " + e.getMessage());
                 }
             }
 
@@ -3733,7 +3734,7 @@ public class RecordsFragment extends BaseFragment implements
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
 
                     // Perform a complete refresh of the data to ensure proper serial numbers
-                    Log.d(TAG, "Performing full refresh after deletion to update serial numbers");
+                    FLog.d(TAG, "Performing full refresh after deletion to update serial numbers");
                     if (recordsAdapter != null) {
                         recordsAdapter.clearCaches(); // Clear any cached data
                     }
@@ -3765,7 +3766,7 @@ public class RecordsFragment extends BaseFragment implements
     private boolean moveToTrashVideoItem(VideoItem videoItem) {
         Context context = getContext();
         if (context == null || videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
-            Log.e(TAG, "moveToTrashVideoItem: Invalid arguments (context, videoItem, URI, or displayName is null).");
+            FLog.e(TAG, "moveToTrashVideoItem: Invalid arguments (context, videoItem, URI, or displayName is null).");
             return false;
         }
 
@@ -3774,14 +3775,14 @@ public class RecordsFragment extends BaseFragment implements
         // Determine if it's an SAF source. Content URIs are typically from SAF.
         boolean isSafSource = "content".equals(uri.getScheme());
 
-        Log.i(TAG, "Attempting to move to trash: " + originalDisplayName + " (URI: " + uri + ", isSAF: " + isSafSource
+        FLog.i(TAG, "Attempting to move to trash: " + originalDisplayName + " (URI: " + uri + ", isSAF: " + isSafSource
                 + ")");
 
         if (TrashManager.moveToTrash(context, uri, originalDisplayName, isSafSource)) {
-            Log.i(TAG, "Successfully moved to trash: " + originalDisplayName);
+            FLog.i(TAG, "Successfully moved to trash: " + originalDisplayName);
             return true;
         } else {
-            Log.e(TAG, "Failed to move to trash: " + originalDisplayName);
+            FLog.e(TAG, "Failed to move to trash: " + originalDisplayName);
             // Optionally, show a specific toast for this failure if needed,
             // but batch operations will show a summary.
             // if(getActivity() != null) getActivity().runOnUiThread(() ->
@@ -3854,7 +3855,7 @@ public class RecordsFragment extends BaseFragment implements
                     boolean hide = false;
                     if (bundle.containsKey("hide_thumbnails"))
                         hide = bundle.getBoolean("hide_thumbnails", false);
-                    Log.d(TAG, "Records sidebar: hide_thumbnails_toggled = " + hide);
+                    FLog.d(TAG, "Records sidebar: hide_thumbnails_toggled = " + hide);
                     if (recordsAdapter != null) {
                         // Adapter will read prefs but force refresh
                         recordsAdapter.notifyDataSetChanged();
@@ -3894,7 +3895,7 @@ public class RecordsFragment extends BaseFragment implements
     // Updated sorting logic to work with List<VideoItem>
     private void performVideoSort() {
         if (videoItems == null || videoItems.isEmpty()) {
-            Log.w(TAG, "No items to sort.");
+            FLog.w(TAG, "No items to sort.");
             return;
         }
         sortItems(videoItems, currentSortOption);
@@ -3904,7 +3905,7 @@ public class RecordsFragment extends BaseFragment implements
             getActivity().runOnUiThread(() -> {
                 recordsAdapter.updateRecords(videoItems); // Update with the sorted list
                 recyclerView.scrollToPosition(0); // Scroll to top after sorting
-                Log.i(TAG, "Video list sorted by: " + currentSortOption);
+                FLog.i(TAG, "Video list sorted by: " + currentSortOption);
             });
         }
     }
@@ -3929,7 +3930,7 @@ public class RecordsFragment extends BaseFragment implements
                     break;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error during sorting", e);
+            FLog.e(TAG, "Error during sorting", e);
         }
     }
 
@@ -3972,17 +3973,17 @@ public class RecordsFragment extends BaseFragment implements
                     String filePath = intent.getStringExtra(Constants.INTENT_EXTRA_FILE_PATH);
                     int segmentNumber = intent.getIntExtra(Constants.INTENT_EXTRA_SEGMENT_NUMBER, -1);
 
-                    Log.i(TAG, "Received ACTION_RECORDING_SEGMENT_COMPLETE for segment " + segmentNumber);
+                    FLog.i(TAG, "Received ACTION_RECORDING_SEGMENT_COMPLETE for segment " + segmentNumber);
                     if (fileUriString != null) {
-                        Log.d(TAG, "Segment URI: " + fileUriString);
+                        FLog.d(TAG, "Segment URI: " + fileUriString);
                     } else if (filePath != null) {
-                        Log.d(TAG, "Segment Path: " + filePath);
+                        FLog.d(TAG, "Segment Path: " + filePath);
                     }
 
                     // Refresh the list of recordings to show the new segment
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
-                            Log.d(TAG, "Segment complete, reloading records list...");
+                            FLog.d(TAG, "Segment complete, reloading records list...");
                             loadRecordsList();
                             // Optionally, you could scroll to the new item if identifiable
                         });
@@ -3999,7 +4000,7 @@ public class RecordsFragment extends BaseFragment implements
                     ContextCompat.RECEIVER_NOT_EXPORTED);
         }
         isSegmentReceiverRegistered = true;
-        Log.d(TAG, "SegmentCompleteReceiver registered.");
+        FLog.d(TAG, "SegmentCompleteReceiver registered.");
     }
 
     private void unregisterSegmentCompleteReceiver() {
@@ -4007,9 +4008,9 @@ public class RecordsFragment extends BaseFragment implements
             try {
                 requireContext().unregisterReceiver(segmentCompleteReceiver);
                 isSegmentReceiverRegistered = false;
-                Log.d(TAG, "SegmentCompleteReceiver unregistered.");
+                FLog.d(TAG, "SegmentCompleteReceiver unregistered.");
             } catch (IllegalArgumentException e) {
-                Log.w(TAG, "Error unregistering SegmentCompleteReceiver: " + e.getMessage());
+                FLog.w(TAG, "Error unregistering SegmentCompleteReceiver: " + e.getMessage());
             }
         }
     }
@@ -4081,7 +4082,7 @@ public class RecordsFragment extends BaseFragment implements
             if (recordsAdapter != null) {
                 recordsAdapter.clearCaches();
             }
-            Log.i(TAG, "refreshList: Invalidated index, reloading records list.");
+            FLog.i(TAG, "refreshList: Invalidated index, reloading records list.");
             loadRecordsList();
         }
     }
@@ -4122,14 +4123,14 @@ public class RecordsFragment extends BaseFragment implements
                 try {
                     Glide.get(getContext()).clearDiskCache();
                 } catch (Exception e) {
-                    Log.e(TAG, "Error clearing Glide disk cache", e);
+                    FLog.e(TAG, "Error clearing Glide disk cache", e);
                 }
             }).start();
         }
 
         // Release references
         recordsAdapter = null;
-        Log.d(TAG, "Resources cleared in onDestroy");
+        FLog.d(TAG, "Resources cleared in onDestroy");
     }
 
     // Restore this important method that was removed
@@ -4146,7 +4147,7 @@ public class RecordsFragment extends BaseFragment implements
                 }
             });
             recyclerView.setLayoutManager(grid);
-            Log.d(TAG, "LayoutManager set to GridLayout with " + currentGridSpan + " columns");
+            FLog.d(TAG, "LayoutManager set to GridLayout with " + currentGridSpan + " columns");
         }
     }
 
@@ -4172,7 +4173,7 @@ public class RecordsFragment extends BaseFragment implements
     // Restore this important method
     private void updateUiVisibility() {
         if (getView() == null) {
-            Log.w(TAG, "LOG_UI_VISIBILITY: getView() is null. Cannot update UI visibility.");
+            FLog.w(TAG, "LOG_UI_VISIBILITY: getView() is null. Cannot update UI visibility.");
             return;
         }
         updateHeaderStats();
@@ -4180,24 +4181,24 @@ public class RecordsFragment extends BaseFragment implements
         boolean isEmpty;
         if (recordsAdapter != null) {
             isEmpty = recordsAdapter.getItemCount() == 0;
-            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter found. Item count: " + recordsAdapter.getItemCount() + ". Is empty: "
+            FLog.d(TAG, "LOG_UI_VISIBILITY: Adapter found. Item count: " + recordsAdapter.getItemCount() + ". Is empty: "
                     + isEmpty);
         } else {
             isEmpty = videoItems.isEmpty();
-            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter is NULL. videoItems list size: " + videoItems.size() + ". Is empty: "
+            FLog.d(TAG, "LOG_UI_VISIBILITY: Adapter is NULL. videoItems list size: " + videoItems.size() + ". Is empty: "
                     + isEmpty);
         }
 
         // While data is loading, don't flash empty state — keep recyclerView visible and
         // empty state hidden. The background thread will deliver data shortly.
         if (isEmpty && isLoading) {
-            Log.d(TAG, "LOG_UI_VISIBILITY: Adapter empty but still loading — suppressing empty state flash");
+            FLog.d(TAG, "LOG_UI_VISIBILITY: Adapter empty but still loading — suppressing empty state flash");
             if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
             if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
             return;
         }
 
-        Log.i(TAG, "LOG_UI_VISIBILITY: updateUiVisibility called. Final decision: isEmpty = " + isEmpty);
+        FLog.i(TAG, "LOG_UI_VISIBILITY: updateUiVisibility called. Final decision: isEmpty = " + isEmpty);
 
         if (isEmpty) {
             if (recyclerView != null)
@@ -4207,7 +4208,7 @@ public class RecordsFragment extends BaseFragment implements
             // Hide navigation FAB when empty
             if (fabScrollNavigation != null)
                 fabScrollNavigation.setVisibility(View.GONE);
-            Log.d(TAG, "LOG_UI_VISIBILITY: Showing empty state (Recycler GONE, Empty VISIBLE).");
+            FLog.d(TAG, "LOG_UI_VISIBILITY: Showing empty state (Recycler GONE, Empty VISIBLE).");
         } else {
             if (emptyStateContainer != null)
                 emptyStateContainer.setVisibility(View.GONE);
@@ -4215,11 +4216,11 @@ public class RecordsFragment extends BaseFragment implements
                 recyclerView.setVisibility(View.VISIBLE);
             // Update navigation FAB when videos are visible
             updateNavigationFab();
-            Log.d(TAG, "LOG_UI_VISIBILITY: Showing recycler view (Empty GONE, Recycler VISIBLE).");
+            FLog.d(TAG, "LOG_UI_VISIBILITY: Showing recycler view (Empty GONE, Recycler VISIBLE).");
         }
         if (loadingIndicator != null && loadingIndicator.getVisibility() == View.VISIBLE) {
             loadingIndicator.setVisibility(View.GONE);
-            Log.d(TAG, "LOG_UI_VISIBILITY: Loading indicator was visible, set to GONE.");
+            FLog.d(TAG, "LOG_UI_VISIBILITY: Loading indicator was visible, set to GONE.");
         }
     }
 
@@ -4431,7 +4432,7 @@ public class RecordsFragment extends BaseFragment implements
 
         if (lastVisible >= firstVisible) {
             recordsAdapter.notifyItemRangeChanged(firstVisible, lastVisible - firstVisible + 1);
-            Log.d(TAG, "updateVisibleArea: Updated items " + firstVisible + " to " + lastVisible);
+            FLog.d(TAG, "updateVisibleArea: Updated items " + firstVisible + " to " + lastVisible);
         }
     }
 
@@ -4478,7 +4479,7 @@ public class RecordsFragment extends BaseFragment implements
 
     @SuppressLint("NotifyDataSetChanged")
     private void loadRecordsList(boolean forceReload) {
-        Log.d(TAG, "loadRecordsList: start, storageMode=" + sharedPreferencesManager.getStorageMode()
+        FLog.d(TAG, "loadRecordsList: start, storageMode=" + sharedPreferencesManager.getStorageMode()
                 + ", activeFilter=" + activeFilter + ", forceReload=" + forceReload);
 
         // Guard against duplicate loads
@@ -4486,13 +4487,13 @@ public class RecordsFragment extends BaseFragment implements
             if (forceReload) {
                 pendingForcedRealtimeReload = true;
             }
-            Log.d(TAG, "loadRecordsList: already loading, skipping duplicate request");
+            FLog.d(TAG, "loadRecordsList: already loading, skipping duplicate request");
             return;
         }
 
         // Skip reload if we already have data and this is not the initial load
         if (!forceReload && !videoItems.isEmpty() && !isInitialLoad) {
-            Log.d(TAG, "loadRecordsList: already have " + videoItems.size() + " items, skipping");
+            FLog.d(TAG, "loadRecordsList: already have " + videoItems.size() + " items, skipping");
             isLoading = false;
             updateUiVisibility();
             drainPendingRealtimeRefresh();
@@ -4525,7 +4526,7 @@ public class RecordsFragment extends BaseFragment implements
         //  directly to adapter. RecyclerView stays invisible for ~26ms = imperceptible.
         // ═══════════════════════════════════════════════════════════════════════
         if (indexedCount > 0) {
-            Log.d(TAG, "loadRecordsList: DB fast path — " + indexedCount + " indexed, skipping skeleton");
+            FLog.d(TAG, "loadRecordsList: DB fast path — " + indexedCount + " indexed, skipping skeleton");
 
             // Ensure RecyclerView is visible but adapter is empty (no skeleton flash)
             if (recyclerView != null) recyclerView.setVisibility(View.VISIBLE);
@@ -4547,7 +4548,7 @@ public class RecordsFragment extends BaseFragment implements
                     totalItems = normalized.size();
 
                     long loadElapsed = System.currentTimeMillis() - loadStart;
-                    Log.i(TAG, "loadRecordsList: DB fast path — " + normalized.size() + " items in " + loadElapsed + "ms (no skeleton)");
+                    FLog.i(TAG, "loadRecordsList: DB fast path — " + normalized.size() + " items in " + loadElapsed + "ms (no skeleton)");
 
                     // Keep caches in sync
                     com.fadcam.utils.VideoSessionCache.updateSessionCache(normalized);
@@ -4589,7 +4590,7 @@ public class RecordsFragment extends BaseFragment implements
                                 List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
                                 sortItems(deltaNormalized, currentSortOption);
                                 totalItems = deltaNormalized.size();
-                                Log.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
+                                FLog.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
                                 com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
                                 new Handler(Looper.getMainLooper()).post(() -> {
                                     if (!isAdded()) return;
@@ -4598,19 +4599,19 @@ public class RecordsFragment extends BaseFragment implements
                                     applyActiveFilterToUi();
                                 });
                             } else {
-                                Log.d(TAG, "Delta scan: no changes detected");
+                                FLog.d(TAG, "Delta scan: no changes detected");
                             }
                         } catch (Exception e) {
-                            Log.w(TAG, "Delta scan failed (non-fatal): " + e.getMessage());
+                            FLog.w(TAG, "Delta scan failed (non-fatal): " + e.getMessage());
                         }
                     });
 
                     // ── Background: enrich durations ──
                     repository.startBackgroundEnrichment((uriString, durationMs) ->
-                        Log.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
+                        FLog.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
 
                 } catch (Exception e) {
-                    Log.e(TAG, "Error in loadRecordsList fast path", e);
+                    FLog.e(TAG, "Error in loadRecordsList fast path", e);
                     new Handler(Looper.getMainLooper()).post(() -> handleLoadingError());
                 }
             });
@@ -4621,7 +4622,7 @@ public class RecordsFragment extends BaseFragment implements
         //  COLD START PATH: DB is empty (first launch or after wipe).
         //  Show skeleton while full SAF scan runs in background.
         // ═══════════════════════════════════════════════════════════════════════
-        Log.d(TAG, "loadRecordsList: Cold start — DB empty, showing skeleton");
+        FLog.d(TAG, "loadRecordsList: Cold start — DB empty, showing skeleton");
         int estimatedCount = 12;
         if (recordsAdapter == null || !recordsAdapter.isSkeletonMode()) {
             showSkeletonLoading(estimatedCount);
@@ -4652,7 +4653,7 @@ public class RecordsFragment extends BaseFragment implements
                 totalItems = normalized.size();
 
                 long loadElapsed = System.currentTimeMillis() - loadStart;
-                Log.i(TAG, "loadRecordsList: Cold start — " + normalized.size() + " items ready in " + loadElapsed + "ms");
+                FLog.i(TAG, "loadRecordsList: Cold start — " + normalized.size() + " items ready in " + loadElapsed + "ms");
 
                 // Digital forensics indexing (non-blocking)
                 DigitalForensicsIndexCoordinator.getInstance(requireContext()).enqueueIndex(normalized);
@@ -4667,10 +4668,10 @@ public class RecordsFragment extends BaseFragment implements
 
                 // Background: enrich durations
                 repository.startBackgroundEnrichment((uriString, durationMs) ->
-                    Log.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
+                    FLog.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
 
             } catch (Exception e) {
-                Log.e(TAG, "Error in loadRecordsList", e);
+                FLog.e(TAG, "Error in loadRecordsList", e);
                 handleLoadingError();
             }
         });
@@ -4689,7 +4690,7 @@ public class RecordsFragment extends BaseFragment implements
                     return getSafRecordsListProgressive(treeUri, null);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error loading SAF videos", e);
+                FLog.e(TAG, "Error loading SAF videos", e);
             }
         }
 
@@ -4748,7 +4749,7 @@ public class RecordsFragment extends BaseFragment implements
         if (getActivity() == null)
             return;
 
-        Log.d(TAG, "updateUiWithVideos: Updating UI with " + newVideos.size() + " videos, isPartial=" + isPartial);
+        FLog.d(TAG, "updateUiWithVideos: Updating UI with " + newVideos.size() + " videos, isPartial=" + isPartial);
 
         getActivity().runOnUiThread(() -> {
             if (isPartial) {
@@ -5256,11 +5257,11 @@ public class RecordsFragment extends BaseFragment implements
         if (isScrollingDown) {
             // FAB shows down arrow - scroll to bottom
             recyclerView.smoothScrollToPosition(totalItemCount - 1);
-            Log.d(TAG, "Navigation FAB: Scrolling to bottom (user was scrolling down)");
+            FLog.d(TAG, "Navigation FAB: Scrolling to bottom (user was scrolling down)");
         } else {
             // FAB shows up arrow - scroll to top
             recyclerView.smoothScrollToPosition(0);
-            Log.d(TAG, "Navigation FAB: Scrolling to top (user was scrolling up)");
+            FLog.d(TAG, "Navigation FAB: Scrolling to top (user was scrolling up)");
         }
 
         // Update FAB icon after a short delay to reflect new position

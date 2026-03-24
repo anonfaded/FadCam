@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.annotation.objects;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -167,7 +169,7 @@ public class PathObject extends AnnotationObject {
                 }
             }
         } catch (NumberFormatException e) {
-            android.util.Log.e("PathObject", "Failed to parse SVG path data", e);
+            FLog.e("PathObject", "Failed to parse SVG path data", e);
         }
         
         return path;

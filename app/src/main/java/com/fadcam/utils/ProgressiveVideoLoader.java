@@ -1,7 +1,8 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
-import android.util.Log;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fadcam.ui.VideoItem;
@@ -53,17 +54,17 @@ public class ProgressiveVideoLoader {
      */
     public void startProgressiveLoading() {
         if (isLoading) {
-            Log.d(TAG, "Already loading - ignoring request");
+            FLog.d(TAG, "Already loading - ignoring request");
             return;
         }
         
         // Check if we have cached videos
         List<VideoItem> cachedVideos = VideoSessionCache.getSessionCachedVideos();
         if (!cachedVideos.isEmpty()) {
-            Log.d(TAG, "Using cached videos for progressive loading: " + cachedVideos.size());
+            FLog.d(TAG, "Using cached videos for progressive loading: " + cachedVideos.size());
             initializeWithVideos(cachedVideos);
         } else {
-            Log.d(TAG, "No cache - loading videos from storage");
+            FLog.d(TAG, "No cache - loading videos from storage");
             loadVideosFromStorage();
         }
     }
@@ -83,7 +84,7 @@ public class ProgressiveVideoLoader {
             listener.onInitialBatchLoaded(initialBatch, allVideos.size());
         }
         
-        Log.d(TAG, "Progressive loading initialized - loaded " + initialBatch.size() + 
+        FLog.d(TAG, "Progressive loading initialized - loaded " + initialBatch.size() + 
                    " of " + allVideos.size() + " videos");
     }
     
@@ -92,7 +93,7 @@ public class ProgressiveVideoLoader {
      */
     public void loadNextBatch() {
         if (isLoading || !hasMoreVideos) {
-            Log.d(TAG, "Cannot load next batch - loading: " + isLoading + ", hasMore: " + hasMoreVideos);
+            FLog.d(TAG, "Cannot load next batch - loading: " + isLoading + ", hasMore: " + hasMoreVideos);
             return;
         }
         
@@ -108,10 +109,10 @@ public class ProgressiveVideoLoader {
                     listener.onProgressiveBatchLoaded(nextBatch, hasMore);
                 }
                 
-                Log.d(TAG, "Loaded next batch: " + nextBatch.size() + " videos, hasMore: " + hasMore);
+                FLog.d(TAG, "Loaded next batch: " + nextBatch.size() + " videos, hasMore: " + hasMore);
                 
             } catch (Exception e) {
-                Log.e(TAG, "Error loading next batch", e);
+                FLog.e(TAG, "Error loading next batch", e);
             } finally {
                 setLoadingState(false);
             }
@@ -148,7 +149,7 @@ public class ProgressiveVideoLoader {
                 initializeWithVideos(new ArrayList<>());
                 
             } catch (Exception e) {
-                Log.e(TAG, "Error loading videos from storage", e);
+                FLog.e(TAG, "Error loading videos from storage", e);
             } finally {
                 setLoadingState(false);
             }
@@ -175,7 +176,7 @@ public class ProgressiveVideoLoader {
                 
                 // Load more when approaching end
                 if ((visibleItemCount + firstVisibleItem + PREFETCH_THRESHOLD) >= totalItemCount) {
-                    Log.d(TAG, "Scroll threshold reached - loading next batch");
+                    FLog.d(TAG, "Scroll threshold reached - loading next batch");
                     loadNextBatch();
                 }
             }
@@ -190,7 +191,7 @@ public class ProgressiveVideoLoader {
         currentLoadedIndex = 0;
         hasMoreVideos = true;
         setLoadingState(false);
-        Log.d(TAG, "Progressive loader reset");
+        FLog.d(TAG, "Progressive loader reset");
     }
     
     /**

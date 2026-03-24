@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
@@ -9,7 +11,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -104,14 +105,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     exportService = binder.getService();
                     exportServiceBound = true;
                     exportService.setServiceListener(exportServiceListener);
-                    Log.d(TAG, "ExportService bound");
+                    FLog.d(TAG, "ExportService bound");
                 }
 
                 @Override
                 public void onServiceDisconnected(android.content.ComponentName name) {
                     exportService = null;
                     exportServiceBound = false;
-                    Log.d(TAG, "ExportService unbound");
+                    FLog.d(TAG, "ExportService unbound");
                 }
             };
 
@@ -208,7 +209,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private final Runnable autoSaveRunnable = () -> {
         if (project != null && projectStorage != null) {
             projectStorage.save(project);
-            Log.d(TAG, "Project auto-saved");
+            FLog.d(TAG, "Project auto-saved");
         }
     };
 
@@ -249,7 +250,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 updatePlayheadPosition();
                 syncAudioPlayerWithPlayhead();
             } catch (Exception e) {
-                Log.e(TAG, "Error in updatePlayheadPosition", e);
+                FLog.e(TAG, "Error in updatePlayheadPosition", e);
             }
             playheadHandler.postDelayed(this, PLAYHEAD_UPDATE_INTERVAL_MS);
         }
@@ -294,7 +295,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (index < 0) {
             selectedClipIndex = -1;
             editorTimeline.setTimeline(project.getTimeline(), -1);
-            Log.d(TAG, "Deselected all segments");
+            FLog.d(TAG, "Deselected all segments");
             return;
         }
         
@@ -370,7 +371,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         refreshTotalTimeDisplay();
 
-        Log.d(TAG, "Selected segment " + index + "/" + count
+        FLog.d(TAG, "Selected segment " + index + "/" + count
                 + " id=" + clip.getId()
                 + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs()
                 + " isReselection=" + isReselection);
@@ -431,16 +432,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                 }
                 continueLoadFromSavedProject(playUri);
-                Log.d(TAG, "Editor opened saved project: " + projectId);
+                FLog.d(TAG, "Editor opened saved project: " + projectId);
                 return;
             }
-            Log.w(TAG, "Could not load saved project: " + projectId + ", falling back");
+            FLog.w(TAG, "Could not load saved project: " + projectId + ", falling back");
         }
 
         // Parse video URI from intent (new project)
         Uri videoUri = parseVideoUri();
         if (videoUri == null) {
-            Log.e(TAG, "No video URI provided");
+            FLog.e(TAG, "No video URI provided");
             Toast.makeText(this, R.string.faditor_error_no_video, Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -452,7 +453,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Check if video needs remuxing for seekable playback
         attemptRemuxAndLoad(videoUri);
 
-        Log.d(TAG, "Editor opened with: " + videoUri);
+        FLog.d(TAG, "Editor opened with: " + videoUri);
     }
 
     @Override
@@ -691,7 +692,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             @Override
             public void onAudioClipSelected(int audioIndex) {
-                Log.d(TAG, "Audio clip selected: " + audioIndex);
+                FLog.d(TAG, "Audio clip selected: " + audioIndex);
                 // Deselect video segment when audio clip is selected
                 if (audioIndex >= 0 && selectedClipIndex >= 0) {
                     // Keep video segment for player but visual deselection
@@ -710,13 +711,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                 }
                 // Real-time visual feedback during audio trim drag
-                Log.d(TAG, "Audio trim changed: index=" + audioIndex
+                FLog.d(TAG, "Audio trim changed: index=" + audioIndex
                         + " in=" + inPointMs + " out=" + outPointMs);
             }
 
             @Override
             public void onAudioTrimFinished(int audioIndex, long inPointMs, long outPointMs) {
-                Log.d(TAG, "Audio trim finished: index=" + audioIndex
+                FLog.d(TAG, "Audio trim finished: index=" + audioIndex
                         + " in=" + inPointMs + " out=" + outPointMs);
                 if (project == null) return;
                 AudioClip ac = project.getTimeline().getAudioClip(audioIndex);
@@ -834,14 +835,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
             // Already remuxed?
             if (remuxer.hasRemuxedVersion(sourceFile)) {
                 File remuxed = remuxer.getRemuxedFile(sourceFile);
-                Log.d(TAG, "Using cached remuxed file: " + remuxed.getName());
+                FLog.d(TAG, "Using cached remuxed file: " + remuxed.getName());
                 continueLoadWithUri(Uri.fromFile(remuxed), videoUri);
                 return;
             }
 
             // Show progress and remux async
             showRemuxProgress();
-            Log.i(TAG, "Remuxing fragmented MP4 for seekable preview…");
+            FLog.i(TAG, "Remuxing fragmented MP4 for seekable preview…");
 
             remuxer.remuxAsync(sourceFile, new FragmentedMp4Remuxer.RemuxCallback() {
                 @Override
@@ -849,11 +850,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         hideRemuxProgress();
                         if (success && outputPath != null) {
-                            Log.i(TAG, "Remux complete: " + outputPath);
+                            FLog.i(TAG, "Remux complete: " + outputPath);
                             continueLoadWithUri(
                                     Uri.fromFile(new File(outputPath)), videoUri);
                         } else {
-                            Log.w(TAG, "Remux failed, loading original (seeking may not work)");
+                            FLog.w(TAG, "Remux failed, loading original (seeking may not work)");
                             continueLoadWithUri(fileUri, videoUri);
                         }
                     });
@@ -923,10 +924,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         List<String> snapshots = new ArrayList<>();
         if (projectStorage.loadUndoHistory(project.getId(), descriptions, snapshots)) {
             undoManager.loadHistory(descriptions, snapshots);
-            Log.d(TAG, "Restored " + descriptions.size() + " undo history entries");
+            FLog.d(TAG, "Restored " + descriptions.size() + " undo history entries");
         }
 
-        Log.d(TAG, "Editor loaded saved project: " + project.getId()
+        FLog.d(TAG, "Editor loaded saved project: " + project.getId()
                 + ", clips=" + project.getTimeline().getClipCount()
                 + ", audioClips=" + project.getTimeline().getAudioClipCount());
     }
@@ -983,10 +984,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     : "/storage/" + storageId;
 
             String fullPath = mountPoint + "/" + relativePath;
-            Log.d(TAG, "resolveSafPath: storageId='" + storageId + "' → " + fullPath);
+            FLog.d(TAG, "resolveSafPath: storageId='" + storageId + "' → " + fullPath);
             return fullPath;
         } catch (Exception e) {
-            Log.w(TAG, "resolveSafPath failed for " + uri, e);
+            FLog.w(TAG, "resolveSafPath failed for " + uri, e);
             return null;
         }
     }
@@ -1011,7 +1012,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Get video duration
         long durationMs = getVideoDuration(videoUri);
         if (durationMs <= 0) {
-            Log.w(TAG, "Could not determine video duration, using fallback");
+            FLog.w(TAG, "Could not determine video duration, using fallback");
             durationMs = 60_000; // Fallback 1 minute
         }
 
@@ -1023,7 +1024,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Update total time display (project-wide duration)
         refreshTotalTimeDisplay();
 
-        Log.d(TAG, "Project created: duration=" + durationMs + "ms");
+        FLog.d(TAG, "Project created: duration=" + durationMs + "ms");
     }
 
     private void initPlayer() {
@@ -1083,7 +1084,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             updateAudioToolUI();
         }
 
-        Log.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
+        FLog.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
                 + "ms, in=" + clip.getInPointMs() + ", out=" + clip.getOutPointMs());
     }
 
@@ -1128,7 +1129,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         btnPlayPause.setText("pause");
                         syncAndPlayAudioPlayer();
                         playheadHandler.post(playheadUpdater);
-                        Log.d(TAG, "Play from audio-tail region: playhead=" + playheadMs + " videoEnd=" + videoEndMs);
+                        FLog.d(TAG, "Play from audio-tail region: playhead=" + playheadMs + " videoEnd=" + videoEndMs);
                     } else {
                         // CRITICAL: Ensure player position matches timeline playhead before play
                         // This fixes the "jumps to start" issue when resuming from a seeked position
@@ -1468,7 +1469,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                 });
 
-        Log.d(TAG, "Entered crop mode (saved: preset=" + preCropPreset
+        FLog.d(TAG, "Entered crop mode (saved: preset=" + preCropPreset
                 + ", bounds=[" + preCropLeft + "," + preCropTop
                 + "," + preCropRight + "," + preCropBottom + "])");
     }
@@ -1509,7 +1510,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
             // else keep "custom" preset with current bounds
             Toast.makeText(this, R.string.faditor_crop_applied, Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Crop applied: preset=" + clip.getCropPreset()
+            FLog.d(TAG, "Crop applied: preset=" + clip.getCropPreset()
                     + ", bounds=[" + clip.getCropLeft() + "," + clip.getCropTop()
                     + "," + clip.getCropRight() + "," + clip.getCropBottom() + "]");
         } else {
@@ -1517,7 +1518,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             clip.setCropPreset(preCropPreset);
             clip.setCustomCropBounds(preCropLeft, preCropTop, preCropRight, preCropBottom);
             Toast.makeText(this, R.string.faditor_crop_cancelled, Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Crop cancelled, reverted to: " + preCropPreset);
+            FLog.d(TAG, "Crop cancelled, reverted to: " + preCropPreset);
         }
 
         // Deactivate the overlay
@@ -1632,7 +1633,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // PlayerView with resize_mode="fit" centres the video
         playerView.post(() -> {
             android.graphics.RectF videoRect = computeVideoContentRect();
-            Log.d(TAG, "activateFreeCrop: videoRect=" + videoRect
+            FLog.d(TAG, "activateFreeCrop: videoRect=" + videoRect
                     + ", cropOverlay size=" + cropOverlay.getWidth() + "x" + cropOverlay.getHeight());
             cropOverlay.setVideoContentRect(videoRect);
 
@@ -1641,14 +1642,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     && (clip.getCropLeft() > 0 || clip.getCropTop() > 0
                     || clip.getCropRight() < 1 || clip.getCropBottom() < 1)) {
                 // Restore previous custom crop bounds
-                Log.d(TAG, "activateFreeCrop: restoring bounds ["
+                FLog.d(TAG, "activateFreeCrop: restoring bounds ["
                         + clip.getCropLeft() + "," + clip.getCropTop()
                         + "," + clip.getCropRight() + "," + clip.getCropBottom() + "]");
                 cropOverlay.activate(
                         clip.getCropLeft(), clip.getCropTop(),
                         clip.getCropRight(), clip.getCropBottom());
             } else {
-                Log.d(TAG, "activateFreeCrop: full frame (no prior custom bounds)");
+                FLog.d(TAG, "activateFreeCrop: full frame (no prior custom bounds)");
                 cropOverlay.activate();
             }
 
@@ -1674,7 +1675,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         float offsetX = playerView.getLeft();
         float offsetY = playerView.getTop();
 
-        Log.d(TAG, "computeVideoContentRect: playerView size=" + viewW + "x" + viewH
+        FLog.d(TAG, "computeVideoContentRect: playerView size=" + viewW + "x" + viewH
                 + ", offset=(" + offsetX + "," + offsetY + ")");
 
         // Try to get actual video dimensions
@@ -1684,7 +1685,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             int videoW = videoSize.width;
             int videoH = videoSize.height;
 
-            Log.d(TAG, "computeVideoContentRect: videoSize=" + videoW + "x" + videoH);
+            FLog.d(TAG, "computeVideoContentRect: videoSize=" + videoW + "x" + videoH);
 
             if (videoW > 0 && videoH > 0) {
                 float videoAspect = (float) videoW / videoH;
@@ -1705,13 +1706,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 float top = offsetY + (viewH - renderH) / 2f;
                 android.graphics.RectF result = new android.graphics.RectF(
                         left, top, left + renderW, top + renderH);
-                Log.d(TAG, "computeVideoContentRect: result=" + result);
+                FLog.d(TAG, "computeVideoContentRect: result=" + result);
                 return result;
             }
         }
 
         // Fallback: assume full view
-        Log.d(TAG, "computeVideoContentRect: FALLBACK to full view");
+        FLog.d(TAG, "computeVideoContentRect: FALLBACK to full view");
         return new android.graphics.RectF(offsetX, offsetY, offsetX + viewW, offsetY + viewH);
     }
 
@@ -1994,11 +1995,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         srcClip.setVolumeLevel(0f);
                         playerManager.setVolume(0f);
                         updateVolumeUI(0f, true);
-                        Log.i(TAG, "Auto-muted video clip after audio extraction: "
+                        FLog.i(TAG, "Auto-muted video clip after audio extraction: "
                                 + "audioMuted=" + srcClip.isAudioMuted()
                                 + ", volumeLevel=" + srcClip.getVolumeLevel());
                     } else {
-                        Log.w(TAG, "Could not auto-mute: getSelectedClip() returned null");
+                        FLog.w(TAG, "Could not auto-mute: getSelectedClip() returned null");
                     }
 
                     updateAudioToolUI();
@@ -2009,7 +2010,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 });
 
             } catch (Exception e) {
-                Log.e(TAG, "Audio extraction failed", e);
+                FLog.e(TAG, "Audio extraction failed", e);
                 runOnUiThread(() -> Toast.makeText(this,
                         R.string.faditor_audio_extract_failed, Toast.LENGTH_SHORT).show());
             }
@@ -2114,7 +2115,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return waveform;
 
         } catch (Exception e) {
-            Log.e(TAG, "Waveform generation failed", e);
+            FLog.e(TAG, "Waveform generation failed", e);
             return null;
         }
     }
@@ -2159,10 +2160,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     if (idx < audioPlayersReady.size()) {
                         audioPlayersReady.set(idx, true);
                     }
-                    Log.d(TAG, "AudioPlayer[" + idx + "] prepared, duration=" + p.getDuration() + "ms");
+                    FLog.d(TAG, "AudioPlayer[" + idx + "] prepared, duration=" + p.getDuration() + "ms");
                 });
                 mp.setOnErrorListener((p, what, extra) -> {
-                    Log.e(TAG, "AudioPlayer[" + idx + "] error: what=" + what + " extra=" + extra);
+                    FLog.e(TAG, "AudioPlayer[" + idx + "] error: what=" + what + " extra=" + extra);
                     if (idx < audioPlayersReady.size()) {
                         audioPlayersReady.set(idx, false);
                     }
@@ -2170,7 +2171,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 });
                 mp.prepareAsync();
             } catch (Exception e) {
-                Log.e(TAG, "Failed to prepare audio player[" + i + "]", e);
+                FLog.e(TAG, "Failed to prepare audio player[" + i + "]", e);
             }
         }
     }
@@ -2200,7 +2201,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     // Guard against seeking past the audio file's actual duration
                     int mediaDuration = mp.getDuration();
                     if (mediaDuration > 0 && seekPos >= mediaDuration) {
-                        Log.w(TAG, "AudioPlayer[" + i + "] seekPos=" + seekPos
+                        FLog.w(TAG, "AudioPlayer[" + i + "] seekPos=" + seekPos
                                 + " exceeds mediaDuration=" + mediaDuration + ", clamping");
                         seekPos = Math.max(0, mediaDuration - 100); // seek near end
                     }
@@ -2212,7 +2213,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     if (mp.isPlaying()) mp.pause();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "AudioPlayer[" + i + "] sync error", e);
+                FLog.e(TAG, "AudioPlayer[" + i + "] sync error", e);
             }
         }
     }
@@ -2247,7 +2248,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         long seekPos = ac.getInPointMs() + (playheadMs - audioStartMs);
                         int mediaDuration = mp.getDuration();
                         if (mediaDuration > 0 && seekPos >= mediaDuration) {
-                            Log.w(TAG, "AudioSync[" + i + "] seekPos=" + seekPos
+                            FLog.w(TAG, "AudioSync[" + i + "] seekPos=" + seekPos
                                     + " exceeds mediaDuration=" + mediaDuration + ", clamping");
                             seekPos = Math.max(0, mediaDuration - 100);
                         }
@@ -2262,7 +2263,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Audio sync[" + i + "] error", e);
+                FLog.e(TAG, "Audio sync[" + i + "] error", e);
             }
         }
     }
@@ -2509,7 +2510,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 public void onExportCompleted(@NonNull String outputPath,
                                               @NonNull ExportResult result) {
                     runOnUiThread(() -> {
-                        Log.d(TAG, "Export saved to: " + outputPath);
+                        FLog.d(TAG, "Export saved to: " + outputPath);
 
                         if (exportProgressPercent != null) exportProgressPercent.setText("100%");
                         if (exportProgressBar != null) exportProgressBar.setProgress(100);
@@ -2546,7 +2547,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         Toast.makeText(FaditorEditorActivity.this,
                                 getString(R.string.faditor_export_error, error.getMessage()),
                                 Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Export failed", error);
+                        FLog.e(TAG, "Export failed", error);
                     });
                 }
             };
@@ -2611,7 +2612,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // (e.g. 60 000 ms) while FFprobe reports the actual content duration
         // (e.g. 4 096 ms). We trust FFprobe for "longer" values.
         if (playerDurationMs < storedDuration && (storedDuration - playerDurationMs) > 500) {
-            Log.w(TAG, "Duration correction (shorter): stored=" + storedDuration
+            FLog.w(TAG, "Duration correction (shorter): stored=" + storedDuration
                     + "ms → ExoPlayer=" + playerDurationMs + "ms");
 
             clip.setSourceDurationMs(playerDurationMs);
@@ -2626,7 +2627,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             // Only update player's internal trim bounds (no seek, no playWhenReady change)
             playerManager.updateTrimEndOnly(playerDurationMs);
         } else {
-            Log.d(TAG, "Duration OK: stored=" + storedDuration
+            FLog.d(TAG, "Duration OK: stored=" + storedDuration
                     + "ms, ExoPlayer=" + playerDurationMs + "ms (keeping stored)");
         }
     }
@@ -2746,7 +2747,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 pauseAudioPlayer();
                 playheadMs = timelineEndMs;
                 updatePlayPauseButton(false);
-                Log.d(TAG, "Audio-tail ended at " + playheadMs + "ms");
+                FLog.d(TAG, "Audio-tail ended at " + playheadMs + "ms");
             }
 
             editorTimeline.setPlayheadPositionMs(playheadMs);
@@ -2782,7 +2783,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         audioTailStartMs = totalEffectiveMs();
                         audioTailStartWall = android.os.SystemClock.elapsedRealtime();
                         updatePlayPauseButton(true);
-                        Log.d(TAG, "Image: entering audio-tail");
+                        FLog.d(TAG, "Image: entering audio-tail");
                     } else {
                         // Last segment — set playhead to end
                         float endFraction = (float) clip.getOutPointMs() / sourceDuration;
@@ -2790,7 +2791,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         editorTimeline.setPlayheadFraction(endFraction);
                         long totalMs = timeline.getTotalDurationMs();
                         timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
-                        Log.d(TAG, "Image playback stopped at last segment end");
+                        FLog.d(TAG, "Image playback stopped at last segment end");
                     }
                 }
                 return;
@@ -2832,7 +2833,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         audioTailStartMs = totalEffectiveMs();
                         audioTailStartWall = android.os.SystemClock.elapsedRealtime();
                         updatePlayPauseButton(true);
-                        Log.d(TAG, "Entering audio-tail: videoEnd=" + audioTailStartMs
+                        FLog.d(TAG, "Entering audio-tail: videoEnd=" + audioTailStartMs
                                 + " timelineEnd=" + timelineEndMs);
                     } else {
                         // No audio beyond video — fully stop
@@ -2844,7 +2845,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         long totalMs = timeline.getTotalDurationMs();
                         timeCurrent.setText(TimeFormatter.formatAuto(totalMs));
                         updatePlayPauseButton(false);
-                        Log.d(TAG, "Playback stopped at last segment end");
+                        FLog.d(TAG, "Playback stopped at last segment end");
                     }
                 }
                 return;
@@ -2869,7 +2870,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * @param autoPlay      whether to start playback immediately
      */
     private void advanceToSegment(int nextIndex, boolean autoPlay) {
-        Log.d(TAG, "Auto-advancing to segment " + nextIndex);
+        FLog.d(TAG, "Auto-advancing to segment " + nextIndex);
 
         // Deactivate crop overlay when switching segments
         if (inCropMode) {
@@ -2957,7 +2958,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             });
             sheet.show(getSupportFragmentManager(), "export_confirm");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to show export confirmation, starting directly", e);
+            FLog.e(TAG, "Failed to show export confirmation, starting directly", e);
             startExportViaService();
         }
     }
@@ -3092,7 +3093,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             });
             sheet.show(getSupportFragmentManager(), "close_confirm");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to show close confirmation sheet, using dialog fallback", e);
+            FLog.e(TAG, "Failed to show close confirmation sheet, using dialog fallback", e);
             showCloseConfirmationDialog();
         }
     }
@@ -3151,11 +3152,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void restoreProjectFromSnapshot(@NonNull String projectJson) {
         FaditorProject restored = projectStorage.fromJson(projectJson);
         if (restored == null) {
-            Log.e(TAG, "Failed to restore project from snapshot");
+            FLog.e(TAG, "Failed to restore project from snapshot");
             return;
         }
         this.project = restored;
-        Log.d(TAG, "Project restored from snapshot, clips="
+        FLog.d(TAG, "Project restored from snapshot, clips="
                 + restored.getTimeline().getClipCount()
                 + ", audioClips=" + restored.getTimeline().getAudioClipCount());
     }
@@ -3238,7 +3239,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 projectStorage.saveUndoHistory(project.getId(), descriptions, snapshots);
             }
 
-            Log.d(TAG, "Project saved: " + project.getId());
+            FLog.d(TAG, "Project saved: " + project.getId());
         }
     }
 
@@ -3260,12 +3261,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (durationStr != null) {
                     double durationSec = Double.parseDouble(durationStr);
                     long durationMs = (long) (durationSec * 1000);
-                    Log.d(TAG, "Duration from FFprobe: " + durationMs + "ms");
+                    FLog.d(TAG, "Duration from FFprobe: " + durationMs + "ms");
                     return durationMs;
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "FFprobe duration failed", e);
+            FLog.e(TAG, "FFprobe duration failed", e);
         }
 
         // ── MediaMetadataRetriever fallback ──────────────────────
@@ -3293,11 +3294,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 long ms = Long.parseLong(durationStr);
-                Log.d(TAG, "Duration from MMR fallback: " + ms + "ms");
+                FLog.d(TAG, "Duration from MMR fallback: " + ms + "ms");
                 return ms;
             }
         } catch (Exception e) {
-            Log.e(TAG, "MMR duration failed", e);
+            FLog.e(TAG, "MMR duration failed", e);
         } finally {
             if (retriever != null) {
                 try { retriever.release(); } catch (Exception ignored) { }
@@ -3321,7 +3322,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (resolved != null) {
             java.io.File f = new java.io.File(resolved);
             if (f.exists() && f.canRead()) {
-                Log.d(TAG, "FFprobe using resolved path: " + resolved);
+                FLog.d(TAG, "FFprobe using resolved path: " + resolved);
                 return resolved;
             }
         }
@@ -3391,7 +3392,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 getContentResolver().takePersistableUriPermission(
                         imageUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } catch (SecurityException e) {
-                Log.w(TAG, "Could not take persistable URI permission", e);
+                FLog.w(TAG, "Could not take persistable URI permission", e);
             }
 
             Clip imageClip = new Clip(imageUri, IMAGE_CLIP_DURATION_MS);
@@ -3413,10 +3414,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
             saveProjectNow();
 
             Toast.makeText(this, R.string.faditor_asset_added, Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Image asset added at index " + insertIndex
+            FLog.d(TAG, "Image asset added at index " + insertIndex
                     + " duration=" + IMAGE_CLIP_DURATION_MS + "ms uri=" + imageUri);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to add image asset", e);
+            FLog.e(TAG, "Failed to add image asset", e);
             Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
         }
     }
@@ -3432,12 +3433,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 getContentResolver().takePersistableUriPermission(
                         videoUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } catch (SecurityException e) {
-                Log.w(TAG, "Could not take persistable URI permission", e);
+                FLog.w(TAG, "Could not take persistable URI permission", e);
             }
 
             long durationMs = getVideoDuration(videoUri);
             if (durationMs <= 0) {
-                Log.w(TAG, "Could not determine video duration for added asset");
+                FLog.w(TAG, "Could not determine video duration for added asset");
                 Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -3459,10 +3460,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
             saveProjectNow();
 
             Toast.makeText(this, R.string.faditor_asset_added, Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Video asset added at index " + insertIndex
+            FLog.d(TAG, "Video asset added at index " + insertIndex
                     + " duration=" + durationMs + "ms uri=" + videoUri);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to add video asset", e);
+            FLog.e(TAG, "Failed to add video asset", e);
             Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
         }
     }
@@ -3498,7 +3499,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             absoluteSplitMs = Math.max(clip.getInPointMs(),
                     Math.min(absoluteSplitMs, clip.getOutPointMs()));
 
-            Log.d(TAG, "splitAtPlayhead: playhead=" + playheadMs + " segStart=" + segStartMs
+            FLog.d(TAG, "splitAtPlayhead: playhead=" + playheadMs + " segStart=" + segStartMs
                     + " local=" + localEffectiveMs + " absoluteSplit=" + absoluteSplitMs);
 
             // Save reference to original clip before split
@@ -3532,7 +3533,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_split_success, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Log.e(TAG, "splitAtPlayhead failed", e);
+            FLog.e(TAG, "splitAtPlayhead failed", e);
             Toast.makeText(this, R.string.faditor_split_error, Toast.LENGTH_SHORT).show();
         }
     }
@@ -3617,7 +3618,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Log.e(TAG, "deleteSelectedSegment failed", e);
+            FLog.e(TAG, "deleteSelectedSegment failed", e);
         }
     }
 
@@ -3662,7 +3663,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_segment_duplicated, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Log.e(TAG, "duplicateSelectedSegment failed", e);
+            FLog.e(TAG, "duplicateSelectedSegment failed", e);
         }
     }
 }

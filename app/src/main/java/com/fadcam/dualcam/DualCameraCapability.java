@@ -1,12 +1,12 @@
 package com.fadcam.dualcam;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -139,7 +139,7 @@ public class DualCameraCapability {
                 return;
             }
 
-            Log.d(TAG, "Front camera ID: " + frontId + ", Back camera ID: " + backId);
+            FLog.d(TAG, "Front camera ID: " + frontId + ", Back camera ID: " + backId);
 
             // 2. Try the strict concurrent API if available (API 30+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -147,18 +147,18 @@ public class DualCameraCapability {
                     @SuppressWarnings("unchecked")
                     Set<Set<String>> concurrentSets = cameraManager.getConcurrentCameraIds();
                     if (concurrentSets != null && !concurrentSets.isEmpty()) {
-                        Log.d(TAG, "Concurrent camera sets reported: " + concurrentSets.size());
+                        FLog.d(TAG, "Concurrent camera sets reported: " + concurrentSets.size());
                         for (Set<String> cameraSet : concurrentSets) {
-                            Log.d(TAG, "  Set: " + cameraSet);
+                            FLog.d(TAG, "  Set: " + cameraSet);
                             if (cameraSet.contains(frontId) && cameraSet.contains(backId)) {
-                                Log.i(TAG, "✅ Concurrent API confirmed dual camera support");
+                                FLog.i(TAG, "✅ Concurrent API confirmed dual camera support");
                                 concurrentApiConfirmed = true;
                                 break;
                             }
                         }
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "getConcurrentCameraIds() call failed — proceeding with best-effort", e);
+                    FLog.w(TAG, "getConcurrentCameraIds() call failed — proceeding with best-effort", e);
                 }
             }
 
@@ -167,13 +167,13 @@ public class DualCameraCapability {
             cachedBackId = backId;
             cachedUnsupportedReason = null;
             cachedSupport = true;
-            Log.i(TAG, "✅ Dual camera available (concurrent API confirmed: " + concurrentApiConfirmed + ")");
+            FLog.i(TAG, "✅ Dual camera available (concurrent API confirmed: " + concurrentApiConfirmed + ")");
 
         } catch (CameraAccessException e) {
-            Log.e(TAG, "CameraAccessException during dual camera evaluation", e);
+            FLog.e(TAG, "CameraAccessException during dual camera evaluation", e);
             fail("Camera access error: " + e.getMessage());
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error during dual camera evaluation", e);
+            FLog.e(TAG, "Unexpected error during dual camera evaluation", e);
             fail("Unexpected error: " + e.getMessage());
         }
     }
@@ -196,7 +196,7 @@ public class DualCameraCapability {
                     return id;
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Error checking characteristics for camera " + id, e);
+                FLog.w(TAG, "Error checking characteristics for camera " + id, e);
             }
         }
         return null;
@@ -208,6 +208,6 @@ public class DualCameraCapability {
         cachedFrontId = null;
         cachedBackId = null;
         cachedUnsupportedReason = reason;
-        Log.d(TAG, "❌ Dual camera not supported: " + reason);
+        FLog.d(TAG, "❌ Dual camera not supported: " + reason);
     }
 }

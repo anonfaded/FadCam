@@ -1,7 +1,7 @@
 package com.fadcam.playback;
 
-import android.util.Log;
-
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -202,7 +202,7 @@ public class FragmentedMp4IndexBuilder {
         int videoTrackId = 0; // Video track ID from moov (0 = unknown)
 
         if (!file.exists() || !file.canRead()) {
-            Log.e(TAG, "File does not exist or is not readable: " + file.getPath());
+            FLog.e(TAG, "File does not exist or is not readable: " + file.getPath());
             return new FragmentIndex(fragments, 0, timescale);
         }
 
@@ -211,7 +211,7 @@ public class FragmentedMp4IndexBuilder {
             long position = 0;
             byte[] header = new byte[16]; // Buffer for atom headers
 
-            Log.d(TAG, "Starting fragment scan: file=" + file.getName() + ", length=" + fileLength);
+            FLog.d(TAG, "Starting fragment scan: file=" + file.getName() + ", length=" + fileLength);
 
             // First pass: find moov and get timescale and video track ID
             while (position < fileLength) {
@@ -234,7 +234,7 @@ public class FragmentedMp4IndexBuilder {
                 }
 
                 if (atomSize < 8) {
-                    Log.w(TAG, "Invalid atom size at position " + position);
+                    FLog.w(TAG, "Invalid atom size at position " + position);
                     break;
                 }
 
@@ -242,7 +242,7 @@ public class FragmentedMp4IndexBuilder {
                     MoovInfo moovInfo = readMoovInfo(raf, position, atomSize);
                     timescale = moovInfo.videoTimescale;
                     videoTrackId = moovInfo.videoTrackId;
-                    Log.d(TAG, "Found moov, timescale=" + timescale + ", videoTrackId=" + videoTrackId);
+                    FLog.d(TAG, "Found moov, timescale=" + timescale + ", videoTrackId=" + videoTrackId);
                 }
 
                 position += atomSize;
@@ -282,7 +282,7 @@ public class FragmentedMp4IndexBuilder {
                     long fragmentDurationUnits = readMoofFragmentDuration(raf, position, atomSize, timescale, videoTrackId);
                     long fragmentDurationUs = (fragmentDurationUnits * 1000000L) / timescale;
                     
-                    Log.d(TAG, "Found moof at " + position + ": fragmentDurationUnits=" + fragmentDurationUnits +
+                    FLog.d(TAG, "Found moof at " + position + ": fragmentDurationUnits=" + fragmentDurationUnits +
                           ", fragmentDurationUs=" + fragmentDurationUs);
 
                     // Find mdat size following moof
@@ -311,7 +311,7 @@ public class FragmentedMp4IndexBuilder {
                     entry.durationUs = fragmentDurationUs > 0 ? fragmentDurationUs : 2000000; // Default 2s
                     fragments.add(entry);
 
-                    Log.d(TAG, "Fragment #" + fragments.size() + " at " + position + ": timeUs=" + cumulativeDecodeTimeUs + 
+                    FLog.d(TAG, "Fragment #" + fragments.size() + " at " + position + ": timeUs=" + cumulativeDecodeTimeUs + 
                           " (" + (cumulativeDecodeTimeUs / 1000000.0) + "s), durationUs=" + entry.durationUs +
                           ", size=" + fragmentSize);
 
@@ -323,7 +323,7 @@ public class FragmentedMp4IndexBuilder {
             }
 
         } catch (IOException e) {
-            Log.e(TAG, "Error scanning file: " + e.getMessage(), e);
+            FLog.e(TAG, "Error scanning file: " + e.getMessage(), e);
         }
 
         // Calculate total duration
@@ -333,7 +333,7 @@ public class FragmentedMp4IndexBuilder {
             totalDurationUs = last.timeUs + last.durationUs;
         }
 
-        Log.d(TAG, "Index built: " + fragments.size() + " fragments, totalDuration=" + 
+        FLog.d(TAG, "Index built: " + fragments.size() + " fragments, totalDuration=" + 
               (totalDurationUs / 1000000.0) + "s");
 
         return new FragmentIndex(fragments, totalDurationUs, timescale);
@@ -354,7 +354,7 @@ public class FragmentedMp4IndexBuilder {
         int videoTrackId = 0;
         int trackNumber = 0; // Counter for track ID (1-based)
 
-        Log.d(TAG, "Scanning moov at " + moovPosition + ", size=" + moovSize);
+        FLog.d(TAG, "Scanning moov at " + moovPosition + ", size=" + moovSize);
 
         while (position < moovEnd) {
             raf.seek(position);
@@ -377,7 +377,7 @@ public class FragmentedMp4IndexBuilder {
                 break;
             }
 
-            Log.d(TAG, "  Found atom: " + atomName + " at " + position + ", size=" + atomSize);
+            FLog.d(TAG, "  Found atom: " + atomName + " at " + position + ", size=" + atomSize);
 
             if (atomType == TYPE_mvhd) {
                 // Read mvhd for movie timescale (fallback)
@@ -389,7 +389,7 @@ public class FragmentedMp4IndexBuilder {
                     } else {
                         mvhdTimescale = readUint32(header, 20);
                     }
-                    Log.d(TAG, "  mvhd version=" + version + ", timescale=" + mvhdTimescale);
+                    FLog.d(TAG, "  mvhd version=" + version + ", timescale=" + mvhdTimescale);
                 }
             } else if (atomType == TYPE_trak) {
                 // Track IDs are 1-based and assigned in order of trak appearance
@@ -404,7 +404,7 @@ public class FragmentedMp4IndexBuilder {
                     if (trackInfo.isVideo && videoTimescale == 0) {
                         videoTimescale = trackInfo.timescale;
                         videoTrackId = trackNumber;
-                        Log.d(TAG, "  Found VIDEO track: id=" + videoTrackId + ", timescale=" + videoTimescale);
+                        FLog.d(TAG, "  Found VIDEO track: id=" + videoTrackId + ", timescale=" + videoTimescale);
                     }
                 }
             }
@@ -416,7 +416,7 @@ public class FragmentedMp4IndexBuilder {
         long timescale = videoTimescale > 0 ? videoTimescale : 
                       (firstTrackTimescale > 0 ? firstTrackTimescale : 
                       (mvhdTimescale > 0 ? mvhdTimescale : 1000));
-        Log.d(TAG, "Using timescale: " + timescale + " (video=" + videoTimescale + 
+        FLog.d(TAG, "Using timescale: " + timescale + " (video=" + videoTimescale + 
               ", firstTrack=" + firstTrackTimescale + ", mvhd=" + mvhdTimescale + 
               "), videoTrackId=" + videoTrackId);
         
@@ -526,7 +526,7 @@ public class FragmentedMp4IndexBuilder {
                     } else {
                         info.timescale = readUint32(header, 20);
                     }
-                    Log.d(TAG, "    mdhd timescale=" + info.timescale);
+                    FLog.d(TAG, "    mdhd timescale=" + info.timescale);
                 }
             } else if (atomType == 0x68646C72) { // 'hdlr'
                 // Read hdlr for handler type
@@ -535,7 +535,7 @@ public class FragmentedMp4IndexBuilder {
                     // hdlr: version(1) + flags(3) + pre_defined(4) + handler_type(4)
                     int handlerType = readInt32(header, 8);
                     info.isVideo = (handlerType == HANDLER_vide);
-                    Log.d(TAG, "    hdlr handler=" + atomTypeToString(handlerType) + ", isVideo=" + info.isVideo);
+                    FLog.d(TAG, "    hdlr handler=" + atomTypeToString(handlerType) + ", isVideo=" + info.isVideo);
                 }
             }
 
@@ -595,7 +595,7 @@ public class FragmentedMp4IndexBuilder {
                     // Match against the video track ID we found in moov
                     if (trafInfo.trackId == targetVideoTrackId && videoTrackDuration == 0) {
                         videoTrackDuration = trafInfo.duration;
-                        Log.d(TAG, "  Using video traf (track " + trafInfo.trackId + ") duration: " + trafInfo.duration + " units");
+                        FLog.d(TAG, "  Using video traf (track " + trafInfo.trackId + ") duration: " + trafInfo.duration + " units");
                     }
                 }
             }
@@ -606,7 +606,7 @@ public class FragmentedMp4IndexBuilder {
         // Prefer video track duration, fall back to first track
         long result = videoTrackDuration > 0 ? videoTrackDuration : firstTrackDuration;
         if (result > 0 && videoTrackDuration == 0) {
-            Log.d(TAG, "  No video track found (targetId=" + targetVideoTrackId + "), using first traf duration: " + result + " units");
+            FLog.d(TAG, "  No video track found (targetId=" + targetVideoTrackId + "), using first traf duration: " + result + " units");
         }
         return result;
     }
@@ -698,7 +698,7 @@ public class FragmentedMp4IndexBuilder {
         int flags = ((data[1] & 0xFF) << 16) | ((data[2] & 0xFF) << 8) | (data[3] & 0xFF);
         long sampleCount = readUint32(data, 4);
 
-        Log.d(TAG, "    trun: version=" + version + ", flags=0x" + Integer.toHexString(flags) + 
+        FLog.d(TAG, "    trun: version=" + version + ", flags=0x" + Integer.toHexString(flags) + 
               ", sampleCount=" + sampleCount);
 
         // Check if sample_duration is present
@@ -713,7 +713,7 @@ public class FragmentedMp4IndexBuilder {
             // No per-sample duration - use default (typically from tfhd)
             // For Media3 fMP4, default is typically fragment_duration / sample_count
             // We'll use 2 seconds as fallback which matches the muxer config
-            Log.d(TAG, "    trun has no sample_duration flag, using default duration");
+            FLog.d(TAG, "    trun has no sample_duration flag, using default duration");
             return 0;
         }
 
@@ -758,7 +758,7 @@ public class FragmentedMp4IndexBuilder {
             remainingSamples -= samplesToRead;
         }
 
-        Log.d(TAG, "    trun total duration: " + totalDuration + " units (" + 
+        FLog.d(TAG, "    trun total duration: " + totalDuration + " units (" + 
               sampleCount + " samples)");
         return totalDuration;
     }

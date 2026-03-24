@@ -1,11 +1,12 @@
 package com.fadcam.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import com.fadcam.Constants;
 import com.fadcam.Utils;
 import java.io.File;
@@ -54,7 +55,7 @@ public class FileOperationManager {
     
     public void enqueueTask(FileOperationTask task) {
         taskQueue.offer(task);
-        Log.d(TAG, "Task enqueued: " + task);
+        FLog.d(TAG, "Task enqueued: " + task);
         processNextTask();
     }
     
@@ -82,7 +83,7 @@ public class FileOperationManager {
     }
     
     private void executeTask(FileOperationTask task) {
-        Log.d(TAG, "Starting task: " + task);
+        FLog.d(TAG, "Starting task: " + task);
         task.status = FileOperationTask.TaskStatus.IN_PROGRESS;
         notifyListener(listener -> listener.onTaskStarted(task));
         
@@ -104,11 +105,11 @@ public class FileOperationManager {
             
             task.status = FileOperationTask.TaskStatus.COMPLETED;
             task.endTime = System.currentTimeMillis();
-            Log.d(TAG, "Task completed: " + task);
+            FLog.d(TAG, "Task completed: " + task);
             notifyListener(listener -> listener.onTaskCompleted(task));
             
         } catch (Exception e) {
-            Log.e(TAG, "Task failed: " + task, e);
+            FLog.e(TAG, "Task failed: " + task, e);
             task.status = FileOperationTask.TaskStatus.FAILED;
             task.errorMessage = e.getMessage();
             task.endTime = System.currentTimeMillis();
@@ -146,7 +147,7 @@ public class FileOperationManager {
         try {
             task.totalBytes = getFileSize(task.sourceUri);
         } catch (Exception e) {
-            Log.w(TAG, "Could not get file size for progress tracking", e);
+            FLog.w(TAG, "Could not get file size for progress tracking", e);
         }
         
         // Copy file with progress tracking
@@ -173,7 +174,7 @@ public class FileOperationManager {
         
         // Scan file for media store
         Utils.scanFileWithMediaStore(context, destFile.getAbsolutePath());
-        Log.i(TAG, "File copied to: " + destFile.getAbsolutePath());
+        FLog.i(TAG, "File copied to: " + destFile.getAbsolutePath());
         
         // Handle move operation (delete original)
         if (moveFile) {
@@ -188,11 +189,11 @@ public class FileOperationManager {
             }
             
             if (!deleted) {
-                Log.w(TAG, "Could not delete original file: " + task.sourceUri);
+                FLog.w(TAG, "Could not delete original file: " + task.sourceUri);
                 throw new Exception("File copied but original could not be deleted");
             }
             
-            Log.i(TAG, "Original file deleted: " + task.sourceUri);
+            FLog.i(TAG, "Original file deleted: " + task.sourceUri);
         }
     }
     
@@ -212,7 +213,7 @@ public class FileOperationManager {
             throw new Exception("Could not delete file: " + task.sourceUri);
         }
         
-        Log.i(TAG, "File deleted: " + task.sourceUri);
+        FLog.i(TAG, "File deleted: " + task.sourceUri);
     }
     
     private long getFileSize(Uri uri) throws Exception {
@@ -226,7 +227,7 @@ public class FileOperationManager {
      * Execute restore operation (placeholder - actual implementation depends on specific requirements)
      */
     private void executeRestore(FileOperationTask task) throws Exception {
-        Log.d(TAG, "executeRestore: Starting restore for " + task.fileName);
+        FLog.d(TAG, "executeRestore: Starting restore for " + task.fileName);
         
         // Since restore operations are currently handled by TrashFragment directly,
         // this method serves as a placeholder for service notification purposes.
@@ -243,7 +244,7 @@ public class FileOperationManager {
         task.progress = 100;
         notifyListener(listener -> listener.onTaskProgress(task));
         
-        Log.d(TAG, "executeRestore: Completed restore placeholder for " + task.fileName);
+        FLog.d(TAG, "executeRestore: Completed restore placeholder for " + task.fileName);
     }
     
     private void notifyListener(ListenerCallback callback) {
@@ -252,7 +253,7 @@ public class FileOperationManager {
                 try {
                     callback.call(listener);
                 } catch (Exception e) {
-                    Log.e(TAG, "Error in listener callback", e);
+                    FLog.e(TAG, "Error in listener callback", e);
                 }
             });
         }

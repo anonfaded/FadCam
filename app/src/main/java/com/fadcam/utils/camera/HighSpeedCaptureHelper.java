@@ -1,10 +1,11 @@
 package com.fadcam.utils.camera;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 
@@ -44,13 +45,13 @@ public class HighSpeedCaptureHelper {
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                     
             if (map == null) {
-                Log.d(TAG, "Stream configuration map is null");
+                FLog.d(TAG, "Stream configuration map is null");
                 return false;
             }
             
             Size[] highSpeedSizes = map.getHighSpeedVideoSizes();
             if (highSpeedSizes == null || highSpeedSizes.length == 0) {
-                Log.d(TAG, "No high speed video sizes available");
+                FLog.d(TAG, "No high speed video sizes available");
                 return false;
             }
             
@@ -61,7 +62,7 @@ public class HighSpeedCaptureHelper {
                     for (Range<Integer> range : fpsRanges) {
                         if (range.getUpper() >= targetFrameRate) {
                             // Found a size/fps combination that supports our target
-                            Log.d(TAG, "High speed supported: " + size.getWidth() + "x" + 
+                            FLog.d(TAG, "High speed supported: " + size.getWidth() + "x" + 
                                   size.getHeight() + " at " + range);
                             return true;
                         }
@@ -69,10 +70,10 @@ public class HighSpeedCaptureHelper {
                 }
             }
             
-            Log.d(TAG, "No high-speed configuration found for " + targetFrameRate + " fps");
+            FLog.d(TAG, "No high-speed configuration found for " + targetFrameRate + " fps");
             return false;
         } catch (Exception e) {
-            Log.e(TAG, "Error checking high speed support", e);
+            FLog.e(TAG, "Error checking high speed support", e);
             return false;
         }
     }
@@ -150,7 +151,7 @@ public class HighSpeedCaptureHelper {
             
             return supportedSizes.get(0);
         } catch (Exception e) {
-            Log.e(TAG, "Error finding best high-speed size", e);
+            FLog.e(TAG, "Error finding best high-speed size", e);
             return null;
         }
     }
@@ -205,7 +206,7 @@ public class HighSpeedCaptureHelper {
             
             return bestRange;
         } catch (Exception e) {
-            Log.e(TAG, "Error finding best high-speed FPS range", e);
+            FLog.e(TAG, "Error finding best high-speed FPS range", e);
             return null;
         }
     }
@@ -240,7 +241,7 @@ public class HighSpeedCaptureHelper {
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                     
             if (map == null) {
-                Log.e(TAG, "Stream configuration map is null");
+                FLog.e(TAG, "Stream configuration map is null");
                 return builder; // Return basic builder
             }
             
@@ -248,11 +249,11 @@ public class HighSpeedCaptureHelper {
             // This is required for constrained high-speed sessions
             long frameDuration = 1_000_000_000L / targetFrameRate;
             builder.set(CaptureRequest.SENSOR_FRAME_DURATION, frameDuration);
-            Log.d(TAG, "Set SENSOR_FRAME_DURATION to " + frameDuration + " ns for " + targetFrameRate + "fps in high-speed request builder");
+            FLog.d(TAG, "Set SENSOR_FRAME_DURATION to " + frameDuration + " ns for " + targetFrameRate + "fps in high-speed request builder");
             
             return builder;
         } catch (Exception e) {
-            Log.e(TAG, "Error configuring high-speed request builder", e);
+            FLog.e(TAG, "Error configuring high-speed request builder", e);
             return null;
         }
     }

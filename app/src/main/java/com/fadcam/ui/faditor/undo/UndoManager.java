@@ -1,7 +1,7 @@
 package com.fadcam.ui.faditor.undo;
 
-import android.util.Log;
-
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -181,7 +181,7 @@ public class UndoManager {
             ((ArrayDeque<HistoryEntry>) undoStack).removeLast();
         }
 
-        Log.d(TAG, "Recorded: " + action.getDescription()
+        FLog.d(TAG, "Recorded: " + action.getDescription()
                 + " (undo=" + undoStack.size() + ", redo=0"
                 + ", snapshot=" + (snapshot != null) + ")");
         notifyListener();
@@ -200,7 +200,7 @@ public class UndoManager {
      */
     public boolean undo() {
         if (undoStack.isEmpty()) {
-            Log.d(TAG, "Nothing to undo");
+            FLog.d(TAG, "Nothing to undo");
             return false;
         }
 
@@ -214,18 +214,18 @@ public class UndoManager {
         if (entry.action != null) {
             // In-session: precise action-based undo
             entry.action.undo();
-            Log.d(TAG, "Undone (action): " + entry.description);
+            FLog.d(TAG, "Undone (action): " + entry.description);
         } else if (entry.snapshotBefore != null && snapshotRestorer != null) {
             // Loaded from disk: snapshot-based undo
             snapshotRestorer.restoreFromSnapshot(entry.snapshotBefore);
             // After snapshot restore, invalidate action refs on redo stack
             invalidateRedoActions();
-            Log.d(TAG, "Undone (snapshot): " + entry.description);
+            FLog.d(TAG, "Undone (snapshot): " + entry.description);
         }
 
         redoStack.push(entry);
 
-        Log.d(TAG, "(undo=" + undoStack.size() + ", redo=" + redoStack.size() + ")");
+        FLog.d(TAG, "(undo=" + undoStack.size() + ", redo=" + redoStack.size() + ")");
         notifyListener();
         return true;
     }
@@ -240,7 +240,7 @@ public class UndoManager {
      */
     public boolean redo() {
         if (redoStack.isEmpty()) {
-            Log.d(TAG, "Nothing to redo");
+            FLog.d(TAG, "Nothing to redo");
             return false;
         }
 
@@ -249,16 +249,16 @@ public class UndoManager {
         if (entry.action != null) {
             // In-session: precise action-based redo
             entry.action.execute();
-            Log.d(TAG, "Redone (action): " + entry.description);
+            FLog.d(TAG, "Redone (action): " + entry.description);
         } else if (entry.snapshotAfter != null && snapshotRestorer != null) {
             // Loaded from disk: snapshot-based redo
             snapshotRestorer.restoreFromSnapshot(entry.snapshotAfter);
-            Log.d(TAG, "Redone (snapshot): " + entry.description);
+            FLog.d(TAG, "Redone (snapshot): " + entry.description);
         }
 
         undoStack.push(entry);
 
-        Log.d(TAG, "(undo=" + undoStack.size() + ", redo=" + redoStack.size() + ")");
+        FLog.d(TAG, "(undo=" + undoStack.size() + ", redo=" + redoStack.size() + ")");
         notifyListener();
         return true;
     }
@@ -301,7 +301,7 @@ public class UndoManager {
     public void clear() {
         undoStack.clear();
         redoStack.clear();
-        Log.d(TAG, "History cleared");
+        FLog.d(TAG, "History cleared");
         notifyListener();
     }
 
@@ -345,7 +345,7 @@ public class UndoManager {
             HistoryEntry entry = new HistoryEntry(null, descriptions.get(i), snapshots.get(i));
             ((ArrayDeque<HistoryEntry>) undoStack).addLast(entry);
         }
-        Log.d(TAG, "Loaded " + count + " history entries from disk");
+        FLog.d(TAG, "Loaded " + count + " history entries from disk");
         notifyListener();
     }
 
@@ -362,7 +362,7 @@ public class UndoManager {
                 entry.action = null;
             }
         }
-        Log.d(TAG, "Invalidated action refs on redo stack (" + redoStack.size() + " entries)");
+        FLog.d(TAG, "Invalidated action refs on redo stack (" + redoStack.size() + " entries)");
     }
 
     private void notifyListener() {

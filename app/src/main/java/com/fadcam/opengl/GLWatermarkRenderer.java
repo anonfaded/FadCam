@@ -1,5 +1,7 @@
 package com.fadcam.opengl;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -16,7 +18,6 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.util.Log;
 import android.view.Surface;
 import android.opengl.EGLExt;
 
@@ -296,10 +297,10 @@ public class GLWatermarkRenderer {
             try {
                 renderToPreview();
             } catch (Exception e) {
-                Log.w(TAG, "Preview rendering failed in renderFrame", e);
+                FLog.w(TAG, "Preview rendering failed in renderFrame", e);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error in renderFrame", e);
+            FLog.e(TAG, "Error in renderFrame", e);
         }
     }
 
@@ -315,7 +316,7 @@ public class GLWatermarkRenderer {
             }
             if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
                 int err = EGL14.eglGetError();
-                Log.w(TAG, "renderPreviewOnlyFrame: eglMakeCurrent failed 0x" + Integer.toHexString(err));
+                FLog.w(TAG, "renderPreviewOnlyFrame: eglMakeCurrent failed 0x" + Integer.toHexString(err));
                 return;
             }
         }
@@ -332,13 +333,13 @@ public class GLWatermarkRenderer {
                 hasLatestTexMatrix = true;
             }
         } catch (Exception e) {
-            Log.w(TAG, "renderPreviewOnlyFrame: updateTexImage failed", e);
+            FLog.w(TAG, "renderPreviewOnlyFrame: updateTexImage failed", e);
             return;
         }
         try {
             renderToPreview();
         } catch (Exception e) {
-            Log.w(TAG, "renderPreviewOnlyFrame: preview render failed", e);
+            FLog.w(TAG, "renderPreviewOnlyFrame: preview render failed", e);
         }
     }
 
@@ -368,19 +369,19 @@ public class GLWatermarkRenderer {
         synchronized (renderLock) {
             // Check if we need to initialize or reinitialize EGL
             if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY) {
-                Log.e(TAG, "EGL not initialized, attempting to reinitialize");
+                FLog.e(TAG, "EGL not initialized, attempting to reinitialize");
                 try {
                     setupEGL();
-                    Log.d(TAG, "Successfully reinitialized EGL");
+                    FLog.d(TAG, "Successfully reinitialized EGL");
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to reinitialize EGL", e);
+                    FLog.e(TAG, "Failed to reinitialize EGL", e);
                     throw new IllegalStateException("EGL not initialized and reinitialization failed");
                 }
             }
 
             // Check if surface is valid and recreate if needed
             if (eglSurface == EGL14.EGL_NO_SURFACE || outputSurface == null) {
-                Log.e(TAG, "EGL surface is invalid, attempting to recreate");
+                FLog.e(TAG, "EGL surface is invalid, attempting to recreate");
                 try {
                     if (eglSurface != EGL14.EGL_NO_SURFACE) {
                         EGL14.eglDestroySurface(eglDisplay, eglSurface);
@@ -402,7 +403,7 @@ public class GLWatermarkRenderer {
                         throw new RuntimeException("Output surface is null");
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to recreate EGL surface", e);
+                    FLog.e(TAG, "Failed to recreate EGL surface", e);
                     throw new IllegalStateException("Failed to recreate EGL surface");
                 }
             }
@@ -415,11 +416,11 @@ public class GLWatermarkRenderer {
                         madeCurrentSuccessfully = true;
                     } else {
                         int error = EGL14.eglGetError();
-                        Log.e(TAG, "eglMakeCurrent failed with error " + error + ", attempt " + (attempt + 1));
+                        FLog.e(TAG, "eglMakeCurrent failed with error " + error + ", attempt " + (attempt + 1));
 
                         // If we get EGL_BAD_SURFACE, try recreating the surface
                         if (error == EGL14.EGL_BAD_SURFACE) {
-                            Log.d(TAG, "EGL_BAD_SURFACE detected, recreating surface");
+                            FLog.d(TAG, "EGL_BAD_SURFACE detected, recreating surface");
                             try {
                                 if (eglSurface != EGL14.EGL_NO_SURFACE) {
                                     EGL14.eglDestroySurface(eglDisplay, eglSurface);
@@ -431,18 +432,18 @@ public class GLWatermarkRenderer {
                                     eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, outputSurface,
                                             surfaceAttribs, 0);
                                     if (eglSurface != EGL14.EGL_NO_SURFACE) {
-                                        Log.d(TAG, "Successfully recreated EGL surface");
+                                        FLog.d(TAG, "Successfully recreated EGL surface");
                                     } else {
-                                        Log.e(TAG, "Failed to recreate EGL surface");
+                                        FLog.e(TAG, "Failed to recreate EGL surface");
                                     }
                                 }
                             } catch (Exception e) {
-                                Log.e(TAG, "Error recreating surface", e);
+                                FLog.e(TAG, "Error recreating surface", e);
                             }
                         }
                         // For EGL_BAD_ACCESS, try recreating the entire context
                         else if (error == EGL14.EGL_BAD_ACCESS && attempt < 2) {
-                            Log.d(TAG, "Trying to recover from EGL_BAD_ACCESS by releasing and recreating EGL");
+                            FLog.d(TAG, "Trying to recover from EGL_BAD_ACCESS by releasing and recreating EGL");
                             try {
                                 // Release current EGL resources
                                 EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
@@ -484,7 +485,7 @@ public class GLWatermarkRenderer {
                                 // Try again with the new context
                                 Thread.sleep(50); // Short delay to let things settle
                             } catch (Exception e) {
-                                Log.e(TAG, "Error during EGL recovery", e);
+                                FLog.e(TAG, "Error during EGL recovery", e);
                             }
                         } else {
                             // For other errors, just wait a bit and retry
@@ -496,7 +497,7 @@ public class GLWatermarkRenderer {
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Exception during eglMakeCurrent", e);
+                    FLog.e(TAG, "Exception during eglMakeCurrent", e);
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException ie) {
@@ -506,7 +507,7 @@ public class GLWatermarkRenderer {
             }
 
             if (!madeCurrentSuccessfully) {
-                Log.e(TAG, "renderToEncoder: eglMakeCurrent ultimately failed; skipping this frame");
+                FLog.e(TAG, "renderToEncoder: eglMakeCurrent ultimately failed; skipping this frame");
                 return; // Abort this frame gracefully instead of throwing
             }
 
@@ -539,13 +540,13 @@ public class GLWatermarkRenderer {
                         System.arraycopy(texMatrix, 0, latestTexMatrix, 0, texMatrix.length);
                         hasLatestTexMatrix = true;
                     } catch (Exception e) {
-                        Log.e(TAG, "Error updating texture image", e);
+                        FLog.e(TAG, "Error updating texture image", e);
                         return;
                     }
                 } else if (hasLatestTexMatrix) {
                     System.arraycopy(latestTexMatrix, 0, texMatrix, 0, texMatrix.length);
                 } else {
-                    Log.w(TAG, "renderToEncoder: stale frame requested but no cached matrix yet");
+                    FLog.w(TAG, "renderToEncoder: stale frame requested but no cached matrix yet");
                     return;
                 }
             } else {
@@ -555,7 +556,7 @@ public class GLWatermarkRenderer {
                         try {
                             frameSyncObject.wait(100);
                             if (!frameAvailable) {
-                                Log.w(TAG, "renderToEncoder: frame wait timed out");
+                                FLog.w(TAG, "renderToEncoder: frame wait timed out");
                                 return;
                             }
                         } catch (InterruptedException e) {
@@ -571,7 +572,7 @@ public class GLWatermarkRenderer {
                     System.arraycopy(texMatrix, 0, latestTexMatrix, 0, texMatrix.length);
                     hasLatestTexMatrix = true;
                 } catch (Exception e) {
-                    Log.e(TAG, "Error updating texture image", e);
+                    FLog.e(TAG, "Error updating texture image", e);
                     return;
                 }
             }
@@ -603,7 +604,7 @@ public class GLWatermarkRenderer {
                 EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeNanos);
 
             } catch (Exception e) {
-                Log.e(TAG, "Error setting presentation time", e);
+                FLog.e(TAG, "Error setting presentation time", e);
                 // Continue anyway
             }
 
@@ -662,21 +663,21 @@ public class GLWatermarkRenderer {
 
                     // If we get EGL_BAD_SURFACE, mark the surface as invalid for next time
                     if (error == EGL14.EGL_BAD_SURFACE) {
-                        Log.e(TAG, "eglSwapBuffers failed with EGL_BAD_SURFACE, marking surface for recreation");
+                        FLog.e(TAG, "eglSwapBuffers failed with EGL_BAD_SURFACE, marking surface for recreation");
                         if (eglSurface != EGL14.EGL_NO_SURFACE) {
                             try {
                                 EGL14.eglDestroySurface(eglDisplay, eglSurface);
                             } catch (Exception e) {
-                                Log.e(TAG, "Error destroying bad surface", e);
+                                FLog.e(TAG, "Error destroying bad surface", e);
                             }
                             eglSurface = EGL14.EGL_NO_SURFACE;
                         }
                     } else {
-                        Log.e(TAG, "eglSwapBuffers failed with error " + error);
+                        FLog.e(TAG, "eglSwapBuffers failed with error " + error);
                     }
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error during drawing or buffer swap", e);
+                FLog.e(TAG, "Error during drawing or buffer swap", e);
             }
         }
     }
@@ -707,19 +708,19 @@ public class GLWatermarkRenderer {
                     previewEglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, currentPreviewSurface,
                             surfaceAttribs, 0);
                     if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
-                        Log.e(TAG, "Failed to create EGL surface for preview");
+                        FLog.e(TAG, "Failed to create EGL surface for preview");
                         // Backoff a bit before next attempt
                         previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L; // 200ms
                         return;
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Exception creating EGL surface for preview", e);
+                    FLog.e(TAG, "Exception creating EGL surface for preview", e);
                     previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
                     return;
                 }
             }
             if (!EGL14.eglMakeCurrent(eglDisplay, previewEglSurface, previewEglSurface, eglContext)) {
-                Log.w(TAG, "renderToPreview: eglMakeCurrent failed, releasing preview surface");
+                FLog.w(TAG, "renderToPreview: eglMakeCurrent failed, releasing preview surface");
                 releasePreviewEGL();
                 previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
                 return;
@@ -813,7 +814,7 @@ public class GLWatermarkRenderer {
                 Matrix.setIdentityM(texMatrix, 0);
             }
             if (oesTextureId == 0) {
-                Log.w(TAG, "OES texture ID is 0, skipping preview draw");
+                FLog.w(TAG, "OES texture ID is 0, skipping preview draw");
                 return;
             }
 
@@ -874,13 +875,13 @@ public class GLWatermarkRenderer {
             boolean swapOk = EGL14.eglSwapBuffers(eglDisplay, previewEglSurface);
             if (!swapOk) {
                 int error = EGL14.eglGetError();
-                Log.w(TAG, "Preview eglSwapBuffers failed: 0x" + Integer.toHexString(error));
+                FLog.w(TAG, "Preview eglSwapBuffers failed: 0x" + Integer.toHexString(error));
                 if (error == EGL14.EGL_BAD_SURFACE) {
                     // Force recreate next time
                     try {
                         EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
                     } catch (Exception e) {
-                        Log.w(TAG, "Error destroying bad preview surface", e);
+                        FLog.w(TAG, "Error destroying bad preview surface", e);
                     }
                     previewEglSurface = EGL14.EGL_NO_SURFACE;
                 }
@@ -1037,7 +1038,7 @@ public class GLWatermarkRenderer {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to ensure EGL current for watermark update", e);
+            FLog.w(TAG, "Failed to ensure EGL current for watermark update", e);
         }
         applyWatermarkAndOverlayPayload(text);
     }
@@ -1366,7 +1367,7 @@ public class GLWatermarkRenderer {
     private void drawOESTexture(float[] mvpMatrix, float[] texMatrix) {
         try {
             if (released || oesTextureId == 0) {
-                Log.w(TAG, "drawOESTexture: Renderer released or OES texture invalid, skipping draw");
+                FLog.w(TAG, "drawOESTexture: Renderer released or OES texture invalid, skipping draw");
                 return;
             }
             // Check if texture is valid before drawing
@@ -1378,7 +1379,7 @@ public class GLWatermarkRenderer {
                     long nowMs = System.currentTimeMillis();
                     // Rate-limit: log at most once every 2000ms unless verbose enabled
                     if (VERBOSE_GL_LOGS || nowMs - lastNoExternalTextureWarnMs > 2000) {
-                        Log.w(TAG, "No external texture bound, attempting to rebind");
+                        FLog.w(TAG, "No external texture bound, attempting to rebind");
                         lastNoExternalTextureWarnMs = nowMs;
                     }
                     warnedNoExternalTexture = true;
@@ -1389,10 +1390,10 @@ public class GLWatermarkRenderer {
                     // Clear any existing GL errors
                     int error = GLES20.glGetError();
                     if (error != GLES20.GL_NO_ERROR) {
-                        Log.w(TAG, "Cleared GL error when binding texture: 0x" + Integer.toHexString(error));
+                        FLog.w(TAG, "Cleared GL error when binding texture: 0x" + Integer.toHexString(error));
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error rebinding texture", e);
+                    FLog.e(TAG, "Error rebinding texture", e);
                     return;
                 }
             } else {
@@ -1402,7 +1403,7 @@ public class GLWatermarkRenderer {
             // Clear any existing GL errors before drawing
             int error = GLES20.glGetError();
             if (error != GLES20.GL_NO_ERROR) {
-                Log.w(TAG, "Clearing GL error before drawing: 0x" + Integer.toHexString(error));
+                FLog.w(TAG, "Clearing GL error before drawing: 0x" + Integer.toHexString(error));
             }
             if (mFullFrameBlit != null) {
                 try {
@@ -1422,7 +1423,7 @@ public class GLWatermarkRenderer {
                                 // Only log when exposure value actually changes
                                 if (Float.isNaN(lastLoggedExposureCompensation) || 
                                     Math.abs(currentExposureCompensation - lastLoggedExposureCompensation) > 0.001f) {
-                                    Log.d(TAG, "Set exposure compensation to Grafika shader: " + currentExposureCompensation);
+                                    FLog.d(TAG, "Set exposure compensation to Grafika shader: " + currentExposureCompensation);
                                     lastLoggedExposureCompensation = currentExposureCompensation;
                                 }
                             }
@@ -1434,27 +1435,27 @@ public class GLWatermarkRenderer {
                             GLES20.glUseProgram(currentProgram);
                             error = GLES20.glGetError();
                             if (error != GLES20.GL_NO_ERROR) {
-                                Log.w(TAG, "Cleared GL error after matrix setup: 0x" + Integer.toHexString(error));
+                                FLog.w(TAG, "Cleared GL error after matrix setup: 0x" + Integer.toHexString(error));
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, "Error setting MVP matrix", e);
+                            FLog.e(TAG, "Error setting MVP matrix", e);
                         }
                     }
                     try {
                         mFullFrameBlit.drawFrame(oesTextureId, texMatrix);
                     } catch (RuntimeException e) {
-                        Log.e(TAG, "Error with mFullFrameBlit, trying fallback method", e);
+                        FLog.e(TAG, "Error with mFullFrameBlit, trying fallback method", e);
                         drawWithFallbackMethod(mvpMatrix, texMatrix);
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error in mFullFrameBlit drawing", e);
+                    FLog.e(TAG, "Error in mFullFrameBlit drawing", e);
                     drawWithFallbackMethod(mvpMatrix, texMatrix);
                 }
             } else {
                 drawWithFallbackMethod(mvpMatrix, texMatrix);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error in drawOESTexture", e);
+            FLog.e(TAG, "Error in drawOESTexture", e);
         }
     }
 
@@ -1466,7 +1467,7 @@ public class GLWatermarkRenderer {
             // Clear any existing errors
             int error = GLES20.glGetError();
             if (error != GLES20.GL_NO_ERROR) {
-                Log.w(TAG, "Clearing GL error before fallback: 0x" + Integer.toHexString(error));
+                FLog.w(TAG, "Clearing GL error before fallback: 0x" + Integer.toHexString(error));
             }
 
             // Use the basic shader program
@@ -1499,7 +1500,7 @@ public class GLWatermarkRenderer {
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
             GLES20.glUseProgram(0);
         } catch (Exception e) {
-            Log.e(TAG, "Error in fallback drawing method", e);
+            FLog.e(TAG, "Error in fallback drawing method", e);
         }
     }
 
@@ -1528,14 +1529,14 @@ public class GLWatermarkRenderer {
                     }
                     mFullFrameBlit.drawFrame(textureId, texMatrix);
                 } catch (Exception e) {
-                    Log.w(TAG, "drawOESTextureWithId: grafika draw failed, using fallback", e);
+                    FLog.w(TAG, "drawOESTextureWithId: grafika draw failed, using fallback", e);
                     drawWithFallbackMethodId(textureId, mvpMatrix, texMatrix);
                 }
             } else {
                 drawWithFallbackMethodId(textureId, mvpMatrix, texMatrix);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error in drawOESTextureWithId", e);
+            FLog.e(TAG, "Error in drawOESTextureWithId", e);
         }
     }
 
@@ -1561,7 +1562,7 @@ public class GLWatermarkRenderer {
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
             GLES20.glUseProgram(0);
         } catch (Exception e) {
-            Log.e(TAG, "Error in drawWithFallbackMethodId", e);
+            FLog.e(TAG, "Error in drawWithFallbackMethodId", e);
         }
     }
 
@@ -1713,7 +1714,7 @@ public class GLWatermarkRenderer {
         final int[] compileStatus = new int[1];
         GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
         if (compileStatus[0] == 0) {
-            Log.e(TAG, "Error compiling shader: " + GLES20.glGetShaderInfoLog(shader));
+            FLog.e(TAG, "Error compiling shader: " + GLES20.glGetShaderInfoLog(shader));
             GLES20.glDeleteShader(shader);
             shader = 0;
         }
@@ -1735,7 +1736,7 @@ public class GLWatermarkRenderer {
                     }
                     EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
                 } catch (Exception e) {
-                    Log.w(TAG, "Error destroying old preview EGLSurface", e);
+                    FLog.w(TAG, "Error destroying old preview EGLSurface", e);
                 }
                 previewEglSurface = EGL14.EGL_NO_SURFACE;
             }
@@ -1757,7 +1758,7 @@ public class GLWatermarkRenderer {
                     }
                     EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
                 } catch (Exception e) {
-                    Log.w(TAG, "Error destroying preview EGLSurface", e);
+                    FLog.w(TAG, "Error destroying preview EGLSurface", e);
                 }
                 previewEglSurface = EGL14.EGL_NO_SURFACE;
             }
@@ -1769,19 +1770,19 @@ public class GLWatermarkRenderer {
     public void release() {
         synchronized (renderLock) {
             if (released) {
-                Log.d(TAG, "release called more than once; ignoring");
+                FLog.d(TAG, "release called more than once; ignoring");
                 return;
             }
             released = true;
             try {
                 releaseEGLResources();
             } catch (Exception e) {
-                Log.e(TAG, "Exception during releaseEGLResources", e);
+                FLog.e(TAG, "Exception during releaseEGLResources", e);
             }
             try {
                 releasePreviewEGL();
             } catch (Exception e) {
-                Log.e(TAG, "Exception during releasePreviewEGL", e);
+                FLog.e(TAG, "Exception during releasePreviewEGL", e);
             }
             // Release PiP resources
             releasePipResources();
@@ -1858,7 +1859,7 @@ public class GLWatermarkRenderer {
         // Initialize PiP MVP matrix to identity (encoder renders without transformation)
         Matrix.setIdentityM(pipMvpMatrix, 0);
 
-        Log.d(TAG, "PiP initialized: " + config);
+        FLog.d(TAG, "PiP initialized: " + config);
     }
 
     /**
@@ -1878,7 +1879,7 @@ public class GLWatermarkRenderer {
      */
     public void swapCameras() {
         camerasSwapped = !camerasSwapped;
-        Log.d(TAG, "Cameras swapped: " + camerasSwapped);
+        FLog.d(TAG, "Cameras swapped: " + camerasSwapped);
     }
 
     /**
@@ -1889,7 +1890,7 @@ public class GLWatermarkRenderer {
     public void updatePipConfig(@NonNull DualCameraConfig newConfig) {
         this.pipConfig = newConfig;
         computePipGeometry();
-        Log.d(TAG, "PiP config updated: " + newConfig);
+        FLog.d(TAG, "PiP config updated: " + newConfig);
     }
 
     /**
@@ -1963,7 +1964,7 @@ public class GLWatermarkRenderer {
         pipBorderColorHandle = GLES20.glGetUniformLocation(pipProgram, "uBorderColor");
         pipAspectRatioHandle = GLES20.glGetUniformLocation(pipProgram, "uAspectRatio");
 
-        Log.d(TAG, "PiP shader program created: " + pipProgram);
+        FLog.d(TAG, "PiP shader program created: " + pipProgram);
     }
 
     /**
@@ -2044,7 +2045,7 @@ public class GLWatermarkRenderer {
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         pipVertexBuffer.put(pipVerts).position(0);
 
-        Log.d(TAG, String.format("PiP geometry: NDC[%.2f,%.2f → %.2f,%.2f] size=%.0f%%",
+        FLog.d(TAG, String.format("PiP geometry: NDC[%.2f,%.2f → %.2f,%.2f] size=%.0f%%",
                 left, bottom, right, top, pipWidthFraction * 100));
     }
 
@@ -2149,11 +2150,11 @@ public class GLWatermarkRenderer {
     private void releasePipResources() {
         pipEnabled = false;
         if (pipCameraInputSurface != null) {
-            try { pipCameraInputSurface.release(); } catch (Exception e) { Log.w(TAG, "Error releasing PiP surface", e); }
+            try { pipCameraInputSurface.release(); } catch (Exception e) { FLog.w(TAG, "Error releasing PiP surface", e); }
             pipCameraInputSurface = null;
         }
         if (pipSurfaceTexture != null) {
-            try { pipSurfaceTexture.release(); } catch (Exception e) { Log.w(TAG, "Error releasing PiP SurfaceTexture", e); }
+            try { pipSurfaceTexture.release(); } catch (Exception e) { FLog.w(TAG, "Error releasing PiP SurfaceTexture", e); }
             pipSurfaceTexture = null;
         }
         if (pipOesTextureId != 0) {
@@ -2185,7 +2186,7 @@ public class GLWatermarkRenderer {
             try {
                 pipSurfaceTexture.updateTexImage();
             } catch (Exception e) {
-                Log.w(TAG, "Error updating PiP texture", e);
+                FLog.w(TAG, "Error updating PiP texture", e);
             }
         }
     }
@@ -2198,7 +2199,7 @@ public class GLWatermarkRenderer {
 
     public void setSurfaceDimensions(int width, int height) {
         if (mSurfaceWidth != width || mSurfaceHeight != height) {
-            Log.d(TAG, "Surface dimensions updated: " + width + "x" + height);
+            FLog.d(TAG, "Surface dimensions updated: " + width + "x" + height);
             mSurfaceWidth = width;
             mSurfaceHeight = height;
             updateMatrices();
@@ -2289,7 +2290,7 @@ public class GLWatermarkRenderer {
     public void setExposureCompensation(float evStops) {
         // Clamp to reasonable range to prevent shader overflow
         currentExposureCompensation = Math.max(-4.0f, Math.min(4.0f, evStops));
-        Log.d(TAG, "GL exposure compensation set to " + currentExposureCompensation + " EV stops");
+        FLog.d(TAG, "GL exposure compensation set to " + currentExposureCompensation + " EV stops");
     }
 
     public void setFrontVideoMirrorEnabled(boolean enabled) {
@@ -2297,7 +2298,7 @@ public class GLWatermarkRenderer {
             return;
         }
         frontVideoMirrorEnabled = enabled;
-        Log.d(TAG, "Flip video changed: enabled=" + enabled + ", sensorOrientation=" + sensorOrientation
+        FLog.d(TAG, "Flip video changed: enabled=" + enabled + ", sensorOrientation=" + sensorOrientation
                 + ", deviceOrientation=" + deviceOrientation + ", frontCamera=" + isFrontCamera());
         updateMatrices();
     }
@@ -2311,12 +2312,12 @@ public class GLWatermarkRenderer {
      */
     public void updateEncoderSurface(Surface newSurface) {
         if (newSurface == null) {
-            Log.e(TAG, "Cannot update encoder surface with null surface");
+            FLog.e(TAG, "Cannot update encoder surface with null surface");
             return;
         }
 
         synchronized (renderLock) {
-            Log.d(TAG, "Updating encoder output surface");
+            FLog.d(TAG, "Updating encoder output surface");
 
             // Save the new surface
             this.outputSurface = newSurface;
@@ -2341,22 +2342,22 @@ public class GLWatermarkRenderer {
                             surfaceAttribs, 0);
 
                     if (eglSurface == EGL14.EGL_NO_SURFACE) {
-                        Log.e(TAG, "Failed to create new EGL surface for encoder");
+                        FLog.e(TAG, "Failed to create new EGL surface for encoder");
                         return;
                     }
 
                     // Make the new surface current
                     if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-                        Log.e(TAG, "Failed to make new encoder surface current");
+                        FLog.e(TAG, "Failed to make new encoder surface current");
                         return;
                     }
 
-                    Log.d(TAG, "Successfully updated encoder EGL surface");
+                    FLog.d(TAG, "Successfully updated encoder EGL surface");
                 } catch (Exception e) {
-                    Log.e(TAG, "Error updating encoder surface", e);
+                    FLog.e(TAG, "Error updating encoder surface", e);
                 }
             } else {
-                Log.d(TAG, "EGL not initialized yet, just updating surface reference");
+                FLog.d(TAG, "EGL not initialized yet, just updating surface reference");
             }
         }
     }
@@ -2376,7 +2377,7 @@ public class GLWatermarkRenderer {
         int[] numConfigs = new int[1];
 
         if (!EGL14.eglChooseConfig(eglDisplay, configAttribs, 0, configs, 0, 1, numConfigs, 0)) {
-            Log.e(TAG, "eglChooseConfig failed");
+            FLog.e(TAG, "eglChooseConfig failed");
             return null;
         }
 
@@ -2387,7 +2388,7 @@ public class GLWatermarkRenderer {
         int rotationDegrees = getRequiredRotation();
         boolean front = isFrontCamera();
         if (rotationDegrees != lastLoggedRotation || front != lastLoggedFront || frontVideoMirrorEnabled != lastLoggedFlip) {
-            Log.d(TAG, "updateMatrices: rotation=" + rotationDegrees + ", front=" + front
+            FLog.d(TAG, "updateMatrices: rotation=" + rotationDegrees + ", front=" + front
                     + ", flip=" + frontVideoMirrorEnabled + ", sensor=" + sensorOrientation
                     + ", device=" + deviceOrientation);
             lastLoggedRotation = rotationDegrees;
@@ -2396,10 +2397,10 @@ public class GLWatermarkRenderer {
         }
         // Watermark texture dimensions are calculated from text metrics in
         // updateWatermarkTexture() to prevent squeeze/stretch artifacts.
-        // Log.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees +
+        // FLog.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees +
         // ", deviceOrientation=" + deviceOrientation +
         // ", sensorOrientation=" + sensorOrientation);
-        // Log.d("FAD-MATRIX", "Applying rotation: " + rotationDegrees);
+        // FLog.d("FAD-MATRIX", "Applying rotation: " + rotationDegrees);
 
         Matrix.setIdentityM(recordingMvpMatrix, 0);
         Matrix.rotateM(recordingMvpMatrix, 0, rotationDegrees, 0f, 0f, 1f);
@@ -2458,7 +2459,7 @@ public class GLWatermarkRenderer {
         if (isFrontCamera()) {
             rotation = (360 - rotation) % 360;
         }
-        // Log.d("FAD-ROT", "Device: " + deviceOrientation + " Sensor: " +
+        // FLog.d("FAD-ROT", "Device: " + deviceOrientation + " Sensor: " +
         // sensorOrientation + " ➜ Rotation = " + rotation);
         return rotation;
     }
@@ -2503,7 +2504,7 @@ public class GLWatermarkRenderer {
     public void initializePreviewSurfaceOnly(Surface dummySurface) {
         synchronized (previewRenderLock) {
             if (dummySurface == null || !dummySurface.isValid()) {
-                Log.e(TAG, "Cannot initialize with invalid dummy surface");
+                FLog.e(TAG, "Cannot initialize with invalid dummy surface");
                 return;
             }
             // Unified EGL: just create and destroy a temporary preview EGLSurface to warm
@@ -2518,7 +2519,7 @@ public class GLWatermarkRenderer {
                     EGL14.eglDestroySurface(eglDisplay, temp);
                 }
             } catch (Exception e) {
-                Log.w(TAG, "initializePreviewSurfaceOnly: temp surface warm-up failed", e);
+                FLog.w(TAG, "initializePreviewSurfaceOnly: temp surface warm-up failed", e);
             }
         }
     }
@@ -2530,14 +2531,14 @@ public class GLWatermarkRenderer {
     public void renderBlackFrame() {
         synchronized (renderLock) {
             if (released) {
-                Log.d(TAG, "renderBlackFrame called after release; ignoring");
+                FLog.d(TAG, "renderBlackFrame called after release; ignoring");
                 return;
             }
             // Don't try to reinitialize if existing EGL resources are lost
             // Just use the existing context if it's valid
             if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY ||
                     eglContext == EGL14.EGL_NO_CONTEXT || eglSurface == EGL14.EGL_NO_SURFACE) {
-                Log.d(TAG, "Cannot render black frame - EGL not initialized and we won't reinitialize");
+                FLog.d(TAG, "Cannot render black frame - EGL not initialized and we won't reinitialize");
                 return;
             }
             boolean contextMadeCurrent = false;
@@ -2552,14 +2553,14 @@ public class GLWatermarkRenderer {
                     return;
                 } else {
                     int error = EGL14.eglGetError();
-                    Log.d(TAG, "Could not make EGL context current: 0x" + Integer.toHexString(error) +
+                    FLog.d(TAG, "Could not make EGL context current: 0x" + Integer.toHexString(error) +
                             " - this is expected during camera disconnection");
                 }
             } catch (Exception e) {
-                Log.d(TAG, "Exception rendering black frame - this is expected during camera disconnection");
+                FLog.d(TAG, "Exception rendering black frame - this is expected during camera disconnection");
             } finally {
                 if (!contextMadeCurrent) {
-                    Log.d(TAG, "Black frame was not rendered - will try again on next frame");
+                    FLog.d(TAG, "Black frame was not rendered - will try again on next frame");
                 }
             }
         }
@@ -2574,13 +2575,13 @@ public class GLWatermarkRenderer {
                 try {
                     EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
                 } catch (Exception e) {
-                    Log.w(TAG, "Error releasing current context", e);
+                    FLog.w(TAG, "Error releasing current context", e);
                 }
                 if (eglSurface != EGL14.EGL_NO_SURFACE) {
                     try {
                         EGL14.eglDestroySurface(eglDisplay, eglSurface);
                     } catch (Exception e) {
-                        Log.w(TAG, "Error destroying surface", e);
+                        FLog.w(TAG, "Error destroying surface", e);
                     }
                     eglSurface = EGL14.EGL_NO_SURFACE;
                 }
@@ -2588,19 +2589,19 @@ public class GLWatermarkRenderer {
                     try {
                         EGL14.eglDestroyContext(eglDisplay, eglContext);
                     } catch (Exception e) {
-                        Log.w(TAG, "Error destroying context", e);
+                        FLog.w(TAG, "Error destroying context", e);
                     }
                     eglContext = EGL14.EGL_NO_CONTEXT;
                 }
                 try {
                     EGL14.eglTerminate(eglDisplay);
                 } catch (Exception e) {
-                    Log.w(TAG, "Error terminating display", e);
+                    FLog.w(TAG, "Error terminating display", e);
                 }
                 eglDisplay = EGL14.EGL_NO_DISPLAY;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error releasing EGL resources", e);
+            FLog.e(TAG, "Error releasing EGL resources", e);
         }
     }
 }

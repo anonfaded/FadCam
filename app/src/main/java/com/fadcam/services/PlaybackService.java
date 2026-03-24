@@ -1,5 +1,7 @@
 package com.fadcam.services;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -145,7 +147,7 @@ public class PlaybackService extends Service {
             try { player.setVolume(muted ? 0f : 1f); } catch (Exception ignored) {}
             if (positionMs > 0) try { player.seekTo(positionMs); } catch (Exception ignored) {}
         } catch (Exception e) {
-            android.util.Log.e("PlaybackService", "initPlayer failed", e);
+            FLog.e("PlaybackService", "initPlayer failed", e);
         }
     }
     
@@ -201,7 +203,7 @@ public class PlaybackService extends Service {
                 return;
             }
         } catch (Exception e) {
-            android.util.Log.e("PlaybackService", "Error extracting video title", e);
+            FLog.e("PlaybackService", "Error extracting video title", e);
         }
         
         // Fallback to app name if we couldn't get anything useful
@@ -223,7 +225,7 @@ public class PlaybackService extends Service {
                 scheduleAutoStopIfNeeded();
             }
             buildAndShowNotification();
-        } catch (Exception e) { android.util.Log.e("PlaybackService", "play/pause failed", e); }
+        } catch (Exception e) { FLog.e("PlaybackService", "play/pause failed", e); }
     }
     
     private void handleRewind() {
@@ -233,7 +235,7 @@ public class PlaybackService extends Service {
                 player.seekTo(newPosition);
                 buildAndShowNotification();
             }
-        } catch (Exception e) { android.util.Log.e("PlaybackService", "rewind failed", e); }
+        } catch (Exception e) { FLog.e("PlaybackService", "rewind failed", e); }
     }
     
     private void handleFastForward() {
@@ -244,7 +246,7 @@ public class PlaybackService extends Service {
                 player.seekTo(newPosition);
                 buildAndShowNotification();
             }
-        } catch (Exception e) { android.util.Log.e("PlaybackService", "fast forward failed", e); }
+        } catch (Exception e) { FLog.e("PlaybackService", "fast forward failed", e); }
     }
     
     private void startProgressUpdates() {
@@ -288,7 +290,7 @@ public class PlaybackService extends Service {
                 if(autoStopHandler==null) autoStopHandler = new Handler(Looper.getMainLooper());
                 autoStopHandler.postDelayed(autoStopRunnable, seconds * 1000L);
             }
-        }catch(Exception e){ android.util.Log.w("PlaybackService", "scheduleAutoStop failed", e); }
+        }catch(Exception e){ FLog.w("PlaybackService", "scheduleAutoStop failed", e); }
     }
 
     private void cancelAutoStop(){
@@ -426,7 +428,7 @@ public class PlaybackService extends Service {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.e("PlaybackService", "show notification failed", e);
+            FLog.e("PlaybackService", "show notification failed", e);
         }
     }
 

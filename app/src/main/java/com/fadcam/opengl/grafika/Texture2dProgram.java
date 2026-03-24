@@ -16,10 +16,10 @@
 
 package com.fadcam.opengl.grafika;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.util.Log;
-
 import java.nio.FloatBuffer;
 
 /**
@@ -96,7 +96,7 @@ public class Texture2dProgram {
         if (mProgramHandle == 0) {
             throw new RuntimeException("Unable to create program");
         }
-        Log.d(TAG, "Created program " + mProgramHandle + " (" + programType + ")");
+        FLog.d(TAG, "Created program " + mProgramHandle + " (" + programType + ")");
 
         // get locations of attributes and uniforms
         maPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "aPosition");
@@ -111,7 +111,7 @@ public class Texture2dProgram {
         // Get exposure compensation uniform location (only for TEXTURE_EXT shaders)
         muExposureCompensationLoc = GLES20.glGetUniformLocation(mProgramHandle, "uExposureCompensation");
         if (muExposureCompensationLoc >= 0) {
-            Log.d(TAG, "Found exposure compensation uniform at location: " + muExposureCompensationLoc);
+            FLog.d(TAG, "Found exposure compensation uniform at location: " + muExposureCompensationLoc);
         }
     }
 
@@ -122,7 +122,7 @@ public class Texture2dProgram {
      * the program).
      */
     public void release() {
-        Log.d(TAG, "deleting program " + mProgramHandle);
+        FLog.d(TAG, "deleting program " + mProgramHandle);
         GLES20.glDeleteProgram(mProgramHandle);
         mProgramHandle = -1;
     }

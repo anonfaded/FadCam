@@ -1,11 +1,11 @@
 package com.fadcam.fadrec;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
-import android.util.Log;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -64,7 +64,7 @@ public class MediaProjectionHelper {
      */
     public Intent createScreenCaptureIntent() {
         if (mediaProjectionManager == null) {
-            Log.e(TAG, "MediaProjectionManager is null");
+            FLog.e(TAG, "MediaProjectionManager is null");
             return null;
         }
         
@@ -80,12 +80,12 @@ public class MediaProjectionHelper {
      */
     public void handlePermissionResult(int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK && data != null) {
-            Log.d(TAG, "Screen recording permission granted");
+            FLog.d(TAG, "Screen recording permission granted");
             if (callback != null) {
                 callback.onPermissionGranted(resultCode, data);
             }
         } else {
-            Log.w(TAG, "Screen recording permission denied");
+            FLog.w(TAG, "Screen recording permission denied");
             if (callback != null) {
                 callback.onPermissionDenied();
             }
@@ -109,10 +109,10 @@ public class MediaProjectionHelper {
      * @param forceNoAudio If true, recording will start without audio even if mic is enabled.
      */
     public void startScreenRecording(int resultCode, Intent data, boolean forceNoAudio) {
-        Log.d(TAG, "Starting ScreenRecordingService with resultCode=" + resultCode);
+        FLog.d(TAG, "Starting ScreenRecordingService with resultCode=" + resultCode);
         
         if (data == null) {
-            Log.e(TAG, "ERROR: data Intent is null - cannot start screen recording");
+            FLog.e(TAG, "ERROR: data Intent is null - cannot start screen recording");
             return;
         }
         
@@ -137,9 +137,9 @@ public class MediaProjectionHelper {
                 context.startService(serviceIntent);
             }
             
-            Log.i(TAG, "ScreenRecordingService started successfully");
+            FLog.i(TAG, "ScreenRecordingService started successfully");
         } catch (Exception e) {
-            Log.e(TAG, "Error starting ScreenRecordingService", e);
+            FLog.e(TAG, "Error starting ScreenRecordingService", e);
         }
     }
     
@@ -147,15 +147,15 @@ public class MediaProjectionHelper {
      * Stop screen recording service.
      */
     public void stopScreenRecording() {
-        Log.d(TAG, "Stopping ScreenRecordingService");
+        FLog.d(TAG, "Stopping ScreenRecordingService");
         
         try {
             Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
             serviceIntent.setAction(Constants.INTENT_ACTION_STOP_SCREEN_RECORDING);
             context.startService(serviceIntent);
-            Log.i(TAG, "Stop command sent to ScreenRecordingService");
+            FLog.i(TAG, "Stop command sent to ScreenRecordingService");
         } catch (Exception e) {
-            Log.e(TAG, "Error stopping ScreenRecordingService", e);
+            FLog.e(TAG, "Error stopping ScreenRecordingService", e);
         }
     }
     
@@ -163,15 +163,15 @@ public class MediaProjectionHelper {
      * Pause screen recording.
      */
     public void pauseScreenRecording() {
-        Log.d(TAG, "Pausing ScreenRecordingService");
+        FLog.d(TAG, "Pausing ScreenRecordingService");
         
         try {
             Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
             serviceIntent.setAction(Constants.INTENT_ACTION_PAUSE_SCREEN_RECORDING);
             context.startService(serviceIntent);
-            Log.i(TAG, "Pause command sent to ScreenRecordingService");
+            FLog.i(TAG, "Pause command sent to ScreenRecordingService");
         } catch (Exception e) {
-            Log.e(TAG, "Error pausing ScreenRecordingService", e);
+            FLog.e(TAG, "Error pausing ScreenRecordingService", e);
         }
     }
     
@@ -179,15 +179,15 @@ public class MediaProjectionHelper {
      * Resume screen recording.
      */
     public void resumeScreenRecording() {
-        Log.d(TAG, "Resuming ScreenRecordingService");
+        FLog.d(TAG, "Resuming ScreenRecordingService");
         
         try {
             Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
             serviceIntent.setAction(Constants.INTENT_ACTION_RESUME_SCREEN_RECORDING);
             context.startService(serviceIntent);
-            Log.i(TAG, "Resume command sent to ScreenRecordingService");
+            FLog.i(TAG, "Resume command sent to ScreenRecordingService");
         } catch (Exception e) {
-            Log.e(TAG, "Error resuming ScreenRecordingService", e);
+            FLog.e(TAG, "Error resuming ScreenRecordingService", e);
         }
     }
 
@@ -200,9 +200,9 @@ public class MediaProjectionHelper {
             serviceIntent.setAction(Constants.INTENT_ACTION_SET_SCREEN_RECORDING_MUTE);
             serviceIntent.putExtra(Constants.EXTRA_SCREEN_RECORDING_MUTED, muted);
             context.startService(serviceIntent);
-            Log.i(TAG, "Mute toggle sent to ScreenRecordingService: " + muted);
+            FLog.i(TAG, "Mute toggle sent to ScreenRecordingService: " + muted);
         } catch (Exception e) {
-            Log.e(TAG, "Error toggling ScreenRecordingService mute", e);
+            FLog.e(TAG, "Error toggling ScreenRecordingService mute", e);
         }
     }
     

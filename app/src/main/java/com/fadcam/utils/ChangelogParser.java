@@ -1,9 +1,9 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.text.Html;
 import android.text.Spanned;
-import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -40,7 +40,7 @@ public class ChangelogParser {
                 
                 return parseChangelogInternal(content.toString());
             } catch (Exception e) {
-                Log.e(TAG, "Error fetching changelog", e);
+                FLog.e(TAG, "Error fetching changelog", e);
                 return "";
             }
         });
@@ -290,7 +290,7 @@ public class ChangelogParser {
             String alt = matcher.group(1);
             String path = matcher.group(2);
             
-            android.util.Log.d("ChangelogParser", "Found image: " + alt + ", path: " + path);
+            FLog.d("ChangelogParser", "Found image: " + alt + ", path: " + path);
             
             // Automatically prepend changelog/ folder if not already an absolute path
             if (!path.startsWith("file:///") && !path.startsWith("/")) {

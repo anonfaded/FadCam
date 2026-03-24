@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -20,7 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.util.Range;
 import android.util.Rational;
 import android.view.MotionEvent;
@@ -438,7 +439,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture st, int w, int h) {
-                android.util.Log.d("FullscreenPreview", "onSurfaceTextureAvailable: " + w + "x" + h);
+                FLog.d("FullscreenPreview", "onSurfaceTextureAvailable: " + w + "x" + h);
                 previewSurface = new Surface(st);
                 sendSurfaceToService(previewSurface, w, h);
                 scheduleSurfaceResendBurst();
@@ -625,7 +626,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     private void handlePreviewLongPress() {
         if (previewUiScale > 1.001f) {
-            Log.d(TAG, "Ignoring long-press toggle while zoom/pan gesture mode is active");
+            FLog.d(TAG, "Ignoring long-press toggle while zoom/pan gesture mode is active");
             return;
         }
         if (textureView != null) {
@@ -786,7 +787,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 try {
                     startService(intent);
                 } catch (Exception e) {
-                    Log.e(TAG, "Torch toggle failed", e);
+                    FLog.e(TAG, "Torch toggle failed", e);
                 }
             } else {
                 toggleTorchIdle();
@@ -818,7 +819,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             sendBroadcast(stateIntent);
             updateTorchIcon();
         } catch (Exception e) {
-            Log.e(TAG, "Idle torch toggle failed", e);
+            FLog.e(TAG, "Idle torch toggle failed", e);
             Toast.makeText(this, R.string.torch_unavailable, Toast.LENGTH_SHORT).show();
         }
     }
@@ -845,7 +846,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
             torchReceiverRegistered = true;
         } catch (Exception e) {
-            Log.e(TAG, "Error registering torch receiver", e);
+            FLog.e(TAG, "Error registering torch receiver", e);
         }
     }
 
@@ -878,7 +879,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
             recordingStateReceiverRegistered = true;
         } catch (Exception e) {
-            Log.e(TAG, "Error registering recording-state receiver", e);
+            FLog.e(TAG, "Error registering recording-state receiver", e);
         }
     }
 
@@ -896,7 +897,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             i.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
             startService(i);
         } catch (Exception e) {
-            Log.w(TAG, "Failed to request recording state", e);
+            FLog.w(TAG, "Failed to request recording state", e);
         }
     }
 
@@ -1284,7 +1285,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "getCameraIdForType: " + e.getMessage());
+            FLog.w(TAG, "getCameraIdForType: " + e.getMessage());
         }
         return null;
     }
@@ -1773,12 +1774,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     try { rootLayout.removeView(focusView); }
-                    catch (Exception e) { Log.w(TAG, "Error removing focus indicator", e); }
+                    catch (Exception e) { FLog.w(TAG, "Error removing focus indicator", e); }
                 }
             });
             animSet.start();
         } catch (Exception e) {
-            Log.e(TAG, "Error showing focus indicator: " + e.getMessage(), e);
+            FLog.e(TAG, "Error showing focus indicator: " + e.getMessage(), e);
         }
     }
 
@@ -1805,16 +1806,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         boolean shouldSync = isRecordingActive || isRecordingPaused || isPreviewOnlyActive
                 || isServiceRunning(svc);
         if (!shouldSync && svc == RecordingService.class) {
-            android.util.Log.d("FullscreenPreview", "sendSurfaceToService: skipped while idle");
+            FLog.d("FullscreenPreview", "sendSurfaceToService: skipped while idle");
             return;
         }
         
-        android.util.Log.d("FullscreenPreview", "sendSurfaceToService: surface=" + 
+        FLog.d("FullscreenPreview", "sendSurfaceToService: surface=" + 
                 (surface != null && surface.isValid() ? "VALID " + w + "x" + h : "NULL") + 
                 ", service=" + svc.getSimpleName());
 
         if (!isServiceRunning(svc) && svc == DualCameraRecordingService.class) {
-            android.util.Log.w("FullscreenPreview", "Dual service not running: " + svc.getSimpleName());
+            FLog.w("FullscreenPreview", "Dual service not running: " + svc.getSimpleName());
             return;
         }
 
@@ -1825,7 +1826,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         intent.putExtra("SURFACE_HEIGHT", h);
         // Mark as fullscreen transition for immediate surface application (bypass 200ms debounce)
         intent.putExtra("IS_FULLSCREEN_TRANSITION", true);
-        android.util.Log.d("FullscreenPreview", "Sending surface with IS_FULLSCREEN_TRANSITION=true");
+        FLog.d("FullscreenPreview", "Sending surface with IS_FULLSCREEN_TRANSITION=true");
         startService(intent);
     }
 

@@ -1,9 +1,10 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -102,7 +103,7 @@ public class WatchRemoteFragment extends Fragment {
                 ctx.startService(intent);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Toggle streaming failed", e);
+            FLog.e(TAG, "Toggle streaming failed", e);
         }
 
         // Refresh after slight delay to allow service to update state

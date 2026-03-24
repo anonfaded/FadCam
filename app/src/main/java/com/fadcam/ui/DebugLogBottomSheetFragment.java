@@ -1,5 +1,6 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
@@ -28,7 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fadcam.Constants;
-import com.fadcam.Log;
+import com.fadcam.FLog;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;

@@ -1,12 +1,12 @@
 package com.fadcam.ui.faditor.export;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
@@ -125,12 +125,12 @@ public class ExportManager {
      */
     public void export(@NonNull FaditorProject project) {
         if (isExporting) {
-            Log.w(TAG, "Export already in progress");
+            FLog.w(TAG, "Export already in progress");
             return;
         }
 
         if (project.getTimeline().isEmpty()) {
-            Log.e(TAG, "Cannot export empty timeline");
+            FLog.e(TAG, "Cannot export empty timeline");
             if (listener != null) {
                 listener.onExportError(new IllegalStateException("Timeline is empty"));
             }
@@ -162,7 +162,7 @@ public class ExportManager {
 
             if (isSimpleTrim) {
                 builder.experimentalSetTrimOptimizationEnabled(true);
-                Log.d(TAG, "Using near-lossless trim optimization");
+                FLog.d(TAG, "Using near-lossless trim optimization");
             }
 
             // Add progress listener
@@ -179,15 +179,15 @@ public class ExportManager {
                         String safResult = copyTempToSaf(outputPath);
                         if (safResult != null) {
                             finalPath = safResult;
-                            Log.d(TAG, "Export copied to SAF: " + safResult);
+                            FLog.d(TAG, "Export copied to SAF: " + safResult);
                         } else {
-                            Log.e(TAG, "SAF copy failed, file remains at: " + outputPath);
+                            FLog.e(TAG, "SAF copy failed, file remains at: " + outputPath);
                         }
                         pendingSafCopy = false;
                         safExportFileName = null;
                     }
 
-                    Log.d(TAG, "Export completed: " + finalPath);
+                    FLog.d(TAG, "Export completed: " + finalPath);
                     if (listener != null) {
                         listener.onExportCompleted(finalPath, result);
                     }
@@ -207,7 +207,7 @@ public class ExportManager {
                             && tempFile.getParentFile().getName().equals("faditor_export")) {
                         tempFile.delete();
                     }
-                    Log.e(TAG, "Export failed", exception);
+                    FLog.e(TAG, "Export failed", exception);
                     if (listener != null) {
                         listener.onExportError(exception);
                     }
@@ -225,14 +225,14 @@ public class ExportManager {
             // Begin polling for progress (Transformer doesn't push progress via Listener)
             startProgressPolling();
 
-            Log.d(TAG, "Export started → " + outputPath);
+            FLog.d(TAG, "Export started → " + outputPath);
             if (listener != null) {
                 listener.onExportStarted(outputPath);
             }
 
         } catch (Exception e) {
             isExporting = false;
-            Log.e(TAG, "Failed to start export", e);
+            FLog.e(TAG, "Failed to start export", e);
             if (listener != null) {
                 listener.onExportError(e);
             }
@@ -247,7 +247,7 @@ public class ExportManager {
             stopProgressPolling();
             transformer.cancel();
             isExporting = false;
-            Log.d(TAG, "Export cancelled");
+            FLog.d(TAG, "Export cancelled");
         }
     }
 
@@ -281,7 +281,7 @@ public class ExportManager {
                 // Continue polling regardless of state (may become available later)
                 progressHandler.postDelayed(this, PROGRESS_POLL_INTERVAL_MS);
             } catch (Exception e) {
-                Log.w(TAG, "Progress poll error", e);
+                FLog.w(TAG, "Progress poll error", e);
                 // Keep polling in case of transient errors
                 progressHandler.postDelayed(this, PROGRESS_POLL_INTERVAL_MS);
             }
@@ -452,7 +452,7 @@ public class ExportManager {
         // Generate a reusable silence WAV file in cache
         File silenceFile = getOrCreateSilenceFile();
         if (silenceFile == null) {
-            Log.e(TAG, "Failed to create silence file — skipping audio track");
+            FLog.e(TAG, "Failed to create silence file — skipping audio track");
             return null;
         }
         Uri silenceUri = Uri.fromFile(silenceFile);
@@ -506,7 +506,7 @@ public class ExportManager {
         }
 
         if (audioItems.isEmpty()) {
-            Log.d(TAG, "All audio clips muted — no audio sequence");
+            FLog.d(TAG, "All audio clips muted — no audio sequence");
             return null;
         }
 
@@ -602,12 +602,12 @@ public class ExportManager {
             fos.flush();
             fos.close();
 
-            Log.d(TAG, "Created silence file: " + silenceFile.getAbsolutePath()
+            FLog.d(TAG, "Created silence file: " + silenceFile.getAbsolutePath()
                     + " (" + silenceFile.length() + " bytes)");
             return silenceFile;
 
         } catch (Exception e) {
-            Log.e(TAG, "Failed to create silence WAV file", e);
+            FLog.e(TAG, "Failed to create silence WAV file", e);
             return null;
         }
     }
@@ -647,7 +647,7 @@ public class ExportManager {
             r.release();
             return w != null ? Integer.parseInt(w) : 0;
         } catch (Exception e) {
-            Log.w(TAG, "Failed to get source width", e);
+            FLog.w(TAG, "Failed to get source width", e);
             return 0;
         }
     }
@@ -667,7 +667,7 @@ public class ExportManager {
             r.release();
             return h != null ? Integer.parseInt(h) : 0;
         } catch (Exception e) {
-            Log.w(TAG, "Failed to get source height", e);
+            FLog.w(TAG, "Failed to get source height", e);
             return 0;
         }
     }
@@ -697,7 +697,7 @@ public class ExportManager {
             }
             pendingSafCopy = true;
             safExportFileName = fileName;
-            Log.d(TAG, "Custom storage mode: exporting to temp, will copy to SAF");
+            FLog.d(TAG, "Custom storage mode: exporting to temp, will copy to SAF");
             return new File(tempDir, fileName).getAbsolutePath();
         } else {
             // Internal mode — same directory as recordings
@@ -726,13 +726,13 @@ public class ExportManager {
     private String copyTempToSaf(@NonNull String tempFilePath) {
         String customUriString = prefsManager.getCustomStorageUri();
         if (customUriString == null) {
-            Log.e(TAG, "SAF copy: custom storage URI is null");
+            FLog.e(TAG, "SAF copy: custom storage URI is null");
             return null;
         }
 
         File tempFile = new File(tempFilePath);
         if (!tempFile.exists()) {
-            Log.e(TAG, "SAF copy: temp file does not exist: " + tempFilePath);
+            FLog.e(TAG, "SAF copy: temp file does not exist: " + tempFilePath);
             return null;
         }
 
@@ -740,7 +740,7 @@ public class ExportManager {
             Uri treeUri = Uri.parse(customUriString);
             DocumentFile pickedDir = DocumentFile.fromTreeUri(context, treeUri);
             if (pickedDir == null || !pickedDir.canWrite()) {
-                Log.e(TAG, "SAF copy: cannot write to custom directory");
+                FLog.e(TAG, "SAF copy: cannot write to custom directory");
                 return null;
             }
             pickedDir = RecordingStoragePaths.findOrCreateChildDirectory(
@@ -749,7 +749,7 @@ public class ExportManager {
                     true
             );
             if (pickedDir == null || !pickedDir.canWrite()) {
-                Log.e(TAG, "SAF copy: cannot write to Faditor subdirectory");
+                FLog.e(TAG, "SAF copy: cannot write to Faditor subdirectory");
                 return null;
             }
 
@@ -757,7 +757,7 @@ public class ExportManager {
             DocumentFile docFile = pickedDir.createFile(
                     "video/" + Constants.RECORDING_FILE_EXTENSION, name);
             if (docFile == null) {
-                Log.e(TAG, "SAF copy: failed to create DocumentFile: " + name);
+                FLog.e(TAG, "SAF copy: failed to create DocumentFile: " + name);
                 return null;
             }
 
@@ -766,7 +766,7 @@ public class ExportManager {
                  OutputStream out = context.getContentResolver()
                          .openOutputStream(docFile.getUri())) {
                 if (out == null) {
-                    Log.e(TAG, "SAF copy: failed to open output stream");
+                    FLog.e(TAG, "SAF copy: failed to open output stream");
                     return null;
                 }
                 byte[] buffer = new byte[8192];
@@ -779,14 +779,14 @@ public class ExportManager {
 
             // Clean up temp file after successful copy
             if (tempFile.delete()) {
-                Log.d(TAG, "SAF copy: temp file deleted");
+                FLog.d(TAG, "SAF copy: temp file deleted");
             }
 
-            Log.i(TAG, "SAF copy successful: " + docFile.getUri());
+            FLog.i(TAG, "SAF copy successful: " + docFile.getUri());
             return name;
 
         } catch (Exception e) {
-            Log.e(TAG, "SAF copy failed", e);
+            FLog.e(TAG, "SAF copy failed", e);
             return null;
         }
     }

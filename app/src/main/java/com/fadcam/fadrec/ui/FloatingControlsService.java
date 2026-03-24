@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,7 +11,6 @@ import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -69,7 +70,7 @@ public class FloatingControlsService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "FloatingControlsService created");
+        FLog.d(TAG, "FloatingControlsService created");
         
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         
@@ -365,7 +366,7 @@ public class FloatingControlsService extends Service {
                         updateFloatingButtonState();
                         updateQuickMenuButtons();
                     } catch (IllegalArgumentException e) {
-                        Log.e(TAG, "Invalid state: " + stateStr, e);
+                        FLog.e(TAG, "Invalid state: " + stateStr, e);
                     }
                 }
             }
@@ -379,7 +380,7 @@ public class FloatingControlsService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "FloatingControlsService destroyed");
+        FLog.d(TAG, "FloatingControlsService destroyed");
         
         if (floatingView != null) {
             windowManager.removeView(floatingView);

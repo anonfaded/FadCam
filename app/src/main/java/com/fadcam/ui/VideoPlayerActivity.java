@@ -1,9 +1,10 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log; // Use standard Android Log
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -119,7 +120,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             pos
                         );
                         lastSavedPos = pos;
-                        Log.d(
+                        FLog.d(
                             TAG,
                             "Periodic save position: " +
                             pos +
@@ -129,7 +130,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Error during periodic resume save", e);
+                FLog.w(TAG, "Error during periodic resume save", e);
             }
             // Re-post
             resumeSaveHandler.postDelayed(this, 5000);
@@ -244,7 +245,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             );
 
         if (videoUri != null) {
-            Log.i(TAG, "Received video URI: " + videoUri.toString());
+            FLog.i(TAG, "Received video URI: " + videoUri.toString());
             spm = SharedPreferencesManager.getInstance(this);
             // Read default playback speed from prefs (if set) and adjust currentSpeedIndex
             float defSpd = sharedPreferencesManager.sharedPreferences.getFloat(
@@ -267,7 +268,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             setupPressAndHoldFor2x();
         } else {
             // Log error and finish if URI is missing
-            Log.e(
+            FLog.e(
                 TAG,
                 "Video URI is null. Intent Data: " +
                 getIntent().getDataString() +
@@ -297,7 +298,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             );
             getWindow().setStatusBarColor(statusBarColor);
         } catch (Exception e) {
-            Log.w(TAG, "Failed to set status bar color", e);
+            FLog.w(TAG, "Failed to set status bar color", e);
         }
 
         // Configure Material Slider colors and behavior if available
@@ -327,7 +328,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 timeSlider.clearOnSliderTouchListeners();
                 timeSlider.clearOnChangeListeners();
             } catch (Exception e) {
-                Log.w(TAG, "Error clearing slider listeners", e);
+                FLog.w(TAG, "Error clearing slider listeners", e);
             }
             
             timeSlider.addOnSliderTouchListener(new com.google.android.material.slider.Slider.OnSliderTouchListener() {
@@ -339,7 +340,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     }
                     
                     isTimebarScrubbing = true;
-                    android.util.Log.d("VideoPlayerActivity", "Started scrubbing");
+                    FLog.d("VideoPlayerActivity", "Started scrubbing");
                     
                     // IMPORTANT: Don't call showController() here - it causes layout changes
                     // that can interrupt touch tracking and make the slider snap back!
@@ -363,7 +364,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     
                     isTimebarScrubbing = false;
                     scrubEndTimeMs = System.currentTimeMillis(); // Start grace period
-                    android.util.Log.d("VideoPlayerActivity", "Stopped scrubbing");
+                    FLog.d("VideoPlayerActivity", "Stopped scrubbing");
                     
                     try {
                         if (playerView != null) {
@@ -414,12 +415,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             // Use PlayerHolder's seekToPosition for fragmented MP4 compatibility
                             com.fadcam.playback.PlayerHolder holder = com.fadcam.playback.PlayerHolder.getInstance();
                             holder.seekToPosition(clamped);
-                            Log.d(TAG, "Seeking to: " + clamped + "ms (slider value: " + value + ")");
+                            FLog.d(TAG, "Seeking to: " + clamped + "ms (slider value: " + value + ")");
                         } else {
-                            Log.w(TAG, "Cannot seek - no valid duration available");
+                            FLog.w(TAG, "Cannot seek - no valid duration available");
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Error during seek", e);
+                        FLog.e(TAG, "Error during seek", e);
                     }
                 }
             });
@@ -443,7 +444,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         lastSingleTapTime = System.currentTimeMillis();
                         return true;
                     } catch (Exception ex) {
-                        Log.w(TAG, "singleTap error", ex);
+                        FLog.w(TAG, "singleTap error", ex);
                         return true;
                     }
                 }
@@ -477,7 +478,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         lastSingleTapTime = System.currentTimeMillis();
                         return true;
                     } catch (Exception ex) {
-                        Log.w(TAG, "doubleTap error", ex);
+                        FLog.w(TAG, "doubleTap error", ex);
                         return true;
                     }
                 }
@@ -1054,7 +1055,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 );
                             }
 
-                            Log.d(
+                            FLog.d(
                                 TAG,
                                 "Audio waveform " +
                                 (state ? "enabled" : "disabled")
@@ -1151,7 +1152,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 int alarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
                 int notifVolume = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
 
-                Log.d(
+                FLog.d(
                     TAG,
                     "AudioState: MUSIC=" + currentVolume + "/" + maxVolume +
                         ", musicMutedVolZero=" + isMusicMuted +
@@ -1162,11 +1163,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 );
 
                 if (currentVolume == 0 || isMusicMutedFlg) {
-                    Log.w(TAG, "WARNING: Device MUSIC stream is at 0 or muted flag set!");
+                    FLog.w(TAG, "WARNING: Device MUSIC stream is at 0 or muted flag set!");
                     // Don't show toast - could be misleading on some devices
                 }
             } else {
-                Log.w(TAG, "AudioManager is NULL - cannot inspect device audio state");
+                FLog.w(TAG, "AudioManager is NULL - cannot inspect device audio state");
             }
             
             // Use shared player so service + activity stay in sync
@@ -1220,11 +1221,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
             // Use the actual playback URI (may be remuxed version for seeking support)
             Uri uriForPlayer = actualPlaybackUri != null ? actualPlaybackUri : videoUri;
-            Log.i(TAG, "initializePlayer() calling holder.setMediaIfNeeded for URI=" + uriForPlayer);
+            FLog.i(TAG, "initializePlayer() calling holder.setMediaIfNeeded for URI=" + uriForPlayer);
             holder.setMediaIfNeeded(uriForPlayer);
             // Set initial playback speed
             float initialSpeed = speedValues[currentSpeedIndex];
-            Log.d(TAG, "Setting initial playback speed to " + initialSpeed + "x");
+            FLog.d(TAG, "Setting initial playback speed to " + initialSpeed + "x");
             player.setPlaybackParameters(
                 new PlaybackParameters(initialSpeed)
             );
@@ -1236,9 +1237,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 // Always use volume 1.0 for debugging
                 float volume = 1f;
                 player.setVolume(volume);
-                Log.d(TAG, "Player volume FORCED to 1.0 (mutedPref was=" + muted + ")");
+                FLog.d(TAG, "Player volume FORCED to 1.0 (mutedPref was=" + muted + ")");
             } catch (Exception e) {
-                Log.e(TAG, "Failed to set player volume", e);
+                FLog.e(TAG, "Failed to set player volume", e);
             }
             // Autoplay (prepared in holder if needed)
             // Restore saved playback position (resume) if available
@@ -1251,22 +1252,22 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     uriStr,
                     filename
                 );
-                Log.d(
+                FLog.d(
                     TAG,
                     "Resume check: uri=" + uriStr +
                         ", filename=" + filename +
                         ", savedPositionMs=" + savedMs
                 );
                 if (savedMs > 0) {
-                    Log.d(TAG, "Seeking to saved position on init: " + savedMs + "ms");
+                    FLog.d(TAG, "Seeking to saved position on init: " + savedMs + "ms");
                     player.seekTo(savedMs);
                 }
             } catch (Exception ignored) {}
             if (openPausedFromForensics) {
-                Log.d(TAG, "Forensics open: keep paused after seek");
+                FLog.d(TAG, "Forensics open: keep paused after seek");
                 player.pause();
             } else {
-                Log.d(TAG, "Calling player.play() after initialization");
+                FLog.d(TAG, "Calling player.play() after initialization");
                 player.play();
             }
             // Listen for seeks so we can save immediately and notify adapters
@@ -1275,7 +1276,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     new Player.Listener() {
                         public void onSeekProcessed() {
                             // Save and broadcast immediately when user finishes a seek
-                            Log.d(TAG, "onSeekProcessed() - saving current playback position");
+                            FLog.d(TAG, "onSeekProcessed() - saving current playback position");
                             saveCurrentPlaybackPosition();
                         }
                         @Override
@@ -1303,12 +1304,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         @Override
                         public void onTracksChanged(androidx.media3.common.Tracks tracks) {
                             // Log track information for debugging
-                            Log.d(TAG, "onTracksChanged(): groups=" + tracks.getGroups().size());
+                            FLog.d(TAG, "onTracksChanged(): groups=" + tracks.getGroups().size());
                             for (int i = 0; i < tracks.getGroups().size(); i++) {
                                 androidx.media3.common.Tracks.Group group = tracks.getGroups().get(i);
                                 String type = group.getType() == C.TRACK_TYPE_AUDIO ? "AUDIO" :
                                               group.getType() == C.TRACK_TYPE_VIDEO ? "VIDEO" : "OTHER";
-                                Log.d(
+                                FLog.d(
                                     TAG,
                                     "TrackGroup[" + i + "] type=" + type +
                                         ", selected=" + group.isSelected() +
@@ -1317,7 +1318,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 for (int t = 0; t < group.length; t++) {
                                     androidx.media3.common.Format fmt = group.getTrackFormat(t);
                                     boolean selected = group.isTrackSelected(t);
-                                    Log.d(
+                                    FLog.d(
                                         TAG,
                                         "  └ track#" + t +
                                             " selected=" + selected +
@@ -1333,15 +1334,15 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         }
                         @Override
                         public void onPlayerError(androidx.media3.common.PlaybackException error) {
-                            Log.e(TAG, "Player error: " + error.getMessage(), error);
+                            FLog.e(TAG, "Player error: " + error.getMessage(), error);
                         }
                         @Override
                         public void onAudioSessionIdChanged(int audioSessionId) {
-                            Log.d(TAG, "onAudioSessionIdChanged(): " + audioSessionId);
+                            FLog.d(TAG, "onAudioSessionIdChanged(): " + audioSessionId);
                         }
                         @Override
                         public void onVolumeChanged(float volume) {
-                            Log.d(TAG, "onVolumeChanged(): " + volume);
+                            FLog.d(TAG, "onVolumeChanged(): " + volume);
                         }
                         @Override
                         public void onPlaybackStateChanged(int state) {
@@ -1353,18 +1354,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 case Player.STATE_ENDED: stateName = "ENDED"; break;
                                 default: stateName = "UNKNOWN(" + state + ")"; break;
                             }
-                            Log.i(TAG, "onPlaybackStateChanged(): " + stateName);
+                            FLog.i(TAG, "onPlaybackStateChanged(): " + stateName);
                             // When ready after seeking, clear lastSeekPositionMs to sync with actual player position
                             // This handles fragmented MP4s where seek lands on keyframe, not exact position
                             if (state == Player.STATE_READY && lastSeekPositionMs >= 0 && player != null) {
                                 long actualPos = player.getCurrentPosition();
-                                Log.d(TAG, "  Seek completed: requested=" + lastSeekPositionMs + 
+                                FLog.d(TAG, "  Seek completed: requested=" + lastSeekPositionMs + 
                                            "ms, actual=" + actualPos + "ms (keyframe alignment)");
                                 lastSeekPositionMs = -1; // Clear to use actual player position
                             }
                             // When ready, log player audio state and validate resume position
                             if (state == Player.STATE_READY && player != null) {
-                                Log.i(TAG, "  Player READY - volume=" + player.getVolume() + 
+                                FLog.i(TAG, "  Player READY - volume=" + player.getVolume() + 
                                            ", audioSessionId=" + player.getAudioSessionId() +
                                            ", playWhenReady=" + player.getPlayWhenReady());
                                 // Guard: if the restored resume position exceeds the actual
@@ -1376,7 +1377,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     long actualDur = player.getDuration();
                                     long curPos = player.getCurrentPosition();
                                     if (actualDur > 0 && actualDur != C.TIME_UNSET && curPos > actualDur) {
-                                        Log.w(TAG, "  Stale resume position (" + curPos + "ms) exceeds" +
+                                        FLog.w(TAG, "  Stale resume position (" + curPos + "ms) exceeds" +
                                                    " actual duration (" + actualDur + "ms)" +
                                                    " — resetting to start and clearing saved position");
                                         player.seekTo(0);
@@ -1388,21 +1389,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                         }
                                     }
                                 } catch (Exception ex) {
-                                    Log.e(TAG, "Error validating resume position", ex);
+                                    FLog.e(TAG, "Error validating resume position", ex);
                                 }
                             }
                         }
                         @Override
                         public void onIsPlayingChanged(boolean isPlaying) {
-                            Log.i(TAG, "onIsPlayingChanged(): " + isPlaying);
+                            FLog.i(TAG, "onIsPlayingChanged(): " + isPlaying);
                             if (isPlaying && player != null) {
-                                Log.i(TAG, "  Playback STARTED - volume=" + player.getVolume() + 
+                                FLog.i(TAG, "  Playback STARTED - volume=" + player.getVolume() + 
                                            ", audioSessionId=" + player.getAudioSessionId());
                             }
                         }
                         @Override
                         public void onRenderedFirstFrame() {
-                            Log.i(TAG, "onRenderedFirstFrame() - first video frame visible");
+                            FLog.i(TAG, "onRenderedFirstFrame() - first video frame visible");
                         }
                     }
                 );
@@ -1494,7 +1495,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     // Once READY, onPlaybackStateChanged clears lastSeekPositionMs for accurate sync
                                     if (lastSeekPositionMs >= 0 && player.getPlaybackState() == Player.STATE_BUFFERING) {
                                         pos = lastSeekPositionMs;
-                                        Log.d(TAG, "Buffering: showing seek target " + lastSeekPositionMs + "ms");
+                                        FLog.d(TAG, "Buffering: showing seek target " + lastSeekPositionMs + "ms");
                                     }
                                     float targetVal = (float) Math.max(0L, Math.min((long) newMax, pos));
                                     // Avoid feedback loop by only setting if significantly changed
@@ -1505,24 +1506,24 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                         timeSlider.setValue(targetVal);
                                     }
                                 } else {
-                                    Log.w(TAG, "Duration still unknown: player=" + player.getDuration() + ", cached=" + cachedDurationMs);
+                                    FLog.w(TAG, "Duration still unknown: player=" + player.getDuration() + ", cached=" + cachedDurationMs);
                                 }
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, "Error in periodic slider update", e);
+                            FLog.e(TAG, "Error in periodic slider update", e);
                         }
                         h.postDelayed(this, 200);
                     }
                 };
                 h.post(r);
             } catch (Exception ignored) {}
-            Log.i(
+            FLog.i(
                 TAG,
                 "ExoPlayer initialized and started for URI: " + videoUri
             );
         } catch (Exception e) {
             // Catch potential exceptions during initialization
-            Log.e(TAG, "Error initializing player for URI: " + videoUri, e);
+            FLog.e(TAG, "Error initializing player for URI: " + videoUri, e);
             Toast.makeText(
                 this,
                 "Error playing video",
@@ -1549,7 +1550,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     long durationMs = Long.parseLong(durationStr);
                     if (durationMs > 0) {
                         cachedDurationMs = durationMs;
-                        Log.d(TAG, "Cached duration fetched via MediaMetadataRetriever: " + durationMs + "ms");
+                        FLog.d(TAG, "Cached duration fetched via MediaMetadataRetriever: " + durationMs + "ms");
                         // Update slider max on UI thread if needed
                         runOnUiThread(() -> {
                             try {
@@ -1557,16 +1558,16 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 boolean inGracePeriod = (System.currentTimeMillis() - scrubEndTimeMs) < SCRUB_GRACE_PERIOD_MS;
                                 if (timeSlider != null && !isTimebarScrubbing && !inGracePeriod && timeSlider.getValueTo() < durationMs) {
                                     timeSlider.setValueTo((float) durationMs);
-                                    Log.d(TAG, "Slider max updated from cached duration: " + durationMs);
+                                    FLog.d(TAG, "Slider max updated from cached duration: " + durationMs);
                                 }
                             } catch (Exception e) {
-                                Log.w(TAG, "Error updating slider max from cached duration", e);
+                                FLog.w(TAG, "Error updating slider max from cached duration", e);
                             }
                         });
                     }
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Error fetching duration via MediaMetadataRetriever", e);
+                FLog.w(TAG, "Error fetching duration via MediaMetadataRetriever", e);
             } finally {
                 if (retriever != null) {
                     try {
@@ -1604,7 +1605,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
-                Log.w(
+                FLog.w(
                     TAG,
                     "Could not query display name for content URI: " + uri,
                     e
@@ -1653,7 +1654,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 } catch (Exception ignored) {}
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to save playback position", e);
+            FLog.w(TAG, "Failed to save playback position", e);
         }
     }
 
@@ -1701,7 +1702,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     public void onVisibilityChanged(int visibility) {
                         try {
                             if (isTimebarScrubbing) {
-                                android.util.Log.w("VideoPlayerActivity", "ControllerVisibilityListener: visibility changed to " + 
+                                FLog.w("VideoPlayerActivity", "ControllerVisibilityListener: visibility changed to " + 
                                     (visibility == View.VISIBLE ? "VISIBLE" : "HIDDEN") + " during scrubbing - forcing visible");
                                 // Force controller visible during scrubbing regardless of any hide attempts
                                 playerView.setControllerShowTimeoutMs(0);
@@ -1730,20 +1731,20 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 settingsButton.setOnClickListener(v ->
                     showVideoSettingsSheet()
                 );
-                Log.d(
+                FLog.d(
                     TAG,
                     "Custom settings button listener attached to @id/exo_settings."
                 );
             } else {
                 // This can happen if the overridden layout exo_styled_player_control_view.xml
                 // doesn't include an ImageButton with the id @id/exo_settings
-                Log.w(
+                FLog.w(
                     TAG,
                     "Could not find settings button (@id/exo_settings) within PlayerView. Ensure it exists in your custom controller layout."
                 );
             }
         } else {
-            Log.w(
+            FLog.w(
                 TAG,
                 "PlayerView is null, cannot attach settings button listener."
             );
@@ -2727,7 +2728,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             player.setPlaybackParameters(
                                 new PlaybackParameters(val)
                             );
-                            Log.i(TAG, "Playback speed set to: " + val + "x");
+                            FLog.i(TAG, "Playback speed set to: " + val + "x");
                         } catch (NumberFormatException ignored) {}
                     }
                 }
@@ -3205,7 +3206,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void showVolumeOverlay(int percent) {
             try {
-                Log.d(TAG, "showVolumeOverlay percent=" + percent);
+                FLog.d(TAG, "showVolumeOverlay percent=" + percent);
                 String tag = "gesture_volume_overlay";
                 int margin = (int) (16 * getResources().getDisplayMetrics().density);
                 android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL, 0, margin);
@@ -3226,7 +3227,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 try { v.animate().cancel(); } catch (Exception ignored) {}
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
-                Log.d(TAG, "showVolumeOverlay done, view visible=" + (v.getVisibility()==View.VISIBLE));
+                FLog.d(TAG, "showVolumeOverlay done, view visible=" + (v.getVisibility()==View.VISIBLE));
             } catch (Exception ignored) {}
         }
 
@@ -3244,7 +3245,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
         private void showBrightnessOverlay(int percent) {
             try {
-                Log.d(TAG, "showBrightnessOverlay percent=" + percent);
+                FLog.d(TAG, "showBrightnessOverlay percent=" + percent);
                 String tag = "gesture_brightness_overlay";
                 int margin = (int) (16 * getResources().getDisplayMetrics().density);
                 android.view.View v = ensureGestureOverlay(tag, android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL, margin, 0);
@@ -3271,7 +3272,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 try { v.animate().cancel(); } catch (Exception ignored) {}
                 v.setVisibility(View.VISIBLE);
                 v.setAlpha(1f);
-                Log.d(TAG, "showBrightnessOverlay done, view visible=" + (v.getVisibility()==View.VISIBLE));
+                FLog.d(TAG, "showBrightnessOverlay done, view visible=" + (v.getVisibility()==View.VISIBLE));
             } catch (Exception ignored) {}
         }
 
@@ -3341,7 +3342,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                         svc
                     );
                 } catch (Exception e) {
-                    Log.w(
+                    FLog.w(
                         TAG,
                         "Failed to start background playback service",
                         e
@@ -3362,7 +3363,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     );
                     startService(stop);
                 } catch (Exception ignored) {}
-                Log.d(
+                FLog.d(
                     TAG,
                     "Background service stopped (no background playback or paused)."
                 );
@@ -3477,21 +3478,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 // Start real audio analysis if we have a video URI
                 android.net.Uri currentUri = getCurrentVideoUri();
                 if (currentUri != null) {
-                    Log.i(
+                    FLog.i(
                         TAG,
                         "Starting real audio analysis for URI: " + currentUri +
                         " (scheme=" + currentUri.getScheme() + ")"
                     );
                     waveformView.analyzeAudioFromVideo(currentUri);
                 } else {
-                    Log.w(TAG, "No current video URI for waveform analysis");
+                    FLog.w(TAG, "No current video URI for waveform analysis");
                 }
             }
 
             // Store waveform view reference for later use
             audioWaveformView = waveformView;
         } catch (Exception e) {
-            Log.w(TAG, "Error setting up controls", e);
+            FLog.w(TAG, "Error setting up controls", e);
         }
     }
 
@@ -3525,7 +3526,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                 waveformHandler.postDelayed(this, 100);
                             }
                         } catch (Exception e) {
-                            Log.w(TAG, "Error in waveform update runnable", e);
+                            FLog.w(TAG, "Error in waveform update runnable", e);
                         }
                     }
                 };
@@ -3533,7 +3534,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
             waveformHandler.post(waveformUpdateRunnable);
         } catch (Exception e) {
-            Log.w(TAG, "Error setting up waveform updates", e);
+            FLog.w(TAG, "Error setting up waveform updates", e);
         }
     }
 
@@ -3558,7 +3559,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error updating waveform progress", e);
+            FLog.w(TAG, "Error updating waveform progress", e);
         }
     }
 
@@ -3595,7 +3596,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Error applying video transform", e);
+                FLog.w(TAG, "Error applying video transform", e);
             }
         }
     }
@@ -3642,7 +3643,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Error resetting video transform", e);
+                FLog.w(TAG, "Error resetting video transform", e);
             }
         }
 
@@ -3677,14 +3678,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
                     
                     try {
                         if (playerView != null && !playerView.isControllerFullyVisible()) {
-                            android.util.Log.w("VideoPlayerActivity", "Controller became hidden during scrubbing - forcing it visible");
+                            FLog.w("VideoPlayerActivity", "Controller became hidden during scrubbing - forcing it visible");
                             playerView.setControllerShowTimeoutMs(0);
                             playerView.showController();
                             if (backButton != null) backButton.setVisibility(View.VISIBLE);
                             if (infoButton != null) infoButton.setVisibility(View.VISIBLE);
                         }
                     } catch (Exception e) {
-                        android.util.Log.e("VideoPlayerActivity", "Error in scrub controller enforcement", e);
+                        FLog.e("VideoPlayerActivity", "Error in scrub controller enforcement", e);
                     }
                     
                     // Schedule next check if still scrubbing

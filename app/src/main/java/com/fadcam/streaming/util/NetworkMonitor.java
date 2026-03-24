@@ -1,5 +1,7 @@
 package com.fadcam.streaming.util;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -10,8 +12,6 @@ import android.net.wifi.WifiInfo;
 import android.net.NetworkCapabilities;
 import android.net.Network;
 import android.os.Build;
-import android.util.Log;
-
 import com.fadcam.streaming.model.NetworkHealth;
 
 import java.io.BufferedReader;
@@ -128,14 +128,14 @@ public class NetworkMonitor {
                     
                     networkHealth.updateMeasurements(mbps, uploadMbps, latency, signalLevel);
                     
-                    Log.d(TAG, String.format(java.util.Locale.US, "Speed test: ↓%.2f Mbps ↑%.2f Mbps (Latency: %dms) - Status: %s (Signal: %d/4)",
+                    FLog.d(TAG, String.format(java.util.Locale.US, "Speed test: ↓%.2f Mbps ↑%.2f Mbps (Latency: %dms) - Status: %s (Signal: %d/4)",
                         mbps, uploadMbps, latency, networkHealth.getStatusString(), signalLevel));
                 } else {
                     int signalLevel = getSignalLevel();
                     networkHealth.updateMeasurements(0, 0, -1, signalLevel);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Speed test failed", e);
+                FLog.e(TAG, "Speed test failed", e);
                 networkHealth.updateMeasurements(0, 0, -1, getSignalLevel());
             }
         });
@@ -147,7 +147,7 @@ public class NetworkMonitor {
      */
     public int getSignalLevel() {
         if (appContext == null) {
-            Log.w(TAG, "getSignalLevel: appContext is null");
+            FLog.w(TAG, "getSignalLevel: appContext is null");
             return -1;
         }
         
@@ -204,7 +204,7 @@ public class NetworkMonitor {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to get signal level: " + e.getMessage());
+            FLog.w(TAG, "Failed to get signal level: " + e.getMessage());
         }
         
         return -1;
@@ -240,7 +240,7 @@ public class NetworkMonitor {
                 }
                 connection.disconnect();
             } catch (Exception e) {
-                Log.w(TAG, "Failed to test with " + testUrl, e);
+                FLog.w(TAG, "Failed to test with " + testUrl, e);
             }
         }
         return 0;

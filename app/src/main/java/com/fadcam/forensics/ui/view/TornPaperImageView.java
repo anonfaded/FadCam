@@ -1,5 +1,7 @@
 package com.fadcam.forensics.ui.view;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -11,8 +13,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Shader;
 import android.util.AttributeSet;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
@@ -215,7 +215,7 @@ public class TornPaperImageView extends AppCompatImageView {
             }
             sharedGrainShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
         } catch (Throwable t) {
-            Log.w(TAG, "Failed to prepare grain shader", t);
+            FLog.w(TAG, "Failed to prepare grain shader", t);
         }
     }
 

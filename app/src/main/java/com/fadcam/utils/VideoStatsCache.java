@@ -1,7 +1,8 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
-import android.util.Log;
 import com.fadcam.SharedPreferencesManager;
 
 /**
@@ -47,14 +48,14 @@ public class VideoStatsCache {
                 long lastUpdate = sharedPrefs.sharedPreferences.getLong(PREF_STATS_LAST_UPDATE, 0L);
                 
                 if (videoCount >= 0 && totalSizeMB >= 0) {
-                    Log.d(TAG, "Retrieved cached stats: " + videoCount + " videos, " + totalSizeMB + "MB");
+                    FLog.d(TAG, "Retrieved cached stats: " + videoCount + " videos, " + totalSizeMB + "MB");
                     return new VideoStats(videoCount, totalSizeMB, lastUpdate);
                 }
                 
-                Log.d(TAG, "No valid cached stats found");
+                FLog.d(TAG, "No valid cached stats found");
                 return null;
             } catch (Exception e) {
-                Log.e(TAG, "Error retrieving cached stats", e);
+                FLog.e(TAG, "Error retrieving cached stats", e);
                 return null;
             }
         }
@@ -76,9 +77,9 @@ public class VideoStatsCache {
                     .putLong(PREF_STATS_LAST_UPDATE, currentTime)
                     .apply();
                 
-                Log.d(TAG, "Updated cached stats: " + videoCount + " videos, " + totalSizeMB + "MB");
+                FLog.d(TAG, "Updated cached stats: " + videoCount + " videos, " + totalSizeMB + "MB");
             } catch (Exception e) {
-                Log.e(TAG, "Error updating cached stats", e);
+                FLog.e(TAG, "Error updating cached stats", e);
             }
         }
     }
@@ -95,9 +96,9 @@ public class VideoStatsCache {
                     .remove(PREF_STATS_LAST_UPDATE)
                     .apply();
                 
-                Log.d(TAG, "Invalidated cached stats");
+                FLog.d(TAG, "Invalidated cached stats");
             } catch (Exception e) {
-                Log.e(TAG, "Error invalidating cached stats", e);
+                FLog.e(TAG, "Error invalidating cached stats", e);
             }
         }
     }

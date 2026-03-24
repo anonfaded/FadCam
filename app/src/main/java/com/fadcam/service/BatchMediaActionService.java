@@ -1,5 +1,7 @@
 package com.fadcam.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -8,8 +10,6 @@ import android.net.Uri;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
@@ -138,7 +138,7 @@ public class BatchMediaActionService extends Service {
                         task.inputUris.size() + 2);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Batch action failed", e);
+            FLog.e(TAG, "Batch action failed", e);
             failed = Math.max(failed, 1);
         }
 
@@ -205,14 +205,14 @@ public class BatchMediaActionService extends Service {
             );
             FFmpegSession session = FFmpegKit.execute(ffmpegCmd);
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
-                Log.w(TAG, "Export FFmpeg failed: " + session.getOutput());
+                FLog.w(TAG, "Export FFmpeg failed: " + session.getOutput());
                 return ProcessResult.failed();
             }
 
             if (!finalizeOutput(outputTarget)) return ProcessResult.failed();
             return ProcessResult.success();
         } catch (Exception e) {
-            Log.e(TAG, "Export failed for uri: " + inputUri, e);
+            FLog.e(TAG, "Export failed for uri: " + inputUri, e);
             return ProcessResult.failed();
         } finally {
             closeQuietly(input);
@@ -275,7 +275,7 @@ public class BatchMediaActionService extends Service {
             );
             FFmpegSession session = FFmpegKit.execute(concatCopyCmd);
             if (!ReturnCode.isSuccess(session.getReturnCode())) {
-                Log.w(TAG, "Merge copy mode failed, trying safe re-encode fallback");
+                FLog.w(TAG, "Merge copy mode failed, trying safe re-encode fallback");
                 StringBuilder inputArgs = new StringBuilder();
                 StringBuilder concatFilter = new StringBuilder();
                 int count = mergePaths.size();
@@ -294,7 +294,7 @@ public class BatchMediaActionService extends Service {
                 );
                 FFmpegSession fallbackSession = FFmpegKit.execute(concatReencodeCmd);
                 if (!ReturnCode.isSuccess(fallbackSession.getReturnCode())) {
-                    Log.w(TAG, "Merge fallback failed: " + fallbackSession.getOutput());
+                    FLog.w(TAG, "Merge fallback failed: " + fallbackSession.getOutput());
                     return new MergeResult(false, skippedCount);
                 }
             }
@@ -304,7 +304,7 @@ public class BatchMediaActionService extends Service {
             }
             return new MergeResult(true, skippedCount);
         } catch (Exception e) {
-            Log.e(TAG, "Merge failed", e);
+            FLog.e(TAG, "Merge failed", e);
             return new MergeResult(false, inputUris.size());
         } finally {
             if (concatFile != null && concatFile.exists()) {
@@ -371,7 +371,7 @@ public class BatchMediaActionService extends Service {
                 return new InputPathHolder(uri, "/proc/self/fd/" + pfd.getFd(), pfd);
             }
         } catch (Exception e) {
-            Log.w(TAG, "Could not resolve input path: " + uri, e);
+            FLog.w(TAG, "Could not resolve input path: " + uri, e);
         }
         return null;
     }
@@ -448,7 +448,7 @@ public class BatchMediaActionService extends Service {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "resolveOutputTarget failed", e);
+            FLog.e(TAG, "resolveOutputTarget failed", e);
         }
         return null;
     }
@@ -472,7 +472,7 @@ public class BatchMediaActionService extends Service {
             out.flush();
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed final SAF copy", e);
+            FLog.e(TAG, "Failed final SAF copy", e);
             return false;
         }
     }
@@ -511,7 +511,7 @@ public class BatchMediaActionService extends Service {
             }
             return profile;
         } catch (Exception e) {
-            Log.w(TAG, "Profile extraction failed for: " + inputPath, e);
+            FLog.w(TAG, "Profile extraction failed for: " + inputPath, e);
             return null;
         }
     }

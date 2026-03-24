@@ -1,10 +1,11 @@
 package com.fadcam.fadrec.ui.overlay;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -55,7 +56,7 @@ public abstract class BaseTransparentEditorActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("BaseTransparentEditor", "onCreate() started");
+        FLog.d("BaseTransparentEditor", "onCreate() started");
         
         // Setup edge-to-edge layout with proper system insets
         setupEdgeToEdge();
@@ -66,21 +67,21 @@ public abstract class BaseTransparentEditorActivity extends Activity {
         // Notify that editor started (disable annotation canvas)
         Intent startBroadcast = new Intent(ACTION_EDITOR_STARTED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(startBroadcast);
-        Log.d("BaseTransparentEditor", "Sent ACTION_EDITOR_STARTED broadcast");
+        FLog.d("BaseTransparentEditor", "Sent ACTION_EDITOR_STARTED broadcast");
         
         // Set content view from subclass
         setContentView(getLayoutResourceId());
-        Log.d("BaseTransparentEditor", "Content view set");
+        FLog.d("BaseTransparentEditor", "Content view set");
         
         // Let subclass initialize views
         View rootView = findViewById(android.R.id.content);
-        Log.d("BaseTransparentEditor", "Root view: " + rootView);
+        FLog.d("BaseTransparentEditor", "Root view: " + rootView);
         
         // Apply safe area insets properly
         applySafeAreaInsets(rootView);
         
         onEditorViewCreated(rootView);
-        Log.d("BaseTransparentEditor", "onCreate() completed");
+        FLog.d("BaseTransparentEditor", "onCreate() completed");
     }
     
     /**
@@ -90,7 +91,7 @@ public abstract class BaseTransparentEditorActivity extends Activity {
     private void setupEdgeToEdge() {
         // Enable edge-to-edge display
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        Log.d("BaseTransparentEditor", "Edge-to-edge layout enabled");
+        FLog.d("BaseTransparentEditor", "Edge-to-edge layout enabled");
     }
     
     /**
@@ -108,7 +109,7 @@ public abstract class BaseTransparentEditorActivity extends Activity {
             int left = insets.getInsets(insetType).left;
             int right = insets.getInsets(insetType).right;
             
-            Log.d("BaseTransparentEditor", "System insets - top:" + top + " left:" + left + " right:" + right);
+            FLog.d("BaseTransparentEditor", "System insets - top:" + top + " left:" + left + " right:" + right);
             
             // Apply padding to root view to prevent content from going under bars
             v.setPadding(left, top, right, 0);
@@ -137,7 +138,7 @@ public abstract class BaseTransparentEditorActivity extends Activity {
             WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
         );
         
-        Log.d("BaseTransparentEditor", "Window configured for proper inset handling");
+        FLog.d("BaseTransparentEditor", "Window configured for proper inset handling");
     }
     
     /**

@@ -1,7 +1,8 @@
 package com.fadcam.forensics.ui.view;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.Path;
-import android.util.Log;
 import android.util.LruCache;
 
 import androidx.annotation.NonNull;
@@ -150,7 +151,7 @@ public final class TornEdgePathFactory {
         }
         int total = cacheHitCount + cacheMissCount;
         if (total == 1 || total % 60 == 0) {
-            Log.d(TAG, "pathCache hits=" + cacheHitCount + ", misses=" + cacheMissCount + ", size=" + PATH_CACHE.size());
+            FLog.d(TAG, "pathCache hits=" + cacheHitCount + ", misses=" + cacheMissCount + ", size=" + PATH_CACHE.size());
         }
     }
 }

@@ -1,9 +1,9 @@
 package com.fadcam.media;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.media3.common.C;
@@ -86,7 +86,7 @@ public class FragmentedMp4MuxerWrapper {
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(2000) // 2 seconds per fragment for stable streaming
                 .build();
-        // Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
+        // FLog.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
     }
 
     /**
@@ -110,7 +110,7 @@ public class FragmentedMp4MuxerWrapper {
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(2000) // 2 seconds per fragment for stable streaming
                 .build();
-        // Log.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
+        // FLog.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
     }
 
     /**
@@ -144,11 +144,11 @@ public class FragmentedMp4MuxerWrapper {
                 // Track which index is audio/video for proper MP4 offset handling
                 if (isVideo) {
                     videoTrackIndex = trackId;
-                    Log.i(TAG, "✅ [MEDIA3-FIX] VIDEO track registered at index " + trackId + 
+                    FLog.i(TAG, "✅ [MEDIA3-FIX] VIDEO track registered at index " + trackId + 
                                " - tfhd.DEFAULT_BASE_IS_MOOF enabled for proper moof-relative offsets");
                 } else if (mimeType != null && mimeType.startsWith("audio/")) {
                     audioTrackIndex = trackId;
-                    Log.i(TAG, "✅ [MEDIA3-FIX] AUDIO track registered at index " + trackId + 
+                    FLog.i(TAG, "✅ [MEDIA3-FIX] AUDIO track registered at index " + trackId + 
                                " - tfhd.DEFAULT_BASE_IS_MOOF enabled for VLC compatibility");
                 }
 
@@ -156,7 +156,7 @@ public class FragmentedMp4MuxerWrapper {
 
                 return trackId;
             } catch (Exception e) {
-                Log.e(TAG, "Failed to add track", e);
+                FLog.e(TAG, "Failed to add track", e);
                 throw new RuntimeException("Failed to add track: " + e.getMessage(), e);
             }
         }
@@ -168,7 +168,7 @@ public class FragmentedMp4MuxerWrapper {
     public void start() {
         synchronized (muxerLock) {
             if (started) {
-                Log.w(TAG, "Muxer already started");
+                FLog.w(TAG, "Muxer already started");
                 return;
             }
             if (released) {
@@ -179,9 +179,9 @@ public class FragmentedMp4MuxerWrapper {
             if (orientationHint != 0) {
                 try {
                     muxer.addMetadataEntry(new Mp4OrientationData(orientationHint));
-                    Log.d(TAG, "Added orientation metadata: " + orientationHint);
+                    FLog.d(TAG, "Added orientation metadata: " + orientationHint);
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to add orientation metadata", e);
+                    FLog.w(TAG, "Failed to add orientation metadata", e);
                 }
             }
 
@@ -193,9 +193,9 @@ public class FragmentedMp4MuxerWrapper {
                     System.currentTimeMillis());
                 muxer.addMetadataEntry(new androidx.media3.container.Mp4TimestampData(
                     mp4TimeSeconds, mp4TimeSeconds));
-                Log.d(TAG, "Added timestamp metadata (MP4 epoch seconds): " + mp4TimeSeconds);
+                FLog.d(TAG, "Added timestamp metadata (MP4 epoch seconds): " + mp4TimeSeconds);
             } catch (Exception e) {
-                Log.w(TAG, "Failed to add timestamp metadata", e);
+                FLog.w(TAG, "Failed to add timestamp metadata", e);
             }
 
             started = true;
@@ -204,11 +204,11 @@ public class FragmentedMp4MuxerWrapper {
             // This makes the file streamable right away
             try {
                 fileOutputStream.flush();
-                Log.d(TAG, "Muxer started and flushed - file is now streamable");
-                Log.i(TAG, "✅ [MEDIA3-FIX] Muxer initialized with " + trackCount + 
+                FLog.d(TAG, "Muxer started and flushed - file is now streamable");
+                FLog.i(TAG, "✅ [MEDIA3-FIX] Muxer initialized with " + trackCount + 
                            " tracks. ALL fragments will use tfhd.DEFAULT_BASE_IS_MOOF for proper offset calculation");
             } catch (IOException e) {
-                Log.w(TAG, "Failed to flush after start", e);
+                FLog.w(TAG, "Failed to flush after start", e);
             }
         }
     }
@@ -239,13 +239,13 @@ public class FragmentedMp4MuxerWrapper {
                 Long offset = timestampOffsets.get(trackIndex);
                 if (offset == null) {
                     timestampOffsets.put(trackIndex, bufferInfo.presentationTimeUs);
-                    Log.w(TAG, "⏱️ Track " + trackIndex + " timestamp offset initialized: " + bufferInfo.presentationTimeUs + "us (" + (bufferInfo.presentationTimeUs / 1000000.0) + "s) - will be normalized to 0");
+                    FLog.w(TAG, "⏱️ Track " + trackIndex + " timestamp offset initialized: " + bufferInfo.presentationTimeUs + "us (" + (bufferInfo.presentationTimeUs / 1000000.0) + "s) - will be normalized to 0");
                 }
                 
                 // Check if all tracks have offsets
                 if (timestampOffsets.size() >= trackCount) {
                     timestampOffsetsInitialized = true;
-                    Log.i(TAG, "✅ All track timestamp offsets initialized - timestamps will now start from 0");
+                    FLog.i(TAG, "✅ All track timestamp offsets initialized - timestamps will now start from 0");
                 }
             }
             
@@ -259,18 +259,18 @@ public class FragmentedMp4MuxerWrapper {
             int logCount = trackSampleLogs.get(trackIndex, 0);
             // Verbose logging reduced per user request - only log first 3 samples to verify initialization
             if (logCount < 3) {
-                Log.d(TAG, "[MUXER] PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
+                FLog.d(TAG, "[MUXER] PTS normalize t=" + normalizedPresentationTimeUs + "us (raw=" + bufferInfo.presentationTimeUs + "us, offset=" + offset + ") track=" + trackIndex + (isKeyFrame ? " [KEY]" : ""));
                 trackSampleLogs.put(trackIndex, logCount + 1);
             }
             
             // VLC debugging logs - reduced verbosity (was spamming hundreds of lines)
             // Uncomment for VLC-specific debugging:
             // if (trackIndex == audioTrackIndex && audioTrackIndex != -1 && logCount < 5) {
-            //     Log.d(TAG, String.format("[VLC-AUDIO] Sample #%d: pts=%dus, size=%d, origFlags=0x%X, hasKeyFlag=%b",
+            //     FLog.d(TAG, String.format("[VLC-AUDIO] Sample #%d: pts=%dus, size=%d, origFlags=0x%X, hasKeyFlag=%b",
             //         logCount, normalizedPresentationTimeUs, bufferInfo.size, bufferInfo.flags, isKeyFrame));
             // }
             // if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && isKeyFrame && logCount < 10) {
-            //     Log.w(TAG, String.format("[VLC-VIDEO-KEY] Sample #%d: pts=%dus, size=%d, origFlags=0x%X - VIDEO KEYFRAME",
+            //     FLog.w(TAG, String.format("[VLC-VIDEO-KEY] Sample #%d: pts=%dus, size=%d, origFlags=0x%X - VIDEO KEYFRAME",
             //         logCount, normalizedPresentationTimeUs, bufferInfo.size, bufferInfo.flags));
             // }
             
@@ -296,7 +296,7 @@ public class FragmentedMp4MuxerWrapper {
             if (data.remaining() != bufferInfo.size) {
                 // Unexpected: caller didn't pre-position correctly
                 // Try to fix it by slicing
-                Log.w(TAG, String.format("Buffer not properly positioned: remaining=%d, size=%d. Attempting correction.",
+                FLog.w(TAG, String.format("Buffer not properly positioned: remaining=%d, size=%d. Attempting correction.",
                     data.remaining(), bufferInfo.size));
                 int start = bufferInfo.offset;
                 int end = bufferInfo.offset + bufferInfo.size;
@@ -313,7 +313,7 @@ public class FragmentedMp4MuxerWrapper {
 
             muxer.writeSampleData(trackIndex, data, media3BufferInfo);
             } catch (MuxerException e) {
-                Log.e(TAG, "Failed to write sample data", e);
+                FLog.e(TAG, "Failed to write sample data", e);
                 throw new RuntimeException("Failed to write sample data: " + e.getMessage(), e);
             }
         }
@@ -326,11 +326,11 @@ public class FragmentedMp4MuxerWrapper {
     public void stop() {
         synchronized (muxerLock) {
             if (!started) {
-                Log.w(TAG, "Muxer was not started, nothing to stop");
+                FLog.w(TAG, "Muxer was not started, nothing to stop");
                 return;
             }
             if (released) {
-                Log.w(TAG, "Muxer already released");
+                FLog.w(TAG, "Muxer already released");
                 return;
             }
 
@@ -338,9 +338,9 @@ public class FragmentedMp4MuxerWrapper {
                 // Media3's FragmentedMp4Muxer.close() automatically creates the final fragment
                 // and finalizes all track durations. No need to manually write EOS samples.
                 muxer.close();
-                Log.d(TAG, "Muxer stopped successfully");
+                FLog.d(TAG, "Muxer stopped successfully");
             } catch (MuxerException e) {
-                Log.e(TAG, "Error stopping muxer", e);
+                FLog.e(TAG, "Error stopping muxer", e);
                 throw new RuntimeException("Failed to stop muxer: " + e.getMessage(), e);
             }
         }
@@ -365,20 +365,20 @@ public class FragmentedMp4MuxerWrapper {
                     try {
                         muxer.close();
                     } catch (MuxerException e) {
-                        Log.e(TAG, "Error closing muxer", e);
+                        FLog.e(TAG, "Error closing muxer", e);
                     }
                 }
                 // CRITICAL: Flush BEFORE closing to ensure all data (including moov box) is written to disk
                 try {
                     fileOutputStream.flush();
-                    Log.d(TAG, "FileOutputStream flushed successfully");
+                    FLog.d(TAG, "FileOutputStream flushed successfully");
                 } catch (IOException e) {
-                    Log.w(TAG, "Failed to flush FileOutputStream", e);
+                    FLog.w(TAG, "Failed to flush FileOutputStream", e);
                 }
                 fileOutputStream.close();
-                Log.d(TAG, "Muxer released and file closed");
+                FLog.d(TAG, "Muxer released and file closed");
             } catch (IOException e) {
-                Log.e(TAG, "Error releasing muxer", e);
+                FLog.e(TAG, "Error releasing muxer", e);
             }
         }
     }
@@ -390,11 +390,11 @@ public class FragmentedMp4MuxerWrapper {
      */
     public void setOrientationHint(int degrees) {
         if (started) {
-            Log.w(TAG, "Cannot set orientation after muxer started");
+            FLog.w(TAG, "Cannot set orientation after muxer started");
             return;
         }
         this.orientationHint = degrees;
-        Log.d(TAG, "Orientation hint set to: " + degrees);
+        FLog.d(TAG, "Orientation hint set to: " + degrees);
     }
 
     /**
@@ -406,14 +406,14 @@ public class FragmentedMp4MuxerWrapper {
      */
     public void setLocation(float latitude, float longitude) {
         if (started) {
-            Log.w(TAG, "Cannot set location after muxer started");
+            FLog.w(TAG, "Cannot set location after muxer started");
             return;
         }
         try {
             muxer.addMetadataEntry(new androidx.media3.container.Mp4LocationData(latitude, longitude));
-            Log.d(TAG, "Location metadata set: " + latitude + ", " + longitude);
+            FLog.d(TAG, "Location metadata set: " + latitude + ", " + longitude);
         } catch (Exception e) {
-            Log.w(TAG, "Failed to set location metadata (may not be supported)", e);
+            FLog.w(TAG, "Failed to set location metadata (may not be supported)", e);
         }
     }
 
@@ -493,7 +493,7 @@ public class FragmentedMp4MuxerWrapper {
                 
                 androidx.media3.common.ColorInfo colorInfo = colorBuilder.build();
                 builder.setColorInfo(colorInfo);
-                Log.d(TAG, "  Set color info from MediaFormat");
+                FLog.d(TAG, "  Set color info from MediaFormat");
             }
             
             if (mediaFormat.containsKey(MediaFormat.KEY_ROTATION)) {
@@ -540,7 +540,7 @@ public class FragmentedMp4MuxerWrapper {
 
         // Handle audio format
         if (mimeType != null && mimeType.startsWith("audio/")) {
-            Log.d(TAG, "Converting audio format: " + mimeType);
+            FLog.d(TAG, "Converting audio format: " + mimeType);
             
             // Extract sample rate and channel count for AAC config generation
             int sampleRate = 48000; // default
@@ -549,21 +549,21 @@ public class FragmentedMp4MuxerWrapper {
             if (mediaFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) {
                 channels = mediaFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
                 builder.setChannelCount(channels);
-                Log.d(TAG, "  channelCount=" + channels);
+                FLog.d(TAG, "  channelCount=" + channels);
             } else {
-                Log.w(TAG, "  WARNING: No channel count in audio format!");
+                FLog.w(TAG, "  WARNING: No channel count in audio format!");
             }
             if (mediaFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE)) {
                 sampleRate = mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE);
                 builder.setSampleRate(sampleRate);
-                Log.d(TAG, "  sampleRate=" + sampleRate);
+                FLog.d(TAG, "  sampleRate=" + sampleRate);
             } else {
-                Log.w(TAG, "  WARNING: No sample rate in audio format!");
+                FLog.w(TAG, "  WARNING: No sample rate in audio format!");
             }
             if (mediaFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
                 int bitrate = mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE);
                 builder.setAverageBitrate(bitrate);
-                Log.d(TAG, "  bitrate=" + bitrate);
+                FLog.d(TAG, "  bitrate=" + bitrate);
             }
 
             // CRITICAL VLC FIX: Generate proper AAC AudioSpecificConfig for ESDS box
@@ -580,7 +580,7 @@ public class FragmentedMp4MuxerWrapper {
                 // The codec string tells the MP4 parser (VLC) what audio codec profile/level to expect
                 builder.setCodecs("mp4a.40.2"); // AAC-LC (object type 2), profile level 0
                 
-                Log.d(TAG, "  Generated clean AAC config for VLC: " + bytesToHex(aacConfig) + 
+                FLog.d(TAG, "  Generated clean AAC config for VLC: " + bytesToHex(aacConfig) + 
                            " (sampleRate=" + sampleRate + ", channels=" + channels + ")");
             }
         }
@@ -597,7 +597,7 @@ public class FragmentedMp4MuxerWrapper {
         if ((mediaCodecFlags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
             flags |= C.BUFFER_FLAG_KEY_FRAME;
             if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && sampleCountDebug < 5) {
-                Log.w(TAG, "[VLC-VIDEO-CONVERT] Video keyframe flag converted to Media3 C.BUFFER_FLAG_KEY_FRAME");
+                FLog.w(TAG, "[VLC-VIDEO-CONVERT] Video keyframe flag converted to Media3 C.BUFFER_FLAG_KEY_FRAME");
             }
         }
         
@@ -656,7 +656,7 @@ public class FragmentedMp4MuxerWrapper {
             
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)
-                Log.i(TAG, "📦 [SEGMENT] Received INIT segment: " + data.length + " bytes");
+                FLog.i(TAG, "📦 [SEGMENT] Received INIT segment: " + data.length + " bytes");
                 
                 // Send to RemoteStreamManager for HLS streaming
                 RemoteStreamManager.getInstance().onInitializationSegment(data);
@@ -666,20 +666,20 @@ public class FragmentedMp4MuxerWrapper {
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    // Log.d(TAG, "✅ Init segment written to file (STREAM_AND_SAVE mode)");
+                    // FLog.d(TAG, "✅ Init segment written to file (STREAM_AND_SAVE mode)");
                 } else {
-                    // Log.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
+                    // FLog.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
                 }
             } else {
                 // Media fragment (moof + mdat)
-                Log.i(TAG, "🎬 [FRAGMENT] #" + segment.segmentNr + 
+                FLog.i(TAG, "🎬 [FRAGMENT] #" + segment.segmentNr + 
                     ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
                 
                 // Send to RemoteStreamManager for HLS streaming
                 if (initSegmentSent) {
                     RemoteStreamManager.getInstance().onFragmentComplete(segment.segmentNr, data);
                 } else {
-                    Log.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
+                    FLog.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
                         " received before init segment - skipping stream upload");
                 }
                 
@@ -687,15 +687,15 @@ public class FragmentedMp4MuxerWrapper {
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
-                    Log.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
+                    FLog.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
                 } else {
-                    // Log.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
+                    // FLog.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
                 
                 nextFragmentNumber++;
             }
             } catch (Exception e) {
-                Log.e(TAG, "❌ Error handling processed segment", e);
+                FLog.e(TAG, "❌ Error handling processed segment", e);
             }
         }
     }
@@ -731,7 +731,7 @@ public class FragmentedMp4MuxerWrapper {
             case 8000: samplingFrequencyIndex = 11; break;
             case 7350: samplingFrequencyIndex = 12; break;
             default:
-                Log.w(TAG, "Unsupported sample rate: " + sampleRate + ", using 48000 Hz");
+                FLog.w(TAG, "Unsupported sample rate: " + sampleRate + ", using 48000 Hz");
                 samplingFrequencyIndex = 3; // 48000 Hz
                 break;
         }

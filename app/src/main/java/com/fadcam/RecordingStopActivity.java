@@ -1,9 +1,9 @@
 package com.fadcam;
 
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
@@ -28,7 +28,7 @@ public class RecordingStopActivity extends Activity {
             startService(stopIntent);
 
         } catch (Exception e) {
-            Log.e(TAG, "Error stopping recording via shortcut", e);
+            FLog.e(TAG, "Error stopping recording via shortcut", e);
             Toast.makeText(this, "Failed to stop recording", Toast.LENGTH_SHORT).show();
         } finally {
             // Prevent app from coming to foreground

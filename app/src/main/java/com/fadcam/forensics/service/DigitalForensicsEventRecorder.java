@@ -1,11 +1,11 @@
 package com.fadcam.forensics.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 
@@ -296,14 +296,14 @@ public class DigitalForensicsEventRecorder {
                     long totalCount = snapshotDao.countAllSnapshots();
                     long prev = lastMediaSnapshotCount.containsKey(mediaUid) ? lastMediaSnapshotCount.get(mediaUid) : 0L;
                     if (mediaCount < prev) {
-                        Log.e(TAG, "ForensicsPersist regression: mediaUid=" + mediaUid
+                        FLog.e(TAG, "ForensicsPersist regression: mediaUid=" + mediaUid
                                 + ", previousMediaSnapshots=" + prev
                                 + ", currentMediaSnapshots=" + mediaCount
                                 + ", totalSnapshots=" + totalCount
                                 + ", lastSnapshotUid=" + snapshotUid);
                     }
                     lastMediaSnapshotCount.put(mediaUid, mediaCount);
-                    Log.i(TAG, "ForensicsPersist: mediaUid=" + mediaUid
+                    FLog.i(TAG, "ForensicsPersist: mediaUid=" + mediaUid
                             + ", mediaSnapshots=" + mediaCount
                             + ", totalSnapshots=" + totalCount
                             + ", lastSnapshotUid=" + snapshotUid);
@@ -422,14 +422,14 @@ public class DigitalForensicsEventRecorder {
         try {
             File externalRoot = appContext.getExternalFilesDir(null);
             if (externalRoot == null) {
-                Log.e(TAG, "Snapshot persistence failed: external files dir unavailable");
+                FLog.e(TAG, "Snapshot persistence failed: external files dir unavailable");
                 return null;
             }
             File root = new File(externalRoot, "FadCam/Forensics/Snapshots");
             String day = new SimpleDateFormat("yyyyMMdd", Locale.US).format(new Date());
             File dir = new File(root, day + "/" + mediaUid);
             if (!dir.exists() && !dir.mkdirs()) {
-                Log.e(TAG, "Snapshot persistence failed: cannot create dir " + dir.getAbsolutePath());
+                FLog.e(TAG, "Snapshot persistence failed: cannot create dir " + dir.getAbsolutePath());
                 return null;
             }
             File out = new File(dir, eventUid + "_" + timelineMs + "_" + snapshotUid + ".jpg");
@@ -439,11 +439,11 @@ public class DigitalForensicsEventRecorder {
             }
             if (!snapshotRootLogged) {
                 snapshotRootLogged = true;
-                Log.i(TAG, "Forensics snapshots root: " + root.getAbsolutePath());
+                FLog.i(TAG, "Forensics snapshots root: " + root.getAbsolutePath());
             }
             return Uri.fromFile(out).toString();
         } catch (Exception e) {
-            Log.w(TAG, "Snapshot persistence failed", e);
+            FLog.w(TAG, "Snapshot persistence failed", e);
             return null;
         }
     }
@@ -503,7 +503,7 @@ public class DigitalForensicsEventRecorder {
             }
             return asset.mediaUid;
         } catch (Exception e) {
-            Log.w(TAG, "ensureMediaAsset failed for uri=" + mediaUri, e);
+            FLog.w(TAG, "ensureMediaAsset failed for uri=" + mediaUri, e);
             return null;
         }
     }
@@ -755,7 +755,7 @@ public class DigitalForensicsEventRecorder {
             return;
         }
         lastFilterLogMs = now;
-        Log.i(TAG, "ForensicsFilter stats: seen=" + filterSeenCount
+        FLog.i(TAG, "ForensicsFilter stats: seen=" + filterSeenCount
                 + ", scopeDrop=" + filteredByScopeCount
                 + ", categoryDrop=" + filteredByCategoryCount
                 + ", antiFaceDrop=" + filteredByAntiFaceCount
@@ -781,7 +781,7 @@ public class DigitalForensicsEventRecorder {
             // capture stutter and GC pressure. Evidence snapshots remain the
             // canonical artifacts for forensics workflows.
         } catch (Exception e) {
-            Log.w(TAG, "Metadata enrichment skipped for uri=" + mediaUri, e);
+            FLog.w(TAG, "Metadata enrichment skipped for uri=" + mediaUri, e);
         }
     }
 

@@ -1,7 +1,8 @@
 package com.fadcam.dualcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -62,7 +63,7 @@ public class DualCameraToggleHelper {
                           @Nullable FragmentActivity activity) {
         if (!isDeviceSupported()) {
             String reason = getUnsupportedReason();
-            Log.w(TAG, "Dual camera not supported: " + reason);
+            FLog.w(TAG, "Dual camera not supported: " + reason);
             Toast.makeText(appContext, reason != null ? reason
                     : "Dual camera not supported on this device", Toast.LENGTH_LONG).show();
             return false;
@@ -72,7 +73,7 @@ public class DualCameraToggleHelper {
         boolean newState = !currentlyEnabled;
         prefs.setDualCameraModeEnabled(newState);
 
-        Log.d(TAG, "Dual camera mode toggled: " + currentlyEnabled + " → " + newState);
+        FLog.d(TAG, "Dual camera mode toggled: " + currentlyEnabled + " → " + newState);
 
         if (newState) {
             // Show full settings screen when enabling
@@ -82,10 +83,10 @@ public class DualCameraToggleHelper {
                             new DualCameraSettingsFragment(),
                             "DualCameraSettingsFragment");
                 } else {
-                    Log.w(TAG, "No activity available to show dual camera settings overlay");
+                    FLog.w(TAG, "No activity available to show dual camera settings overlay");
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Could not show dual camera settings", e);
+                FLog.w(TAG, "Could not show dual camera settings", e);
             }
         }
 

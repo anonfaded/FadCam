@@ -1,10 +1,11 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -125,7 +126,7 @@ public class WatermarkSettingsFragment extends Fragment {
                 refreshLocationValue();
                 updatePreview();
                 updateLocationRowState();
-                Log.d(TAG, "Location watermark enabled via sheet.");
+                FLog.d(TAG, "Location watermark enabled via sheet.");
             });
         } else {
             prefs.setLocationEnabled(false);
@@ -133,7 +134,7 @@ public class WatermarkSettingsFragment extends Fragment {
             refreshLocationValue();
             updatePreview();
             updateLocationRowState();
-            Log.d(TAG, "Location watermark disabled via sheet.");
+            FLog.d(TAG, "Location watermark disabled via sheet.");
         }
     }
 
@@ -323,7 +324,7 @@ public class WatermarkSettingsFragment extends Fragment {
                     prefs.setWatermarkCustomText(input.trim());
                     refreshCustomTextValue();
                     updatePreview();
-                    Log.d(TAG, "Custom watermark text set: " + input);
+                    FLog.d(TAG, "Custom watermark text set: " + input);
                 }
                 sheet.dismiss();
             }

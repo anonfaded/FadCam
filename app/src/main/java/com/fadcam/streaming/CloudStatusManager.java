@@ -1,12 +1,12 @@
 package com.fadcam.streaming;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -112,7 +112,7 @@ public class CloudStatusManager {
             authErrorShown = true;  // Mark as shown - don't show again
             handler.post(() -> authErrorListener.onAuthError(reason));
         } else if (authErrorShown) {
-            Log.d(TAG, "☁️ Auth error already shown, suppressing additional notification: " + reason);
+            FLog.d(TAG, "☁️ Auth error already shown, suppressing additional notification: " + reason);
         }
     }
     
@@ -136,7 +136,7 @@ public class CloudStatusManager {
         boolean ready = ((hasToken || hasRefresh) || hasStreamToken) && hasUuid;
         
         // Debug logging to trace why cloud might not be ready
-        Log.d(TAG, "☁️ isCloudReady check: hasToken=" + hasToken 
+        FLog.d(TAG, "☁️ isCloudReady check: hasToken=" + hasToken 
             + ", hasRefresh=" + hasRefresh 
             + ", hasUuid=" + hasUuid 
             + ", hasStreamToken=" + hasStreamToken 
@@ -151,24 +151,24 @@ public class CloudStatusManager {
      * Will only actually start if cloud mode is enabled and user is linked.
      */
     public void start() {
-        Log.i(TAG, "☁️ start() called");
+        FLog.i(TAG, "☁️ start() called");
         
         if (isRunning) {
-            Log.d(TAG, "☁️ Already running, ignoring start");
+            FLog.d(TAG, "☁️ Already running, ignoring start");
             return;
         }
         
         if (!isCloudModeEnabled()) {
-            Log.d(TAG, "☁️ Cloud mode not enabled, not starting");
+            FLog.d(TAG, "☁️ Cloud mode not enabled, not starting");
             return;
         }
         
         if (!isCloudReady()) {
-            Log.d(TAG, "☁️ Cloud not ready (no credentials), not starting");
+            FLog.d(TAG, "☁️ Cloud not ready (no credentials), not starting");
             return;
         }
         
-        Log.i(TAG, "☁️ Starting status push and command polling...");
+        FLog.i(TAG, "☁️ Starting status push and command polling...");
         
         isRunning = true;
         statusPushCount = 0;
@@ -178,7 +178,7 @@ public class CloudStatusManager {
             @Override
             public void run() {
                 if (!isRunning) {
-                    Log.w(TAG, "☁️ Status push loop stopped (isRunning=false)");
+                    FLog.w(TAG, "☁️ Status push loop stopped (isRunning=false)");
                     return;
                 }
                 
@@ -186,7 +186,7 @@ public class CloudStatusManager {
                     pushStatus();
                     statusPushCount++;
                 } catch (Exception e) {
-                    Log.e(TAG, "☁️ Exception in pushStatus (will retry): " + e.getMessage());
+                    FLog.e(TAG, "☁️ Exception in pushStatus (will retry): " + e.getMessage());
                     onPushFailure("Exception: " + e.getMessage());
                 }
                 
@@ -206,14 +206,14 @@ public class CloudStatusManager {
             @Override
             public void run() {
                 if (!isRunning) {
-                    Log.w(TAG, "☁️ Command poll loop stopped (isRunning=false)");
+                    FLog.w(TAG, "☁️ Command poll loop stopped (isRunning=false)");
                     return;
                 }
                 
                 try {
                     pollCommands();
                 } catch (Exception e) {
-                    Log.e(TAG, "☁️ Exception in pollCommands (will retry): " + e.getMessage());
+                    FLog.e(TAG, "☁️ Exception in pollCommands (will retry): " + e.getMessage());
                 }
                 
                 // Always reschedule regardless of errors
@@ -227,14 +227,14 @@ public class CloudStatusManager {
             @Override
             public void run() {
                 if (!isRunning) {
-                    Log.w(TAG, "☁️ Viewers poll loop stopped (isRunning=false)");
+                    FLog.w(TAG, "☁️ Viewers poll loop stopped (isRunning=false)");
                     return;
                 }
                 
                 try {
                     pollCloudViewers();
                 } catch (Exception e) {
-                    Log.e(TAG, "☁️ Exception in pollCloudViewers (will retry): " + e.getMessage());
+                    FLog.e(TAG, "☁️ Exception in pollCloudViewers (will retry): " + e.getMessage());
                 }
                 
                 // Reschedule regardless of errors
@@ -243,7 +243,7 @@ public class CloudStatusManager {
         };
         handler.postDelayed(viewersRunnable, 2000); // Start 2s after server starts
         
-        Log.i(TAG, "☁️ Cloud status manager started (status: " + STATUS_PUSH_INTERVAL_MS + 
+        FLog.i(TAG, "☁️ Cloud status manager started (status: " + STATUS_PUSH_INTERVAL_MS + 
               "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, viewers: " + VIEWERS_POLL_INTERVAL_MS + "ms)");
     }
     
@@ -277,7 +277,7 @@ public class CloudStatusManager {
         // Reset cloud viewer count when stopping
         RemoteStreamManager.getInstance().setCloudViewerCount(0);
         
-        Log.i(TAG, "☁️ Cloud status manager stopped (pushed " + statusPushCount + " status updates)");
+        FLog.i(TAG, "☁️ Cloud status manager stopped (pushed " + statusPushCount + " status updates)");
     }
     
     /**
@@ -305,7 +305,7 @@ public class CloudStatusManager {
         String streamToken = authManager.getStreamToken();
         
         if (userUuid == null || deviceId == null) {
-            Log.w(TAG, "Missing credentials for status push: " +
+            FLog.w(TAG, "Missing credentials for status push: " +
                     "userUuid=" + (userUuid != null ? "OK" : "NULL") +
                     ", deviceId=" + (deviceId != null ? "OK" : "NULL"));
             return;
@@ -317,23 +317,23 @@ public class CloudStatusManager {
             long timeSinceLastFailure = System.currentTimeMillis() - lastStreamTokenFetchFailureTime;
             if (timeSinceLastFailure < STREAM_TOKEN_FETCH_COOLDOWN_MS) {
                 long cooldownRemaining = STREAM_TOKEN_FETCH_COOLDOWN_MS - timeSinceLastFailure;
-                Log.d(TAG, "☁️ Stream token fetch on cooldown for " + (cooldownRemaining / 1000) + "s (waiting after recent failure)");
+                FLog.d(TAG, "☁️ Stream token fetch on cooldown for " + (cooldownRemaining / 1000) + "s (waiting after recent failure)");
                 onPushFailure("Token fetch throttled (cooldown)");
                 return;
             }
             
-            Log.i(TAG, "Stream token missing/expired, fetching new one...");
+            FLog.i(TAG, "Stream token missing/expired, fetching new one...");
             authManager.getValidStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
                 @Override
                 public void onSuccess(String newStreamToken) {
-                    Log.i(TAG, "Stream token fetched, will use on next push");
+                    FLog.i(TAG, "Stream token fetched, will use on next push");
                     // Actually push now with the new token
                     doPushStatus(statusJson, userUuid, deviceId, newStreamToken);
                 }
                 
                 @Override
                 public void onError(String error) {
-                    Log.e(TAG, "Stream token fetch failed: " + error);
+                    FLog.e(TAG, "Stream token fetch failed: " + error);
                     lastStreamTokenFetchFailureTime = System.currentTimeMillis();  // Record failure time
                     onPushFailure("Token fetch failed: " + error);
                     // Notify UI of auth error (only once)
@@ -354,7 +354,7 @@ public class CloudStatusManager {
      */
     private void onPushSuccess() {
         if (consecutiveFailures > 0) {
-            Log.i(TAG, "☁️ ✅ Status push RECOVERED after " + consecutiveFailures + " failures (was offline for " + 
+            FLog.i(TAG, "☁️ ✅ Status push RECOVERED after " + consecutiveFailures + " failures (was offline for " + 
                     ((System.currentTimeMillis() - lastSuccessfulPushTime) / 1000) + "s)");
         }
         consecutiveFailures = 0;
@@ -370,21 +370,21 @@ public class CloudStatusManager {
         
         // Log with escalating severity
         if (consecutiveFailures == 1) {
-            Log.w(TAG, "☁️ ⚠️ Status push failed (" + consecutiveFailures + "/" + MAX_CONSECUTIVE_FAILURES + "): " + reason);
+            FLog.w(TAG, "☁️ ⚠️ Status push failed (" + consecutiveFailures + "/" + MAX_CONSECUTIVE_FAILURES + "): " + reason);
         } else if (consecutiveFailures <= 3) {
-            Log.w(TAG, "☁️ ⚠️ Status push still failing (" + consecutiveFailures + "/" + MAX_CONSECUTIVE_FAILURES + "): " + reason);
+            FLog.w(TAG, "☁️ ⚠️ Status push still failing (" + consecutiveFailures + "/" + MAX_CONSECUTIVE_FAILURES + "): " + reason);
         } else if (consecutiveFailures == MAX_CONSECUTIVE_FAILURES) {
-            Log.e(TAG, "☁️ ❌ Status push MAX FAILURES reached (" + consecutiveFailures + "). Dashboard will show offline.");
+            FLog.e(TAG, "☁️ ❌ Status push MAX FAILURES reached (" + consecutiveFailures + "). Dashboard will show offline.");
         } else if (consecutiveFailures % 10 == 0) {
             // Log every 10 failures after max to avoid log spam
-            Log.e(TAG, "☁️ ❌ Status push offline for " + consecutiveFailures + " cycles (~" + 
+            FLog.e(TAG, "☁️ ❌ Status push offline for " + consecutiveFailures + " cycles (~" + 
                     (consecutiveFailures * currentBackoffMs / 1000) + "s)");
         }
         
         // Exponential backoff: 2s → 4s → 8s max
         if (consecutiveFailures >= 3 && currentBackoffMs < MAX_BACKOFF_MS) {
             currentBackoffMs = Math.min(currentBackoffMs * 2, MAX_BACKOFF_MS);
-            Log.d(TAG, "☁️ Increasing push interval to " + currentBackoffMs + "ms due to failures");
+            FLog.d(TAG, "☁️ Increasing push interval to " + currentBackoffMs + "ms due to failures");
         }
     }
     
@@ -408,14 +408,14 @@ public class CloudStatusManager {
                 JSONObject status = new JSONObject(statusJson);
                 int cloudViewers = status.optInt("cloudViewers", -1);
                 int activeConnections = status.optInt("activeConnections", -1);
-                Log.i(TAG, "☁️ 📤 Status push #" + statusPushCount + 
+                FLog.i(TAG, "☁️ 📤 Status push #" + statusPushCount + 
                     " | cloudViewers=" + cloudViewers + 
                     " | activeConnections=" + activeConnections);
             } catch (Exception e) {
-                Log.d(TAG, "☁️ 📤 Status push #" + statusPushCount);
+                FLog.d(TAG, "☁️ 📤 Status push #" + statusPushCount);
             }
         }
-        Log.d(TAG, "☁️ 📤 Pushing status to: " + urlStr);
+        FLog.d(TAG, "☁️ 📤 Pushing status to: " + urlStr);
         
         // Debug logging for token and device info
         long tokenExpiry = android.content.SharedPreferences.class.isInstance(authManager) ? 0 : 0;
@@ -423,7 +423,7 @@ public class CloudStatusManager {
             String tokenDebug = token.length() > 20 ? 
                 token.substring(0, 10) + "..." + token.substring(token.length() - 10) : 
                 "***";
-            Log.d(TAG, "☁️ 📤 Auth token: " + tokenDebug + 
+            FLog.d(TAG, "☁️ 📤 Auth token: " + tokenDebug + 
                     " | Device: " + deviceId + 
                     " | User: " + userUuid.substring(0, 8) + "...");
         }
@@ -444,7 +444,7 @@ public class CloudStatusManager {
                 }
                 
                 int responseCode = conn.getResponseCode();
-                Log.d(TAG, "☁️ 📤 Push response: HTTP " + responseCode);
+                FLog.d(TAG, "☁️ 📤 Push response: HTTP " + responseCode);
                 if (responseCode >= 200 && responseCode < 300) {
                     // Success - track recovery
                     onPushSuccess();
@@ -469,9 +469,9 @@ public class CloudStatusManager {
                         // Ignore
                     }
                     
-                    Log.e(TAG, "☁️ 📤 AUTH ERROR (401): Device not properly authenticated" + errorDetail);
-                    Log.d(TAG, "☁️ 📤 DEBUG: Checking token validity...");
-                    Log.d(TAG, "☁️ 📤 Token present: " + (token != null && !token.isEmpty()) +
+                    FLog.e(TAG, "☁️ 📤 AUTH ERROR (401): Device not properly authenticated" + errorDetail);
+                    FLog.d(TAG, "☁️ 📤 DEBUG: Checking token validity...");
+                    FLog.d(TAG, "☁️ 📤 Token present: " + (token != null && !token.isEmpty()) +
                             " | User UUID: " + (userUuid != null) +
                             " | Device ID: " + (deviceId != null));
                     
@@ -481,13 +481,13 @@ public class CloudStatusManager {
                     onPushFailure("HTTP " + responseCode);
                 }
             } catch (java.net.SocketTimeoutException e) {
-                Log.e(TAG, "☁️ 📤 Push timeout: " + e.getMessage());
+                FLog.e(TAG, "☁️ 📤 Push timeout: " + e.getMessage());
                 onPushFailure("Timeout: " + e.getMessage());
             } catch (java.io.IOException e) {
-                Log.e(TAG, "☁️ 📤 Push IO error: " + e.getMessage());
+                FLog.e(TAG, "☁️ 📤 Push IO error: " + e.getMessage());
                 onPushFailure("IO: " + e.getMessage());
             } catch (Exception e) {
-                Log.e(TAG, "☁️ 📤 Push exception: " + e.getMessage());
+                FLog.e(TAG, "☁️ 📤 Push exception: " + e.getMessage());
                 onPushFailure("Error: " + e.getMessage());
             } finally {
                 if (conn != null) {
@@ -546,7 +546,7 @@ public class CloudStatusManager {
                     }
                     
                     if (commandCount > 0) {
-                        Log.i(TAG, "☁️ Found " + commandCount + " pending cloud commands");
+                        FLog.i(TAG, "☁️ Found " + commandCount + " pending cloud commands");
                         for (int i = 0; i < files.length(); i++) {
                             JSONObject fileEntry = files.getJSONObject(i);
                             String cmdFile = fileEntry.getString("name");
@@ -579,12 +579,12 @@ public class CloudStatusManager {
         String streamToken = authManager.getStreamToken();
         
         if (userUuid == null || deviceId == null || streamToken == null) {
-            Log.w(TAG, "☁️ Cannot fetch command " + cmdId + " - auth not ready");
+            FLog.w(TAG, "☁️ Cannot fetch command " + cmdId + " - auth not ready");
             return;
         }
         
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/command/" + userUuid + "/" + deviceId + "/" + cmdId + ".json";
-        Log.d(TAG, "☁️ Fetching command: " + cmdId);
+        FLog.d(TAG, "☁️ Fetching command: " + cmdId);
         
         executor.execute(() -> {
             HttpURLConnection conn = null;
@@ -596,7 +596,7 @@ public class CloudStatusManager {
                 conn.setReadTimeout(5000);
                 
                 int responseCode = conn.getResponseCode();
-                Log.d(TAG, "☁️ Command fetch response: " + responseCode);
+                FLog.d(TAG, "☁️ Command fetch response: " + responseCode);
                 if (responseCode == 200) {
                     java.io.InputStream is = conn.getInputStream();
                     java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
@@ -607,7 +607,7 @@ public class CloudStatusManager {
                     executeCommand(cmdId, command);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Failed to fetch command " + cmdId + ": " + e.getMessage());
+                FLog.e(TAG, "Failed to fetch command " + cmdId + ": " + e.getMessage());
             } finally {
                 if (conn != null) {
                     conn.disconnect();
@@ -624,7 +624,7 @@ public class CloudStatusManager {
     private void executeCommand(String cmdId, JSONObject command) {
         try {
             String action = command.getString("action");
-            Log.i(TAG, "☁️ Executing cloud command: " + action);
+            FLog.i(TAG, "☁️ Executing cloud command: " + action);
 
             RemoteStreamManager manager = RemoteStreamManager.getInstance();
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
@@ -647,7 +647,7 @@ public class CloudStatusManager {
                 } else {
                     context.startService(intent);
                 }
-                Log.i(TAG, "✅ Cloud torch toggle sent to TorchService. New state: " + newState);
+                FLog.i(TAG, "✅ Cloud torch toggle sent to TorchService. New state: " + newState);
 
             } else if ("recording_toggle".equals(action)) {
                 // Start / stop / resume-if-paused – mirrors LiveM3U8Server.toggleRecording()
@@ -658,37 +658,37 @@ public class CloudStatusManager {
                         context, com.fadcam.services.RecordingService.class);
                 if (isPaused) {
                     intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
-                    Log.d(TAG, "☁️ recording_toggle: recording paused → RESUME");
+                    FLog.d(TAG, "☁️ recording_toggle: recording paused → RESUME");
                 } else if (isRecording) {
                     intent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_RECORDING);
-                    Log.d(TAG, "☁️ recording_toggle: recording active → STOP");
+                    FLog.d(TAG, "☁️ recording_toggle: recording active → STOP");
                 } else {
                     intent.setAction(com.fadcam.Constants.INTENT_ACTION_START_RECORDING);
-                    Log.d(TAG, "☁️ recording_toggle: not recording → START");
+                    FLog.d(TAG, "☁️ recording_toggle: not recording → START");
                 }
                 com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-                Log.i(TAG, "✅ Cloud recording toggle executed");
+                FLog.i(TAG, "✅ Cloud recording toggle executed");
 
             } else if ("recording_pause".equals(action)) {
                 if (!spManager.isRecordingInProgress()) {
-                    Log.w(TAG, "☁️ recording_pause: not recording, ignoring");
+                    FLog.w(TAG, "☁️ recording_pause: not recording, ignoring");
                 } else {
                     android.content.Intent intent = new android.content.Intent(
                             context, com.fadcam.services.RecordingService.class);
                     intent.setAction(com.fadcam.Constants.INTENT_ACTION_PAUSE_RECORDING);
                     com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-                    Log.i(TAG, "✅ Cloud recording pause sent");
+                    FLog.i(TAG, "✅ Cloud recording pause sent");
                 }
 
             } else if ("recording_resume".equals(action)) {
                 if (!manager.isPaused()) {
-                    Log.w(TAG, "☁️ recording_resume: not paused, ignoring");
+                    FLog.w(TAG, "☁️ recording_resume: not paused, ignoring");
                 } else {
                     android.content.Intent intent = new android.content.Intent(
                             context, com.fadcam.services.RecordingService.class);
                     intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
                     com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-                    Log.i(TAG, "✅ Cloud recording resume sent");
+                    FLog.i(TAG, "✅ Cloud recording resume sent");
                 }
 
             } else if ("alarm_ring".equals(action)) {
@@ -714,7 +714,7 @@ public class CloudStatusManager {
                 } else {
                     context.startService(alarmIntent);
                 }
-                Log.i(TAG, "✅ Cloud alarm ring sent: " + soundFile + " for " + durationMs + "ms");
+                FLog.i(TAG, "✅ Cloud alarm ring sent: " + soundFile + " for " + durationMs + "ms");
 
             } else if ("alarm_stop".equals(action)) {
                 // Stop alarm – mirrors LiveM3U8Server.stopAlarm()
@@ -723,7 +723,7 @@ public class CloudStatusManager {
                         context, com.fadcam.services.AlarmService.class);
                 alarmIntent.setAction("com.fadcam.action.STOP_ALARM");
                 context.startService(alarmIntent);
-                Log.i(TAG, "✅ Cloud alarm stop sent");
+                FLog.i(TAG, "✅ Cloud alarm stop sent");
 
             } else if ("audio_volume".equals(action)) {
                 // Set volume
@@ -748,9 +748,9 @@ public class CloudStatusManager {
                             // Update RemoteStreamManager state
                             manager.setMediaVolume(targetVolume);
                             
-                            Log.i(TAG, "✅ Cloud volume set to " + percentage + "% (" + targetVolume + "/" + maxVolume + ")");
+                            FLog.i(TAG, "✅ Cloud volume set to " + percentage + "% (" + targetVolume + "/" + maxVolume + ")");
                         } else {
-                            Log.e(TAG, "AudioManager not available for volume change");
+                            FLog.e(TAG, "AudioManager not available for volume change");
                         }
                     }
                 }
@@ -766,13 +766,13 @@ public class CloudStatusManager {
                     } else if ("stream_and_save".equals(mode)) {
                         streamingMode = RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
                     } else {
-                        Log.w(TAG, "☁️ config_recordingMode: invalid mode: " + mode);
+                        FLog.w(TAG, "☁️ config_recordingMode: invalid mode: " + mode);
                         deleteCommand(cmdId);
                         return;
                     }
                     spManager.setStreamingMode(streamingMode);
                     manager.setStreamingMode(streamingMode);
-                    Log.i(TAG, "✅ Cloud recording mode set to: " + mode);
+                    FLog.i(TAG, "✅ Cloud recording mode set to: " + mode);
                 }
 
             } else if ("config_streamQuality".equals(action)) {
@@ -784,9 +784,9 @@ public class CloudStatusManager {
                         com.fadcam.streaming.model.StreamQuality.Preset preset =
                                 com.fadcam.streaming.model.StreamQuality.Preset.valueOf(quality);
                         manager.setStreamQuality(preset, context);
-                        Log.i(TAG, "✅ Cloud stream quality set to: " + quality);
+                        FLog.i(TAG, "✅ Cloud stream quality set to: " + quality);
                     } catch (IllegalArgumentException e) {
-                        Log.w(TAG, "☁️ config_streamQuality: invalid preset: " + quality);
+                        FLog.w(TAG, "☁️ config_streamQuality: invalid preset: " + quality);
                     }
                 }
 
@@ -797,9 +797,9 @@ public class CloudStatusManager {
                     int threshold = params.optInt("threshold", 20);
                     if (threshold >= 5 && threshold <= 100) {
                         spManager.setBatteryWarningThreshold(threshold);
-                        Log.i(TAG, "✅ Cloud battery warning threshold set to: " + threshold + "%");
+                        FLog.i(TAG, "✅ Cloud battery warning threshold set to: " + threshold + "%");
                     } else {
-                        Log.w(TAG, "☁️ config_batteryWarning: invalid threshold (must be 5–100): " + threshold);
+                        FLog.w(TAG, "☁️ config_batteryWarning: invalid threshold (must be 5–100): " + threshold);
                     }
                 }
 
@@ -812,9 +812,9 @@ public class CloudStatusManager {
                         spManager.sharedPreferences.edit()
                                 .putString(com.fadcam.Constants.PREF_VIDEO_CODEC, codec)
                                 .apply();
-                        Log.i(TAG, "✅ Cloud video codec set to: " + codec);
+                        FLog.i(TAG, "✅ Cloud video codec set to: " + codec);
                     } else {
-                        Log.w(TAG, "☁️ config_videoCodec: invalid codec (must be AVC or HEVC): " + codec);
+                        FLog.w(TAG, "☁️ config_videoCodec: invalid codec (must be AVC or HEVC): " + codec);
                     }
                 }
 
@@ -851,13 +851,13 @@ public class CloudStatusManager {
                     switchIntent.putExtra(com.fadcam.Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH,
                             targetType.toString());
                     com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, switchIntent);
-                    Log.i(TAG, "✅ Cloud camera switch (live): " + currentType + " → " + targetType);
+                    FLog.i(TAG, "✅ Cloud camera switch (live): " + currentType + " → " + targetType);
                 } else {
                     // Not recording – persist the preference for next session
                     spManager.sharedPreferences.edit()
                             .putString(com.fadcam.Constants.PREF_CAMERA_SELECTION, targetType.toString())
                             .apply();
-                    Log.i(TAG, "✅ Cloud camera switch (preference): " + currentType + " → " + targetType);
+                    FLog.i(TAG, "✅ Cloud camera switch (preference): " + currentType + " → " + targetType);
                 }
 
             } else if ("config_zoom".equals(action)) {
@@ -884,7 +884,7 @@ public class CloudStatusManager {
                                     Math.max(-1.0f, Math.min(1.0f, panY)));
                         }
                         com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, zoomIntent);
-                        Log.i(TAG, "✅ Cloud zoom dispatched (live): ratio=" + ratio);
+                        FLog.i(TAG, "✅ Cloud zoom dispatched (live): ratio=" + ratio);
                     } else {
                         // Persist for next recording session
                         com.fadcam.CameraType cam = spManager.getCameraSelection();
@@ -894,7 +894,7 @@ public class CloudStatusManager {
                             float panY = ratio <= 1.0f ? 0.0f : (float) params.optDouble("panY", 0.0);
                             spManager.setSpecificPan(cam, panX, panY);
                         }
-                        Log.i(TAG, "✅ Cloud zoom saved (preference): ratio=" + ratio);
+                        FLog.i(TAG, "✅ Cloud zoom saved (preference): ratio=" + ratio);
                     }
                 }
 
@@ -911,7 +911,7 @@ public class CloudStatusManager {
                     evIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION);
                     evIntent.putExtra(com.fadcam.Constants.EXTRA_EXPOSURE_COMPENSATION, ev);
                     com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, evIntent);
-                    Log.i(TAG, "✅ Cloud exposure compensation set to: " + ev);
+                    FLog.i(TAG, "✅ Cloud exposure compensation set to: " + ev);
                 }
 
             } else if ("config_mirror".equals(action)) {
@@ -934,7 +934,7 @@ public class CloudStatusManager {
                 mirrorIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR);
                 mirrorIntent.putExtra(com.fadcam.Constants.EXTRA_FRONT_VIDEO_MIRROR_ENABLED, enabled);
                 com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, mirrorIntent);
-                Log.i(TAG, "✅ Cloud front mirror set to: " + enabled);
+                FLog.i(TAG, "✅ Cloud front mirror set to: " + enabled);
 
             } else if ("config_aeLock".equals(action)) {
                 // Toggle AE lock on/off.
@@ -945,17 +945,17 @@ public class CloudStatusManager {
                 aeLockIntent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_AE_LOCK);
                 aeLockIntent.putExtra(com.fadcam.Constants.EXTRA_AE_LOCK, newLocked);
                 com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, aeLockIntent);
-                Log.i(TAG, "✅ Cloud AE lock set to: " + newLocked);
+                FLog.i(TAG, "✅ Cloud AE lock set to: " + newLocked);
 
             } else {
-                Log.w(TAG, "☁️ Unknown command action: " + action);
+                FLog.w(TAG, "☁️ Unknown command action: " + action);
             }
             
             // Delete command after execution
             deleteCommand(cmdId);
             
         } catch (Exception e) {
-            Log.e(TAG, "Failed to execute command " + cmdId + ": " + e.getMessage());
+            FLog.e(TAG, "Failed to execute command " + cmdId + ": " + e.getMessage());
             deleteCommand(cmdId);
         }
     }
@@ -966,14 +966,14 @@ public class CloudStatusManager {
     private void executeLocalCommand(String endpoint, String method, String body) {
         // Get server port from RemoteStreamService
         int port = getServerPort();
-        Log.d(TAG, "☁️ executeLocalCommand - port=" + port + ", endpoint=" + endpoint + ", body=" + body);
+        FLog.d(TAG, "☁️ executeLocalCommand - port=" + port + ", endpoint=" + endpoint + ", body=" + body);
         if (port <= 0) {
-            Log.w(TAG, "☁️ Server port not available (port=" + port + ")");
+            FLog.w(TAG, "☁️ Server port not available (port=" + port + ")");
             return;
         }
         
         String urlStr = "http://localhost:" + port + endpoint;
-        Log.i(TAG, "☁️ Calling local endpoint: " + urlStr);
+        FLog.i(TAG, "☁️ Calling local endpoint: " + urlStr);
         
         try {
             HttpURLConnection conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
@@ -997,14 +997,14 @@ public class CloudStatusManager {
             
             int responseCode = conn.getResponseCode();
             if (responseCode >= 200 && responseCode < 300) {
-                Log.i(TAG, "☁️ Command executed successfully: " + endpoint + " -> HTTP " + responseCode);
+                FLog.i(TAG, "☁️ Command executed successfully: " + endpoint + " -> HTTP " + responseCode);
             } else {
-                Log.w(TAG, "☁️ Command execution failed: " + endpoint + " -> HTTP " + responseCode);
+                FLog.w(TAG, "☁️ Command execution failed: " + endpoint + " -> HTTP " + responseCode);
             }
             conn.disconnect();
             
         } catch (Exception e) {
-            Log.e(TAG, "☁️ Local command failed: " + endpoint + " - " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            FLog.e(TAG, "☁️ Local command failed: " + endpoint + " - " + e.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
     
@@ -1036,10 +1036,10 @@ public class CloudStatusManager {
                 
                 int responseCode = conn.getResponseCode();
                 if (responseCode >= 200 && responseCode < 300) {
-                    Log.d(TAG, "☁️ Command deleted from relay: " + cmdId);
+                    FLog.d(TAG, "☁️ Command deleted from relay: " + cmdId);
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Failed to delete command: " + e.getMessage());
+                FLog.w(TAG, "Failed to delete command: " + e.getMessage());
             } finally {
                 if (conn != null) {
                     conn.disconnect();
@@ -1065,14 +1065,14 @@ public class CloudStatusManager {
         
         if (userUuid == null || deviceId == null || streamToken == null) {
             // No auth yet - skip
-            Log.d(TAG, "☁️ 👥 Skipping viewers poll: missing auth (userUuid=" + (userUuid != null) + ", deviceId=" + (deviceId != null) + ", streamToken=" + (streamToken != null) + ")");
+            FLog.d(TAG, "☁️ 👥 Skipping viewers poll: missing auth (userUuid=" + (userUuid != null) + ", deviceId=" + (deviceId != null) + ", streamToken=" + (streamToken != null) + ")");
             return;
         }
         
         String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/viewers/" + userUuid + "/" + deviceId;
-        Log.i(TAG, "☁️ 👥 ====== POLLING CLOUD VIEWERS ======");
-        Log.i(TAG, "☁️ 👥 URL: " + urlStr);
-        Log.i(TAG, "☁️ 👥 Token: " + streamToken.substring(0, Math.min(20, streamToken.length())) + "...");
+        FLog.i(TAG, "☁️ 👥 ====== POLLING CLOUD VIEWERS ======");
+        FLog.i(TAG, "☁️ 👥 URL: " + urlStr);
+        FLog.i(TAG, "☁️ 👥 Token: " + streamToken.substring(0, Math.min(20, streamToken.length())) + "...");
         
         long startTime = System.currentTimeMillis();
         
@@ -1085,11 +1085,11 @@ public class CloudStatusManager {
                 conn.setConnectTimeout(10000);  // 10s connect timeout
                 conn.setReadTimeout(10000);     // 10s read timeout
                 
-                Log.i(TAG, "☁️ 👥 Connecting to relay server...");
+                FLog.i(TAG, "☁️ 👥 Connecting to relay server...");
                 
                 int responseCode = conn.getResponseCode();
                 long elapsed = System.currentTimeMillis() - startTime;
-                Log.i(TAG, "☁️ 👥 Response received in " + elapsed + "ms: HTTP " + responseCode);
+                FLog.i(TAG, "☁️ 👥 Response received in " + elapsed + "ms: HTTP " + responseCode);
                 
                 if (responseCode == 200) {
                     java.io.InputStream is = conn.getInputStream();
@@ -1097,7 +1097,7 @@ public class CloudStatusManager {
                     String body = s.hasNext() ? s.next() : "{}";
                     is.close();
                     
-                    Log.i(TAG, "☁️ 👥 Response body: " + body);
+                    FLog.i(TAG, "☁️ 👥 Response body: " + body);
                     
                     // Parse JSON: {"count":N,"bytesServed":M,"updated":timestamp}
                     // PRIVACY: No IP addresses are included in the response
@@ -1110,11 +1110,11 @@ public class CloudStatusManager {
                     int oldCount = RemoteStreamManager.getInstance().getCloudViewerCount();
                     RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount, bytesServed);
                     
-                    Log.i(TAG, "☁️ 👥 ✅ Cloud viewers: " + viewerCount + " (was: " + oldCount + ", bytes: " + bytesServed + ", updated: " + updated + ")");
+                    FLog.i(TAG, "☁️ 👥 ✅ Cloud viewers: " + viewerCount + " (was: " + oldCount + ", bytes: " + bytesServed + ", updated: " + updated + ")");
                 } else if (responseCode == 404) {
                     // No viewers file yet - means no viewers, which is valid
                     RemoteStreamManager.getInstance().setCloudViewerCount(0);
-                    Log.i(TAG, "☁️ 👥 No viewers data available (404 - normal if no viewers yet)");
+                    FLog.i(TAG, "☁️ 👥 No viewers data available (404 - normal if no viewers yet)");
                 } else {
                     // Read error response body for debugging
                     String errorBody = "";
@@ -1126,15 +1126,15 @@ public class CloudStatusManager {
                             errorStream.close();
                         }
                     } catch (Exception ignored) {}
-                    Log.e(TAG, "☁️ 👥 ❌ Viewers poll failed: HTTP " + responseCode + " - " + errorBody);
+                    FLog.e(TAG, "☁️ 👥 ❌ Viewers poll failed: HTTP " + responseCode + " - " + errorBody);
                 }
             } catch (java.net.SocketTimeoutException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
-                Log.e(TAG, "☁️ 👥 ❌ TIMEOUT after " + elapsed + "ms: " + e.getMessage());
+                FLog.e(TAG, "☁️ 👥 ❌ TIMEOUT after " + elapsed + "ms: " + e.getMessage());
                 // Don't reset count on timeout - keep last known value
             } catch (Exception e) {
                 long elapsed = System.currentTimeMillis() - startTime;
-                Log.e(TAG, "☁️ 👥 ❌ ERROR after " + elapsed + "ms: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+                FLog.e(TAG, "☁️ 👥 ❌ ERROR after " + elapsed + "ms: " + e.getClass().getSimpleName() + " - " + e.getMessage());
                 // Don't reset count on error - keep last known value
             } finally {
                 if (conn != null) {

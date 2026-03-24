@@ -1,9 +1,9 @@
 package com.fadcam.forensics.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
-
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
 import com.fadcam.forensics.data.local.dao.IntegrityLinkLogDao;
@@ -46,7 +46,7 @@ public class DigitalForensicsIndexer {
             try {
                 processVideoItem(item, now);
             } catch (Exception e) {
-                Log.w(TAG, "Skipping item after index failure: " + item.uri, e);
+                FLog.w(TAG, "Skipping item after index failure: " + item.uri, e);
             }
         }
     }

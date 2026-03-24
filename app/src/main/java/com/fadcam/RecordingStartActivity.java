@@ -1,10 +1,10 @@
 package com.fadcam;
 
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 import androidx.core.content.ContextCompat;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
@@ -73,7 +73,7 @@ public class RecordingStartActivity extends Activity {
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "Error starting recording via shortcut", e);
+            FLog.e(TAG, "Error starting recording via shortcut", e);
             Toast.makeText(this, "Failed to start recording", Toast.LENGTH_SHORT).show();
         } finally {
             // Prevent app from coming to foreground

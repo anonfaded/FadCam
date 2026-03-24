@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -11,7 +13,6 @@ import android.location.Geocoder;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -115,7 +116,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (videoUri == null) {
-            Log.e(TAG, "Video URI is null, dismissing bottom sheet");
+            FLog.e(TAG, "Video URI is null, dismissing bottom sheet");
             dismiss();
             return;
         }
@@ -135,9 +136,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         View root = view.findViewById(R.id.picker_root);
         if (root != null) {
             root.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
-            Log.d(TAG, "Applied dynamic gradient background");
+            FLog.d(TAG, "Applied dynamic gradient background");
         } else {
-            Log.w(TAG, "Could not find picker_root to apply gradient background");
+            FLog.w(TAG, "Could not find picker_root to apply gradient background");
         }
     }
 
@@ -158,21 +159,21 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     private void setupVideoInfoGrid(View view) {
         LinearLayout container = view.findViewById(R.id.video_info_grid);
         if (container == null) {
-            Log.e(TAG, "Video info grid container not found in layout");
+            FLog.e(TAG, "Video info grid container not found in layout");
             return;
         }
 
         // Clear any existing content
         container.removeAllViews();
 
-        Log.d(TAG, "Starting video metadata extraction for URI: " + videoUri);
-        Log.d(TAG, "Video URI scheme: " + videoUri.getScheme());
-        Log.d(TAG, "Video URI path: " + videoUri.getPath());
+        FLog.d(TAG, "Starting video metadata extraction for URI: " + videoUri);
+        FLog.d(TAG, "Video URI scheme: " + videoUri.getScheme());
+        FLog.d(TAG, "Video URI path: " + videoUri.getPath());
 
         // Extract comprehensive video metadata
         VideoMetadata metadata = extractVideoMetadata();
 
-        Log.d(TAG, "Extracted metadata - Duration: " + metadata.duration +
+        FLog.d(TAG, "Extracted metadata - Duration: " + metadata.duration +
                 ", Resolution: " + metadata.resolution +
                 ", FPS: " + metadata.frameRate +
                 ", Codec: " + metadata.codec +
@@ -242,7 +243,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         try {
             // Get file path for FFprobe - handle content:// URIs using SAF protocol
             String filePath = getFFprobePath();
-            Log.d(TAG, "Extracting metadata with FFprobe for: " + filePath);
+            FLog.d(TAG, "Extracting metadata with FFprobe for: " + filePath);
 
             // Use FFprobeKit to get accurate metadata
             MediaInformationSession session = FFprobeKit.getMediaInformation(filePath);
@@ -256,9 +257,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                         double durationSec = Double.parseDouble(durationStr);
                         long durationMs = (long) (durationSec * 1000);
                         metadata.duration = formatVideoDuration(durationMs);
-                        Log.d(TAG, "FFprobe duration: " + durationSec + "s -> " + metadata.duration);
+                        FLog.d(TAG, "FFprobe duration: " + durationSec + "s -> " + metadata.duration);
                     } catch (NumberFormatException e) {
-                        Log.w(TAG, "Failed to parse duration: " + durationStr);
+                        FLog.w(TAG, "Failed to parse duration: " + durationStr);
                     }
                 }
 
@@ -268,9 +269,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                     try {
                         long bitrate = Long.parseLong(bitrateStr);
                         metadata.bitrate = formatBitrate(bitrate);
-                        Log.d(TAG, "FFprobe bitrate: " + bitrate + " -> " + metadata.bitrate);
+                        FLog.d(TAG, "FFprobe bitrate: " + bitrate + " -> " + metadata.bitrate);
                     } catch (NumberFormatException e) {
-                        Log.w(TAG, "Failed to parse bitrate: " + bitrateStr);
+                        FLog.w(TAG, "Failed to parse bitrate: " + bitrateStr);
                     }
                 }
 
@@ -286,7 +287,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                             if (width != null && height != null && width > 0 && height > 0) {
                                 String resolutionName = getResolutionName(width.intValue(), height.intValue());
                                 metadata.resolution = width + " x " + height + " (" + resolutionName + ")";
-                                Log.d(TAG, "FFprobe resolution: " + metadata.resolution);
+                                FLog.d(TAG, "FFprobe resolution: " + metadata.resolution);
                             }
 
                             // Codec
@@ -305,7 +306,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                                 } else {
                                     metadata.codec = codecName.toUpperCase();
                                 }
-                                Log.d(TAG, "FFprobe codec: " + codecName + " -> " + metadata.codec);
+                                FLog.d(TAG, "FFprobe codec: " + codecName + " -> " + metadata.codec);
                             }
 
                             // Frame rate from r_frame_rate or avg_frame_rate
@@ -323,15 +324,15 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                                         if (den > 0) {
                                             double fps = num / den;
                                             metadata.frameRate = String.format(Locale.US, "%.2f fps", fps);
-                                            Log.d(TAG, "FFprobe frame rate: " + frameRateStr + " -> " + metadata.frameRate);
+                                            FLog.d(TAG, "FFprobe frame rate: " + frameRateStr + " -> " + metadata.frameRate);
                                         }
                                     } else {
                                         double fps = Double.parseDouble(frameRateStr);
                                         metadata.frameRate = String.format(Locale.US, "%.2f fps", fps);
-                                        Log.d(TAG, "FFprobe frame rate: " + fps + " fps");
+                                        FLog.d(TAG, "FFprobe frame rate: " + fps + " fps");
                                     }
                                 } catch (NumberFormatException e) {
-                                    Log.w(TAG, "Failed to parse frame rate: " + frameRateStr);
+                                    FLog.w(TAG, "Failed to parse frame rate: " + frameRateStr);
                                 }
                             }
                             break; // Only process first video stream
@@ -339,7 +340,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                     }
                 }
             } else {
-                Log.w(TAG, "FFprobeKit returned null MediaInformation");
+                FLog.w(TAG, "FFprobeKit returned null MediaInformation");
             }
 
             // Use MediaMetadataRetriever as fallback for missing metadata and for location
@@ -354,9 +355,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                         try {
                             long durationMs = Long.parseLong(durationStr);
                             metadata.duration = formatVideoDuration(durationMs);
-                            Log.d(TAG, "MediaMetadataRetriever duration fallback: " + metadata.duration);
+                            FLog.d(TAG, "MediaMetadataRetriever duration fallback: " + metadata.duration);
                         } catch (NumberFormatException e) {
-                            Log.w(TAG, "Failed to parse duration from MediaMetadataRetriever: " + durationStr);
+                            FLog.w(TAG, "Failed to parse duration from MediaMetadataRetriever: " + durationStr);
                         }
                     }
                 }
@@ -371,9 +372,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                             int height = Integer.parseInt(heightStr);
                             String resolutionName = getResolutionName(width, height);
                             metadata.resolution = width + " x " + height + " (" + resolutionName + ")";
-                            Log.d(TAG, "MediaMetadataRetriever resolution fallback: " + metadata.resolution);
+                            FLog.d(TAG, "MediaMetadataRetriever resolution fallback: " + metadata.resolution);
                         } catch (NumberFormatException e) {
-                            Log.w(TAG, "Failed to parse resolution from MediaMetadataRetriever");
+                            FLog.w(TAG, "Failed to parse resolution from MediaMetadataRetriever");
                         }
                     }
                 }
@@ -385,9 +386,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                         try {
                             long bitrate = Long.parseLong(bitrateStr);
                             metadata.bitrate = formatBitrate(bitrate);
-                            Log.d(TAG, "MediaMetadataRetriever bitrate fallback: " + metadata.bitrate);
+                            FLog.d(TAG, "MediaMetadataRetriever bitrate fallback: " + metadata.bitrate);
                         } catch (NumberFormatException e) {
-                            Log.w(TAG, "Failed to parse bitrate from MediaMetadataRetriever: " + bitrateStr);
+                            FLog.w(TAG, "Failed to parse bitrate from MediaMetadataRetriever: " + bitrateStr);
                         }
                     }
                 }
@@ -395,7 +396,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                 // Location data (FFprobe doesn't handle GPS well)
                 metadata.location = extractLocationData(retriever);
             } catch (Exception e) {
-                Log.w(TAG, "Could not extract data with MediaMetadataRetriever", e);
+                FLog.w(TAG, "Could not extract data with MediaMetadataRetriever", e);
                 if (getString(R.string.video_info_unknown).equals(metadata.location) || metadata.location == null) {
                     metadata.location = getString(R.string.video_info_no_location);
                 }
@@ -403,12 +404,12 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                 try {
                     retriever.release();
                 } catch (Exception e) {
-                    Log.e(TAG, "Error releasing MediaMetadataRetriever", e);
+                    FLog.e(TAG, "Error releasing MediaMetadataRetriever", e);
                 }
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "Error extracting video metadata with FFprobe", e);
+            FLog.e(TAG, "Error extracting video metadata with FFprobe", e);
         }
 
         return metadata;
@@ -418,39 +419,39 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
      * Enhanced location extraction using multiple methods
      */
     private String extractLocationData(MediaMetadataRetriever retriever) {
-        Log.d(TAG, "=== Location Detection ===");
+        FLog.d(TAG, "=== Location Detection ===");
 
         // Method 1: Standard location metadata
         String location = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION);
-        Log.d(TAG, "Method 1 - METADATA_KEY_LOCATION: " + location);
+        FLog.d(TAG, "Method 1 - METADATA_KEY_LOCATION: " + location);
         if (location != null && !location.isEmpty()) {
             String parsed = parseLocationString(location);
-            Log.d(TAG, "Parsed location from metadata: " + parsed);
+            FLog.d(TAG, "Parsed location from metadata: " + parsed);
             return parsed;
         }
 
         // Method 2: Try EXIF data for file URIs
-        Log.d(TAG, "Method 2 - Trying EXIF data");
+        FLog.d(TAG, "Method 2 - Trying EXIF data");
         String exifLocation = extractLocationFromExif();
         if (!getString(R.string.video_info_no_location).equals(exifLocation)) {
-            Log.d(TAG, "Found location in EXIF: " + exifLocation);
+            FLog.d(TAG, "Found location in EXIF: " + exifLocation);
             return exifLocation;
         }
 
         // Method 3: Check for GPS metadata keys (some devices store differently)
-        Log.d(TAG, "Method 3 - Checking alternative GPS metadata");
+        FLog.d(TAG, "Method 3 - Checking alternative GPS metadata");
         try {
             // Some devices might store GPS data in different metadata keys
             String[] gpsKeys = { "GPS", "gps", "location", "coordinates" };
             for (String key : gpsKeys) {
                 // This is a bit of a hack, but some metadata might be stored with custom keys
-                Log.d(TAG, "Checking for GPS key: " + key);
+                FLog.d(TAG, "Checking for GPS key: " + key);
             }
         } catch (Exception e) {
-            Log.d(TAG, "Alternative GPS metadata check failed", e);
+            FLog.d(TAG, "Alternative GPS metadata check failed", e);
         }
 
-        Log.d(TAG, "No location data found in any method");
+        FLog.d(TAG, "No location data found in any method");
         return getString(R.string.video_info_no_location);
     }
 
@@ -470,7 +471,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                 return formatLocationCoordinates(latLong[0], latLong[1]);
             }
         } catch (IOException e) {
-            Log.d(TAG, "Could not read EXIF data for location", e);
+            FLog.d(TAG, "Could not read EXIF data for location", e);
         }
 
         return getString(R.string.video_info_no_location);
@@ -492,7 +493,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                 }
             }
         } catch (Exception e) {
-            Log.d(TAG, "Could not parse location string: " + location, e);
+            FLog.d(TAG, "Could not parse location string: " + location, e);
         }
 
         return location; // Return as-is if parsing fails
@@ -523,7 +524,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
                 }
             }
         } catch (Exception e) {
-            Log.d(TAG, "Could not reverse geocode coordinates", e);
+            FLog.d(TAG, "Could not reverse geocode coordinates", e);
         }
 
         return coordinates;
@@ -558,7 +559,7 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
             clipboard.setPrimaryClip(clip);
             Toast.makeText(getContext(), "Video info copied to clipboard", Toast.LENGTH_SHORT).show();
         } else {
-            Log.e(TAG, "ClipboardManager service is null");
+            FLog.e(TAG, "ClipboardManager service is null");
             Toast.makeText(getContext(), "Could not access clipboard", Toast.LENGTH_SHORT).show();
         }
     }
@@ -631,14 +632,14 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         if (reconstructedPath != null) {
             java.io.File file = new java.io.File(reconstructedPath);
             if (file.exists() && file.canRead()) {
-                Log.d(TAG, "Using reconstructed file path for FFprobe: " + reconstructedPath);
+                FLog.d(TAG, "Using reconstructed file path for FFprobe: " + reconstructedPath);
                 return reconstructedPath;
             }
         }
         
         // Fall back to SAF protocol for FFprobeKit
         // Format: saf:<content-uri>
-        Log.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
+        FLog.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
         return "saf:" + videoUri.toString();
     }
     

@@ -1,7 +1,8 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -435,7 +436,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                     totalBytes += file.length();
                 }
             } catch (Exception e) {
-                Log.w(TAG, "updateHeaderStats: error reading file size for " + item.getTrashFileName(), e);
+                FLog.w(TAG, "updateHeaderStats: error reading file size for " + item.getTrashFileName(), e);
             }
         }
         if (statsVideosText != null) statsVideosText.setText(String.valueOf(videos));
@@ -684,7 +685,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         File trashedFile = new File(trashDirectory, item.getTrashFileName());
 
         if (!trashedFile.exists()) {
-            Log.e(TAG, "Trashed file does not exist: " + trashedFile.getAbsolutePath());
+            FLog.e(TAG, "Trashed file does not exist: " + trashedFile.getAbsolutePath());
             Toast.makeText(getContext(), "File not found in trash.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -697,7 +698,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             intent.setData(Uri.fromFile(trashedFile));
             startActivity(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Error opening trash item: " + trashedFile.getAbsolutePath(), e);
+            FLog.e(TAG, "Error opening trash item: " + trashedFile.getAbsolutePath(), e);
             Toast.makeText(getContext(), "Error opening file.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -933,7 +934,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
 
     private void showAutoDeleteSettingsDialog() {
         if (getContext() == null || sharedPreferencesManager == null) {
-            Log.e(TAG, "Cannot show auto-delete settings dialog, context or prefs manager is null.");
+            FLog.e(TAG, "Cannot show auto-delete settings dialog, context or prefs manager is null.");
             return;
         }
 
@@ -1007,7 +1008,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                         int selectedMinutes = valuesInMinutes[selectedPosition];
                         sharedPreferencesManager.setTrashAutoDeleteMinutes(selectedMinutes);
                         updateAutoDeleteInfoText();
-                        Log.d(TAG, "Auto-delete setting updated to: " + selectedMinutes + " minutes.");
+                        FLog.d(TAG, "Auto-delete setting updated to: " + selectedMinutes + " minutes.");
                         boolean itemsWereAutoDeleted = false;
                         if (getContext() != null) {
                             int autoDeletedCount = TrashManager.autoDeleteExpiredItems(getContext(), selectedMinutes);
@@ -1083,7 +1084,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                                                 drawable.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                                             }
                                         } catch (Exception e) {
-                                            Log.e(TAG, "Failed to tint radio button via reflection: " + e.getMessage());
+                                            FLog.e(TAG, "Failed to tint radio button via reflection: " + e.getMessage());
                                         }
                                     }
 
@@ -1093,11 +1094,11 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                             }
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Failed to tint radio buttons after delay: " + e.getMessage());
+                        FLog.e(TAG, "Failed to tint radio buttons after delay: " + e.getMessage());
                     }
                 }, 100); // Short delay to ensure views are laid out
             } catch (Exception e) {
-                Log.e(TAG, "Failed to schedule radio button tinting: " + e.getMessage());
+                FLog.e(TAG, "Failed to schedule radio button tinting: " + e.getMessage());
             }
         }
 
@@ -1456,10 +1457,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 
                 for (String tag : possibleTags) {
                     androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
-                    Log.d("TrashFragment", "Checking tag " + tag + ": " + (fragment != null ? fragment.getClass().getSimpleName() : "null"));
+                    FLog.d("TrashFragment", "Checking tag " + tag + ": " + (fragment != null ? fragment.getClass().getSimpleName() : "null"));
                     if (fragment instanceof com.fadcam.ui.RecordsFragment) {
                         ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
-                        Log.i("TrashFragment", "Successfully refreshed RecordsFragment with tag: " + tag);
+                        FLog.i("TrashFragment", "Successfully refreshed RecordsFragment with tag: " + tag);
                         refreshSuccess = true;
                         break;
                     }
@@ -1468,12 +1469,12 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 // Method 2: Try to find by iterating through all fragments
                 if (!refreshSuccess) {
                     java.util.List<androidx.fragment.app.Fragment> allFragments = mainActivity.getSupportFragmentManager().getFragments();
-                    Log.d("TrashFragment", "Total fragments found: " + allFragments.size());
+                    FLog.d("TrashFragment", "Total fragments found: " + allFragments.size());
                     for (androidx.fragment.app.Fragment fragment : allFragments) {
-                        Log.d("TrashFragment", "Fragment: " + (fragment != null ? fragment.getClass().getSimpleName() : "null"));
+                        FLog.d("TrashFragment", "Fragment: " + (fragment != null ? fragment.getClass().getSimpleName() : "null"));
                         if (fragment instanceof com.fadcam.ui.RecordsFragment) {
                             ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
-                            Log.i("TrashFragment", "Successfully refreshed RecordsFragment by iteration.");
+                            FLog.i("TrashFragment", "Successfully refreshed RecordsFragment by iteration.");
                             refreshSuccess = true;
                             break;
                         }
@@ -1484,7 +1485,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 refreshHomeFragmentStats(mainActivity);
             }
         } catch (Exception e) {
-            Log.e("TrashFragment", "Failed to refresh RecordsFragment directly", e);
+            FLog.e("TrashFragment", "Failed to refresh RecordsFragment directly", e);
         }
         
         // Method 3: Fallback to broadcast if direct method failed
@@ -1492,9 +1493,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             try {
                 Intent intent = new Intent(com.fadcam.Constants.ACTION_FILES_RESTORED);
                 requireContext().sendBroadcast(intent);
-                Log.i("TrashFragment", "Sent ACTION_FILES_RESTORED broadcast as fallback.");
+                FLog.i("TrashFragment", "Sent ACTION_FILES_RESTORED broadcast as fallback.");
             } catch (Exception e) {
-                Log.e("TrashFragment", "Failed to send fallback broadcast", e);
+                FLog.e("TrashFragment", "Failed to send fallback broadcast", e);
             }
         }
     }
@@ -1512,7 +1513,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
                 if (fragment instanceof com.fadcam.ui.HomeFragment) {
                     ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
-                    Log.i("TrashFragment", "Successfully refreshed HomeFragment stats with tag: " + tag);
+                    FLog.i("TrashFragment", "Successfully refreshed HomeFragment stats with tag: " + tag);
                     refreshSuccess = true;
                     break;
                 }
@@ -1523,7 +1524,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
                     if (fragment instanceof com.fadcam.ui.HomeFragment) {
                         ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
-                        Log.i("TrashFragment", "Successfully refreshed HomeFragment stats by iteration.");
+                        FLog.i("TrashFragment", "Successfully refreshed HomeFragment stats by iteration.");
                         refreshSuccess = true;
                         break;
                     }
@@ -1531,10 +1532,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             }
             
             if (!refreshSuccess) {
-                Log.w("TrashFragment", "Could not find HomeFragment to refresh stats after restore.");
+                FLog.w("TrashFragment", "Could not find HomeFragment to refresh stats after restore.");
             }
         } catch (Exception e) {
-            Log.e("TrashFragment", "Failed to refresh HomeFragment stats", e);
+            FLog.e("TrashFragment", "Failed to refresh HomeFragment stats", e);
         }
     }
 

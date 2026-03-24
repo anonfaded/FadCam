@@ -1,9 +1,10 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.os.Environment;
 import android.os.StatFs;
-import android.util.Log;
 import androidx.documentfile.provider.DocumentFile;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
@@ -70,7 +71,7 @@ public class StorageInfoCache {
      */
     public static StorageInfo calculateAndCacheStorageInfo(Context context, 
                                                           SharedPreferencesManager prefsManager) {
-        Log.d(TAG, "Calculating fresh storage information");
+        FLog.d(TAG, "Calculating fresh storage information");
         
         // Default to internal external storage stats
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
@@ -129,7 +130,7 @@ public class StorageInfoCache {
                     }
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error probing custom storage", e);
+                FLog.e(TAG, "Error probing custom storage", e);
             }
         }
         
@@ -141,7 +142,7 @@ public class StorageInfoCache {
             cachedCustomIsOnPrimary = customIsOnPrimary;
             lastCacheTime = System.currentTimeMillis();
             
-            Log.d(TAG, "Storage info cached - Available: " + (bytesAvailable / (1024.0 * 1024.0 * 1024.0)) 
+            FLog.d(TAG, "Storage info cached - Available: " + (bytesAvailable / (1024.0 * 1024.0 * 1024.0)) 
                       + " GB, Total: " + (bytesTotal / (1024.0 * 1024.0 * 1024.0)) + " GB");
         }
         
@@ -166,7 +167,7 @@ public class StorageInfoCache {
             lastCacheTime = 0;
             cachedAvailableBytes = -1;
             cachedTotalBytes = -1;
-            Log.d(TAG, "Storage info cache cleared");
+            FLog.d(TAG, "Storage info cache cleared");
         }
     }
     
@@ -181,7 +182,7 @@ public class StorageInfoCache {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error checking SAF permissions", e);
+            FLog.e(TAG, "Error checking SAF permissions", e);
         }
         return false;
     }

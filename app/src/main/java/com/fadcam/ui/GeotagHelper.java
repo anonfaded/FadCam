@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
@@ -8,8 +10,6 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 /**
  * Helper class to manage location services specifically for embedding geotags in video metadata.
  * This is separate from LocationHelper which is used for watermark text.
@@ -36,7 +36,7 @@ public class GeotagHelper {
     public GeotagHelper(Context context) {
         this.context = context;
         this.locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        Log.d(TAG, "GeotagHelper initialized");
+        FLog.d(TAG, "GeotagHelper initialized");
     }
     
     /**
@@ -45,7 +45,7 @@ public class GeotagHelper {
      */
     public boolean startUpdates() {
         if (isActive) {
-            Log.d(TAG, "Location updates already active");
+            FLog.d(TAG, "Location updates already active");
             return true;
         }
         
@@ -55,7 +55,7 @@ public class GeotagHelper {
             boolean networkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             
             if (!gpsEnabled && !networkEnabled) {
-                Log.w(TAG, "No location providers enabled");
+                FLog.w(TAG, "No location providers enabled");
                 return false;
             }
             
@@ -64,11 +64,11 @@ public class GeotagHelper {
                 try {
                     Location lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                     if (lastKnown != null) {
-                        Log.d(TAG, "Using last known GPS location: " + lastKnown.getLatitude() + ", " + lastKnown.getLongitude());
+                        FLog.d(TAG, "Using last known GPS location: " + lastKnown.getLatitude() + ", " + lastKnown.getLongitude());
                         updateBestLocation(lastKnown);
                     }
                 } catch (SecurityException se) {
-                    Log.e(TAG, "Security exception getting last GPS location", se);
+                    FLog.e(TAG, "Security exception getting last GPS location", se);
                 }
             }
             
@@ -76,11 +76,11 @@ public class GeotagHelper {
                 try {
                     Location lastKnown = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                     if (lastKnown != null) {
-                        Log.d(TAG, "Using last known network location: " + lastKnown.getLatitude() + ", " + lastKnown.getLongitude());
+                        FLog.d(TAG, "Using last known network location: " + lastKnown.getLatitude() + ", " + lastKnown.getLongitude());
                         updateBestLocation(lastKnown);
                     }
                 } catch (SecurityException se) {
-                    Log.e(TAG, "Security exception getting last network location", se);
+                    FLog.e(TAG, "Security exception getting last network location", se);
                 }
             }
             
@@ -98,9 +98,9 @@ public class GeotagHelper {
                         gpsListener,
                         Looper.getMainLooper()
                     );
-                    Log.d(TAG, "GPS location updates requested");
+                    FLog.d(TAG, "GPS location updates requested");
                 } catch (SecurityException se) {
-                    Log.e(TAG, "Security exception requesting GPS updates", se);
+                    FLog.e(TAG, "Security exception requesting GPS updates", se);
                 }
             }
             
@@ -113,18 +113,18 @@ public class GeotagHelper {
                         networkListener,
                         Looper.getMainLooper()
                     );
-                    Log.d(TAG, "Network location updates requested");
+                    FLog.d(TAG, "Network location updates requested");
                 } catch (SecurityException se) {
-                    Log.e(TAG, "Security exception requesting network updates", se);
+                    FLog.e(TAG, "Security exception requesting network updates", se);
                 }
             }
             
             isActive = true;
-            Log.d(TAG, "Location updates started successfully");
+            FLog.d(TAG, "Location updates started successfully");
             return true;
             
         } catch (Exception e) {
-            Log.e(TAG, "Error starting location updates", e);
+            FLog.e(TAG, "Error starting location updates", e);
             return false;
         }
     }
@@ -145,11 +145,11 @@ public class GeotagHelper {
                 locationManager.removeUpdates(networkListener);
             }
             isActive = false;
-            Log.d(TAG, "Location updates stopped");
+            FLog.d(TAG, "Location updates stopped");
         } catch (SecurityException se) {
-            Log.e(TAG, "Security exception stopping location updates", se);
+            FLog.e(TAG, "Security exception stopping location updates", se);
         } catch (Exception e) {
-            Log.e(TAG, "Error stopping location updates", e);
+            FLog.e(TAG, "Error stopping location updates", e);
         }
     }
     
@@ -163,7 +163,7 @@ public class GeotagHelper {
             @Override
             public void onLocationChanged(Location location) {
                 if (location != null) {
-                    Log.d(TAG, providerName + " location update: " + 
+                    FLog.d(TAG, providerName + " location update: " + 
                          location.getLatitude() + ", " + location.getLongitude() + 
                          " (accuracy: " + location.getAccuracy() + "m)");
                     updateBestLocation(location);
@@ -172,17 +172,17 @@ public class GeotagHelper {
             
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
-                Log.d(TAG, providerName + " provider status changed: " + status);
+                FLog.d(TAG, providerName + " provider status changed: " + status);
             }
             
             @Override
             public void onProviderEnabled(String provider) {
-                Log.d(TAG, providerName + " provider enabled");
+                FLog.d(TAG, providerName + " provider enabled");
             }
             
             @Override
             public void onProviderDisabled(String provider) {
-                Log.d(TAG, providerName + " provider disabled");
+                FLog.d(TAG, providerName + " provider disabled");
             }
         };
     }
@@ -226,12 +226,12 @@ public class GeotagHelper {
      */
     public boolean applyLocationToRecorder(MediaRecorder recorder) {
         if (recorder == null) {
-            Log.e(TAG, "Cannot apply location to null MediaRecorder");
+            FLog.e(TAG, "Cannot apply location to null MediaRecorder");
             return false;
         }
         
         if (bestLocation == null) {
-            Log.w(TAG, "No location available to apply to MediaRecorder");
+            FLog.w(TAG, "No location available to apply to MediaRecorder");
             return false;
         }
         
@@ -239,10 +239,10 @@ public class GeotagHelper {
             float latitude = (float) bestLocation.getLatitude();
             float longitude = (float) bestLocation.getLongitude();
             recorder.setLocation(latitude, longitude);
-            Log.d(TAG, "Applied location to MediaRecorder: " + latitude + ", " + longitude);
+            FLog.d(TAG, "Applied location to MediaRecorder: " + latitude + ", " + longitude);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to set location metadata in MediaRecorder", e);
+            FLog.e(TAG, "Failed to set location metadata in MediaRecorder", e);
             return false;
         }
     }
@@ -256,7 +256,7 @@ public class GeotagHelper {
         if (bestLocation != null) {
             long locationAge = System.currentTimeMillis() - bestLocation.getTime();
             if (locationAge > 120000) { // 2 minutes
-                Log.w(TAG, "Current location is stale (" + (locationAge/1000) + " seconds old)");
+                FLog.w(TAG, "Current location is stale (" + (locationAge/1000) + " seconds old)");
                 // Don't return null, still return the stale location as it's better than nothing
                 // Just log a warning
             }

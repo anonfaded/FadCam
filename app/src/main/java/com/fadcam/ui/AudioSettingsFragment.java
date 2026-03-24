@@ -1,10 +1,11 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -195,7 +196,7 @@ public class AudioSettingsFragment extends Fragment {
                     }
                 }
             }
-        }catch(Exception e){ Log.e(TAG, "Error enumerating audio devices", e); }
+        }catch(Exception e){ FLog.e(TAG, "Error enumerating audio devices", e); }
         // Always add Phone Mic as first option
         availableMicLabels.add(0, getString(R.string.audio_input_source_phone));
         availableInputMics.add(0, null); // Represents phone mic
@@ -273,7 +274,7 @@ public class AudioSettingsFragment extends Fragment {
             }
         }
         valueInputSource.setText(status);
-        Log.i(TAG, "Audio input source status updated. Selected: " + selectedMic);
+        FLog.i(TAG, "Audio input source status updated. Selected: " + selectedMic);
     }
 
     private void showAudioAdvancedBottomSheet(){

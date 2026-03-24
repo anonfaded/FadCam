@@ -1,13 +1,13 @@
 package com.fadcam.fadrec.ui.overlay;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.graphics.PixelFormat;
 import android.os.Build;
-import android.util.Log;
-
 /**
  * Abstract base class for all inline overlay editors (text, shapes, images, etc.).
  * Provides common functionality for showing/hiding overlays, managing window params,
@@ -90,7 +90,7 @@ public abstract class BaseEditorOverlay {
      */
     public void show() {
         if (isShowing) {
-            Log.w(TAG, "Overlay already showing");
+            FLog.w(TAG, "Overlay already showing");
             return;
         }
         
@@ -109,9 +109,9 @@ public abstract class BaseEditorOverlay {
             // Call subclass-specific show logic
             onShow();
             
-            Log.d(TAG, getClass().getSimpleName() + " shown");
+            FLog.d(TAG, getClass().getSimpleName() + " shown");
         } catch (Exception e) {
-            Log.e(TAG, "Error showing overlay", e);
+            FLog.e(TAG, "Error showing overlay", e);
         }
     }
     
@@ -120,7 +120,7 @@ public abstract class BaseEditorOverlay {
      */
     public void hide() {
         if (!isShowing) {
-            Log.w(TAG, "Overlay not showing");
+            FLog.w(TAG, "Overlay not showing");
             return;
         }
         
@@ -134,9 +134,9 @@ public abstract class BaseEditorOverlay {
             }
             
             isShowing = false;
-            Log.d(TAG, getClass().getSimpleName() + " hidden");
+            FLog.d(TAG, getClass().getSimpleName() + " hidden");
         } catch (Exception e) {
-            Log.e(TAG, "Error hiding overlay", e);
+            FLog.e(TAG, "Error hiding overlay", e);
         }
     }
     

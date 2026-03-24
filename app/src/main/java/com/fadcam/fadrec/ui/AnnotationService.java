@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -24,7 +26,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -221,7 +222,7 @@ public class AnnotationService extends Service {
         // Check SYSTEM_ALERT_WINDOW permission before doing anything
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             if (!android.provider.Settings.canDrawOverlays(this)) {
-                Log.e(TAG, "SYSTEM_ALERT_WINDOW permission not granted, cannot start AnnotationService");
+                FLog.e(TAG, "SYSTEM_ALERT_WINDOW permission not granted, cannot start AnnotationService");
                 // Broadcast permission missing error
                 Intent errorBroadcast = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_PERMISSION_ERROR");
                 sendBroadcast(errorBroadcast);
@@ -257,7 +258,7 @@ public class AnnotationService extends Service {
     }
     
     private void terminateService() {
-        Log.d(TAG, "Terminate service requested from notification");
+        FLog.d(TAG, "Terminate service requested from notification");
         
         // Broadcast to FadRecHomeFragment to turn off toggle
         Intent broadcast = new Intent("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
@@ -595,35 +596,35 @@ public class AnnotationService extends Service {
     }
 
     private void loadProject(String projectName) {
-        Log.i(TAG, "========== LOADING PROJECT: " + projectName + " ==========");
+        FLog.i(TAG, "========== LOADING PROJECT: " + projectName + " ==========");
 
         // Only save current project if it's different from the one we're loading
         // This prevents overwriting the project we're about to load with stale data
         if (!projectName.equals(currentProjectName) && currentProjectName != null) {
-            Log.d(TAG, "Saving current project before switching: " + currentProjectName);
+            FLog.d(TAG, "Saving current project before switching: " + currentProjectName);
             saveCurrentState();
         } else {
-            Log.d(TAG, "Skipping save - loading same project or no current project");
+            FLog.d(TAG, "Skipping save - loading same project or no current project");
         }
 
         // Update current project name and save to preferences
         currentProjectName = projectName;
         android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
         prefs.edit().putString("current_project", currentProjectName).apply();
-        Log.d(TAG, "Updated current project preference: " + currentProjectName);
+        FLog.d(TAG, "Updated current project preference: " + currentProjectName);
 
         // Load new project
         AnnotationState loadedState = projectFileManager.loadProject(projectName);
 
         if (loadedState != null && annotationView != null) {
-            Log.i(TAG, "✅ Project loaded successfully from file");
-            Log.d(TAG, "  - Total pages: " + loadedState.getPages().size());
-            Log.d(TAG, "  - Active page index: " + loadedState.getActivePageIndex());
+            FLog.i(TAG, "✅ Project loaded successfully from file");
+            FLog.d(TAG, "  - Total pages: " + loadedState.getPages().size());
+            FLog.d(TAG, "  - Active page index: " + loadedState.getActivePageIndex());
 
             // Log each page details
             for (int i = 0; i < loadedState.getPages().size(); i++) {
                 AnnotationPage page = loadedState.getPages().get(i);
-                Log.d(TAG, "  - Page " + (i + 1) + ": " + page.getLayers().size() + " layers, " +
+                FLog.d(TAG, "  - Page " + (i + 1) + ": " + page.getLayers().size() + " layers, " +
                         "Total objects across all layers: " + getTotalObjectsInPage(page));
             }
 
@@ -634,7 +635,7 @@ public class AnnotationService extends Service {
             annotationView.post(() -> {
                 annotationView.invalidate();
                 annotationView.requestLayout();
-                Log.d(TAG, "Post-load redraw completed");
+                FLog.d(TAG, "Post-load redraw completed");
             });
 
             updateUndoRedoButtons();
@@ -643,11 +644,11 @@ public class AnnotationService extends Service {
             updateNotification();
 
             Toast.makeText(this, "✅ Loaded: " + projectName, Toast.LENGTH_SHORT).show();
-            Log.i(TAG, "========== PROJECT LOADED AND APPLIED ==========");
+            FLog.i(TAG, "========== PROJECT LOADED AND APPLIED ==========");
         } else {
-            Log.e(TAG, "❌ Failed to load project: " + projectName);
-            Log.e(TAG, "  - loadedState is null: " + (loadedState == null));
-            Log.e(TAG, "  - annotationView is null: " + (annotationView == null));
+            FLog.e(TAG, "❌ Failed to load project: " + projectName);
+            FLog.e(TAG, "  - loadedState is null: " + (loadedState == null));
+            FLog.e(TAG, "  - annotationView is null: " + (annotationView == null));
             Toast.makeText(this, "❌ Failed to load project", Toast.LENGTH_SHORT).show();
         }
     }
@@ -666,7 +667,7 @@ public class AnnotationService extends Service {
     private void createNewProject() {
         // Save current project before creating new one (if exists)
         if (currentProjectName != null) {
-            Log.d(TAG, "Saving current project before creating new: " + currentProjectName);
+            FLog.d(TAG, "Saving current project before creating new: " + currentProjectName);
             saveCurrentState();
         }
 
@@ -692,13 +693,13 @@ public class AnnotationService extends Service {
         projectFileManager.saveProject(newState, currentProjectName);
 
         Toast.makeText(this, "📝 New Project: " + newProjectName, Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "Created new project: " + newProjectName);
+        FLog.d(TAG, "Created new project: " + newProjectName);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "============ AnnotationService onCreate START ============");
+        FLog.d(TAG, "============ AnnotationService onCreate START ============");
 
         createNotificationChannel();
         
@@ -707,7 +708,7 @@ public class AnnotationService extends Service {
         // The foregroundServiceType is declared in AndroidManifest.xml as "specialUse"
         Notification notification = createNotification();
         startForeground(NOTIFICATION_ID, notification);
-        Log.d(TAG, "Foreground notification started");
+        FLog.d(TAG, "Foreground notification started");
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
@@ -716,13 +717,13 @@ public class AnnotationService extends Service {
 
         // Initialize project file manager
         projectFileManager = new ProjectFileManager(this);
-        Log.d(TAG, "ProjectFileManager initialized");
+        FLog.d(TAG, "ProjectFileManager initialized");
 
         // Move project scanning to background thread to avoid UI lag
         new Thread(() -> {
             // Get or create current project name (file scanning happens here)
             currentProjectName = projectFileManager.getOrCreateCurrentProject();
-            Log.i(TAG, "Current project name: " + currentProjectName);
+            FLog.i(TAG, "Current project name: " + currentProjectName);
 
             // Switch back to main thread for UI operations
             new Handler(Looper.getMainLooper()).post(() -> {
@@ -746,7 +747,7 @@ public class AnnotationService extends Service {
                 Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
                 sendBroadcast(readyIntent);
 
-                Log.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
+                FLog.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
             });
         }).start();
     }
@@ -758,23 +759,23 @@ public class AnnotationService extends Service {
         if (currentProjectName != null && projectFileManager != null) {
             // Check if project exists
             if (projectFileManager.projectExists(currentProjectName)) {
-                Log.i(TAG, "Found existing project: " + currentProjectName);
+                FLog.i(TAG, "Found existing project: " + currentProjectName);
 
                 // Only show startup dialog if we haven't shown it yet (prevents repeated prompts on service restart)
                 if (!hasShownStartupDialog) {
-                    Log.d(TAG, "First time loading - showing startup dialog");
+                    FLog.d(TAG, "First time loading - showing startup dialog");
                     showStartupDialog(currentProjectName);
                     hasShownStartupDialog = true;
                 } else {
-                    Log.d(TAG, "Service restarted - skipping dialog and loading project directly");
+                    FLog.d(TAG, "Service restarted - skipping dialog and loading project directly");
                     loadExistingProject(currentProjectName);
                 }
             } else {
-                Log.w(TAG, "Saved project doesn't exist, starting fresh");
+                FLog.w(TAG, "Saved project doesn't exist, starting fresh");
                 startFreshProject();
             }
         } else {
-            Log.w(TAG, "No current project name or ProjectFileManager not initialized");
+            FLog.w(TAG, "No current project name or ProjectFileManager not initialized");
             startFreshProject();
         }
     }
@@ -794,12 +795,12 @@ public class AnnotationService extends Service {
                 .setMessage("Continue with your last saved project \"" + sanitizedName + "\" or start a new one?")
                 .setPositiveButton("Continue", (dialog, which) -> {
                     dialog.dismiss();
-                    Log.i(TAG, "User chose to continue with: " + existingProjectName);
+                    FLog.i(TAG, "User chose to continue with: " + existingProjectName);
                     loadExistingProject(existingProjectName);
                 })
                 .setNegativeButton("New Project", (dialog, which) -> {
                     dialog.dismiss();
-                    Log.i(TAG, "User chose to create new project");
+                    FLog.i(TAG, "User chose to create new project");
                     createNewProject();
                 })
                 .setCancelable(false)
@@ -853,14 +854,14 @@ public class AnnotationService extends Service {
      * Load an existing project
      */
     private void loadExistingProject(String projectName) {
-        Log.i(TAG, "Attempting to load last project: " + projectName);
+        FLog.i(TAG, "Attempting to load last project: " + projectName);
 
         AnnotationState loadedState = projectFileManager.loadProject(projectName);
 
         if (loadedState != null && annotationView != null) {
-            Log.i(TAG, "✅ Successfully loaded project: " + projectName);
-            Log.d(TAG, "  - Pages: " + loadedState.getPages().size());
-            Log.d(TAG, "  - Current page index: " + loadedState.getActivePageIndex());
+            FLog.i(TAG, "✅ Successfully loaded project: " + projectName);
+            FLog.d(TAG, "  - Pages: " + loadedState.getPages().size());
+            FLog.d(TAG, "  - Current page index: " + loadedState.getActivePageIndex());
 
             // Apply the loaded state to annotation view
             annotationView.setState(loadedState);
@@ -869,17 +870,17 @@ public class AnnotationService extends Service {
             annotationView.post(() -> {
                 annotationView.invalidate();
                 annotationView.requestLayout();
-                Log.d(TAG, "Post-load redraw triggered");
+                FLog.d(TAG, "Post-load redraw triggered");
             });
 
             updateUndoRedoButtons();
             updatePageLayerInfo();
             updateProjectNameDisplay();
 
-            Log.i(TAG, "Project state applied to AnnotationView");
+            FLog.i(TAG, "Project state applied to AnnotationView");
         } else {
-            Log.w(TAG, "⚠️ Failed to load project: " + projectName);
-            Log.i(TAG, "Starting with fresh state");
+            FLog.w(TAG, "⚠️ Failed to load project: " + projectName);
+            FLog.i(TAG, "Starting with fresh state");
             startFreshProject();
         }
     }
@@ -888,14 +889,14 @@ public class AnnotationService extends Service {
      * Start with a fresh project (no existing data)
      */
     private void startFreshProject() {
-        Log.i(TAG, "Starting with fresh state");
+        FLog.i(TAG, "Starting with fresh state");
         updateUndoRedoButtons();
         updatePageLayerInfo();
         updateProjectNameDisplay();
     }
 
     private void setupAnnotationCanvas() {
-        Log.d(TAG, "Setting up annotation canvas...");
+        FLog.d(TAG, "Setting up annotation canvas...");
         annotationView = new AnnotationView(this);
 
         // IMPORTANT: Disable annotation by default so user doesn't see accidental
@@ -946,7 +947,7 @@ public class AnnotationService extends Service {
         annotationCanvasParams.gravity = Gravity.TOP | Gravity.START;
 
         windowManager.addView(annotationView, annotationCanvasParams);
-        Log.d(TAG, "Annotation canvas added to window with saved state");
+        FLog.d(TAG, "Annotation canvas added to window with saved state");
     }
 
     private void setupToolbar() {
@@ -982,7 +983,7 @@ public class AnnotationService extends Service {
         arrowParams.y = (int) (screenHeight * 0.5); // Center vertically
 
         windowManager.addView(arrowOverlay, arrowParams);
-        Log.d(TAG, "Arrow overlay added at x=0, y=" + arrowParams.y + " (RIGHT edge, 60% down) - ALWAYS ON TOP");
+        FLog.d(TAG, "Arrow overlay added at x=0, y=" + arrowParams.y + " (RIGHT edge, 60% down) - ALWAYS ON TOP");
 
         // Set initial arrow size for RIGHT edge (vertical layout)
         currentEdge = EdgePosition.RIGHT;
@@ -1114,7 +1115,7 @@ public class AnnotationService extends Service {
         toolbarView.setVisibility(View.VISIBLE);
         expandableContent.setVisibility(View.GONE); // Only the content inside starts hidden
         windowManager.addView(toolbarView, menuParams);
-        Log.d(TAG, "Menu overlay added at x=24dp, y=" + menuParams.y + " (offset from arrow)");
+        FLog.d(TAG, "Menu overlay added at x=24dp, y=" + menuParams.y + " (offset from arrow)");
 
         setupToolbarListeners();
         setupToolbarDragging();
@@ -1126,7 +1127,7 @@ public class AnnotationService extends Service {
         // normally
         setAnnotationEnabled(false);
 
-        Log.d(TAG, "Two separate overlays created - arrow and menu are now independent");
+        FLog.d(TAG, "Two separate overlays created - arrow and menu are now independent");
     }
 
     private void setupToolbarListeners() {
@@ -1159,18 +1160,18 @@ public class AnnotationService extends Service {
         // Main Expand/Collapse button - toggle menu
         btnExpandCollapseContainer.setOnClickListener(v -> {
             if (isAnimating) {
-                Log.d(TAG, "Click ignored - animation in progress");
+                FLog.d(TAG, "Click ignored - animation in progress");
                 return;
             }
 
             if (toolbarView == null || toolbarView.getWindowToken() == null) {
-                Log.w(TAG, "Toggle skipped - toolbar not attached");
+                FLog.w(TAG, "Toggle skipped - toolbar not attached");
                 return;
             }
 
             // Simple toggle - expand or collapse
             performMenuToggle();
-            Log.d(TAG, "Menu toggled - isExpanded: " + isExpanded);
+            FLog.d(TAG, "Menu toggled - isExpanded: " + isExpanded);
         });
 
         // Enable/Disable Annotation button
@@ -1227,22 +1228,22 @@ public class AnnotationService extends Service {
         snapGuidesSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (annotationView != null) {
                 annotationView.setSnapGuidesEnabled(isChecked);
-                Log.d(TAG, "Snap guides " + (isChecked ? "enabled" : "disabled"));
+                FLog.d(TAG, "Snap guides " + (isChecked ? "enabled" : "disabled"));
             }
         });
 
         // Recording controls - Collapsed button click to START recording
         btnRecordingCollapsed.setOnClickListener(v -> {
-            Log.d(TAG, "Overlay button clicked - currentState: " + recordingState + ", NONE=" + com.fadcam.fadrec.ScreenRecordingState.NONE + ", isEqual=" + (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE));
+            FLog.d(TAG, "Overlay button clicked - currentState: " + recordingState + ", NONE=" + com.fadcam.fadrec.ScreenRecordingState.NONE + ", isEqual=" + (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE));
             if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
                 // Start recording - launch TransparentPermissionActivity directly from service
                 // This works even if app is removed from recents
-                Log.d(TAG, "Starting recording from overlay - launching permission activity");
+                FLog.d(TAG, "Starting recording from overlay - launching permission activity");
                 Intent intent = new Intent(this, TransparentPermissionActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
             } else {
-                Log.w(TAG, "Button clicked but recordingState is not NONE: " + recordingState);
+                FLog.w(TAG, "Button clicked but recordingState is not NONE: " + recordingState);
             }
         });
 
@@ -1250,7 +1251,7 @@ public class AnnotationService extends Service {
         btnStartStopRec.setOnClickListener(v -> {
             if (btnStartStopRec.isEnabled()) {
                 // Stop recording - send intent directly to ScreenRecordingService
-                Log.d(TAG, "Stop button clicked - sending stop intent to service");
+                FLog.d(TAG, "Stop button clicked - sending stop intent to service");
                 Intent stopIntent = new Intent(this, com.fadcam.fadrec.services.ScreenRecordingService.class);
                 stopIntent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_SCREEN_RECORDING);
                 startService(stopIntent);
@@ -1262,13 +1263,13 @@ public class AnnotationService extends Service {
             if (btnPauseResumeRec.isEnabled()) {
                 if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
                     // Pause recording
-                    Log.d(TAG, "Pause button clicked - sending pause intent to service");
+                    FLog.d(TAG, "Pause button clicked - sending pause intent to service");
                     Intent pauseIntent = new Intent(this, com.fadcam.fadrec.services.ScreenRecordingService.class);
                     pauseIntent.setAction(com.fadcam.Constants.INTENT_ACTION_PAUSE_SCREEN_RECORDING);
                     startService(pauseIntent);
                 } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.PAUSED) {
                     // Resume recording
-                    Log.d(TAG, "Resume button clicked - sending resume intent to service");
+                    FLog.d(TAG, "Resume button clicked - sending resume intent to service");
                     Intent resumeIntent = new Intent(this, com.fadcam.fadrec.services.ScreenRecordingService.class);
                     resumeIntent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_SCREEN_RECORDING);
                     startService(resumeIntent);
@@ -1412,14 +1413,14 @@ public class AnnotationService extends Service {
         isExpanded = !isExpanded;
         isAnimating = true;
 
-        Log.d(TAG, "=== MENU OVERLAY TOGGLE ===");
-        Log.d(TAG, "Action: " + (isExpanded ? "EXPANDING" : "COLLAPSING"));
-        Log.d(TAG, "Current Edge: " + currentEdge);
-        Log.d(TAG, "Arrow Params - x: " + arrowParams.x + ", y: " + arrowParams.y);
-        Log.d(TAG, "Menu Params - x: " + menuParams.x + ", y: " + menuParams.y);
+        FLog.d(TAG, "=== MENU OVERLAY TOGGLE ===");
+        FLog.d(TAG, "Action: " + (isExpanded ? "EXPANDING" : "COLLAPSING"));
+        FLog.d(TAG, "Current Edge: " + currentEdge);
+        FLog.d(TAG, "Arrow Params - x: " + arrowParams.x + ", y: " + arrowParams.y);
+        FLog.d(TAG, "Menu Params - x: " + menuParams.x + ", y: " + menuParams.y);
 
         if (isExpanded) {
-            Log.d(TAG, "Starting EXPAND - showing menu overlay");
+            FLog.d(TAG, "Starting EXPAND - showing menu overlay");
             
             // Show the entire menu window
             menuParams.alpha = 1f;
@@ -1432,12 +1433,12 @@ public class AnnotationService extends Service {
                     .setDuration(200)
                     .withEndAction(() -> {
                         isAnimating = false;
-                        Log.d(TAG, "EXPAND completed - menu visible");
+                        FLog.d(TAG, "EXPAND completed - menu visible");
                     })
                     .start();
             updateArrowDirection(arrowParams, true);
         } else {
-            Log.d(TAG, "Starting COLLAPSE - hiding menu overlay");
+            FLog.d(TAG, "Starting COLLAPSE - hiding menu overlay");
             expandableContent.animate()
                     .alpha(0f)
                     .setDuration(150)
@@ -1449,7 +1450,7 @@ public class AnnotationService extends Service {
                         expandableContent.setVisibility(View.GONE);
                         expandableContent.setAlpha(1f);
                         isAnimating = false;
-                        Log.d(TAG, "COLLAPSE completed - menu hidden");
+                        FLog.d(TAG, "COLLAPSE completed - menu hidden");
                     })
                     .start();
             updateArrowDirection(arrowParams, true);
@@ -1558,7 +1559,7 @@ public class AnnotationService extends Service {
             public void onDeleteRequested() {
                 // Default implementation - should not be called since we use
                 // onTextDeleteRequested
-                Log.w(TAG, "onDeleteRequested called but should use onTextDeleteRequested");
+                FLog.w(TAG, "onDeleteRequested called but should use onTextDeleteRequested");
             }
 
             @Override
@@ -1594,7 +1595,7 @@ public class AnnotationService extends Service {
             }
         });
 
-        Log.d(TAG, "Inline text editor initialized");
+        FLog.d(TAG, "Inline text editor initialized");
     }
 
     /**
@@ -1632,7 +1633,7 @@ public class AnnotationService extends Service {
 
             annotationView.invalidate();
             saveCurrentState();
-            Log.d(TAG, "Text object updated");
+            FLog.d(TAG, "Text object updated");
         } else {
             // Creating new text - add to active layer
             AnnotationPage currentPage = annotationView.getState().getActivePage();
@@ -1675,7 +1676,7 @@ public class AnnotationService extends Service {
                     annotationView.invalidate();
                     saveCurrentState();
                     Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "New text object created");
+                    FLog.d(TAG, "New text object created");
                 } else {
                     Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
                 }
@@ -1792,10 +1793,10 @@ public class AnnotationService extends Service {
 
             annotationView.invalidate();
             saveCurrentState();
-            Log.d(TAG, "Text object auto-saved");
+            FLog.d(TAG, "Text object auto-saved");
         } else {
             // Text object should have been created by preview already
-            Log.w(TAG, "Auto-save called but no currentEditingTextObject exists");
+            FLog.w(TAG, "Auto-save called but no currentEditingTextObject exists");
         }
     }
 
@@ -1863,7 +1864,7 @@ public class AnnotationService extends Service {
             annotationView.invalidate();
             saveCurrentState();
             Toast.makeText(this, "🗑️ Text deleted!", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Text object soft deleted");
+            FLog.d(TAG, "Text object soft deleted");
         }
     }
 
@@ -1896,8 +1897,8 @@ public class AnnotationService extends Service {
      * Updates both arrow and menu overlays together
      */
     private void snapToEdgeIfNeeded() {
-        Log.d(TAG, ">>> snapToEdgeIfNeeded() called");
-        Log.d(TAG, "Arrow params - x: " + arrowParams.x + ", y: " + arrowParams.y);
+        FLog.d(TAG, ">>> snapToEdgeIfNeeded() called");
+        FLog.d(TAG, "Arrow params - x: " + arrowParams.x + ", y: " + arrowParams.y);
 
         android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
         windowManager.getDefaultDisplay().getMetrics(metrics);
@@ -1921,18 +1922,18 @@ public class AnnotationService extends Service {
 
         // Only snap if within threshold
         if (minDistance > snapThreshold) {
-            Log.d(TAG, "Not snapping - distance " + minDistance + " > threshold " + snapThreshold);
+            FLog.d(TAG, "Not snapping - distance " + minDistance + " > threshold " + snapThreshold);
             currentEdge = EdgePosition.CENTER;
             windowManager.updateViewLayout(arrowOverlay, arrowParams);
             windowManager.updateViewLayout(toolbarView, menuParams);
-            Log.d(TAG, "<<< snapToEdgeIfNeeded() - NO SNAP");
+            FLog.d(TAG, "<<< snapToEdgeIfNeeded() - NO SNAP");
             return;
         }
 
         // Snap to nearest edge and update both overlays
         if (minDistance == distanceToLeft) {
             // Snap to LEFT edge
-            Log.d(TAG, "Snapping to LEFT edge");
+            FLog.d(TAG, "Snapping to LEFT edge");
             currentEdge = EdgePosition.LEFT;
             arrowParams.x = screenWidth; // Fully touching left edge
             // Menu should be to the RIGHT of arrow (arrow is 20dp + 4dp gap)
@@ -1941,7 +1942,7 @@ public class AnnotationService extends Service {
 
         } else if (minDistance == distanceToRight) {
             // Snap to RIGHT edge
-            Log.d(TAG, "Snapping to RIGHT edge");
+            FLog.d(TAG, "Snapping to RIGHT edge");
             currentEdge = EdgePosition.RIGHT;
             arrowParams.x = 0; // Fully touching right edge
             menuParams.x = dpToPx(24); // Menu offset to left (20dp arrow + 4dp gap)
@@ -1949,7 +1950,7 @@ public class AnnotationService extends Service {
 
         } else if (minDistance == distanceToTop) {
             // Snap to TOP edge
-            Log.d(TAG, "Snapping to TOP edge");
+            FLog.d(TAG, "Snapping to TOP edge");
             currentEdge = EdgePosition.TOP;
             arrowParams.y = 0; // Fully touching top edge
             // Menu should be BELOW arrow (arrow is 20dp + 4dp gap)
@@ -1960,7 +1961,7 @@ public class AnnotationService extends Service {
 
         } else {
             // Snap to BOTTOM edge
-            Log.d(TAG, "Snapping to BOTTOM edge");
+            FLog.d(TAG, "Snapping to BOTTOM edge");
             currentEdge = EdgePosition.BOTTOM;
             arrowParams.y = screenHeight; // Fully touching bottom edge
             // Menu should be ABOVE arrow (need to account for menu height)
@@ -1971,15 +1972,15 @@ public class AnnotationService extends Service {
             adaptLayoutForEdge(EdgePosition.BOTTOM);
         }
 
-        Log.d(TAG, "Updating both overlays after snap");
-        Log.d(TAG, "Arrow final - x: " + arrowParams.x + ", y: " + arrowParams.y);
-        Log.d(TAG, "Menu final - x: " + menuParams.x + ", y: " + menuParams.y);
+        FLog.d(TAG, "Updating both overlays after snap");
+        FLog.d(TAG, "Arrow final - x: " + arrowParams.x + ", y: " + arrowParams.y);
+        FLog.d(TAG, "Menu final - x: " + menuParams.x + ", y: " + menuParams.y);
 
         windowManager.updateViewLayout(arrowOverlay, arrowParams);
         windowManager.updateViewLayout(toolbarView, menuParams);
         updateArrowDirection(arrowParams);
 
-        Log.d(TAG, "<<< snapToEdgeIfNeeded() - SNAPPED to " + currentEdge);
+        FLog.d(TAG, "<<< snapToEdgeIfNeeded() - SNAPPED to " + currentEdge);
     }
 
     /**
@@ -2039,8 +2040,8 @@ public class AnnotationService extends Service {
     }
 
     private void updateArrowDirection(WindowManager.LayoutParams params, boolean forceHint) {
-        Log.d(TAG, ">>> updateArrowDirection() called");
-        Log.d(TAG, "WindowManager params IN - x: " + params.x + ", y: " + params.y + ", gravity: " + params.gravity);
+        FLog.d(TAG, ">>> updateArrowDirection() called");
+        FLog.d(TAG, "WindowManager params IN - x: " + params.x + ", y: " + params.y + ", gravity: " + params.gravity);
 
         android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
         windowManager.getDefaultDisplay().getMetrics(metrics);
@@ -2135,9 +2136,9 @@ public class AnnotationService extends Service {
 
         playArrowHintAnimation(newGlyph, forceHint);
 
-        Log.d(TAG, "Arrow direction updated - text: " + btnExpandCollapse.getText() +
+        FLog.d(TAG, "Arrow direction updated - text: " + btnExpandCollapse.getText() +
                 ", isExpanded: " + isExpanded + ", edge: " + currentEdge);
-        Log.d(TAG, "<<< updateArrowDirection() completed");
+        FLog.d(TAG, "<<< updateArrowDirection() completed");
     }
 
     /**
@@ -2607,7 +2608,7 @@ public class AnnotationService extends Service {
             }
         };
         autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_INTERVAL);
-        Log.d(TAG, "Auto-save started (interval: " + AUTO_SAVE_INTERVAL + "ms)");
+        FLog.d(TAG, "Auto-save started (interval: " + AUTO_SAVE_INTERVAL + "ms)");
     }
 
     /**
@@ -2620,20 +2621,20 @@ public class AnnotationService extends Service {
                 // Log state details before save
                 AnnotationPage activePage = state.getActivePage();
                 if (activePage != null) {
-                    Log.d(TAG, ">>> SAVING STATE: " + currentProjectName);
-                    Log.d(TAG, "  Active page layer count: " + activePage.getLayers().size());
+                    FLog.d(TAG, ">>> SAVING STATE: " + currentProjectName);
+                    FLog.d(TAG, "  Active page layer count: " + activePage.getLayers().size());
                     for (int i = 0; i < activePage.getLayers().size(); i++) {
                         AnnotationLayer layer = activePage.getLayers().get(i);
-                        Log.d(TAG, "    Layer " + i + ": " + layer.getName() + " (" + layer.getObjects().size()
+                        FLog.d(TAG, "    Layer " + i + ": " + layer.getName() + " (" + layer.getObjects().size()
                                 + " objects)");
                     }
                 }
 
                 boolean success = projectFileManager.saveProject(state, currentProjectName);
                 if (success) {
-                    Log.d(TAG, "✅ State saved successfully to: " + currentProjectName + ".fadrec");
+                    FLog.d(TAG, "✅ State saved successfully to: " + currentProjectName + ".fadrec");
                 } else {
-                    Log.e(TAG, "❌ Failed to save state to: " + currentProjectName + ".fadrec");
+                    FLog.e(TAG, "❌ Failed to save state to: " + currentProjectName + ".fadrec");
                 }
             }
         }
@@ -2665,53 +2666,53 @@ public class AnnotationService extends Service {
                 public void onPageAdded() {
                     int newPageNumber = state.getPages().size() + 1;
                     String pageName = "Page " + newPageNumber;
-                    Log.d(TAG, "=== PAGE ADD STARTED ===");
-                    Log.d(TAG, "Current page count: " + state.getPages().size());
-                    Log.d(TAG, "New page name: " + pageName);
+                    FLog.d(TAG, "=== PAGE ADD STARTED ===");
+                    FLog.d(TAG, "Current page count: " + state.getPages().size());
+                    FLog.d(TAG, "New page name: " + pageName);
 
                     annotationView.addPage(pageName);
                     annotationView.switchToPage(state.getPages().size() - 1);
 
-                    Log.d(TAG, "Page added. New page count: " + state.getPages().size());
-                    Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
-                    Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                    FLog.d(TAG, "Page added. New page count: " + state.getPages().size());
+                    FLog.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                    FLog.d(TAG, "Redo count: " + annotationView.getRedoCount());
 
                     updateUndoRedoButtons();
                     Toast.makeText(AnnotationService.this, "✨ Created: " + pageName, Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "=== PAGE ADD COMPLETED ===");
+                    FLog.d(TAG, "=== PAGE ADD COMPLETED ===");
                 }
 
                 @Override
                 public void onPageDeleted(int index) {
                     if (state.getPages().size() > 1) {
                         String pageName = state.getPages().get(index).getName();
-                        Log.d(TAG, "=== PAGE DELETE STARTED ===");
-                        Log.d(TAG, "Deleting page: " + pageName + " at index: " + index);
-                        Log.d(TAG, "Current page count: " + state.getPages().size());
+                        FLog.d(TAG, "=== PAGE DELETE STARTED ===");
+                        FLog.d(TAG, "Deleting page: " + pageName + " at index: " + index);
+                        FLog.d(TAG, "Current page count: " + state.getPages().size());
 
                         state.removePage(index);
                         annotationView.invalidate();
                         annotationView.notifyStateChanged(); // Trigger undo/redo snapshot
 
-                        Log.d(TAG, "Page deleted. New page count: " + state.getPages().size());
-                        Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
-                        Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                        FLog.d(TAG, "Page deleted. New page count: " + state.getPages().size());
+                        FLog.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                        FLog.d(TAG, "Redo count: " + annotationView.getRedoCount());
 
                         updateUndoRedoButtons();
                         pageTabBarOverlay.refresh();
                         Toast.makeText(AnnotationService.this, "🗑️ Deleted: " + pageName, Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "=== PAGE DELETE COMPLETED ===");
+                        FLog.d(TAG, "=== PAGE DELETE COMPLETED ===");
                     }
                 }
 
                 @Override
                 public void onPageReordered(int fromIndex, int toIndex) {
-                    Log.d(TAG, "=== PAGE REORDER STARTED ===");
-                    Log.d(TAG, "From index: " + fromIndex + ", To index: " + toIndex);
+                    FLog.d(TAG, "=== PAGE REORDER STARTED ===");
+                    FLog.d(TAG, "From index: " + fromIndex + ", To index: " + toIndex);
                     AnnotationPage movedPage = null;
                     if (fromIndex >= 0 && fromIndex < state.getPages().size()) {
                         movedPage = state.getPages().get(fromIndex);
-                        Log.d(TAG, "Page being moved: " + movedPage.getName());
+                        FLog.d(TAG, "Page being moved: " + movedPage.getName());
                     }
 
                     state.movePage(fromIndex, toIndex);
@@ -2732,8 +2733,8 @@ public class AnnotationService extends Service {
                                 "Pages reordered", Toast.LENGTH_SHORT).show();
                     }
 
-                    Log.d(TAG, "Active page index is now: " + state.getActivePageIndex());
-                    Log.d(TAG, "=== PAGE REORDER COMPLETED ===");
+                    FLog.d(TAG, "Active page index is now: " + state.getActivePageIndex());
+                    FLog.d(TAG, "=== PAGE REORDER COMPLETED ===");
                 }
 
                 @Override
@@ -2819,7 +2820,7 @@ public class AnnotationService extends Service {
                     public void onLayerOpacityChanged(String layerId, float opacity) {
                         AnnotationLayer layer = currentPage.getLayerById(layerId);
                         if (layer != null) {
-                            Log.d(TAG, "Layer opacity changed: layerId=" + layerId + ", opacity=" + opacity);
+                            FLog.d(TAG, "Layer opacity changed: layerId=" + layerId + ", opacity=" + opacity);
                             layer.setOpacity(opacity);
                             // CRITICAL: Must call notifyStateChangedWithRedraw() to regenerate bitmap
                             // invalidate() alone doesn't update the pre-rendered layer bitmap with new
@@ -2852,9 +2853,9 @@ public class AnnotationService extends Service {
                     public void onLayerAdded() {
                         int newLayerNumber = currentPage.getLayers().size() + 1;
                         String layerName = "Layer " + newLayerNumber;
-                        Log.d(TAG, "=== LAYER ADD STARTED ===");
-                        Log.d(TAG, "Current layer count: " + currentPage.getLayers().size());
-                        Log.d(TAG, "New layer name: " + layerName);
+                        FLog.d(TAG, "=== LAYER ADD STARTED ===");
+                        FLog.d(TAG, "Current layer count: " + currentPage.getLayers().size());
+                        FLog.d(TAG, "New layer name: " + layerName);
 
                         // Use command pattern to enable undo/redo
                         com.fadcam.fadrec.ui.annotation.AddLayerCommand command = new com.fadcam.fadrec.ui.annotation.AddLayerCommand(
@@ -2864,14 +2865,14 @@ public class AnnotationService extends Service {
                         // layer
                         annotationView.notifyStateChangedWithRedraw();
 
-                        Log.d(TAG, "Layer added. New layer count: " + currentPage.getLayers().size());
-                        Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
-                        Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                        FLog.d(TAG, "Layer added. New layer count: " + currentPage.getLayers().size());
+                        FLog.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                        FLog.d(TAG, "Redo count: " + annotationView.getRedoCount());
 
                         updatePageLayerInfo();
                         layerPanelOverlay.refresh();
                         Toast.makeText(AnnotationService.this, "✨ Created: " + layerName, Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "=== LAYER ADD COMPLETED ===");
+                        FLog.d(TAG, "=== LAYER ADD COMPLETED ===");
                     }
 
                     @Override
@@ -2885,20 +2886,20 @@ public class AnnotationService extends Service {
                                 // Find the actual index in the full layers list (including deleted)
                                 int actualIndex = currentPage.getLayers().indexOf(layerToDelete);
 
-                                Log.d(TAG, "=== LAYER DELETE STARTED ===");
-                                Log.d(TAG, "Deleting layer: " + layerName + " (ID: " + layerId + ") at index: "
+                                FLog.d(TAG, "=== LAYER DELETE STARTED ===");
+                                FLog.d(TAG, "Deleting layer: " + layerName + " (ID: " + layerId + ") at index: "
                                         + actualIndex);
-                                Log.d(TAG, "Current visible layer count BEFORE deletion: " + visibleLayers.size());
-                                Log.d(TAG, "Total layers (including deleted): " + currentPage.getLayers().size());
+                                FLog.d(TAG, "Current visible layer count BEFORE deletion: " + visibleLayers.size());
+                                FLog.d(TAG, "Total layers (including deleted): " + currentPage.getLayers().size());
 
                                 // Use command pattern to enable undo/redo - uses soft-delete
                                 com.fadcam.fadrec.ui.annotation.DeleteLayerCommand command = new com.fadcam.fadrec.ui.annotation.DeleteLayerCommand(
                                         currentPage, actualIndex);
                                 currentPage.executeCommand(command);
 
-                                Log.d(TAG,
+                                FLog.d(TAG,
                                         "Visible layer count AFTER deletion: " + currentPage.getVisibleLayers().size());
-                                Log.d(TAG, "Total layers (preserved for version control): "
+                                FLog.d(TAG, "Total layers (preserved for version control): "
                                         + currentPage.getLayers().size());
 
                                 // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap without
@@ -2906,16 +2907,16 @@ public class AnnotationService extends Service {
                                 // This also triggers saveCurrentState() via the state change listener
                                 annotationView.notifyStateChangedWithRedraw();
 
-                                Log.d(TAG, "State saved after layer soft-deletion");
-                                Log.d(TAG, "Undo count: " + annotationView.getUndoCount());
-                                Log.d(TAG, "Redo count: " + annotationView.getRedoCount());
+                                FLog.d(TAG, "State saved after layer soft-deletion");
+                                FLog.d(TAG, "Undo count: " + annotationView.getUndoCount());
+                                FLog.d(TAG, "Redo count: " + annotationView.getRedoCount());
 
                                 updatePageLayerInfo();
                                 layerPanelOverlay.refresh();
                                 Toast.makeText(AnnotationService.this,
                                         "🗑️ Deleted: " + layerName + " (preserved for undo)", Toast.LENGTH_SHORT)
                                         .show();
-                                Log.d(TAG, "=== LAYER DELETE COMPLETED ===");
+                                FLog.d(TAG, "=== LAYER DELETE COMPLETED ===");
                             }
                         }
                     }
@@ -2929,9 +2930,9 @@ public class AnnotationService extends Service {
                             int fromIndex = currentPage.getLayers().indexOf(fromLayer);
                             int toIndex = currentPage.getLayers().indexOf(toLayer);
 
-                            Log.d(TAG, "=== LAYER REORDER STARTED ===");
-                            Log.d(TAG, "From: " + fromLayer.getName() + " (index " + fromIndex + ")");
-                            Log.d(TAG, "To: " + toLayer.getName() + " (index " + toIndex + ")");
+                            FLog.d(TAG, "=== LAYER REORDER STARTED ===");
+                            FLog.d(TAG, "From: " + fromLayer.getName() + " (index " + fromIndex + ")");
+                            FLog.d(TAG, "To: " + toLayer.getName() + " (index " + toIndex + ")");
 
                             currentPage.moveLayer(fromIndex, toIndex);
                             // CRITICAL: Use notifyStateChangedWithRedraw() to regenerate bitmap with
@@ -2944,8 +2945,8 @@ public class AnnotationService extends Service {
                             Toast.makeText(AnnotationService.this,
                                     "↕️ Reordered: " + fromLayer.getName(), Toast.LENGTH_SHORT).show();
 
-                            Log.d(TAG, "Active layer index is now: " + currentPage.getActiveLayerIndex());
-                            Log.d(TAG, "=== LAYER REORDER COMPLETED ===");
+                            FLog.d(TAG, "Active layer index is now: " + currentPage.getActiveLayerIndex());
+                            FLog.d(TAG, "=== LAYER REORDER COMPLETED ===");
                         }
                     }
                 });
@@ -2973,7 +2974,7 @@ public class AnnotationService extends Service {
                 AnnotationPage page = state.getPages().get(nextIndex);
                 String message = "📄 " + page.getName() + " (" + (nextIndex + 1) + "/" + totalPages + ")";
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "Switched to page: " + page.getName() + " (" + (nextIndex + 1) + "/" + totalPages + ")");
+                FLog.d(TAG, "Switched to page: " + page.getName() + " (" + (nextIndex + 1) + "/" + totalPages + ")");
             }
         }
     }
@@ -2998,7 +2999,7 @@ public class AnnotationService extends Service {
                         String message = lockIcon + " " + currentLayer.getName() + " "
                                 + (newLockState ? "Locked" : "Unlocked");
                         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "Layer " + currentLayer.getName() + " locked: " + newLockState);
+                        FLog.d(TAG, "Layer " + currentLayer.getName() + " locked: " + newLockState);
                     }
                 }
             }
@@ -3022,7 +3023,7 @@ public class AnnotationService extends Service {
 
                 String message = "✨ Created: " + pageName;
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "Added new page: " + pageName);
+                FLog.d(TAG, "Added new page: " + pageName);
             }
         }
     }
@@ -3043,7 +3044,7 @@ public class AnnotationService extends Service {
 
                     String message = "✨ Created: " + layerName;
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "Added new layer: " + layerName);
+                    FLog.d(TAG, "Added new layer: " + layerName);
                 }
             }
         }
@@ -3133,7 +3134,7 @@ public class AnnotationService extends Service {
                         boolean enabled = intent.getBooleanExtra("enabled", true);
                         if (annotationView != null) {
                             annotationView.setSnapGuidesEnabled(enabled);
-                            Log.d(TAG, "Snap guides " + (enabled ? "enabled" : "disabled"));
+                            FLog.d(TAG, "Snap guides " + (enabled ? "enabled" : "disabled"));
                         }
                         break;
 
@@ -3153,7 +3154,7 @@ public class AnnotationService extends Service {
         filter.addAction("com.fadcam.fadrec.ADD_TEXT");
         filter.addAction("com.fadcam.fadrec.ADD_SHAPE");
         androidx.core.content.ContextCompat.registerReceiver(this, menuActionReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-        Log.d(TAG, "Menu action receiver registered");
+        FLog.d(TAG, "Menu action receiver registered");
     }
 
     /**
@@ -3164,22 +3165,22 @@ public class AnnotationService extends Service {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String stateStr = intent.getStringExtra("recordingState");
-                Log.d(TAG, "[BROADCAST] Recording state broadcast received: " + stateStr);
+                FLog.d(TAG, "[BROADCAST] Recording state broadcast received: " + stateStr);
                 if (stateStr != null) {
                     try {
                         com.fadcam.fadrec.ScreenRecordingState oldState = recordingState;
                         recordingState = com.fadcam.fadrec.ScreenRecordingState.valueOf(stateStr);
-                        Log.d(TAG, "[BROADCAST] State updated: " + oldState + " -> " + recordingState);
+                        FLog.d(TAG, "[BROADCAST] State updated: " + oldState + " -> " + recordingState);
 
                         // Handle timer based on state changes
                         if (recordingState == com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS
                                 && oldState != com.fadcam.fadrec.ScreenRecordingState.IN_PROGRESS) {
                             // Recording started or resumed
-                            Log.d(TAG, "[BROADCAST] Starting timer due to state change");
+                            FLog.d(TAG, "[BROADCAST] Starting timer due to state change");
                             startRecordingTimer();
                         } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.NONE) {
                             // Recording stopped completely
-                            Log.d(TAG, "[BROADCAST] Stopping timer due to state change");
+                            FLog.d(TAG, "[BROADCAST] Stopping timer due to state change");
                             stopRecordingTimer();
                         } else if (recordingState == com.fadcam.fadrec.ScreenRecordingState.PAUSED) {
                             // Recording paused - stop updating but keep timer visible with current value
@@ -3188,13 +3189,13 @@ public class AnnotationService extends Service {
                             }
                             // Update one last time to show paused value
                             updateTimerDisplay();
-                            Log.d(TAG, "Timer paused at current value");
+                            FLog.d(TAG, "Timer paused at current value");
                         }
 
                         updateRecordingButtons();
-                        Log.d(TAG, "Recording state updated: " + recordingState);
+                        FLog.d(TAG, "Recording state updated: " + recordingState);
                     } catch (IllegalArgumentException e) {
-                        Log.e(TAG, "Invalid state: " + stateStr, e);
+                        FLog.e(TAG, "Invalid state: " + stateStr, e);
                     }
                 }
             }
@@ -3203,7 +3204,7 @@ public class AnnotationService extends Service {
         IntentFilter filter = new IntentFilter(com.fadcam.Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         // Use LocalBroadcastManager for guaranteed delivery on Android 12+
         LocalBroadcastManager.getInstance(this).registerReceiver(recordingStateReceiver, filter);
-        Log.d(TAG, "[BROADCAST] Recording state receiver registered via LocalBroadcastManager");
+        FLog.d(TAG, "[BROADCAST] Recording state receiver registered via LocalBroadcastManager");
     }
 
     /**
@@ -3221,7 +3222,7 @@ public class AnnotationService extends Service {
                     return;
 
                 if (com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED.equals(action)) {
-                    Log.d(TAG, "Permission granted in service, starting recording");
+                    FLog.d(TAG, "Permission granted in service, starting recording");
 
                     // Extract permission data - try both old and new key names
                     Intent permissionData = intent.getParcelableExtra("mediaProjectionData");
@@ -3231,7 +3232,7 @@ public class AnnotationService extends Service {
 
                     int resultCode = intent.getIntExtra("resultCode", -1);
 
-                    Log.d(TAG, "Extracted: resultCode=" + resultCode + ", data="
+                    FLog.d(TAG, "Extracted: resultCode=" + resultCode + ", data="
                             + (permissionData != null ? "present" : "null"));
 
                     // RESULT_OK is -1, not 0!
@@ -3239,16 +3240,16 @@ public class AnnotationService extends Service {
                         // Start recording using MediaProjectionHelper
                         MediaProjectionHelper helper = new MediaProjectionHelper(context);
                         helper.startScreenRecording(resultCode, permissionData);
-                        // Log.i(TAG, "Screen recording started from overlay service");
+                        // FLog.i(TAG, "Screen recording started from overlay service");
                     } else {
-                        Log.e(TAG, "Permission granted but invalid data - resultCode: " + resultCode + ", data: "
+                        FLog.e(TAG, "Permission granted but invalid data - resultCode: " + resultCode + ", data: "
                                 + (permissionData != null));
                         Toast.makeText(context, "Failed to start recording - invalid permission data",
                                 Toast.LENGTH_SHORT).show();
                     }
 
                 } else if (com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED.equals(action)) {
-                    Log.d(TAG, "Permission denied in service");
+                    FLog.d(TAG, "Permission denied in service");
                     Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -3259,7 +3260,7 @@ public class AnnotationService extends Service {
         filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
         // Use LocalBroadcastManager for guaranteed delivery on Android 12+
         LocalBroadcastManager.getInstance(this).registerReceiver(permissionResultReceiver, filter);
-        Log.d(TAG, "[BROADCAST] Permission result receiver registered via LocalBroadcastManager");
+        FLog.d(TAG, "[BROADCAST] Permission result receiver registered via LocalBroadcastManager");
     }
 
     private void registerColorPickerReceiver() {
@@ -3272,14 +3273,14 @@ public class AnnotationService extends Service {
                     annotationView.setPenMode();
                     updateToolSelection(true);
                     updateColorSelection(null);
-                    Log.d(TAG, "Color selected from picker: " + Integer.toHexString(selectedColor));
+                    FLog.d(TAG, "Color selected from picker: " + Integer.toHexString(selectedColor));
                 }
             }
         };
 
         IntentFilter filter = new IntentFilter(ColorPickerDialogActivity.ACTION_COLOR_SELECTED);
         androidx.core.content.ContextCompat.registerReceiver(this, colorPickerReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-        Log.d(TAG, "Color picker receiver registered");
+        FLog.d(TAG, "Color picker receiver registered");
     }
 
     /**
@@ -3299,10 +3300,10 @@ public class AnnotationService extends Service {
                     String oldName = currentProjectName;
                     String sanitizedNewName = ProjectFileManager.sanitizeProjectName(newName);
 
-                    Log.i(TAG, "========== PROJECT RENAME ==========");
-                    Log.i(TAG, "Old name: '" + oldName + "'");
-                    Log.i(TAG, "New name (user input): '" + newName + "'");
-                    Log.i(TAG, "New name (sanitized): '" + sanitizedNewName + "'");
+                    FLog.i(TAG, "========== PROJECT RENAME ==========");
+                    FLog.i(TAG, "Old name: '" + oldName + "'");
+                    FLog.i(TAG, "New name (user input): '" + newName + "'");
+                    FLog.i(TAG, "New name (sanitized): '" + sanitizedNewName + "'");
 
                     // Update metadata with sanitized name
                     if (state != null && state.getMetadata() != null) {
@@ -3311,15 +3312,15 @@ public class AnnotationService extends Service {
                             if (newDescription != null) {
                                 state.getMetadata().put("description", newDescription);
                             }
-                            Log.d(TAG, "Metadata updated");
+                            FLog.d(TAG, "Metadata updated");
                         } catch (org.json.JSONException e) {
-                            Log.e(TAG, "Failed to update metadata", e);
+                            FLog.e(TAG, "Failed to update metadata", e);
                         }
                     }
 
                     // Save current state to old file first
                     projectFileManager.saveProject(state, oldName);
-                    Log.d(TAG, "Saved state to old file: " + oldName);
+                    FLog.d(TAG, "Saved state to old file: " + oldName);
 
                     // Rename the project folder with sanitized name
                     boolean renamed = projectFileManager.renameProject(oldName, sanitizedNewName);
@@ -3327,7 +3328,7 @@ public class AnnotationService extends Service {
                     if (renamed) {
                         // Update current project name AFTER successful rename
                         currentProjectName = sanitizedNewName;
-                        Log.i(TAG, "✅ Project renamed successfully");
+                        FLog.i(TAG, "✅ Project renamed successfully");
 
                         // Update preferences with new name
                         android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
@@ -3337,35 +3338,35 @@ public class AnnotationService extends Service {
                         updateProjectNameDisplay();
                         updateNotification();
                     } else {
-                        Log.e(TAG, "❌ Failed to rename project file, keeping old name");
+                        FLog.e(TAG, "❌ Failed to rename project file, keeping old name");
                         // Revert metadata if rename failed
                         try {
                             if (state != null && state.getMetadata() != null) {
                                 state.getMetadata().put("name", oldName);
                             }
                         } catch (org.json.JSONException e) {
-                            Log.e(TAG, "Failed to revert metadata", e);
+                            FLog.e(TAG, "Failed to revert metadata", e);
                         }
                     }
 
-                    Log.i(TAG, "====================================");
+                    FLog.i(TAG, "====================================");
                 } else {
                     // Just updating description (or keeping same name)
                     if (state != null && state.getMetadata() != null) {
                         try {
                             if (newDescription != null) {
                                 state.getMetadata().put("description", newDescription);
-                                Log.d(TAG, "Description updated to: " + newDescription);
+                                FLog.d(TAG, "Description updated to: " + newDescription);
                             }
 
                             // Save the project with updated description
                             projectFileManager.saveProject(state, currentProjectName);
-                            Log.d(TAG, "Project saved with updated metadata");
+                            FLog.d(TAG, "Project saved with updated metadata");
 
                             // Update UI immediately
                             updateProjectNameDisplay();
                         } catch (org.json.JSONException e) {
-                            Log.e(TAG, "Failed to update description", e);
+                            FLog.e(TAG, "Failed to update description", e);
                         }
                     }
                 }
@@ -3374,7 +3375,7 @@ public class AnnotationService extends Service {
 
         IntentFilter filter = new IntentFilter(ProjectNamingDialogActivity.ACTION_PROJECT_RENAMED);
         androidx.core.content.ContextCompat.registerReceiver(this, projectNamingReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-        Log.d(TAG, "Project naming receiver registered");
+        FLog.d(TAG, "Project naming receiver registered");
     }
 
     /**
@@ -3388,30 +3389,30 @@ public class AnnotationService extends Service {
                 String selectedProject = intent.getStringExtra(ProjectSelectionDialogActivity.EXTRA_PROJECT_NAME);
 
                 if (selectedProject != null && !selectedProject.isEmpty()) {
-                    Log.i(TAG, "========== PROJECT SWITCH ==========");
-                    Log.i(TAG, "Current project: " + currentProjectName);
-                    Log.i(TAG, "Loading project: " + selectedProject);
+                    FLog.i(TAG, "========== PROJECT SWITCH ==========");
+                    FLog.i(TAG, "Current project: " + currentProjectName);
+                    FLog.i(TAG, "Loading project: " + selectedProject);
 
                     // Save current project before switching
                     if (annotationView != null && currentProjectName != null) {
                         AnnotationState currentState = annotationView.getState();
                         if (currentState != null) {
                             projectFileManager.saveProject(currentState, currentProjectName);
-                            Log.d(TAG, "Saved current project: " + currentProjectName);
+                            FLog.d(TAG, "Saved current project: " + currentProjectName);
                         }
                     }
 
                     // Load the selected project
                     loadProject(selectedProject);
 
-                    Log.i(TAG, "====================================");
+                    FLog.i(TAG, "====================================");
                 }
             }
         };
 
         IntentFilter filter = new IntentFilter(ProjectSelectionDialogActivity.ACTION_PROJECT_SELECTED);
         androidx.core.content.ContextCompat.registerReceiver(this, projectSelectionReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
-        Log.d(TAG, "Project selection receiver registered");
+        FLog.d(TAG, "Project selection receiver registered");
 
         // Register layer rename receiver
         layerRenameReceiver = new BroadcastReceiver() {
@@ -3472,7 +3473,7 @@ public class AnnotationService extends Service {
         
         IntentFilter filter = new IntentFilter(BaseTransparentEditorActivity.ACTION_EDITOR_RESULT);
         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(textEditorResultReceiver, filter);
-        Log.d(TAG, "Text editor result receiver registered");
+        FLog.d(TAG, "Text editor result receiver registered");
         
         // Register editor lifecycle receivers (start/finish)
         editorLifecycleReceiver = new BroadcastReceiver() {
@@ -3492,7 +3493,7 @@ public class AnnotationService extends Service {
                         annotationCanvasParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                         windowManager.updateViewLayout(annotationView, annotationCanvasParams);
                         
-                        Log.d(TAG, "Editor started - annotation canvas hidden (GONE), disabled, and NOT_TOUCHABLE flag set");
+                        FLog.d(TAG, "Editor started - annotation canvas hidden (GONE), disabled, and NOT_TOUCHABLE flag set");
                     }
                 } else if (BaseTransparentEditorActivity.ACTION_EDITOR_FINISHED.equals(action)) {
                     // Re-enable annotation canvas when editor finishes
@@ -3506,7 +3507,7 @@ public class AnnotationService extends Service {
                         annotationCanvasParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                         windowManager.updateViewLayout(annotationView, annotationCanvasParams);
                         
-                        Log.d(TAG, "Editor finished - annotation canvas shown (VISIBLE), enabled, and NOT_TOUCHABLE flag removed");
+                        FLog.d(TAG, "Editor finished - annotation canvas shown (VISIBLE), enabled, and NOT_TOUCHABLE flag removed");
                     }
                 }
             }
@@ -3516,7 +3517,7 @@ public class AnnotationService extends Service {
         lifecycleFilter.addAction(BaseTransparentEditorActivity.ACTION_EDITOR_STARTED);
         lifecycleFilter.addAction(BaseTransparentEditorActivity.ACTION_EDITOR_FINISHED);
         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).registerReceiver(editorLifecycleReceiver, lifecycleFilter);
-        Log.d(TAG, "Editor lifecycle receiver registered");
+        FLog.d(TAG, "Editor lifecycle receiver registered");
     }
     
     /**
@@ -3537,14 +3538,14 @@ public class AnnotationService extends Service {
         int backgroundColor = resultData.getInt(TextEditorActivity.RESULT_BACKGROUND_COLOR, 0);
         int maxWidth = resultData.getInt(TextEditorActivity.RESULT_MAX_WIDTH, 0);
         
-        Log.d(TAG, "handleTextEditorSave: maxWidth=" + maxWidth + " fontSize=" + fontSize);
+        FLog.d(TAG, "handleTextEditorSave: maxWidth=" + maxWidth + " fontSize=" + fontSize);
         
         // Use text as-is (no wrapping - maxWidth will handle line breaking in rendering)
         Paint.Align paintAlign = convertGravityToPaintAlign(alignment);
         
         AnnotationPage currentPage = annotationView.getState().getActivePage();
         if (currentPage == null) {
-            Log.e(TAG, "No active page for text save");
+            FLog.e(TAG, "No active page for text save");
             return;
         }
         
@@ -3593,9 +3594,9 @@ public class AnnotationService extends Service {
                 
                 saveCurrentState();
                 Toast.makeText(this, "✏️ Text updated!", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "Text modified via command pattern - undo stack size: " + currentPage.getUndoStackSize());
+                FLog.d(TAG, "Text modified via command pattern - undo stack size: " + currentPage.getUndoStackSize());
             } else {
-                Log.e(TAG, "Could not find layer containing text object");
+                FLog.e(TAG, "Could not find layer containing text object");
                 currentEditingTextObject = null;
             }
         } else {
@@ -3628,12 +3629,12 @@ public class AnnotationService extends Service {
                 
                 saveCurrentState();
                 Toast.makeText(this, "✏️ Text added!", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "New text created via command pattern - undo stack size: " + currentPage.getUndoStackSize());
+                FLog.d(TAG, "New text created via command pattern - undo stack size: " + currentPage.getUndoStackSize());
                 
                 // Auto-collapse menu to show text in selection mode
                 if (isExpanded) {
                     performMenuToggle();
-                    Log.d(TAG, "Auto-collapsed menu after text creation");
+                    FLog.d(TAG, "Auto-collapsed menu after text creation");
                 }
             } else {
                 Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
@@ -3755,9 +3756,9 @@ public class AnnotationService extends Service {
      * Show rename dialog for layer (Material Design)
      */
     private void showLayerRenameDialog(String layerId, String currentName) {
-        Log.d(TAG, "showLayerRenameDialog called for layerId: " + layerId + ", name: " + currentName);
+        FLog.d(TAG, "showLayerRenameDialog called for layerId: " + layerId + ", name: " + currentName);
         if (annotationView == null) {
-            Log.w(TAG, "AnnotationView is null, cannot show rename dialog");
+            FLog.w(TAG, "AnnotationView is null, cannot show rename dialog");
             return;
         }
         AnnotationState currentState = annotationView.getState();
@@ -3776,15 +3777,15 @@ public class AnnotationService extends Service {
                                 if (layerPanelOverlay != null) {
                                     layerPanelOverlay.refresh();
                                 }
-                                Log.d(TAG, "Layer renamed to: " + newName);
+                                FLog.d(TAG, "Layer renamed to: " + newName);
                                 Toast.makeText(this, getString(R.string.rename_dialog_toast_success, newName),
                                         Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
-            Log.d(TAG, "Rename layer dialog shown");
+            FLog.d(TAG, "Rename layer dialog shown");
         } catch (Exception e) {
-            Log.e(TAG, "Error showing rename layer dialog", e);
+            FLog.e(TAG, "Error showing rename layer dialog", e);
             Toast.makeText(this, "Error showing rename dialog", Toast.LENGTH_SHORT).show();
         }
     }
@@ -3793,9 +3794,9 @@ public class AnnotationService extends Service {
      * Show rename dialog for page (Material Design)
      */
     private void showPageRenameDialog(int pageIndex, String currentName) {
-        Log.d(TAG, "showPageRenameDialog called for index: " + pageIndex + ", name: " + currentName);
+        FLog.d(TAG, "showPageRenameDialog called for index: " + pageIndex + ", name: " + currentName);
         if (annotationView == null) {
-            Log.w(TAG, "AnnotationView is null, cannot show rename dialog");
+            FLog.w(TAG, "AnnotationView is null, cannot show rename dialog");
             return;
         }
         AnnotationState currentState = annotationView.getState();
@@ -3812,14 +3813,14 @@ public class AnnotationService extends Service {
                                 pageTabBarOverlay.refresh();
                             }
                             updatePageLayerInfo();
-                            Log.d(TAG, "Page renamed to: " + newName);
+                            FLog.d(TAG, "Page renamed to: " + newName);
                             Toast.makeText(this, getString(R.string.rename_dialog_toast_success, newName),
                                     Toast.LENGTH_SHORT).show();
                         }
                     });
-            Log.d(TAG, "Rename page dialog shown");
+            FLog.d(TAG, "Rename page dialog shown");
         } catch (Exception e) {
-            Log.e(TAG, "Error showing rename page dialog", e);
+            FLog.e(TAG, "Error showing rename page dialog", e);
             Toast.makeText(this, "Error showing rename dialog", Toast.LENGTH_SHORT).show();
         }
     }
@@ -3960,13 +3961,13 @@ public class AnnotationService extends Service {
                     updateTimerDisplay();
                     recordingTimerHandler.postDelayed(this, 1000); // Update every second
                 } else {
-                    Log.d(TAG, "Timer runnable stopped - state is: " + recordingState);
+                    FLog.d(TAG, "Timer runnable stopped - state is: " + recordingState);
                 }
             }
         };
 
         recordingTimerHandler.post(recordingTimerRunnable);
-        Log.d(TAG, "Recording timer started in overlay");
+        FLog.d(TAG, "Recording timer started in overlay");
     }
 
     /**
@@ -3982,7 +3983,7 @@ public class AnnotationService extends Service {
             recordingTimerText.setText("00:00");
         }
 
-        Log.d(TAG, "Recording timer stopped in overlay");
+        FLog.d(TAG, "Recording timer stopped in overlay");
     }
 
     /**
@@ -4047,7 +4048,7 @@ public class AnnotationService extends Service {
                     annotationCanvasParams.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                 }
                 windowManager.updateViewLayout(annotationView, annotationCanvasParams);
-                Log.d(TAG, "Canvas window flags updated: touchable=" + enabled);
+                FLog.d(TAG, "Canvas window flags updated: touchable=" + enabled);
             }
         }
 
@@ -4077,7 +4078,7 @@ public class AnnotationService extends Service {
         updateAnnotationToolsState(enabled);
 
         updateNotification();
-        Log.d(TAG, "Annotation enabled: " + enabled);
+        FLog.d(TAG, "Annotation enabled: " + enabled);
     }
 
     /**
@@ -4121,7 +4122,7 @@ public class AnnotationService extends Service {
             Toast.makeText(this, "Canvas Hidden - Pinned layers still visible", Toast.LENGTH_SHORT).show();
         }
 
-        Log.d(TAG, "Canvas visible: " + visible);
+        FLog.d(TAG, "Canvas visible: " + visible);
     }
 
     /**
@@ -4159,7 +4160,7 @@ public class AnnotationService extends Service {
                     .start();
         }
 
-        Log.d(TAG, "Recording controls expanded: " + isRecordingControlsExpanded);
+        FLog.d(TAG, "Recording controls expanded: " + isRecordingControlsExpanded);
     }
 
     /**
@@ -4335,7 +4336,7 @@ public class AnnotationService extends Service {
             snapGuidesSwitch.setClickable(enabled);
         }
 
-        Log.d(TAG, "Annotation tools state updated: " + (enabled ? "enabled" : "disabled"));
+        FLog.d(TAG, "Annotation tools state updated: " + (enabled ? "enabled" : "disabled"));
     }
 
     /**
@@ -4363,7 +4364,7 @@ public class AnnotationService extends Service {
         }
 
         updateNotification();
-        Log.d(TAG, "Overlay hidden");
+        FLog.d(TAG, "Overlay hidden");
     }
 
     /**
@@ -4391,13 +4392,13 @@ public class AnnotationService extends Service {
         }
 
         updateNotification();
-        Log.d(TAG, "Overlay shown");
+        FLog.d(TAG, "Overlay shown");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "AnnotationService destroyed");
+        FLog.d(TAG, "AnnotationService destroyed");
 
         // Stop recording timer
         stopRecordingTimer();
@@ -4441,7 +4442,7 @@ public class AnnotationService extends Service {
         // Stop auto-save timer
         if (autoSaveHandler != null && autoSaveRunnable != null) {
             autoSaveHandler.removeCallbacks(autoSaveRunnable);
-            Log.d(TAG, "Auto-save stopped");
+            FLog.d(TAG, "Auto-save stopped");
         }
 
         // Final save before shutdown
@@ -4503,7 +4504,7 @@ public class AnnotationService extends Service {
             // CRITICAL: Regenerate cached bitmap to reflect hidden text
             // invalidate() alone doesn't regenerate the cached drawingLayerBitmap
             annotationView.notifyStateChangedWithRedraw();
-            Log.d(TAG, "Text object hidden and bitmap regenerated before launching editor");
+            FLog.d(TAG, "Text object hidden and bitmap regenerated before launching editor");
         }
 
         // Launch TextEditorActivity

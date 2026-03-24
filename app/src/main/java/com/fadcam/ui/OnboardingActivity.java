@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.view.View;
@@ -67,7 +69,7 @@ public class OnboardingActivity extends AppIntro {
             }
         } catch (Exception e) {
             // If reflection fails, log and continue
-            android.util.Log.e("OnboardingActivity", "Could not clear slides: " + e.getMessage());
+            FLog.e("OnboardingActivity", "Could not clear slides: " + e.getMessage());
         }
 
         // Add slides in the correct sequence
@@ -796,7 +798,7 @@ public class OnboardingActivity extends AppIntro {
             }
         } catch (Exception e) {
             // Log error but continue
-            android.util.Log.e("OnboardingActivity", "Error refreshing current slide: " + e.getMessage());
+            FLog.e("OnboardingActivity", "Error refreshing current slide: " + e.getMessage());
         }
     }
 
@@ -881,7 +883,7 @@ public class OnboardingActivity extends AppIntro {
                             }
                         }
                     } catch (Exception e) {
-                        android.util.Log.e("OnboardingActivity",
+                        FLog.e("OnboardingActivity",
                                 "Failed to refresh fragment at position " + i + ": " + e.getMessage());
                     }
                 }
@@ -991,7 +993,7 @@ public class OnboardingActivity extends AppIntro {
         sharedPreferencesManager.setShowOnboarding(false);
 
         // Log the change to verify it happened
-        android.util.Log.d("OnboardingActivity", "Onboarding marked as completed");
+        FLog.d("OnboardingActivity", "Onboarding marked as completed");
 
         // START: Navigate to What's New screen after onboarding completes
         // Show What's New screen if onboarding display is enabled (which it should be on first install)

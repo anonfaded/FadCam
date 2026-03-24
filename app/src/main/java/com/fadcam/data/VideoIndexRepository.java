@@ -1,10 +1,10 @@
 package com.fadcam.data;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -131,7 +131,7 @@ public class VideoIndexRepository {
         // with disk. This preserves enrichment data (durations, thumbnails) for
         // unchanged files, unlike the old deleteAll() approach.
         if (indexInvalidated.compareAndSet(true, false)) {
-            Log.i(TAG, "Index invalidated — running delta scan to re-sync");
+            FLog.i(TAG, "Index invalidated — running delta scan to re-sync");
             return deltaScan(prefs);
         }
 
@@ -142,22 +142,22 @@ public class VideoIndexRepository {
             List<VideoItem> items = entitiesToVideoItems(entities);
             updateInMemoryCaches(entities, items.size());
             long elapsed = System.currentTimeMillis() - start;
-            Log.i(TAG, "DB fast path: " + items.size() + " items in " + elapsed + "ms");
+            FLog.i(TAG, "DB fast path: " + items.size() + " items in " + elapsed + "ms");
             return items;
         }
 
         // Cold start: full scan + insert
-        Log.i(TAG, "Cold start: no DB data, performing full scan");
+        FLog.i(TAG, "Cold start: no DB data, performing full scan");
         List<VideoIndexEntity> scanned = scanner.scanAll(prefs);
         if (!scanned.isEmpty()) {
             dao.insertOrReplaceAll(scanned);
-            Log.i(TAG, "Inserted " + scanned.size() + " items into DB");
+            FLog.i(TAG, "Inserted " + scanned.size() + " items into DB");
         }
 
         List<VideoItem> items = entitiesToVideoItems(scanned);
         updateInMemoryCaches(scanned, items.size());
         long elapsed = System.currentTimeMillis() - start;
-        Log.i(TAG, "Cold start complete: " + items.size() + " items in " + elapsed + "ms");
+        FLog.i(TAG, "Cold start complete: " + items.size() + " items in " + elapsed + "ms");
         return items;
     }
 
@@ -182,12 +182,12 @@ public class VideoIndexRepository {
         try {
             int count = dao.getCount();
             long totalSize = dao.getTotalSize();
-            Log.d(TAG, "getQuickStats: count=" + count + ", totalSize=" + totalSize);
+            FLog.d(TAG, "getQuickStats: count=" + count + ", totalSize=" + totalSize);
             // Also update in-memory cache while we're at it
             cachedCount.set(count);
             return new long[]{count, totalSize};
         } catch (Exception e) {
-            Log.e(TAG, "getQuickStats: Error querying Room DB", e);
+            FLog.e(TAG, "getQuickStats: Error querying Room DB", e);
             return new long[]{0, 0};
         }
     }
@@ -250,11 +250,11 @@ public class VideoIndexRepository {
         // Apply changes
         if (!toDelete.isEmpty()) {
             dao.deleteByUris(toDelete);
-            Log.i(TAG, "Delta: removed " + toDelete.size() + " deleted files from index");
+            FLog.i(TAG, "Delta: removed " + toDelete.size() + " deleted files from index");
         }
         if (!toInsert.isEmpty()) {
             dao.insertOrReplaceAll(toInsert);
-            Log.i(TAG, "Delta: added/updated " + toInsert.size() + " files in index");
+            FLog.i(TAG, "Delta: added/updated " + toInsert.size() + " files in index");
         }
 
         // Return fresh list from DB
@@ -263,7 +263,7 @@ public class VideoIndexRepository {
         updateInMemoryCaches(allEntities, items.size());
 
         long elapsed = System.currentTimeMillis() - start;
-        Log.i(TAG, "Delta scan complete: " + items.size() + " items, " +
+        FLog.i(TAG, "Delta scan complete: " + items.size() + " items, " +
                 toInsert.size() + " added, " + toDelete.size() + " removed, " + elapsed + "ms");
 
         return items;
@@ -291,9 +291,9 @@ public class VideoIndexRepository {
                     enrichmentData.put(e.uriString, new long[]{e.durationMs, 1});
                 }
             }
-            Log.d(TAG, "Preserved enrichment data for " + enrichmentData.size() + " items");
+            FLog.d(TAG, "Preserved enrichment data for " + enrichmentData.size() + " items");
         } catch (Exception e) {
-            Log.w(TAG, "Failed to read existing enrichment data (non-fatal)", e);
+            FLog.w(TAG, "Failed to read existing enrichment data (non-fatal)", e);
         }
 
         // Wipe and re-scan
@@ -317,7 +317,7 @@ public class VideoIndexRepository {
         List<VideoItem> items = entitiesToVideoItems(scanned);
         updateInMemoryCaches(scanned, items.size());
         long elapsed = System.currentTimeMillis() - start;
-        Log.i(TAG, "Full reindex: " + items.size() + " items in " + elapsed + "ms"
+        FLog.i(TAG, "Full reindex: " + items.size() + " items in " + elapsed + "ms"
                 + " (preserved " + enrichmentData.size() + " durations)");
         return items;
     }
@@ -337,14 +337,14 @@ public class VideoIndexRepository {
      */
     public void startBackgroundEnrichment(@Nullable EnrichmentCallback callback) {
         if (!isEnriching.compareAndSet(false, true)) {
-            Log.d(TAG, "Enrichment already running, skipping");
+            FLog.d(TAG, "Enrichment already running, skipping");
             return;
         }
 
         enrichmentExecutor.submit(() -> {
             try {
                 List<VideoIndexEntity> unresolved = getUnresolvedDurationItems();
-                Log.i(TAG, "Enrichment: " + unresolved.size() + " items need duration resolution");
+                FLog.i(TAG, "Enrichment: " + unresolved.size() + " items need duration resolution");
 
                 for (VideoIndexEntity entity : unresolved) {
                     try {
@@ -364,17 +364,17 @@ public class VideoIndexRepository {
                         // Leaving items as `durationResolved=false` here causes the adapter to fall
                         // through to its FFprobe path (getVideoDuration) which correctly probes the file
                         // and persists the result via persistDurationToDb().
-                        Log.d(TAG, "Enrichment: skipping " + entity.displayName + " (VIDEO) — FFprobe in adapter will handle it");
+                        FLog.d(TAG, "Enrichment: skipping " + entity.displayName + " (VIDEO) — FFprobe in adapter will handle it");
                         if (callback != null) callback.onItemEnriched(entity.uriString, -1);
 
                     } catch (Exception e) {
-                        Log.w(TAG, "Failed to enrich: " + entity.displayName);
+                        FLog.w(TAG, "Failed to enrich: " + entity.displayName);
                     }
                 }
 
-                Log.i(TAG, "Enrichment complete");
+                FLog.i(TAG, "Enrichment complete");
             } catch (Exception e) {
-                Log.e(TAG, "Enrichment error", e);
+                FLog.e(TAG, "Enrichment error", e);
             } finally {
                 isEnriching.set(false);
             }
@@ -402,9 +402,9 @@ public class VideoIndexRepository {
         enrichmentExecutor.submit(() -> {
             try {
                 dao.updateDuration(uriString, durationMs);
-                Log.d(TAG, "Persisted FFprobe duration to DB: " + durationMs + "ms for " + uriString);
+                FLog.d(TAG, "Persisted FFprobe duration to DB: " + durationMs + "ms for " + uriString);
             } catch (Exception e) {
-                Log.w(TAG, "Failed to persist duration to DB: " + e.getMessage());
+                FLog.w(TAG, "Failed to persist duration to DB: " + e.getMessage());
             }
         });
     }
@@ -424,7 +424,7 @@ public class VideoIndexRepository {
             try {
                 dao.deleteByUri(uriString);
             } catch (Exception e) {
-                Log.w(TAG, "Failed to remove from index: " + uriString, e);
+                FLog.w(TAG, "Failed to remove from index: " + uriString, e);
             }
         });
     }
@@ -442,7 +442,7 @@ public class VideoIndexRepository {
             try {
                 dao.deleteByUris(uriStrings);
             } catch (Exception e) {
-                Log.w(TAG, "Failed to remove from index", e);
+                FLog.w(TAG, "Failed to remove from index", e);
             }
         });
     }
@@ -455,7 +455,7 @@ public class VideoIndexRepository {
         indexInvalidated.set(true);
         cachedCount.set(0);
         durationCache.clear();
-        Log.i(TAG, "Index marked for invalidation (flag set)");
+        FLog.i(TAG, "Index marked for invalidation (flag set)");
     }
 
     /**
@@ -483,11 +483,11 @@ public class VideoIndexRepository {
                 java.io.File adapterDiskCache = new java.io.File(appContext.getCacheDir(), "duration_cache.json");
                 if (adapterDiskCache.exists()) {
                     boolean deleted = adapterDiskCache.delete();
-                    Log.i(TAG, "clearStaleMMRDurationsOnce: duration_cache.json " + (deleted ? "deleted" : "delete failed"));
+                    FLog.i(TAG, "clearStaleMMRDurationsOnce: duration_cache.json " + (deleted ? "deleted" : "delete failed"));
                 }
-                Log.i(TAG, "clearStaleMMRDurationsOnce: reset video durations — will be re-probed via FFprobe");
+                FLog.i(TAG, "clearStaleMMRDurationsOnce: reset video durations — will be re-probed via FFprobe");
             } catch (Exception e) {
-                Log.w(TAG, "clearStaleMMRDurationsOnce failed (non-fatal)", e);
+                FLog.w(TAG, "clearStaleMMRDurationsOnce failed (non-fatal)", e);
             }
         });
     }
@@ -548,7 +548,7 @@ public class VideoIndexRepository {
             item.isNew = Utils.isVideoConsideredNew(entity.lastModified);
             return item;
         } catch (Exception e) {
-            Log.w(TAG, "Failed to convert entity: " + entity.displayName, e);
+            FLog.w(TAG, "Failed to convert entity: " + entity.displayName, e);
             return null;
         }
     }
@@ -598,7 +598,7 @@ public class VideoIndexRepository {
             }
             return unresolved;
         } catch (Exception e) {
-            Log.w(TAG, "Failed to get unresolved items", e);
+            FLog.w(TAG, "Failed to get unresolved items", e);
             return new ArrayList<>();
         }
     }
@@ -629,7 +629,7 @@ public class VideoIndexRepository {
                 return Long.parseLong(durationStr);
             }
         } catch (Exception e) {
-            Log.w(TAG, "Duration extraction failed for " + videoUri, e);
+            FLog.w(TAG, "Duration extraction failed for " + videoUri, e);
         } finally {
             try {
                 retriever.release();

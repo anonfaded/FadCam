@@ -1,9 +1,10 @@
 package com.fadcam.forensics.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.net.Uri;
 import android.app.ActivityManager;
 import android.text.format.Formatter;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -831,7 +832,7 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
             }
         }
         if (collisionCount > 0) {
-            Log.w(TAG, "submit integrity warning: duplicate snapshot identity count=" + collisionCount + ", rows=" + rows.size());
+            FLog.w(TAG, "submit integrity warning: duplicate snapshot identity count=" + collisionCount + ", rows=" + rows.size());
         }
     }
 

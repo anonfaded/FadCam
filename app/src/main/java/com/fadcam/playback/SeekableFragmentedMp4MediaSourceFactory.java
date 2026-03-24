@@ -1,10 +1,10 @@
 package com.fadcam.playback;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
@@ -105,7 +105,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                     long startTime = System.currentTimeMillis();
                     fragmentIndex = indexBuilder.buildIndex(file);
                     long scanTime = System.currentTimeMillis() - startTime;
-                    Log.d(TAG, "Index built in " + scanTime + "ms: " + 
+                    FLog.d(TAG, "Index built in " + scanTime + "ms: " + 
                           fragmentIndex.fragments.size() + " fragments, " +
                           "duration=" + (fragmentIndex.durationUs / 1000000.0) + "s, " +
                           "seekable=" + fragmentIndex.isSeekable);
@@ -144,12 +144,12 @@ public class SeekableFragmentedMp4MediaSourceFactory {
         String reconstructedPath = tryReconstructFilePath(uri);
         if (reconstructedPath != null) {
             File file = new File(reconstructedPath);
-            Log.d(TAG, "Content URI → reconstructed path: " + reconstructedPath);
+            FLog.d(TAG, "Content URI → reconstructed path: " + reconstructedPath);
 
             long startTime = System.currentTimeMillis();
             FragmentedMp4IndexBuilder.FragmentIndex fragmentIndex = indexBuilder.buildIndex(file);
             long scanTime = System.currentTimeMillis() - startTime;
-            Log.d(TAG, "Index built from content URI in " + scanTime + "ms: " +
+            FLog.d(TAG, "Index built from content URI in " + scanTime + "ms: " +
                   fragmentIndex.fragments.size() + " fragments, " +
                   "duration=" + (fragmentIndex.durationUs / 1_000_000.0) + "s, " +
                   "seekable=" + fragmentIndex.isSeekable);
@@ -170,7 +170,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
 
         // Fallback 1: Use /proc/self/fd/ trick for full index-based seeking
         // This works for any content:// URI including SD card files
-        Log.d(TAG, "Path reconstruction failed, trying FD-based index building");
+        FLog.d(TAG, "Path reconstruction failed, trying FD-based index building");
         android.os.ParcelFileDescriptor pfd = null;
         try {
             pfd = context.getContentResolver().openFileDescriptor(uri, "r");
@@ -182,7 +182,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                     FragmentedMp4IndexBuilder.FragmentIndex fragmentIndex =
                             indexBuilder.buildIndex(fdFile);
                     long scanTime = System.currentTimeMillis() - startTime;
-                    Log.d(TAG, "Index built from FD in " + scanTime + "ms: " +
+                    FLog.d(TAG, "Index built from FD in " + scanTime + "ms: " +
                           fragmentIndex.fragments.size() + " fragments, " +
                           "duration=" + (fragmentIndex.durationUs / 1_000_000.0) + "s, " +
                           "seekable=" + fragmentIndex.isSeekable);
@@ -202,7 +202,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "FD-based index building failed: " + e.getMessage());
+            FLog.w(TAG, "FD-based index building failed: " + e.getMessage());
         } finally {
             if (pfd != null) {
                 try { pfd.close(); } catch (Exception ignored) {}
@@ -210,7 +210,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
         }
 
         // Fallback 2: ClippingMediaSource with DefaultDataSource
-        Log.d(TAG, "Could not build index, using ClippingMediaSource fallback");
+        FLog.d(TAG, "Could not build index, using ClippingMediaSource fallback");
         long durationUs = getDurationFromRetriever(uri);
 
         // DefaultDataSource handles content:// URIs natively
@@ -225,7 +225,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                 .createMediaSource(mediaItem);
 
         if (durationUs > 0) {
-            Log.d(TAG, "Content URI fMP4: ClippingMediaSource duration=" +
+            FLog.d(TAG, "Content URI fMP4: ClippingMediaSource duration=" +
                   (durationUs / 1_000_000.0) + "s");
             return new ClippingMediaSource(
                     baseSource,
@@ -237,7 +237,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             );
         }
 
-        Log.w(TAG, "Content URI fMP4: could not determine duration, using raw source");
+        FLog.w(TAG, "Content URI fMP4: could not determine duration, using raw source");
         return baseSource;
     }
 
@@ -287,7 +287,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error resolving storage volumes: " + e.getMessage());
+            FLog.w(TAG, "Error resolving storage volumes: " + e.getMessage());
         }
         return null;
     }
@@ -311,7 +311,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                 // Reconstructed path works much better for fMP4 files
                 String reconstructedPath = tryReconstructFilePath(uri);
                 if (reconstructedPath != null) {
-                    Log.d(TAG, "Retriever: using reconstructed path: " + reconstructedPath);
+                    FLog.d(TAG, "Retriever: using reconstructed path: " + reconstructedPath);
                     retriever.setDataSource(reconstructedPath);
                 } else {
                     retriever.setDataSource(context, uri);
@@ -326,12 +326,12 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             if (durationStr != null) {
                 long durationMs = Long.parseLong(durationStr);
                 long durationUs = durationMs * 1000;
-                Log.d(TAG, "Retriever duration: " + durationMs + "ms for " +
+                FLog.d(TAG, "Retriever duration: " + durationMs + "ms for " +
                       uri.getLastPathSegment());
                 return durationUs;
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error getting duration via Retriever for: " + uri, e);
+            FLog.w(TAG, "Error getting duration via Retriever for: " + uri, e);
         } finally {
             if (retriever != null) {
                 try { retriever.release(); } catch (Exception ignored) {}
@@ -420,13 +420,13 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             }
 
             boolean result = foundFtyp && foundMoof;
-            Log.d(TAG, "isFragmentedMp4ContentUri: " + result +
+            FLog.d(TAG, "isFragmentedMp4ContentUri: " + result +
                   " (ftyp=" + foundFtyp + ", moof=" + foundMoof +
                   ", scanned " + totalRead + " bytes) for " + uri.getLastPathSegment());
             return result;
 
         } catch (Exception e) {
-            Log.w(TAG, "Error checking content URI for fMP4: " + uri, e);
+            FLog.w(TAG, "Error checking content URI for fMP4: " + uri, e);
             return false;
         } finally {
             if (is != null) {
@@ -502,7 +502,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             return foundFtyp && foundMoof;
             
         } catch (IOException e) {
-            Log.w(TAG, "Error checking file type", e);
+            FLog.w(TAG, "Error checking file type", e);
             return false;
         }
     }
@@ -534,10 +534,10 @@ public class SeekableFragmentedMp4MediaSourceFactory {
                 long[] timesUs = fragmentIndex.getTimesUs();
                 
                 this.seekableChunkIndex = new ChunkIndex(sizes, offsets, durationsUs, timesUs);
-                Log.i(TAG_EXTRACTOR, "Created ChunkIndex with " + count + " fragments, " +
+                FLog.i(TAG_EXTRACTOR, "Created ChunkIndex with " + count + " fragments, " +
                       "duration=" + (seekableChunkIndex.getDurationUs() / 1000000.0) + "s");
             } else {
-                Log.w(TAG_EXTRACTOR, "No fragment index available, seeking will not work");
+                FLog.w(TAG_EXTRACTOR, "No fragment index available, seeking will not work");
             }
         }
 
@@ -554,7 +554,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
 
         @Override
         public void init(@NonNull ExtractorOutput output) {
-            Log.d(TAG_EXTRACTOR, "init() called, wrapping output to intercept seekMap");
+            FLog.d(TAG_EXTRACTOR, "init() called, wrapping output to intercept seekMap");
             // Wrap the output to intercept seekMap calls
             this.wrappedOutput = new SeekMapInterceptingOutput(output, seekableChunkIndex);
             delegate.init(wrappedOutput);
@@ -568,7 +568,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
 
         @Override
         public void seek(long position, long timeUs) {
-            Log.d(TAG_EXTRACTOR, "seek() called: position=" + position + ", timeUs=" + timeUs + 
+            FLog.d(TAG_EXTRACTOR, "seek() called: position=" + position + ", timeUs=" + timeUs + 
                   " (" + (timeUs / 1000000.0) + "s)");
             delegate.seek(position, timeUs);
         }
@@ -609,21 +609,21 @@ public class SeekableFragmentedMp4MediaSourceFactory {
 
         @Override
         public void seekMap(@NonNull SeekMap seekMap) {
-            Log.i(TAG_OUTPUT, "seekMap() called: isSeekable=" + seekMap.isSeekable() + 
+            FLog.i(TAG_OUTPUT, "seekMap() called: isSeekable=" + seekMap.isSeekable() + 
                   ", duration=" + (seekMap.getDurationUs() / 1000000.0) + "s");
             
             if (seekableChunkIndex != null && !seekMap.isSeekable()) {
                 // Replace UNSEEKABLE with our pre-built ChunkIndex
-                Log.i(TAG_OUTPUT, "*** REPLACING UNSEEKABLE SeekMap with pre-built ChunkIndex ***");
-                Log.i(TAG_OUTPUT, "ChunkIndex: duration=" + (seekableChunkIndex.getDurationUs() / 1000000.0) + "s");
+                FLog.i(TAG_OUTPUT, "*** REPLACING UNSEEKABLE SeekMap with pre-built ChunkIndex ***");
+                FLog.i(TAG_OUTPUT, "ChunkIndex: duration=" + (seekableChunkIndex.getDurationUs() / 1000000.0) + "s");
                 delegate.seekMap(seekableChunkIndex);
             } else if (seekMap.isSeekable()) {
                 // Delegate already has a seekable map (has sidx)
-                Log.d(TAG_OUTPUT, "Using delegate's seekable SeekMap (file has sidx)");
+                FLog.d(TAG_OUTPUT, "Using delegate's seekable SeekMap (file has sidx)");
                 delegate.seekMap(seekMap);
             } else {
                 // No index and delegate is unseekable - pass through
-                Log.w(TAG_OUTPUT, "No pre-built index, using original UNSEEKABLE SeekMap");
+                FLog.w(TAG_OUTPUT, "No pre-built index, using original UNSEEKABLE SeekMap");
                 delegate.seekMap(seekMap);
             }
         }

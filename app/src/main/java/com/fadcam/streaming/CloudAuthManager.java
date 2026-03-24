@@ -1,10 +1,10 @@
 package com.fadcam.streaming;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.provider.Settings;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -118,7 +118,7 @@ public class CloudAuthManager {
             .putString(KEY_REFRESH_TOKEN, refreshToken)
             .putString(KEY_USER_ID, userId)
             .apply();
-        Log.i(TAG, "JWT token stored with refresh token, expires at: " + expiryMs);
+        FLog.i(TAG, "JWT token stored with refresh token, expires at: " + expiryMs);
     }
     
     /**
@@ -185,7 +185,7 @@ public class CloudAuthManager {
      */
     public void setDeviceName(@NonNull String name) {
         prefs.edit().putString(KEY_DEVICE_NAME, name).apply();
-        Log.i(TAG, "Device name set: " + name);
+        FLog.i(TAG, "Device name set: " + name);
     }
     
     /**
@@ -228,7 +228,7 @@ public class CloudAuthManager {
             .remove(KEY_REFRESH_TOKEN)
             .remove(KEY_USER_ID)
             .apply();
-        Log.i(TAG, "JWT token cleared");
+        FLog.i(TAG, "JWT token cleared");
     }
     
     /**
@@ -239,7 +239,7 @@ public class CloudAuthManager {
         final String deviceId = getDeviceId();
         final String userId = getUserId();
         
-        Log.i(TAG, "Unlinking device from cloud account...");
+        FLog.i(TAG, "Unlinking device from cloud account...");
         
         // Clear local state immediately (don't wait for network response)
         prefs.edit()
@@ -276,22 +276,22 @@ public class CloudAuthManager {
                     
                     int responseCode = conn.getResponseCode();
                     if (responseCode == 200) {
-                        Log.i(TAG, "✅ Device unlinked from backend - will disappear from dashboard");
+                        FLog.i(TAG, "✅ Device unlinked from backend - will disappear from dashboard");
                     } else if (responseCode == 404) {
-                        Log.w(TAG, "⚠️ Device not found on backend (already unlinked?)");
+                        FLog.w(TAG, "⚠️ Device not found on backend (already unlinked?)");
                     } else if (responseCode == 403) {
-                        Log.w(TAG, "⚠️ Backend rejected unlink (ownership mismatch)");
+                        FLog.w(TAG, "⚠️ Backend rejected unlink (ownership mismatch)");
                     } else {
-                        Log.w(TAG, "⚠️ Backend unlink failed (HTTP " + responseCode + "), but local unlink complete");
+                        FLog.w(TAG, "⚠️ Backend unlink failed (HTTP " + responseCode + "), but local unlink complete");
                     }
                     conn.disconnect();
                 } catch (Exception e) {
-                    Log.w(TAG, "⚠️ Failed to notify backend of unlink: " + e.getMessage());
+                    FLog.w(TAG, "⚠️ Failed to notify backend of unlink: " + e.getMessage());
                 }
             }).start();
         }
         
-        Log.i(TAG, "✅ Device unlinked locally and from dashboard");
+        FLog.i(TAG, "✅ Device unlinked locally and from dashboard");
     }
     
     /**
@@ -316,7 +316,7 @@ public class CloudAuthManager {
     public void refreshTokenAsync(@Nullable TokenRefreshListener listener) {
         String refreshToken = getRefreshToken();
         if (refreshToken == null || refreshToken.isEmpty()) {
-            Log.w(TAG, "No refresh token available");
+            FLog.w(TAG, "No refresh token available");
             if (listener != null) {
                 listener.onRefreshFailed("No refresh token available");
             }
@@ -326,7 +326,7 @@ public class CloudAuthManager {
         // Deduplication: if refresh already in progress, queue this listener
         synchronized (refreshLock) {
             if (isRefreshing) {
-                Log.d(TAG, "Token refresh already in progress, queuing listener");
+                FLog.d(TAG, "Token refresh already in progress, queuing listener");
                 if (listener != null) {
                     pendingRefreshListeners.add(listener);
                 }
@@ -338,7 +338,7 @@ public class CloudAuthManager {
             }
         }
         
-        Log.i(TAG, "Starting token refresh...");
+        FLog.i(TAG, "Starting token refresh...");
         
         new Thread(() -> {
             try {
@@ -394,13 +394,13 @@ public class CloudAuthManager {
                         // Store new tokens
                         setJwtToken(newAccessToken, newExpiry, finalRefreshToken, finalUserId);
                         
-                        Log.i(TAG, "Token refreshed successfully, expires in " + expiresIn + "s");
+                        FLog.i(TAG, "Token refreshed successfully, expires in " + expiresIn + "s");
                         
                         // Notify all pending listeners
                         notifyRefreshListeners(true, newAccessToken, newExpiry, null);
                     } else {
                         String error = "Missing required token data in response";
-                        Log.e(TAG, error + " (token=" + (newAccessToken != null) + ", refresh=" + (finalRefreshToken != null) + ", userId=" + (finalUserId != null) + ")");
+                        FLog.e(TAG, error + " (token=" + (newAccessToken != null) + ", refresh=" + (finalRefreshToken != null) + ", userId=" + (finalUserId != null) + ")");
                         notifyRefreshListeners(false, null, 0, error);
                     }
                 } else {
@@ -415,14 +415,14 @@ public class CloudAuthManager {
                     errorReader.close();
                     
                     String errorMsg = "HTTP " + responseCode + ": " + errorResponse;
-                    Log.e(TAG, "Token refresh failed: " + errorMsg);
+                    FLog.e(TAG, "Token refresh failed: " + errorMsg);
                     
                     notifyRefreshListeners(false, null, 0, errorMsg);
                 }
                 
                 conn.disconnect();
             } catch (Exception e) {
-                Log.e(TAG, "Error refreshing token", e);
+                FLog.e(TAG, "Error refreshing token", e);
                 notifyRefreshListeners(false, null, 0, e.getMessage());
             }
         }).start();
@@ -444,7 +444,7 @@ public class CloudAuthManager {
             return;
         }
         
-        Log.d(TAG, "Notifying " + listeners.size() + " pending refresh listeners (success=" + success + ")");
+        FLog.d(TAG, "Notifying " + listeners.size() + " pending refresh listeners (success=" + success + ")");
         
         android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
         mainHandler.post(() -> {
@@ -485,7 +485,7 @@ public class CloudAuthManager {
             return;
         }
         
-        Log.i(TAG, "Token expired or near expiry, refreshing...");
+        FLog.i(TAG, "Token expired or near expiry, refreshing...");
         refreshTokenAsync(listener);
     }
     
@@ -591,7 +591,7 @@ public class CloudAuthManager {
                     String currentName = getDeviceName();
                     if (name != null && !name.equals(currentName)) {
                         setDeviceName(name);
-                        Log.i(TAG, "Device name synced from server: " + name);
+                        FLog.i(TAG, "Device name synced from server: " + name);
                     }
                     
                     if (listener != null) {
@@ -602,7 +602,7 @@ public class CloudAuthManager {
                 } else {
                     // Error response
                     String errorMsg = "HTTP " + responseCode;
-                    Log.w(TAG, "Failed to sync device info: " + errorMsg);
+                    FLog.w(TAG, "Failed to sync device info: " + errorMsg);
                     if (listener != null) {
                         android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
                         mainHandler.post(() -> listener.onError(errorMsg));
@@ -611,7 +611,7 @@ public class CloudAuthManager {
                 
                 conn.disconnect();
             } catch (Exception e) {
-                Log.e(TAG, "Error syncing device info", e);
+                FLog.e(TAG, "Error syncing device info", e);
                 if (listener != null) {
                     android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
                     mainHandler.post(() -> listener.onError(e.getMessage()));
@@ -643,7 +643,7 @@ public class CloudAuthManager {
         }
         long expiry = prefs.getLong(KEY_STREAM_TOKEN_EXPIRY, 0);
         if (System.currentTimeMillis() > expiry) {
-            Log.d(TAG, "Stream token expired");
+            FLog.d(TAG, "Stream token expired");
             return null;
         }
         return prefs.getString(KEY_STREAM_TOKEN, null);
@@ -683,7 +683,7 @@ public class CloudAuthManager {
         String userId = getUserId();
         
         if (userId == null) {
-            Log.w(TAG, "No user ID available for stream token fetch");
+            FLog.w(TAG, "No user ID available for stream token fetch");
             if (listener != null) {
                 listener.onError("Not linked to cloud account");
             }
@@ -694,7 +694,7 @@ public class CloudAuthManager {
         if (isTokenExpired()) {
             // Check retry limit to prevent hammering Supabase
             if (refreshAttempt >= MAX_STREAM_TOKEN_REFRESH_ATTEMPTS) {
-                Log.e(TAG, "❌ Stream token refresh exceeded max attempts (" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "), giving up");
+                FLog.e(TAG, "❌ Stream token refresh exceeded max attempts (" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "), giving up");
                 lastFailedStreamTokenFetchTime = System.currentTimeMillis();
                 if (listener != null) {
                     listener.onError("Token refresh failed - device may need to be re-linked");
@@ -702,19 +702,19 @@ public class CloudAuthManager {
                 return;
             }
             
-            Log.i(TAG, "JWT token expired (attempt " + (refreshAttempt + 1) + "/" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "), refreshing...");
+            FLog.i(TAG, "JWT token expired (attempt " + (refreshAttempt + 1) + "/" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "), refreshing...");
             final int nextAttempt = refreshAttempt + 1;
             refreshTokenAsync(new TokenRefreshListener() {
                 @Override
                 public void onRefreshSuccess(String newToken, long newExpiry) {
-                    Log.i(TAG, "JWT token refreshed, now fetching stream token...");
+                    FLog.i(TAG, "JWT token refreshed, now fetching stream token...");
                     // Retry with incremented attempt count
                     fetchStreamTokenAsyncWithRetry(listener, nextAttempt);
                 }
                 
                 @Override
                 public void onRefreshFailed(String error) {
-                    Log.e(TAG, "JWT token refresh failed (attempt " + nextAttempt + "/" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "): " + error);
+                    FLog.e(TAG, "JWT token refresh failed (attempt " + nextAttempt + "/" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "): " + error);
                     lastFailedStreamTokenFetchTime = System.currentTimeMillis();
                     if (listener != null) {
                         listener.onError("Token refresh failed: " + error);
@@ -727,7 +727,7 @@ public class CloudAuthManager {
         String accessToken = getJwtToken();
         String url = SUPABASE_URL + "/functions/v1/get-stream-token";
         
-        Log.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (using " + (accessToken != null ? "Bearer token" : "device auth") + ")");
+        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (using " + (accessToken != null ? "Bearer token" : "device auth") + ")");
         
         new Thread(() -> {
             try {
@@ -751,7 +751,7 @@ public class CloudAuthManager {
                 }
                 
                 int responseCode = conn.getResponseCode();
-                Log.i(TAG, "Stream token response: HTTP " + responseCode);
+                FLog.i(TAG, "Stream token response: HTTP " + responseCode);
                 
                 if (responseCode == 200) {
                     // Read response
@@ -776,7 +776,7 @@ public class CloudAuthManager {
                             .putLong(KEY_STREAM_TOKEN_EXPIRY, expiresAt)
                             .apply();
                         
-                        Log.i(TAG, "✅ Stream token fetched and stored, expires at: " + expiresAt);
+                        FLog.i(TAG, "✅ Stream token fetched and stored, expires at: " + expiresAt);
                         
                         if (listener != null) {
                             android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
@@ -784,7 +784,7 @@ public class CloudAuthManager {
                         }
                     } else {
                         String error = "Invalid stream token response";
-                        Log.e(TAG, error);
+                        FLog.e(TAG, error);
                         if (listener != null) {
                             android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
                             mainHandler.post(() -> listener.onError(error));
@@ -806,7 +806,7 @@ public class CloudAuthManager {
                         errorMsg = "HTTP " + responseCode + ": " + errorResponse;
                     }
                     
-                    Log.e(TAG, "Stream token fetch failed: " + errorMsg);
+                    FLog.e(TAG, "Stream token fetch failed: " + errorMsg);
                     
                     final String finalErrorMsg = errorMsg;
                     if (listener != null) {
@@ -817,7 +817,7 @@ public class CloudAuthManager {
                 
                 conn.disconnect();
             } catch (Exception e) {
-                Log.e(TAG, "Error fetching stream token", e);
+                FLog.e(TAG, "Error fetching stream token", e);
                 if (listener != null) {
                     android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
                     mainHandler.post(() -> listener.onError(e.getMessage()));
@@ -842,7 +842,7 @@ public class CloudAuthManager {
         }
         
         // Need to fetch new stream token
-        Log.i(TAG, "Stream token expired or near expiry, fetching new one...");
+        FLog.i(TAG, "Stream token expired or near expiry, fetching new one...");
         fetchStreamTokenAsync(listener);
     }
     
@@ -854,6 +854,6 @@ public class CloudAuthManager {
             .remove(KEY_STREAM_TOKEN)
             .remove(KEY_STREAM_TOKEN_EXPIRY)
             .apply();
-        Log.i(TAG, "Stream token cleared");
+        FLog.i(TAG, "Stream token cleared");
     }
 }

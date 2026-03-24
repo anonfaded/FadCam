@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -10,7 +12,6 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -107,7 +108,7 @@ public class FaditorMiniFragment extends BaseFragment {
                                     videoUri,
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         } catch (SecurityException e) {
-                            Log.w(TAG, "Could not take persistable URI permission", e);
+                            FLog.w(TAG, "Could not take persistable URI permission", e);
                         }
                         launchEditor(videoUri);
                     }
@@ -119,7 +120,7 @@ public class FaditorMiniFragment extends BaseFragment {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
-                        Log.d(TAG, "Editor returned successfully");
+                        FLog.d(TAG, "Editor returned successfully");
                     }
                     // Refresh recent projects list when returning
                     refreshRecentProjects();
@@ -554,7 +555,7 @@ public class FaditorMiniFragment extends BaseFragment {
                         }
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "ContentResolver query failed for display name", e);
+                    FLog.w(TAG, "ContentResolver query failed for display name", e);
                 }
             }
 
@@ -578,7 +579,7 @@ public class FaditorMiniFragment extends BaseFragment {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to extract display name from: " + uriString, e);
+            FLog.w(TAG, "Failed to extract display name from: " + uriString, e);
         }
 
         return "Untitled";
@@ -627,7 +628,7 @@ public class FaditorMiniFragment extends BaseFragment {
                 }
                 bmp = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             } catch (Exception e) {
-                Log.w(TAG, "Thumbnail extraction failed", e);
+                FLog.w(TAG, "Thumbnail extraction failed", e);
             } finally {
                 if (retriever != null) {
                     try { retriever.release(); } catch (Exception ignored) {}
@@ -676,7 +677,7 @@ public class FaditorMiniFragment extends BaseFragment {
         try {
             videoPickerLauncher.launch(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to open video picker", e);
+            FLog.e(TAG, "Failed to open video picker", e);
             Toast.makeText(requireContext(),
                     R.string.faditor_error_picker, Toast.LENGTH_SHORT).show();
         }
@@ -765,7 +766,7 @@ public class FaditorMiniFragment extends BaseFragment {
                 return String.format("Cache: %.1f MB", mb);
             }
         } catch (Exception e) {
-            Log.w(TAG, "Could not calculate cache size: " + e.getMessage());
+            FLog.w(TAG, "Could not calculate cache size: " + e.getMessage());
             return "Cache: unknown";
         }
     }
@@ -792,7 +793,7 @@ public class FaditorMiniFragment extends BaseFragment {
             }
             return uri;
         } catch (Exception e) {
-            Log.w(TAG, "Could not extract filename from URI: " + uri, e);
+            FLog.w(TAG, "Could not extract filename from URI: " + uri, e);
             return null;
         }
     }

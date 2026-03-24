@@ -1,10 +1,10 @@
 package com.fadcam.playback;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
@@ -75,7 +75,7 @@ public class FragmentedMp4SeekableMediaSource implements MediaSourceFactory {
                   mediaItem.localConfiguration.uri : null;
         
         if (uri == null) {
-            Log.w(TAG, "No URI in MediaItem, using default progressive source");
+            FLog.w(TAG, "No URI in MediaItem, using default progressive source");
             return progressiveFactory.createMediaSource(mediaItem);
         }
 
@@ -83,7 +83,7 @@ public class FragmentedMp4SeekableMediaSource implements MediaSourceFactory {
         long durationUs = getDurationUs(uri);
         
         if (durationUs > 0) {
-            Log.i(TAG, "Creating seekable source for: " + uri.getLastPathSegment() + 
+            FLog.i(TAG, "Creating seekable source for: " + uri.getLastPathSegment() + 
                        ", duration: " + (durationUs / 1000) + "ms");
             
             // Create the base progressive source
@@ -104,7 +104,7 @@ public class FragmentedMp4SeekableMediaSource implements MediaSourceFactory {
                     /* relativeToDefaultPosition= */ false
             );
         } else {
-            Log.w(TAG, "Could not determine duration for: " + uri.getLastPathSegment() + 
+            FLog.w(TAG, "Could not determine duration for: " + uri.getLastPathSegment() + 
                        ", falling back to progressive source");
             return progressiveFactory.createMediaSource(mediaItem);
         }
@@ -137,17 +137,17 @@ public class FragmentedMp4SeekableMediaSource implements MediaSourceFactory {
             if (durationStr != null) {
                 long durationMs = Long.parseLong(durationStr);
                 long durationUs = durationMs * 1000; // Convert ms to us
-                Log.d(TAG, "Retrieved duration: " + durationMs + "ms (" + durationUs + "us)");
+                FLog.d(TAG, "Retrieved duration: " + durationMs + "ms (" + durationUs + "us)");
                 return durationUs;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error getting duration for: " + uri, e);
+            FLog.e(TAG, "Error getting duration for: " + uri, e);
         } finally {
             if (retriever != null) {
                 try {
                     retriever.release();
                 } catch (Exception e) {
-                    Log.w(TAG, "Error releasing MediaMetadataRetriever", e);
+                    FLog.w(TAG, "Error releasing MediaMetadataRetriever", e);
                 }
             }
         }

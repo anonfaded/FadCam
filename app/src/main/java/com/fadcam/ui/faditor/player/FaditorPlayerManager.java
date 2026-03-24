@@ -1,10 +1,10 @@
 package com.fadcam.ui.faditor.player;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.audiofx.LoudnessEnhancer;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
@@ -69,11 +69,11 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
                 case Player.STATE_ENDED: stateStr = "ENDED"; break;
                 default: stateStr = "UNKNOWN(" + playbackState + ")";
             }
-            Log.d(TAG, "Playback state: " + stateStr + ", pendingSeek=" + pendingSeekMs);
+            FLog.d(TAG, "Playback state: " + stateStr + ", pendingSeek=" + pendingSeekMs);
 
             if (playbackState == Player.STATE_READY && pendingSeekMs >= 0) {
                 if (player != null) {
-                    Log.d(TAG, "Executing pending seek to " + pendingSeekMs + "ms (absolute)");
+                    FLog.d(TAG, "Executing pending seek to " + pendingSeekMs + "ms (absolute)");
                     player.seekTo(pendingSeekMs);
                 }
                 pendingSeekMs = -1;
@@ -82,7 +82,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
 
         @Override
         public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
-            Log.e(TAG, "Player error: " + error.getMessage()
+            FLog.e(TAG, "Player error: " + error.getMessage()
                     + ", code=" + error.errorCode, error);
         }
     };
@@ -171,13 +171,13 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         if (state == Player.STATE_READY || state == Player.STATE_BUFFERING) {
             player.seekTo(trimStartMs);
             player.setPlayWhenReady(false);
-            Log.d(TAG, "Trim bounds updated (seek): in=" + trimStartMs
+            FLog.d(TAG, "Trim bounds updated (seek): in=" + trimStartMs
                     + " out=" + trimEndMs
                     + " duration=" + (trimEndMs - trimStartMs) + "ms");
         } else {
             // Player not ready yet, queue the seek
             pendingSeekMs = trimStartMs;
-            Log.d(TAG, "Trim bounds updated (queued): in=" + trimStartMs
+            FLog.d(TAG, "Trim bounds updated (queued): in=" + trimStartMs
                     + " out=" + trimEndMs);
         }
     }
@@ -196,7 +196,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         if (currentClip != null) {
             this.currentClip.setOutPointMs(newTrimEndMs);
         }
-        Log.d(TAG, "Trim end updated (no seek): trimEnd=" + newTrimEndMs + "ms");
+        FLog.d(TAG, "Trim end updated (no seek): trimEnd=" + newTrimEndMs + "ms");
     }
 
     public void play() {
@@ -244,7 +244,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             int gainMb = (int) (2000.0 * Math.log10(clampedVolume));
             setLoudnessGain(gainMb);
         }
-        Log.d(TAG, "Volume set to " + volume
+        FLog.d(TAG, "Volume set to " + volume
                 + " (native=" + Math.min(clampedVolume, 1.0f)
                 + ", loudnessGainMb=" + (clampedVolume > 1.0f
                     ? (int) (2000.0 * Math.log10(clampedVolume)) : 0) + ")");
@@ -263,7 +263,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             if (loudnessEnhancer == null) {
                 int audioSessionId = player.getAudioSessionId();
                 if (audioSessionId == 0) {
-                    Log.w(TAG, "Audio session ID is 0, cannot create LoudnessEnhancer");
+                    FLog.w(TAG, "Audio session ID is 0, cannot create LoudnessEnhancer");
                     return;
                 }
                 loudnessEnhancer = new LoudnessEnhancer(audioSessionId);
@@ -271,7 +271,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             loudnessEnhancer.setTargetGain(gainMb);
             loudnessEnhancer.setEnabled(gainMb > 0);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to set loudness gain", e);
+            FLog.e(TAG, "Failed to set loudness gain", e);
         }
     }
 
@@ -284,7 +284,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         if (player != null) {
             player.setPlaybackParameters(
                     new androidx.media3.common.PlaybackParameters(speed));
-            Log.d(TAG, "Playback speed set to " + speed + "x");
+            FLog.d(TAG, "Playback speed set to " + speed + "x");
         }
     }
 
@@ -309,11 +309,11 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
                 || state == Player.STATE_ENDED) {
             player.seekTo(absoluteMs);
             pendingSeekMs = -1;
-            Log.d(TAG, "Seek to " + positionMs + "ms (rel) / " + absoluteMs + "ms (abs)"
+            FLog.d(TAG, "Seek to " + positionMs + "ms (rel) / " + absoluteMs + "ms (abs)"
                     + " state=" + state);
         } else {
             pendingSeekMs = absoluteMs;
-            Log.d(TAG, "Seek to " + positionMs + "ms (queued, state=" + state + ")");
+            FLog.d(TAG, "Seek to " + positionMs + "ms (queued, state=" + state + ")");
         }
     }
 
@@ -336,7 +336,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             pendingSeekMs = -1;
         } else {
             pendingSeekMs = absoluteMs;
-            Log.d(TAG, "Seek absolute queued: " + absoluteMs + "ms (state=" + state + ")");
+            FLog.d(TAG, "Seek absolute queued: " + absoluteMs + "ms (state=" + state + ")");
         }
     }
 
@@ -444,13 +444,13 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
                 // double audio after a lifecycle resume.
                 float vol = currentClip.isAudioMuted() ? 0f : currentClip.getVolumeLevel();
                 setVolume(vol);
-                Log.d(TAG, "Restored volume from clip state: vol=" + vol
+                FLog.d(TAG, "Restored volume from clip state: vol=" + vol
                         + ", muted=" + currentClip.isAudioMuted());
             }
 
-            Log.d(TAG, "ExoPlayer initialized");
+            FLog.d(TAG, "ExoPlayer initialized");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to initialize ExoPlayer", e);
+            FLog.e(TAG, "Failed to initialize ExoPlayer", e);
         }
     }
 
@@ -468,7 +468,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         Uri sourceUri = clip.getSourceUri();
         Uri resolvedUri = resolveFileUri(sourceUri);
 
-        Log.d(TAG, "Preparing clip: originalUri=" + sourceUri
+        FLog.d(TAG, "Preparing clip: originalUri=" + sourceUri
                 + " resolvedUri=" + resolvedUri
                 + " trimIn=" + trimStartMs
                 + " trimOut=" + trimEndMs
@@ -534,18 +534,18 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
                 java.io.File f = new java.io.File(mountPoint + "/" + relativePath);
                 if (f.exists() && f.canRead()) {
                     Uri fileUri = Uri.fromFile(f);
-                    Log.d(TAG, "Resolved content:// → file:// (storageId='" + storageId + "'): " + fileUri);
+                    FLog.d(TAG, "Resolved content:// → file:// (storageId='" + storageId + "'): " + fileUri);
                     return fileUri;
                 } else {
-                    Log.w(TAG, "Resolved path does not exist: " + f.getAbsolutePath());
+                    FLog.w(TAG, "Resolved path does not exist: " + f.getAbsolutePath());
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Failed to parse SAF URI path: " + uri, e);
+                FLog.w(TAG, "Failed to parse SAF URI path: " + uri, e);
             }
         }
 
         // Fallback: use original URI (ContentDataSource, limited seeking)
-        Log.w(TAG, "Cannot resolve to file URI, using content:// (seeking may fail): " + uri);
+        FLog.w(TAG, "Cannot resolve to file URI, using content:// (seeking may fail): " + uri);
         return uri;
     }
 
@@ -554,7 +554,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             try {
                 loudnessEnhancer.release();
             } catch (Exception e) {
-                Log.w(TAG, "Failed to release LoudnessEnhancer", e);
+                FLog.w(TAG, "Failed to release LoudnessEnhancer", e);
             }
             loudnessEnhancer = null;
         }
@@ -566,7 +566,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
             player = null;
             pendingSeekMs = -1;
             needsPrepare = true;
-            Log.d(TAG, "ExoPlayer released");
+            FLog.d(TAG, "ExoPlayer released");
         }
     }
 }

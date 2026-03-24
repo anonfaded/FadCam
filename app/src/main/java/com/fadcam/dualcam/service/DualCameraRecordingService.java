@@ -1,5 +1,7 @@
 package com.fadcam.dualcam.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.app.Notification;
@@ -22,7 +24,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
-import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.widget.Toast;
@@ -165,14 +166,14 @@ public class DualCameraRecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "onCreate");
+        FLog.d(TAG, "onCreate");
 
         prefs = SharedPreferencesManager.getInstance(getApplicationContext());
         capability = new DualCameraCapability(this);
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
 
         if (cameraManager == null) {
-            Log.e(TAG, "CameraManager unavailable — cannot start dual camera service");
+            FLog.e(TAG, "CameraManager unavailable — cannot start dual camera service");
             stopSelf();
             return;
         }
@@ -183,12 +184,12 @@ public class DualCameraRecordingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null || intent.getAction() == null) {
-            Log.w(TAG, "onStartCommand: null intent/action");
+            FLog.w(TAG, "onStartCommand: null intent/action");
             return START_STICKY;
         }
 
         String action = intent.getAction();
-        Log.d(TAG, "onStartCommand: action=" + action);
+        FLog.d(TAG, "onStartCommand: action=" + action);
 
         switch (action) {
             case Constants.INTENT_ACTION_START_DUAL_RECORDING:
@@ -248,7 +249,7 @@ public class DualCameraRecordingService extends Service {
                 break;
 
             default:
-                Log.w(TAG, "Unknown action: " + action);
+                FLog.w(TAG, "Unknown action: " + action);
                 break;
         }
 
@@ -257,7 +258,7 @@ public class DualCameraRecordingService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "onDestroy");
+        FLog.d(TAG, "onDestroy");
         releaseAllResources();
         stopBackgroundThread();
         releaseWakeLock();
@@ -283,7 +284,7 @@ public class DualCameraRecordingService extends Service {
      */
     private void handleStartDualRecording() {
         if (state != DualCameraState.DISABLED) {
-            Log.w(TAG, "Cannot start dual recording — state=" + state);
+            FLog.w(TAG, "Cannot start dual recording — state=" + state);
             return;
         }
         lastRecordingUriString = null;
@@ -293,7 +294,7 @@ public class DualCameraRecordingService extends Service {
                 != PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "Camera or audio permission not granted");
+            FLog.e(TAG, "Camera or audio permission not granted");
             broadcastError("Permissions required for dual camera recording");
             stopSelf();
             return;
@@ -301,8 +302,8 @@ public class DualCameraRecordingService extends Service {
 
         // ── Capability check ──────────────────────────────────────────
         if (!capability.isSupported()) {
-            Log.w(TAG, "Dual camera not supported: " + capability.getUnsupportedReason());
-            Log.i(TAG, "⚡ Enabling black frame fallback mode for testing");
+            FLog.w(TAG, "Dual camera not supported: " + capability.getUnsupportedReason());
+            FLog.i(TAG, "⚡ Enabling black frame fallback mode for testing");
             useBlackFrameFallback = true;
             
             // For testing: use any available camera for both feeds
@@ -324,7 +325,7 @@ public class DualCameraRecordingService extends Service {
                     backCameraId = cameraIds[0];
                 }
             } catch (CameraAccessException e) {
-                Log.e(TAG, "Failed to enumerate cameras for fallback", e);
+                FLog.e(TAG, "Failed to enumerate cameras for fallback", e);
                 broadcastError("No cameras available");
                 stopSelf();
                 return;
@@ -340,7 +341,7 @@ public class DualCameraRecordingService extends Service {
             backCameraId = capability.getConcurrentBackCameraId();
 
             if (frontCameraId == null || backCameraId == null) {
-                Log.e(TAG, "Could not resolve front/back camera IDs");
+                FLog.e(TAG, "Could not resolve front/back camera IDs");
                 broadcastError("Could not identify concurrent cameras");
                 stopSelf();
                 return;
@@ -368,12 +369,12 @@ public class DualCameraRecordingService extends Service {
      */
     private void handleStopDualRecording() {
         if (state == DualCameraState.DISABLED) {
-            Log.w(TAG, "Already stopped / disabled");
+            FLog.w(TAG, "Already stopped / disabled");
             stopSelf();
             return;
         }
 
-        Log.i(TAG, "Stopping dual camera recording");
+        FLog.i(TAG, "Stopping dual camera recording");
         isStopping = true;
         state = DualCameraState.DISABLED;
         fallbackMode = false;
@@ -385,7 +386,7 @@ public class DualCameraRecordingService extends Service {
             try {
                 recordingPipeline.stopRecording();
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping pipeline", e);
+                FLog.e(TAG, "Error stopping pipeline", e);
             }
             recordingPipeline = null;
         }
@@ -402,9 +403,9 @@ public class DualCameraRecordingService extends Service {
         if (safRecordingPfd != null) {
             try {
                 safRecordingPfd.close();
-                Log.d(TAG, "Closed SAF ParcelFileDescriptor");
+                FLog.d(TAG, "Closed SAF ParcelFileDescriptor");
             } catch (Exception e) {
-                Log.e(TAG, "Error closing ParcelFileDescriptor", e);
+                FLog.e(TAG, "Error closing ParcelFileDescriptor", e);
             }
             safRecordingPfd = null;
             safRecordingUri = null;
@@ -422,7 +423,7 @@ public class DualCameraRecordingService extends Service {
 
     private void handlePauseDualRecording() {
         if (state != DualCameraState.RECORDING) {
-            Log.w(TAG, "Cannot pause — state=" + state);
+            FLog.w(TAG, "Cannot pause — state=" + state);
             return;
         }
 
@@ -431,12 +432,12 @@ public class DualCameraRecordingService extends Service {
         }
         state = DualCameraState.PAUSED;
         broadcastAction(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
-        Log.i(TAG, "Dual recording paused");
+        FLog.i(TAG, "Dual recording paused");
     }
 
     private void handleResumeDualRecording() {
         if (state != DualCameraState.PAUSED) {
-            Log.w(TAG, "Cannot resume — state=" + state);
+            FLog.w(TAG, "Cannot resume — state=" + state);
             return;
         }
 
@@ -445,7 +446,7 @@ public class DualCameraRecordingService extends Service {
         }
         state = DualCameraState.RECORDING;
         broadcastAction(Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED);
-        Log.i(TAG, "Dual recording resumed");
+        FLog.i(TAG, "Dual recording resumed");
     }
 
     /**
@@ -454,7 +455,7 @@ public class DualCameraRecordingService extends Service {
      */
     private void handleSwapCameras() {
         if (state != DualCameraState.RECORDING && state != DualCameraState.PAUSED) {
-            Log.w(TAG, "Cannot swap cameras — state=" + state);
+            FLog.w(TAG, "Cannot swap cameras — state=" + state);
             return;
         }
 
@@ -475,7 +476,7 @@ public class DualCameraRecordingService extends Service {
         }
 
         broadcastAction(Constants.BROADCAST_ON_DUAL_CAMERAS_SWAPPED);
-        Log.i(TAG, "Cameras swapped — new primary: " + newPrimary);
+        FLog.i(TAG, "Cameras swapped — new primary: " + newPrimary);
     }
 
     /**
@@ -486,7 +487,7 @@ public class DualCameraRecordingService extends Service {
         if (recordingPipeline != null) {
             recordingPipeline.updateConfig(config);
         }
-        Log.d(TAG, "PiP config updated live");
+        FLog.d(TAG, "PiP config updated live");
     }
 
     /**
@@ -504,7 +505,7 @@ public class DualCameraRecordingService extends Service {
         if (recordingPipeline != null) {
             // Use IMMEDIATE mode for fullscreen to bypass debounce
             if (isFullscreenTransition && surface != null && surface.isValid()) {
-                Log.d(TAG, "Setting preview surface IMMEDIATE (fullscreen transition)");
+                FLog.d(TAG, "Setting preview surface IMMEDIATE (fullscreen transition)");
                 recordingPipeline.setPreviewSurfaceImmediate(surface);
             } else {
                 recordingPipeline.setPreviewSurface(surface);
@@ -512,11 +513,11 @@ public class DualCameraRecordingService extends Service {
             if (surfaceW > 0 && surfaceH > 0) {
                 recordingPipeline.updateSurfaceDimensions(surfaceW, surfaceH);
             }
-            Log.d(TAG, "Preview surface updated: " +
+            FLog.d(TAG, "Preview surface updated: " +
                     (surface != null && surface.isValid() ? surfaceW + "x" + surfaceH : "null") +
                     " (immediate=" + isFullscreenTransition + ")");
         } else {
-            Log.w(TAG, "handleChangeSurface: pipeline not ready, surface change ignored");
+            FLog.w(TAG, "handleChangeSurface: pipeline not ready, surface change ignored");
         }
     }
 
@@ -529,7 +530,7 @@ public class DualCameraRecordingService extends Service {
      */
     private void handleToggleTorch() {
         if (primaryRequestBuilder == null || primarySession == null) {
-            Log.w(TAG, "handleToggleTorch: no active primary session");
+            FLog.w(TAG, "handleToggleTorch: no active primary session");
             return;
         }
         isTorchOn = !isTorchOn;
@@ -537,7 +538,7 @@ public class DualCameraRecordingService extends Service {
                 isTorchOn ? CaptureRequest.FLASH_MODE_TORCH
                           : CaptureRequest.FLASH_MODE_OFF);
         if (applyPrimaryRepeating()) {
-            Log.d(TAG, "Torch toggled: " + (isTorchOn ? "ON" : "OFF"));
+            FLog.d(TAG, "Torch toggled: " + (isTorchOn ? "ON" : "OFF"));
         }
         // Persist and broadcast
         prefs.sharedPreferences.edit()
@@ -559,7 +560,7 @@ public class DualCameraRecordingService extends Service {
         if (primaryRequestBuilder == null || primarySession == null) return;
         primaryRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, ev);
         if (applyPrimaryRepeating()) {
-            Log.d(TAG, "Exposure compensation set to: " + ev);
+            FLog.d(TAG, "Exposure compensation set to: " + ev);
         }
     }
 
@@ -575,7 +576,7 @@ public class DualCameraRecordingService extends Service {
         if (primaryRequestBuilder == null || primarySession == null) return;
         primaryRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, lock);
         if (applyPrimaryRepeating()) {
-            Log.d(TAG, "AE lock set to: " + lock);
+            FLog.d(TAG, "AE lock set to: " + lock);
         }
     }
 
@@ -592,7 +593,7 @@ public class DualCameraRecordingService extends Service {
         if (primaryRequestBuilder == null || primarySession == null) return;
         primaryRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mode);
         if (applyPrimaryRepeating()) {
-            Log.d(TAG, "AF mode set to: " + mode);
+            FLog.d(TAG, "AF mode set to: " + mode);
         }
     }
 
@@ -609,9 +610,9 @@ public class DualCameraRecordingService extends Service {
             // Reset trigger for subsequent repeating requests
             primaryRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
-            Log.d(TAG, "Tap-to-focus triggered");
+            FLog.d(TAG, "Tap-to-focus triggered");
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Tap-to-focus failed", e);
+            FLog.e(TAG, "Tap-to-focus failed", e);
         }
     }
 
@@ -663,7 +664,7 @@ public class DualCameraRecordingService extends Service {
             primaryRequestBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoom);
         }
         if (applyPrimaryRepeating()) {
-            Log.d(TAG, "Zoom ratio set to: " + zoom);
+            FLog.d(TAG, "Zoom ratio set to: " + zoom);
         }
     }
 
@@ -678,10 +679,10 @@ public class DualCameraRecordingService extends Service {
                     primaryRequestBuilder.build(), null, backgroundHandler);
             return true;
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Failed to apply primary repeating request", e);
+            FLog.e(TAG, "Failed to apply primary repeating request", e);
             return false;
         } catch (IllegalStateException e) {
-            Log.w(TAG, "Primary session already closed", e);
+            FLog.w(TAG, "Primary session already closed", e);
             return false;
         }
     }
@@ -701,7 +702,7 @@ public class DualCameraRecordingService extends Service {
     private void openBothCameras() {
         // ── BLACK FRAME FALLBACK (TEST MODE) ─────────────────────────────
         if (useBlackFrameFallback) {
-            Log.i(TAG, "Black frame fallback: opening only primary camera for testing");
+            FLog.i(TAG, "Black frame fallback: opening only primary camera for testing");
             fallbackMode = true; // Treat as fallback mode (secondary won't stream)
             // Continue to open primary camera only (secondary will remain null)
         }
@@ -713,13 +714,13 @@ public class DualCameraRecordingService extends Service {
         String secondaryId = (config.getPrimaryCamera() == DualCameraConfig.PrimaryCamera.BACK)
                 ? frontCameraId : backCameraId;
 
-        Log.d(TAG, "Opening primary camera: " + primaryId + ", secondary: " + secondaryId);
+        FLog.d(TAG, "Opening primary camera: " + primaryId + ", secondary: " + secondaryId);
         resolvedSecondaryId = secondaryId;
 
         try {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                     != PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG, "Camera permission denied");
+                FLog.e(TAG, "Camera permission denied");
                 transitionToError("Camera permission denied");
                 return;
             }
@@ -732,12 +733,12 @@ public class DualCameraRecordingService extends Service {
                         camera.close();
                         return;
                     }
-                    Log.d(TAG, "Primary camera opened: " + camera.getId());
+                    FLog.d(TAG, "Primary camera opened: " + camera.getId());
                     primaryCameraDevice = camera;
 
                     if (useBlackFrameFallback) {
                         // Black frame test mode: skip secondary camera entirely
-                        Log.i(TAG, "Black frame test mode: skipping secondary camera");
+                        FLog.i(TAG, "Black frame test mode: skipping secondary camera");
                         camerasOpened = 1;
                         onPrimaryCameraReadyForFallback();
                     } else {
@@ -749,7 +750,7 @@ public class DualCameraRecordingService extends Service {
 
                 @Override
                 public void onDisconnected(@NonNull CameraDevice camera) {
-                    Log.w(TAG, "Primary camera disconnected: " + camera.getId());
+                    FLog.w(TAG, "Primary camera disconnected: " + camera.getId());
                     camera.close();
                     primaryCameraDevice = null;
                     transitionToError("Primary camera disconnected");
@@ -757,7 +758,7 @@ public class DualCameraRecordingService extends Service {
 
                 @Override
                 public void onError(@NonNull CameraDevice camera, int error) {
-                    Log.e(TAG, "Primary camera error: " + error);
+                    FLog.e(TAG, "Primary camera error: " + error);
                     camera.close();
                     primaryCameraDevice = null;
                     transitionToError("Primary camera error (code " + error + ")");
@@ -765,7 +766,7 @@ public class DualCameraRecordingService extends Service {
             }, backgroundHandler);
 
         } catch (CameraAccessException | SecurityException e) {
-            Log.e(TAG, "Error opening primary camera", e);
+            FLog.e(TAG, "Error opening primary camera", e);
             transitionToError("Failed to open camera: " + e.getMessage());
         }
     }
@@ -775,7 +776,7 @@ public class DualCameraRecordingService extends Service {
      */
     private void openSecondaryCamera(@NonNull String secondaryId) {
         if (isStopping || primaryCameraDevice == null) {
-            Log.w(TAG, "openSecondaryCamera: Aborting — stopping=" + isStopping);
+            FLog.w(TAG, "openSecondaryCamera: Aborting — stopping=" + isStopping);
             return;
         }
 
@@ -793,7 +794,7 @@ public class DualCameraRecordingService extends Service {
                         camera.close();
                         return;
                     }
-                    Log.d(TAG, "Secondary camera opened: " + camera.getId());
+                    FLog.d(TAG, "Secondary camera opened: " + camera.getId());
                     secondaryCameraDevice = camera;
                     // Both cameras now open — proceed to pipeline setup
                     camerasOpened = 2;
@@ -802,7 +803,7 @@ public class DualCameraRecordingService extends Service {
 
                 @Override
                 public void onDisconnected(@NonNull CameraDevice camera) {
-                    Log.w(TAG, "Secondary camera disconnected: " + camera.getId());
+                    FLog.w(TAG, "Secondary camera disconnected: " + camera.getId());
                     camera.close();
                     secondaryCameraDevice = null;
                     transitionToError("Secondary camera disconnected");
@@ -810,7 +811,7 @@ public class DualCameraRecordingService extends Service {
 
                 @Override
                 public void onError(@NonNull CameraDevice camera, int error) {
-                    Log.w(TAG, "Secondary camera error: " + error
+                    FLog.w(TAG, "Secondary camera error: " + error
                             + " — falling back to periodic snapshot mode");
                     camera.close();
                     secondaryCameraDevice = null;
@@ -824,7 +825,7 @@ public class DualCameraRecordingService extends Service {
             }, backgroundHandler);
 
         } catch (CameraAccessException | SecurityException e) {
-            Log.e(TAG, "Error opening secondary camera", e);
+            FLog.e(TAG, "Error opening secondary camera", e);
             transitionToError("Failed to open secondary camera: " + e.getMessage());
         }
     }
@@ -834,10 +835,10 @@ public class DualCameraRecordingService extends Service {
      * proceeds to create the recording pipeline.
      */
     private synchronized void onCameraOpened() {
-        Log.d(TAG, "onCameraOpened — both cameras ready, camerasOpened=" + camerasOpened);
+        FLog.d(TAG, "onCameraOpened — both cameras ready, camerasOpened=" + camerasOpened);
 
         if (primaryCameraDevice == null || secondaryCameraDevice == null) {
-            Log.e(TAG, "One of the cameras is null despite both reported open");
+            FLog.e(TAG, "One of the cameras is null despite both reported open");
             transitionToError("Camera initialization failed");
             return;
         }
@@ -853,10 +854,10 @@ public class DualCameraRecordingService extends Service {
      * (unless in black frame test mode).
      */
     private void onPrimaryCameraReadyForFallback() {
-        Log.i(TAG, "⚡ Entering fallback mode — primary-only recording");
+        FLog.i(TAG, "⚡ Entering fallback mode — primary-only recording");
 
         if (primaryCameraDevice == null) {
-            Log.e(TAG, "Primary camera is null in fallback mode");
+            FLog.e(TAG, "Primary camera is null in fallback mode");
             transitionToError("Camera initialization failed");
             return;
         }
@@ -871,7 +872,7 @@ public class DualCameraRecordingService extends Service {
             // Delay the first snapshot to let the pipeline stabilise.
             backgroundHandler.postDelayed(this::captureSecondarySnapshot, 2000);
         } else {
-            Log.d(TAG, "Black frame test mode: skipping periodic snapshots (secondary will remain black)");
+            FLog.d(TAG, "Black frame test mode: skipping periodic snapshots (secondary will remain black)");
         }
     }
 
@@ -904,7 +905,7 @@ public class DualCameraRecordingService extends Service {
             return;
         }
 
-        Log.d(TAG, "Fallback: capturing PiP snapshot from camera " + secId);
+        FLog.d(TAG, "Fallback: capturing PiP snapshot from camera " + secId);
 
         try {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -921,7 +922,7 @@ public class DualCameraRecordingService extends Service {
                         isCapturingSnapshot = false;
                         return;
                     }
-                    Log.d(TAG, "Fallback: secondary camera opened for snapshot");
+                    FLog.d(TAG, "Fallback: secondary camera opened for snapshot");
                     captureOneFrameAndClose(camera);
                 }
 
@@ -934,7 +935,7 @@ public class DualCameraRecordingService extends Service {
 
                 @Override
                 public void onError(@NonNull CameraDevice camera, int error) {
-                    Log.w(TAG, "Fallback: secondary camera snapshot error: " + error);
+                    FLog.w(TAG, "Fallback: secondary camera snapshot error: " + error);
                     camera.close();
                     isCapturingSnapshot = false;
                     scheduleNextSnapshot();
@@ -942,7 +943,7 @@ public class DualCameraRecordingService extends Service {
             }, backgroundHandler);
 
         } catch (CameraAccessException | SecurityException e) {
-            Log.w(TAG, "Fallback: cannot open secondary camera for snapshot", e);
+            FLog.w(TAG, "Fallback: cannot open secondary camera for snapshot", e);
             isCapturingSnapshot = false;
             scheduleNextSnapshot();
         }
@@ -992,7 +993,7 @@ public class DualCameraRecordingService extends Service {
                                                 framesReceived++;
                                                 if (framesReceived >= 1) {
                                                     // Got our frame — close and schedule next
-                                                    Log.d(TAG, "Fallback: PiP snapshot captured");
+                                                    FLog.d(TAG, "Fallback: PiP snapshot captured");
                                                     session.close();
                                                     camera.close();
                                                     isCapturingSnapshot = false;
@@ -1002,7 +1003,7 @@ public class DualCameraRecordingService extends Service {
                                         }, backgroundHandler);
 
                             } catch (CameraAccessException e) {
-                                Log.w(TAG, "Fallback: capture request failed", e);
+                                FLog.w(TAG, "Fallback: capture request failed", e);
                                 session.close();
                                 camera.close();
                                 isCapturingSnapshot = false;
@@ -1012,7 +1013,7 @@ public class DualCameraRecordingService extends Service {
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            Log.w(TAG, "Fallback: snapshot session config failed");
+                            FLog.w(TAG, "Fallback: snapshot session config failed");
                             session.close();
                             camera.close();
                             isCapturingSnapshot = false;
@@ -1022,7 +1023,7 @@ public class DualCameraRecordingService extends Service {
                     backgroundHandler);
 
         } catch (CameraAccessException e) {
-            Log.w(TAG, "Fallback: error setting up snapshot session", e);
+            FLog.w(TAG, "Fallback: error setting up snapshot session", e);
             camera.close();
             isCapturingSnapshot = false;
             scheduleNextSnapshot();
@@ -1049,7 +1050,7 @@ public class DualCameraRecordingService extends Service {
      * {@link DualCameraConfig} to enable PiP compositing in the GL renderer.
      */
     private void startDualRecording() {
-        Log.d(TAG, "startDualRecording: setting up unified pipeline");
+        FLog.d(TAG, "startDualRecording: setting up unified pipeline");
 
         try {
             // ── Resolution + codec ────────────────────────────────────
@@ -1071,7 +1072,7 @@ public class DualCameraRecordingService extends Service {
                 Integer so = chars.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 if (so != null) sensorOrientation = so;
             } catch (CameraAccessException e) {
-                Log.e(TAG, "Error reading sensor orientation", e);
+                FLog.e(TAG, "Error reading sensor orientation", e);
             }
 
             // ── Output file ───────────────────────────────────────────
@@ -1104,7 +1105,7 @@ public class DualCameraRecordingService extends Service {
             // ── Build unified pipeline with DualCameraConfig ──────────
             if (safRecordingPfd != null) {
                 // SAF mode: use FileDescriptor constructor
-                Log.d(TAG, "Building unified pipeline with FileDescriptor (SAF mode)");
+                FLog.d(TAG, "Building unified pipeline with FileDescriptor (SAF mode)");
                 recordingPipeline = new GLRecordingPipeline(
                         this,
                         watermarkProvider,
@@ -1126,7 +1127,7 @@ public class DualCameraRecordingService extends Service {
                     transitionToError("Cannot create output file");
                     return;
                 }
-                Log.d(TAG, "Building unified pipeline with file path (internal mode)");
+                FLog.d(TAG, "Building unified pipeline with file path (internal mode)");
                 recordingPipeline = new GLRecordingPipeline(
                         this,
                         watermarkProvider,
@@ -1161,7 +1162,7 @@ public class DualCameraRecordingService extends Service {
                             secondarySurface,
                             false /* isPrimary */);
                 } else {
-                    Log.w(TAG, "Secondary camera surface not available, entering fallback mode");
+                    FLog.w(TAG, "Secondary camera surface not available, entering fallback mode");
                     fallbackMode = true;
                     onSessionConfigured(false);
                 }
@@ -1169,12 +1170,12 @@ public class DualCameraRecordingService extends Service {
                 // Fallback mode: only primary camera streams; secondary gets
                 // periodic snapshots. Mark secondary session as "configured"
                 // immediately so the pipeline can start.
-                Log.i(TAG, "Fallback mode: skipping secondary capture session (periodic snapshots)");
+                FLog.i(TAG, "Fallback mode: skipping secondary capture session (periodic snapshots)");
                 onSessionConfigured(false);
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start dual recording", e);
+            FLog.e(TAG, "Failed to start dual recording", e);
             transitionToError("Recording setup failed: " + e.getMessage());
         }
     }
@@ -1208,7 +1209,7 @@ public class DualCameraRecordingService extends Service {
                             try {
                                 session.setRepeatingRequest(builder.build(), null, backgroundHandler);
                             } catch (CameraAccessException e) {
-                                Log.e(TAG, "Failed to start repeating request", e);
+                                FLog.e(TAG, "Failed to start repeating request", e);
                                 transitionToError("Capture request failed");
                                 return;
                             }
@@ -1221,7 +1222,7 @@ public class DualCameraRecordingService extends Service {
                                 secondaryRequestBuilder = builder;
                             }
 
-                            Log.d(TAG, (isPrimary ? "Primary" : "Secondary")
+                            FLog.d(TAG, (isPrimary ? "Primary" : "Secondary")
                                     + " capture session configured");
 
                             onSessionConfigured(isPrimary);
@@ -1229,7 +1230,7 @@ public class DualCameraRecordingService extends Service {
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            Log.e(TAG, (isPrimary ? "Primary" : "Secondary")
+                            FLog.e(TAG, (isPrimary ? "Primary" : "Secondary")
                                     + " capture session configuration failed");
                             transitionToError("Camera session failed");
                         }
@@ -1237,7 +1238,7 @@ public class DualCameraRecordingService extends Service {
                     backgroundHandler);
 
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Error creating capture session", e);
+            FLog.e(TAG, "Error creating capture session", e);
             transitionToError("Camera session creation error");
         }
     }
@@ -1247,7 +1248,7 @@ public class DualCameraRecordingService extends Service {
 
     private synchronized void onSessionConfigured(boolean isPrimary) {
         sessionsConfigured++;
-        Log.d(TAG, "Session configured (" + (isPrimary ? "primary" : "secondary")
+        FLog.d(TAG, "Session configured (" + (isPrimary ? "primary" : "secondary")
                 + ") — " + sessionsConfigured + "/2");
 
         if (sessionsConfigured < 2) return;
@@ -1266,9 +1267,9 @@ public class DualCameraRecordingService extends Service {
                     .commit();
 
             broadcastAction(Constants.BROADCAST_ON_DUAL_RECORDING_STARTED);
-            Log.i(TAG, "✅ Dual camera recording started");
+            FLog.i(TAG, "✅ Dual camera recording started");
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start pipeline encoding", e);
+            FLog.e(TAG, "Failed to start pipeline encoding", e);
             transitionToError("Encoder start failed");
         }
     }
@@ -1311,7 +1312,7 @@ public class DualCameraRecordingService extends Service {
             try {
                 String treeUriString = prefs.getCustomStorageUri();
                 if (treeUriString == null || treeUriString.isEmpty()) {
-                    Log.e(TAG, "No custom storage location configured");
+                    FLog.e(TAG, "No custom storage location configured");
                     return null;
                 }
 
@@ -1321,24 +1322,24 @@ public class DualCameraRecordingService extends Service {
                         RecordingStoragePaths.CameraSource.DUAL,
                         true);
                 if (treeDoc == null || !treeDoc.exists() || !treeDoc.canWrite()) {
-                    Log.e(TAG, "Cannot write to custom storage location");
+                    FLog.e(TAG, "Cannot write to custom storage location");
                     return null;
                 }
 
                 DocumentFile videoFile = treeDoc.createFile("video/mp4", filename);
                 if (videoFile == null) {
-                    Log.e(TAG, "Failed to create SAF file: " + filename);
+                    FLog.e(TAG, "Failed to create SAF file: " + filename);
                     return null;
                 }
 
                 safRecordingPfd = getContentResolver().openFileDescriptor(videoFile.getUri(), "w");
                 safRecordingUri = videoFile.getUri();
                 safOutputFileName = filename;
-                Log.d(TAG, "SAF mode: created file descriptor for " + filename);
+                FLog.d(TAG, "SAF mode: created file descriptor for " + filename);
                 
                 return null;  // Signal SAF mode (fd will be used instead)
             } catch (Exception e) {
-                Log.e(TAG, "Error creating SAF file", e);
+                FLog.e(TAG, "Error creating SAF file", e);
                 return null;
             }
         } else {
@@ -1346,7 +1347,7 @@ public class DualCameraRecordingService extends Service {
             File videoDir = RecordingStoragePaths.getInternalCameraSourceDir(
                     this, RecordingStoragePaths.CameraSource.DUAL, true);
             if (videoDir == null) {
-                Log.e(TAG, "Cannot create recording directory for dual camera");
+                FLog.e(TAG, "Cannot create recording directory for dual camera");
                 return null;
             }
             safRecordingPfd = null;
@@ -1422,7 +1423,7 @@ public class DualCameraRecordingService extends Service {
             try {
                 wakeLock.release();
             } catch (Exception e) {
-                Log.w(TAG, "Error releasing wake lock", e);
+                FLog.w(TAG, "Error releasing wake lock", e);
             }
             wakeLock = null;
         }
@@ -1437,14 +1438,14 @@ public class DualCameraRecordingService extends Service {
             try {
                 session.close();
             } catch (Exception e) {
-                Log.w(TAG, "Error closing " + label + " session", e);
+                FLog.w(TAG, "Error closing " + label + " session", e);
             }
         }
         if (device != null) {
             try {
                 device.close();
             } catch (Exception e) {
-                Log.w(TAG, "Error closing " + label + " camera", e);
+                FLog.w(TAG, "Error closing " + label + " camera", e);
             }
         }
     }
@@ -1459,7 +1460,7 @@ public class DualCameraRecordingService extends Service {
             try {
                 recordingPipeline.stopRecording();
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping pipeline on destroy", e);
+                FLog.e(TAG, "Error stopping pipeline on destroy", e);
             }
             recordingPipeline = null;
         }
@@ -1480,7 +1481,7 @@ public class DualCameraRecordingService extends Service {
 
     private void transitionToError(@NonNull String reason) {
         DualCameraState previousState = state;
-        Log.e(TAG, "Dual camera error: " + reason);
+        FLog.e(TAG, "Dual camera error: " + reason);
         state = DualCameraState.ERROR;
         broadcastError(reason);
         if (previousState == DualCameraState.RECORDING || previousState == DualCameraState.PAUSED) {
@@ -1522,9 +1523,9 @@ public class DualCameraRecordingService extends Service {
                 recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, lastRecordingUriString);
             }
             sendBroadcast(recordingCompleteIntent);
-            Log.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for dual recording. success=" + success);
+            FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for dual recording. success=" + success);
         } catch (Exception e) {
-            Log.e(TAG, "Error broadcasting ACTION_RECORDING_COMPLETE for dual recording", e);
+            FLog.e(TAG, "Error broadcasting ACTION_RECORDING_COMPLETE for dual recording", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.fadcam;
 
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,7 +11,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -109,10 +109,10 @@ public class MainActivity extends AppCompatActivity {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
         if (overlayContainer != null) {
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                Log.d("OverlayDebug", "hideOverlayIfNoFragments: back stack empty -> hide overlay");
+                FLog.d("OverlayDebug", "hideOverlayIfNoFragments: back stack empty -> hide overlay");
                 overlayContainer.setVisibility(View.GONE);
             } else {
-                Log.d("OverlayDebug", "hideOverlayIfNoFragments: back stack count="
+                FLog.d("OverlayDebug", "hideOverlayIfNoFragments: back stack count="
                         + getSupportFragmentManager().getBackStackEntryCount());
             }
         }
@@ -240,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
             
             // Handle Remote badge
             boolean shouldShowRemoteBadge = NewFeatureManager.shouldShowBadge(this, "remote");
-            Log.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowRemoteBadge=" + shouldShowRemoteBadge);
+            FLog.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowRemoteBadge=" + shouldShowRemoteBadge);
             
             if (shouldShowRemoteBadge) {
                 // Show badge on Remote nav item
@@ -251,23 +251,23 @@ public class MainActivity extends AppCompatActivity {
                     badge.setText("NEW"); // Show "NEW" text instead of number
                     badge.setBackgroundColor(0xFF4CAF50); // Green background
                     badge.setBadgeTextColor(0xFFFFFFFF); // White text color
-                    Log.d("MainActivity", "Badge shown for remote");
+                    FLog.d("MainActivity", "Badge shown for remote");
                 } catch (Exception e) {
-                    Log.e("MainActivity", "Error creating badge", e);
+                    FLog.e("MainActivity", "Error creating badge", e);
                 }
             } else {
                 // Remove badge from Remote nav item
                 try {
                     bottomNavigationView.removeBadge(R.id.navigation_remote);
-                    Log.d("MainActivity", "Badge removed for remote");
+                    FLog.d("MainActivity", "Badge removed for remote");
                 } catch (Exception e) {
-                    Log.e("MainActivity", "Error removing badge", e);
+                    FLog.e("MainActivity", "Error removing badge", e);
                 }
             }
             
             // Handle Settings Nav Badge (separate from watermark option inside settings)
             boolean shouldShowSettingsNavBadge = NewFeatureManager.shouldShowBadge(this, "settings_nav");
-            Log.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowSettingsNavBadge=" + shouldShowSettingsNavBadge);
+            FLog.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowSettingsNavBadge=" + shouldShowSettingsNavBadge);
             
             if (shouldShowSettingsNavBadge) {
                 // Show badge on Settings nav item as a small dot (no text, no number)
@@ -280,21 +280,21 @@ public class MainActivity extends AppCompatActivity {
                     badge.setHorizontalPadding(0);
                     badge.setVerticalPadding(0);
                     badge.setBackgroundColor(0xFF4CAF50); // Green background
-                    Log.d("MainActivity", "Badge shown for settings");
+                    FLog.d("MainActivity", "Badge shown for settings");
                 } catch (Exception e) {
-                    Log.e("MainActivity", "Error creating settings badge", e);
+                    FLog.e("MainActivity", "Error creating settings badge", e);
                 }
             } else {
                 // Remove badge from Settings nav item
                 try {
                     bottomNavigationView.removeBadge(R.id.navigation_settings);
-                    Log.d("MainActivity", "Badge removed for settings");
+                    FLog.d("MainActivity", "Badge removed for settings");
                 } catch (Exception e) {
-                    Log.e("MainActivity", "Error removing settings badge", e);
+                    FLog.e("MainActivity", "Error removing settings badge", e);
                 }
             }
         } catch (Exception e) {
-            Log.e("MainActivity", "Error updating badge visibility", e);
+            FLog.e("MainActivity", "Error updating badge visibility", e);
         }
     }
 
@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
         if (overlayContainer == null)
             return;
-        Log.d("OverlayDebug", "showOverlayFragment: tag=" + tag + " currentBackStack="
+        FLog.d("OverlayDebug", "showOverlayFragment: tag=" + tag + " currentBackStack="
                 + getSupportFragmentManager().getBackStackEntryCount());
         overlayContainer.setVisibility(View.VISIBLE);
         overlayContainer.setAlpha(0f);
@@ -363,7 +363,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Throwable t) {
-            android.util.Log.w("Cloak", "early cloak apply fail", t);
+            FLog.w("Cloak", "early cloak apply fail", t);
         }
         // possible)-----------
 
@@ -377,7 +377,7 @@ public class MainActivity extends AppCompatActivity {
         if (!firstInstallChecked) {
             // This is definitely a first install or app data was cleared
             // Force onboarding to show by setting the flag to false
-            android.util.Log.d("MainActivity", "First install detected! Forcing onboarding to show.");
+            FLog.d("MainActivity", "First install detected! Forcing onboarding to show.");
             sharedPreferencesManager.sharedPreferences.edit()
                     .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
                     .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
@@ -387,9 +387,9 @@ public class MainActivity extends AppCompatActivity {
         // Check for onboarding BEFORE applying theme or language
         boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
         boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
-        android.util.Log.d("MainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
-        android.util.Log.d("MainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
-        android.util.Log.d("MainActivity", "Should show onboarding: " + showOnboarding);
+        FLog.d("MainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
+        FLog.d("MainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
+        FLog.d("MainActivity", "Should show onboarding: " + showOnboarding);
 
         if (showOnboarding) {
             // Check if onboarding was actually completed (user went through it)
@@ -462,7 +462,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Throwable t) {
-            android.util.Log.w("Cloak", "init cloak state fail", t);
+            FLog.w("Cloak", "init cloak state fail", t);
         }
         // startup)-----------
 
@@ -550,7 +550,7 @@ public class MainActivity extends AppCompatActivity {
             }
             cloakOverlay = overlay;
         } catch (Exception e) {
-            android.util.Log.w("Cloak", "Failed to init cloak overlay", e);
+            FLog.w("Cloak", "Failed to init cloak overlay", e);
         }
 
         // Save the original bottom nav background color for restoration later
@@ -563,10 +563,10 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     originalBottomNavColor = getResources().getColor(typedValue.resourceId);
                 }
-                Log.d("MainActivity", "Saved bottom nav color from colorBottomNav: " + Integer.toHexString(originalBottomNavColor));
+                FLog.d("MainActivity", "Saved bottom nav color from colorBottomNav: " + Integer.toHexString(originalBottomNavColor));
             }
         } catch (Exception e) {
-            Log.e("MainActivity", "Error getting bottom nav color from colorBottomNav", e);
+            FLog.e("MainActivity", "Error getting bottom nav color from colorBottomNav", e);
         }
 
         // Initialize badge visibility
@@ -574,16 +574,16 @@ public class MainActivity extends AppCompatActivity {
 
         // Load initial fragment (Home tab) immediately with commitNow()
         // Check if there's already a fragment (e.g., after configuration change)
-        Log.d("FragmentNav", "onCreate: About to load initial fragment (position 0), savedInstanceState=" + (savedInstanceState == null ? "null" : "exists"));
+        FLog.d("FragmentNav", "onCreate: About to load initial fragment (position 0), savedInstanceState=" + (savedInstanceState == null ? "null" : "exists"));
         if (savedInstanceState == null) {
             // Fresh launch — load Home tab
-            Log.d("FragmentNav", "onCreate: No saved state, loading Home fragment");
+            FLog.d("FragmentNav", "onCreate: No saved state, loading Home fragment");
             switchFragment(0, false); // Uses commitNow() for instant, synchronous load
-            Log.d("FragmentNav", "onCreate: Initial fragment load completed");
+            FLog.d("FragmentNav", "onCreate: Initial fragment load completed");
         } else {
             // Configuration change / process death — FragmentManager restores all added fragments
             // We need to find which was the current one and ensure others are hidden
-            Log.d("FragmentNav", "onCreate: Restoring from savedInstanceState");
+            FLog.d("FragmentNav", "onCreate: Restoring from savedInstanceState");
             int restoredPosition = savedInstanceState.getInt("current_fragment_position", 0);
             androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
             
@@ -594,15 +594,15 @@ public class MainActivity extends AppCompatActivity {
                 if (f != null) {
                     if (i == restoredPosition) {
                         fm.beginTransaction().show(f).commitNow();
-                        Log.d("FragmentNav", "onCreate: Showing restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                        FLog.d("FragmentNav", "onCreate: Showing restored fragment at position " + i + ": " + f.getClass().getSimpleName());
                     } else {
                         fm.beginTransaction().hide(f).commitNow();
-                        Log.d("FragmentNav", "onCreate: Hiding restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                        FLog.d("FragmentNav", "onCreate: Hiding restored fragment at position " + i + ": " + f.getClass().getSimpleName());
                     }
                 }
             }
             currentFragmentPosition = restoredPosition;
-            Log.d("FragmentNav", "onCreate: Restored current position to " + restoredPosition);
+            FLog.d("FragmentNav", "onCreate: Restored current position to " + restoredPosition);
         }
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -655,7 +655,7 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences reopenPrefs = sharedPreferencesManager.sharedPreferences;
             boolean reopenAppearance = reopenPrefs.getBoolean("reopen_appearance_after_theme", false);
             if (reopenAppearance) {
-                Log.d("FragmentNav", "Theme reopen: Switching to Settings tab");
+                FLog.d("FragmentNav", "Theme reopen: Switching to Settings tab");
                 // Clear flag to avoid loops
                 reopenPrefs.edit().putBoolean("reopen_appearance_after_theme", false).apply();
                 //  Ensure Settings tab selected (index 4)
@@ -682,12 +682,12 @@ public class MainActivity extends AppCompatActivity {
                             });
                         }
                     } catch (Exception e) {
-                        android.util.Log.e("ThemeReopen", "Failed to reopen appearance fragment", e);
+                        FLog.e("ThemeReopen", "Failed to reopen appearance fragment", e);
                     }
                 }, 100);
             }
         } catch (Exception e) {
-            android.util.Log.e("ThemeReopen", "Outer fail", e);
+            FLog.e("ThemeReopen", "Outer fail", e);
         }
         // theme change)-----------
 
@@ -845,10 +845,10 @@ public class MainActivity extends AppCompatActivity {
                                         records.onFragmentBecameVisible();
                                         // Trigger refresh to show the newly recorded video
                                         records.refreshList();
-                                        android.util.Log.d("MainActivity", "Records tab refreshed after notification");
+                                        FLog.d("MainActivity", "Records tab refreshed after notification");
                                     }
                                 } catch (Exception e) {
-                                    android.util.Log.e("MainActivity", "Error triggering Records refresh", e);
+                                    FLog.e("MainActivity", "Error triggering Records refresh", e);
                                 }
                             }, 300); // Additional delay for refresh
                         }
@@ -866,7 +866,7 @@ public class MainActivity extends AppCompatActivity {
                         com.fadcam.ui.ShortcutsSettingsFragment frag = new com.fadcam.ui.ShortcutsSettingsFragment();
                         OverlayNavUtil.show(this, frag, "ShortcutsSettingsFragment");
                     } catch (Exception e) {
-                        android.util.Log.e("WidgetIntent", "Failed to open shortcuts fragment", e);
+                        FLog.e("WidgetIntent", "Failed to open shortcuts fragment", e);
                     }
                 }, 100);
             }
@@ -923,7 +923,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Only apply language change if it's different from the current language
         if (!languageCode.equals(currentLanguage)) {
-            Log.d("MainActivity", "Applying language: " + languageCode);
+            FLog.d("MainActivity", "Applying language: " + languageCode);
             Locale locale = new Locale(languageCode);
             Locale.setDefault(locale);
 
@@ -936,7 +936,7 @@ public class MainActivity extends AppCompatActivity {
             // Recreate the activity to apply the changes
             recreate();
         } else {
-            Log.d("MainActivity", "Language is already set to " + languageCode + "; no need to change.");
+            FLog.d("MainActivity", "Language is already set to " + languageCode + "; no need to change.");
         }
     }
 
@@ -974,7 +974,7 @@ public class MainActivity extends AppCompatActivity {
                 cloakOverlay.setAlpha(1f);
             }
         } catch (Exception e) {
-            android.util.Log.w("Cloak", "applyCloakIfNeeded failed", e);
+            FLog.w("Cloak", "applyCloakIfNeeded failed", e);
         }
     }
 
@@ -1011,7 +1011,7 @@ public class MainActivity extends AppCompatActivity {
             // Ensure decoy overlay is hidden during active use
             applyCloakIfNeeded(false);
         } catch (Exception e) {
-            android.util.Log.w("Cloak", "applyCloakPreferenceNow failed", e);
+            FLog.w("Cloak", "applyCloakPreferenceNow failed", e);
         }
     }
 
@@ -1019,7 +1019,7 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         // Unified: handle any visible overlay fragment (trash or settings)
         if (handleOverlayBack()) {
-            Log.d("OverlayDebug", "onBackPressed: dismissed overlay fragment");
+            FLog.d("OverlayDebug", "onBackPressed: dismissed overlay fragment");
             return;
         }
 
@@ -1082,7 +1082,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Throwable t) {
-            android.util.Log.w("Cloak", "onResume preference apply fail", t);
+            FLog.w("Cloak", "onResume preference apply fail", t);
         }
         // state)-----------
 
@@ -1118,7 +1118,7 @@ public class MainActivity extends AppCompatActivity {
                 public void handleOnBackPressed() {
                     // Unified: generic overlay back handling (trash & settings)
                     if (handleOverlayBack()) {
-                        Log.d("OverlayDebug", "DispatcherBack: dismissed overlay fragment");
+                        FLog.d("OverlayDebug", "DispatcherBack: dismissed overlay fragment");
                         return; // handled
                     }
 
@@ -1181,7 +1181,7 @@ public class MainActivity extends AppCompatActivity {
                 // secure/recents)-----------
             }
         } catch (Exception e) {
-            android.util.Log.w("Cloak", "onPause cloak fail", e);
+            FLog.w("Cloak", "onPause cloak fail", e);
         }
         super.onPause();
     }
@@ -1211,7 +1211,7 @@ public class MainActivity extends AppCompatActivity {
                 // secure/recents)-----------
             }
         } catch (Exception e) {
-            android.util.Log.w("Cloak", "onUserLeaveHint cloak fail", e);
+            FLog.w("Cloak", "onUserLeaveHint cloak fail", e);
         }
     }
 
@@ -1348,7 +1348,7 @@ public class MainActivity extends AppCompatActivity {
         // Guard: Skip theme application for watch devices
         // Watch uses dedicated WatchMainActivity with Wear OS-optimized themes
         if (isWatchDevice()) {
-            android.util.Log.w("MainActivity", "applyTheme() called on watch device - skipping phone theme application");
+            FLog.w("MainActivity", "applyTheme() called on watch device - skipping phone theme application");
             return;
         }
 
@@ -1409,7 +1409,7 @@ public class MainActivity extends AppCompatActivity {
     public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
 
-        Log.d("MainActivity", "Configuration changed - orientation: " +
+        FLog.d("MainActivity", "Configuration changed - orientation: " +
                 (newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape"
                         : "portrait"));
 
@@ -1436,7 +1436,7 @@ public class MainActivity extends AppCompatActivity {
                 Fragment f = fm.findFragmentByTag(tag);
                 if (f != null) {
                     detachTx.detach(f);
-                    Log.d("MainActivity", "Orientation: detaching fragment at position " + i + ": " + f.getClass().getSimpleName());
+                    FLog.d("MainActivity", "Orientation: detaching fragment at position " + i + ": " + f.getClass().getSimpleName());
                 }
             }
             detachTx.commitNow(); // Must commit before re-attaching
@@ -1454,16 +1454,16 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         attachTx.show(f);
                     }
-                    Log.d("MainActivity", "Orientation: re-attached fragment at position " + i + ": " + f.getClass().getSimpleName());
+                    FLog.d("MainActivity", "Orientation: re-attached fragment at position " + i + ": " + f.getClass().getSimpleName());
                 }
             }
             attachTx.commitNow();
             
-            Log.d("MainActivity", "Orientation changed to " +
+            FLog.d("MainActivity", "Orientation changed to " +
                     (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? "landscape" : "portrait") +
                     " — all fragments re-inflated");
         } catch (Exception e) {
-            Log.e("MainActivity", "Error handling orientation change", e);
+            FLog.e("MainActivity", "Error handling orientation change", e);
         }
     }
 
@@ -1578,10 +1578,10 @@ public class MainActivity extends AppCompatActivity {
      * @param animate Whether to animate the transition
      */
     public void switchFragment(int position, boolean animate) {
-        Log.d("FragmentNav", "switchFragment: Called with position=" + position + ", animate=" + animate + ", current=" + currentFragmentPosition);
+        FLog.d("FragmentNav", "switchFragment: Called with position=" + position + ", animate=" + animate + ", current=" + currentFragmentPosition);
         
         if (position == currentFragmentPosition) {
-            Log.d("FragmentNav", "switchFragment: Already showing position " + position + ", returning");
+            FLog.d("FragmentNav", "switchFragment: Already showing position " + position + ", returning");
             return; // Already showing this fragment
         }
         
@@ -1603,7 +1603,7 @@ public class MainActivity extends AppCompatActivity {
             Fragment currentFragment = fm.findFragmentByTag(currentTag);
             if (currentFragment != null) {
                 transaction.hide(currentFragment);
-                Log.d("FragmentNav", "switchFragment: Hiding fragment at position " + currentFragmentPosition);
+                FLog.d("FragmentNav", "switchFragment: Hiding fragment at position " + currentFragmentPosition);
             }
         }
         
@@ -1614,28 +1614,28 @@ public class MainActivity extends AppCompatActivity {
         if (targetFragment != null) {
             // Fragment already added — just show it (instant, no view inflation)
             transaction.show(targetFragment);
-            Log.d("FragmentNav", "switchFragment: Showing existing fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
+            FLog.d("FragmentNav", "switchFragment: Showing existing fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
         } else {
             // First time visiting this tab — create and add
             targetFragment = createFragmentForPosition(position);
             transaction.add(R.id.fragment_container, targetFragment, targetTag);
-            Log.d("FragmentNav", "switchFragment: Adding new fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
+            FLog.d("FragmentNav", "switchFragment: Adding new fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
         }
         
         // Use commitNow() for instant switching (no lag), commit() for animated transitions
         if (animate) {
-            Log.d("FragmentNav", "switchFragment: Committing with animation (async)");
+            FLog.d("FragmentNav", "switchFragment: Committing with animation (async)");
             transaction.commit(); // Async for animation
         } else {
-            Log.d("FragmentNav", "switchFragment: Committing NOW (synchronous)");
+            FLog.d("FragmentNav", "switchFragment: Committing NOW (synchronous)");
             transaction.commitNow(); // Immediate for instant switching and initial load
         }
         
         long endTime = System.currentTimeMillis();
-        Log.d("FragmentNav", "switchFragment: Transaction completed in " + (endTime - startTime) + "ms");
+        FLog.d("FragmentNav", "switchFragment: Transaction completed in " + (endTime - startTime) + "ms");
         
         currentFragmentPosition = position;
-        Log.d("FragmentNav", "switchFragment: Updated currentFragmentPosition to " + position);
+        FLog.d("FragmentNav", "switchFragment: Updated currentFragmentPosition to " + position);
         
         // Handle tab-specific logic (same as old onPageSelected)
         handleTabSelected(position);
@@ -1646,7 +1646,7 @@ public class MainActivity extends AppCompatActivity {
      * Only called the first time a tab is visited — subsequent visits reuse the existing fragment.
      */
     private Fragment createFragmentForPosition(int position) {
-        Log.d("FragmentNav", "createFragmentForPosition: Creating new fragment for position " + position);
+        FLog.d("FragmentNav", "createFragmentForPosition: Creating new fragment for position " + position);
         
         // Create new fragment if not found
         Fragment newFragment;
@@ -1679,7 +1679,7 @@ public class MainActivity extends AppCompatActivity {
                 newFragment = new com.fadcam.ui.HomeFragment();
         }
         
-        Log.d("FragmentNav", "createFragmentForPosition: Created new fragment for position " + position + ": " + newFragment.getClass().getSimpleName());
+        FLog.d("FragmentNav", "createFragmentForPosition: Created new fragment for position " + position + ": " + newFragment.getClass().getSimpleName());
         return newFragment;
     }
     
@@ -1688,7 +1688,7 @@ public class MainActivity extends AppCompatActivity {
      * Replaces old ViewPager2.OnPageChangeCallback logic.
      */
     private void handleTabSelected(int position) {
-        Log.d("FragmentNav", "handleTabSelected: Called for position " + position);
+        FLog.d("FragmentNav", "handleTabSelected: Called for position " + position);
         
         // Update bottom nav selection
         int navItemId = getNavItemIdForPosition(position);
@@ -1710,7 +1710,7 @@ public class MainActivity extends AppCompatActivity {
                         ((RecordsFragment) recordsFragment).onFragmentBecameVisible();
                     }
                 } catch (Exception e) {
-                    Log.e("MainActivity", "Error triggering Records lazy load", e);
+                    FLog.e("MainActivity", "Error triggering Records lazy load", e);
                 }
                 break;
             case 5: // Lab tab
@@ -1750,7 +1750,7 @@ public class MainActivity extends AppCompatActivity {
      * @param position Tab position to recreate
      */
     public void forceRecreateFragment(int position) {
-        Log.d("FragmentNav", "forceRecreateFragment: Forcing recreation of fragment at position " + position);
+        FLog.d("FragmentNav", "forceRecreateFragment: Forcing recreation of fragment at position " + position);
         
         androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
         String tag = FRAGMENT_TAG_PREFIX + position;
@@ -1761,7 +1761,7 @@ public class MainActivity extends AppCompatActivity {
             androidx.fragment.app.FragmentTransaction removeTx = fm.beginTransaction();
             removeTx.remove(existingFragment);
             removeTx.commitNow();
-            Log.d("FragmentNav", "forceRecreateFragment: Removed existing fragment: " + existingFragment.getClass().getSimpleName());
+            FLog.d("FragmentNav", "forceRecreateFragment: Removed existing fragment: " + existingFragment.getClass().getSimpleName());
         }
         
         // Create and add the new fragment
@@ -1777,7 +1777,7 @@ public class MainActivity extends AppCompatActivity {
         }
         
         addTx.commitNow();
-        Log.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
+        FLog.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
     }
 
     /**

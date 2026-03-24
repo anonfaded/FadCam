@@ -1,9 +1,9 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
 import java.util.List;
@@ -49,10 +49,10 @@ public final class ServiceUtils {
 
             return false;
         } catch (SecurityException e) {
-            Log.w(TAG, "SecurityException checking running services", e);
+            FLog.w(TAG, "SecurityException checking running services", e);
             return false;
         } catch (Exception e) {
-            Log.w(TAG, "Failed checking running services", e);
+            FLog.w(TAG, "Failed checking running services", e);
             return false;
         }
     }

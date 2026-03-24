@@ -1,13 +1,13 @@
 package com.fadcam.ui.faditor.util;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.net.Uri;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -71,7 +71,7 @@ public class AudioExtractor {
                 long durationMs = getAudioDuration(output);
                 runOnMain(() -> callback.onSuccess(output, durationMs));
             } catch (Exception e) {
-                Log.e(TAG, "Audio extraction failed", e);
+                FLog.e(TAG, "Audio extraction failed", e);
                 runOnMain(() -> callback.onError(e));
             }
         });
@@ -90,7 +90,7 @@ public class AudioExtractor {
                 int[] waveform = doGenerateWaveform(audioUri);
                 runOnMain(() -> callback.onWaveformReady(waveform));
             } catch (Exception e) {
-                Log.e(TAG, "Waveform generation failed", e);
+                FLog.e(TAG, "Waveform generation failed", e);
                 runOnMain(() -> callback.onError(e));
             }
         });
@@ -163,7 +163,7 @@ public class AudioExtractor {
             muxer.stop();
             muxer.release();
 
-            Log.d(TAG, "Audio extracted to: " + outputFile.getAbsolutePath()
+            FLog.d(TAG, "Audio extracted to: " + outputFile.getAbsolutePath()
                     + " (" + outputFile.length() + " bytes)");
             return outputFile;
 
@@ -189,7 +189,7 @@ public class AudioExtractor {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to get audio duration", e);
+            FLog.e(TAG, "Failed to get audio duration", e);
         } finally {
             extractor.release();
         }

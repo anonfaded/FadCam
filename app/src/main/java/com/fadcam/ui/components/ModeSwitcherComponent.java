@@ -1,10 +1,11 @@
 package com.fadcam.ui.components;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
-import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
@@ -68,7 +69,7 @@ public class ModeSwitcherComponent {
             segmentFadMic = rootView.findViewById(R.id.segment_fadmic);
 
             if (segmentFadCam == null || segmentFadRec == null || segmentFadMic == null) {
-                Log.e(TAG, "Segment views missing");
+                FLog.e(TAG, "Segment views missing");
                 return;
             }
 
@@ -78,9 +79,9 @@ public class ModeSwitcherComponent {
                 try {
                     boolean shouldShowFadRecBadge = com.fadcam.ui.utils.NewFeatureManager.shouldShowBadge(context, "fadrec");
                     badgeFadRec.setVisibility(shouldShowFadRecBadge ? View.VISIBLE : View.GONE);
-                    Log.d(TAG, "FadRec badge visibility: " + (shouldShowFadRecBadge ? "VISIBLE" : "GONE"));
+                    FLog.d(TAG, "FadRec badge visibility: " + (shouldShowFadRecBadge ? "VISIBLE" : "GONE"));
                 } catch (Exception e) {
-                    Log.e(TAG, "Error managing FadRec badge visibility", e);
+                    FLog.e(TAG, "Error managing FadRec badge visibility", e);
                     badgeFadRec.setVisibility(View.GONE);
                 }
             }
@@ -126,9 +127,9 @@ public class ModeSwitcherComponent {
             });
 
             setupClickListeners();
-            Log.d(TAG, "ModeSwitcher initialized (active=" + currentMode + ")");
+            FLog.d(TAG, "ModeSwitcher initialized (active=" + currentMode + ")");
         } catch (Exception e) {
-            Log.e(TAG, "Error initializing ModeSwitcher", e);
+            FLog.e(TAG, "Error initializing ModeSwitcher", e);
             isInitializing = false; // Reset on error
         }
     }
@@ -146,37 +147,37 @@ public class ModeSwitcherComponent {
         // During initialization, ONLY set backgrounds, don't touch text at all
         // Text will be set by the layout inflation and doesn't need animation
         if (isInitializing) {
-            Log.d(TAG, "setExclusiveSelected - isInitializing=true, only backgrounds applied, skipping text");
+            FLog.d(TAG, "setExclusiveSelected - isInitializing=true, only backgrounds applied, skipping text");
         } else {
             // User click: instantly deactivate previous button, animate new one
-            Log.d(TAG, "setExclusiveSelected - user click, current=" + currentMode + ", new=" + mode);
+            FLog.d(TAG, "setExclusiveSelected - user click, current=" + currentMode + ", new=" + mode);
             
             // Deactivate the previously active button instantly
             if (Constants.MODE_FADCAM.equals(currentMode) && !Constants.MODE_FADCAM.equals(mode)) {
                 styleText(segmentFadCam, false, false);
-                Log.d(TAG, "Deactivating FadCam (was active)");
+                FLog.d(TAG, "Deactivating FadCam (was active)");
             } else if (Constants.MODE_FADREC.equals(currentMode) && !Constants.MODE_FADREC.equals(mode)) {
                 styleText(segmentFadRec, false, false);
-                Log.d(TAG, "Deactivating FadRec (was active)");
+                FLog.d(TAG, "Deactivating FadRec (was active)");
             } else if (Constants.MODE_FADMIC.equals(currentMode) && !Constants.MODE_FADMIC.equals(mode)) {
                 styleText(segmentFadMic, false, false);
-                Log.d(TAG, "Deactivating FadMic (was active)");
+                FLog.d(TAG, "Deactivating FadMic (was active)");
             }
             
             // Animate the newly clicked button
             if (Constants.MODE_FADCAM.equals(mode)) {
                 styleText(segmentFadCam, true, true);
-                Log.d(TAG, "Activating FadCam (animating)");
+                FLog.d(TAG, "Activating FadCam (animating)");
             } else if (Constants.MODE_FADREC.equals(mode)) {
                 styleText(segmentFadRec, true, true);
-                Log.d(TAG, "Activating FadRec (animating)");
+                FLog.d(TAG, "Activating FadRec (animating)");
             } else if (Constants.MODE_FADMIC.equals(mode)) {
                 styleText(segmentFadMic, true, true);
-                Log.d(TAG, "Activating FadMic (animating)");
+                FLog.d(TAG, "Activating FadMic (animating)");
             }
         }
         
-        Log.d(TAG, String.format("setExclusiveSelected(%s): FadCam=%b FadRec=%b FadMic=%b", 
+        FLog.d(TAG, String.format("setExclusiveSelected(%s): FadCam=%b FadRec=%b FadMic=%b", 
             mode, Constants.MODE_FADCAM.equals(mode), 
             Constants.MODE_FADREC.equals(mode), 
             Constants.MODE_FADMIC.equals(mode)));
@@ -207,7 +208,7 @@ public class ModeSwitcherComponent {
         segment.setBackground(background);
         segment.setSelected(active);
         
-        Log.d(TAG, "applyBackground: " + segment.getId() + " active=" + active);
+        FLog.d(TAG, "applyBackground: " + segment.getId() + " active=" + active);
     }
 
     /**
@@ -227,22 +228,22 @@ public class ModeSwitcherComponent {
         
         // Only change color if it's actually different
         if (currentColor == targetColor) {
-            Log.d(TAG, "styleText - segment=" + segment.getId() + " already has correct color, skipping");
+            FLog.d(TAG, "styleText - segment=" + segment.getId() + " already has correct color, skipping");
             return;
         }
         
-        Log.d(TAG, "styleText - segment=" + segment.getId() + ", active=" + active + ", animate=" + animate);
+        FLog.d(TAG, "styleText - segment=" + segment.getId() + ", active=" + active + ", animate=" + animate);
         
         if (animate) {
             ValueAnimator anim = ValueAnimator.ofObject(new ArgbEvaluator(), currentColor, targetColor);
             anim.setDuration(ANIMATION_DURATION);
             anim.addUpdateListener(a -> tv.setTextColor((Integer) a.getAnimatedValue()));
             anim.start();
-            Log.d(TAG, "Text color animation STARTED for segment " + segment.getId());
+            FLog.d(TAG, "Text color animation STARTED for segment " + segment.getId());
         } else {
             // No animation - instant color change
             tv.setTextColor(targetColor);
-            Log.d(TAG, "Text color set INSTANTLY for segment " + segment.getId());
+            FLog.d(TAG, "Text color set INSTANTLY for segment " + segment.getId());
         }
     }
     
@@ -268,7 +269,7 @@ public class ModeSwitcherComponent {
      * @param mode The selected mode
      */
     private void handleModeClick(String mode) {
-        Log.d(TAG, "Mode clicked: " + mode);
+        FLog.d(TAG, "Mode clicked: " + mode);
         
         if (isInitializing) return;
 
@@ -283,7 +284,7 @@ public class ModeSwitcherComponent {
         currentMode = mode;
         setExclusiveSelected(currentMode);
         sharedPreferencesManager.setCurrentRecordingMode(currentMode);
-        Log.d(TAG, "Mode switched -> " + currentMode);
+        FLog.d(TAG, "Mode switched -> " + currentMode);
         
         switch (mode) {
             case Constants.MODE_FADCAM:
@@ -304,7 +305,7 @@ public class ModeSwitcherComponent {
                         badgeFadRec.setVisibility(View.GONE);
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error marking FadRec badge as seen", e);
+                    FLog.e(TAG, "Error marking FadRec badge as seen", e);
                 }
                 if (listener != null) {
                     listener.onModeSelected(mode);
@@ -381,7 +382,7 @@ public class ModeSwitcherComponent {
     private void showComingSoonToast(String modeName) {
         String message = modeName + " coming soon! 🚀";
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "Showed coming soon toast for: " + modeName);
+        FLog.d(TAG, "Showed coming soon toast for: " + modeName);
     }
     
     /**

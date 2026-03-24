@@ -1,10 +1,10 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
 import com.fadcam.Constants;
@@ -21,7 +21,7 @@ public final class ServiceStartPolicy {
     public static void startRecordingAction(@NonNull Context context, @NonNull Intent intent) {
         final String action = intent.getAction();
         final boolean foreground = isForegroundStartAction(action);
-        Log.d(TAG, "dispatch action=" + action + ", mode=" + (foreground ? "foreground" : "service"));
+        FLog.d(TAG, "dispatch action=" + action + ", mode=" + (foreground ? "foreground" : "service"));
         if (foreground && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent);
         } else {

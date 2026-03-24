@@ -1,5 +1,7 @@
 package com.fadcam.opengl;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -7,7 +9,6 @@ import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.Log;
 import android.view.Surface;
 
 import java.io.File;
@@ -124,7 +125,7 @@ public class GLRecordingPipeline {
             synchronized (timestampLock) {
                 if (recordingStartSystemTimeNanos == -1) {
                     recordingStartSystemTimeNanos = System.nanoTime();
-                    Log.d(TAG, "[VIDEO_TIMESTAMP] Recording system time reference initialized: " + 
+                    FLog.d(TAG, "[VIDEO_TIMESTAMP] Recording system time reference initialized: " + 
                           recordingStartSystemTimeNanos + " nanos");
                 }
             }
@@ -259,7 +260,7 @@ public class GLRecordingPipeline {
                     bitmap = null;
                 }
             } catch (Exception e) {
-                Log.w(TAG, "capturePhotoFrame failed", e);
+                FLog.w(TAG, "capturePhotoFrame failed", e);
             } finally {
                 try {
                     glRenderer.setSuppressWatermarkForSnapshot(false);
@@ -322,7 +323,7 @@ public class GLRecordingPipeline {
                         try {
                             updateWatermark();
                         } catch (Exception e) {
-                            Log.w(TAG, "Watermark update failed", e);
+                            FLog.w(TAG, "Watermark update failed", e);
                         }
                         watermarkUpdateHandler.postDelayed(this, 1000);
                     }
@@ -387,7 +388,7 @@ public class GLRecordingPipeline {
         this.mSurfaceHeight = videoHeight;
         // Calculate target aspect ratio based on the fixed dimensions
         this.targetAspectRatio = (float) videoWidth / videoHeight;
-        Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " +
+        FLog.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " +
                 videoWidth + "x" + videoHeight + " in " + orientation +
                 " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
         initAudioSettings();
@@ -425,7 +426,7 @@ public class GLRecordingPipeline {
         this.mSurfaceHeight = videoHeight;
         // Calculate target aspect ratio based on the fixed dimensions
         this.targetAspectRatio = (float) videoWidth / videoHeight;
-        Log.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " +
+        FLog.d(TAG, "GLRecordingPipeline initialized with fixed dimensions: " +
                 videoWidth + "x" + videoHeight + " in " + orientation +
                 " orientation (sensor=" + sensorOrientation + "), aspect ratio: " + targetAspectRatio);
         initAudioSettings();
@@ -449,7 +450,7 @@ public class GLRecordingPipeline {
                 outputFilePath, maxFileSizeBytes, segmentNumber, segmentCallback,
                 previewSurface, orientation, sensorOrientation, videoCodec, latitude, longitude);
         this.dualCameraConfig = dualCameraConfig;
-        Log.d(TAG, "Dual camera mode enabled: " + dualCameraConfig);
+        FLog.d(TAG, "Dual camera mode enabled: " + dualCameraConfig);
     }
 
     /**
@@ -466,7 +467,7 @@ public class GLRecordingPipeline {
                 outputFd, maxFileSizeBytes, segmentNumber, segmentCallback,
                 previewSurface, orientation, sensorOrientation, videoCodec, latitude, longitude);
         this.dualCameraConfig = dualCameraConfig;
-        Log.d(TAG, "Dual camera mode enabled (SAF): " + dualCameraConfig);
+        FLog.d(TAG, "Dual camera mode enabled (SAF): " + dualCameraConfig);
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -502,7 +503,7 @@ public class GLRecordingPipeline {
     public void swapCameras() {
         if (glRenderer != null) {
             glRenderer.swapCameras();
-            Log.d(TAG, "Camera rendering swapped");
+            FLog.d(TAG, "Camera rendering swapped");
         }
     }
 
@@ -516,7 +517,7 @@ public class GLRecordingPipeline {
         this.dualCameraConfig = newConfig;
         if (glRenderer != null) {
             glRenderer.updatePipConfig(newConfig);
-            Log.d(TAG, "PiP config updated: " + newConfig);
+            FLog.d(TAG, "PiP config updated: " + newConfig);
         }
     }
 
@@ -529,18 +530,18 @@ public class GLRecordingPipeline {
     public void prepareSurfaces() {
         try {
             try {
-                com.fadcam.Log.d(TAG, "prepareSurfaces() called");
+                FLog.d(TAG, "prepareSurfaces() called");
             } catch (Throwable ignore) {
             }
             // Make sure any previous resources are fully released
             if (glRenderer != null) {
-                Log.d(TAG, "Releasing previous renderer before preparing new surfaces");
+                FLog.d(TAG, "Releasing previous renderer before preparing new surfaces");
                 try {
                     glRenderer.release();
                 } catch (Exception e) {
-                    Log.e(TAG, "Error releasing previous renderer", e);
+                    FLog.e(TAG, "Error releasing previous renderer", e);
                     try {
-                        com.fadcam.Log.e(TAG, "Error releasing previous renderer", e);
+                        FLog.e(TAG, "Error releasing previous renderer", e);
                     } catch (Throwable ignore) {
                     }
                 }
@@ -548,7 +549,7 @@ public class GLRecordingPipeline {
             }
 
             if (encoderInputSurface == null) {
-                // Log.d(TAG, "Setting up video encoder");
+                // FLog.d(TAG, "Setting up video encoder");
                 setupEncoder();
                 if (encoderInputSurface == null) {
                     throw new RuntimeException("Failed to create encoder input surface");
@@ -556,7 +557,7 @@ public class GLRecordingPipeline {
             }
 
             if (glRenderer == null) {
-                // Log.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
+                // FLog.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation,
                         videoWidth, videoHeight);
                 glRenderer.setUserOrientationSetting(orientation);
@@ -579,30 +580,30 @@ public class GLRecordingPipeline {
                 final Throwable[] initError = new Throwable[1];
                 handler.post(() -> {
                     try {
-                        Log.d(TAG, "Initializing renderer EGL context on GL thread");
+                        FLog.d(TAG, "Initializing renderer EGL context on GL thread");
                         glRenderer.initializeEGL();
                         // Request camera input surface now that GL is initialized
-                        Log.d(TAG, "Requesting camera input surface from renderer (GL thread)");
+                        FLog.d(TAG, "Requesting camera input surface from renderer (GL thread)");
                         Surface camSurf = glRenderer.getCameraInputSurface();
                         cameraInputSurface = camSurf;
 
                         // Initialize PiP if dual camera mode is enabled
                         if (dualCameraConfig != null) {
-                            Log.d(TAG, "Initializing PiP on GL thread for dual camera mode");
+                            FLog.d(TAG, "Initializing PiP on GL thread for dual camera mode");
                             glRenderer.initializePiP(dualCameraConfig);
                             secondaryCameraInputSurface = glRenderer.getSecondaryCameraInputSurface();
                             if (secondaryCameraInputSurface == null || !secondaryCameraInputSurface.isValid()) {
-                                Log.e(TAG, "Secondary camera input surface is invalid after PiP init");
+                                FLog.e(TAG, "Secondary camera input surface is invalid after PiP init");
                             } else {
-                                Log.d(TAG, "Secondary camera input surface obtained successfully");
+                                FLog.d(TAG, "Secondary camera input surface obtained successfully");
                             }
                         }
 
                         if (previewSurface != null && previewSurface.isValid()) {
-                            // Log.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
+                            // FLog.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
                             glRenderer.setPreviewSurface(previewSurface);
                         } else {
-                            Log.d(TAG, "No valid preview surface; optional preview warm-up");
+                            FLog.d(TAG, "No valid preview surface; optional preview warm-up");
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                                 try {
                                     android.util.DisplayMetrics metrics = context.getResources().getDisplayMetrics();
@@ -613,7 +614,7 @@ public class GLRecordingPipeline {
                                     Surface dummy = ir.getSurface();
                                     try {
                                         glRenderer.initializePreviewSurfaceOnly(dummy);
-                                        Log.d(TAG, "Dummy preview surface warmed up (GL thread)");
+                                        FLog.d(TAG, "Dummy preview surface warmed up (GL thread)");
                                     } finally {
                                         try {
                                             if (dummy != null)
@@ -626,7 +627,7 @@ public class GLRecordingPipeline {
                                         }
                                     }
                                 } catch (Exception warmEx) {
-                                    Log.w(TAG, "Preview warm-up failed; continuing without", warmEx);
+                                    FLog.w(TAG, "Preview warm-up failed; continuing without", warmEx);
                                 }
                             }
                         }
@@ -650,10 +651,10 @@ public class GLRecordingPipeline {
                 }
                 // Validate camera surface
                 if (cameraInputSurface == null || !cameraInputSurface.isValid()) {
-                    Log.e(TAG, "Camera input surface is invalid after GL init");
+                    FLog.e(TAG, "Camera input surface is invalid after GL init");
                     throw new RuntimeException("Camera input surface invalid");
                 }
-                Log.d(TAG, "Successfully obtained valid camera input surface");
+                FLog.d(TAG, "Successfully obtained valid camera input surface");
 
                 // Set up the frame listener to trigger rendering when new frames arrive
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
@@ -670,22 +671,22 @@ public class GLRecordingPipeline {
                     if (watermarkInfoProvider != null) {
                         String initial = watermarkInfoProvider.getWatermarkText();
                         glRenderer.setWatermarkText(initial != null ? initial : "");
-                        Log.d(TAG, "Applied initial watermark text during prepareSurfaces");
+                        FLog.d(TAG, "Applied initial watermark text during prepareSurfaces");
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to apply initial watermark", e);
+                    FLog.w(TAG, "Failed to apply initial watermark", e);
                 }
 
-                // Log.d(TAG, "GLWatermarkRenderer setup complete");
+                // FLog.d(TAG, "GLWatermarkRenderer setup complete");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error preparing surfaces", e);
+            FLog.e(TAG, "Error preparing surfaces", e);
             // Clean up any resources we may have created
             if (glRenderer != null) {
                 try {
                     glRenderer.release();
                 } catch (Exception ex) {
-                    Log.e(TAG, "Error releasing renderer during error cleanup", ex);
+                    FLog.e(TAG, "Error releasing renderer during error cleanup", ex);
                 }
                 glRenderer = null;
             }
@@ -699,20 +700,20 @@ public class GLRecordingPipeline {
     public void startRecording() {
         try {
             if (!isRecording) {
-                Log.d(TAG, "Starting recording pipeline");
+                FLog.d(TAG, "Starting recording pipeline");
                 try {
-                    com.fadcam.Log.d(TAG, "Starting recording pipeline");
+                    FLog.d(TAG, "Starting recording pipeline");
                 } catch (Throwable ignore) {
                 }
                 
                 // Reset timestamp tracking at recording start
                 recordingStartTimeNanos = -1;  // Will be initialized on first VIDEO frame
                 recordingStartSystemTimeNanos = System.nanoTime(); // Initialize for AUDIO thread reference NOW
-                Log.i(TAG, "[RECORDING_START] Audio/Video timing reference initialized: " + recordingStartSystemTimeNanos);
+                FLog.i(TAG, "[RECORDING_START] Audio/Video timing reference initialized: " + recordingStartSystemTimeNanos);
 
                 // Make sure we have a valid renderer and surfaces
                 if (glRenderer == null || encoderInputSurface == null) {
-                    Log.d(TAG, "Preparing surfaces before starting recording");
+                    FLog.d(TAG, "Preparing surfaces before starting recording");
                     prepareSurfaces();
                 }
 
@@ -747,7 +748,7 @@ public class GLRecordingPipeline {
                     for (int i = 0; i < 40 && audioTrackIndex == -1; i++) {
                         drainAudioEncoder();
                         if (audioTrackIndex != -1) {
-                            Log.d(TAG, "Audio track added after " + (i + 1) + " drain attempts");
+                            FLog.d(TAG, "Audio track added after " + (i + 1) + " drain attempts");
                             break;
                         }
                         try {
@@ -762,7 +763,7 @@ public class GLRecordingPipeline {
                     // The muxer will start when video format is ready and we'll continue
                     // to try adding audio in the drainAudioEncoder loop
                     if (audioTrackIndex == -1) {
-                        Log.w(TAG, "Audio track not yet ready after initialization - will continue trying in render loop");
+                        FLog.w(TAG, "Audio track not yet ready after initialization - will continue trying in render loop");
                         
                         // Add a delayed safety check: if muxer hasn't started after 5 seconds,
                         // start it without audio to prevent recording from hanging
@@ -771,15 +772,15 @@ public class GLRecordingPipeline {
                             public void run() {
                                 synchronized (GLRecordingPipeline.this) {
                                     if (!muxerStarted && videoTrackIndex != -1 && isRecording) {
-                                        Log.w(TAG, "SAFETY FALLBACK: Starting muxer without audio after 5 second timeout");
+                                        FLog.w(TAG, "SAFETY FALLBACK: Starting muxer without audio after 5 second timeout");
                                         try {
                                             if (mediaMuxer != null) {
                                                 mediaMuxer.start();
                                                 muxerStarted = true;
-                                                Log.d(TAG, "Muxer started via safety fallback (video-only mode)");
+                                                FLog.d(TAG, "Muxer started via safety fallback (video-only mode)");
                                             }
                                         } catch (Exception e) {
-                                            Log.e(TAG, "Failed to start muxer via safety fallback", e);
+                                            FLog.e(TAG, "Failed to start muxer via safety fallback", e);
                                         }
                                     }
                                 }
@@ -794,10 +795,10 @@ public class GLRecordingPipeline {
                 // Start the render loop (which will trigger video encoder format change)
                 startRenderLoop();
 
-                Log.d(TAG, "Recording pipeline started successfully");
+                FLog.d(TAG, "Recording pipeline started successfully");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start recording pipeline", e);
+            FLog.e(TAG, "Failed to start recording pipeline", e);
             stopRecording();
         }
     }
@@ -817,7 +818,7 @@ public class GLRecordingPipeline {
      * This ensures audio and video have the same duration.
      */
     private void emergencyDrainEncoders() {
-        Log.d(TAG, "Draining encoders until EOS (production-grade finalization)");
+        FLog.d(TAG, "Draining encoders until EOS (production-grade finalization)");
 
         videoEosReceived = false;
         audioEosReceived = !audioRecordingEnabled; // If no audio, mark as done
@@ -827,9 +828,9 @@ public class GLRecordingPipeline {
         if (videoEncoder != null) {
             try {
                 videoEncoder.signalEndOfInputStream();
-                Log.d(TAG, "Signaled EOS to video encoder input surface");
+                FLog.d(TAG, "Signaled EOS to video encoder input surface");
             } catch (Exception e) {
-                Log.e(TAG, "Error signaling video EOS", e);
+                FLog.e(TAG, "Error signaling video EOS", e);
                 videoEosReceived = true; // Mark as done to prevent infinite loop
             }
         } else {
@@ -848,15 +849,15 @@ public class GLRecordingPipeline {
                     Thread.sleep(1);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error draining video encoder", e);
+                FLog.e(TAG, "Error draining video encoder", e);
                 videoEosReceived = true;
             }
         }
         
         if (videoEosReceived) {
-            Log.d(TAG, "Video encoder EOS received - video fully drained");
+            FLog.d(TAG, "Video encoder EOS received - video fully drained");
         } else {
-            Log.w(TAG, "Video drain timeout - proceeding with audio stop");
+            FLog.w(TAG, "Video drain timeout - proceeding with audio stop");
         }
 
         // Step 3: NOW stop audio recording (after video is done)
@@ -870,10 +871,10 @@ public class GLRecordingPipeline {
                 if (audioThread != null) {
                     try {
                         audioThread.join(3000); // Wait up to 3s for audio thread
-                        Log.d(TAG, "Audio thread joined successfully");
+                        FLog.d(TAG, "Audio thread joined successfully");
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        Log.w(TAG, "Interrupted waiting for audio thread");
+                        FLog.w(TAG, "Interrupted waiting for audio thread");
                     }
                 }
                 
@@ -881,10 +882,10 @@ public class GLRecordingPipeline {
                 if (audioRecord != null
                         && audioRecord.getRecordingState() == android.media.AudioRecord.RECORDSTATE_RECORDING) {
                     audioRecord.stop();
-                    Log.d(TAG, "AudioRecord stopped");
+                    FLog.d(TAG, "AudioRecord stopped");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping audio input", e);
+                FLog.e(TAG, "Error stopping audio input", e);
             }
         }
 
@@ -897,18 +898,18 @@ public class GLRecordingPipeline {
                     Thread.sleep(1);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error draining audio encoder", e);
+                FLog.e(TAG, "Error draining audio encoder", e);
                 audioEosReceived = true;
             }
         }
 
         if (audioEosReceived) {
-            Log.d(TAG, "Audio encoder EOS received - audio fully drained");
+            FLog.d(TAG, "Audio encoder EOS received - audio fully drained");
         } else {
-            Log.w(TAG, "Audio drain timeout");
+            FLog.w(TAG, "Audio drain timeout");
         }
 
-        Log.d(TAG, "Encoder drain completed - videoEos=" + videoEosReceived + ", audioEos=" + audioEosReceived);
+        FLog.d(TAG, "Encoder drain completed - videoEos=" + videoEosReceived + ", audioEos=" + audioEosReceived);
     }
 
     /**
@@ -931,7 +932,7 @@ public class GLRecordingPipeline {
             } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 // Handle format change (should have happened during recording)
                 MediaFormat newFormat = videoEncoder.getOutputFormat();
-                Log.d(TAG, "Video format changed during drain: " + newFormat);
+                FLog.d(TAG, "Video format changed during drain: " + newFormat);
                 if (!muxerStarted && videoTrackIndex == -1) {
                     cachedVideoFormat = newFormat;
                     videoTrackIndex = mediaMuxer.addTrack(newFormat);
@@ -955,7 +956,7 @@ public class GLRecordingPipeline {
                             mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                             segmentBytesWritten += bufferInfo.size;
                         } catch (Exception e) {
-                            Log.e(TAG, "Error writing final video frame", e);
+                            FLog.e(TAG, "Error writing final video frame", e);
                         }
                     }
                 }
@@ -964,12 +965,12 @@ public class GLRecordingPipeline {
 
                 // Check for EOS flag
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d(TAG, "Video encoder EOS received - all frames drained");
+                    FLog.d(TAG, "Video encoder EOS received - all frames drained");
                     return true;
                 }
             } else {
                 // Unexpected return value
-                Log.w(TAG, "Unexpected dequeueOutputBuffer result: " + outputBufferIndex);
+                FLog.w(TAG, "Unexpected dequeueOutputBuffer result: " + outputBufferIndex);
                 return false;
             }
         }
@@ -996,7 +997,7 @@ public class GLRecordingPipeline {
                 return false; // No buffer available, need to try again
             } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 MediaFormat newFormat = audioEncoder.getOutputFormat();
-                Log.d(TAG, "Audio format changed during drain: " + newFormat);
+                FLog.d(TAG, "Audio format changed during drain: " + newFormat);
                 if (!muxerStarted && audioTrackIndex == -1) {
                     cachedAudioFormat = newFormat;
                     audioTrackIndex = mediaMuxer.addTrack(newFormat);
@@ -1021,11 +1022,11 @@ public class GLRecordingPipeline {
                             
                             audioSamplesWritten++;
                             lastAudioPts = bufferInfo.presentationTimeUs;
-                            Log.d(TAG, String.format("[AUDIO-FINAL] sample #%d, pts=%dus (%.2fs)",
+                            FLog.d(TAG, String.format("[AUDIO-FINAL] sample #%d, pts=%dus (%.2fs)",
                                 audioSamplesWritten, bufferInfo.presentationTimeUs, 
                                 bufferInfo.presentationTimeUs / 1000000.0));
                         } catch (Exception e) {
-                            Log.e(TAG, "Error writing final audio frame", e);
+                            FLog.e(TAG, "Error writing final audio frame", e);
                         }
                     }
                 }
@@ -1034,11 +1035,11 @@ public class GLRecordingPipeline {
 
                 // Check for EOS flag
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d(TAG, "Audio encoder EOS received - all frames drained");
+                    FLog.d(TAG, "Audio encoder EOS received - all frames drained");
                     return true;
                 }
             } else {
-                Log.w(TAG, "Unexpected audio dequeueOutputBuffer result: " + outputBufferIndex);
+                FLog.w(TAG, "Unexpected audio dequeueOutputBuffer result: " + outputBufferIndex);
                 return false;
             }
         }
@@ -1049,14 +1050,14 @@ public class GLRecordingPipeline {
      * Uses multiple fallback strategies if normal stop() fails.
      */
     private void emergencyFinalizeMuxer() {
-        Log.d(TAG, "Emergency finalizing muxer to ensure file playability");
+        FLog.d(TAG, "Emergency finalizing muxer to ensure file playability");
 
         boolean muxerStopped = false;
 
         // Strategy 1: Normal stop (preferred)
         try {
-            Log.d(TAG, "Attempting normal muxer stop");
-            Log.d(TAG, String.format("═══ FINAL RECORDING STATS ═══\n" +
+            FLog.d(TAG, "Attempting normal muxer stop");
+            FLog.d(TAG, String.format("═══ FINAL RECORDING STATS ═══\n" +
                 "  Video: %d samples, last pts=%.2fs\n" +
                 "  Audio: %d samples, last pts=%.2fs\n" +
                 "  Duration diff: %.2fs\n" +
@@ -1067,35 +1068,35 @@ public class GLRecordingPipeline {
             
             mediaMuxer.stop();
             muxerStopped = true;
-            Log.d(TAG, "Normal muxer stop successful");
+            FLog.d(TAG, "Normal muxer stop successful");
         } catch (Exception e) {
-            Log.w(TAG, "Normal muxer stop failed, trying emergency strategies", e);
+            FLog.w(TAG, "Normal muxer stop failed, trying emergency strategies", e);
         }
 
         // Strategy 2: Force stop with small delay (if normal failed)
         if (!muxerStopped) {
             try {
-                Log.d(TAG, "Attempting force muxer stop with delay");
+                FLog.d(TAG, "Attempting force muxer stop with delay");
                 Thread.sleep(50); // Small delay to let pending operations complete
                 mediaMuxer.stop();
                 muxerStopped = true;
-                Log.d(TAG, "Force muxer stop successful");
+                FLog.d(TAG, "Force muxer stop successful");
             } catch (Exception e) {
-                Log.w(TAG, "Force muxer stop failed, trying final strategy", e);
+                FLog.w(TAG, "Force muxer stop failed, trying final strategy", e);
             }
         }
 
         // Strategy 3: Release without stop (last resort to prevent app crash)
         if (!muxerStopped) {
-            Log.w(TAG, "All muxer stop strategies failed, releasing without stop (file may have issues)");
+            FLog.w(TAG, "All muxer stop strategies failed, releasing without stop (file may have issues)");
         }
 
         // Always release the muxer (even if stop failed)
         try {
             mediaMuxer.release();
-            Log.d(TAG, "Muxer released successfully");
+            FLog.d(TAG, "Muxer released successfully");
         } catch (Exception e) {
-            Log.e(TAG, "Error releasing muxer", e);
+            FLog.e(TAG, "Error releasing muxer", e);
         } finally {
             mediaMuxer = null;
             muxerStarted = false;
@@ -1103,7 +1104,7 @@ public class GLRecordingPipeline {
 
         // BULLETPROOF: If file exists but may be corrupted, log for user awareness
         if (!muxerStopped) {
-            Log.w(TAG, "WARNING: Video file may have playback issues due to muxer stop failure");
+            FLog.w(TAG, "WARNING: Video file may have playback issues due to muxer stop failure");
             // Note: With our progressive MP4 implementation, even failed stops often result
             // in playable files
         }
@@ -1124,9 +1125,9 @@ public class GLRecordingPipeline {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             try {
                 format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
-                Log.d(TAG, "Applied VBR bitrate mode for proper frame timing");
+                FLog.d(TAG, "Applied VBR bitrate mode for proper frame timing");
             } catch (Exception e) {
-                Log.w(TAG, "VBR bitrate mode not supported, using default", e);
+                FLog.w(TAG, "VBR bitrate mode not supported, using default", e);
             }
         }
 
@@ -1135,22 +1136,22 @@ public class GLRecordingPipeline {
         try {
             // This helps ensure the encoder produces constant framerate output
             format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-            // Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+            // FLog.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
         } catch (Exception e) {
-            // Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+            // FLog.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
         }
 
         // ESSENTIAL: Real-time priority for smooth recording (API 23+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             try {
                 format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Real-time priority
-                Log.d(TAG, "Applied real-time encoding priority");
+                FLog.d(TAG, "Applied real-time encoding priority");
             } catch (Exception e) {
-                Log.w(TAG, "Priority setting not supported", e);
+                FLog.w(TAG, "Priority setting not supported", e);
             }
         }
 
-        // Log.d(TAG, "Applied basic encoder configuration: " +
+        // FLog.d(TAG, "Applied basic encoder configuration: " +
         //     "bitrate=" + videoBitrate + ", framerate=" + videoFramerate + ", vbr=enabled, priority=realtime");
     }
 
@@ -1171,9 +1172,9 @@ public class GLRecordingPipeline {
         // ESSENTIAL: For constant framerate recording, especially on Samsung devices
         try {
             format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-            // Log.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
+            // FLog.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
         } catch (Exception e) {
-            // Log.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
+            // FLog.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
         }
 
         // Industry Standard: Enhanced encoder configuration for reliability
@@ -1187,14 +1188,14 @@ public class GLRecordingPipeline {
                     // H.264 Baseline Profile for maximum compatibility
                     format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
                     format.setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel31);
-                    Log.d(TAG, "Applied H.264 Baseline profile for compatibility");
+                    FLog.d(TAG, "Applied H.264 Baseline profile for compatibility");
                 } else if (mimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
                     // HEVC Main Profile
                     format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.HEVCProfileMain);
-                    Log.d(TAG, "Applied HEVC Main profile");
+                    FLog.d(TAG, "Applied HEVC Main profile");
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Profile/level settings not supported, using defaults", e);
+                FLog.w(TAG, "Profile/level settings not supported, using defaults", e);
             }
         }
 
@@ -1202,9 +1203,9 @@ public class GLRecordingPipeline {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             try {
                 format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
-                Log.d(TAG, "Applied VBR bitrate mode");
+                FLog.d(TAG, "Applied VBR bitrate mode");
             } catch (Exception e) {
-                Log.w(TAG, "VBR mode not supported, using default bitrate mode", e);
+                FLog.w(TAG, "VBR mode not supported, using default bitrate mode", e);
             }
         }
 
@@ -1212,13 +1213,13 @@ public class GLRecordingPipeline {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             try {
                 format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Real-time priority
-                Log.d(TAG, "Applied real-time encoding priority");
+                FLog.d(TAG, "Applied real-time encoding priority");
             } catch (Exception e) {
-                Log.w(TAG, "Priority setting not supported", e);
+                FLog.w(TAG, "Priority setting not supported", e);
             }
         }
 
-        // Log.d(TAG, "Applied industry-standard encoder configuration with user settings: " +
+        // FLog.d(TAG, "Applied industry-standard encoder configuration with user settings: " +
         //     "codec=" + videoCodec + ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate);
     }
 
@@ -1240,9 +1241,9 @@ public class GLRecordingPipeline {
         encoderWidth = needsSwap ? videoHeight : videoWidth;
         encoderHeight = needsSwap ? videoWidth : videoHeight;
 
-        Log.d("FAD-ENCODER", "Orientation setting: " + orientation);
-        Log.d("FAD-ENCODER", "Original resolution: " + originalWidth + "x" + originalHeight);
-        Log.d("FAD-ENCODER", "Final encoder resolution: " + encoderWidth + "x" + encoderHeight);
+        FLog.d("FAD-ENCODER", "Orientation setting: " + orientation);
+        FLog.d("FAD-ENCODER", "Original resolution: " + originalWidth + "x" + originalHeight);
+        FLog.d("FAD-ENCODER", "Final encoder resolution: " + encoderWidth + "x" + encoderHeight);
 
         // Industry Standard: Try encoder configurations with progressive fallbacks
         boolean encoderConfigured = false;
@@ -1251,7 +1252,7 @@ public class GLRecordingPipeline {
 
         // Strategy 1: Try user's preferred codec with minimal settings
         try {
-            // Log.d(TAG, "Attempting " + currentMimeType + " encoder with minimal settings");
+            // FLog.d(TAG, "Attempting " + currentMimeType + " encoder with minimal settings");
             MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
             configureBasicEncoder(format);
 
@@ -1259,9 +1260,9 @@ public class GLRecordingPipeline {
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             encoderInputSurface = videoEncoder.createInputSurface();
             encoderConfigured = true;
-            // Log.d(TAG, "Successfully configured " + currentMimeType + " encoder with basic settings");
+            // FLog.d(TAG, "Successfully configured " + currentMimeType + " encoder with basic settings");
         } catch (Exception e) {
-            Log.w(TAG, "Failed to configure " + currentMimeType + " with minimal settings: " + e.getMessage());
+            FLog.w(TAG, "Failed to configure " + currentMimeType + " with minimal settings: " + e.getMessage());
             if (videoEncoder != null) {
                 try {
                     videoEncoder.release();
@@ -1275,7 +1276,7 @@ public class GLRecordingPipeline {
         if (!encoderConfigured && currentMimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
             try {
                 currentMimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
-                Log.d(TAG, "Falling back to H.264 encoder");
+                FLog.d(TAG, "Falling back to H.264 encoder");
                 MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
                 configureBasicEncoder(format);
 
@@ -1283,9 +1284,9 @@ public class GLRecordingPipeline {
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
                 encoderInputSurface = videoEncoder.createInputSurface();
                 encoderConfigured = true;
-                // Log.d(TAG, "Successfully configured H.264 fallback encoder");
+                // FLog.d(TAG, "Successfully configured H.264 fallback encoder");
             } catch (Exception e) {
-                Log.e(TAG, "Failed to configure H.264 fallback encoder: " + e.getMessage());
+                FLog.e(TAG, "Failed to configure H.264 fallback encoder: " + e.getMessage());
                 if (videoEncoder != null) {
                     try {
                         videoEncoder.release();
@@ -1302,15 +1303,15 @@ public class GLRecordingPipeline {
 
         // Update the codec reference to reflect what was actually used
         if (!currentMimeType.equals(originalMimeType)) {
-            Log.i(TAG, "Codec changed from " + originalMimeType + " to " + currentMimeType + " due to compatibility");
+            FLog.i(TAG, "Codec changed from " + originalMimeType + " to " + currentMimeType + " due to compatibility");
         }
 
         // DEBUG: Log MediaCodec surface dimensions
         try {
-            Log.d("DEBUG_RECORDING", "MediaCodec configured for: " + originalWidth + "x" + originalHeight);
-            Log.d("MEDIACODEC_VERIFY", "Encoder dimensions: " + encoderWidth + "x" + encoderHeight);
+            FLog.d("DEBUG_RECORDING", "MediaCodec configured for: " + originalWidth + "x" + originalHeight);
+            FLog.d("MEDIACODEC_VERIFY", "Encoder dimensions: " + encoderWidth + "x" + encoderHeight);
         } catch (Exception e) {
-            Log.e(TAG, "Error logging MediaCodec dimensions", e);
+            FLog.e(TAG, "Error logging MediaCodec dimensions", e);
         }
 
         videoEncoder.start();
@@ -1331,18 +1332,18 @@ public class GLRecordingPipeline {
         // We must use Media3's FragmentedMp4Muxer
         if (currentOutputFd != null) {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
-            Log.d(TAG, "Created FragmentedMp4Muxer with file descriptor (fMP4 for streaming)");
+            FLog.d(TAG, "Created FragmentedMp4Muxer with file descriptor (fMP4 for streaming)");
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
-            // Log.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (fMP4 for streaming)");
+            // FLog.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (fMP4 for streaming)");
         }
 
         // Set location metadata if available
         if (locationLatitude != null && locationLongitude != null) {
             mediaMuxer.setLocation(locationLatitude.floatValue(), locationLongitude.floatValue());
-            Log.d(TAG, "Location metadata set: " + locationLatitude + ", " + locationLongitude);
+            FLog.d(TAG, "Location metadata set: " + locationLatitude + ", " + locationLongitude);
         } else {
-            Log.d(TAG, "No location metadata available");
+            FLog.d(TAG, "No location metadata available");
         }
 
         // Reset track indices
@@ -1360,7 +1361,7 @@ public class GLRecordingPipeline {
         // DO NOT start muxer here - wait for encoder formats to be available
         // This prevents the format change issue that causes muxer restarts
     muxerStarted = false;
-    Log.d(TAG, "FragmentedMp4Muxer created but not started - waiting for encoder formats");
+    FLog.d(TAG, "FragmentedMp4Muxer created but not started - waiting for encoder formats");
     // Reset per-segment state
     segmentBytesWritten = 0L;
     pendingRollover = false;
@@ -1378,7 +1379,7 @@ public class GLRecordingPipeline {
         setupMuxer();
 
         // Log encoder and muxer status
-        Log.d(TAG, "Encoder setup complete. Encoder: " + (videoEncoder != null ? "valid" : "null") +
+        FLog.d(TAG, "Encoder setup complete. Encoder: " + (videoEncoder != null ? "valid" : "null") +
                 ", EncoderSurface: " + (encoderInputSurface != null ? "valid" : "null") +
                 ", Muxer: " + (mediaMuxer != null ? "valid" : "null") +
                 ", MuxerStarted: " + muxerStarted);
@@ -1408,7 +1409,7 @@ public class GLRecordingPipeline {
                         try {
                             action.run();
                         } catch (Throwable t) {
-                            android.util.Log.w(TAG, "Renderer action failed", t);
+                            FLog.w(TAG, "Renderer action failed", t);
                         }
                     }
                     if (glRenderer != null) {
@@ -1432,7 +1433,7 @@ public class GLRecordingPipeline {
                     try {
                         action.run();
                     } catch (Throwable t) {
-                        android.util.Log.w(TAG, "Renderer action failed", t);
+                        FLog.w(TAG, "Renderer action failed", t);
                     }
                 }
 
@@ -1443,7 +1444,7 @@ public class GLRecordingPipeline {
 
                 // Check if we need to split the segment due to size
                 if (shouldSplitSegment()) {
-                    Log.d(TAG, "Size limit reached, rolling over segment");
+                    FLog.d(TAG, "Size limit reached, rolling over segment");
                     rolloverSegment();
                 }
 
@@ -1451,7 +1452,7 @@ public class GLRecordingPipeline {
                 // runnable).
                 // Avoid self-posting to reduce CPU load and sustain high FPS.
             } catch (Exception e) {
-                Log.e(TAG, "Error in render loop", e);
+                FLog.e(TAG, "Error in render loop", e);
             } finally {
                 renderRunnableQueued.set(false);
             }
@@ -1460,11 +1461,11 @@ public class GLRecordingPipeline {
 
     private void drainEncoder() {
         if (videoEncoder == null) {
-            Log.d(TAG, "Encoder is null, skipping drainEncoder");
+            FLog.d(TAG, "Encoder is null, skipping drainEncoder");
             return;
         }
         if (mediaMuxer == null) {
-            Log.d(TAG, "Muxer is null, skipping drainEncoder");
+            FLog.d(TAG, "Muxer is null, skipping drainEncoder");
             return;
         }
 
@@ -1476,17 +1477,17 @@ public class GLRecordingPipeline {
                     break;
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat newFormat = videoEncoder.getOutputFormat();
-                    Log.d(TAG, "Encoder output format changed: " + newFormat);
+                    FLog.d(TAG, "Encoder output format changed: " + newFormat);
                     
                     // Inject frame rate and bitrate into output format for proper metadata
                     // The encoder's output format often doesn't include these values
                     if (!newFormat.containsKey(MediaFormat.KEY_FRAME_RATE)) {
                         newFormat.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
-                        Log.d(TAG, "Injected frame rate: " + videoFramerate);
+                        FLog.d(TAG, "Injected frame rate: " + videoFramerate);
                     }
                     if (!newFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
                         newFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
-                        Log.d(TAG, "Injected bitrate: " + videoBitrate);
+                        FLog.d(TAG, "Injected bitrate: " + videoBitrate);
                     }
 
                     // Cache for future segment rollovers
@@ -1494,20 +1495,20 @@ public class GLRecordingPipeline {
 
                     if (muxerStarted) {
                         // This should NOT happen if we wait for format before starting muxer
-                        Log.e(TAG, "CRITICAL: Format changed after muxer started - this indicates a timing issue!");
+                        FLog.e(TAG, "CRITICAL: Format changed after muxer started - this indicates a timing issue!");
                         try {
-                            com.fadcam.Log.e(TAG, "CRITICAL: Format changed after muxer started - timing issue");
+                            FLog.e(TAG, "CRITICAL: Format changed after muxer started - timing issue");
                         } catch (Throwable ignore) {
                         }
                         // Don't restart muxer - this causes duration issues
                         // Instead, log the error and continue with existing muxer
-                        Log.w(TAG, "Continuing with existing muxer to prevent duration corruption");
+                        FLog.w(TAG, "Continuing with existing muxer to prevent duration corruption");
                     } else {
                         // Normal case - add video track first
                         videoTrackIndex = mediaMuxer.addTrack(newFormat);
-                        Log.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
+                        FLog.d(TAG, "Added video track with index " + videoTrackIndex + " to muxer");
                         try {
-                            com.fadcam.Log.d(TAG,
+                            FLog.d(TAG,
                                     "Video track added: index=" + videoTrackIndex + ", fmt=" + newFormat.toString());
                         } catch (Throwable ignore) {
                         }
@@ -1516,29 +1517,29 @@ public class GLRecordingPipeline {
                         if (!audioRecordingEnabled) {
                             mediaMuxer.start();
                             muxerStarted = true;
-                            Log.d(TAG, "Started muxer for video-only recording");
+                            FLog.d(TAG, "Started muxer for video-only recording");
                             try {
-                                com.fadcam.Log.d(TAG, "Muxer started (video-only)");
+                                FLog.d(TAG, "Muxer started (video-only)");
                             } catch (Throwable ignore) {
                             }
                         } else {
                             // Audio is enabled - check if audio track is already added
-                            Log.d(TAG, "Audio recording enabled, checking audio track status. AudioTrackIndex: " + audioTrackIndex);
+                            FLog.d(TAG, "Audio recording enabled, checking audio track status. AudioTrackIndex: " + audioTrackIndex);
                             if (audioTrackIndex != -1) {
                                 // Both tracks are ready, start muxer
                                 mediaMuxer.start();
                                 muxerStarted = true;
-                                Log.d(TAG, "Started muxer with both video and audio tracks");
+                                FLog.d(TAG, "Started muxer with both video and audio tracks");
                                 try {
-                                    com.fadcam.Log.d(TAG, "Muxer started (audio+video)");
+                                    FLog.d(TAG, "Muxer started (audio+video)");
                                 } catch (Throwable ignore) {
                                 }
                             } else {
                                 // Wait for audio track to be added
-                                Log.d(TAG, "Video track added, waiting for audio track before starting muxer");
-                                Log.d(TAG, "DEBUG: audioRecordingEnabled=" + audioRecordingEnabled + ", audioEncoder=" + (audioEncoder != null) + ", audioTrackIndex=" + audioTrackIndex);
+                                FLog.d(TAG, "Video track added, waiting for audio track before starting muxer");
+                                FLog.d(TAG, "DEBUG: audioRecordingEnabled=" + audioRecordingEnabled + ", audioEncoder=" + (audioEncoder != null) + ", audioTrackIndex=" + audioTrackIndex);
                                 try {
-                                    com.fadcam.Log.d(TAG, "Waiting for audio track before starting muxer");
+                                    FLog.d(TAG, "Waiting for audio track before starting muxer");
                                 } catch (Throwable ignore) {
                                 }
                             }
@@ -1547,7 +1548,7 @@ public class GLRecordingPipeline {
                 } else if (outputBufferIndex >= 0) {
                     ByteBuffer encodedData = videoEncoder.getOutputBuffer(outputBufferIndex);
                     if (encodedData == null) {
-                        Log.e(TAG, "encoderOutputBuffer " + outputBufferIndex + " was null");
+                        FLog.e(TAG, "encoderOutputBuffer " + outputBufferIndex + " was null");
                         videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
                         continue;
                     }
@@ -1567,10 +1568,10 @@ public class GLRecordingPipeline {
                                 android.os.Bundle params = new android.os.Bundle();
                                 params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
                                 videoEncoder.setParameters(params);
-                                Log.d(TAG, "Requested sync frame pre-rollover at ~95% threshold");
+                                FLog.d(TAG, "Requested sync frame pre-rollover at ~95% threshold");
                             }
                         } catch (Exception ex) {
-                            Log.w(TAG, "Failed requesting sync frame", ex);
+                            FLog.w(TAG, "Failed requesting sync frame", ex);
                         }
                         pendingRollover = true;
                         awaitingKeyframeForRollover = true;
@@ -1579,7 +1580,7 @@ public class GLRecordingPipeline {
                     if (bufferInfo.size > 0 && muxerStarted) {
                         // Ensure we have valid data in the buffer
                         if (encodedData.remaining() < bufferInfo.size) {
-                            Log.w(TAG, "Buffer size mismatch: remaining=" + encodedData.remaining() +
+                            FLog.w(TAG, "Buffer size mismatch: remaining=" + encodedData.remaining() +
                                     ", bufferInfo.size=" + bufferInfo.size +
                                     " - adjusting size to prevent error");
                             bufferInfo.size = encodedData.remaining();
@@ -1599,29 +1600,29 @@ public class GLRecordingPipeline {
                                 lastVideoPts = bufferInfo.presentationTimeUs;
                                 // Log every frame for debugging (can reduce frequency later)
                                 if (videoSamplesWritten % 30 == 0) {
-                                    Log.i(TAG, String.format("[VIDEO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db, keyframe=%s",
+                                    FLog.i(TAG, String.format("[VIDEO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db, keyframe=%s",
                                         videoSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0, 
                                         bufferInfo.presentationTimeUs, bufferInfo.size, isKeyframe));
                                 }
                                 
                                 segmentBytesWritten += bufferInfo.size;
                                 if (!rolloverRequestedByDrain && awaitingKeyframeForRollover && isKeyframe && maxFileSizeBytes > 0 && segmentBytesWritten >= maxFileSizeBytes) {
-                                    Log.i(TAG, "Keyframe boundary reached with size >= limit (" + segmentBytesWritten + "); scheduling rollover");
+                                    FLog.i(TAG, "Keyframe boundary reached with size >= limit (" + segmentBytesWritten + "); scheduling rollover");
                                     awaitingKeyframeForRollover = false;
                                     pendingRollover = false;
                                     rolloverRequestedByDrain = true; // Will execute after draining
                                 }
                             } catch (Exception e) {
-                                Log.e(TAG, "Error writing video frame to muxer", e);
+                                FLog.e(TAG, "Error writing video frame to muxer", e);
                                 try {
-                                    com.fadcam.Log.e(TAG, "Error writing video frame to muxer", e);
+                                    FLog.e(TAG, "Error writing video frame to muxer", e);
                                 } catch (Throwable ignore) {
                                 }
                                 // BULLETPROOF: Continue processing but mark potential corruption
                                 if (e.getMessage() != null && e.getMessage().contains("muxer")) {
-                                    Log.w(TAG, "Muxer error detected - file may need emergency finalization");
+                                    FLog.w(TAG, "Muxer error detected - file may need emergency finalization");
                                     try {
-                                        com.fadcam.Log.w(TAG,
+                                        FLog.w(TAG,
                                                 "Muxer error detected - will attempt emergency finalize if needed");
                                     } catch (Throwable ignore) {
                                     }
@@ -1629,16 +1630,16 @@ public class GLRecordingPipeline {
                             }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
-                        Log.d(TAG, "Dropping encoded frame because muxer isn't started yet");
+                        FLog.d(TAG, "Dropping encoded frame because muxer isn't started yet");
                         try {
-                            com.fadcam.Log.w(TAG, "Dropping encoded frame (muxer not started yet)");
+                            FLog.w(TAG, "Dropping encoded frame (muxer not started yet)");
                         } catch (Throwable ignore) {
                         }
                     }
 
                     videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        Log.d(TAG, "End of stream reached in video encoder");
+                        FLog.d(TAG, "End of stream reached in video encoder");
                         break;
                     }
                 }
@@ -1653,11 +1654,11 @@ public class GLRecordingPipeline {
                 try {
                     rolloverSegment();
                 } catch (Exception ex) {
-                    Log.e(TAG, "Deferred rollover failed", ex);
+                    FLog.e(TAG, "Deferred rollover failed", ex);
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error draining encoder", e);
+            FLog.e(TAG, "Error draining encoder", e);
         }
     }
 
@@ -1668,7 +1669,7 @@ public class GLRecordingPipeline {
 
         if (segmentBytesWritten >= maxFileSizeBytes) {
             // Force sync-frame rollover if we somehow exceeded without preemption
-            Log.i(TAG, "Segment bytes exceeded limit before keyframe; requesting sync frame now");
+            FLog.i(TAG, "Segment bytes exceeded limit before keyframe; requesting sync frame now");
             try {
                 if (android.os.Build.VERSION.SDK_INT >= 19) {
                     android.os.Bundle params = new android.os.Bundle();
@@ -1676,7 +1677,7 @@ public class GLRecordingPipeline {
                     videoEncoder.setParameters(params);
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Failed to request sync frame in force path", e);
+                FLog.w(TAG, "Failed to request sync frame in force path", e);
             }
             pendingRollover = true;
             awaitingKeyframeForRollover = true;
@@ -1687,10 +1688,10 @@ public class GLRecordingPipeline {
 
     private void rolloverSegment() {
         try {
-            Log.i(TAG, "Auto-splitting: segment size limit reached, rolling over to next segment");
-            Log.d(TAG, "Current segment number: " + segmentNumber + ", rolling over to " + (segmentNumber + 1));
+            FLog.i(TAG, "Auto-splitting: segment size limit reached, rolling over to next segment");
+            FLog.d(TAG, "Current segment number: " + segmentNumber + ", rolling over to " + (segmentNumber + 1));
             if (rolloverInProgress) {
-                Log.w(TAG, "Rollover already in progress; skipping");
+                FLog.w(TAG, "Rollover already in progress; skipping");
                 return;
             }
             rolloverInProgress = true;
@@ -1699,19 +1700,19 @@ public class GLRecordingPipeline {
             // This is done first to ensure we have a valid output before stopping the
             // current muxer
             segmentNumber++;
-            Log.d(TAG, "Increment segment number to: " + segmentNumber);
+            FLog.d(TAG, "Increment segment number to: " + segmentNumber);
 
             if (segmentCallback != null) {
-                Log.d(TAG, "Calling segment callback for next segment");
+                FLog.d(TAG, "Calling segment callback for next segment");
                 segmentCallback.onSegmentRollover(segmentNumber);
             } else {
-                Log.e(TAG, "Segment callback is null, cannot continue rollover");
+                FLog.e(TAG, "Segment callback is null, cannot continue rollover");
                 throw new IllegalStateException("Segment callback is null");
             }
 
             // Check if callback set the new output
             if (currentOutputFilePath == null && currentOutputFd == null) {
-                Log.e(TAG, "Segment callback did not set new output path or descriptor");
+                FLog.e(TAG, "Segment callback did not set new output path or descriptor");
                 throw new IllegalStateException("No output path or descriptor set after callback");
             }
 
@@ -1719,13 +1720,13 @@ public class GLRecordingPipeline {
             if (mediaMuxer != null) {
                 try {
                     if (muxerStarted) {
-                        Log.d(TAG, "Stopping current muxer");
+                        FLog.d(TAG, "Stopping current muxer");
                         mediaMuxer.stop();
                     }
-                    Log.d(TAG, "Releasing current muxer");
+                    FLog.d(TAG, "Releasing current muxer");
                     mediaMuxer.release();
                 } catch (Exception e) {
-                    Log.e(TAG, "Error releasing muxer during rollover", e);
+                    FLog.e(TAG, "Error releasing muxer during rollover", e);
                 }
                 mediaMuxer = null;
                 muxerStarted = false;
@@ -1742,26 +1743,26 @@ public class GLRecordingPipeline {
                 if (cachedVideoFormat != null) {
                     try {
                         videoTrackIndex = mediaMuxer.addTrack(cachedVideoFormat);
-                        Log.d(TAG, "Added cached video track to new muxer. index=" + videoTrackIndex);
+                        FLog.d(TAG, "Added cached video track to new muxer. index=" + videoTrackIndex);
                     } catch (Exception e) {
-                        Log.e(TAG, "Failed adding cached video track to new muxer", e);
+                        FLog.e(TAG, "Failed adding cached video track to new muxer", e);
                         throw e;
                     }
                 } else {
-                    Log.w(TAG, "Video format not cached; new segment will wait for format change (unlikely)");
+                    FLog.w(TAG, "Video format not cached; new segment will wait for format change (unlikely)");
                 }
 
                 if (audioRecordingEnabled) {
                     if (cachedAudioFormat != null) {
                         try {
                             audioTrackIndex = mediaMuxer.addTrack(cachedAudioFormat);
-                            Log.d(TAG, "Added cached audio track to new muxer. index=" + audioTrackIndex);
+                            FLog.d(TAG, "Added cached audio track to new muxer. index=" + audioTrackIndex);
                         } catch (Exception e) {
-                            Log.e(TAG, "Failed adding cached audio track to new muxer", e);
+                            FLog.e(TAG, "Failed adding cached audio track to new muxer", e);
                             // Continue without audio for this segment
                         }
                     } else {
-                        Log.w(TAG, "Audio format not cached; audio may be missing in new segment");
+                        FLog.w(TAG, "Audio format not cached; audio may be missing in new segment");
                     }
                 }
 
@@ -1770,15 +1771,15 @@ public class GLRecordingPipeline {
                     if (videoTrackIndex != -1 && !muxerStarted) {
                         mediaMuxer.start();
                         muxerStarted = true;
-                        Log.d(TAG, "Started new muxer (video-only) for segment " + segmentNumber);
+                        FLog.d(TAG, "Started new muxer (video-only) for segment " + segmentNumber);
                     }
                 } else {
                     if (videoTrackIndex != -1 && audioTrackIndex != -1 && !muxerStarted) {
                         mediaMuxer.start();
                         muxerStarted = true;
-                        Log.d(TAG, "Started new muxer (audio+video) for segment " + segmentNumber);
+                        FLog.d(TAG, "Started new muxer (audio+video) for segment " + segmentNumber);
                     } else {
-                        Log.d(TAG, "Deferred starting new muxer: videoTrackIndex=" + videoTrackIndex +
+                        FLog.d(TAG, "Deferred starting new muxer: videoTrackIndex=" + videoTrackIndex +
                                 ", audioTrackIndex=" + audioTrackIndex + ", muxerStarted=" + muxerStarted);
                     }
                 }
@@ -1786,19 +1787,19 @@ public class GLRecordingPipeline {
                 // Force a frame render to ensure the encoder has valid data for the new segment
                 if (glRenderer != null) {
                     glRenderer.renderFrame();
-                    Log.d(TAG, "Forced a frame render for the new segment");
+                    FLog.d(TAG, "Forced a frame render for the new segment");
                 }
 
-                Log.i(TAG, "Started new segment: " + segmentNumber +
+                FLog.i(TAG, "Started new segment: " + segmentNumber +
                         (currentOutputFilePath != null ? " at path: " + currentOutputFilePath
                                 : " with file descriptor"));
                 rolloverInProgress = false;
             } catch (Exception e) {
-                Log.e(TAG, "Error setting up muxer for new segment", e);
+                FLog.e(TAG, "Error setting up muxer for new segment", e);
                 throw e; // Re-throw to be caught by outer try-catch
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error during segment rollover", e);
+            FLog.e(TAG, "Error during segment rollover", e);
             stopRecording();
             rolloverInProgress = false;
         }
@@ -1815,13 +1816,13 @@ public class GLRecordingPipeline {
      * 4. THEN release all resources
      */
     public void stopRecording() {
-        Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+        FLog.d(TAG, "stopRecording: Stopping recording and releasing resources");
         try {
-            com.fadcam.Log.d(TAG, "stopRecording: Stopping recording and releasing resources");
+            FLog.d(TAG, "stopRecording: Stopping recording and releasing resources");
         } catch (Throwable ignore) {
         }
         if (isStopped || released) {
-            Log.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
+            FLog.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
             return;
         }
         boolean wasPreviewOnly = previewOnlyRendering && !isRecording;
@@ -1842,7 +1843,7 @@ public class GLRecordingPipeline {
                     try {
                         glRenderer.releasePreviewEGL();
                     } catch (Throwable t) {
-                        android.util.Log.w(TAG, "releasePreviewEGL on GL thread failed", t);
+                        FLog.w(TAG, "releasePreviewEGL on GL thread failed", t);
                     } finally {
                         latch.countDown();
                     }
@@ -1859,16 +1860,16 @@ public class GLRecordingPipeline {
             watermarkUpdateHandler.removeCallbacksAndMessages(null);
             updateWatermarkRunnable = null;
         } catch (Exception e) {
-            Log.w(TAG, "Error stopping watermark updater", e);
+            FLog.w(TAG, "Error stopping watermark updater", e);
             try {
-                com.fadcam.Log.w(TAG, "Error stopping watermark updater: " + e.getMessage());
+                FLog.w(TAG, "Error stopping watermark updater: " + e.getMessage());
             } catch (Throwable ignore) {
             }
         }
 
         if (wasPreviewOnly) {
             quickReleaseForPreviewOnly();
-            Log.d(TAG, "GLRecordingPipeline preview-only stopped and released.");
+            FLog.d(TAG, "GLRecordingPipeline preview-only stopped and released.");
             // Reset flags so a new preview-only/recording session can start cleanly.
             isStopped = false;
             released = false;
@@ -1892,7 +1893,7 @@ public class GLRecordingPipeline {
                 renderThread.quitSafely();
                 renderThread.join(300); // Wait for render thread to exit
             } catch (InterruptedException e) {
-                Log.w(TAG, "Interrupted while waiting for render thread to exit", e);
+                FLog.w(TAG, "Interrupted while waiting for render thread to exit", e);
                 Thread.currentThread().interrupt();
             }
             renderThread = null;
@@ -1901,16 +1902,16 @@ public class GLRecordingPipeline {
         // Now stop and release the video encoder
         if (videoEncoder != null) {
             try {
-                Log.d(TAG, "Stopping video encoder");
+                FLog.d(TAG, "Stopping video encoder");
                 videoEncoder.stop();
                 videoEncoder.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping video encoder", e);
+                FLog.e(TAG, "Error stopping video encoder", e);
                 // BULLETPROOF: Force release even if stop() fails
                 try {
                     videoEncoder.release();
                 } catch (Exception releaseEx) {
-                    Log.e(TAG, "Error force-releasing video encoder", releaseEx);
+                    FLog.e(TAG, "Error force-releasing video encoder", releaseEx);
                 }
             } finally {
                 videoEncoder = null;
@@ -1927,7 +1928,7 @@ public class GLRecordingPipeline {
             try {
                 encoderInputSurface.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing encoder input surface", e);
+                FLog.e(TAG, "Error releasing encoder input surface", e);
             } finally {
                 encoderInputSurface = null;
             }
@@ -1936,10 +1937,10 @@ public class GLRecordingPipeline {
         // Release GL renderer last to ensure proper cleanup of OpenGL resources
         if (glRenderer != null) {
             try {
-                Log.d(TAG, "Releasing GL renderer");
+                FLog.d(TAG, "Releasing GL renderer");
                 glRenderer.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing renderer", e);
+                FLog.e(TAG, "Error releasing renderer", e);
             } finally {
                 glRenderer = null;
             }
@@ -1956,7 +1957,7 @@ public class GLRecordingPipeline {
                 audioEncoder.stop();
                 audioEncoder.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping audio encoder", e);
+                FLog.e(TAG, "Error stopping audio encoder", e);
             } finally {
                 audioEncoder = null;
             }
@@ -1981,17 +1982,17 @@ public class GLRecordingPipeline {
                 // Restore original audio mode and speakerphone state
                 if (originalAudioMode != -1) {
                     audioManager.setMode(originalAudioMode);
-                    Log.i(TAG, "AudioManager mode restored to: " + originalAudioMode);
+                    FLog.i(TAG, "AudioManager mode restored to: " + originalAudioMode);
                 }
                 audioManager.setSpeakerphoneOn(originalSpeakerphoneOn);
-                Log.i(TAG, "Speakerphone restored to: " + originalSpeakerphoneOn);
+                FLog.i(TAG, "Speakerphone restored to: " + originalSpeakerphoneOn);
                 
                 // Release audio focus
                 if (audioFocusListener != null) {
                     audioManager.abandonAudioFocus(audioFocusListener);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing audio resources", e);
+                FLog.e(TAG, "Error releasing audio resources", e);
             }
             audioManager = null;
             audioFocusListener = null;
@@ -2015,7 +2016,7 @@ public class GLRecordingPipeline {
         videoEosReceived = false;
         audioEosReceived = false;
 
-        Log.d(TAG, "GLRecordingPipeline stopped and released.");
+        FLog.d(TAG, "GLRecordingPipeline stopped and released.");
         // Reset flags so a new recording can be started cleanly
         isStopped = false;
         released = false;
@@ -2111,7 +2112,7 @@ public class GLRecordingPipeline {
                 try {
                     glRenderer.updateWatermarkTextOnGlThread(text != null ? text : "");
                 } catch (Exception e) {
-                    Log.w(TAG, "updateWatermark: GL thread update failed", e);
+                    FLog.w(TAG, "updateWatermark: GL thread update failed", e);
                 }
             });
         }
@@ -2131,11 +2132,11 @@ public class GLRecordingPipeline {
      */
     public void pauseRecording() {
         if (!isRecording || isStopped) {
-            Log.w(TAG, "Cannot pause recording - recording is not active");
+            FLog.w(TAG, "Cannot pause recording - recording is not active");
             return;
         }
 
-        Log.i(TAG, "========== PAUSE RECORDING ===========");
+        FLog.i(TAG, "========== PAUSE RECORDING ===========");
 
         synchronized (timestampLock) {
             // Record pause start time for duration tracking
@@ -2146,12 +2147,12 @@ public class GLRecordingPipeline {
             lastVideoPtsBeforePauseUs = lastVideoPts;
             lastAudioPtsBeforePauseUs = lastAudioPts;
             
-            Log.i(TAG, "[PAUSE] Pause started at " + (pauseStartTimeNanos / 1_000_000L) + "ms");
-            Log.i(TAG, "[PAUSE] Last video PTS: " + lastVideoPtsBeforePauseUs + "us (" + (lastVideoPtsBeforePauseUs / 1000.0) + "ms)");
-            Log.i(TAG, "[PAUSE] Last audio PTS: " + lastAudioPtsBeforePauseUs + "us (" + (lastAudioPtsBeforePauseUs / 1000.0) + "ms)");
-            Log.i(TAG, "[PAUSE] Total pause duration so far: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
-            Log.i(TAG, "[PAUSE] Video samples written: " + videoSamplesWritten);
-            Log.i(TAG, "[PAUSE] Audio samples written: " + audioSamplesWritten);
+            FLog.i(TAG, "[PAUSE] Pause started at " + (pauseStartTimeNanos / 1_000_000L) + "ms");
+            FLog.i(TAG, "[PAUSE] Last video PTS: " + lastVideoPtsBeforePauseUs + "us (" + (lastVideoPtsBeforePauseUs / 1000.0) + "ms)");
+            FLog.i(TAG, "[PAUSE] Last audio PTS: " + lastAudioPtsBeforePauseUs + "us (" + (lastAudioPtsBeforePauseUs / 1000.0) + "ms)");
+            FLog.i(TAG, "[PAUSE] Total pause duration so far: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
+            FLog.i(TAG, "[PAUSE] Video samples written: " + videoSamplesWritten);
+            FLog.i(TAG, "[PAUSE] Audio samples written: " + audioSamplesWritten);
         }
 
         // Set recording flag to false to stop encoding new frames
@@ -2165,14 +2166,14 @@ public class GLRecordingPipeline {
             try {
                 if (audioRecord.getRecordingState() == android.media.AudioRecord.RECORDSTATE_RECORDING) {
                     audioRecord.stop();
-                    Log.d(TAG, "Audio recording paused");
+                    FLog.d(TAG, "Audio recording paused");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error pausing audio recording", e);
+                FLog.e(TAG, "Error pausing audio recording", e);
             }
         }
 
-        Log.d(TAG, "Recording paused successfully");
+        FLog.d(TAG, "Recording paused successfully");
     }
     
     /**
@@ -2182,10 +2183,10 @@ public class GLRecordingPipeline {
     public void prepareCameraSwitch() {
         synchronized (timestampLock) {
             isCameraSwitchPause = true;
-            Log.i(TAG, "========== PREPARE CAMERA SWITCH ===========");
-            Log.i(TAG, "[CAMERA_SWITCH] Prepared - timestamps will be adjusted on resume");
-            Log.i(TAG, "[CAMERA_SWITCH] Current video PTS: " + lastVideoPts + "us");
-            Log.i(TAG, "[CAMERA_SWITCH] Current audio PTS: " + lastAudioPts + "us");
+            FLog.i(TAG, "========== PREPARE CAMERA SWITCH ===========");
+            FLog.i(TAG, "[CAMERA_SWITCH] Prepared - timestamps will be adjusted on resume");
+            FLog.i(TAG, "[CAMERA_SWITCH] Current video PTS: " + lastVideoPts + "us");
+            FLog.i(TAG, "[CAMERA_SWITCH] Current audio PTS: " + lastAudioPts + "us");
         }
     }
 
@@ -2194,13 +2195,13 @@ public class GLRecordingPipeline {
      */
     public void resumeRecording() {
         if (isRecording || isStopped) {
-            Log.w(TAG, "Cannot resume recording - recording is either already active or has been stopped");
+            FLog.w(TAG, "Cannot resume recording - recording is either already active or has been stopped");
             return;
         }
 
-        Log.d(TAG, "Resuming recording");
+        FLog.d(TAG, "Resuming recording");
 
-        Log.i(TAG, "========== RESUME RECORDING ===========");
+        FLog.i(TAG, "========== RESUME RECORDING ===========");
         
         synchronized (timestampLock) {
             // Calculate pause duration — getSynchronizedVideoTimestamp() and the audio thread
@@ -2211,9 +2212,9 @@ public class GLRecordingPipeline {
             if (pauseStartTimeNanos > 0) {
                 long pauseDuration = System.nanoTime() - pauseStartTimeNanos;
                 totalPauseDurationNanos += pauseDuration;
-                Log.i(TAG, "[RESUME] This pause duration: " + (pauseDuration / 1_000_000L) + "ms");
-                Log.i(TAG, "[RESUME] Total pause duration: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
-                Log.i(TAG, "[RESUME] PTS are self-correcting — no extra write-time offset needed");
+                FLog.i(TAG, "[RESUME] This pause duration: " + (pauseDuration / 1_000_000L) + "ms");
+                FLog.i(TAG, "[RESUME] Total pause duration: " + (totalPauseDurationNanos / 1_000_000L) + "ms");
+                FLog.i(TAG, "[RESUME] PTS are self-correcting — no extra write-time offset needed");
             }
             
             isPaused = false;
@@ -2225,10 +2226,10 @@ public class GLRecordingPipeline {
             try {
                 if (audioRecord.getRecordingState() != android.media.AudioRecord.RECORDSTATE_RECORDING) {
                     audioRecord.startRecording();
-                    Log.d(TAG, "Audio recording resumed");
+                    FLog.d(TAG, "Audio recording resumed");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error resuming audio recording", e);
+                FLog.e(TAG, "Error resuming audio recording", e);
             }
         }
 
@@ -2242,9 +2243,9 @@ public class GLRecordingPipeline {
                 android.os.Bundle params = new android.os.Bundle();
                 params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
                 videoEncoder.setParameters(params);
-                Log.i(TAG, "[RESUME] Requested sync (IDR keyframe) from video encoder");
+                FLog.i(TAG, "[RESUME] Requested sync (IDR keyframe) from video encoder");
             } catch (Exception e) {
-                Log.w(TAG, "[RESUME] Failed to request sync frame from encoder", e);
+                FLog.w(TAG, "[RESUME] Failed to request sync frame from encoder", e);
             }
         }
 
@@ -2257,14 +2258,14 @@ public class GLRecordingPipeline {
             handler.post(() -> {
                 try {
                     glRenderer.renderFrame();
-                    Log.d(TAG, "Forced a frame render after resuming");
+                    FLog.d(TAG, "Forced a frame render after resuming");
                 } catch (Exception e) {
-                    Log.e(TAG, "Error rendering frame after resume", e);
+                    FLog.e(TAG, "Error rendering frame after resume", e);
                 }
             });
         }
 
-        Log.d(TAG, "Recording resumed successfully");
+        FLog.d(TAG, "Recording resumed successfully");
     }
 
     /**
@@ -2303,7 +2304,7 @@ public class GLRecordingPipeline {
      * @param evStops Exposure compensation in EV stops (e.g., -2.0 to +2.0)
      */
     public void setExposureCompensation(float evStops) {
-        Log.d(TAG, "GLRecordingPipeline: Setting exposure compensation to " + evStops + " EV stops");
+        FLog.d(TAG, "GLRecordingPipeline: Setting exposure compensation to " + evStops + " EV stops");
         if (glRenderer != null) {
             glRenderer.setExposureCompensation(evStops);
         }
@@ -2331,7 +2332,7 @@ public class GLRecordingPipeline {
      */
     public void setPreviewSurfaceImmediate(Surface surface) {
         this.previewSurface = surface;
-        Log.d(TAG, "setPreviewSurfaceImmediate: " + (surface != null && surface.isValid() ? "VALID" : "NULL"));
+        FLog.d(TAG, "setPreviewSurfaceImmediate: " + (surface != null && surface.isValid() ? "VALID" : "NULL"));
         
         if (glRenderer != null) {
             synchronized (previewApplyLock) {
@@ -2350,23 +2351,23 @@ public class GLRecordingPipeline {
             rendererActions.offer(() -> {
                 try {
                     if (s == null || !s.isValid()) {
-                        Log.d(TAG, "Releasing preview EGL (immediate)");
+                        FLog.d(TAG, "Releasing preview EGL (immediate)");
                         glRenderer.releasePreviewEGL();
                     } else {
-                        Log.d(TAG, "Setting preview surface to glRenderer (immediate)");
+                        FLog.d(TAG, "Setting preview surface to glRenderer (immediate)");
                         glRenderer.setPreviewSurface(s);
                         // Force a re-render by requesting next frame
-                        Log.d(TAG, "Preview surface applied immediately - forcing render");
+                        FLog.d(TAG, "Preview surface applied immediately - forcing render");
                     }
                 } catch (Throwable t) {
-                    Log.e(TAG, "Immediate preview apply failed", t);
+                    FLog.e(TAG, "Immediate preview apply failed", t);
                 }
             });
             if (handler != null && (isRecording || previewOnlyRendering)) {
                 handler.post(renderRunnable);
             }
         } else {
-            Log.w(TAG, "setPreviewSurfaceImmediate called but glRenderer is null");
+            FLog.w(TAG, "setPreviewSurfaceImmediate called but glRenderer is null");
         }
     }
 
@@ -2401,7 +2402,7 @@ public class GLRecordingPipeline {
                                 glRenderer.setPreviewSurface(s);
                             }
                         } catch (Throwable t) {
-                            Log.w(TAG, "Deferred preview apply failed", t);
+                            FLog.w(TAG, "Deferred preview apply failed", t);
                         } finally {
                             synchronized (previewApplyLock) {
                                 pendingPreviewApplyRunnable = null;
@@ -2456,7 +2457,7 @@ public class GLRecordingPipeline {
      */
     public void updateSurfaceDimensions(int width, int height) {
         if (width > 0 && height > 0 && (mSurfaceWidth != width || mSurfaceHeight != height)) {
-            Log.d(TAG, "Surface dimensions changed: " + width + "x" + height);
+            FLog.d(TAG, "Surface dimensions changed: " + width + "x" + height);
             mSurfaceWidth = width;
             mSurfaceHeight = height;
 
@@ -2485,14 +2486,14 @@ public class GLRecordingPipeline {
 
             // Debug aspect ratio information
             float recordingAspectRatio = (float) videoWidth / videoHeight;
-            Log.d("DEBUG_ASPECT", "Recording dimensions: " + videoWidth + "x" + videoHeight);
-            Log.d("DEBUG_ASPECT", "Recording aspect ratio: " + recordingAspectRatio);
-            Log.d("DEBUG_ASPECT", "Forcing fixed dimensions: " + videoWidth + "x" + videoHeight +
+            FLog.d("DEBUG_ASPECT", "Recording dimensions: " + videoWidth + "x" + videoHeight);
+            FLog.d("DEBUG_ASPECT", "Recording aspect ratio: " + recordingAspectRatio);
+            FLog.d("DEBUG_ASPECT", "Forcing fixed dimensions: " + videoWidth + "x" + videoHeight +
                     " with aspect ratio " + targetAspectRatio);
 
             // Compare with the target aspect ratio
             if (Math.abs(recordingAspectRatio - targetAspectRatio) > 0.01f) {
-                Log.w("DEBUG_ASPECT", "Recording aspect ratio doesn't match target aspect ratio!");
+                FLog.w("DEBUG_ASPECT", "Recording aspect ratio doesn't match target aspect ratio!");
             }
         }
     }
@@ -2501,19 +2502,19 @@ public class GLRecordingPipeline {
      * Debug method to compare preview and recording dimensions and aspect ratios.
      */
     private void debugPreviewVsRecording() {
-        Log.d("DEBUG_COMPARISON", "Preview surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
-        Log.d("DEBUG_COMPARISON", "Recording surface: " + videoWidth + "x" + videoHeight);
+        FLog.d("DEBUG_COMPARISON", "Preview surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
+        FLog.d("DEBUG_COMPARISON", "Recording surface: " + videoWidth + "x" + videoHeight);
 
         float previewAspectRatio = (float) mSurfaceWidth / mSurfaceHeight;
         float recordingAspectRatio = (float) videoWidth / videoHeight;
 
-        Log.d("DEBUG_COMPARISON", "Preview aspect ratio: " + previewAspectRatio);
-        Log.d("DEBUG_COMPARISON", "Recording aspect ratio: " + recordingAspectRatio);
+        FLog.d("DEBUG_COMPARISON", "Preview aspect ratio: " + previewAspectRatio);
+        FLog.d("DEBUG_COMPARISON", "Recording aspect ratio: " + recordingAspectRatio);
 
         if (Math.abs(previewAspectRatio - recordingAspectRatio) > 0.01f) {
-            Log.w("DEBUG_COMPARISON", "Preview and recording aspect ratios don't match!");
+            FLog.w("DEBUG_COMPARISON", "Preview and recording aspect ratios don't match!");
         } else {
-            Log.d("DEBUG_COMPARISON", "Preview and recording aspect ratios match.");
+            FLog.d("DEBUG_COMPARISON", "Preview and recording aspect ratios match.");
         }
     }
 
@@ -2542,11 +2543,11 @@ public class GLRecordingPipeline {
      */
     private void setupAudio() {
         if (!audioRecordingEnabled) {
-            Log.d(TAG, "DEBUG: Audio recording disabled, skipping audio setup");
+            FLog.d(TAG, "DEBUG: Audio recording disabled, skipping audio setup");
             return;
         }
         
-        Log.d(TAG, "DEBUG: Setting up audio encoder and recorder");
+        FLog.d(TAG, "DEBUG: Setting up audio encoder and recorder");
         try {
             // Configure MediaCodec for AAC
             MediaFormat audioFormat = MediaFormat.createAudioFormat(
@@ -2561,14 +2562,14 @@ public class GLRecordingPipeline {
             try {
                 audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, desiredMaxInput);
             } catch (Exception e) {
-                Log.w(TAG, "KEY_MAX_INPUT_SIZE not supported as integer?", e);
+                FLog.w(TAG, "KEY_MAX_INPUT_SIZE not supported as integer?", e);
             }
             // Explicitly declare PCM encoding when available (API 24+)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
                 try {
                     audioFormat.setInteger(MediaFormat.KEY_PCM_ENCODING, android.media.AudioFormat.ENCODING_PCM_16BIT);
                 } catch (Exception e) {
-                    Log.w(TAG, "KEY_PCM_ENCODING not supported", e);
+                    FLog.w(TAG, "KEY_PCM_ENCODING not supported", e);
                 }
             }
             
@@ -2576,16 +2577,16 @@ public class GLRecordingPipeline {
             // SBR (Spectral Band Replication) mode 3 can cause "Reserved bit set" errors
             try {
                 audioFormat.setInteger("aac-sbr-mode", 0); // Disable SBR
-                Log.d(TAG, "Disabled AAC SBR mode");
+                FLog.d(TAG, "Disabled AAC SBR mode");
             } catch (Exception e) {
-                Log.w(TAG, "aac-sbr-mode not supported (harmless, Codec2 may override)", e);
+                FLog.w(TAG, "aac-sbr-mode not supported (harmless, Codec2 may override)", e);
             }
             
             audioEncoder = MediaCodec.createEncoderByType(android.media.MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             audioEncoder.start();
             audioEncoderStarted = true;
-            Log.d(TAG, "DEBUG: Audio encoder created and started successfully");
+            FLog.d(TAG, "DEBUG: Audio encoder created and started successfully");
 
             // Setup AudioRecord
             int channelConfig = audioChannelCount == 2 ? android.media.AudioFormat.CHANNEL_IN_STEREO
@@ -2596,7 +2597,7 @@ public class GLRecordingPipeline {
                     android.media.AudioFormat.ENCODING_PCM_16BIT);
             // Use 2x the minimum buffer size for best reliability
             int bufferSize = Math.max(minBufferSize * 2, audioSampleRate * audioChannelCount);
-            Log.d(TAG, "DEBUG: Audio buffer size calculated: " + bufferSize + " (min: " + minBufferSize + ")");
+            FLog.d(TAG, "DEBUG: Audio buffer size calculated: " + bufferSize + " (min: " + minBufferSize + ")");
 
             // Check for RECORD_AUDIO permission before creating AudioRecord
             if (androidx.core.content.ContextCompat.checkSelfPermission(context,
@@ -2622,19 +2623,19 @@ public class GLRecordingPipeline {
             if (audioRecord.getState() != android.media.AudioRecord.STATE_INITIALIZED) {
                 throw new RuntimeException("AudioRecord initialization failed");
             }
-            Log.d(TAG, "DEBUG: AudioRecord created successfully with state: " + audioRecord.getState());
+            FLog.d(TAG, "DEBUG: AudioRecord created successfully with state: " + audioRecord.getState());
             boolean noiseSuppression = com.fadcam.SharedPreferencesManager.getInstance(context)
                     .isNoiseSuppressionEnabled();
             if (noiseSuppression && android.media.audiofx.NoiseSuppressor.isAvailable()) {
                 android.media.audiofx.NoiseSuppressor ns = android.media.audiofx.NoiseSuppressor
                         .create(audioRecord.getAudioSessionId());
                 if (ns != null) {
-                    Log.i(TAG, "NoiseSuppressor enabled for AudioRecord");
+                    FLog.i(TAG, "NoiseSuppressor enabled for AudioRecord");
                 } else {
-                    Log.w(TAG, "Failed to enable NoiseSuppressor (create returned null)");
+                    FLog.w(TAG, "Failed to enable NoiseSuppressor (create returned null)");
                 }
             } else if (noiseSuppression) {
-                Log.w(TAG, "NoiseSuppressor requested but not available on this device");
+                FLog.w(TAG, "NoiseSuppressor requested but not available on this device");
             }
 
             // CRITICAL: Set AudioManager mode to MODE_NORMAL for camcorder recording
@@ -2649,14 +2650,14 @@ public class GLRecordingPipeline {
                 audioManager.setMode(android.media.AudioManager.MODE_NORMAL);
                 // Explicitly enable speakerphone for normal audio routing
                 audioManager.setSpeakerphoneOn(true);
-                Log.i(TAG, "AudioManager mode set to MODE_NORMAL for camcorder recording (was: " + originalAudioMode + "), speakerphone enabled (was: " + originalSpeakerphoneOn + ")");
+                FLog.i(TAG, "AudioManager mode set to MODE_NORMAL for camcorder recording (was: " + originalAudioMode + "), speakerphone enabled (was: " + originalSpeakerphoneOn + ")");
                 
                 // Request audio focus with USAGE_MEDIA for camcorder recording
                 audioFocusListener = focusChange -> {
                     if (focusChange == android.media.AudioManager.AUDIOFOCUS_LOSS || focusChange == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-                        Log.w(TAG, "⚠️ AUDIO FOCUS LOST: " + focusChange);
+                        FLog.w(TAG, "⚠️ AUDIO FOCUS LOST: " + focusChange);
                     } else if (focusChange == android.media.AudioManager.AUDIOFOCUS_GAIN) {
-                        Log.i(TAG, "Audio focus regained");
+                        FLog.i(TAG, "Audio focus regained");
                     }
                 };
 
@@ -2675,17 +2676,17 @@ public class GLRecordingPipeline {
                             .build();
 
                     int result = audioManager.requestAudioFocus(focusRequest);
-                    Log.w(TAG, "🎤 AudioFocusRequest result: " + (result == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "DENIED"));
+                    FLog.w(TAG, "🎤 AudioFocusRequest result: " + (result == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "DENIED"));
                 } else {
                     int result = audioManager.requestAudioFocus(
                             audioFocusListener,
                             android.media.AudioManager.STREAM_MUSIC,
                             android.media.AudioManager.AUDIOFOCUS_GAIN);
-                    Log.w(TAG, "🎤 AudioFocus (legacy) result: " + (result == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "DENIED"));
+                    FLog.w(TAG, "🎤 AudioFocus (legacy) result: " + (result == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "DENIED"));
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Audio setup failed", e);
+            FLog.e(TAG, "Audio setup failed", e);
             audioRecordingEnabled = false;
         }
     }
@@ -2769,7 +2770,7 @@ public class GLRecordingPipeline {
                         }
                     } else if (read < 0) {
                         // Error or AudioRecord stopped
-                        Log.w(TAG, "AudioRecord.read returned " + read + " - likely paused or error");
+                        FLog.w(TAG, "AudioRecord.read returned " + read + " - likely paused or error");
                         try {
                             Thread.sleep(10);
                         } catch (InterruptedException e) {
@@ -2779,7 +2780,7 @@ public class GLRecordingPipeline {
                 }
                 // CRITICAL: Signal EOS to audio encoder before exiting
                 // This is mandatory for proper fMP4 finalization
-                Log.d(TAG, "Audio thread exiting, signaling EOS to encoder");
+                FLog.d(TAG, "Audio thread exiting, signaling EOS to encoder");
                 int eosRetries = 3;
                 boolean eosQueued = false;
                 while (eosRetries > 0 && !eosQueued) {
@@ -2792,23 +2793,23 @@ public class GLRecordingPipeline {
                                 eosPtsUs = lastPtsUs; // monotonic safeguard
                             audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, eosPtsUs,
                                     MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            Log.d(TAG, "Audio EOS queued at PTS=" + eosPtsUs + "us (" + (eosPtsUs / 1000000.0) + "s)");
+                            FLog.d(TAG, "Audio EOS queued at PTS=" + eosPtsUs + "us (" + (eosPtsUs / 1000000.0) + "s)");
                             eosQueued = true;
                         }
                     } else {
                         eosRetries--;
-                        Log.w(TAG, "Failed to get input buffer for audio EOS, retries left: " + eosRetries);
+                        FLog.w(TAG, "Failed to get input buffer for audio EOS, retries left: " + eosRetries);
                     }
                 }
                 if (!eosQueued) {
-                    Log.e(TAG, "CRITICAL: Failed to queue audio EOS - file duration may be incorrect!");
+                    FLog.e(TAG, "CRITICAL: Failed to queue audio EOS - file duration may be incorrect!");
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Audio thread error", e);
+                FLog.e(TAG, "Audio thread error", e);
             }
             // NOTE: Do NOT stop/release audioRecord here - let stopRecording() handle it
             // This prevents race conditions and ensures proper cleanup order
-            Log.d(TAG, "Audio thread finished");
+            FLog.d(TAG, "Audio thread finished");
         }, "AudioThread");
         audioThread.start();
     }
@@ -2833,59 +2834,59 @@ public class GLRecordingPipeline {
                     break;
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     MediaFormat newFormat = audioEncoder.getOutputFormat();
-                    Log.d(TAG, "Audio encoder output format changed: " + newFormat);
-                    Log.d(TAG, "DEBUG Audio FORMAT: muxerStarted=" + muxerStarted + ", audioTrackIndex=" + audioTrackIndex + ", videoTrackIndex=" + videoTrackIndex);
+                    FLog.d(TAG, "Audio encoder output format changed: " + newFormat);
+                    FLog.d(TAG, "DEBUG Audio FORMAT: muxerStarted=" + muxerStarted + ", audioTrackIndex=" + audioTrackIndex + ", videoTrackIndex=" + videoTrackIndex);
                     
                     // Log CSD data for debugging audio issues
                     try {
                         if (newFormat.containsKey("csd-0")) {
                             java.nio.ByteBuffer csd0 = newFormat.getByteBuffer("csd-0");
                             if (csd0 != null) {
-                                Log.d(TAG, "Audio CSD-0 present, size=" + csd0.remaining() + " bytes");
+                                FLog.d(TAG, "Audio CSD-0 present, size=" + csd0.remaining() + " bytes");
                             } else {
-                                Log.w(TAG, "Audio CSD-0 key present but null!");
+                                FLog.w(TAG, "Audio CSD-0 key present but null!");
                             }
                         } else {
-                            Log.w(TAG, "Audio format MISSING csd-0 - this may cause playback issues!");
+                            FLog.w(TAG, "Audio format MISSING csd-0 - this may cause playback issues!");
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Error checking audio CSD", e);
+                        FLog.e(TAG, "Error checking audio CSD", e);
                     }
 
                     // Cache audio format for future segment rollovers
                     cachedAudioFormat = newFormat;
 
                     if (audioTrackIndex != -1) {
-                        Log.w(TAG, "Audio format changed after track was added - continuing with existing track");
+                        FLog.w(TAG, "Audio format changed after track was added - continuing with existing track");
                         // Don't restart or replace tracks - this causes duration issues
                     } else if (muxerStarted) {
-                        Log.w(TAG, "Audio format changed after muxer started - cannot add track now");
+                        FLog.w(TAG, "Audio format changed after muxer started - cannot add track now");
                         // Don't try to add tracks after muxer has started
                     } else {
                         // Normal case - add audio track only if muxer hasn't started yet
                         try {
-                            Log.d(TAG, "DEBUG: About to add audio track to muxer");
+                            FLog.d(TAG, "DEBUG: About to add audio track to muxer");
                             audioTrackIndex = mediaMuxer.addTrack(newFormat);
-                            Log.d(TAG, "Added audio track with index " + audioTrackIndex + " to muxer");
+                            FLog.d(TAG, "Added audio track with index " + audioTrackIndex + " to muxer");
 
                             // Check if we can start the muxer now (video track should already be added)
                             if (!muxerStarted && videoTrackIndex != -1) {
                                 // Both tracks are ready - start muxer
-                                Log.d(TAG, "DEBUG: Both tracks ready, starting muxer now");
+                                FLog.d(TAG, "DEBUG: Both tracks ready, starting muxer now");
                                 mediaMuxer.start();
                                 muxerStarted = true;
-                                Log.d(TAG, "Started muxer after adding audio track - both tracks ready");
+                                FLog.d(TAG, "Started muxer after adding audio track - both tracks ready");
                             } else if (!muxerStarted) {
-                                Log.d(TAG, "Audio track added, waiting for video track before starting muxer (videoTrackIndex=" + videoTrackIndex + ")");
+                                FLog.d(TAG, "Audio track added, waiting for video track before starting muxer (videoTrackIndex=" + videoTrackIndex + ")");
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, "Failed to add audio track to muxer", e);
+                            FLog.e(TAG, "Failed to add audio track to muxer", e);
                         }
                     }
                 } else if (outputBufferIndex >= 0) {
                     ByteBuffer encodedData = audioEncoder.getOutputBuffer(outputBufferIndex);
                     if (encodedData == null) {
-                        Log.e(TAG, "audioEncoderOutputBuffer " + outputBufferIndex + " was null");
+                        FLog.e(TAG, "audioEncoderOutputBuffer " + outputBufferIndex + " was null");
                         audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
                         continue;
                     }
@@ -2899,7 +2900,7 @@ public class GLRecordingPipeline {
                     if (bufferInfo.size > 0 && muxerStarted && audioTrackIndex != -1) {
                         // Ensure we have valid data in the buffer
                         if (encodedData.remaining() < bufferInfo.size) {
-                            Log.w(TAG, "Audio buffer size mismatch: remaining=" + encodedData.remaining() +
+                            FLog.w(TAG, "Audio buffer size mismatch: remaining=" + encodedData.remaining() +
                                     ", bufferInfo.size=" + bufferInfo.size +
                                     " - adjusting size to prevent error");
                             bufferInfo.size = encodedData.remaining();
@@ -2919,7 +2920,7 @@ public class GLRecordingPipeline {
                                 lastAudioPts = bufferInfo.presentationTimeUs;
                                 // Log every 50 samples for debugging
                                 if (audioSamplesWritten % 50 == 0) {
-                                    Log.i(TAG, String.format("[AUDIO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db",
+                                    FLog.i(TAG, String.format("[AUDIO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db",
                                         audioSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0,
                                         bufferInfo.presentationTimeUs, bufferInfo.size));
                                 }
@@ -2927,31 +2928,31 @@ public class GLRecordingPipeline {
                                 if (bufferInfo.size == 512) {
                                     consecutive512Count++;
                                     if (consecutive512Count == 10) {
-                                        Log.w(TAG, "⚠️ SILENCE DETECTED: 10 consecutive 512-byte frames at sample #" + audioSamplesWritten + ", " + (bufferInfo.presentationTimeUs / 1000000.0) + "s");
+                                        FLog.w(TAG, "⚠️ SILENCE DETECTED: 10 consecutive 512-byte frames at sample #" + audioSamplesWritten + ", " + (bufferInfo.presentationTimeUs / 1000000.0) + "s");
                                     }
                                 } else {
                                     consecutive512Count = 0;
                                 }
                             } catch (Exception e) {
-                                Log.e(TAG, "Error writing audio frame to muxer", e);
+                                FLog.e(TAG, "Error writing audio frame to muxer", e);
                                 // Continue processing other frames
                             }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
-                        Log.d(TAG, "Dropping audio frame because muxer isn't started yet");
+                        FLog.d(TAG, "Dropping audio frame because muxer isn't started yet");
                     } else if (bufferInfo.size > 0 && audioTrackIndex == -1) {
-                        Log.d(TAG, "Dropping audio frame because audio track is not added yet");
+                        FLog.d(TAG, "Dropping audio frame because audio track is not added yet");
                     }
 
                     audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        Log.d(TAG, "End of stream reached in audio encoder");
+                        FLog.d(TAG, "End of stream reached in audio encoder");
                         break;
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error draining audio encoder", e);
+            FLog.e(TAG, "Error draining audio encoder", e);
         }
     }
 
@@ -2967,7 +2968,7 @@ public class GLRecordingPipeline {
         if (!isRecording)
             return;
 
-        Log.d(TAG, "App returned to foreground, updating preview surface");
+        FLog.d(TAG, "App returned to foreground, updating preview surface");
 
         // If we have a valid preview surface, make sure it's set on the renderer
         if (previewSurface != null && previewSurface.isValid() && glRenderer != null) {
@@ -2979,9 +2980,9 @@ public class GLRecordingPipeline {
                     if (mSurfaceWidth > 0 && mSurfaceHeight > 0) {
                         glRenderer.setSurfaceDimensions(mSurfaceWidth, mSurfaceHeight);
                     }
-                    Log.d(TAG, "Preview surface updated successfully");
+                    FLog.d(TAG, "Preview surface updated successfully");
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to update preview surface", e);
+                    FLog.e(TAG, "Failed to update preview surface", e);
                 }
             });
         }
@@ -3006,18 +3007,18 @@ public class GLRecordingPipeline {
         // Only use the existing renderer, don't try to recreate it
         if (glRenderer != null && encoderInputSurface != null && encoderInputSurface.isValid()) {
             try {
-                Log.d(TAG, "Rendering black frame to maintain recording pipeline");
+                FLog.d(TAG, "Rendering black frame to maintain recording pipeline");
                 glRenderer.renderBlackFrame();
                 try {
                     drainEncoder();
                 } catch (Exception e) {
-                    Log.d(TAG, "Error draining encoder after black frame - continuing");
+                    FLog.d(TAG, "Error draining encoder after black frame - continuing");
                 }
             } catch (Exception e) {
-                Log.d(TAG, "Could not render black frame - this is expected during camera disconnection");
+                FLog.d(TAG, "Could not render black frame - this is expected during camera disconnection");
             }
         } else {
-            Log.d(TAG, "Cannot render black frame - renderer or surface is null/invalid");
+            FLog.d(TAG, "Cannot render black frame - renderer or surface is null/invalid");
         }
     }
 

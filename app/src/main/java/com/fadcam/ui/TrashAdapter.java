@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +25,6 @@ import com.bumptech.glide.Glide;
 import android.net.Uri;
 import java.io.File;
 import com.fadcam.utils.TrashManager;
-import android.util.Log;
 import android.widget.Toast;
 import com.fadcam.SharedPreferencesManager;
 import java.util.concurrent.TimeUnit;
@@ -323,11 +324,11 @@ public class TrashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                             .centerCrop()
                             .into(imageViewThumbnail);
                     } else {
-                        Log.w("TrashAdapter", "Trashed video file does not exist: " + trashedVideoFile.getAbsolutePath());
+                        FLog.w("TrashAdapter", "Trashed video file does not exist: " + trashedVideoFile.getAbsolutePath());
                         Glide.with(context).load(R.drawable.ic_error).into(imageViewThumbnail); // Show error icon
                     }
                 } else {
-                    Log.e("TrashAdapter", "Trash directory or trash file name is null.");
+                    FLog.e("TrashAdapter", "Trash directory or trash file name is null.");
                     Glide.with(context).load(R.drawable.ic_error).into(imageViewThumbnail); // Show error icon
                 }
             }

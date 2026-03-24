@@ -1,9 +1,9 @@
 package com.fadcam.playback;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
-
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.FFmpegSession;
 import com.arthenica.ffmpegkit.ReturnCode;
@@ -70,21 +70,21 @@ public class FragmentedMp4Remuxer {
                                     | ((buf[i - 2] & 0xFF) << 8)
                                     | (buf[i - 1] & 0xFF);
                         if (boxSize >= 8) {
-                            Log.d(TAG, "Detected fragmented MP4 (moof box at offset "
+                            FLog.d(TAG, "Detected fragmented MP4 (moof box at offset "
                                     + (i - 4) + ", size=" + boxSize + "): " + file.getName());
                             return true;
                         }
                     } else {
                         // 'moof' at very start — unlikely but still fragmented
-                        Log.d(TAG, "Detected fragmented MP4 (moof at offset 0): " + file.getName());
+                        FLog.d(TAG, "Detected fragmented MP4 (moof at offset 0): " + file.getName());
                         return true;
                     }
                 }
             }
-            Log.d(TAG, "Not a fragmented MP4 (no moof in first " + scanLimit + " bytes): " + file.getName());
+            FLog.d(TAG, "Not a fragmented MP4 (no moof in first " + scanLimit + " bytes): " + file.getName());
             return false;
         } catch (IOException e) {
-            Log.w(TAG, "Could not check file for fMP4 structure: " + file.getName(), e);
+            FLog.w(TAG, "Could not check file for fMP4 structure: " + file.getName(), e);
             // Fallback: assume FadCam-named files are fragmented
             return name.startsWith("fadcam_");
         }
@@ -152,11 +152,11 @@ public class FragmentedMp4Remuxer {
         
         // Check if already remuxed
         if (hasRemuxedVersion(inputFile)) {
-            Log.d(TAG, "Using existing remuxed file: " + outputFile.getName());
+            FLog.d(TAG, "Using existing remuxed file: " + outputFile.getName());
             return outputFile;
         }
         
-        Log.i(TAG, "Remuxing: " + inputFile.getName() + " -> " + outputFile.getName());
+        FLog.i(TAG, "Remuxing: " + inputFile.getName() + " -> " + outputFile.getName());
         
         String inputPath = inputFile.getAbsolutePath();
         String outputPath = outputFile.getAbsolutePath();
@@ -176,18 +176,18 @@ public class FragmentedMp4Remuxer {
             inputPath, outputPath
         );
         
-        Log.d(TAG, "FFmpeg command: " + ffmpegCmd);
+        FLog.d(TAG, "FFmpeg command: " + ffmpegCmd);
         
         try {
             FFmpegSession session = FFmpegKit.execute(ffmpegCmd);
             
             if (ReturnCode.isSuccess(session.getReturnCode())) {
-                Log.i(TAG, "Remux successful: " + outputFile.getName() + 
+                FLog.i(TAG, "Remux successful: " + outputFile.getName() + 
                            " (" + outputFile.length() / 1024 + " KB)");
                 return outputFile;
             } else {
-                Log.e(TAG, "Remux failed with code: " + session.getReturnCode());
-                Log.e(TAG, "FFmpeg output: " + session.getOutput());
+                FLog.e(TAG, "Remux failed with code: " + session.getReturnCode());
+                FLog.e(TAG, "FFmpeg output: " + session.getOutput());
                 
                 // Clean up failed output
                 if (outputFile.exists()) {
@@ -196,7 +196,7 @@ public class FragmentedMp4Remuxer {
                 return null;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Remux exception", e);
+            FLog.e(TAG, "Remux exception", e);
             if (outputFile.exists()) {
                 outputFile.delete();
             }
@@ -215,14 +215,14 @@ public class FragmentedMp4Remuxer {
         
         // Check if already remuxed
         if (hasRemuxedVersion(inputFile)) {
-            Log.d(TAG, "Using existing remuxed file: " + outputFile.getName());
+            FLog.d(TAG, "Using existing remuxed file: " + outputFile.getName());
             if (callback != null) {
                 callback.onRemuxComplete(true, outputFile.getAbsolutePath());
             }
             return;
         }
         
-        Log.i(TAG, "Async remuxing: " + inputFile.getName());
+        FLog.i(TAG, "Async remuxing: " + inputFile.getName());
         
         String inputPath = inputFile.getAbsolutePath();
         String outputPath = outputFile.getAbsolutePath();
@@ -241,9 +241,9 @@ public class FragmentedMp4Remuxer {
             boolean success = ReturnCode.isSuccess(session.getReturnCode());
             
             if (success) {
-                Log.i(TAG, "Async remux successful: " + outputFile.getName());
+                FLog.i(TAG, "Async remux successful: " + outputFile.getName());
             } else {
-                Log.e(TAG, "Async remux failed: " + session.getReturnCode());
+                FLog.e(TAG, "Async remux failed: " + session.getReturnCode());
                 if (outputFile.exists()) {
                     outputFile.delete();
                 }
@@ -254,7 +254,7 @@ public class FragmentedMp4Remuxer {
             }
         }, log -> {
             // Log callback - could parse for progress
-            Log.v(TAG, "FFmpeg: " + log.getMessage());
+            FLog.v(TAG, "FFmpeg: " + log.getMessage());
         }, statistics -> {
             // Progress callback
             if (callback != null && statistics.getTime() > 0) {
@@ -292,7 +292,7 @@ public class FragmentedMp4Remuxer {
         }
         
         if (deleted > 0) {
-            Log.i(TAG, "Cleaned up " + deleted + " cached remuxed files");
+            FLog.i(TAG, "Cleaned up " + deleted + " cached remuxed files");
         }
     }
     
@@ -357,7 +357,7 @@ public class FragmentedMp4Remuxer {
             for (File file : files) {
                 if (file.isFile() && file.getName().startsWith(prefix)) {
                     if (file.delete()) {
-                        Log.d(TAG, "Deleted cache file: " + file.getName());
+                        FLog.d(TAG, "Deleted cache file: " + file.getName());
                         deleted++;
                     }
                 }
@@ -365,7 +365,7 @@ public class FragmentedMp4Remuxer {
         }
         
         if (deleted > 0) {
-            Log.i(TAG, "Deleted " + deleted + " cached files for prefix: " + prefix);
+            FLog.i(TAG, "Deleted " + deleted + " cached files for prefix: " + prefix);
         }
         
         return deleted;
@@ -395,7 +395,7 @@ public class FragmentedMp4Remuxer {
             cacheDir.delete();
         }
         
-        Log.i(TAG, "Cleared cache: deleted " + deleted + " files");
+        FLog.i(TAG, "Cleared cache: deleted " + deleted + " files");
         return deleted;
     }
 }

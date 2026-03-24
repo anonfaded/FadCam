@@ -1,11 +1,11 @@
 package com.fadcam.streaming;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -97,7 +97,7 @@ public class CloudStreamUploader {
         android.content.SharedPreferences prefs = this.context.getSharedPreferences("FadCamCloudPrefs", Context.MODE_PRIVATE);
         int streamingMode = prefs.getInt("streaming_mode", 0); // 0=Local, 1=Cloud
         this.isEnabled = (streamingMode == 1);
-        Log.i(TAG, "Initialized from preferences: isEnabled=" + isEnabled + " (streaming_mode=" + streamingMode + ")");
+        FLog.i(TAG, "Initialized from preferences: isEnabled=" + isEnabled + " (streaming_mode=" + streamingMode + ")");
     }
     
     /**
@@ -122,9 +122,9 @@ public class CloudStreamUploader {
             // Reset auth failure tracking (fresh start)
             consecutive401Count = 0;
             authBackoffActive = false;
-            Log.i(TAG, "Cloud streaming enabled");
+            FLog.i(TAG, "Cloud streaming enabled");
         } else {
-            Log.i(TAG, "Cloud streaming disabled");
+            FLog.i(TAG, "Cloud streaming disabled");
         }
     }
     
@@ -158,7 +158,7 @@ public class CloudStreamUploader {
         // Fallback to extracting from JWT
         String token = authManager.getJwtToken();
         if (token == null) {
-            Log.w(TAG, "No JWT token available");
+            FLog.w(TAG, "No JWT token available");
             return null;
         }
         
@@ -166,7 +166,7 @@ public class CloudStreamUploader {
             // JWT has 3 parts: header.payload.signature
             String[] parts = token.split("\\.");
             if (parts.length != 3) {
-                Log.e(TAG, "Invalid JWT format: expected 3 parts, got " + parts.length);
+                FLog.e(TAG, "Invalid JWT format: expected 3 parts, got " + parts.length);
                 return null;
             }
             
@@ -178,12 +178,12 @@ public class CloudStreamUploader {
             cachedUserUuid = payload.optString("sub", null);
             
             if (cachedUserUuid != null) {
-                Log.i(TAG, "User UUID extracted: " + cachedUserUuid.substring(0, 8) + "...");
+                FLog.i(TAG, "User UUID extracted: " + cachedUserUuid.substring(0, 8) + "...");
             }
             
             return cachedUserUuid;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to decode JWT", e);
+            FLog.e(TAG, "Failed to decode JWT", e);
             return null;
         }
     }
@@ -197,7 +197,7 @@ public class CloudStreamUploader {
      */
     public void uploadInitSegment(byte[] initData, @Nullable UploadCallback callback) {
         if (!isEnabled) {
-            Log.d(TAG, "Cloud streaming disabled, skipping init upload");
+            FLog.d(TAG, "Cloud streaming disabled, skipping init upload");
             return;
         }
         
@@ -207,18 +207,18 @@ public class CloudStreamUploader {
             return;
         }
         
-        Log.i(TAG, "Uploading init segment: " + initData.length + " bytes");
+        FLog.i(TAG, "Uploading init segment: " + initData.length + " bytes");
         uploadBytes(url, initData, MEDIA_TYPE_MP4, new UploadCallback() {
             @Override
             public void onSuccess() {
                 initSegmentUploaded = true;
-                Log.i(TAG, "✅ Init segment uploaded successfully");
+                FLog.i(TAG, "✅ Init segment uploaded successfully");
                 if (callback != null) callback.onSuccess();
             }
             
             @Override
             public void onError(String error) {
-                Log.e(TAG, "❌ Init segment upload failed: " + error);
+                FLog.e(TAG, "❌ Init segment upload failed: " + error);
                 if (callback != null) callback.onError(error);
             }
         });
@@ -237,7 +237,7 @@ public class CloudStreamUploader {
         }
         
         if (!initSegmentUploaded) {
-            Log.w(TAG, "Init segment not uploaded yet, skipping segment " + sequenceNumber);
+            FLog.w(TAG, "Init segment not uploaded yet, skipping segment " + sequenceNumber);
             return;
         }
         
@@ -248,7 +248,7 @@ public class CloudStreamUploader {
             return;
         }
         
-        // Log.d(TAG, "Uploading segment " + sequenceNumber + ": " + segmentData.length + " bytes");
+        // FLog.d(TAG, "Uploading segment " + sequenceNumber + ": " + segmentData.length + " bytes");
         uploadBytes(url, segmentData, MEDIA_TYPE_M4S, callback);
     }
     
@@ -280,7 +280,7 @@ public class CloudStreamUploader {
     private String buildUploadUrl(String filename) {
         String userUuid = getUserUuid();
         if (userUuid == null) {
-            Log.e(TAG, "Cannot build URL: no user UUID");
+            FLog.e(TAG, "Cannot build URL: no user UUID");
             return null;
         }
         
@@ -299,7 +299,7 @@ public class CloudStreamUploader {
         
         if (streamToken == null || authManager.isStreamTokenNearExpiry()) {
             // Need to fetch stream token first
-            Log.i(TAG, "Stream token missing or near expiry, fetching...");
+            FLog.i(TAG, "Stream token missing or near expiry, fetching...");
             authManager.getValidStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
                 @Override
                 public void onSuccess(String newStreamToken) {
@@ -309,7 +309,7 @@ public class CloudStreamUploader {
                 
                 @Override
                 public void onError(String error) {
-                    Log.e(TAG, "Failed to get stream token: " + error);
+                    FLog.e(TAG, "Failed to get stream token: " + error);
                     failedUploads++;
                     if (callback != null) callback.onError("Stream token error: " + error);
                 }
@@ -328,12 +328,12 @@ public class CloudStreamUploader {
         if (authBackoffActive) {
             long timeSinceFailure = System.currentTimeMillis() - lastAuthFailureTime;
             if (timeSinceFailure < BACKOFF_AFTER_AUTH_FAILURE_MS) {
-                Log.d(TAG, "Auth backoff active, skipping upload (wait " + 
+                FLog.d(TAG, "Auth backoff active, skipping upload (wait " + 
                     ((BACKOFF_AFTER_AUTH_FAILURE_MS - timeSinceFailure) / 1000) + "s)");
                 return; // Silently skip, don't call callback
             }
             // Backoff period expired, reset and try again
-            Log.i(TAG, "Auth backoff period expired, resuming uploads");
+            FLog.i(TAG, "Auth backoff period expired, resuming uploads");
             authBackoffActive = false;
             consecutive401Count = 0;
         }
@@ -345,7 +345,7 @@ public class CloudStreamUploader {
             .addHeader("Authorization", "Bearer " + token)
             .build();
         
-        Log.i(TAG, "📤 Sending HTTP PUT to: " + url.substring(0, Math.min(80, url.length())) + "...");
+        FLog.i(TAG, "📤 Sending HTTP PUT to: " + url.substring(0, Math.min(80, url.length())) + "...");
         long startTime = System.currentTimeMillis();
         
         httpClient.newCall(request).enqueue(new Callback() {
@@ -354,15 +354,15 @@ public class CloudStreamUploader {
                 long elapsed = System.currentTimeMillis() - startTime;
                 failedUploads++;
                 String errorType = e.getClass().getSimpleName();
-                Log.e(TAG, "❌ Upload network failure after " + elapsed + "ms: " + errorType + ": " + e.getMessage());
+                FLog.e(TAG, "❌ Upload network failure after " + elapsed + "ms: " + errorType + ": " + e.getMessage());
                 
                 // Log specific timeout types for debugging
                 if (e instanceof java.net.SocketTimeoutException) {
-                    Log.e(TAG, "   ⏱️ TIMEOUT: Connection or read timeout - network may be too slow");
+                    FLog.e(TAG, "   ⏱️ TIMEOUT: Connection or read timeout - network may be too slow");
                 } else if (e instanceof java.net.ConnectException) {
-                    Log.e(TAG, "   🔌 CONNECT: Failed to connect to server - check network connectivity");
+                    FLog.e(TAG, "   🔌 CONNECT: Failed to connect to server - check network connectivity");
                 } else if (e instanceof java.net.UnknownHostException) {
-                    Log.e(TAG, "   🌐 DNS: Failed to resolve hostname - no internet?");
+                    FLog.e(TAG, "   🌐 DNS: Failed to resolve hostname - no internet?");
                 }
                 
                 if (callback != null) callback.onError(errorType + ": " + e.getMessage());
@@ -371,7 +371,7 @@ public class CloudStreamUploader {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 long elapsed = System.currentTimeMillis() - startTime;
-                Log.i(TAG, "📥 Upload response received: HTTP " + response.code() + " after " + elapsed + "ms");
+                FLog.i(TAG, "📥 Upload response received: HTTP " + response.code() + " after " + elapsed + "ms");
                 try {
                     if (response.isSuccessful()) {
                         successfulUploads++;
@@ -382,16 +382,16 @@ public class CloudStreamUploader {
                     } else {
                         failedUploads++;
                         String error = "HTTP " + response.code() + ": " + response.message();
-                        Log.e(TAG, "Upload error: " + error);
+                        FLog.e(TAG, "Upload error: " + error);
                         
                         // Handle 401 - clear stream token and retry with new one
                         if (response.code() == 401) {
                             consecutive401Count++;
-                            Log.w(TAG, "Stream token 401 error (attempt " + consecutive401Count + "/" + MAX_401_RETRIES + ")");
+                            FLog.w(TAG, "Stream token 401 error (attempt " + consecutive401Count + "/" + MAX_401_RETRIES + ")");
                             
                             // Check if we've exceeded retry limit
                             if (consecutive401Count > MAX_401_RETRIES) {
-                                Log.e(TAG, "Max 401 retries exceeded, entering backoff mode");
+                                FLog.e(TAG, "Max 401 retries exceeded, entering backoff mode");
                                 lastAuthFailureTime = System.currentTimeMillis();
                                 authBackoffActive = true;
                                 if (callback != null) callback.onError("Auth failed after " + MAX_401_RETRIES + " attempts");
@@ -403,7 +403,7 @@ public class CloudStreamUploader {
                             authManager.fetchStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
                                 @Override
                                 public void onSuccess(String newStreamToken) {
-                                    Log.i(TAG, "New stream token fetched after 401, retrying upload...");
+                                    FLog.i(TAG, "New stream token fetched after 401, retrying upload...");
                                     cachedUserUuid = null; // Clear cache
                                     // Retry upload with new token
                                     doUploadWithToken(url, data, mediaType, newStreamToken, callback);
@@ -411,7 +411,7 @@ public class CloudStreamUploader {
                                 
                                 @Override
                                 public void onError(String fetchError) {
-                                    Log.e(TAG, "Stream token fetch failed after 401: " + fetchError);
+                                    FLog.e(TAG, "Stream token fetch failed after 401: " + fetchError);
                                     lastAuthFailureTime = System.currentTimeMillis();
                                     authBackoffActive = true;
                                     if (callback != null) callback.onError("Auth failed: " + fetchError);
@@ -507,7 +507,7 @@ public class CloudStreamUploader {
     private String buildStatusUrl() {
         String userUuid = getUserUuid();
         if (userUuid == null) {
-            Log.e(TAG, "Cannot build status URL: no user UUID");
+            FLog.e(TAG, "Cannot build status URL: no user UUID");
             return null;
         }
         
@@ -595,7 +595,7 @@ public class CloudStreamUploader {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to parse command list: " + e.getMessage());
+            FLog.e(TAG, "Failed to parse command list: " + e.getMessage());
         }
         return commands;
     }
@@ -700,7 +700,7 @@ public class CloudStreamUploader {
     private String buildCommandUrl() {
         String userUuid = getUserUuid();
         if (userUuid == null) {
-            Log.e(TAG, "Cannot build command URL: no user UUID");
+            FLog.e(TAG, "Cannot build command URL: no user UUID");
             return null;
         }
         

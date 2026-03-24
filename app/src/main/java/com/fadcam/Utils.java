@@ -1,5 +1,6 @@
 package com.fadcam;
 
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
@@ -8,8 +9,6 @@ import android.os.Looper;
 import android.util.Size;
 import android.widget.Toast;
 import android.media.MediaScannerConnection;
-import android.util.Log;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -104,7 +103,7 @@ public class Utils {
             Date date = sdf.parse(timestampString);
             return date != null ? date.getTime() : -1;
         } catch (ParseException | IndexOutOfBoundsException e) {
-            Log.w("Utils", "Failed to parse timestamp from filename: " + filename);
+            FLog.w("Utils", "Failed to parse timestamp from filename: " + filename);
             return -1;
         }
     }
@@ -168,23 +167,23 @@ public class Utils {
      */
     public static void scanFileWithMediaStore(Context context, String filePath) {
         if (context == null || filePath == null || filePath.isEmpty()) {
-            Log.w("Utils", "scanFileWithMediaStore: Context or filePath is null/empty.");
+            FLog.w("Utils", "scanFileWithMediaStore: Context or filePath is null/empty.");
             return;
         }
-        Log.d("Utils", "Scanning file with MediaStore: " + filePath);
+        FLog.d("Utils", "Scanning file with MediaStore: " + filePath);
         try {
             MediaScannerConnection.scanFile(context.getApplicationContext(), // Use application context
                     new String[]{filePath},
                     null, // MIME types (null to infer)
                     (path, uri) -> {
                         if (uri != null) {
-                            Log.i("Utils", "MediaScanner finished scanning " + path + ". URI: " + uri);
+                            FLog.i("Utils", "MediaScanner finished scanning " + path + ". URI: " + uri);
                         } else {
-                            Log.w("Utils", "MediaScanner finished scanning " + path + ", but MediaStore URI is null. File might not be recognized or already scanned.");
+                            FLog.w("Utils", "MediaScanner finished scanning " + path + ", but MediaStore URI is null. File might not be recognized or already scanned.");
                         }
                     });
         } catch (Exception e) {
-            Log.e("Utils", "Error during MediaScannerConnection.scanFile for path: " + filePath, e);
+            FLog.e("Utils", "Error during MediaScannerConnection.scanFile for path: " + filePath, e);
         }
     }
 
@@ -204,7 +203,7 @@ public class Utils {
             // For content:// or tree:// URIs we cannot reliably map to a File path here.
             return null;
         } catch (Exception e) {
-            Log.w("Utils", "getFileFromSafUriIfPossible: failed to resolve URI: " + uri, e);
+            FLog.w("Utils", "getFileFromSafUriIfPossible: failed to resolve URI: " + uri, e);
             return null;
         }
     }

@@ -1,5 +1,7 @@
 package com.fadcam.forensics.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -471,7 +473,7 @@ public class ForensicsInsightsFragment extends Fragment {
                         fThreat, fHourly, fHourlyTypes, fPeakHour, fPeakCount,
                         fZones, fObs, fSitrep, fRange));
             } catch (Exception e) {
-                android.util.Log.e("IntelBriefing", "Failed to compile intelligence", e);
+                FLog.e("IntelBriefing", "Failed to compile intelligence", e);
                 isLoading = false;
             }
         });

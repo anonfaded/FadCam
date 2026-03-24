@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.Outline;
 import android.view.ViewOutlineProvider;
 import android.app.AlertDialog;
@@ -12,7 +14,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -126,31 +127,31 @@ public class WatchRecordsFragment extends Fragment {
         if (ctx == null) return Collections.emptyList();
 
         final File externalDir = ctx.getExternalFilesDir(null);
-        Log.d(TAG, "=== SCAN RECORDINGS DEBUG ===");
-        Log.d(TAG, "External dir: " + externalDir);
+        FLog.d(TAG, "=== SCAN RECORDINGS DEBUG ===");
+        FLog.d(TAG, "External dir: " + externalDir);
         
         if (externalDir == null) {
-            Log.e(TAG, "getExternalFilesDir() returned null!");
+            FLog.e(TAG, "getExternalFilesDir() returned null!");
             return Collections.emptyList();
         }
         
-        Log.d(TAG, "External dir exists: " + externalDir.exists());
-        Log.d(TAG, "External dir can read: " + externalDir.canRead());
-        Log.d(TAG, "External dir can write: " + externalDir.canWrite());
+        FLog.d(TAG, "External dir exists: " + externalDir.exists());
+        FLog.d(TAG, "External dir can read: " + externalDir.canRead());
+        FLog.d(TAG, "External dir can write: " + externalDir.canWrite());
 
         final File cameraDir = new File(externalDir,
                 Constants.RECORDING_DIRECTORY + File.separator + Constants.RECORDING_SUBDIR_CAMERA);
         
-        Log.d(TAG, "Camera dir: " + cameraDir.getAbsolutePath());
-        Log.d(TAG, "Camera dir exists: " + cameraDir.exists());
-        Log.d(TAG, "Camera dir can read: " + cameraDir.canRead());
+        FLog.d(TAG, "Camera dir: " + cameraDir.getAbsolutePath());
+        FLog.d(TAG, "Camera dir exists: " + cameraDir.exists());
+        FLog.d(TAG, "Camera dir can read: " + cameraDir.canRead());
         
         if (cameraDir.exists()) {
             File[] files = cameraDir.listFiles();
-            Log.d(TAG, "Files in camera dir: " + (files != null ? files.length : "null"));
+            FLog.d(TAG, "Files in camera dir: " + (files != null ? files.length : "null"));
             if (files != null) {
                 for (File f : files) {
-                    Log.d(TAG, "  - " + f.getName() + " (exists: " + f.exists() + ", size: " + f.length() + ")");
+                    FLog.d(TAG, "  - " + f.getName() + " (exists: " + f.exists() + ", size: " + f.length() + ")");
                 }
             }
         }
@@ -159,7 +160,7 @@ public class WatchRecordsFragment extends Fragment {
         collectVideoFiles(cameraDir, videoFiles);
         Collections.sort(videoFiles, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
         
-        Log.d(TAG, "Total video files found: " + videoFiles.size());
+        FLog.d(TAG, "Total video files found: " + videoFiles.size());
 
         final List<RecordingEntry> result = new ArrayList<>();
         final int limit = Math.min(videoFiles.size(), MAX_ITEMS);
@@ -188,9 +189,9 @@ public class WatchRecordsFragment extends Fragment {
     // ── Click ─────────────────────────────────────────────────────────────────
 
     private void onItemClicked(@NonNull RecordingEntry entry) {
-        Log.d(TAG, "=== VIDEO PLAYBACK DEBUG ===");
-        Log.d(TAG, "File path: " + entry.file.getAbsolutePath());
-        Log.d(TAG, "File exists: " + entry.file.exists());
+        FLog.d(TAG, "=== VIDEO PLAYBACK DEBUG ===");
+        FLog.d(TAG, "File path: " + entry.file.getAbsolutePath());
+        FLog.d(TAG, "File exists: " + entry.file.exists());
 
         try {
             // Use FileProvider content URI — file:// EACCES on Wear OS API 30 emulator.
@@ -201,10 +202,10 @@ public class WatchRecordsFragment extends Fragment {
             final Intent intent = new Intent(requireContext(), WatchVideoPlayerActivity.class);
             intent.putExtra(WatchVideoPlayerActivity.EXTRA_URI, contentUri.toString());
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Log.d(TAG, "Starting player with content URI: " + contentUri);
+            FLog.d(TAG, "Starting player with content URI: " + contentUri);
             startActivity(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start player", e);
+            FLog.e(TAG, "Failed to start player", e);
             Toast.makeText(requireContext(), "Cannot play: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -254,7 +255,7 @@ public class WatchRecordsFragment extends Fragment {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(Intent.createChooser(intent, entry.displayName));
         } catch (Exception e) {
-            Log.e(TAG, "Share failed", e);
+            FLog.e(TAG, "Share failed", e);
         }
     }
     private void saveVideo(@NonNull RecordingEntry entry) {
@@ -289,7 +290,7 @@ public class WatchRecordsFragment extends Fragment {
                             R.string.watch_video_saved_toast, Toast.LENGTH_SHORT).show();
                 });
             } catch (Exception e) {
-                Log.e(TAG, "Save failed", e);
+                FLog.e(TAG, "Save failed", e);
                 mainHandler.post(() -> {
                     if (isAdded()) Toast.makeText(requireContext(),
                             "Save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -340,8 +341,8 @@ public class WatchRecordsFragment extends Fragment {
     }
 
     private void deleteVideo(@NonNull RecordingEntry entry) {
-        Log.d(TAG, "=== DELETE DEBUG ===");
-        Log.d(TAG, "Deleting video: " + entry.file.getAbsolutePath());
+        FLog.d(TAG, "=== DELETE DEBUG ===");
+        FLog.d(TAG, "Deleting video: " + entry.file.getAbsolutePath());
 
         executor.execute(() -> {
             // Delegate to TrashManager so metadata is written in the same format
@@ -349,7 +350,7 @@ public class WatchRecordsFragment extends Fragment {
             final Uri fileUri = Uri.fromFile(entry.file);
             final boolean success = TrashManager.moveToTrash(
                     requireContext(), fileUri, entry.displayName, false);
-            Log.d(TAG, "moveToTrash result: " + success);
+            FLog.d(TAG, "moveToTrash result: " + success);
 
             mainHandler.post(() -> {
                 if (isAdded()) {
@@ -517,7 +518,7 @@ public class WatchRecordsFragment extends Fragment {
             android.media.MediaMetadataRetriever retriever = null;
             android.os.ParcelFileDescriptor pfd = null;
             try {
-                Log.d(TAG, "Loading thumbnail for: " + file.getAbsolutePath());
+                FLog.d(TAG, "Loading thumbnail for: " + file.getAbsolutePath());
                 // Use ParcelFileDescriptor so EACCES on Wear OS emulator (canRead=false) is bypassed.
                 pfd = android.os.ParcelFileDescriptor.open(
                         file, android.os.ParcelFileDescriptor.MODE_READ_ONLY);
@@ -526,13 +527,13 @@ public class WatchRecordsFragment extends Fragment {
                 Bitmap frame = retriever.getFrameAtTime(1_000_000L,
                         android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
                 if (frame != null) {
-                    Log.d(TAG, "Got frame: " + frame.getWidth() + "x" + frame.getHeight());
+                    FLog.d(TAG, "Got frame: " + frame.getWidth() + "x" + frame.getHeight());
                     return Bitmap.createScaledBitmap(frame, 64, 64, true);
                 }
-                Log.w(TAG, "No frame extracted from video");
+                FLog.w(TAG, "No frame extracted from video");
                 return null;
             } catch (Exception e) {
-                Log.e(TAG, "Thumbnail load failed for " + file.getName() + ": " + e.getMessage(), e);
+                FLog.e(TAG, "Thumbnail load failed for " + file.getName() + ": " + e.getMessage(), e);
                 return null;
             } finally {
                 if (retriever != null) {

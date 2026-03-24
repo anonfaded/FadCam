@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.annotation.objects;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -61,13 +63,13 @@ public class TextObject extends AnnotationObject {
             android.text.Spanned spanned = (android.text.Spanned) text;
             android.text.style.ForegroundColorSpan[] spans = 
                 spanned.getSpans(0, text.length(), android.text.style.ForegroundColorSpan.class);
-            android.util.Log.d("TextObject", "Drawing text with " + spans.length + " color spans");
+            FLog.d("TextObject", "Drawing text with " + spans.length + " color spans");
             for (int i = 0; i < spans.length; i++) {
                 int start = spanned.getSpanStart(spans[i]);
                 int end = spanned.getSpanEnd(spans[i]);
                 int color = spans[i].getForegroundColor();
-                android.util.Log.d("TextObject", "  Span " + i + ": [" + start + "-" + end + "] color=#" + Integer.toHexString(color));
-                android.util.Log.d("TextObject", "  Text: \"" + text.toString().substring(start, Math.min(end, text.length())) + "\"");
+                FLog.d("TextObject", "  Span " + i + ": [" + start + "-" + end + "] color=#" + Integer.toHexString(color));
+                FLog.d("TextObject", "  Text: \"" + text.toString().substring(start, Math.min(end, text.length())) + "\"");
             }
         }
 
@@ -78,7 +80,7 @@ public class TextObject extends AnnotationObject {
         textPaint.setColor(textColor); // Default color for unspanned text
         textPaint.setAlpha((int) (opacity * 255));
         
-        android.util.Log.d("TextObject", "TextPaint base color: #" + Integer.toHexString(textColor));
+        FLog.d("TextObject", "TextPaint base color: #" + Integer.toHexString(textColor));
 
         // Set typeface based on style
         int style = Typeface.NORMAL;
@@ -96,7 +98,7 @@ public class TextObject extends AnnotationObject {
         int layoutWidth;
         if (maxWidth > 0) {
             layoutWidth = maxWidth;
-            android.util.Log.d("TextObject", "Using maxWidth from editor: " + layoutWidth);
+            FLog.d("TextObject", "Using maxWidth from editor: " + layoutWidth);
         } else {
             // Auto-width: measure the longest line
             String textStr = text.toString();
@@ -107,7 +109,7 @@ public class TextObject extends AnnotationObject {
                 if (lineWidth > maxLineWidth) maxLineWidth = lineWidth;
             }
             layoutWidth = (int) Math.ceil(maxLineWidth);
-            android.util.Log.d("TextObject", "Calculated layoutWidth: " + layoutWidth);
+            FLog.d("TextObject", "Calculated layoutWidth: " + layoutWidth);
         }
         
         // Create StaticLayout for proper text wrapping
@@ -124,7 +126,7 @@ public class TextObject extends AnnotationObject {
     // Keep internal bounds in sync with what we actually draw (local space)
     bounds.set(0f, 0f, containerWidth, containerHeight);
         
-        android.util.Log.d("TextObject", "Drawing layout: " + containerWidth + "x" + containerHeight + 
+        FLog.d("TextObject", "Drawing layout: " + containerWidth + "x" + containerHeight + 
                           " bounds: " + bounds.width() + "x" + bounds.height() + 
                           " scale: " + scale + " lines: " + layout.getLineCount());
 
@@ -385,7 +387,7 @@ public class TextObject extends AnnotationObject {
         // Bounds are in LOCAL space (before scale transformation)
         bounds.set(0, 0, layoutWidth, actualHeight);
         
-        android.util.Log.d("TextObject", "Calculated bounds: " + layoutWidth + "x" + actualHeight + 
+        FLog.d("TextObject", "Calculated bounds: " + layoutWidth + "x" + actualHeight + 
                           " (actualWidth=" + actualWidth + ", maxWidth=" + maxWidth + ", scale=" + scale + 
                           ", lines=" + layout.getLineCount() + ")");
     }

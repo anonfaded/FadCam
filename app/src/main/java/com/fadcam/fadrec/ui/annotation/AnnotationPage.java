@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
 
 import org.json.JSONArray;
@@ -280,7 +282,7 @@ public class AnnotationPage {
                 try {
                     undoArray.put(cmd.toJSON());
                 } catch (Exception e) {
-                    android.util.Log.w("AnnotationPage", "Failed to serialize command: " + cmd.getDescription(), e);
+                    FLog.w("AnnotationPage", "Failed to serialize command: " + cmd.getDescription(), e);
                 }
             }
         }
@@ -292,7 +294,7 @@ public class AnnotationPage {
                 try {
                     redoArray.put(cmd.toJSON());
                 } catch (Exception e) {
-                    android.util.Log.w("AnnotationPage", "Failed to serialize command: " + cmd.getDescription(), e);
+                    FLog.w("AnnotationPage", "Failed to serialize command: " + cmd.getDescription(), e);
                 }
             }
         }
@@ -339,7 +341,7 @@ public class AnnotationPage {
         // Deserialize undo history
         if (json.has("undoHistory")) {
             JSONArray undoArray = json.getJSONArray("undoHistory");
-            android.util.Log.d("AnnotationPage", "Restoring " + undoArray.length() + " undo commands");
+            FLog.d("AnnotationPage", "Restoring " + undoArray.length() + " undo commands");
             for (int i = 0; i < undoArray.length(); i++) {
                 try {
                     JSONObject cmdJson = undoArray.getJSONObject(i);
@@ -348,7 +350,7 @@ public class AnnotationPage {
                         page.undoStack.add(cmd);
                     }
                 } catch (Exception e) {
-                    android.util.Log.e("AnnotationPage", "Failed to deserialize undo command " + i, e);
+                    FLog.e("AnnotationPage", "Failed to deserialize undo command " + i, e);
                 }
             }
         }
@@ -356,7 +358,7 @@ public class AnnotationPage {
         // Deserialize redo history
         if (json.has("redoHistory")) {
             JSONArray redoArray = json.getJSONArray("redoHistory");
-            android.util.Log.d("AnnotationPage", "Restoring " + redoArray.length() + " redo commands");
+            FLog.d("AnnotationPage", "Restoring " + redoArray.length() + " redo commands");
             for (int i = 0; i < redoArray.length(); i++) {
                 try {
                     JSONObject cmdJson = redoArray.getJSONObject(i);
@@ -365,12 +367,12 @@ public class AnnotationPage {
                         page.redoStack.add(cmd);
                     }
                 } catch (Exception e) {
-                    android.util.Log.e("AnnotationPage", "Failed to deserialize redo command " + i, e);
+                    FLog.e("AnnotationPage", "Failed to deserialize redo command " + i, e);
                 }
             }
         }
         
-        android.util.Log.d("AnnotationPage", "Loaded page with " + page.undoStack.size() + " undo, " + 
+        FLog.d("AnnotationPage", "Loaded page with " + page.undoStack.size() + " undo, " + 
                           page.redoStack.size() + " redo commands");
         
         return page;
@@ -396,7 +398,7 @@ public class AnnotationPage {
                 String layerId = json.getString("layerId");
                 AnnotationLayer layer = page.getLayerById(layerId);
                 if (layer == null) {
-                    android.util.Log.e("AnnotationPage", "Cannot deserialize ADD_PATH: layer " + layerId + " not found");
+                    FLog.e("AnnotationPage", "Cannot deserialize ADD_PATH: layer " + layerId + " not found");
                     return null;
                 }
                 return AddPathCommand.fromJSON(layer, json);
@@ -406,7 +408,7 @@ public class AnnotationPage {
                 String objLayerId = json.getString("layerId");
                 AnnotationLayer objLayer = page.getLayerById(objLayerId);
                 if (objLayer == null) {
-                    android.util.Log.e("AnnotationPage", "Cannot deserialize ADD_OBJECT: layer " + objLayerId + " not found");
+                    FLog.e("AnnotationPage", "Cannot deserialize ADD_OBJECT: layer " + objLayerId + " not found");
                     return null;
                 }
                 return AddObjectCommand.fromJSON(objLayer, json);
@@ -416,7 +418,7 @@ public class AnnotationPage {
                 String textLayerId = json.getString("layerId");
                 AnnotationLayer textLayer = page.getLayerById(textLayerId);
                 if (textLayer == null) {
-                    android.util.Log.e("AnnotationPage", "Cannot deserialize MODIFY_TEXT_OBJECT: layer " + textLayerId + " not found");
+                    FLog.e("AnnotationPage", "Cannot deserialize MODIFY_TEXT_OBJECT: layer " + textLayerId + " not found");
                     return null;
                 }
                 return ModifyTextObjectCommand.fromJSON(textLayer, json);
@@ -428,7 +430,7 @@ public class AnnotationPage {
                 return ClearAllLayersCommand.fromJSON(page, json);
             
             default:
-                android.util.Log.w("AnnotationPage", "Unknown command type: " + type);
+                FLog.w("AnnotationPage", "Unknown command type: " + type);
                 return null;
         }
     }
@@ -441,16 +443,16 @@ public class AnnotationPage {
     public void reconstruct() {
         // CRITICAL: If commands were deserialized, don't overwrite them
         if (undoStack != null && !undoStack.isEmpty()) {
-            android.util.Log.d("AnnotationPage", "Command history already loaded from JSON (" + 
+            FLog.d("AnnotationPage", "Command history already loaded from JSON (" + 
                               undoStack.size() + " undo, " + redoStack.size() + " redo). Skipping reconstruct.");
             return;
         }
         
         initializeStacks();
         
-        android.util.Log.d("AnnotationPage", "=== RECONSTRUCT HISTORY STARTED (Legacy) ===");
-        android.util.Log.d("AnnotationPage", "Saved undo count: " + savedUndoCount);
-        android.util.Log.d("AnnotationPage", "Saved redo count: " + savedRedoCount);
+        FLog.d("AnnotationPage", "=== RECONSTRUCT HISTORY STARTED (Legacy) ===");
+        FLog.d("AnnotationPage", "Saved undo count: " + savedUndoCount);
+        FLog.d("AnnotationPage", "Saved redo count: " + savedRedoCount);
         
         // Rebuild undo history from ALL objects in ALL layers
         // Each object becomes one undo step
@@ -468,9 +470,9 @@ public class AnnotationPage {
             undoStack.remove(0);
         }
         
-        android.util.Log.d("AnnotationPage", "Rebuilt " + totalObjects + " objects into undo stack");
-        android.util.Log.d("AnnotationPage", "Final undo count: " + undoStack.size());
-        android.util.Log.d("AnnotationPage", "=== RECONSTRUCT HISTORY COMPLETED ===");
+        FLog.d("AnnotationPage", "Rebuilt " + totalObjects + " objects into undo stack");
+        FLog.d("AnnotationPage", "Final undo count: " + undoStack.size());
+        FLog.d("AnnotationPage", "=== RECONSTRUCT HISTORY COMPLETED ===");
     }
     
     /**

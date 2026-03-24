@@ -1,5 +1,6 @@
 package com.fadcam;
 
+import com.fadcam.FLog;
 import static android.content.ContentValues.TAG;
 
 import android.content.Context;
@@ -57,9 +58,9 @@ public class SharedPreferencesManager {
                 .edit()
                 .putStringSet(Constants.PREF_OPENED_VIDEO_URIS, openedUris)
                 .apply();
-            Log.d("SharedPrefs", "Added opened URI: " + uriString);
+            FLog.d("SharedPrefs", "Added opened URI: " + uriString);
         } else {
-            android.util.Log.v(
+            FLog.v(
                 "SharedPrefs",
                 "URI already marked as opened: " + uriString
             );
@@ -72,7 +73,7 @@ public class SharedPreferencesManager {
             .edit()
             .remove(Constants.PREF_OPENED_VIDEO_URIS)
             .apply();
-        Log.w("SharedPrefs", "Cleared all opened video URIs.");
+        FLog.w("SharedPrefs", "Cleared all opened video URIs.");
     }
 
     // --- End Opened Video Methods ---
@@ -379,7 +380,7 @@ public class SharedPreferencesManager {
                 Constants.PREF_VIDEO_FRAME_RATE,
                 Constants.DEFAULT_VIDEO_FRAME_RATE
             );
-            Log.w(
+            FLog.w(
                 "SharedPrefs",
                 "Migrating old FPS pref (" +
                 oldGenericValue +
@@ -508,7 +509,7 @@ public class SharedPreferencesManager {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w("SharedPrefs", "Error reading zoom min", e);
+            FLog.w("SharedPrefs", "Error reading zoom min", e);
         }
 
         if (preferWideAngleMin) {
@@ -542,7 +543,7 @@ public class SharedPreferencesManager {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w("SharedPrefs", "Error reading zoom max", e);
+            FLog.w("SharedPrefs", "Error reading zoom max", e);
         }
 
         return 5.0f;
@@ -575,7 +576,7 @@ public class SharedPreferencesManager {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w("SharedPrefs", "Error resolving zoom camera ID", e);
+            FLog.w("SharedPrefs", "Error resolving zoom camera ID", e);
         }
 
         return null;
@@ -606,7 +607,7 @@ public class SharedPreferencesManager {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.w(
+            FLog.w(
                 "SharedPrefs",
                 "Error checking camera characteristics for ID: " + cameraId,
                 e
@@ -1209,7 +1210,7 @@ public class SharedPreferencesManager {
      */
     public void setSelectedBackCameraId(String cameraId) {
         if (cameraId == null || cameraId.isEmpty()) {
-            Log.w(
+            FLog.w(
                 "SharedPrefs",
                 "Attempted to save null or empty back camera ID. Resetting to default."
             );
@@ -1219,7 +1220,7 @@ public class SharedPreferencesManager {
             .edit()
             .putString(Constants.PREF_SELECTED_BACK_CAMERA_ID, cameraId)
             .apply();
-        Log.d("SharedPrefs", "Saved selected back camera ID: " + cameraId);
+        FLog.d("SharedPrefs", "Saved selected back camera ID: " + cameraId);
     }
 
     // --- Audio Settings ---
@@ -1295,7 +1296,7 @@ public class SharedPreferencesManager {
             .edit()
             .putInt(PREF_KEY_TRASH_AUTO_DELETE_MINUTES, minutes)
             .apply();
-        Log.d(
+        FLog.d(
             "SharedPrefsManager",
             "Trash auto-delete duration set to: " + minutes + " minutes."
         );
@@ -1306,7 +1307,7 @@ public class SharedPreferencesManager {
             PREF_KEY_TRASH_AUTO_DELETE_MINUTES,
             DEFAULT_TRASH_AUTO_DELETE_MINUTES
         );
-        Log.d(
+        FLog.d(
             "SharedPrefsManager",
             "Retrieved trash auto-delete duration: " + minutes + " minutes."
         );
@@ -2004,7 +2005,7 @@ public class SharedPreferencesManager {
             .edit()
             .putString(Constants.PREF_SCREEN_RECORDING_STATE, state)
             .apply();
-        Log.d("SharedPrefs", "Screen recording state changed to: " + state);
+        FLog.d("SharedPrefs", "Screen recording state changed to: " + state);
     }
 
     /**
@@ -2047,7 +2048,7 @@ public class SharedPreferencesManager {
             .edit()
             .putString("current_recording_mode", mode)
             .apply();
-        Log.d("SharedPrefs", "Recording mode changed to: " + mode);
+        FLog.d("SharedPrefs", "Recording mode changed to: " + mode);
     }
 
     // -------------- Motion Lab (Advanced) Preferences Start --------------
@@ -2245,7 +2246,7 @@ public class SharedPreferencesManager {
             .edit()
             .putBoolean(Constants.PREF_FLOATING_CONTROLS_ENABLED, enabled)
             .apply();
-        Log.d("SharedPrefs", "Floating controls enabled: " + enabled);
+        FLog.d("SharedPrefs", "Floating controls enabled: " + enabled);
     }
 
     // -------------- FadRec (Screen Recording) Preferences End --------------
@@ -2266,7 +2267,7 @@ public class SharedPreferencesManager {
             // Parse and clean in JS, or optionally do cleanup here if needed
             return cached;
         } catch (Exception e) {
-            android.util.Log.e("SharedPrefs", "Error getting notification history", e);
+            FLog.e("SharedPrefs", "Error getting notification history", e);
             return "[]";
         }
     }
@@ -2283,9 +2284,9 @@ public class SharedPreferencesManager {
                 .edit()
                 .putString(PREF_NOTIFICATION_HISTORY, historyJson)
                 .apply();
-            android.util.Log.d("SharedPrefs", "Notification history saved");
+            FLog.d("SharedPrefs", "Notification history saved");
         } catch (Exception e) {
-            android.util.Log.e("SharedPrefs", "Error saving notification history", e);
+            FLog.e("SharedPrefs", "Error saving notification history", e);
         }
     }
 
@@ -2297,7 +2298,7 @@ public class SharedPreferencesManager {
             .edit()
             .remove(PREF_NOTIFICATION_HISTORY)
             .apply();
-        android.util.Log.d("SharedPrefs", "Notification history cleared");
+        FLog.d("SharedPrefs", "Notification history cleared");
     }
 
     /**

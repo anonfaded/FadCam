@@ -1,12 +1,13 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -135,13 +136,13 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
         // Extract URI from intent
         final String uriString = getIntent().getStringExtra(EXTRA_URI);
         if (uriString == null || uriString.isEmpty()) {
-            Log.e(TAG, "No URI to play — finishing");
+            FLog.e(TAG, "No URI to play — finishing");
             Toast.makeText(this, "No video URI", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        Log.d(TAG, "Playing video: " + uriString);
+        FLog.d(TAG, "Playing video: " + uriString);
 
         // Derive short title from URI path
         final String rawPath = Uri.parse(uriString).getLastPathSegment();
@@ -153,7 +154,7 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
         try {
             initPlayer(Uri.parse(uriString));
         } catch (Exception e) {
-            Log.e(TAG, "Failed to initialize player: " + e.getMessage(), e);
+            FLog.e(TAG, "Failed to initialize player: " + e.getMessage(), e);
             Toast.makeText(this, "Cannot play video: " + e.getMessage(), Toast.LENGTH_LONG).show();
             finish();
         }
@@ -167,7 +168,7 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
         super.onStart();
         if (player != null) {
             player.play();
-            Log.d(TAG, "Player started");
+            FLog.d(TAG, "Player started");
         }
     }
 
@@ -176,7 +177,7 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
         super.onStop();
         if (player != null) {
             player.pause();
-            Log.d(TAG, "Player paused");
+            FLog.d(TAG, "Player paused");
         }
     }
 
@@ -191,9 +192,9 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
 
     private void initPlayer(@NonNull Uri uri) {
         try {
-            Log.d(TAG, "Initializing player with URI: " + uri);
-            Log.d(TAG, "URI scheme: " + uri.getScheme());
-            Log.d(TAG, "URI path: " + uri.getPath());
+            FLog.d(TAG, "Initializing player with URI: " + uri);
+            FLog.d(TAG, "URI scheme: " + uri.getScheme());
+            FLog.d(TAG, "URI path: " + uri.getPath());
             
             player = new ExoPlayer.Builder(this).build();
             playerView.setPlayer(player);
@@ -204,12 +205,12 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
             player.prepare();
             player.setPlayWhenReady(true);
 
-            Log.d(TAG, "Player initialized, preparing...");
+            FLog.d(TAG, "Player initialized, preparing...");
 
             player.addListener(new Player.Listener() {
                 @Override
                 public void onIsPlayingChanged(boolean isPlaying) {
-                    Log.d(TAG, "Playing state changed: " + isPlaying);
+                    FLog.d(TAG, "Playing state changed: " + isPlaying);
                     updatePlayPauseButton(isPlaying);
                 }
 
@@ -223,10 +224,10 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
                         case Player.STATE_ENDED: stateStr = "ENDED"; break;
                         default: stateStr = "UNKNOWN"; break;
                     }
-                    Log.d(TAG, "Playback state: " + stateStr);
+                    FLog.d(TAG, "Playback state: " + stateStr);
                     
                     if (playbackState == Player.STATE_READY) {
-                        Log.d(TAG, "Player ready! Duration: " + player.getDuration() + "ms");
+                        FLog.d(TAG, "Player ready! Duration: " + player.getDuration() + "ms");
                     } else if (playbackState == Player.STATE_ENDED) {
                         showControls();
                     }
@@ -234,7 +235,7 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
 
                 @Override
                 public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
-                    Log.e(TAG, "Player error: " + error.getMessage() + ", errorCode: " + error.errorCode);
+                    FLog.e(TAG, "Player error: " + error.getMessage() + ", errorCode: " + error.errorCode);
                     Toast.makeText(WatchVideoPlayerActivity.this, 
                         "Playback error: " + error.getMessage(), 
                         Toast.LENGTH_LONG).show();
@@ -251,7 +252,7 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
                 }
             });
         } catch (Exception e) {
-            Log.e(TAG, "Failed to initialize player: " + e.getMessage(), e);
+            FLog.e(TAG, "Failed to initialize player: " + e.getMessage(), e);
             throw e;
         }
     }

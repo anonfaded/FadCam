@@ -1,11 +1,11 @@
 package com.fadcam.util;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
 import com.fadcam.Constants;
@@ -72,7 +72,7 @@ public final class PreferencesBackupUtil {
                 }
                 root.put(e.getKey(), arr);
             } else {
-                Log.w(TAG, "Skipping unsupported pref type for key: " + e.getKey());
+                FLog.w(TAG, "Skipping unsupported pref type for key: " + e.getKey());
             }
         }
         return root;
@@ -142,7 +142,7 @@ public final class PreferencesBackupUtil {
                 }
                 editor.putStringSet(key, set);
             } else {
-                Log.w(TAG, "Unsupported import type for key: " + key);
+                FLog.w(TAG, "Unsupported import type for key: " + key);
             }
         }
         editor.apply();

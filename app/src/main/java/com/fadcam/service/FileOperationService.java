@@ -1,12 +1,13 @@
 package com.fadcam.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 import androidx.annotation.Nullable;
 import com.fadcam.R;
 
@@ -51,7 +52,7 @@ public class FileOperationService extends Service implements FileOperationManage
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "Service created");
+        FLog.d(TAG, "Service created");
         
         operationManager = new FileOperationManager(this);
         operationManager.setOperationListener(this);
@@ -61,7 +62,7 @@ public class FileOperationService extends Service implements FileOperationManage
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "Service started with intent: " + intent);
+        FLog.d(TAG, "Service started with intent: " + intent);
         
         if (intent != null) {
             handleIntent(intent);
@@ -78,7 +79,7 @@ public class FileOperationService extends Service implements FileOperationManage
         String displayName = intent.getStringExtra(EXTRA_DISPLAY_NAME);
         
         if (operationType == null || sourceUriString == null || fileName == null) {
-            Log.e(TAG, "Missing required intent extras");
+            FLog.e(TAG, "Missing required intent extras");
             return;
         }
         
@@ -99,7 +100,7 @@ public class FileOperationService extends Service implements FileOperationManage
                 type = FileOperationTask.OperationType.RESTORE_FILE;
                 break;
             default:
-                Log.e(TAG, "Unknown operation type: " + operationType);
+                FLog.e(TAG, "Unknown operation type: " + operationType);
                 return;
         }
         
@@ -115,7 +116,7 @@ public class FileOperationService extends Service implements FileOperationManage
     
     @Override
     public void onDestroy() {
-        Log.d(TAG, "Service destroyed");
+        FLog.d(TAG, "Service destroyed");
         if (operationManager != null) {
             operationManager.shutdown();
         }
@@ -133,7 +134,7 @@ public class FileOperationService extends Service implements FileOperationManage
     
     @Override
     public void onTaskStarted(FileOperationTask task) {
-        Log.d(TAG, "Task started: " + task);
+        FLog.d(TAG, "Task started: " + task);
         
         // Start foreground service with notification
         startForeground(FOREGROUND_ID, notificationManager.createForegroundNotification(task).build());
@@ -154,7 +155,7 @@ public class FileOperationService extends Service implements FileOperationManage
     
     @Override
     public void onTaskCompleted(FileOperationTask task) {
-        Log.d(TAG, "Task completed: " + task);
+        FLog.d(TAG, "Task completed: " + task);
         
         String message = getCompletionMessage(task);
         notificationManager.showCompleted(message, true);
@@ -166,7 +167,7 @@ public class FileOperationService extends Service implements FileOperationManage
     
     @Override
     public void onTaskFailed(FileOperationTask task, String error) {
-        Log.e(TAG, "Task failed: " + task + ", error: " + error);
+        FLog.e(TAG, "Task failed: " + task + ", error: " + error);
         
         String message = "Failed to " + task.getOperationText().toLowerCase() + ": " + 
                         (task.displayName != null ? task.displayName : task.fileName);
@@ -179,7 +180,7 @@ public class FileOperationService extends Service implements FileOperationManage
     
     @Override
     public void onAllTasksCompleted() {
-        Log.d(TAG, "All tasks completed");
+        FLog.d(TAG, "All tasks completed");
         
         // Stop foreground service when no more tasks
         stopForeground(false);

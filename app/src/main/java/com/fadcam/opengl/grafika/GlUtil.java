@@ -16,10 +16,10 @@
 
 package com.fadcam.opengl.grafika;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.util.Log;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -62,7 +62,7 @@ public class GlUtil {
         int program = GLES20.glCreateProgram();
         checkGlError("glCreateProgram");
         if (program == 0) {
-            Log.e(TAG, "Could not create program");
+            FLog.e(TAG, "Could not create program");
         }
         GLES20.glAttachShader(program, vertexShader);
         checkGlError("glAttachShader");
@@ -72,8 +72,8 @@ public class GlUtil {
         int[] linkStatus = new int[1];
         GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
         if (linkStatus[0] != GLES20.GL_TRUE) {
-            Log.e(TAG, "Could not link program: ");
-            Log.e(TAG, GLES20.glGetProgramInfoLog(program));
+            FLog.e(TAG, "Could not link program: ");
+            FLog.e(TAG, GLES20.glGetProgramInfoLog(program));
             GLES20.glDeleteProgram(program);
             program = 0;
         }
@@ -93,8 +93,8 @@ public class GlUtil {
         int[] compiled = new int[1];
         GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compiled, 0);
         if (compiled[0] == 0) {
-            Log.e(TAG, "Could not compile shader " + shaderType + ":");
-            Log.e(TAG, " " + GLES20.glGetShaderInfoLog(shader));
+            FLog.e(TAG, "Could not compile shader " + shaderType + ":");
+            FLog.e(TAG, " " + GLES20.glGetShaderInfoLog(shader));
             GLES20.glDeleteShader(shader);
             shader = 0;
         }
@@ -108,7 +108,7 @@ public class GlUtil {
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
             String msg = op + ": glError 0x" + Integer.toHexString(error);
-            Log.e(TAG, msg);
+            FLog.e(TAG, msg);
             throw new RuntimeException(msg);
         }
     }
@@ -178,8 +178,8 @@ public class GlUtil {
      * Writes GL version info to the log.
      */
     public static void logVersionInfo() {
-        Log.i(TAG, "vendor  : " + GLES20.glGetString(GLES20.GL_VENDOR));
-        Log.i(TAG, "renderer: " + GLES20.glGetString(GLES20.GL_RENDERER));
-        Log.i(TAG, "version : " + GLES20.glGetString(GLES20.GL_VERSION));
+        FLog.i(TAG, "vendor  : " + GLES20.glGetString(GLES20.GL_VENDOR));
+        FLog.i(TAG, "renderer: " + GLES20.glGetString(GLES20.GL_RENDERER));
+        FLog.i(TAG, "version : " + GLES20.glGetString(GLES20.GL_VERSION));
     }
 } 

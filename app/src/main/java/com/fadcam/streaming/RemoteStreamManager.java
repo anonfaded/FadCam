@@ -1,9 +1,9 @@
 package com.fadcam.streaming;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -150,7 +150,7 @@ public class RemoteStreamManager {
     public void invalidateStatusCache() {
         cachedStatusJson = null;
         lastStatusJsonTime = 0;
-        Log.d(TAG, "🔄 Status cache invalidated - next request will generate fresh JSON");
+        FLog.d(TAG, "🔄 Status cache invalidated - next request will generate fresh JSON");
     }
     
     /**
@@ -162,7 +162,7 @@ public class RemoteStreamManager {
         bufferLock.writeLock().lock();
         try {
             this.streamingEnabled = enabled;
-            Log.i(TAG, "Streaming " + (enabled ? "enabled" : "disabled"));
+            FLog.i(TAG, "Streaming " + (enabled ? "enabled" : "disabled"));
             
             if (enabled) {
                 // Start server uptime tracking
@@ -171,7 +171,7 @@ public class RemoteStreamManager {
                     clientMetricsMap.clear();
                 }
                 NetworkMonitor.getInstance().startMonitoring();
-                Log.i(TAG, "Server uptime started");
+                FLog.i(TAG, "Server uptime started");
             } else {
                 serverStartTime = 0;
                 synchronized (clientMetricsMap) {
@@ -195,7 +195,7 @@ public class RemoteStreamManager {
         bufferLock.writeLock().lock();
         try {
             this.streamingMode = mode;
-            Log.i(TAG, "Streaming mode set to: " + mode);
+            FLog.i(TAG, "Streaming mode set to: " + mode);
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -228,10 +228,10 @@ public class RemoteStreamManager {
                 int maxVol = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
                 this.mediaVolume = currentVolume;
                 this.maxMediaVolume = maxVol;
-                Log.d(TAG, "Volume initialized: " + currentVolume + "/" + maxVol);
+                FLog.d(TAG, "Volume initialized: " + currentVolume + "/" + maxVol);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to initialize volume", e);
+            FLog.e(TAG, "Failed to initialize volume", e);
         }
     }
     
@@ -241,14 +241,14 @@ public class RemoteStreamManager {
      * Fragments are received via FragmentedMp4MuxerWrapper callbacks.
      */
     public void startRecording(@NonNull File recordingFile) {
-        // Log.i(TAG, "🎬 START RECORDING called: enabled=" + streamingEnabled + ", file=" + recordingFile.getName());
+        // FLog.i(TAG, "🎬 START RECORDING called: enabled=" + streamingEnabled + ", file=" + recordingFile.getName());
         
         if (!streamingEnabled) {
-            Log.w(TAG, "❌ Streaming NOT enabled - ignoring startRecording call");
+            FLog.w(TAG, "❌ Streaming NOT enabled - ignoring startRecording call");
             return;
         }
         
-        // Log.i(TAG, "✅ Streaming ENABLED - ready to receive fragments via callbacks");
+        // FLog.i(TAG, "✅ Streaming ENABLED - ready to receive fragments via callbacks");
         
         bufferLock.writeLock().lock();
         try {
@@ -261,15 +261,15 @@ public class RemoteStreamManager {
             
             if (isNewRecording) {
                 clearBuffer(); // Reset buffer for new recording
-                // Log.d(TAG, "📋 Buffer cleared for new recording session");
+                // FLog.d(TAG, "📋 Buffer cleared for new recording session");
             } else {
-                // Log.d(TAG, "⚠️ Same recording file - buffer NOT cleared (duplicate call)");
+                // FLog.d(TAG, "⚠️ Same recording file - buffer NOT cleared (duplicate call)");
             }
         } finally {
             bufferLock.writeLock().unlock();
         }
         
-        // Log.i(TAG, "Remote streaming ready (callback-based)");
+        // FLog.i(TAG, "Remote streaming ready (callback-based)");
     }
 
     /**
@@ -280,7 +280,7 @@ public class RemoteStreamManager {
      */
     public void startRecordingSaf() {
         if (!streamingEnabled) {
-            Log.w(TAG, "❌ Streaming NOT enabled - ignoring startRecordingSaf call");
+            FLog.w(TAG, "❌ Streaming NOT enabled - ignoring startRecordingSaf call");
             return;
         }
 
@@ -293,7 +293,7 @@ public class RemoteStreamManager {
             if (isNewRecording) {
                 clearBuffer();
             }
-            Log.i(TAG, "🎬 SAF recording started (no File, using flag)");
+            FLog.i(TAG, "🎬 SAF recording started (no File, using flag)");
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -308,7 +308,7 @@ public class RemoteStreamManager {
         bufferLock.writeLock().lock();
         try {
             recordingPaused = true;
-            Log.i(TAG, "⏸️ Recording PAUSED - stream buffers retained");
+            FLog.i(TAG, "⏸️ Recording PAUSED - stream buffers retained");
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -322,7 +322,7 @@ public class RemoteStreamManager {
         bufferLock.writeLock().lock();
         try {
             recordingPaused = false;
-            Log.i(TAG, "▶️ Recording RESUMED");
+            FLog.i(TAG, "▶️ Recording RESUMED");
         } finally {
             bufferLock.writeLock().unlock();
         }
@@ -342,7 +342,7 @@ public class RemoteStreamManager {
      * DOES NOT clear buffer - keeps fragments available for playback until next recording starts.
      */
     public void stopRecording() {
-        // Log.i(TAG, "🛑 STOP RECORDING - buffer remains available for playback");
+        // FLog.i(TAG, "🛑 STOP RECORDING - buffer remains available for playback");
         
         bufferLock.writeLock().lock();
         try {
@@ -378,7 +378,7 @@ public class RemoteStreamManager {
      * @param initData ftyp + moov boxes
      */
     public void onInitializationSegment(byte[] initData) {
-        // Log.i(TAG, "🔔 onInitializationSegment CALLED - data size: " + (initData != null ? initData.length : "NULL"));
+        // FLog.i(TAG, "🔔 onInitializationSegment CALLED - data size: " + (initData != null ? initData.length : "NULL"));
         bufferLock.writeLock().lock();
         try {
             this.initializationSegment = initData;
@@ -399,11 +399,11 @@ public class RemoteStreamManager {
             bufferHead = 0;
             
             if (clearedCount > 0) {
-                // Log.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
+                // FLog.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
             }
             
             if (initData != null) {
-                // Log.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
+                // FLog.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
                 
                 // Upload to cloud relay if enabled
                 if (context != null) {
@@ -413,7 +413,7 @@ public class RemoteStreamManager {
                     }
                 }
             } else {
-                Log.w(TAG, "⚠️ Initialization segment is NULL");
+                FLog.w(TAG, "⚠️ Initialization segment is NULL");
             }
         } finally {
             bufferLock.writeLock().unlock();
@@ -434,14 +434,14 @@ public class RemoteStreamManager {
         try {
             // Detect unexpected sequence gaps (helps catch encoder reset issues)
             if (fragmentSequence > 0 && sequenceNumber != fragmentSequence + 1) {
-                Log.w(TAG, "⚠️ Fragment gap: last=" + fragmentSequence + " incoming=" + sequenceNumber + " (possible encoder restart)");
+                FLog.w(TAG, "⚠️ Fragment gap: last=" + fragmentSequence + " incoming=" + sequenceNumber + " (possible encoder restart)");
             }
 
             // CRITICAL FIX: Clear all old fragments from the buffer slot we're about to use
             // This prevents serving stale fragments when buffer wraps around
             if (fragmentBuffer[bufferHead] != null) {
                 int oldSeq = fragmentBuffer[bufferHead].sequenceNumber;
-                // Log.d(TAG, "🗑️ Evicting old fragment #" + oldSeq + " from slot " + bufferHead);
+                // FLog.d(TAG, "🗑️ Evicting old fragment #" + oldSeq + " from slot " + bufferHead);
             }
             
             // Create fragment object
@@ -458,7 +458,7 @@ public class RemoteStreamManager {
             // This ensures no stale data from previous buffer cycles
             for (int i = 0; i < BUFFER_SIZE; i++) {
                 if (fragmentBuffer[i] != null && fragmentBuffer[i].sequenceNumber < oldestSequence) {
-                    // Log.d(TAG, "🗑️ Purging stale fragment #" + fragmentBuffer[i].sequenceNumber + " (< oldest " + oldestSequence + ")");
+                    // FLog.d(TAG, "🗑️ Purging stale fragment #" + fragmentBuffer[i].sequenceNumber + " (< oldest " + oldestSequence + ")");
                     fragmentBuffer[i] = null;
                 }
             }
@@ -466,7 +466,7 @@ public class RemoteStreamManager {
             // Advance head pointer (circular)
             bufferHead = (bufferHead + 1) % BUFFER_SIZE;
             
-            // Log.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
+            // FLog.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
             //     (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
             
             // Upload to cloud relay if enabled
@@ -491,7 +491,7 @@ public class RemoteStreamManager {
                         @Override
                         public void onError(String error) {
                             // Segment failed - don't update playlist (viewers won't see missing segment)
-                            Log.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed, skipping playlist update: " + error);
+                            FLog.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed, skipping playlist update: " + error);
                         }
                     });
                 }
@@ -509,7 +509,7 @@ public class RemoteStreamManager {
     public byte[] getInitializationSegment() {
         bufferLock.readLock().lock();
         try {
-            // Log.d(TAG, "📥 getInitializationSegment called - returning: " + (initializationSegment != null ? (initializationSegment.length + " bytes") : "NULL"));
+            // FLog.d(TAG, "📥 getInitializationSegment called - returning: " + (initializationSegment != null ? (initializationSegment.length + " bytes") : "NULL"));
             return initializationSegment;
         } finally {
             bufferLock.readLock().unlock();
@@ -527,7 +527,7 @@ public class RemoteStreamManager {
             // CRITICAL: Reject requests for fragments outside the valid window
             // This prevents serving 45+ minute old fragments when client has stale playlist
             if (sequenceNumber < oldestSequence || sequenceNumber > fragmentSequence) {
-                Log.w(TAG, "❌ Fragment #" + sequenceNumber + " is outside valid range [" + oldestSequence + " to " + fragmentSequence + "] - REJECTED");
+                FLog.w(TAG, "❌ Fragment #" + sequenceNumber + " is outside valid range [" + oldestSequence + " to " + fragmentSequence + "] - REJECTED");
                 return null;
             }
             
@@ -538,7 +538,7 @@ public class RemoteStreamManager {
             }
             
             // Fragment was in valid range but not found in buffer (already evicted)
-            Log.w(TAG, "⚠️ Fragment #" + sequenceNumber + " was in valid range but already evicted from buffer");
+            FLog.w(TAG, "⚠️ Fragment #" + sequenceNumber + " was in valid range but already evicted from buffer");
             return null;
         } finally {
             bufferLock.readLock().unlock();
@@ -702,18 +702,18 @@ public class RemoteStreamManager {
         // OPTIMIZATION: Check cache first (1 second TTL)
         long currentTime = System.currentTimeMillis();
         if (cachedStatusJson != null && (currentTime - lastStatusJsonTime) < STATUS_CACHE_MS) {
-            Log.d(TAG, "📊 [getStatusJson] Serving from cache (age: " + (currentTime - lastStatusJsonTime) + "ms)");
+            FLog.d(TAG, "📊 [getStatusJson] Serving from cache (age: " + (currentTime - lastStatusJsonTime) + "ms)");
             return cachedStatusJson;
         }
         
         long startTime = System.currentTimeMillis();
         bufferLock.readLock().lock();
         try {
-            Log.d(TAG, "📊 [getStatusJson] Cache miss, generating fresh JSON...");
+            FLog.d(TAG, "📊 [getStatusJson] Cache miss, generating fresh JSON...");
             
             // CRITICAL: Check if context is null (happens when app is backgrounded/destroyed)
             if (context == null) {
-                Log.w(TAG, "⚠️ [getStatusJson] Context is null (app backgrounded). Returning safe state...");
+                FLog.w(TAG, "⚠️ [getStatusJson] Context is null (app backgrounded). Returning safe state...");
                 String safeState = "{\"streaming\": " + streamingEnabled + ", \"state\": \"backgrounded\", \"message\": \"App is backgrounded\", \"isRecording\": false}";
                 cachedStatusJson = safeState;
                 lastStatusJsonTime = currentTime;
@@ -728,7 +728,7 @@ public class RemoteStreamManager {
                 
                 // Only log if volume changed (avoid spam)
                 if (currentVolume != mediaVolume) {
-                    android.util.Log.d(TAG, "🔄 Volume synced from AudioManager: " + mediaVolume + " → " + currentVolume + "/" + maxVol);
+                    FLog.d(TAG, "🔄 Volume synced from AudioManager: " + mediaVolume + " → " + currentVolume + "/" + maxVol);
                     mediaVolume = currentVolume;
                 }
                 maxMediaVolume = maxVol;
@@ -858,7 +858,7 @@ public class RemoteStreamManager {
             // Compute display EV for web dashboard (backend is single source of truth)
             float exposureCompensationDisplay = exposureCompensation * exposureCompensationStep;
             // DIAGNOSTIC: Log exposure values before inserting into JSON
-            Log.d(TAG, "🔍 [getStatusJson] EXPOSURE DEBUG: ev=" + exposureCompensation + ", step=" + exposureCompensationStep + ", display=" + exposureCompensationDisplay);
+            FLog.d(TAG, "🔍 [getStatusJson] EXPOSURE DEBUG: ev=" + exposureCompensation + ", step=" + exposureCompensationStep + ", display=" + exposureCompensationDisplay);
             int exposureCompensationMin = spMgr != null ? spMgr.getExposureCompensationMin() : -12;
             int exposureCompensationMax = spMgr != null ? spMgr.getExposureCompensationMax() : 12;
             boolean mirrorEnabled = spMgr != null && spMgr.isFrontVideoMirrorEnabled();
@@ -965,13 +965,13 @@ public class RemoteStreamManager {
             
             // ULTRA-CRITICAL DIAGNOSTIC: Check String.format output immediately
             if (result.length() < 100) {
-                Log.e(TAG, "❌ String.format produced tiny response: " + result.length() + " bytes");
-                Log.e(TAG, "Full result: " + result);
+                FLog.e(TAG, "❌ String.format produced tiny response: " + result.length() + " bytes");
+                FLog.e(TAG, "Full result: " + result);
             } else if (!result.contains("exposureCompensation")) {
-                Log.e(TAG, "❌ String.format result missing exposureCompensation!");
-                Log.e(TAG, "First 500 chars: " + result.substring(0, Math.min(500, result.length())));
+                FLog.e(TAG, "❌ String.format result missing exposureCompensation!");
+                FLog.e(TAG, "First 500 chars: " + result.substring(0, Math.min(500, result.length())));
             } else {
-                Log.d(TAG, "✅ String.format executed, result size: " + result.length() + " bytes");
+                FLog.d(TAG, "✅ String.format executed, result size: " + result.length() + " bytes");
             }
             
             // OPTIMIZATION: Store result in cache for 1 second
@@ -981,33 +981,33 @@ public class RemoteStreamManager {
             lastStatusJsonTime = currentTime;
             
             long generationTime = System.currentTimeMillis() - startTime;
-            Log.d(TAG, "📊 [getStatusJson] JSON generated successfully in " + generationTime + "ms, size: " + result.length() + " bytes");
+            FLog.d(TAG, "📊 [getStatusJson] JSON generated successfully in " + generationTime + "ms, size: " + result.length() + " bytes");
             
             // DIAGNOSTIC: Check if exposure fields are actually in the response
             if (result.contains("\"exposureCompensationDisplay\"")) {
-                Log.d(TAG, "✅ [getStatusJson] exposureCompensationDisplay IS in JSON response");
+                FLog.d(TAG, "✅ [getStatusJson] exposureCompensationDisplay IS in JSON response");
             } else {
-                Log.e(TAG, "❌ [getStatusJson] CRITICAL BUG: exposureCompensationDisplay MISSING from JSON response!");
-                Log.e(TAG, "❌ Response length: " + result.length());
+                FLog.e(TAG, "❌ [getStatusJson] CRITICAL BUG: exposureCompensationDisplay MISSING from JSON response!");
+                FLog.e(TAG, "❌ Response length: " + result.length());
             }
             
             // ULTRA-DEBUG: Log the part of JSON that SHOULD contain exposure fields
             int expIdx = result.indexOf("\"exposureCompensation\"");
             if (expIdx > 0) {
                 String snippet = result.substring(expIdx, Math.min(expIdx + 300, result.length()));
-                Log.d(TAG, "📋 [getStatusJson] Exposure snippet:\n" + snippet);
+                FLog.d(TAG, "📋 [getStatusJson] Exposure snippet:\n" + snippet);
             } else {
-                Log.e(TAG, "❌ exposureCompensation field not found at all!");
+                FLog.e(TAG, "❌ exposureCompensation field not found at all!");
             }
             
             // DEBUG: Log first 350 chars to help identify JSON errors
             String preview = result.substring(0, Math.min(350, result.length()));
             if (result.length() > 350) preview += "...[truncated]";
-            Log.d(TAG, "📋 [getStatusJson] JSON preview:\n" + preview);
+            FLog.d(TAG, "📋 [getStatusJson] JSON preview:\n" + preview);
             
             return result;
         } catch (Exception e) {
-            Log.e(TAG, "❌ [getStatusJson] Exception during JSON generation: " + e.getMessage(), e);
+            FLog.e(TAG, "❌ [getStatusJson] Exception during JSON generation: " + e.getMessage(), e);
             // Return fallback JSON instead of crashing
             return "{\"streaming\": " + streamingEnabled + ", \"state\": \"error\", \"message\": \"JSON generation failed\", \"error\": \"" + 
                    com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(e.getMessage()) + "\"}";
@@ -1035,7 +1035,7 @@ public class RemoteStreamManager {
                 boolean torchStateFromPrefs = prefs.getBoolean(com.fadcam.Constants.PREF_TORCH_STATE, false);
                 return torchStateFromPrefs;
             } catch (Exception e) {
-                Log.e(TAG, "Error reading torch state from SharedPreferences", e);
+                FLog.e(TAG, "Error reading torch state from SharedPreferences", e);
                 return torchState; // Fallback to cached value
             }
         }
@@ -1062,7 +1062,7 @@ public class RemoteStreamManager {
      */
     public void setMediaVolume(int volume) {
         this.mediaVolume = Math.max(0, Math.min(volume, maxMediaVolume));
-        Log.d(TAG, "Media volume set to: " + this.mediaVolume);
+        FLog.d(TAG, "Media volume set to: " + this.mediaVolume);
     }
     
     /**
@@ -1088,9 +1088,9 @@ public class RemoteStreamManager {
         this.alarmRinging = ringing;
         if (ringing) {
             this.alarmStartTime = System.currentTimeMillis();
-            Log.i(TAG, "🚨 Alarm started ringing: " + selectedAlarmSound + " (Duration: " + (alarmDurationMs == -1 ? "infinite" : alarmDurationMs + "ms") + ")");
+            FLog.i(TAG, "🚨 Alarm started ringing: " + selectedAlarmSound + " (Duration: " + (alarmDurationMs == -1 ? "infinite" : alarmDurationMs + "ms") + ")");
         } else {
-            Log.i(TAG, "🔇 Alarm stopped");
+            FLog.i(TAG, "🔇 Alarm stopped");
         }
     }
     
@@ -1107,7 +1107,7 @@ public class RemoteStreamManager {
     public void setSelectedAlarmSound(String soundFileName) {
         if (soundFileName != null && !soundFileName.isEmpty()) {
             this.selectedAlarmSound = soundFileName;
-            Log.d(TAG, "Selected alarm sound: " + soundFileName);
+            FLog.d(TAG, "Selected alarm sound: " + soundFileName);
         }
     }
     
@@ -1123,7 +1123,7 @@ public class RemoteStreamManager {
      */
     public void setAlarmDurationMs(long durationMs) {
         this.alarmDurationMs = durationMs;
-        Log.d(TAG, "Alarm duration set to: " + (durationMs == -1 ? "infinite" : durationMs + "ms"));
+        FLog.d(TAG, "Alarm duration set to: " + (durationMs == -1 ? "infinite" : durationMs + "ms"));
     }
     
     /**
@@ -1176,7 +1176,7 @@ public class RemoteStreamManager {
             boolean isNewClient = !clientMetricsMap.containsKey(clientIP);
             if (isNewClient) {
                 clientMetricsMap.put(clientIP, new ClientMetrics(clientIP));
-                Log.i(TAG, "New client connected: " + clientIP + " (Total: " + clientMetricsMap.size() + ")");
+                FLog.i(TAG, "New client connected: " + clientIP + " (Total: " + clientMetricsMap.size() + ")");
             }
         }
     }
@@ -1193,7 +1193,7 @@ public class RemoteStreamManager {
             clientMetricsMap.remove("::1");
             int afterSize = clientMetricsMap.size();
             if (beforeSize != afterSize) {
-                Log.i(TAG, "Cleared localhost clients: " + (beforeSize - afterSize) + " removed");
+                FLog.i(TAG, "Cleared localhost clients: " + (beforeSize - afterSize) + " removed");
             }
         }
     }
@@ -1356,7 +1356,7 @@ public class RemoteStreamManager {
         this.cloudViewerCount = count;
         this.cloudBytesServed = bytesServed;
         this.cloudViewerCountUpdatedAt = System.currentTimeMillis();
-        Log.d(TAG, "☁️ Cloud viewer count updated: " + count + " (bytes served: " + bytesServed + ")");
+        FLog.d(TAG, "☁️ Cloud viewer count updated: " + count + " (bytes served: " + bytesServed + ")");
     }
     
     /**
@@ -1419,7 +1419,7 @@ public class RemoteStreamManager {
             return status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || 
                    status == android.os.BatteryManager.BATTERY_STATUS_FULL;
         } catch (Exception e) {
-            Log.e(TAG, "Error checking charging status: " + e.getMessage());
+            FLog.e(TAG, "Error checking charging status: " + e.getMessage());
             return false;
         }
     }
@@ -1474,7 +1474,7 @@ public class RemoteStreamManager {
         // Get configured battery warning threshold from SharedPreferencesManager
         com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
         int warningThreshold = prefs.getBatteryWarningThreshold();
-        // Log.d(TAG, "[Battery] Retrieved threshold from prefs: " + warningThreshold);
+        // FLog.d(TAG, "[Battery] Retrieved threshold from prefs: " + warningThreshold);
         
         // Warning if battery is below or equal to threshold (only if not charging)
         if (currentLevel <= warningThreshold && !isCharging) {
@@ -1489,7 +1489,7 @@ public class RemoteStreamManager {
             "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remainingHours\": %.1f, \"warning\": %s, \"warningThreshold\": %d}",
             currentLevel, chargingStatus, consumed, remainingHours, warningJson, warningThreshold
         );
-        // Log.d(TAG, "[Battery] Returning JSON: " + result);
+        // FLog.d(TAG, "[Battery] Returning JSON: " + result);
         return result;
     }
     
@@ -1687,7 +1687,7 @@ public class RemoteStreamManager {
         editor.putInt("stream_orientation", orientation.getValue());
         editor.apply();
         
-        Log.d(TAG, "Stream orientation set to: " + orientation.getDisplayName());
+        FLog.d(TAG, "Stream orientation set to: " + orientation.getDisplayName());
     }
     
     /**
@@ -1701,9 +1701,9 @@ public class RemoteStreamManager {
         try {
             StreamQuality.Preset preset = StreamQuality.Preset.valueOf(presetName);
             streamQuality.setPreset(preset);
-            Log.d(TAG, "Loaded quality preset from preferences: " + preset.getDisplayName());
+            FLog.d(TAG, "Loaded quality preset from preferences: " + preset.getDisplayName());
         } catch (IllegalArgumentException e) {
-            Log.w(TAG, "Invalid quality preset in preferences: " + presetName + ", using HIGH");
+            FLog.w(TAG, "Invalid quality preset in preferences: " + presetName + ", using HIGH");
             streamQuality.setPreset(StreamQuality.Preset.HIGH);
         }
     }
@@ -1878,7 +1878,7 @@ public class RemoteStreamManager {
         fragmentSequence = 0;
         oldestSequence = 0;
         initializationSegment = null;
-        Log.d(TAG, "Fragment buffer cleared");
+        FLog.d(TAG, "Fragment buffer cleared");
     }
     
     /**
@@ -1909,7 +1909,7 @@ public class RemoteStreamManager {
         com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
         prefs.setBatteryWarningThreshold(percentage);
         
-        Log.d(TAG, "Battery warning threshold set to " + percentage + "%");
+        FLog.d(TAG, "Battery warning threshold set to " + percentage + "%");
     }
     
     // =========================================================================
@@ -1922,18 +1922,18 @@ public class RemoteStreamManager {
      */
     private void startCloudStatusPush() {
         if (context == null) {
-            Log.w(TAG, "Cannot start cloud status push: no context");
+            FLog.w(TAG, "Cannot start cloud status push: no context");
             return;
         }
         
         CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
         if (!uploader.isEnabled() || !uploader.isReady()) {
-            Log.d(TAG, "Cloud streaming not enabled or not ready, skipping status push");
+            FLog.d(TAG, "Cloud streaming not enabled or not ready, skipping status push");
             return;
         }
         
         if (cloudStatusPushEnabled) {
-            Log.d(TAG, "Cloud status push already running");
+            FLog.d(TAG, "Cloud status push already running");
             return;
         }
         
@@ -1946,13 +1946,13 @@ public class RemoteStreamManager {
             @Override
             public void run() {
                 if (!cloudStatusPushEnabled || !streamingEnabled) {
-                    Log.d(TAG, "Cloud status push stopped (disabled or streaming stopped)");
+                    FLog.d(TAG, "Cloud status push stopped (disabled or streaming stopped)");
                     return;
                 }
                 
                 CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                 if (!uploader.isEnabled() || !uploader.isReady()) {
-                    Log.d(TAG, "Cloud uploader not ready, skipping this iteration");
+                    FLog.d(TAG, "Cloud uploader not ready, skipping this iteration");
                     cloudStatusHandler.postDelayed(this, CLOUD_STATUS_INTERVAL_MS);
                     return;
                 }
@@ -1967,7 +1967,7 @@ public class RemoteStreamManager {
                     
                     @Override
                     public void onError(String error) {
-                        Log.w(TAG, "Cloud status push failed: " + error);
+                        FLog.w(TAG, "Cloud status push failed: " + error);
                     }
                 });
                 
@@ -1985,7 +1985,7 @@ public class RemoteStreamManager {
         
         // Start immediately
         cloudStatusHandler.post(cloudStatusRunnable);
-        Log.i(TAG, "☁️ Cloud status push started (interval: " + CLOUD_STATUS_INTERVAL_MS + "ms)");
+        FLog.i(TAG, "☁️ Cloud status push started (interval: " + CLOUD_STATUS_INTERVAL_MS + "ms)");
     }
     
     /**
@@ -1996,7 +1996,7 @@ public class RemoteStreamManager {
         cloudStatusPushEnabled = false;
         if (cloudStatusHandler != null && cloudStatusRunnable != null) {
             cloudStatusHandler.removeCallbacks(cloudStatusRunnable);
-            Log.i(TAG, "☁️ Cloud status push stopped");
+            FLog.i(TAG, "☁️ Cloud status push stopped");
         }
         cloudStatusHandler = null;
         cloudStatusRunnable = null;
@@ -2013,7 +2013,7 @@ public class RemoteStreamManager {
                     return;
                 }
                 
-                Log.i(TAG, "☁️ Found " + commandIds.size() + " pending cloud commands");
+                FLog.i(TAG, "☁️ Found " + commandIds.size() + " pending cloud commands");
                 
                 // Process each command
                 for (String cmdId : commandIds) {
@@ -2025,7 +2025,7 @@ public class RemoteStreamManager {
                         
                         @Override
                         public void onError(String error) {
-                            Log.e(TAG, "Failed to fetch command " + cmdId + ": " + error);
+                            FLog.e(TAG, "Failed to fetch command " + cmdId + ": " + error);
                         }
                     });
                 }
@@ -2033,7 +2033,7 @@ public class RemoteStreamManager {
             
             @Override
             public void onError(String error) {
-                Log.w(TAG, "Command poll failed: " + error);
+                FLog.w(TAG, "Command poll failed: " + error);
             }
         });
     }
@@ -2046,7 +2046,7 @@ public class RemoteStreamManager {
             String action = command.optString("action", "");
             JSONObject params = command.optJSONObject("params");
             
-            Log.i(TAG, "☁️ Executing cloud command: " + action + " (id: " + commandId + ")");
+            FLog.i(TAG, "☁️ Executing cloud command: " + action + " (id: " + commandId + ")");
             
             boolean success = false;
             
@@ -2101,7 +2101,7 @@ public class RemoteStreamManager {
                     break;
                     
                 default:
-                    Log.w(TAG, "Unknown cloud command action: " + action);
+                    FLog.w(TAG, "Unknown cloud command action: " + action);
                     success = true; // Still delete unknown commands
             }
             
@@ -2109,17 +2109,17 @@ public class RemoteStreamManager {
             uploader.deleteCommand(commandId, new CloudStreamUploader.UploadCallback() {
                 @Override
                 public void onSuccess() {
-                    Log.d(TAG, "☁️ Command " + commandId + " deleted from relay");
+                    FLog.d(TAG, "☁️ Command " + commandId + " deleted from relay");
                 }
                 
                 @Override
                 public void onError(String error) {
-                    Log.w(TAG, "Failed to delete command " + commandId + ": " + error);
+                    FLog.w(TAG, "Failed to delete command " + commandId + ": " + error);
                 }
             });
             
         } catch (Exception e) {
-            Log.e(TAG, "Error executing cloud command: " + e.getMessage(), e);
+            FLog.e(TAG, "Error executing cloud command: " + e.getMessage(), e);
         }
     }
     
@@ -2159,19 +2159,19 @@ public class RemoteStreamManager {
             client.newCall(request).enqueue(new okhttp3.Callback() {
                 @Override
                 public void onFailure(@NonNull okhttp3.Call call, @NonNull java.io.IOException e) {
-                    Log.e(TAG, "Cloud command execution failed: " + e.getMessage());
+                    FLog.e(TAG, "Cloud command execution failed: " + e.getMessage());
                 }
                 
                 @Override
                 public void onResponse(@NonNull okhttp3.Call call, @NonNull okhttp3.Response response) {
                     response.close();
-                    Log.d(TAG, "☁️ Cloud command " + endpoint + " executed: " + response.code());
+                    FLog.d(TAG, "☁️ Cloud command " + endpoint + " executed: " + response.code());
                 }
             });
             
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to execute command via server: " + e.getMessage(), e);
+            FLog.e(TAG, "Failed to execute command via server: " + e.getMessage(), e);
             return false;
         }
     }

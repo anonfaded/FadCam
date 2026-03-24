@@ -1,8 +1,8 @@
 package com.fadcam.forensics.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
-import android.util.Log;
-
 import com.fadcam.ui.VideoItem;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public class DigitalForensicsIndexCoordinator {
             try {
                 indexer.index(copy);
             } catch (Exception e) {
-                Log.w(TAG, "Digital forensics indexing failed", e);
+                FLog.w(TAG, "Digital forensics indexing failed", e);
             }
         });
     }

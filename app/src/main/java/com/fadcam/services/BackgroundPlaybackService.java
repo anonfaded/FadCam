@@ -1,5 +1,7 @@
 package com.fadcam.services;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -100,7 +102,7 @@ public class BackgroundPlaybackService extends Service {
             startForeground(NOTIFICATION_ID, nb.build());
             isForeground = true;
         } catch (Exception e) {
-            android.util.Log.e(TAG, "Failed to start foreground", e);
+            FLog.e(TAG, "Failed to start foreground", e);
         }
     }
 

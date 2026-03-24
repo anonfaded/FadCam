@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,7 +10,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -94,7 +95,7 @@ public class WatchCameraFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (action == null) return;
-            Log.d(TAG, "Broadcast: " + action);
+            FLog.d(TAG, "Broadcast: " + action);
 
             switch (action) {
                 case Constants.BROADCAST_ON_RECORDING_STARTED:
@@ -165,14 +166,14 @@ public class WatchCameraFragment extends Fragment {
                                 android.widget.Toast.LENGTH_SHORT).show();
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "Privacy Black launch failed", e);
+                    FLog.w(TAG, "Privacy Black launch failed", e);
                 }
             });
             appTitle.setOnLongClickListener(v -> {
                 try {
                     OverlayNavUtil.show(requireActivity(), new WatchTrashFragment(), "watch_trash");
                 } catch (Exception e) {
-                    Log.w(TAG, "Open trash failed", e);
+                    FLog.w(TAG, "Open trash failed", e);
                 }
                 return true;
             });
@@ -228,24 +229,24 @@ public class WatchCameraFragment extends Fragment {
     // ── Recording control ──────────────────────────────────────────────────────
 
     private void startRecording() {
-        Log.d(TAG, "startRecording");
+        FLog.d(TAG, "startRecording");
         try {
             final Intent intent = new Intent(requireContext(), RecordingService.class);
             intent.setAction(Constants.INTENT_ACTION_START_RECORDING);
             ServiceStartPolicy.startRecordingAction(requireContext(), intent);
         } catch (Exception e) {
-            Log.e(TAG, "startRecording error", e);
+            FLog.e(TAG, "startRecording error", e);
         }
     }
 
     private void stopRecording() {
-        Log.d(TAG, "stopRecording");
+        FLog.d(TAG, "stopRecording");
         try {
             final Intent intent = new Intent(requireContext(), RecordingService.class);
             intent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
             requireContext().startService(intent);
         } catch (Exception e) {
-            Log.e(TAG, "stopRecording error", e);
+            FLog.e(TAG, "stopRecording error", e);
         }
     }
 
@@ -255,7 +256,7 @@ public class WatchCameraFragment extends Fragment {
             q.setAction(Constants.BROADCAST_ON_RECORDING_STATE_REQUEST);
             ServiceStartPolicy.startRecordingAction(requireContext(), q);
         } catch (Exception e) {
-            Log.w(TAG, "queryRecordingState: " + e.getMessage());
+            FLog.w(TAG, "queryRecordingState: " + e.getMessage());
         }
     }
 
@@ -269,7 +270,7 @@ public class WatchCameraFragment extends Fragment {
         final boolean next = !prefs.isRecordAudioEnabled();
         prefs.setRecordAudioEnabled(next);
         updateAudioIcon();
-        Log.d(TAG, "Audio toggled: enabled=" + next);
+        FLog.d(TAG, "Audio toggled: enabled=" + next);
     }
 
     /**
@@ -285,9 +286,9 @@ public class WatchCameraFragment extends Fragment {
             final Intent intent = new Intent(requireContext(), RecordingService.class);
             intent.setAction(action);
             requireContext().startService(intent);
-            Log.d(TAG, "pauseResumeRecording: " + action);
+            FLog.d(TAG, "pauseResumeRecording: " + action);
         } catch (Exception e) {
-            Log.e(TAG, "pauseResumeRecording error", e);
+            FLog.e(TAG, "pauseResumeRecording error", e);
         }
     }
 
@@ -308,9 +309,9 @@ public class WatchCameraFragment extends Fragment {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 startActivity(intent);
             }
-            Log.d(TAG, "takeFadShot: recording=" + isRecording);
+            FLog.d(TAG, "takeFadShot: recording=" + isRecording);
         } catch (Exception e) {
-            Log.e(TAG, "takeFadShot error", e);
+            FLog.e(TAG, "takeFadShot error", e);
         }
     }
 
@@ -328,9 +329,9 @@ public class WatchCameraFragment extends Fragment {
                         recordingStartTime);
             }
             startActivity(intent);
-            Log.d(TAG, "toggleFullscreen → WatchFullscreenActivity");
+            FLog.d(TAG, "toggleFullscreen → WatchFullscreenActivity");
         } catch (Exception e) {
-            Log.w(TAG, "toggleFullscreen failed: " + e.getMessage());
+            FLog.w(TAG, "toggleFullscreen failed: " + e.getMessage());
         }
     }
 
@@ -432,7 +433,7 @@ public class WatchCameraFragment extends Fragment {
             final String text = formatBytes(freeBytes) + " free";
             tvWatchStorage.setText(text);
         } catch (Exception e) {
-            Log.w(TAG, "refreshStorage: " + e.getMessage());
+            FLog.w(TAG, "refreshStorage: " + e.getMessage());
             tvWatchStorage.setText("—");
         }
     }

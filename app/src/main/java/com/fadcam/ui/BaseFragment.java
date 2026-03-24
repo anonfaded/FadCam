@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.os.Bundle;
 import android.view.View;
 
@@ -35,7 +37,7 @@ public abstract class BaseFragment extends Fragment {
                 new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                android.util.Log.d("OverlayDebug","BaseFragment handleOnBackPressed fragment="+getClass().getSimpleName());
+                FLog.d("OverlayDebug","BaseFragment handleOnBackPressed fragment="+getClass().getSimpleName());
                 // First give the fragment a chance to handle the back press
                 if (!onBackPressed()) {
                     // If fragment doesn't handle it, navigate to home tab if not already there
@@ -67,7 +69,7 @@ public abstract class BaseFragment extends Fragment {
         super.onDestroyView();
         // Ensure overlay container visibility updates if this was last fragment
         if(getActivity() instanceof com.fadcam.MainActivity){
-            android.util.Log.d("OverlayDebug","BaseFragment onDestroyView fragment="+getClass().getSimpleName()+" backStackBefore="+getActivity().getSupportFragmentManager().getBackStackEntryCount());
+            FLog.d("OverlayDebug","BaseFragment onDestroyView fragment="+getClass().getSimpleName()+" backStackBefore="+getActivity().getSupportFragmentManager().getBackStackEntryCount());
             ((com.fadcam.MainActivity) getActivity()).hideOverlayIfNoFragments();
         }
     }

@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.Outline;
 import android.view.ViewOutlineProvider;
 import android.app.AlertDialog;
@@ -8,7 +10,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -92,7 +93,7 @@ public class WatchTrashFragment extends Fragment {
 
         // Always reload items when view is created to ensure fresh data
         loadItems();
-        Log.d(TAG, "WatchTrashFragment onViewCreated - trash overlay shown");
+        FLog.d(TAG, "WatchTrashFragment onViewCreated - trash overlay shown");
     }
 
     @Override
@@ -100,7 +101,7 @@ public class WatchTrashFragment extends Fragment {
         super.onResume();
         // Reload items when returning to this fragment
         loadItems();
-        Log.d(TAG, "WatchTrashFragment onResume - refreshing trash items");
+        FLog.d(TAG, "WatchTrashFragment onResume - refreshing trash items");
     }
 
     @Override
@@ -114,13 +115,13 @@ public class WatchTrashFragment extends Fragment {
     // -------------------------------------------------------------------------
 
     private void loadItems() {
-        Log.d(TAG, "Loading trash items...");
+        FLog.d(TAG, "Loading trash items...");
         executor.execute(() -> {
             final List<TrashItem> loaded = TrashManager.loadTrashMetadata(requireContext());
-            Log.d(TAG, "Loaded " + (loaded != null ? loaded.size() : 0) + " trash items");
+            FLog.d(TAG, "Loaded " + (loaded != null ? loaded.size() : 0) + " trash items");
             if (loaded != null) {
                 for (TrashItem item : loaded) {
-                    Log.d(TAG, "Trash item: " + item.getOriginalDisplayName() + " -> " + item.getTrashFileName());
+                    FLog.d(TAG, "Trash item: " + item.getOriginalDisplayName() + " -> " + item.getTrashFileName());
                 }
             }
             mainHandler.post(() -> {
@@ -204,7 +205,7 @@ public class WatchTrashFragment extends Fragment {
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "restoreItem failed", e);
+                FLog.e(TAG, "restoreItem failed", e);
             }
 
             final boolean finalOk = ok;
@@ -356,21 +357,21 @@ public class WatchTrashFragment extends Fragment {
                         final File trashDir = TrashManager.getTrashDirectory(requireContext());
                         if (trashDir != null) {
                             final File videoFile = new File(trashDir, trashFileName);
-                            Log.d(TAG, "Loading trash thumbnail: " + videoFile.getAbsolutePath());
-                            Log.d(TAG, "File exists: " + videoFile.exists() + ", can read: " + videoFile.canRead());
+                            FLog.d(TAG, "Loading trash thumbnail: " + videoFile.getAbsolutePath());
+                            FLog.d(TAG, "File exists: " + videoFile.exists() + ", can read: " + videoFile.canRead());
                             
                             if (videoFile.exists()) {
                                 retriever = new android.media.MediaMetadataRetriever();
                                 retriever.setDataSource(videoFile.getAbsolutePath());
                                 Bitmap frame = retriever.getFrameAtTime(1000000, android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
                                 if (frame != null) {
-                                    Log.d(TAG, "Got trash frame: " + frame.getWidth() + "x" + frame.getHeight());
+                                    FLog.d(TAG, "Got trash frame: " + frame.getWidth() + "x" + frame.getHeight());
                                     bmp = Bitmap.createScaledBitmap(frame, 64, 64, true);
                                 }
                             }
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Thumbnail failed for: " + trashFileName, e);
+                        FLog.e(TAG, "Thumbnail failed for: " + trashFileName, e);
                     } finally {
                         if (retriever != null) {
                             try { retriever.release(); } catch (Exception ignored) {}

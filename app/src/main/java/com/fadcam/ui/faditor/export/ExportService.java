@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor.export;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -10,8 +12,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -97,7 +97,7 @@ public class ExportService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "Service created");
+        FLog.d(TAG, "Service created");
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         createNotificationChannel();
     }
@@ -135,7 +135,7 @@ public class ExportService extends Service {
         if (exportManager != null && exportManager.isExporting()) {
             exportManager.cancel();
         }
-        Log.d(TAG, "Service destroyed");
+        FLog.d(TAG, "Service destroyed");
     }
 
     // ── Export execution ─────────────────────────────────────────────
@@ -145,13 +145,13 @@ public class ExportService extends Service {
         pendingProject = null; // consume
 
         if (project == null) {
-            Log.e(TAG, "No pending project — cannot export");
+            FLog.e(TAG, "No pending project — cannot export");
             stopSelf();
             return;
         }
 
         if (isExporting) {
-            Log.w(TAG, "Export already in progress");
+            FLog.w(TAG, "Export already in progress");
             return;
         }
 
@@ -167,7 +167,7 @@ public class ExportService extends Service {
         exportManager.setExportListener(new ExportManager.ExportListener() {
             @Override
             public void onExportStarted(@NonNull String outputPath) {
-                Log.d(TAG, "Export started → " + outputPath);
+                FLog.d(TAG, "Export started → " + outputPath);
                 if (serviceListener != null) {
                     serviceListener.onExportStarted(outputPath);
                 }
@@ -185,7 +185,7 @@ public class ExportService extends Service {
             @Override
             public void onExportCompleted(@NonNull String outputPath,
                                           @NonNull androidx.media3.transformer.ExportResult result) {
-                Log.d(TAG, "Export completed: " + outputPath);
+                FLog.d(TAG, "Export completed: " + outputPath);
                 isExporting = false;
                 showCompletionNotification();
                 if (serviceListener != null) {
@@ -197,7 +197,7 @@ public class ExportService extends Service {
 
             @Override
             public void onExportError(@NonNull Exception error) {
-                Log.e(TAG, "Export failed", error);
+                FLog.e(TAG, "Export failed", error);
                 isExporting = false;
                 showErrorNotification(error.getMessage());
                 if (serviceListener != null) {
@@ -218,7 +218,7 @@ public class ExportService extends Service {
         if (exportManager != null && exportManager.isExporting()) {
             exportManager.cancel();
             isExporting = false;
-            Log.d(TAG, "Export cancelled via service");
+            FLog.d(TAG, "Export cancelled via service");
         }
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();

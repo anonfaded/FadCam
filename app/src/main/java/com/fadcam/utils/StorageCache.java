@@ -1,9 +1,9 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
-
 /**
  * Utility class for caching storage information to avoid recalculating on every app launch
  */
@@ -31,9 +31,9 @@ public class StorageCache {
                 .putLong(KEY_AVAILABLE_BYTES, availableBytes)
                 .putLong(KEY_LAST_UPDATE, System.currentTimeMillis())
                 .apply();
-            Log.d(TAG, "Storage info cached: total=" + totalBytes + ", available=" + availableBytes);
+            FLog.d(TAG, "Storage info cached: total=" + totalBytes + ", available=" + availableBytes);
         } catch (Exception e) {
-            Log.e(TAG, "Error caching storage info", e);
+            FLog.e(TAG, "Error caching storage info", e);
         }
     }
     
@@ -47,9 +47,9 @@ public class StorageCache {
                 .putInt(KEY_VIDEO_COUNT, videoCount)
                 .putLong(KEY_VIDEOS_USED_SIZE, usedSizeBytes)
                 .apply();
-            Log.d(TAG, "Video usage info cached: count=" + videoCount + ", usedSize=" + usedSizeBytes);
+            FLog.d(TAG, "Video usage info cached: count=" + videoCount + ", usedSize=" + usedSizeBytes);
         } catch (Exception e) {
-            Log.e(TAG, "Error caching video usage info", e);
+            FLog.e(TAG, "Error caching video usage info", e);
         }
     }
     
@@ -67,14 +67,14 @@ public class StorageCache {
                 long availableBytes = prefs.getLong(KEY_AVAILABLE_BYTES, 0);
                 
                 if (totalBytes > 0 && availableBytes > 0) {
-                    Log.d(TAG, "Using cached storage info: total=" + totalBytes + ", available=" + availableBytes);
+                    FLog.d(TAG, "Using cached storage info: total=" + totalBytes + ", available=" + availableBytes);
                     return new long[]{totalBytes, availableBytes};
                 }
             } else {
-                Log.d(TAG, "Storage cache expired, age=" + (System.currentTimeMillis() - lastUpdate) + "ms");
+                FLog.d(TAG, "Storage cache expired, age=" + (System.currentTimeMillis() - lastUpdate) + "ms");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error getting cached storage info", e);
+            FLog.e(TAG, "Error getting cached storage info", e);
         }
         return null;
     }
@@ -95,14 +95,14 @@ public class StorageCache {
                 long usedSize = prefs.getLong(KEY_VIDEOS_USED_SIZE, 0);
                 
                 if (videoCount >= 0 && usedSize >= 0) {
-                    Log.d(TAG, "Using cached video usage info: count=" + videoCount + ", usedSize=" + usedSize);
+                    FLog.d(TAG, "Using cached video usage info: count=" + videoCount + ", usedSize=" + usedSize);
                     return new long[]{videoCount, usedSize};
                 }
             } else {
-                Log.d(TAG, "Video usage cache expired or unavailable");
+                FLog.d(TAG, "Video usage cache expired or unavailable");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error getting cached video usage info", e);
+            FLog.e(TAG, "Error getting cached video usage info", e);
         }
         return null;
     }
@@ -121,9 +121,9 @@ public class StorageCache {
         try {
             SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
             prefs.edit().clear().apply();
-            Log.d(TAG, "Storage cache cleared");
+            FLog.d(TAG, "Storage cache cleared");
         } catch (Exception e) {
-            Log.e(TAG, "Error clearing storage cache", e);
+            FLog.e(TAG, "Error clearing storage cache", e);
         }
     }
 }

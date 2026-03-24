@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.overlay;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -9,7 +11,6 @@ import android.text.Editable;
 import android.text.Spannable;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -94,26 +95,26 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        Log.d("TextEditorActivity", "dispatchTouchEvent: action=" + ev.getAction() + 
+        FLog.d("TextEditorActivity", "dispatchTouchEvent: action=" + ev.getAction() + 
               " x=" + ev.getX() + " y=" + ev.getY());
         return super.dispatchTouchEvent(ev);
     }
     
     @Override
     protected int getLayoutResourceId() {
-        Log.d("TextEditorActivity", "getLayoutResourceId() called");
+        FLog.d("TextEditorActivity", "getLayoutResourceId() called");
         return R.layout.overlay_inline_text_editor;
     }
     
     @Override
     protected void onEditorViewCreated(View rootView) {
-        Log.d("TextEditorActivity", "onEditorViewCreated() called");
+        FLog.d("TextEditorActivity", "onEditorViewCreated() called");
         
         // Load default typeface
         defaultTypeface = ResourcesCompat.getFont(this, R.font.ubuntu_regular);
         
-        Log.d("TextEditorActivity", "rootView clickable: " + rootView.isClickable());
-        Log.d("TextEditorActivity", "rootView focusable: " + rootView.isFocusable());
+        FLog.d("TextEditorActivity", "rootView clickable: " + rootView.isClickable());
+        FLog.d("TextEditorActivity", "rootView focusable: " + rootView.isFocusable());
         
         // Find views
         findViews(rootView);
@@ -133,13 +134,13 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
-                Log.d("TextEditorActivity", "Keyboard show requested");
+                FLog.d("TextEditorActivity", "Keyboard show requested");
             }
         }, 200);
     }
     
     private void findViews(View rootView) {
-        Log.d("TextEditorActivity", "findViews() called");
+        FLog.d("TextEditorActivity", "findViews() called");
         scrollContainer = rootView.findViewById(R.id.scrollContainer);
         editText = rootView.findViewById(R.id.editText);
         colorPickerLayout = rootView.findViewById(R.id.colorPickerLayout);
@@ -202,50 +203,50 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
     }
     
     private void setupListeners() {
-        Log.d("TextEditorActivity", "setupListeners() called");
+        FLog.d("TextEditorActivity", "setupListeners() called");
         
         btnDone.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Done button clicked");
+            FLog.d("TextEditorActivity", "Done button clicked");
             saveAndFinish();
         });
         
         btnDelete.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Delete button clicked");
+            FLog.d("TextEditorActivity", "Delete button clicked");
             deleteAndFinish();
         });
         
         btnAlignLeft.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Align left clicked");
+            FLog.d("TextEditorActivity", "Align left clicked");
             setAlignment(Gravity.LEFT);
         });
         
         btnAlignCenter.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Align center clicked");
+            FLog.d("TextEditorActivity", "Align center clicked");
             setAlignment(Gravity.CENTER);
         });
         
         btnAlignRight.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Align right clicked");
+            FLog.d("TextEditorActivity", "Align right clicked");
             setAlignment(Gravity.RIGHT);
         });
         
         btnBold.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Bold button clicked");
+            FLog.d("TextEditorActivity", "Bold button clicked");
             toggleBold();
         });
         
         btnItalic.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Italic button clicked");
+            FLog.d("TextEditorActivity", "Italic button clicked");
             toggleItalic();
         });
         
         btnBackground.setOnClickListener(v -> {
-            Log.d("TextEditorActivity", "Background button clicked");
+            FLog.d("TextEditorActivity", "Background button clicked");
             toggleBackground();
         });
         
         editText.setOnTouchListener((v, event) -> {
-            Log.d("TextEditorActivity", "EditText touched: " + event.getAction());
+            FLog.d("TextEditorActivity", "EditText touched: " + event.getAction());
             return false; // Don't consume, let it process normally
         });
     }
@@ -320,19 +321,19 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
         int selectionStart = editText.getSelectionStart();
         int selectionEnd = editText.getSelectionEnd();
         
-        Log.d("TextEditorActivity", "selectColor: color=#" + Integer.toHexString(color) + 
+        FLog.d("TextEditorActivity", "selectColor: color=#" + Integer.toHexString(color) + 
               " selection=[" + selectionStart + "-" + selectionEnd + "]");
         
         if (selectionStart >= 0 && selectionEnd > selectionStart) {
             // User has selected text - apply color ONLY to selection
             Editable editable = editText.getText();
             
-            Log.d("TextEditorActivity", "  Text: \"" + editable.toString().substring(selectionStart, selectionEnd) + "\"");
+            FLog.d("TextEditorActivity", "  Text: \"" + editable.toString().substring(selectionStart, selectionEnd) + "\"");
             
             // Find spans that overlap the selection
             ForegroundColorSpan[] existingSpans = editable.getSpans(
                 selectionStart, selectionEnd, ForegroundColorSpan.class);
-            Log.d("TextEditorActivity", "  Found " + existingSpans.length + " overlapping spans");
+            FLog.d("TextEditorActivity", "  Found " + existingSpans.length + " overlapping spans");
             
             // For each overlapping span, we need to preserve parts outside selection
             for (ForegroundColorSpan span : existingSpans) {
@@ -340,7 +341,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
                 int spanEnd = editable.getSpanEnd(span);
                 int spanColor = span.getForegroundColor();
                 
-                Log.d("TextEditorActivity", "  Processing span [" + spanStart + "-" + spanEnd + "] color=#" + Integer.toHexString(spanColor));
+                FLog.d("TextEditorActivity", "  Processing span [" + spanStart + "-" + spanEnd + "] color=#" + Integer.toHexString(spanColor));
                 
                 // Remove the original span
                 editable.removeSpan(span);
@@ -353,7 +354,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
                         selectionStart,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
-                    Log.d("TextEditorActivity", "    Recreated span before selection [" + spanStart + "-" + selectionStart + "]");
+                    FLog.d("TextEditorActivity", "    Recreated span before selection [" + spanStart + "-" + selectionStart + "]");
                 }
                 
                 // Recreate span for part AFTER selection (if any)
@@ -364,7 +365,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
                         spanEnd,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                     );
-                    Log.d("TextEditorActivity", "    Recreated span after selection [" + selectionEnd + "-" + spanEnd + "]");
+                    FLog.d("TextEditorActivity", "    Recreated span after selection [" + selectionEnd + "-" + spanEnd + "]");
                 }
             }
             
@@ -375,16 +376,16 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
                 selectionEnd,
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             );
-            Log.d("TextEditorActivity", "  Applied new color span [" + selectionStart + "-" + selectionEnd + "]");
+            FLog.d("TextEditorActivity", "  Applied new color span [" + selectionStart + "-" + selectionEnd + "]");
             
             // Debug: Show ALL spans in the entire text
             ForegroundColorSpan[] allSpans = editable.getSpans(0, editable.length(), ForegroundColorSpan.class);
-            Log.d("TextEditorActivity", "  Total spans in text: " + allSpans.length);
+            FLog.d("TextEditorActivity", "  Total spans in text: " + allSpans.length);
             for (int i = 0; i < allSpans.length; i++) {
                 int start = editable.getSpanStart(allSpans[i]);
                 int end = editable.getSpanEnd(allSpans[i]);
                 int spanColor = allSpans[i].getForegroundColor();
-                Log.d("TextEditorActivity", "    Span " + i + ": [" + start + "-" + end + "] color=#" + Integer.toHexString(spanColor));
+                FLog.d("TextEditorActivity", "    Span " + i + ": [" + start + "-" + end + "] color=#" + Integer.toHexString(spanColor));
             }
         }
         // If no selection, just update selectedColor for future typing
@@ -477,7 +478,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
         // Measure EditText width to preserve line wrapping behavior
         // Let StaticLayout handle ALL text wrapping based on maxWidth and alignment
         int maxWidth = editText.getWidth() - editText.getPaddingLeft() - editText.getPaddingRight();
-        Log.d("TextEditorActivity", "Saving text with maxWidth=" + maxWidth + 
+        FLog.d("TextEditorActivity", "Saving text with maxWidth=" + maxWidth + 
               " (editText.width=" + editText.getWidth() + 
               " paddingLeft=" + editText.getPaddingLeft() + 
               " paddingRight=" + editText.getPaddingRight() + ")");
@@ -513,7 +514,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
         
         // If no spans at all, this is plain text - don't add spans
         if (existingSpans.length == 0) {
-            Log.d("TextEditorActivity", "No color spans - plain text mode");
+            FLog.d("TextEditorActivity", "No color spans - plain text mode");
             return false;
         }
         
@@ -542,7 +543,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
                     start,
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 );
-                Log.d("TextEditorActivity", "Filled gap [" + currentPos + "-" + start + "] with WHITE");
+                FLog.d("TextEditorActivity", "Filled gap [" + currentPos + "-" + start + "] with WHITE");
             }
             
             currentPos = Math.max(currentPos, end);
@@ -556,7 +557,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
                 editable.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             );
-            Log.d("TextEditorActivity", "Filled end gap [" + currentPos + "-" + editable.length() + "] with WHITE");
+            FLog.d("TextEditorActivity", "Filled end gap [" + currentPos + "-" + editable.length() + "] with WHITE");
         }
         
         return true; // Has color spans

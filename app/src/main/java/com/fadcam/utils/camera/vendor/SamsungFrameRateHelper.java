@@ -1,10 +1,11 @@
 package com.fadcam.utils.camera.vendor;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
-import android.util.Log;
 import android.util.Range;
 
 import androidx.annotation.NonNull;
@@ -53,7 +54,7 @@ public class SamsungFrameRateHelper {
      */
     public static void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate, @Nullable CameraCharacteristics characteristics) {
         if (builder == null) {
-            Log.e(TAG, "CaptureRequest.Builder is null, cannot apply Samsung frame rate settings.");
+            FLog.e(TAG, "CaptureRequest.Builder is null, cannot apply Samsung frame rate settings.");
             return;
         }
         // Do NOT override CONTROL_AE_TARGET_FPS_RANGE here; let the caller choose a supported range.
@@ -66,12 +67,12 @@ public class SamsungFrameRateHelper {
                         CaptureRequest.Key<Integer> key = new CaptureRequest.Key<>(keyName, Integer.class);
                         if (characteristics == null || isKeySupported(characteristics, key)) {
                             builder.set(key, value);
-                            Log.d(TAG, "Applied vendor key " + keyName + "=" + value);
+                            FLog.d(TAG, "Applied vendor key " + keyName + "=" + value);
                         } else {
-                            Log.d(TAG, "Vendor key not supported per characteristics: " + keyName);
+                            FLog.d(TAG, "Vendor key not supported per characteristics: " + keyName);
                         }
                     } catch (Throwable t) {
-                        Log.d(TAG, "Skipping vendor key due to error: " + keyName + ", " + t.getMessage());
+                        FLog.d(TAG, "Skipping vendor key due to error: " + keyName + ", " + t.getMessage());
                     }
                 };
 
@@ -91,10 +92,10 @@ public class SamsungFrameRateHelper {
                     // Some models require leaving HFR mode alone for 60fps to engage properly.
                 }
             } catch (Exception e) {
-                Log.w(TAG, "Samsung vendor key application skipped: " + e.getMessage());
+                FLog.w(TAG, "Samsung vendor key application skipped: " + e.getMessage());
             }
         } else {
-            Log.d(TAG, "API < 29: Skipping Samsung vendor keys to avoid compatibility issues");
+            FLog.d(TAG, "API < 29: Skipping Samsung vendor keys to avoid compatibility issues");
         }
     }
 
@@ -177,7 +178,7 @@ public class SamsungFrameRateHelper {
             session.setRepeatingRequest(builder.build(), null, null);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to configure Samsung session with frame rate " + targetFrameRate, e);
+            FLog.e(TAG, "Failed to configure Samsung session with frame rate " + targetFrameRate, e);
             return false;
         }
     }
@@ -197,14 +198,14 @@ public class SamsungFrameRateHelper {
                 return characteristics.getAvailableCaptureRequestKeys().contains(key);
             } catch (Exception e) {
                 // Log and return false if there's an error getting keys
-                Log.e(TAG, "Error checking key support for " + key.getName() + ": " + e.getMessage());
+                FLog.e(TAG, "Error checking key support for " + key.getName() + ": " + e.getMessage());
                 return false;
             }
         } else {
             // For older APIs, we can't reliably check if a vendor key is supported dynamically.
             // We have to rely on trial-and-error or a hardcoded list.
             // For now, assume it's not supported unless explicitly known.
-            Log.w(TAG, "Dynamic key support check not available on API < 28. Assuming " + key.getName() + " is NOT supported.");
+            FLog.w(TAG, "Dynamic key support check not available on API < 28. Assuming " + key.getName() + " is NOT supported.");
             return false; // Safest default for older APIs
         }
     }

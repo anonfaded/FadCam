@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,7 +10,6 @@ import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -226,10 +227,10 @@ public class WatchFullscreenActivity extends AppCompatActivity {
                 intent.putExtra("SURFACE_HEIGHT", -1);
             }
             startService(intent);
-            Log.d(TAG, "sendSurfaceToService: " +
+            FLog.d(TAG, "sendSurfaceToService: " +
                     (surface != null && surface.isValid() ? "VALID " + w + "x" + h : "NULL"));
         } catch (Exception e) {
-            Log.w(TAG, "sendSurfaceToService failed: " + e.getMessage());
+            FLog.w(TAG, "sendSurfaceToService failed: " + e.getMessage());
         }
     }
 

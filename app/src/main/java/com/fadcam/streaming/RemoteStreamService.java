@@ -1,5 +1,7 @@
 package com.fadcam.streaming;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -12,8 +14,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
-
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
@@ -69,7 +69,7 @@ public class RemoteStreamService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "Service created");
+        FLog.d(TAG, "Service created");
         createNotificationChannel();
         
         // Initialize RemoteStreamManager with context for status reporting
@@ -78,7 +78,7 @@ public class RemoteStreamService extends Service {
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "Service starting");
+        FLog.i(TAG, "Service starting");
         
         // Handle copy stream URL action from notification
         if (intent != null && "com.fadcam.COPY_STREAM_URL".equals(intent.getAction())) {
@@ -87,7 +87,7 @@ public class RemoteStreamService extends Service {
                 android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 android.content.ClipData clip = android.content.ClipData.newPlainText("Stream URL", streamUrl);
                 clipboard.setPrimaryClip(clip);
-                Log.d(TAG, "Stream URL copied to clipboard: " + streamUrl);
+                FLog.d(TAG, "Stream URL copied to clipboard: " + streamUrl);
             }
             return START_STICKY;
         }
@@ -99,13 +99,13 @@ public class RemoteStreamService extends Service {
         int streamingMode = getSharedPreferences("FadCamCloudPrefs", MODE_PRIVATE).getInt("streaming_mode", 0);
         boolean isCloudMode = streamingMode == 1;
         
-        Log.i(TAG, (isCloudMode ? "☁️" : "📱") + " Streaming mode: " + (isCloudMode ? "CLOUD" : "LOCAL"));
+        FLog.i(TAG, (isCloudMode ? "☁️" : "📱") + " Streaming mode: " + (isCloudMode ? "CLOUD" : "LOCAL"));
         
         // SECURITY FIX: Only start HTTP server in LOCAL mode
         // In cloud mode, all streaming goes through relay server, no local access needed
         if (!isCloudMode) {
             if (!startHttpServer()) {
-                Log.e(TAG, "Failed to start HTTP server, stopping service");
+                FLog.e(TAG, "Failed to start HTTP server, stopping service");
                 stopSelf();
                 return START_NOT_STICKY;
             }
@@ -116,7 +116,7 @@ public class RemoteStreamService extends Service {
                 .putInt("stream_server_port", activePort)
                 .apply();
         } else {
-            Log.i(TAG, "🔒 Cloud mode active - HTTP server not started (all traffic through relay)");
+            FLog.i(TAG, "🔒 Cloud mode active - HTTP server not started (all traffic through relay)");
             activePort = -1;
         }
         
@@ -138,7 +138,7 @@ public class RemoteStreamService extends Service {
     
     @Override
     public void onDestroy() {
-        Log.i(TAG, "Service stopping");
+        FLog.i(TAG, "Service stopping");
         
         // Stop cloud status manager
         CloudStatusManager.getInstance(this).stop();
@@ -176,23 +176,23 @@ public class RemoteStreamService extends Service {
             .getInt("streaming_mode", 0);
         boolean isCloudMode = streamingMode == 1;
         
-        Log.i(TAG, (isCloudMode ? "☁️" : "📱") + " Mode changed: " + (isCloudMode ? "CLOUD" : "LOCAL"));
+        FLog.i(TAG, (isCloudMode ? "☁️" : "📱") + " Mode changed: " + (isCloudMode ? "CLOUD" : "LOCAL"));
         
         boolean serverRunning = isServerRunning();
         
         if (isCloudMode) {
             // Cloud mode: STOP server if running (security - no local access in cloud mode)
             if (serverRunning) {
-                Log.i(TAG, "🔒 Stopping HTTP server (switching to cloud mode)");
+                FLog.i(TAG, "🔒 Stopping HTTP server (switching to cloud mode)");
                 stopHttpServer();
                 updateNotification();
             } else {
-                Log.i(TAG, "🔒 Cloud mode - HTTP server already stopped");
+                FLog.i(TAG, "🔒 Cloud mode - HTTP server already stopped");
             }
         } else {
             // Local mode: START server if not running
             if (!serverRunning) {
-                Log.i(TAG, "📱 Starting HTTP server (switching to local mode)");
+                FLog.i(TAG, "📱 Starting HTTP server (switching to local mode)");
                 if (startHttpServer()) {
                     // Save port to preferences
                     getSharedPreferences("FadCamPrefs", MODE_PRIVATE)
@@ -201,10 +201,10 @@ public class RemoteStreamService extends Service {
                         .apply();
                     updateNotification();
                 } else {
-                    Log.e(TAG, "❌ Failed to start HTTP server when switching to local mode");
+                    FLog.e(TAG, "❌ Failed to start HTTP server when switching to local mode");
                 }
             } else {
-                Log.i(TAG, "📱 Local mode - HTTP server already running on port " + activePort);
+                FLog.i(TAG, "📱 Local mode - HTTP server already running on port " + activePort);
             }
         }
     }
@@ -223,7 +223,7 @@ public class RemoteStreamService extends Service {
         // Find free port
         int port = findFreePort(DEFAULT_PORT);
         if (port == -1) {
-            Log.e(TAG, "❌ No free port available in range " + DEFAULT_PORT + "-" + (DEFAULT_PORT + PORT_SCAN_RANGE));
+            FLog.e(TAG, "❌ No free port available in range " + DEFAULT_PORT + "-" + (DEFAULT_PORT + PORT_SCAN_RANGE));
             return false;
         }
         
@@ -236,23 +236,23 @@ public class RemoteStreamService extends Service {
             String ipAddress = getLocalIpAddress();
             String serverUrl = "http://" + ipAddress + ":" + port;
             
-            Log.i(TAG, "════════════════════════════════════════════════════════");
-            Log.i(TAG, "🚀 HTTP SERVER STARTED");
-            Log.i(TAG, "════════════════════════════════════════════════════════");
-            Log.i(TAG, "   📍 Address: " + serverUrl);
-            Log.i(TAG, "   🔌 Port: " + port);
-            Log.i(TAG, "   🌐 IP: " + ipAddress);
-            Log.i(TAG, "   📡 Endpoints:");
-            Log.i(TAG, "      • Dashboard: " + serverUrl + "/");
-            Log.i(TAG, "      • Status API: " + serverUrl + "/status");
-            Log.i(TAG, "      • HLS Stream: " + serverUrl + "/live.m3u8");
-            Log.i(TAG, "════════════════════════════════════════════════════════");
-            Log.i(TAG, "   ⚠️  Open the URL above on a device on the SAME network");
-            Log.i(TAG, "════════════════════════════════════════════════════════");
+            FLog.i(TAG, "════════════════════════════════════════════════════════");
+            FLog.i(TAG, "🚀 HTTP SERVER STARTED");
+            FLog.i(TAG, "════════════════════════════════════════════════════════");
+            FLog.i(TAG, "   📍 Address: " + serverUrl);
+            FLog.i(TAG, "   🔌 Port: " + port);
+            FLog.i(TAG, "   🌐 IP: " + ipAddress);
+            FLog.i(TAG, "   📡 Endpoints:");
+            FLog.i(TAG, "      • Dashboard: " + serverUrl + "/");
+            FLog.i(TAG, "      • Status API: " + serverUrl + "/status");
+            FLog.i(TAG, "      • HLS Stream: " + serverUrl + "/live.m3u8");
+            FLog.i(TAG, "════════════════════════════════════════════════════════");
+            FLog.i(TAG, "   ⚠️  Open the URL above on a device on the SAME network");
+            FLog.i(TAG, "════════════════════════════════════════════════════════");
             
             return true;
         } catch (IOException e) {
-            Log.e(TAG, "❌ Failed to start HTTP server", e);
+            FLog.e(TAG, "❌ Failed to start HTTP server", e);
             return false;
         }
     }
@@ -263,7 +263,7 @@ public class RemoteStreamService extends Service {
     private void stopHttpServer() {
         if (httpServer != null) {
             httpServer.stop();
-            Log.i(TAG, "HTTP server stopped");
+            FLog.i(TAG, "HTTP server stopped");
             httpServer = null;
             activePort = -1;
         }
@@ -299,7 +299,7 @@ public class RemoteStreamService extends Service {
     private int findFreePort(int startPort) {
         for (int port = startPort; port < startPort + PORT_SCAN_RANGE; port++) {
             if (isPortAvailable(port)) {
-                Log.d(TAG, "Found free port: " + port);
+                FLog.d(TAG, "Found free port: " + port);
                 return port;
             }
         }
@@ -427,12 +427,12 @@ public class RemoteStreamService extends Service {
                 networkLog.append(" [CELLULAR - No incoming connections]");
             }
             
-            Log.i(TAG, networkLog.toString());
+            FLog.i(TAG, networkLog.toString());
             
             return selectedIp != null ? selectedIp : "N/A";
             
         } catch (Exception e) {
-            Log.e(TAG, "❌ [Network] Error detecting IP address", e);
+            FLog.e(TAG, "❌ [Network] Error detecting IP address", e);
         }
         return "N/A";
     }
@@ -495,7 +495,7 @@ public class RemoteStreamService extends Service {
         } else {
             // Local mode - only show if server is running (activePort != -1)
             if (activePort == -1) {
-                Log.d(TAG, "Local mode but server not running, skipping notification update");
+                FLog.d(TAG, "Local mode but server not running, skipping notification update");
                 return;
             }
             

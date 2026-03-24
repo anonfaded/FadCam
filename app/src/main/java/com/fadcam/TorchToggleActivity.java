@@ -1,12 +1,12 @@
 package com.fadcam;
 
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -52,7 +52,7 @@ public class TorchToggleActivity extends Activity {
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "Error toggling torch", e);
+            FLog.e(TAG, "Error toggling torch", e);
             showTorchErrorToast();
         } finally {
             moveTaskToBack(true);

@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
@@ -388,8 +390,8 @@ public class LayerPanelOverlay {
         TextView btnRenameLayer = layerView.findViewById(R.id.btnRenameLayer);
         
         String layerId = layer.getId();
-        android.util.Log.d("LayerPanelOverlay", "Creating layer view for: " + layer.getName() + " (ID: " + layerId + ")");
-        android.util.Log.d("LayerPanelOverlay", "btnRenameLayer found: " + (btnRenameLayer != null));
+        FLog.d("LayerPanelOverlay", "Creating layer view for: " + layer.getName() + " (ID: " + layerId + ")");
+        FLog.d("LayerPanelOverlay", "btnRenameLayer found: " + (btnRenameLayer != null));
         
         txtLayerName.setText(layer.getName());
         
@@ -495,9 +497,9 @@ public class LayerPanelOverlay {
         // Rename button - launches rename dialog
         if (btnRenameLayer != null) {
             btnRenameLayer.setOnClickListener(v -> {
-                android.util.Log.d("LayerPanelOverlay", "=== RENAME LAYER BUTTON CLICKED ===");
-                android.util.Log.d("LayerPanelOverlay", "Layer ID: " + layerId);
-                android.util.Log.d("LayerPanelOverlay", "Layer name: " + layer.getName());
+                FLog.d("LayerPanelOverlay", "=== RENAME LAYER BUTTON CLICKED ===");
+                FLog.d("LayerPanelOverlay", "Layer ID: " + layerId);
+                FLog.d("LayerPanelOverlay", "Layer name: " + layer.getName());
                 
                 // Broadcast to show rename dialog
                 android.content.Intent intent = new android.content.Intent("com.fadcam.fadrec.RENAME_LAYER");
@@ -505,10 +507,10 @@ public class LayerPanelOverlay {
                 intent.putExtra("layer_name", layer.getName());
                 context.sendBroadcast(intent);
                 
-                android.util.Log.d("LayerPanelOverlay", "Broadcast sent for layer rename");
+                FLog.d("LayerPanelOverlay", "Broadcast sent for layer rename");
             });
         } else {
-            android.util.Log.w("LayerPanelOverlay", "btnRenameLayer is NULL!");
+            FLog.w("LayerPanelOverlay", "btnRenameLayer is NULL!");
         }
         
                 // Drag handle - Simple drag implementation

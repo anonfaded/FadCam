@@ -1,11 +1,11 @@
 package com.fadcam.playback;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.net.Uri;
-import android.util.Log;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,7 +90,7 @@ public class FragmentedMp4SeekHelper {
             }
             
             if (videoTrackIndex < 0) {
-                Log.e(TAG, "No video track found in: " + uri);
+                FLog.e(TAG, "No video track found in: " + uri);
                 release();
                 return false;
             }
@@ -98,13 +98,13 @@ public class FragmentedMp4SeekHelper {
             extractor.selectTrack(videoTrackIndex);
             isInitialized = true;
             
-            Log.d(TAG, "Initialized for: " + uri.getLastPathSegment() + 
+            FLog.d(TAG, "Initialized for: " + uri.getLastPathSegment() + 
                        ", videoTrack=" + videoTrackIndex + 
                        ", duration=" + (durationUs / 1000) + "ms");
             
             return true;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to initialize MediaExtractor for: " + uri, e);
+            FLog.e(TAG, "Failed to initialize MediaExtractor for: " + uri, e);
             release();
             return false;
         }
@@ -118,7 +118,7 @@ public class FragmentedMp4SeekHelper {
      */
     public List<SyncPoint> buildSyncPointList() {
         if (!isInitialized || extractor == null) {
-            Log.e(TAG, "Not initialized");
+            FLog.e(TAG, "Not initialized");
             return null;
         }
         
@@ -155,7 +155,7 @@ public class FragmentedMp4SeekHelper {
                 }
             }
             
-            Log.d(TAG, "Built sync point list: " + syncPoints.size() + 
+            FLog.d(TAG, "Built sync point list: " + syncPoints.size() + 
                        " keyframes from " + sampleCount + " samples");
             
             // Seek back to beginning after scanning
@@ -163,7 +163,7 @@ public class FragmentedMp4SeekHelper {
             
             return syncPoints;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to build sync point list", e);
+            FLog.e(TAG, "Failed to build sync point list", e);
             return null;
         }
     }
@@ -188,7 +188,7 @@ public class FragmentedMp4SeekHelper {
                 return new SyncPoint(resultTime, 0, true);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to find sync point at " + timeUs, e);
+            FLog.e(TAG, "Failed to find sync point at " + timeUs, e);
         }
         
         return null;
@@ -213,11 +213,11 @@ public class FragmentedMp4SeekHelper {
             
             if (resultTimeUs >= 0) {
                 long resultTimeMs = resultTimeUs / 1000;
-                Log.d(TAG, "Seek target=" + targetTimeMs + "ms, result=" + resultTimeMs + "ms");
+                FLog.d(TAG, "Seek target=" + targetTimeMs + "ms, result=" + resultTimeMs + "ms");
                 return resultTimeMs;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to seek to " + targetTimeMs + "ms", e);
+            FLog.e(TAG, "Failed to seek to " + targetTimeMs + "ms", e);
         }
         
         return -1;
@@ -248,7 +248,7 @@ public class FragmentedMp4SeekHelper {
             try {
                 extractor.release();
             } catch (Exception e) {
-                Log.w(TAG, "Error releasing MediaExtractor", e);
+                FLog.w(TAG, "Error releasing MediaExtractor", e);
             }
             extractor = null;
         }

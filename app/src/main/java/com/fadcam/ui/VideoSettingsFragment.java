@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -8,7 +10,6 @@ import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.view.LayoutInflater;
@@ -651,7 +652,7 @@ public class VideoSettingsFragment extends Fragment {
 
                     // Skip duplicate camera types (except Main camera which is always included)
                     if (!isDefault && addedCameraTypes.contains(cameraType)) {
-                        Log.d(TAG, "Skipping duplicate camera type: " + cameraType + " (ID: " + id + ")");
+                        FLog.d(TAG, "Skipping duplicate camera type: " + cameraType + " (ID: " + id + ")");
                         continue;
                     }
 
@@ -661,7 +662,7 @@ public class VideoSettingsFragment extends Fragment {
                         display.append(" ").append(Math.round(focal)).append("mm");
                     availableBackCameras.add(new CameraIdInfo(id, display.toString()));
 
-                    Log.d(TAG, "Added camera: " + display.toString() + " with focal length: " + focal);
+                    FLog.d(TAG, "Added camera: " + display.toString() + " with focal length: " + focal);
                 }
             }
             // Sort: default first then numeric id
@@ -691,7 +692,7 @@ public class VideoSettingsFragment extends Fragment {
                 prefs.setSelectedBackCameraId(availableBackCameras.get(0).id);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error detecting back cameras", e);
+            FLog.e(TAG, "Error detecting back cameras", e);
         }
         // method(detectAvailableBackCameras)-----------
     }
@@ -723,7 +724,7 @@ public class VideoSettingsFragment extends Fragment {
                 supported = getSupportedVideoSizesForCamera(cameraId); // already filtered by isReasonableVideoSize
             }
         } catch (Exception e) {
-            Log.w(TAG, "Direct supported size enumeration failed, falling back", e);
+            FLog.w(TAG, "Direct supported size enumeration failed, falling back", e);
         }
 
         if (supported == null)
@@ -764,7 +765,7 @@ public class VideoSettingsFragment extends Fragment {
                 String[] parts = dim.split("x");
                 Size candidate = new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
                 curated.add(candidate);
-                Log.d(TAG, "Resolution Validation: " + dim + " - SUPPORTED (hardware advertises it)");
+                FLog.d(TAG, "Resolution Validation: " + dim + " - SUPPORTED (hardware advertises it)");
             } catch (Exception ignored) {
             }
         }
@@ -780,7 +781,7 @@ public class VideoSettingsFragment extends Fragment {
                 boolean alreadyAdded = curated.stream().anyMatch(c -> c.getWidth() == s.getWidth() && c.getHeight() == s.getHeight());
                 if (!alreadyAdded) {
                     curated.add(s);
-                    Log.d(TAG, "Resolution Validation: " + key + " - SUPPORTED (non-canonical high-res)");
+                    FLog.d(TAG, "Resolution Validation: " + key + " - SUPPORTED (non-canonical high-res)");
                 }
             }
         }
@@ -895,9 +896,9 @@ public class VideoSettingsFragment extends Fragment {
                             (long) s1.getWidth() * s1.getHeight()));
                     
                     // Log all supported video sizes for diagnosis
-                    Log.d(TAG, "Video Sizes: Camera " + cameraId + " supports " + videoSizes.length + " video resolutions:");
+                    FLog.d(TAG, "Video Sizes: Camera " + cameraId + " supports " + videoSizes.length + " video resolutions:");
                     for (Size size : videoSizes) {
-                        Log.d(TAG, "Video Sizes: " + size.getWidth() + "x" + size.getHeight() + 
+                        FLog.d(TAG, "Video Sizes: " + size.getWidth() + "x" + size.getHeight() + 
                               " (reasonable: " + isReasonableVideoSize(size) + ")");
                     }
                     
@@ -908,7 +909,7 @@ public class VideoSettingsFragment extends Fragment {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error accessing camera " + cameraId + " for video sizes", e);
+            FLog.e(TAG, "Error accessing camera " + cameraId + " for video sizes", e);
         }
         return supportedSizes;
     }
@@ -942,15 +943,15 @@ public class VideoSettingsFragment extends Fragment {
             
             // Simplified diagnostic logging for 8K detection
             if (size.getWidth() == 7680 && size.getHeight() == 4320) {
-                Log.d(TAG, "8K Detection: Checking 8K (7680x4320) for camera " + cameraId);
+                FLog.d(TAG, "8K Detection: Checking 8K (7680x4320) for camera " + cameraId);
                 boolean has8K = CamcorderProfile.hasProfile(camIdInt, CamcorderProfile.QUALITY_8KUHD);
-                Log.d(TAG, "8K Detection: CamcorderProfile.hasProfile(QUALITY_8KUHD) = " + has8K);
+                FLog.d(TAG, "8K Detection: CamcorderProfile.hasProfile(QUALITY_8KUHD) = " + has8K);
                 if (has8K) {
                     CamcorderProfile profile8K = CamcorderProfile.get(camIdInt, CamcorderProfile.QUALITY_8KUHD);
                     if (profile8K != null) {
-                        Log.d(TAG, "8K Detection: 8K Profile dimensions = " + profile8K.videoFrameWidth + "x" + profile8K.videoFrameHeight);
+                        FLog.d(TAG, "8K Detection: 8K Profile dimensions = " + profile8K.videoFrameWidth + "x" + profile8K.videoFrameHeight);
                     } else {
-                        Log.w(TAG, "8K Detection: 8K Profile is null despite hasProfile=true");
+                        FLog.w(TAG, "8K Detection: 8K Profile is null despite hasProfile=true");
                     }
                 }
             }
@@ -969,7 +970,7 @@ public class VideoSettingsFragment extends Fragment {
                 if (CamcorderProfile.hasProfile(camIdInt, CamcorderProfile.QUALITY_8KUHD)) {
                     CamcorderProfile p8k = CamcorderProfile.get(camIdInt, CamcorderProfile.QUALITY_8KUHD);
                     if (p8k != null) {
-                        Log.d(TAG, "8K Fallback: Found 8K profile with dimensions " + p8k.videoFrameWidth + "x" + p8k.videoFrameHeight);
+                        FLog.d(TAG, "8K Fallback: Found 8K profile with dimensions " + p8k.videoFrameWidth + "x" + p8k.videoFrameHeight);
                         return p8k;
                     }
                 }
@@ -980,13 +981,13 @@ public class VideoSettingsFragment extends Fragment {
                 if (CamcorderProfile.hasProfile(camIdInt, CamcorderProfile.QUALITY_2160P)) {
                     CamcorderProfile p4k = CamcorderProfile.get(camIdInt, CamcorderProfile.QUALITY_2160P);
                     if (p4k != null) {
-                        Log.d(TAG, "4K Fallback: Found 4K profile with dimensions " + p4k.videoFrameWidth + "x" + p4k.videoFrameHeight);
+                        FLog.d(TAG, "4K Fallback: Found 4K profile with dimensions " + p4k.videoFrameWidth + "x" + p4k.videoFrameHeight);
                         return p4k;
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "createProfileForSize error", e);
+            FLog.e(TAG, "createProfileForSize error", e);
         }
         return null;
     }
@@ -1065,7 +1066,7 @@ public class VideoSettingsFragment extends Fragment {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error resolving camera id", e);
+            FLog.e(TAG, "Error resolving camera id", e);
         }
         return null;
     }
@@ -1253,7 +1254,7 @@ public class VideoSettingsFragment extends Fragment {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Zoom ratio query failed", e);
+            FLog.w(TAG, "Zoom ratio query failed", e);
         }
         return defaultMaxZoom;
     }
@@ -1505,7 +1506,7 @@ public class VideoSettingsFragment extends Fragment {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Error checking camera characteristics for ID: " + cameraId, e);
+            FLog.w(TAG, "Error checking camera characteristics for ID: " + cameraId, e);
         }
         return false;
     }
@@ -1522,7 +1523,7 @@ public class VideoSettingsFragment extends Fragment {
     @ExperimentalCamera2Interop
     private List<Integer> getHardwareSupportedFrameRates(CameraType cameraType) {
         if (getContext() == null) {
-            Log.e(TAG, "FPS Query: Context is null.");
+            FLog.e(TAG, "FPS Query: Context is null.");
             return Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
         }
 
@@ -1533,14 +1534,14 @@ public class VideoSettingsFragment extends Fragment {
 
         // Use the new CameraX utility for framerate detection
         try {
-            Log.i(TAG, "Using CameraX API for framerate detection");
+            FLog.i(TAG, "Using CameraX API for framerate detection");
             List<Integer> detectedRates = CameraXFrameRateUtil.getHardwareSupportedFrameRates(requireContext(),
                     cameraType);
 
             // Special handling for Samsung devices - explicitly add 60fps support if not
             // already present
             if (DeviceHelper.isSamsung() && !detectedRates.contains(60)) {
-                Log.i(TAG, "Samsung device detected - Adding 60fps support explicitly");
+                FLog.i(TAG, "Samsung device detected - Adding 60fps support explicitly");
                 List<Integer> enhancedRates = new ArrayList<>(detectedRates);
                 enhancedRates.add(60);
                 Collections.sort(enhancedRates);
@@ -1551,7 +1552,7 @@ public class VideoSettingsFragment extends Fragment {
 
             return detectedRates;
         } catch (Exception e) {
-            Log.e(TAG, "Error using CameraX for framerate detection, falling back to Camera2", e);
+            FLog.e(TAG, "Error using CameraX for framerate detection, falling back to Camera2", e);
             // Fallback to Camera2 API implementation - retain original logic
             return getHardwareSupportedFrameRatesUsingCamera2(cameraType);
         }
@@ -1565,18 +1566,18 @@ public class VideoSettingsFragment extends Fragment {
      * @return A sorted List<Integer> of all supported frame rates.
      */
     private List<Integer> getHardwareSupportedFrameRatesUsingCamera2(CameraType cameraType) {
-        Log.i(TAG,
+        FLog.i(TAG,
                 "=== Getting Hardware Supported FPS for CameraType: " + cameraType + " using Camera2 API ===");
         final List<Integer> defaultRateList = Collections.singletonList(Constants.DEFAULT_VIDEO_FRAME_RATE);
 
         if (getContext() == null) {
-            Log.e(TAG, "FPS Query: Context is null.");
+            FLog.e(TAG, "FPS Query: Context is null.");
             return defaultRateList;
         }
 
         CameraManager manager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
         if (manager == null) {
-            Log.e(TAG, "FPS Query: CameraManager is null.");
+            FLog.e(TAG, "FPS Query: CameraManager is null.");
             return defaultRateList;
         }
 
@@ -1596,13 +1597,13 @@ public class VideoSettingsFragment extends Fragment {
                 if (facing != null) {
                     if (cameraType == CameraType.FRONT && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                         targetCameraId = id;
-                        Log.d(TAG, "FPS Query: Found FRONT camera ID: " + targetCameraId);
+                        FLog.d(TAG, "FPS Query: Found FRONT camera ID: " + targetCameraId);
                         break;
                     }
                     if (cameraType == CameraType.BACK && facing == CameraCharacteristics.LENS_FACING_BACK) {
                         if (id.equals(Constants.DEFAULT_BACK_CAMERA_ID)) {
                             targetCameraId = id; // Found preferred default BACK ID "0"
-                            Log.d(TAG, "FPS Query: Found Primary BACK camera ID: " + targetCameraId);
+                            FLog.d(TAG, "FPS Query: Found Primary BACK camera ID: " + targetCameraId);
                             break;
                         } else if (firstBackIdFallback == null) {
                             firstBackIdFallback = id; // Store first BACK ID encountered as fallback
@@ -1613,20 +1614,20 @@ public class VideoSettingsFragment extends Fragment {
             // If default BACK "0" wasn't found, use the fallback if available
             if (cameraType == CameraType.BACK && targetCameraId == null && firstBackIdFallback != null) {
                 targetCameraId = firstBackIdFallback;
-                Log.w(TAG,
+                FLog.w(TAG,
                         "FPS Query: Default Back ID '0' not found/back-facing. Using first available back ID: "
                                 + targetCameraId);
             }
         } catch (CameraAccessException | IllegalArgumentException e) {
-            Log.e(TAG, "FPS Query: Error accessing camera list/characteristics during ID selection", e);
+            FLog.e(TAG, "FPS Query: Error accessing camera list/characteristics during ID selection", e);
             return defaultRateList;
         }
 
         if (targetCameraId == null) {
-            Log.e(TAG, "FPS Query: Could not find a valid Camera ID for type: " + cameraType);
+            FLog.e(TAG, "FPS Query: Could not find a valid Camera ID for type: " + cameraType);
             return defaultRateList;
         }
-        Log.d(TAG, "FPS Query: Using Camera ID: " + targetCameraId + " for characteristic lookup.");
+        FLog.d(TAG, "FPS Query: Using Camera ID: " + targetCameraId + " for characteristic lookup.");
 
         // Get the available AE FPS ranges for the target camera
         Range<Integer>[] hardwareFpsRanges = null;
@@ -1634,12 +1635,12 @@ public class VideoSettingsFragment extends Fragment {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(targetCameraId);
             hardwareFpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
         } catch (CameraAccessException | IllegalArgumentException e) {
-            Log.e(TAG, "FPS Query: Camera access/arg exception getting FPS ranges for ID " + targetCameraId,
+            FLog.e(TAG, "FPS Query: Camera access/arg exception getting FPS ranges for ID " + targetCameraId,
                     e);
             // Return default [30] on error accessing ranges
             return defaultRateList;
         } catch (Exception e) {
-            Log.e(TAG, "FPS Query: Unexpected error getting FPS ranges for ID " + targetCameraId, e);
+            FLog.e(TAG, "FPS Query: Unexpected error getting FPS ranges for ID " + targetCameraId, e);
             return defaultRateList;
         }
 
@@ -1665,7 +1666,7 @@ public class VideoSettingsFragment extends Fragment {
                     CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
                     if (profile != null && profile.videoFrameRate > maxProfileFps) {
                         maxProfileFps = profile.videoFrameRate;
-                        Log.d(TAG, "FPS Query: Found higher framerate " + maxProfileFps +
+                        FLog.d(TAG, "FPS Query: Found higher framerate " + maxProfileFps +
                                 " in CamcorderProfile quality " + quality);
                     }
                 }
@@ -1680,7 +1681,7 @@ public class VideoSettingsFragment extends Fragment {
                                 CamcorderProfile.QUALITY_HIGH_SPEED_HIGH);
                         if (profile != null && profile.videoFrameRate > maxProfileFps) {
                             maxProfileFps = profile.videoFrameRate;
-                            Log.d(TAG, "FPS Query: Found high-speed framerate " +
+                            FLog.d(TAG, "FPS Query: Found high-speed framerate " +
                                     maxProfileFps + " in QUALITY_HIGH_SPEED_HIGH");
                         }
                     }
@@ -1690,7 +1691,7 @@ public class VideoSettingsFragment extends Fragment {
                                 CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
                         if (profile != null && profile.videoFrameRate > maxProfileFps) {
                             maxProfileFps = profile.videoFrameRate;
-                            Log.d(TAG, "FPS Query: Found high-speed framerate " +
+                            FLog.d(TAG, "FPS Query: Found high-speed framerate " +
                                     maxProfileFps + " in QUALITY_HIGH_SPEED_1080P");
                         }
                     }
@@ -1700,27 +1701,27 @@ public class VideoSettingsFragment extends Fragment {
                                 CamcorderProfile.QUALITY_HIGH_SPEED_720P);
                         if (profile != null && profile.videoFrameRate > maxProfileFps) {
                             maxProfileFps = profile.videoFrameRate;
-                            Log.d(TAG, "FPS Query: Found high-speed framerate " +
+                            FLog.d(TAG, "FPS Query: Found high-speed framerate " +
                                     maxProfileFps + " in QUALITY_HIGH_SPEED_720P");
                         }
                     }
                 } catch (Exception e) {
-                    Log.w(TAG, "FPS Query: Error checking high-speed profiles: " + e.getMessage());
+                    FLog.w(TAG, "FPS Query: Error checking high-speed profiles: " + e.getMessage());
                 }
             }
 
-            Log.d(TAG, "FPS Query: Maximum framerate found in CamcorderProfiles: " + maxProfileFps);
+            FLog.d(TAG, "FPS Query: Maximum framerate found in CamcorderProfiles: " + maxProfileFps);
 
         } catch (NumberFormatException e) {
-            Log.w(TAG, "FPS Query: Could not parse camera ID as integer: " + targetCameraId);
+            FLog.w(TAG, "FPS Query: Could not parse camera ID as integer: " + targetCameraId);
             // Continue with Camera2 API method only
         } catch (Exception e) {
-            Log.w(TAG, "FPS Query: Error checking CamcorderProfiles: " + e.getMessage());
+            FLog.w(TAG, "FPS Query: Error checking CamcorderProfiles: " + e.getMessage());
             // Continue with Camera2 API method only
         }
 
         if (hardwareFpsRanges == null || hardwareFpsRanges.length == 0) {
-            Log.w(TAG, "FPS Query: No AE FPS ranges reported by hardware for camera " + targetCameraId
+            FLog.w(TAG, "FPS Query: No AE FPS ranges reported by hardware for camera " + targetCameraId
                     + ". Using CamcorderProfile.");
             // Create some basic framerates based on CamcorderProfile information
             for (int fps = 10; fps <= maxProfileFps; fps += 5) {
@@ -1741,7 +1742,7 @@ public class VideoSettingsFragment extends Fragment {
                 framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE); // Default fallback
             }
         } else {
-            Log.d(TAG, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": "
+            FLog.d(TAG, "FPS Query: Hardware reported AE ranges for ID " + targetCameraId + ": "
                     + Arrays.toString(hardwareFpsRanges));
 
             // Process each range to get ALL supported framerates
@@ -1750,7 +1751,7 @@ public class VideoSettingsFragment extends Fragment {
                     int lower = range.getLower();
                     int upper = range.getUpper();
 
-                    Log.d(TAG, "FPS Query: Processing range " + lower + "-" + upper);
+                    FLog.d(TAG, "FPS Query: Processing range " + lower + "-" + upper);
 
                     // For most devices, framerates are available at discrete steps (usually 1fps)
                     // Add ALL integer values within the range to ensure we catch values like 59fps
@@ -1763,14 +1764,14 @@ public class VideoSettingsFragment extends Fragment {
             // If CamcorderProfile reported higher framerates than Camera2 API, add those
             // too
             if (maxProfileFps > 30) {
-                Log.d(TAG, "FPS Query: Adding higher framerates from CamcorderProfile");
+                FLog.d(TAG, "FPS Query: Adding higher framerates from CamcorderProfile");
 
                 // Add standard high framerates if they're supported by the profile
                 int[] highRates = { 60, 90, 120, 240 };
                 for (int rate : highRates) {
                     if (rate <= maxProfileFps) {
                         framerates.add(rate);
-                        Log.d(TAG, "FPS Query: Added " + rate + "fps from CamcorderProfile");
+                        FLog.d(TAG, "FPS Query: Added " + rate + "fps from CamcorderProfile");
                     }
                 }
             }
@@ -1778,7 +1779,7 @@ public class VideoSettingsFragment extends Fragment {
 
         // Ensure we have at least one value (the default)
         if (framerates.isEmpty()) {
-            Log.e(TAG, "FPS Query: No valid framerates found from hardware ranges. Adding default: "
+            FLog.e(TAG, "FPS Query: No valid framerates found from hardware ranges. Adding default: "
                     + Constants.DEFAULT_VIDEO_FRAME_RATE);
             framerates.add(Constants.DEFAULT_VIDEO_FRAME_RATE);
         }
@@ -1790,7 +1791,7 @@ public class VideoSettingsFragment extends Fragment {
         // we could optionally filter to keep just common/useful values or step at
         // 5-10fps intervals
         if (finalSupportedRates.size() > 20) {
-            Log.w(TAG, "FPS Query: Large number of framerates detected (" + finalSupportedRates.size() +
+            FLog.w(TAG, "FPS Query: Large number of framerates detected (" + finalSupportedRates.size() +
                     "), keeping only useful values for UI");
 
             // Filter to keep standard values + any higher FPS values
@@ -1825,7 +1826,7 @@ public class VideoSettingsFragment extends Fragment {
 
             // Replace the full list with our filtered list
             finalSupportedRates = new ArrayList<>(filteredRates);
-            Log.d(TAG, "FPS Query: Filtered to " + finalSupportedRates.size() + " useful framerates");
+            FLog.d(TAG, "FPS Query: Filtered to " + finalSupportedRates.size() + " useful framerates");
         }
 
         return finalSupportedRates;

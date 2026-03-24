@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.encoding;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -12,7 +14,6 @@ import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.Log;
 import android.view.Surface;
 
 import com.fadcam.Constants;
@@ -182,8 +183,8 @@ public class ScreenRecordingPipeline {
         this.screenWidth = initialEncoder[0];
         this.screenHeight = initialEncoder[1];
         
-        // Log.d(TAG, "Display dimensions: " + this.displayWidth + "x" + this.displayHeight);
-        // Log.d(TAG, "Encoder dimensions: " + this.screenWidth + "x" + this.screenHeight);
+        // FLog.d(TAG, "Display dimensions: " + this.displayWidth + "x" + this.displayHeight);
+        // FLog.d(TAG, "Encoder dimensions: " + this.screenWidth + "x" + this.screenHeight);
         
         this.screenDensity = builder.screenDensity;
         this.videoFramerate = builder.videoFramerate;
@@ -234,7 +235,7 @@ public class ScreenRecordingPipeline {
     /**     * Initialize all encoding components
      */
     private void initialize() throws IOException {
-        // Log.d(TAG, "Initializing ScreenRecordingPipeline: " + screenWidth + "x" + screenHeight + 
+        // FLog.d(TAG, "Initializing ScreenRecordingPipeline: " + screenWidth + "x" + screenHeight + 
         //     "@" + videoFramerate + "fps, bitrate=" + videoBitrate);
         
         // Create encoding threads
@@ -265,7 +266,7 @@ public class ScreenRecordingPipeline {
             initializeAudioEncoder();
         }
         
-        // Log.d(TAG, "ScreenRecordingPipeline initialized successfully");
+        // FLog.d(TAG, "ScreenRecordingPipeline initialized successfully");
     }
     
     /**
@@ -277,7 +278,7 @@ public class ScreenRecordingPipeline {
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(outputFilePath);
         }
-        // Log.d(TAG, "FragmentedMp4Muxer created");
+        // FLog.d(TAG, "FragmentedMp4Muxer created");
     }
     
     /**
@@ -301,11 +302,11 @@ public class ScreenRecordingPipeline {
                 screenWidth = candidateWidth;
                 screenHeight = candidateHeight;
 
-                Log.i(TAG, "Hardware H.264 encoder initialized: " + screenWidth + "x" + screenHeight);
+                FLog.i(TAG, "Hardware H.264 encoder initialized: " + screenWidth + "x" + screenHeight);
                 return;
             } catch (Exception e) {
                 lastException = new IOException("Hardware encoder failed for " + candidateWidth + "x" + candidateHeight, e);
-                Log.w(TAG, "Hardware encoder failed for " + candidateWidth + "x" + candidateHeight + ": " + e.getMessage());
+                FLog.w(TAG, "Hardware encoder failed for " + candidateWidth + "x" + candidateHeight + ": " + e.getMessage());
             }
         }
 
@@ -321,11 +322,11 @@ public class ScreenRecordingPipeline {
                 screenWidth = candidateWidth;
                 screenHeight = candidateHeight;
 
-                Log.i(TAG, "Software H.264 encoder initialized: " + screenWidth + "x" + screenHeight);
+                FLog.i(TAG, "Software H.264 encoder initialized: " + screenWidth + "x" + screenHeight);
                 return;
             } catch (Exception e) {
                 lastException = new IOException("Software encoder failed for " + candidateWidth + "x" + candidateHeight, e);
-                Log.w(TAG, "Software encoder failed for " + candidateWidth + "x" + candidateHeight + ": " + e.getMessage());
+                FLog.w(TAG, "Software encoder failed for " + candidateWidth + "x" + candidateHeight + ": " + e.getMessage());
             }
         }
 
@@ -357,7 +358,7 @@ public class ScreenRecordingPipeline {
             format.setInteger(MediaFormat.KEY_COMPLEXITY, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR);
         }
         
-        // Log.d(TAG, String.format("Configuring %s encoder: %dx%d @%dfps, bitrate=%d",
+        // FLog.d(TAG, String.format("Configuring %s encoder: %dx%d @%dfps, bitrate=%d",
         //     isSoftware ? "software" : "hardware", width, height, videoFramerate, effectiveBitrate));
         
         encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -370,7 +371,7 @@ public class ScreenRecordingPipeline {
      */
     // private void initializeWatermarkRenderer() {
     //     // Will be properly integrated with MediaProjection surface
-    //     Log.d(TAG, "GLWatermarkRenderer initialization deferred");
+    //     FLog.d(TAG, "GLWatermarkRenderer initialization deferred");
     // }
     
     /**
@@ -411,10 +412,10 @@ public class ScreenRecordingPipeline {
             audioEncoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat_encoder, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             
-            // Log.d(TAG, "Audio encoder initialized: AAC, " + sampleRate + "Hz");
+            // FLog.d(TAG, "Audio encoder initialized: AAC, " + sampleRate + "Hz");
             
         } catch (IOException e) {
-            Log.e(TAG, "Failed to initialize audio encoder", e);
+            FLog.e(TAG, "Failed to initialize audio encoder", e);
             throw e;
         }
     }
@@ -424,11 +425,11 @@ public class ScreenRecordingPipeline {
      */
     public void startRecording() throws IOException {
         if (isRecording) {
-            Log.w(TAG, "Already recording");
+            FLog.w(TAG, "Already recording");
             return;
         }
         
-        // Log.d(TAG, "Starting screen recording");
+        // FLog.d(TAG, "Starting screen recording");
         
         // Start encoders
         videoEncoder.start();
@@ -457,7 +458,7 @@ public class ScreenRecordingPipeline {
             startAudioEncodingLoop();
         }
         
-        // Log.d(TAG, "Screen recording started");
+        // FLog.d(TAG, "Screen recording started");
     }
     
     /**
@@ -479,7 +480,7 @@ public class ScreenRecordingPipeline {
             null
         );
         
-        // Log.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight);
+        // FLog.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight);
     }
     
     /**
@@ -520,7 +521,7 @@ public class ScreenRecordingPipeline {
                 // Muxer setup
                 MediaFormat newFormat = videoEncoder.getOutputFormat();
                 videoTrackIndex = mediaMuxer.addTrack(newFormat);
-                // Log.d(TAG, "Video track added: " + videoTrackIndex);
+                // FLog.d(TAG, "Video track added: " + videoTrackIndex);
                 
                 tryStartMuxer();
                 
@@ -647,7 +648,7 @@ public class ScreenRecordingPipeline {
             if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 MediaFormat newFormat = audioEncoder.getOutputFormat();
                 audioTrackIndex = mediaMuxer.addTrack(newFormat);
-                // Log.d(TAG, "Audio track added: " + audioTrackIndex);
+                // FLog.d(TAG, "Audio track added: " + audioTrackIndex);
                 
                 tryStartMuxer();
                 
@@ -689,7 +690,7 @@ public class ScreenRecordingPipeline {
         if (!muxerStarted && videoReady && audioReady) {
             mediaMuxer.start();
             muxerStarted = true;
-            // Log.d(TAG, "Muxer started");
+            // FLog.d(TAG, "Muxer started");
         }
     }
     
@@ -706,7 +707,7 @@ public class ScreenRecordingPipeline {
         }
         
         isPaused = true;
-        // Log.d(TAG, "Recording paused");
+        // FLog.d(TAG, "Recording paused");
     }
     
     /**
@@ -725,7 +726,7 @@ public class ScreenRecordingPipeline {
         }
         
         isPaused = false;
-        Log.d(TAG, "Recording resumed");
+        FLog.d(TAG, "Recording resumed");
     }
 
     /**
@@ -744,7 +745,7 @@ public class ScreenRecordingPipeline {
             return;
         }
         
-        Log.d(TAG, "Stopping screen recording");
+        FLog.d(TAG, "Stopping screen recording");
         isStopped = true;
         isRecording = false;
         
@@ -753,7 +754,7 @@ public class ScreenRecordingPipeline {
             try {
                 audioRecord.stop();
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping AudioRecord", e);
+                FLog.e(TAG, "Error stopping AudioRecord", e);
             }
         }
         
@@ -766,7 +767,7 @@ public class ScreenRecordingPipeline {
         // Release resources
         release();
         
-        Log.d(TAG, "Screen recording stopped");
+        FLog.d(TAG, "Screen recording stopped");
     }
     
     /**
@@ -785,7 +786,7 @@ public class ScreenRecordingPipeline {
                 videoEncoder.stop();
                 videoEncoder.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing video encoder", e);
+                FLog.e(TAG, "Error releasing video encoder", e);
             }
             videoEncoder = null;
         }
@@ -796,7 +797,7 @@ public class ScreenRecordingPipeline {
                 audioEncoder.stop();
                 audioEncoder.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing audio encoder", e);
+                FLog.e(TAG, "Error releasing audio encoder", e);
             }
             audioEncoder = null;
         }
@@ -806,7 +807,7 @@ public class ScreenRecordingPipeline {
             try {
                 audioRecord.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing AudioRecord", e);
+                FLog.e(TAG, "Error releasing AudioRecord", e);
             }
             audioRecord = null;
         }
@@ -819,7 +820,7 @@ public class ScreenRecordingPipeline {
                 }
                 mediaMuxer.release();
             } catch (Exception e) {
-                Log.e(TAG, "Error releasing muxer", e);
+                FLog.e(TAG, "Error releasing muxer", e);
             }
             mediaMuxer = null;
         }

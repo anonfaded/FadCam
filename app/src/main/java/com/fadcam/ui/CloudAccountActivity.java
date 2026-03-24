@@ -1,9 +1,10 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -101,7 +102,7 @@ public class CloudAccountActivity extends AppCompatActivity {
         
         // Load device link URL
         String url = cloudAuthManager.buildDeviceLinkUrl(deviceName);
-        Log.d(TAG, "Loading URL: " + url);
+        FLog.d(TAG, "Loading URL: " + url);
         webView.loadUrl(url);
     }
     
@@ -135,7 +136,7 @@ public class CloudAccountActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(android.webkit.WebView view, int errorCode, String description, String failingUrl) {
                 super.onReceivedError(view, errorCode, description, failingUrl);
-                Log.e(TAG, "WebView error: " + description);
+                FLog.e(TAG, "WebView error: " + description);
                 statusText.setText(R.string.cloud_account_link_failed);
             }
         });
@@ -169,7 +170,7 @@ public class CloudAccountActivity extends AppCompatActivity {
          */
         @JavascriptInterface
         public void onLinkSuccess(String token, long expiryMs, String email, String refreshToken, String userId) {
-            Log.i(TAG, "Device linked successfully to: " + email + ", has refresh: " + (refreshToken != null && !refreshToken.isEmpty()));
+            FLog.i(TAG, "Device linked successfully to: " + email + ", has refresh: " + (refreshToken != null && !refreshToken.isEmpty()));
             
             // Store the token with refresh token for seamless renewal
             cloudAuthManager.setJwtToken(token, expiryMs, refreshToken, userId);
@@ -195,7 +196,7 @@ public class CloudAccountActivity extends AppCompatActivity {
          */
         @JavascriptInterface
         public void onLinkFailed(String error) {
-            Log.e(TAG, "Device linking failed: " + error);
+            FLog.e(TAG, "Device linking failed: " + error);
             runOnUiThread(() -> {
                 Toast.makeText(CloudAccountActivity.this, 
                     R.string.cloud_account_link_failed, Toast.LENGTH_SHORT).show();

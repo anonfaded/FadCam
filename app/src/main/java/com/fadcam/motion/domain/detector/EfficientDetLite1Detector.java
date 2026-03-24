@@ -1,11 +1,11 @@
 package com.fadcam.motion.domain.detector;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.media.Image;
-import android.util.Log;
-
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.label.Category;
 import org.tensorflow.lite.task.core.BaseOptions;
@@ -150,9 +150,9 @@ public class EfficientDetLite1Detector {
                             .setMaxResults(MAX_RESULTS)
                             .build();
             local = ObjectDetector.createFromFileAndOptions(context, MODEL_PATH, options);
-            Log.i(TAG, "Loaded model via Task Vision API: " + MODEL_PATH);
+            FLog.i(TAG, "Loaded model via Task Vision API: " + MODEL_PATH);
         } catch (Throwable t) {
-            Log.e(TAG, "Failed to initialize EfficientDet Task Vision detector", t);
+            FLog.e(TAG, "Failed to initialize EfficientDet Task Vision detector", t);
         }
         this.detector = local;
     }
@@ -227,7 +227,7 @@ public class EfficientDetLite1Detector {
             long now = android.os.SystemClock.elapsedRealtime();
             if ((now - lastInferenceWarnMs) > 5000L) {
                 lastInferenceWarnMs = now;
-                Log.w(TAG, "EfficientDet inference skipped for one frame: " + t.getClass().getSimpleName());
+                FLog.w(TAG, "EfficientDet inference skipped for one frame: " + t.getClass().getSimpleName());
             }
         }
         return out;

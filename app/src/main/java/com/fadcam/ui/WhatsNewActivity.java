@@ -1,12 +1,13 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -130,18 +131,18 @@ public class WhatsNewActivity extends AppCompatActivity {
      * Navigate to home screen (MainActivity)
      */
     private void navigateToHome() {
-        Log.d(TAG, "navigateToHome: Marking onboarding as complete before navigation");
+        FLog.d(TAG, "navigateToHome: Marking onboarding as complete before navigation");
         // Mark onboarding as complete BEFORE navigating to prevent it from showing again
         SharedPreferencesManager.getInstance(this).setShowOnboarding(false);
-        Log.d(TAG, "navigateToHome: Onboarding marked as complete");
+        FLog.d(TAG, "navigateToHome: Onboarding marked as complete");
         
-        Log.d(TAG, "navigateToHome: Starting navigation to MainActivity");
+        FLog.d(TAG, "navigateToHome: Starting navigation to MainActivity");
         Intent intent = new Intent(this, com.fadcam.MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        Log.d(TAG, "navigateToHome: Activity started, calling finish()");
+        FLog.d(TAG, "navigateToHome: Activity started, calling finish()");
         finish();
-        Log.d(TAG, "navigateToHome: finish() called");
+        FLog.d(TAG, "navigateToHome: finish() called");
     }
 
     /**
@@ -172,10 +173,10 @@ public class WhatsNewActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 String changelog = readAssetFile(this, "changelog/main.md");
-                android.util.Log.d(TAG, "Changelog loaded successfully, size: " + changelog.length());
+                FLog.d(TAG, "Changelog loaded successfully, size: " + changelog.length());
                 
                 String formattedChangelog = ChangelogParser.parseChangelogOffline(changelog);
-                android.util.Log.d(TAG, "Changelog parsed, formatted size: " + formattedChangelog.length());
+                FLog.d(TAG, "Changelog parsed, formatted size: " + formattedChangelog.length());
 
                 runOnUiThread(() -> {
                     if (changelogWebView != null) {
@@ -188,7 +189,7 @@ public class WhatsNewActivity extends AppCompatActivity {
                             "</body></html>";
                         
                         changelogWebView.loadDataWithBaseURL("file:///android_asset/changelog/", htmlContent, "text/html", "utf-8", null);
-                        android.util.Log.d(TAG, "Changelog displayed in WebView");
+                        FLog.d(TAG, "Changelog displayed in WebView");
                         
                         // Hide shimmer and show content with animation
                         if (shimmerContainer != null) {
@@ -208,7 +209,7 @@ public class WhatsNewActivity extends AppCompatActivity {
                     }
                 });
             } catch (Exception e) {
-                android.util.Log.e(TAG, "Error loading changelog", e);
+                FLog.e(TAG, "Error loading changelog", e);
             }
         }).start();
     }
@@ -263,7 +264,7 @@ public class WhatsNewActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy: WhatsNewActivity being destroyed");
+        FLog.d(TAG, "onDestroy: WhatsNewActivity being destroyed");
         
         // Cancel countdown timer if still running
         if (countdownTimer != null) {
@@ -272,7 +273,7 @@ public class WhatsNewActivity extends AppCompatActivity {
         
         // Note: Onboarding is now marked complete in navigateToHome() before navigation
         // to ensure persistence before activity destruction
-        Log.d(TAG, "onDestroy: WhatsNewActivity destroyed");
+        FLog.d(TAG, "onDestroy: WhatsNewActivity destroyed");
     }
 
     /**

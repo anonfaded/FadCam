@@ -1,9 +1,10 @@
 package com.fadcam.fadrec.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -29,12 +30,12 @@ public class TransparentPermissionActivity extends ComponentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        Log.d(TAG, "TransparentPermissionActivity created");
+        FLog.d(TAG, "TransparentPermissionActivity created");
         
         // Check if we already requested permission (activity recreated)
         if (savedInstanceState != null) {
             permissionRequested = savedInstanceState.getBoolean("permissionRequested", false);
-            Log.d(TAG, "Activity recreated, permissionRequested: " + permissionRequested);
+            FLog.d(TAG, "Activity recreated, permissionRequested: " + permissionRequested);
             if (permissionRequested) {
                 // Permission already requested, activity was recreated
                 // Don't request again, just wait for result or finish
@@ -49,14 +50,14 @@ public class TransparentPermissionActivity extends ComponentActivity {
         screenCapturePermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                Log.d(TAG, "Screen capture permission result: " + result.getResultCode());
-                Log.d(TAG, "Result data is null: " + (result.getData() == null));
+                FLog.d(TAG, "Screen capture permission result: " + result.getResultCode());
+                FLog.d(TAG, "Result data is null: " + (result.getData() == null));
                 
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                     // Permission granted, start recording
                     Intent data = result.getData();
                     
-                    Log.d(TAG, "Permission GRANTED - resultCode: " + result.getResultCode());
+                    FLog.d(TAG, "Permission GRANTED - resultCode: " + result.getResultCode());
                     
                     // Send broadcast with permission result to start recording
                     // Use LocalBroadcastManager to guarantee delivery on Android 12+
@@ -71,10 +72,10 @@ public class TransparentPermissionActivity extends ComponentActivity {
                     
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                     
-                    Log.d(TAG, "[BROADCAST-SEND] Permission granted broadcast sent via LocalBroadcastManager with data extras");
+                    FLog.d(TAG, "[BROADCAST-SEND] Permission granted broadcast sent via LocalBroadcastManager with data extras");
                 } else {
                     // Permission denied or data is null
-                    Log.w(TAG, "Screen capture permission DENIED or data null - resultCode: " + result.getResultCode());
+                    FLog.w(TAG, "Screen capture permission DENIED or data null - resultCode: " + result.getResultCode());
                     
                     Intent broadcastIntent = new Intent(Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
@@ -93,12 +94,12 @@ public class TransparentPermissionActivity extends ComponentActivity {
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean("permissionRequested", permissionRequested);
-        Log.d(TAG, "Saving state - permissionRequested: " + permissionRequested);
+        FLog.d(TAG, "Saving state - permissionRequested: " + permissionRequested);
     }
     
     private void requestScreenCapturePermission() {
         if (permissionRequested) {
-            Log.d(TAG, "Permission already requested, skipping");
+            FLog.d(TAG, "Permission already requested, skipping");
             return;
         }
         
@@ -106,14 +107,14 @@ public class TransparentPermissionActivity extends ComponentActivity {
             Intent permissionIntent = mediaProjectionHelper.createScreenCaptureIntent();
             if (permissionIntent != null) {
                 permissionRequested = true;
-                Log.d(TAG, "Launching permission dialog");
+                FLog.d(TAG, "Launching permission dialog");
                 screenCapturePermissionLauncher.launch(permissionIntent);
             } else {
-                Log.e(TAG, "Failed to create screen capture intent");
+                FLog.e(TAG, "Failed to create screen capture intent");
                 finish();
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error requesting screen capture permission", e);
+            FLog.e(TAG, "Error requesting screen capture permission", e);
             finish();
         }
     }

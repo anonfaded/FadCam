@@ -1,5 +1,7 @@
 package com.fadcam.service;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -91,7 +93,7 @@ public class FileOperationNotificationManager {
         try {
             notificationManager.notify(NOTIFICATION_ID, builder.build());
         } catch (SecurityException e) {
-            android.util.Log.w("FileOpNotification", "No notification permission", e);
+            FLog.w("FileOpNotification", "No notification permission", e);
         }
     }
     
@@ -107,7 +109,7 @@ public class FileOperationNotificationManager {
         try {
             notificationManager.notify(NOTIFICATION_ID + 1, builder.build());
         } catch (SecurityException e) {
-            android.util.Log.w("FileOpNotification", "No notification permission", e);
+            FLog.w("FileOpNotification", "No notification permission", e);
         }
     }
     

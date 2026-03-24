@@ -1,5 +1,7 @@
 package com.fadcam.ui.custom;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -9,7 +11,6 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.net.Uri;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import java.nio.ByteBuffer;
@@ -159,8 +160,8 @@ public class AudioWaveformView extends View {
      */
     private void extractRealAudioData(Uri videoUri) {
         long startTime = System.currentTimeMillis();
-        Log.i(TAG, "═══ WAVEFORM ANALYSIS START ═══");
-        Log.d(TAG, "Analyzing waveform for URI: " + videoUri);
+        FLog.i(TAG, "═══ WAVEFORM ANALYSIS START ═══");
+        FLog.d(TAG, "Analyzing waveform for URI: " + videoUri);
 
         MediaExtractor extractor = null;
         MediaCodec codec = null;
@@ -182,7 +183,7 @@ public class AudioWaveformView extends View {
             }
 
             if (audioTrackIndex == -1 || audioFormat == null) {
-                Log.w(TAG, "No audio track found — showing silence");
+                FLog.w(TAG, "No audio track found — showing silence");
                 postSilence();
                 return;
             }
@@ -198,7 +199,7 @@ public class AudioWaveformView extends View {
             int channels = audioFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT)
                     ? audioFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT) : 1;
 
-            Log.d(TAG, "Audio: " + mime + ", " + sampleRate + "Hz, " +
+            FLog.d(TAG, "Audio: " + mime + ", " + sampleRate + "Hz, " +
                     channels + "ch, duration=" + durationUs + "us");
 
             codec = MediaCodec.createDecoderByType(mime);
@@ -231,7 +232,7 @@ public class AudioWaveformView extends View {
             }
 
             long elapsedMs = System.currentTimeMillis() - startTime;
-            Log.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE in " + elapsedMs + "ms ═══");
+            FLog.i(TAG, "═══ WAVEFORM ANALYSIS COMPLETE in " + elapsedMs + "ms ═══");
 
             final float[] finalBins = rawBins;
             post(() -> {
@@ -242,7 +243,7 @@ public class AudioWaveformView extends View {
             });
 
         } catch (Exception e) {
-            Log.e(TAG, "Error extracting audio data", e);
+            FLog.e(TAG, "Error extracting audio data", e);
             postSilence();
         } finally {
             if (codec != null) {

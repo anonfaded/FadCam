@@ -1,7 +1,8 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,7 +62,7 @@ public class WatchSettingsFragment extends Fragment {
         try {
             OverlayNavUtil.show(requireActivity(), fragment, tag);
         } catch (Exception e) {
-            Log.e(TAG, "Failed to open overlay: " + tag, e);
+            FLog.e(TAG, "Failed to open overlay: " + tag, e);
         }
     }
 }

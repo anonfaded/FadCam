@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -43,24 +45,24 @@ public class WatchMainActivity extends AppCompatActivity {
         // WATCH-SPECIFIC FIX: Override manifest theme for better Wear OS compatibility
         // Material3 has rendering issues on small round Wear OS screens
         // MaterialComponents (Material 2) works better on all screen sizes including watch
-        android.util.Log.d("WatchMainActivity", "Overriding theme to MaterialComponents for Wear OS");
+        FLog.d("WatchMainActivity", "Overriding theme to MaterialComponents for Wear OS");
         setTheme(R.style.Theme_FadCam_WatchCompat);
         
         super.onCreate(savedInstanceState);
 
         // DEBUG: Log device characteristics for Wear OS diagnosis
-        android.util.Log.d("WatchMainActivity", "=== WATCH ACTIVITY LIFECYCLE ===");
-        android.util.Log.d("WatchMainActivity", "Display dimensions: " + 
+        FLog.d("WatchMainActivity", "=== WATCH ACTIVITY LIFECYCLE ===");
+        FLog.d("WatchMainActivity", "Display dimensions: " + 
             getResources().getDisplayMetrics().widthPixels + "x" + 
             getResources().getDisplayMetrics().heightPixels);
-        android.util.Log.d("WatchMainActivity", "Screen density: " + 
+        FLog.d("WatchMainActivity", "Screen density: " + 
             getResources().getDisplayMetrics().density);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            android.util.Log.d("WatchMainActivity", "Is round watch: " + 
+            FLog.d("WatchMainActivity", "Is round watch: " + 
                 getResources().getConfiguration().isScreenRound());
         }
-        android.util.Log.d("WatchMainActivity", "API level: " + android.os.Build.VERSION.SDK_INT);
-        android.util.Log.d("WatchMainActivity", "Device: " + android.os.Build.DEVICE);
+        FLog.d("WatchMainActivity", "API level: " + android.os.Build.VERSION.SDK_INT);
+        FLog.d("WatchMainActivity", "Device: " + android.os.Build.DEVICE);
         
         // Check for onboarding BEFORE applying theme or setting content view
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
@@ -72,7 +74,7 @@ public class WatchMainActivity extends AppCompatActivity {
         if (!firstInstallChecked) {
             // This is definitely a first install or app data was cleared
             // Force onboarding to show by setting the flag to false
-            android.util.Log.d("WatchMainActivity", "First install detected! Forcing onboarding to show.");
+            FLog.d("WatchMainActivity", "First install detected! Forcing onboarding to show.");
             sharedPreferencesManager.sharedPreferences.edit()
                     .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
                     .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
@@ -82,9 +84,9 @@ public class WatchMainActivity extends AppCompatActivity {
         // Check for onboarding
         boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
         boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
-        android.util.Log.d("WatchMainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
-        android.util.Log.d("WatchMainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
-        android.util.Log.d("WatchMainActivity", "Should show onboarding: " + showOnboarding);
+        FLog.d("WatchMainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
+        FLog.d("WatchMainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
+        FLog.d("WatchMainActivity", "Should show onboarding: " + showOnboarding);
 
         if (showOnboarding) {
             // User has NOT completed onboarding yet - show full onboarding first
@@ -115,9 +117,9 @@ public class WatchMainActivity extends AppCompatActivity {
     private void initializeUI() {
         if (uiInitialized) return; // Already initialized
 
-        android.util.Log.d("WatchMainActivity", "Initializing UI...");
+        FLog.d("WatchMainActivity", "Initializing UI...");
         setContentView(R.layout.activity_watch_main);
-        android.util.Log.d("WatchMainActivity", "Content view set");
+        FLog.d("WatchMainActivity", "Content view set");
 
         viewPager = findViewById(R.id.watch_viewpager);
         dots[0]   = findViewById(R.id.dot_0);
@@ -125,7 +127,7 @@ public class WatchMainActivity extends AppCompatActivity {
         dots[2]   = findViewById(R.id.dot_2);
         dots[3]   = findViewById(R.id.dot_3);
 
-        android.util.Log.d("WatchMainActivity", "ViewPager and dots found");
+        FLog.d("WatchMainActivity", "ViewPager and dots found");
 
         viewPager.setAdapter(new WatchPagerAdapter(this));
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {

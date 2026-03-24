@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor.timeline;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,7 +13,6 @@ import android.graphics.Shader;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -332,7 +333,7 @@ public class TimelineView extends View {
                 });
                 
             } catch (Exception e) {
-                Log.e(TAG, "Failed to load thumbnails", e);
+                FLog.e(TAG, "Failed to load thumbnails", e);
             }
         }).start();
     }
@@ -618,7 +619,7 @@ public class TimelineView extends View {
                     if (trimListener != null) {
                         trimListener.onTrimFinished(trimStartFraction, trimEndFraction);
                     }
-                    Log.d(TAG, "Trim finished: start=" + trimStartFraction
+                    FLog.d(TAG, "Trim finished: start=" + trimStartFraction
                             + " end=" + trimEndFraction);
                 } else if (activeDrag == DragTarget.TIMELINE) {
                     if (playheadListener != null) {

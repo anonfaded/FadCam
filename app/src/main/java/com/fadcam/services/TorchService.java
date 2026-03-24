@@ -1,5 +1,7 @@
 package com.fadcam.services;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -18,8 +20,6 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
-
 import androidx.core.app.NotificationCompat;
 
 import com.fadcam.Constants;
@@ -51,13 +51,13 @@ public class TorchService extends Service {
 
     // In TorchService.java
     private void toggleTorchInternal() {
-        Log.d(TAG, "toggleTorchInternal called");
+        FLog.d(TAG, "toggleTorchInternal called");
         try {
             SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
             
             // If recording is in progress, delegate to RecordingService
             if (sharedPreferencesManager.isRecordingInProgress()) {
-                Log.d(TAG, "Recording is in progress, delegating torch toggle to RecordingService");
+                FLog.d(TAG, "Recording is in progress, delegating torch toggle to RecordingService");
                 Intent intent = new Intent(this, RecordingService.class);
                 intent.setAction(Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH);
                 startService(intent);
@@ -66,30 +66,30 @@ public class TorchService extends Service {
 
             // Get the new torch state (opposite of current state)
             boolean newState = !isTorchOn.get();
-            Log.d(TAG, "Attempting to set torch to: " + newState);
+            FLog.d(TAG, "Attempting to set torch to: " + newState);
 
             // Check if "both torches" option is enabled
             boolean bothTorchesEnabled = sharedPreferences.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
 
             if (bothTorchesEnabled) {
-                Log.d(TAG, "Both torches mode enabled");
+                FLog.d(TAG, "Both torches mode enabled");
                 // Get all camera IDs with flash
                 for (String cameraId : cameraManager.getCameraIdList()) {
                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
                     Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                     if (hasFlash != null && hasFlash) {
                         try {
-                            Log.d(TAG, "Toggling torch for camera: " + cameraId);
+                            FLog.d(TAG, "Toggling torch for camera: " + cameraId);
                             cameraManager.setTorchMode(cameraId, newState);
                         } catch (Exception e) {
-                            Log.e(TAG, "Error toggling torch for camera " + cameraId + ": " + e.getMessage());
+                            FLog.e(TAG, "Error toggling torch for camera " + cameraId + ": " + e.getMessage());
                         }
                     }
                 }
             } else {
                 // Single torch mode - use selected source, or fallback if not set
                 selectedTorchSource = sharedPreferences.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
-                Log.d(TAG, "Single torch mode. Selected source: " + selectedTorchSource);
+                FLog.d(TAG, "Single torch mode. Selected source: " + selectedTorchSource);
                 if (selectedTorchSource == null) {
                     // Fallback: pick first back camera with flash, else any camera with flash
                     try {
@@ -117,20 +117,20 @@ public class TorchService extends Service {
                             }
                         }
                         selectedTorchSource = fallbackId;
-                        Log.d(TAG, "Fallback torch source selected: " + selectedTorchSource);
+                        FLog.d(TAG, "Fallback torch source selected: " + selectedTorchSource);
                     } catch (Exception e) {
-                        Log.e(TAG, "Error finding fallback torch source", e);
+                        FLog.e(TAG, "Error finding fallback torch source", e);
                     }
                 }
                 if (selectedTorchSource != null) {
                     try {
                         cameraManager.setTorchMode(selectedTorchSource, newState);
-                        Log.d(TAG, "Torch toggled for camera: " + selectedTorchSource + ", new state: " + newState);
+                        FLog.d(TAG, "Torch toggled for camera: " + selectedTorchSource + ", new state: " + newState);
                     } catch (Exception e) {
-                        Log.e(TAG, "Error toggling torch for selected source: " + e.getMessage());
+                        FLog.e(TAG, "Error toggling torch for selected source: " + e.getMessage());
                     }
                 } else {
-                    Log.w(TAG, "No torch source selected or found");
+                    FLog.w(TAG, "No torch source selected or found");
                 }
             }
 
@@ -144,10 +144,10 @@ public class TorchService extends Service {
             
             updateUIAndBroadcastState(newState);
             manageServiceNotification(newState);
-            Log.d(TAG, "toggleTorchInternal completed. Torch state is now: " + newState);
+            FLog.d(TAG, "toggleTorchInternal completed. Torch state is now: " + newState);
             
         } catch (Exception e) {
-            Log.e(TAG, "Error toggling torch", e);
+            FLog.e(TAG, "Error toggling torch", e);
         }
     }
 
@@ -178,7 +178,7 @@ public class TorchService extends Service {
             }
         };
 
-        Log.d(TAG, "TorchService created");
+        FLog.d(TAG, "TorchService created");
     }
 
     private void createNotificationChannel() {
@@ -195,18 +195,18 @@ public class TorchService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand called. Intent: " + intent);
+        FLog.d(TAG, "onStartCommand called. Intent: " + intent);
         if (intent != null) {
             String action = intent.getAction();
-            Log.d(TAG, "onStartCommand received action: " + action);
+            FLog.d(TAG, "onStartCommand received action: " + action);
             if (Constants.INTENT_ACTION_TOGGLE_TORCH.equals(action)) {
-                Log.d(TAG, "Received INTENT_ACTION_TOGGLE_TORCH, sending message to background handler.");
+                FLog.d(TAG, "Received INTENT_ACTION_TOGGLE_TORCH, sending message to background handler.");
                 backgroundHandler.sendEmptyMessage(1);
             } else {
-                Log.d(TAG, "Unknown or missing action in TorchService: " + action);
+                FLog.d(TAG, "Unknown or missing action in TorchService: " + action);
             }
         } else {
-            Log.d(TAG, "onStartCommand received null intent");
+            FLog.d(TAG, "onStartCommand received null intent");
         }
         // Ensure service stays alive
         return START_STICKY;
@@ -229,7 +229,7 @@ public class TorchService extends Service {
                 Integer lensFacing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 
                 // Log camera details for debugging
-                Log.d(TAG, "Checking camera: " + cameraId + 
+                FLog.d(TAG, "Checking camera: " + cameraId + 
                       ", Lens Facing: " + (lensFacing != null ? lensFacing : "Unknown") + 
                       ", Has Flash: " + hasFlash);
 
@@ -237,7 +237,7 @@ public class TorchService extends Service {
                 // For now, we'll just log the camera details
             }
         } catch (CameraAccessException e) {
-            Log.e(TAG, "Error checking camera availability", e);
+            FLog.e(TAG, "Error checking camera availability", e);
         }
         
         // If you want to prevent torch toggle in certain scenarios, modify the return logic
@@ -302,7 +302,7 @@ public class TorchService extends Service {
                 cameraManager.setTorchMode(selectedTorchSource, false);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error turning off torch: " + e.getMessage());
+            FLog.e(TAG, "Error turning off torch: " + e.getMessage());
         }
 
         // Clean up background thread
@@ -311,7 +311,7 @@ public class TorchService extends Service {
         }
 
         super.onDestroy();
-        Log.d(TAG, "TorchService destroyed");
+        FLog.d(TAG, "TorchService destroyed");
     }
 
     @Override

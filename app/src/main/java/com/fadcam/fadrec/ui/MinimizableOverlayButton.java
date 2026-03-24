@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
@@ -7,7 +9,6 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -154,7 +155,7 @@ public class MinimizableOverlayButton {
         try {
             windowManager.addView(buttonOverlay, layoutParams);
         } catch (Exception e) {
-            Log.e(TAG, "Error adding button to window", e);
+            FLog.e(TAG, "Error adding button to window", e);
             return;
         }
 
@@ -175,7 +176,7 @@ public class MinimizableOverlayButton {
             try {
                 windowManager.removeView(buttonOverlay);
             } catch (Exception e) {
-                Log.e(TAG, "Error removing button from window", e);
+                FLog.e(TAG, "Error removing button from window", e);
             }
             buttonOverlay = null;
             layoutParams = null;
@@ -492,7 +493,7 @@ public class MinimizableOverlayButton {
             try {
                 windowManager.updateViewLayout(buttonOverlay, layoutParams);
             } catch (Exception e) {
-                Log.e(TAG, "Error updating view layout", e);
+                FLog.e(TAG, "Error updating view layout", e);
             }
         }
 
@@ -517,7 +518,7 @@ public class MinimizableOverlayButton {
                 labelParams.width = dpToPx(50); // Enough for "Layers"/"Pages" text
                 labelParams.height = dpToPx(12); // Height of text (becomes width after rotation)
                 labelView.setLayoutParams(labelParams);
-                Log.d(TAG, "Set label dimensions for rotation: " + labelParams.width + "x" + labelParams.height);
+                FLog.d(TAG, "Set label dimensions for rotation: " + labelParams.width + "x" + labelParams.height);
             }
             
             // More spacing between label and arrow for better separation
@@ -549,12 +550,12 @@ public class MinimizableOverlayButton {
         
         // Debug logging
         buttonOverlay.post(() -> {
-            Log.d(TAG, "=== Button Layout Debug for " + labelText + " on " + edge + " ===");
-            Log.d(TAG, "Button container: " + buttonContainer.getWidth() + "x" + buttonContainer.getHeight());
-            Log.d(TAG, "Content layout: " + contentLayout.getWidth() + "x" + contentLayout.getHeight());
-            Log.d(TAG, "Label view: " + labelView.getWidth() + "x" + labelView.getHeight() + 
+            FLog.d(TAG, "=== Button Layout Debug for " + labelText + " on " + edge + " ===");
+            FLog.d(TAG, "Button container: " + buttonContainer.getWidth() + "x" + buttonContainer.getHeight());
+            FLog.d(TAG, "Content layout: " + contentLayout.getWidth() + "x" + contentLayout.getHeight());
+            FLog.d(TAG, "Label view: " + labelView.getWidth() + "x" + labelView.getHeight() + 
                   " rotation=" + labelView.getRotation());
-            Log.d(TAG, "Arrow view: " + arrowIcon.getWidth() + "x" + arrowIcon.getHeight());
+            FLog.d(TAG, "Arrow view: " + arrowIcon.getWidth() + "x" + arrowIcon.getHeight());
         });
 
         // Update background

@@ -1,9 +1,9 @@
 package com.fadcam.utils;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
-
 /**
  * Helper class for device-specific detection and capabilities
  */
@@ -69,13 +69,13 @@ public class DeviceHelper {
      * Log device information for debugging
      */
     public static void logDeviceInfo() {
-        Log.d(TAG, "Device Information:");
-        Log.d(TAG, "  Manufacturer: " + Build.MANUFACTURER);
-        Log.d(TAG, "  Model: " + Build.MODEL);
-        Log.d(TAG, "  Device: " + Build.DEVICE);
-        Log.d(TAG, "  Product: " + Build.PRODUCT);
-        Log.d(TAG, "  Android Version: " + Build.VERSION.RELEASE);
-        Log.d(TAG, "  SDK Level: " + Build.VERSION.SDK_INT);
+        FLog.d(TAG, "Device Information:");
+        FLog.d(TAG, "  Manufacturer: " + Build.MANUFACTURER);
+        FLog.d(TAG, "  Model: " + Build.MODEL);
+        FLog.d(TAG, "  Device: " + Build.DEVICE);
+        FLog.d(TAG, "  Product: " + Build.PRODUCT);
+        FLog.d(TAG, "  Android Version: " + Build.VERSION.RELEASE);
+        FLog.d(TAG, "  SDK Level: " + Build.VERSION.SDK_INT);
     }
 
     /**
@@ -92,7 +92,7 @@ public class DeviceHelper {
                 return activeNetwork != null && activeNetwork.isConnected();
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error checking internet connectivity", e);
+            FLog.e(TAG, "Error checking internet connectivity", e);
         }
         return false;
     }

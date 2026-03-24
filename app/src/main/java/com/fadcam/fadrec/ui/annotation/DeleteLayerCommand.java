@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -43,7 +45,7 @@ public class DeleteLayerCommand implements DrawingCommand {
         if (layer == null) resolveLayer();
         if (layer != null) {
             layer.setDeleted(true);
-            android.util.Log.d("DeleteLayerCommand", "Layer soft-deleted: " + layer.getName() + " (preserved in memory)");
+            FLog.d("DeleteLayerCommand", "Layer soft-deleted: " + layer.getName() + " (preserved in memory)");
         }
     }
     
@@ -52,7 +54,7 @@ public class DeleteLayerCommand implements DrawingCommand {
         if (layer == null) resolveLayer();
         if (layer != null) {
             layer.setDeleted(false);
-            android.util.Log.d("DeleteLayerCommand", "Layer restored: " + layer.getName());
+            FLog.d("DeleteLayerCommand", "Layer restored: " + layer.getName());
         }
     }
     

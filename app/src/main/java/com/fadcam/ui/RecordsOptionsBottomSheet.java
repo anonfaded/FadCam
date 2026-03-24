@@ -1,9 +1,10 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -88,7 +89,7 @@ public class RecordsOptionsBottomSheet extends BottomSheetDialogFragment {
                 case SMALLEST_FILES: sortOptionsGroup.check(R.id.sort_smallest); break;
                 case LARGEST_FILES: sortOptionsGroup.check(R.id.sort_largest); break;
             }
-            Log.d(TAG, "Sort options pre-checked: " + currentSortOption);
+            FLog.d(TAG, "Sort options pre-checked: " + currentSortOption);
 
             sortOptionsGroup.setOnCheckedChangeListener((group, checkedId) -> {
                 SortOption newSortOption = currentSortOption; // Start assuming no change
@@ -98,14 +99,14 @@ public class RecordsOptionsBottomSheet extends BottomSheetDialogFragment {
                 else if (checkedId == R.id.sort_largest) newSortOption = SortOption.LARGEST_FILES;
 
                 if (newSortOption != currentSortOption) {
-                    Log.i(TAG, "Sort option changed to: " + newSortOption);
+                    FLog.i(TAG, "Sort option changed to: " + newSortOption);
                     
                     // Call the sort listener
                     if (sortListener != null) {
                         sortListener.onSortOptionSelected(newSortOption);
                     }
                 } else {
-                    Log.d(TAG, "Sort option clicked, but no change: " + currentSortOption);
+                    FLog.d(TAG, "Sort option clicked, but no change: " + currentSortOption);
                 }
                 dismiss();
             });

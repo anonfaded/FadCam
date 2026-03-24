@@ -1,8 +1,8 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
-import android.util.Log;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -61,10 +61,10 @@ public class AnnotationStateManager {
             oos.close();
             fos.close();
             
-            Log.d(TAG, "State saved successfully to " + stateFile.getAbsolutePath());
+            FLog.d(TAG, "State saved successfully to " + stateFile.getAbsolutePath());
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to save state", e);
+            FLog.e(TAG, "Failed to save state", e);
             return false;
         }
     }
@@ -74,7 +74,7 @@ public class AnnotationStateManager {
      */
     public AnnotationState loadState() {
         if (!stateFile.exists()) {
-            Log.d(TAG, "No saved state file found");
+            FLog.d(TAG, "No saved state file found");
             return null;
         }
         
@@ -88,10 +88,10 @@ public class AnnotationStateManager {
             // Reconstruct transient fields
             state.reconstruct();
             
-            Log.d(TAG, "State loaded successfully from " + stateFile.getAbsolutePath());
+            FLog.d(TAG, "State loaded successfully from " + stateFile.getAbsolutePath());
             return state;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to load state", e);
+            FLog.e(TAG, "Failed to load state", e);
             return null;
         }
     }
@@ -104,7 +104,7 @@ public class AnnotationStateManager {
             boolean deleted = stateFile.delete();
             if (deleted) {
                 currentState = new AnnotationState();
-                Log.d(TAG, "State file deleted successfully");
+                FLog.d(TAG, "State file deleted successfully");
             }
             return deleted;
         }

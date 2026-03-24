@@ -1,10 +1,10 @@
 package com.fadcam.fadrec.ui.annotation;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
-import android.util.Log;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,7 +77,7 @@ public class ProjectFileManager {
         
         if (!projectsDir.exists()) {
             projectsDir.mkdirs();
-            Log.i(TAG, "Created FadRec projects directory: " + projectsDir.getAbsolutePath());
+            FLog.i(TAG, "Created FadRec projects directory: " + projectsDir.getAbsolutePath());
         }
     }
     
@@ -134,7 +134,7 @@ public class ProjectFileManager {
      * Save annotation state to .fadrec file in project folder
      */
     public boolean saveProject(AnnotationState state, String projectName) {
-        Log.i(TAG, "========== SAVING PROJECT: " + projectName + " ==========");
+        FLog.i(TAG, "========== SAVING PROJECT: " + projectName + " ==========");
         try {
             JSONObject project = new JSONObject();
             
@@ -177,29 +177,29 @@ public class ProjectFileManager {
                 for (AnnotationLayer layer : page.getLayers()) {
                     totalObjects += layer.getObjects().size();
                 }
-                Log.d(TAG, "  Page " + (i+1) + ": " + page.getLayers().size() + " layers");
+                FLog.d(TAG, "  Page " + (i+1) + ": " + page.getLayers().size() + " layers");
             }
             project.put("pages", pagesArray);
             project.put("currentPageIndex", state.getActivePageIndex());
             
-            Log.d(TAG, "  Total pages: " + state.getPages().size());
-            Log.d(TAG, "  Total objects: " + totalObjects);
-            Log.d(TAG, "  Active page: " + (state.getActivePageIndex() + 1));
+            FLog.d(TAG, "  Total pages: " + state.getPages().size());
+            FLog.d(TAG, "  Total objects: " + totalObjects);
+            FLog.d(TAG, "  Active page: " + (state.getActivePageIndex() + 1));
             
             // Create project folder if it doesn't exist
             File projectFolder = getProjectFolder(projectName);
             if (!projectFolder.exists()) {
                 boolean created = projectFolder.mkdirs();
                 if (!created) {
-                    Log.e(TAG, "❌ Failed to create project folder: " + projectFolder.getAbsolutePath());
+                    FLog.e(TAG, "❌ Failed to create project folder: " + projectFolder.getAbsolutePath());
                     throw new IOException("Unable to create project folder: " + projectFolder.getAbsolutePath());
                 }
-                Log.d(TAG, "  Created project folder: " + projectFolder.getAbsolutePath());
+                FLog.d(TAG, "  Created project folder: " + projectFolder.getAbsolutePath());
             }
             
             // Verify the folder is writable before attempting to write
             if (!projectFolder.canWrite()) {
-                Log.e(TAG, "❌ Project folder is not writable: " + projectFolder.getAbsolutePath());
+                FLog.e(TAG, "❌ Project folder is not writable: " + projectFolder.getAbsolutePath());
                 throw new IOException("Project folder is not writable. Check MANAGE_EXTERNAL_STORAGE permission.");
             }
             
@@ -214,13 +214,13 @@ public class ProjectFileManager {
             long currentTime = System.currentTimeMillis();
             boolean timestampUpdated = projectFile.setLastModified(currentTime);
             
-            Log.i(TAG, "✅ Project saved successfully: " + projectFile.getAbsolutePath());
-            Log.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
-            Log.d(TAG, "  File timestamp updated: " + timestampUpdated + " → " + new java.util.Date(projectFile.lastModified()));
+            FLog.i(TAG, "✅ Project saved successfully: " + projectFile.getAbsolutePath());
+            FLog.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
+            FLog.d(TAG, "  File timestamp updated: " + timestampUpdated + " → " + new java.util.Date(projectFile.lastModified()));
             return true;
             
         } catch (JSONException | IOException e) {
-            Log.e(TAG, "❌ Failed to save project: " + projectName, e);
+            FLog.e(TAG, "❌ Failed to save project: " + projectName, e);
             return false;
         }
     }
@@ -229,16 +229,16 @@ public class ProjectFileManager {
      * Load annotation state from .fadrec file in project folder
      */
     public AnnotationState loadProject(String projectName) {
-        Log.i(TAG, "========== LOADING PROJECT FROM FILE: " + projectName + " ==========");
+        FLog.i(TAG, "========== LOADING PROJECT FROM FILE: " + projectName + " ==========");
         try {
             File projectFile = getProjectFile(projectName);
             if (!projectFile.exists()) {
-                Log.e(TAG, "❌ Project file not found: " + projectFile.getAbsolutePath());
+                FLog.e(TAG, "❌ Project file not found: " + projectFile.getAbsolutePath());
                 return null;
             }
             
-            Log.d(TAG, "  File found: " + projectFile.getAbsolutePath());
-            Log.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
+            FLog.d(TAG, "  File found: " + projectFile.getAbsolutePath());
+            FLog.d(TAG, "  File size: " + (projectFile.length() / 1024) + " KB");
             
             // Read file
             FileReader reader = new FileReader(projectFile);
@@ -255,9 +255,9 @@ public class ProjectFileManager {
             
             // Verify version
             String version = project.getString("version");
-            Log.d(TAG, "  Project version: " + version);
+            FLog.d(TAG, "  Project version: " + version);
             if (!version.equals(PROJECT_VERSION)) {
-                Log.w(TAG, "⚠️ Project version mismatch: expected " + PROJECT_VERSION + ", got " + version);
+                FLog.w(TAG, "⚠️ Project version mismatch: expected " + PROJECT_VERSION + ", got " + version);
             }
             
             // Create state
@@ -267,12 +267,12 @@ public class ProjectFileManager {
             if (project.has("metadata")) {
                 JSONObject metadata = project.getJSONObject("metadata");
                 state.setMetadata(metadata);
-                Log.d(TAG, "  Metadata loaded: " + metadata.toString());
+                FLog.d(TAG, "  Metadata loaded: " + metadata.toString());
             }
             
             // Load pages
             JSONArray pagesArray = project.getJSONArray("pages");
-            Log.d(TAG, "  Loading " + pagesArray.length() + " pages...");
+            FLog.d(TAG, "  Loading " + pagesArray.length() + " pages...");
             
             int totalObjects = 0;
             for (int i = 0; i < pagesArray.length(); i++) {
@@ -286,7 +286,7 @@ public class ProjectFileManager {
                 }
                 totalObjects += pageObjects;
                 
-                Log.d(TAG, "    Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + pageObjects + " objects");
+                FLog.d(TAG, "    Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + pageObjects + " objects");
                 
                 // Remove default page if loading first page
                 if (i == 0 && state.getPages().size() == 1) {
@@ -301,21 +301,21 @@ public class ProjectFileManager {
                 int currentIndex = project.getInt("currentPageIndex");
                 if (currentIndex >= 0 && currentIndex < state.getPages().size()) {
                     state.setActivePageIndex(currentIndex);
-                    Log.d(TAG, "  Active page set to: " + (currentIndex + 1));
+                    FLog.d(TAG, "  Active page set to: " + (currentIndex + 1));
                 }
             }
             
             // CRITICAL: Reconstruct transient fields (Paths, etc)
-            Log.d(TAG, "  Reconstructing transient fields for rendering...");
+            FLog.d(TAG, "  Reconstructing transient fields for rendering...");
             state.reconstruct();
             
-            Log.i(TAG, "✅ Project loaded successfully");
-            Log.d(TAG, "  Total pages loaded: " + state.getPages().size());
-            Log.d(TAG, "  Total objects: " + totalObjects);
+            FLog.i(TAG, "✅ Project loaded successfully");
+            FLog.d(TAG, "  Total pages loaded: " + state.getPages().size());
+            FLog.d(TAG, "  Total objects: " + totalObjects);
             return state;
             
         } catch (JSONException | IOException e) {
-            Log.e(TAG, "❌ Failed to load project: " + projectName, e);
+            FLog.e(TAG, "❌ Failed to load project: " + projectName, e);
             e.printStackTrace();
             return null;
         }
@@ -324,7 +324,7 @@ public class ProjectFileManager {
     public ProjectSummary getProjectSummary(String projectName) {
         File projectFile = getProjectFile(projectName);
         if (!projectFile.exists()) {
-            Log.w(TAG, "Project file missing for summary: " + projectName);
+            FLog.w(TAG, "Project file missing for summary: " + projectName);
             return null;
         }
 
@@ -356,7 +356,7 @@ public class ProjectFileManager {
                 summary.modifiedAt = metadata.optLong("modified", summary.modifiedAt);
             }
         } catch (IOException | JSONException e) {
-            Log.e(TAG, "Failed to read project summary for " + projectName, e);
+            FLog.e(TAG, "Failed to read project summary for " + projectName, e);
         }
 
         return summary;
@@ -366,15 +366,15 @@ public class ProjectFileManager {
      * Get or create current project name (persistent across app restarts)
      */
     public String getOrCreateCurrentProject() {
-        Log.d(TAG, "getOrCreateCurrentProject() called");
+        FLog.d(TAG, "getOrCreateCurrentProject() called");
         
         // Check if we have a saved current project
         String savedProject = prefs.getString(KEY_CURRENT_PROJECT, null);
-        Log.d(TAG, "Saved project from preferences: " + savedProject);
+        FLog.d(TAG, "Saved project from preferences: " + savedProject);
         
         // Get all existing projects to find the latest one
         File[] existingProjects = listProjects();
-        Log.d(TAG, "Found " + (existingProjects != null ? existingProjects.length : 0) + " existing projects");
+        FLog.d(TAG, "Found " + (existingProjects != null ? existingProjects.length : 0) + " existing projects");
         
         if (existingProjects != null && existingProjects.length > 0) {
             // Sort by project FILE (project.fadrec) last modified date (newest first)
@@ -391,26 +391,26 @@ public class ProjectFileManager {
             File latestProjectFile = new File(existingProjects[0], PROJECT_FILE_NAME);
             long latestModified = latestProjectFile.exists() ? latestProjectFile.lastModified() : existingProjects[0].lastModified();
             
-            Log.d(TAG, "Latest project by FILE modified date: " + latestProject);
-            Log.d(TAG, "Latest project file modified at: " + new java.util.Date(latestModified));
+            FLog.d(TAG, "Latest project by FILE modified date: " + latestProject);
+            FLog.d(TAG, "Latest project file modified at: " + new java.util.Date(latestModified));
             
             // If saved project exists and is the same as latest, use it
             if (savedProject != null && savedProject.equals(latestProject) && projectExists(savedProject)) {
-                Log.i(TAG, "✅ Resuming saved project (which is also the latest): " + savedProject);
+                FLog.i(TAG, "✅ Resuming saved project (which is also the latest): " + savedProject);
                 return savedProject;
             }
             
             // If saved project exists but isn't the latest, or doesn't exist anymore
             if (savedProject != null) {
                 if (projectExists(savedProject)) {
-                    Log.i(TAG, "⚠️ Saved project exists but NOT the latest. Latest: " + latestProject);
+                    FLog.i(TAG, "⚠️ Saved project exists but NOT the latest. Latest: " + latestProject);
                 } else {
-                    Log.i(TAG, "⚠️ Saved project doesn't exist anymore: " + savedProject);
+                    FLog.i(TAG, "⚠️ Saved project doesn't exist anymore: " + savedProject);
                 }
             }
             
             // Use the latest project
-            Log.i(TAG, "✅ Using latest project by modified date: " + latestProject);
+            FLog.i(TAG, "✅ Using latest project by modified date: " + latestProject);
             prefs.edit().putString(KEY_CURRENT_PROJECT, latestProject).apply();
             return latestProject;
         }
@@ -422,7 +422,7 @@ public class ProjectFileManager {
         
         // Save as current project
         prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
-        Log.i(TAG, "Created new project: " + projectName);
+        FLog.i(TAG, "Created new project: " + projectName);
         
         return projectName;
     }
@@ -437,7 +437,7 @@ public class ProjectFileManager {
         
         // Save as current project
         prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
-        Log.i(TAG, "User created new project: " + projectName);
+        FLog.i(TAG, "User created new project: " + projectName);
         
         return projectName;
     }
@@ -471,7 +471,7 @@ public class ProjectFileManager {
         if (projectFolder.exists() && projectFolder.isDirectory()) {
             boolean deleted = deleteRecursive(projectFolder);
             if (deleted) {
-                Log.i(TAG, "✅ Project deleted: " + projectFolder.getAbsolutePath());
+                FLog.i(TAG, "✅ Project deleted: " + projectFolder.getAbsolutePath());
             }
             return deleted;
         }
@@ -499,7 +499,7 @@ public class ProjectFileManager {
      */
     public boolean renameProject(String oldName, String newName) {
         if (oldName == null || newName == null || oldName.equals(newName)) {
-            Log.w(TAG, "Invalid rename operation: " + oldName + " → " + newName);
+            FLog.w(TAG, "Invalid rename operation: " + oldName + " → " + newName);
             return false;
         }
         
@@ -510,29 +510,29 @@ public class ProjectFileManager {
         File newFolder = getProjectFolder(sanitizedNewName);
         
         if (!oldFolder.exists()) {
-            Log.e(TAG, "❌ Cannot rename: old folder doesn't exist: " + oldFolder.getAbsolutePath());
+            FLog.e(TAG, "❌ Cannot rename: old folder doesn't exist: " + oldFolder.getAbsolutePath());
             return false;
         }
         
         if (newFolder.exists()) {
-            Log.e(TAG, "❌ Cannot rename: new folder already exists: " + newFolder.getAbsolutePath());
+            FLog.e(TAG, "❌ Cannot rename: new folder already exists: " + newFolder.getAbsolutePath());
             return false;
         }
         
         boolean renamed = oldFolder.renameTo(newFolder);
         if (renamed) {
-            Log.i(TAG, "✅ Project folder renamed: " + oldName + " → " + sanitizedNewName);
+            FLog.i(TAG, "✅ Project folder renamed: " + oldName + " → " + sanitizedNewName);
             
             // Update current project preference if this was the active project
             String currentProject = prefs.getString(KEY_CURRENT_PROJECT, null);
             if (oldName.equals(currentProject)) {
                 prefs.edit().putString(KEY_CURRENT_PROJECT, sanitizedNewName).apply();
-                Log.i(TAG, "Updated current project preference to: " + sanitizedNewName);
+                FLog.i(TAG, "Updated current project preference to: " + sanitizedNewName);
             }
             
             return true;
         } else {
-            Log.e(TAG, "❌ Failed to rename project folder");
+            FLog.e(TAG, "❌ Failed to rename project folder");
             return false;
         }
     }

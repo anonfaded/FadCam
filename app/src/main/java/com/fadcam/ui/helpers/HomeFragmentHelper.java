@@ -1,6 +1,7 @@
 package com.fadcam.ui.helpers;
 
-import android.util.Log;
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -45,9 +46,9 @@ public class HomeFragmentHelper {
             // Initialize mode switcher component
             initializeModeSwitcher(view);
 
-            Log.d(TAG, "All components initialized successfully");
+            FLog.d(TAG, "All components initialized successfully");
         } catch (Exception e) {
-            Log.e(TAG, "Error initializing components", e);
+            FLog.e(TAG, "Error initializing components", e);
         }
     }
 
@@ -75,7 +76,7 @@ public class HomeFragmentHelper {
         // Initialize the component
         modeSwitcherComponent.initialize(view);
 
-        Log.d(TAG, "ModeSwitcher component initialized");
+        FLog.d(TAG, "ModeSwitcher component initialized");
     }
 
     /**
@@ -84,7 +85,7 @@ public class HomeFragmentHelper {
      * @param mode The selected mode
      */
     private void handleModeSelection(String mode) {
-        Log.d(TAG, "Mode selected: " + mode);
+        FLog.d(TAG, "Mode selected: " + mode);
 
         // Save the selected mode
         sharedPreferencesManager.setCurrentRecordingMode(mode);
@@ -92,21 +93,21 @@ public class HomeFragmentHelper {
         switch (mode) {
             case Constants.MODE_FADCAM:
                 // FadCam mode - regular camera recording
-                Log.d(TAG, "FadCam mode selected");
+                FLog.d(TAG, "FadCam mode selected");
                 // Recreate fragment to show HomeFragment
                 recreateHomeFragment();
                 break;
 
             case Constants.MODE_FADREC:
                 // FadRec mode - screen recording
-                Log.d(TAG, "FadRec mode selected");
+                FLog.d(TAG, "FadRec mode selected");
                 // Recreate fragment to show FadRecHomeFragment
                 recreateHomeFragment();
                 break;
 
             case Constants.MODE_FADMIC:
                 // Future: Handle mic recording mode
-                Log.d(TAG, "FadMic mode will be implemented in future");
+                FLog.d(TAG, "FadMic mode will be implemented in future");
                 break;
         }
     }
@@ -120,7 +121,7 @@ public class HomeFragmentHelper {
         try {
             FragmentActivity activity = fragment.getActivity();
             if (activity == null) {
-                Log.w(TAG, "Activity is null, cannot recreate fragment");
+                FLog.w(TAG, "Activity is null, cannot recreate fragment");
                 return;
             }
 
@@ -130,12 +131,12 @@ public class HomeFragmentHelper {
                 
                 // Force recreate position 0 (Home tab)
                 mainActivity.forceRecreateFragment(0);
-                Log.d(TAG, "Home fragment recreated for mode switch");
+                FLog.d(TAG, "Home fragment recreated for mode switch");
             } else {
-                Log.w(TAG, "Activity is not MainActivity");
+                FLog.w(TAG, "Activity is not MainActivity");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error recreating home fragment", e);
+            FLog.e(TAG, "Error recreating home fragment", e);
         }
     }
 
@@ -145,7 +146,7 @@ public class HomeFragmentHelper {
      * @param modeName The name of the mode that's coming soon
      */
     private void handleComingSoonRequest(String modeName) {
-        Log.d(TAG, "Coming soon requested for: " + modeName);
+        FLog.d(TAG, "Coming soon requested for: " + modeName);
         // Toast is already shown by the component
         // Future: Could track analytics or show more detailed info
     }
@@ -165,6 +166,6 @@ public class HomeFragmentHelper {
     public void onDestroy() {
         // Clean up any resources if needed
         modeSwitcherComponent = null;
-        Log.d(TAG, "HomeFragmentHelper cleaned up");
+        FLog.d(TAG, "HomeFragmentHelper cleaned up");
     }
 }

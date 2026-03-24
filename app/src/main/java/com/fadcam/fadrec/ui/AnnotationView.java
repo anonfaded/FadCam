@@ -1,5 +1,7 @@
 package com.fadcam.fadrec.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,7 +13,6 @@ import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -162,8 +163,8 @@ public class AnnotationView extends View {
     }
     
     public void setState(AnnotationState state) {
-        Log.d(TAG, "========== setState() called ==========");
-        Log.d(TAG, "  New state pages: " + (state != null ? state.getPages().size() : "null"));
+        FLog.d(TAG, "========== setState() called ==========");
+        FLog.d(TAG, "  New state pages: " + (state != null ? state.getPages().size() : "null"));
         
         if (state != null) {
             for (int i = 0; i < state.getPages().size(); i++) {
@@ -172,9 +173,9 @@ public class AnnotationView extends View {
                 for (AnnotationLayer layer : page.getLayers()) {
                     totalObjects += layer.getObjects().size();
                 }
-                Log.d(TAG, "    Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + totalObjects + " objects");
+                FLog.d(TAG, "    Page " + (i+1) + ": " + page.getLayers().size() + " layers, " + totalObjects + " objects");
             }
-            Log.d(TAG, "  Active page index: " + state.getActivePageIndex());
+            FLog.d(TAG, "  Active page index: " + state.getActivePageIndex());
         }
         
         this.state = state;
@@ -183,11 +184,11 @@ public class AnnotationView extends View {
         // Redraw all content onto the drawing layer
         redrawAllToLayer();
         
-        Log.d(TAG, "  Calling invalidate() to trigger redraw...");
+        FLog.d(TAG, "  Calling invalidate() to trigger redraw...");
         invalidate();
         
-        Log.d(TAG, "  View dimensions: " + getWidth() + "x" + getHeight());
-        Log.d(TAG, "========== setState() complete, should redraw now ==========");
+        FLog.d(TAG, "  View dimensions: " + getWidth() + "x" + getHeight());
+        FLog.d(TAG, "========== setState() complete, should redraw now ==========");
     }
     
     public AnnotationState getState() {
@@ -853,7 +854,7 @@ public class AnnotationView extends View {
         
         // Test in original bounds
         boolean contains = bounds.contains(localX, localY);
-        android.util.Log.d("AnnotationView", String.format("containsPoint for %s: touch=(%.1f,%.1f) local=(%.1f,%.1f) bounds=[%.1f,%.1f,%.1f,%.1f] result=%b",
+        FLog.d("AnnotationView", String.format("containsPoint for %s: touch=(%.1f,%.1f) local=(%.1f,%.1f) bounds=[%.1f,%.1f,%.1f,%.1f] result=%b",
             obj.getClass().getSimpleName(), px, py, localX, localY, bounds.left, bounds.top, bounds.right, bounds.bottom, contains));
         return contains;
     }
@@ -905,7 +906,7 @@ public class AnnotationView extends View {
                         float rotation = selectedObject.getRotation();
                         float scale = selectedObject.getScale();
                         
-                        android.util.Log.d("AnnotationView", String.format(
+                        FLog.d("AnnotationView", String.format(
                             "Touch at (%.1f, %.1f), object at (%.1f, %.1f), scale=%.2f, rotation=%.1f°",
                             x, y, centerX, centerY, scale, rotation
                         ));
@@ -943,7 +944,7 @@ public class AnnotationView extends View {
                         float topY = centerY + topDx * sin + topDy * cos;
                         float distTop = (float) Math.sqrt((x - topX) * (x - topX) + (y - topY) * (y - topY));
                         
-                        android.util.Log.d("AnnotationView", String.format(
+                        FLog.d("AnnotationView", String.format(
                             "Handle distances - Left:%.1f Right:%.1f Top:%.1f (radius:%.1f)",
                             distLeft, distRight, distTop, touchRadius
                         ));
@@ -962,29 +963,29 @@ public class AnnotationView extends View {
                         if (distEdit < touchRadius) {
                             // Edit button clicked
                             activeHandle = HandleType.EDIT;
-                            android.util.Log.d("AnnotationView", "EDIT handle activated");
+                            FLog.d("AnnotationView", "EDIT handle activated");
                             showTextEditDialog((com.fadcam.fadrec.ui.annotation.objects.TextObject) selectedObject);
                             return true;
                         } else if (distTop < touchRadius) {
                             // Rotation handle
                             activeHandle = HandleType.TOP;
                             initialRotation = selectedObject.getRotation();
-                            android.util.Log.d("AnnotationView", "ROTATION handle activated");
+                            FLog.d("AnnotationView", "ROTATION handle activated");
                             return true;
                         } else if (distLeft < touchRadius) {
                             // Left scale handle
                             activeHandle = HandleType.LEFT;
-                            android.util.Log.d("AnnotationView", "LEFT SCALE handle activated");
+                            FLog.d("AnnotationView", "LEFT SCALE handle activated");
                             return true;
                         } else if (distRight < touchRadius) {
                             // Right scale handle
                             activeHandle = HandleType.RIGHT;
-                            android.util.Log.d("AnnotationView", "RIGHT SCALE handle activated");
+                            FLog.d("AnnotationView", "RIGHT SCALE handle activated");
                             return true;
                         } else if (containsPoint(selectedObject, x, y)) {
                             // Clicked inside object - start drag
                             activeHandle = HandleType.NONE;
-                            android.util.Log.d("AnnotationView", "DRAG mode activated (inside object)");
+                            FLog.d("AnnotationView", "DRAG mode activated (inside object)");
                             return true;
                         } else {
                             // Clicked outside - try to select another object or exit selection mode
@@ -1032,7 +1033,7 @@ public class AnnotationView extends View {
                                 float angle2 = (float) Math.toDegrees(Math.atan2(y - centerY, x - centerX));
                                 float angleDelta = angle2 - angle1;
                                 
-                                android.util.Log.d("AnnotationView", String.format(
+                                FLog.d("AnnotationView", String.format(
                                     "Rotation calc: angle1=%.1f° angle2=%.1f° delta=%.1f° currentRot=%.1f°",
                                     angle1, angle2, angleDelta, selectedObject.getRotation()
                                 ));
@@ -1097,7 +1098,7 @@ public class AnnotationView extends View {
                                 // Normal drag - move object with position snapping
                                 isDraggingObject = true; // Set flag for real-time redraw
                                 
-                                android.util.Log.d("AnnotationView", String.format("Dragging object: type=%s, before=(%.1f, %.1f), dx=%.1f, dy=%.1f", 
+                                FLog.d("AnnotationView", String.format("Dragging object: type=%s, before=(%.1f, %.1f), dx=%.1f, dy=%.1f", 
                                     selectedObject.getClass().getSimpleName(), selectedObject.getX(), selectedObject.getY(), dx, dy));
                                 
                                 float newX = selectedObject.getX() + dx;
@@ -1161,7 +1162,7 @@ public class AnnotationView extends View {
                                 // Apply the new position
                                 selectedObject.setX(newX);
                                 selectedObject.setY(newY);
-                                android.util.Log.d("AnnotationView", String.format("After drag: (%.1f, %.1f)", newX, newY));
+                                FLog.d("AnnotationView", String.format("After drag: (%.1f, %.1f)", newX, newY));
                                 break;
                         }
                         

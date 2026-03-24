@@ -1,7 +1,7 @@
 package com.fadcam.streaming;
 
-import android.util.Log;
-
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import androidx.annotation.NonNull;
 
 import com.fadcam.streaming.model.ClientEvent;
@@ -52,8 +52,8 @@ import fi.iki.elonen.NanoHTTPD;
             this.context = context.getApplicationContext();
             this.streamManager = RemoteStreamManager.getInstance();
             
-            Log.i(TAG, "✅ [HTTP Server] Listening on ALL interfaces (0.0.0.0:" + port + ")");
-            Log.i(TAG, "✅ [HTTP Server] Now ACCESSIBLE from other devices on hotspot!");
+            FLog.i(TAG, "✅ [HTTP Server] Listening on ALL interfaces (0.0.0.0:" + port + ")");
+            FLog.i(TAG, "✅ [HTTP Server] Now ACCESSIBLE from other devices on hotspot!");
         }
     
     /**
@@ -88,8 +88,8 @@ import fi.iki.elonen.NanoHTTPD;
         
         // OPTIMIZATION: Commented out HTTP request logging (called 10-30x per second during streaming)
         // Every request was being logged, massive I/O overhead during playback
-        // Log.i(TAG, "📥 " + method + " " + uri + " from " + clientIP);
-        // Log.d(TAG, "   User-Agent: " + (userAgent != null ? userAgent : "unknown"));
+        // FLog.i(TAG, "📥 " + method + " " + uri + " from " + clientIP);
+        // FLog.d(TAG, "   User-Agent: " + (userAgent != null ? userAgent : "unknown"));
         
         // Track unique client IPs (only adds if new, Set handles duplicates)
         streamManager.trackClientIP(clientIP);
@@ -101,7 +101,7 @@ import fi.iki.elonen.NanoHTTPD;
         
         // Log API requests (important ones that indicate client activity)
         if (isApiCall && (uri.equals("/") || uri.equals("/status") || uri.startsWith("/auth") || uri.startsWith("/api/"))) {
-            Log.i(TAG, "📥 [API] " + method + " " + uri + " from " + clientIP);
+            FLog.i(TAG, "📥 [API] " + method + " " + uri + " from " + clientIP);
         }
         
         if (isApiCall) {
@@ -134,7 +134,7 @@ import fi.iki.elonen.NanoHTTPD;
             } else if (uri.startsWith("/seg-") && uri.endsWith(".m4s")) {
                 response = serveFragment(uri, clientIP);
             } else if ("/status".equals(uri)) {
-                Log.d(TAG, "🌐 [/status] Dashboard request from " + clientIP + " User-Agent: " + userAgent);
+                FLog.d(TAG, "🌐 [/status] Dashboard request from " + clientIP + " User-Agent: " + userAgent);
                 response = serveStatus();
             } else if ("/auth/check".equals(uri)) {
                 response = handleAuthCheck(session);
@@ -226,7 +226,7 @@ import fi.iki.elonen.NanoHTTPD;
     private Response servePlaylist() {
         // Check if streaming is enabled at all
         if (!streamManager.isStreamingEnabled()) {
-            Log.w(TAG, "❌ Streaming is disabled - recording not started or streaming mode is DISABLED");
+            FLog.w(TAG, "❌ Streaming is disabled - recording not started or streaming mode is DISABLED");
             String message = "❌ Streaming Disabled\n\n" +
                 "Please start recording on FadCam with streaming enabled (STREAM_ONLY or STREAM_AND_SAVE mode).\n\n" +
                 "Check /status endpoint for current state.";
@@ -240,7 +240,7 @@ import fi.iki.elonen.NanoHTTPD;
         // Check if initialization segment is available
         byte[] initSegment = streamManager.getInitializationSegment();
         if (initSegment == null) {
-            Log.w(TAG, "❌ Init segment not available yet - recording just started or stopped");
+            FLog.w(TAG, "❌ Init segment not available yet - recording just started or stopped");
             String message = "⏳ Stream Initializing\n\n" +
                 "Recording is starting up. First fragments are being encoded.\n" +
                 "This usually takes 2-3 seconds. Please wait...\n\n" +
@@ -256,7 +256,7 @@ import fi.iki.elonen.NanoHTTPD;
         java.util.List<RemoteStreamManager.FragmentData> fragments = streamManager.getBufferedFragments();
         
         if (fragments.isEmpty()) {
-            Log.w(TAG, "⏳ No fragments buffered yet - waiting for encoder output");
+            FLog.w(TAG, "⏳ No fragments buffered yet - waiting for encoder output");
             String message = "⏳ Buffering Fragments\n\n" +
                 "Init segment ready, waiting for first video fragments from encoder.\n" +
                 "This usually takes 1-2 seconds. Please wait...\n\n" +
@@ -297,7 +297,7 @@ import fi.iki.elonen.NanoHTTPD;
 
             // Professional live streaming: minimum 2 fragments buffered before serving (lowered to reduce startup delay)
             if (fragments.size() < 2) {
-                Log.d(TAG, "⏳ Buffering... Only " + fragments.size() + "/2 fragments available");
+                FLog.d(TAG, "⏳ Buffering... Only " + fragments.size() + "/2 fragments available");
                 return newFixedLengthResponse(
                     Response.Status.SERVICE_UNAVAILABLE,
                     MIME_PLAINTEXT,
@@ -311,12 +311,12 @@ import fi.iki.elonen.NanoHTTPD;
                 m3u8.append("/seg-").append(fragment.sequenceNumber).append(".m4s\n");
             }
             
-            Log.i(TAG, "📋 Generated M3U8 playlist:");
-            Log.i(TAG, "   Total fragments: " + fragments.size());
-            Log.i(TAG, "   Stable fragments: " + stable.size());
-            Log.i(TAG, "   Live edge fragments: " + liveEdge.size());
-            Log.i(TAG, "   Sequence range: " + liveEdge.get(0).sequenceNumber + " to " + liveEdge.get(liveEdge.size()-1).sequenceNumber);
-            Log.d(TAG, "M3U8 Content:\n" + m3u8.toString());
+            FLog.i(TAG, "📋 Generated M3U8 playlist:");
+            FLog.i(TAG, "   Total fragments: " + fragments.size());
+            FLog.i(TAG, "   Stable fragments: " + stable.size());
+            FLog.i(TAG, "   Live edge fragments: " + liveEdge.size());
+            FLog.i(TAG, "   Sequence range: " + liveEdge.get(0).sequenceNumber + " to " + liveEdge.get(liveEdge.size()-1).sequenceNumber);
+            FLog.d(TAG, "M3U8 Content:\n" + m3u8.toString());
             
             Response response = newFixedLengthResponse(
                 Response.Status.OK,
@@ -360,20 +360,20 @@ import fi.iki.elonen.NanoHTTPD;
         streamManager.incrementConnections();
         
         try {
-            Log.d(TAG, "📋 Serving initialization segment (" + (initSegment.length / 1024) + " KB) to " + clientIP);
+            FLog.d(TAG, "📋 Serving initialization segment (" + (initSegment.length / 1024) + " KB) to " + clientIP);
             
             // DEBUG: Log first few bytes of init segment to verify ftyp box
             if (initSegment.length > 8) {
                 String firstBytes = String.format(java.util.Locale.US, "%02X %02X %02X %02X %02X %02X %02X %02X",
                     initSegment[0] & 0xFF, initSegment[1] & 0xFF, initSegment[2] & 0xFF, initSegment[3] & 0xFF,
                     initSegment[4] & 0xFF, initSegment[5] & 0xFF, initSegment[6] & 0xFF, initSegment[7] & 0xFF);
-                Log.d(TAG, "📋 Init segment header (hex): " + firstBytes + " (should start with ftyp signature)");
+                FLog.d(TAG, "📋 Init segment header (hex): " + firstBytes + " (should start with ftyp signature)");
                 
                 // Check for ftyp box signature
                 if (initSegment[4] == 'f' && initSegment[5] == 't' && initSegment[6] == 'y' && initSegment[7] == 'p') {
-                    Log.d(TAG, "✅ Init segment has valid ftyp box");
+                    FLog.d(TAG, "✅ Init segment has valid ftyp box");
                 } else {
-                    Log.w(TAG, "❌ Init segment missing ftyp box! May be corrupted");
+                    FLog.w(TAG, "❌ Init segment missing ftyp box! May be corrupted");
                 }
             }
             
@@ -425,34 +425,34 @@ import fi.iki.elonen.NanoHTTPD;
 
             // Reject clearly stale requests early (e.g., cached player asking for old segments)
             if (sequenceNumber < oldest || sequenceNumber > latest) {
-                Log.w(TAG, "❌ Fragment #" + sequenceNumber + " outside window [" + oldest + ", " + latest + "] - treating as stale request");
+                FLog.w(TAG, "❌ Fragment #" + sequenceNumber + " outside window [" + oldest + ", " + latest + "] - treating as stale request");
                 return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Fragment outside live window");
             }
 
             RemoteStreamManager.FragmentData fragment = streamManager.getFragment(sequenceNumber);
             
             if (fragment == null) {
-                Log.w(TAG, "Fragment #" + sequenceNumber + " not found in buffer");
+                FLog.w(TAG, "Fragment #" + sequenceNumber + " not found in buffer");
                 return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Fragment not found");
             }
             
             streamManager.incrementConnections();
             
             try {
-                Log.d(TAG, "📦 Serving fragment #" + sequenceNumber + " (" + (fragment.sizeBytes / 1024) + " KB) to " + clientIP);
+                FLog.d(TAG, "📦 Serving fragment #" + sequenceNumber + " (" + (fragment.sizeBytes / 1024) + " KB) to " + clientIP);
                 
                 // DEBUG: Log first few bytes of fragment to verify moof box
                 if (fragment.data.length > 8) {
                     String firstBytes = String.format(java.util.Locale.US, "%02X %02X %02X %02X %02X %02X %02X %02X",
                         fragment.data[0] & 0xFF, fragment.data[1] & 0xFF, fragment.data[2] & 0xFF, fragment.data[3] & 0xFF,
                         fragment.data[4] & 0xFF, fragment.data[5] & 0xFF, fragment.data[6] & 0xFF, fragment.data[7] & 0xFF);
-                    Log.d(TAG, "📦 Fragment #" + sequenceNumber + " header (hex): " + firstBytes + " (should start with moof)");
+                    FLog.d(TAG, "📦 Fragment #" + sequenceNumber + " header (hex): " + firstBytes + " (should start with moof)");
                     
                     // Check for moof box signature
                     if (fragment.data[4] == 'm' && fragment.data[5] == 'o' && fragment.data[6] == 'o' && fragment.data[7] == 'f') {
-                        Log.d(TAG, "✅ Fragment #" + sequenceNumber + " has valid moof box");
+                        FLog.d(TAG, "✅ Fragment #" + sequenceNumber + " has valid moof box");
                     } else {
-                        Log.w(TAG, "❌ Fragment #" + sequenceNumber + " missing moof box! May be corrupted");
+                        FLog.w(TAG, "❌ Fragment #" + sequenceNumber + " missing moof box! May be corrupted");
                     }
                 }
                 
@@ -494,7 +494,7 @@ import fi.iki.elonen.NanoHTTPD;
             }
             
         } catch (NumberFormatException e) {
-            Log.e(TAG, "Invalid sequence number in URI: " + uri, e);
+            FLog.e(TAG, "Invalid sequence number in URI: " + uri, e);
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT, "Invalid fragment ID");
         }
     }
@@ -506,7 +506,7 @@ import fi.iki.elonen.NanoHTTPD;
     @NonNull
     private Response toggleTorch() {
         try {
-            Log.i(TAG, "🔦 Torch toggle requested via web interface");
+            FLog.i(TAG, "🔦 Torch toggle requested via web interface");
 
             // Toggle state in RemoteStreamManager
             RemoteStreamManager manager = RemoteStreamManager.getInstance();
@@ -527,12 +527,12 @@ import fi.iki.elonen.NanoHTTPD;
                 context.startService(intent);
             }
 
-            Log.i(TAG, "✅ Torch toggle intent sent to TorchService. New state: " + newState);
+            FLog.i(TAG, "✅ Torch toggle intent sent to TorchService. New state: " + newState);
             
             String responseJson = String.format(java.util.Locale.US, "{\"status\": \"success\", \"torch_state\": %s}", newState);
             return jsonResponse(Response.Status.OK, responseJson);
         } catch (Exception e) {
-            Log.e(TAG, "Error toggling torch", e);
+            FLog.e(TAG, "Error toggling torch", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -543,11 +543,11 @@ import fi.iki.elonen.NanoHTTPD;
     @NonNull
     private Response getVolume() {
         try {
-            Log.i(TAG, "🔊 Volume status requested via web interface");
+            FLog.i(TAG, "🔊 Volume status requested via web interface");
             
             android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
             if (audioManager == null) {
-                Log.e(TAG, "AudioManager not available");
+                FLog.e(TAG, "AudioManager not available");
                 return jsonResponse(Response.Status.INTERNAL_ERROR, 
                     "{\"status\": \"error\", \"message\": \"AudioManager not available\"}");
             }
@@ -564,11 +564,11 @@ import fi.iki.elonen.NanoHTTPD;
                 currentVolume, maxVolume, (currentVolume * 100.0f / maxVolume)
             );
             
-            Log.i(TAG, "✅ Volume retrieved: " + currentVolume + "/" + maxVolume);
+            FLog.i(TAG, "✅ Volume retrieved: " + currentVolume + "/" + maxVolume);
             
             return jsonResponse(Response.Status.OK, responseJson);
         } catch (Exception e) {
-            Log.e(TAG, "Error getting volume", e);
+            FLog.e(TAG, "Error getting volume", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -581,7 +581,7 @@ import fi.iki.elonen.NanoHTTPD;
     @NonNull
     private Response setVolume(IHTTPSession session) {
         try {
-            Log.i(TAG, "🔊 Volume change requested via web interface");
+            FLog.i(TAG, "🔊 Volume change requested via web interface");
             
             // Parse JSON body
             java.util.Map<String, String> files = new java.util.HashMap<>();
@@ -598,7 +598,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
             if (audioManager == null) {
-                Log.e(TAG, "AudioManager not available");
+                FLog.e(TAG, "AudioManager not available");
                 return jsonResponse(Response.Status.INTERNAL_ERROR, 
                     "{\"status\": \"error\", \"message\": \"AudioManager not available\"}");
             }
@@ -634,7 +634,7 @@ import fi.iki.elonen.NanoHTTPD;
             int actualVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
             float actualPercentage = actualVolume * 100.0f / maxVolume;
             
-            Log.i(TAG, "✅ Volume set to: " + actualVolume + "/" + maxVolume + " (" + String.format(java.util.Locale.US, "%.1f", actualPercentage) + "%)");
+            FLog.i(TAG, "✅ Volume set to: " + actualVolume + "/" + maxVolume + " (" + String.format(java.util.Locale.US, "%.1f", actualPercentage) + "%)");
             
             String responseJson = String.format(java.util.Locale.US,
                 "{\"status\": \"success\", \"volume\": %d, \"max_volume\": %d, \"percentage\": %.1f}",
@@ -643,11 +643,11 @@ import fi.iki.elonen.NanoHTTPD;
             
             return jsonResponse(Response.Status.OK, responseJson);
         } catch (org.json.JSONException e) {
-            Log.e(TAG, "Invalid JSON in volume request", e);
+            FLog.e(TAG, "Invalid JSON in volume request", e);
             return jsonResponse(Response.Status.BAD_REQUEST, 
                 "{\"status\": \"error\", \"message\": \"Invalid JSON: " + e.getMessage() + "\"}");
         } catch (Exception e) {
-            Log.e(TAG, "Error setting volume", e);
+            FLog.e(TAG, "Error setting volume", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -660,7 +660,7 @@ import fi.iki.elonen.NanoHTTPD;
     @NonNull
     private Response toggleRecording() {
         try {
-            Log.i(TAG, "⏹️ Recording toggle requested via web interface");
+            FLog.i(TAG, "⏹️ Recording toggle requested via web interface");
             
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
             boolean isRecording = spManager.isRecordingInProgress();
@@ -671,7 +671,7 @@ import fi.iki.elonen.NanoHTTPD;
             if (isPaused) {
                 // Currently paused - resume recording
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
-                Log.d(TAG, "Recording paused - sending RESUME_RECORDING intent");
+                FLog.d(TAG, "Recording paused - sending RESUME_RECORDING intent");
                 ServiceStartPolicy.startRecordingAction(context, intent);
                 String responseJson = "{\"status\": \"success\", \"action\": \"resume\", \"isRecording\": true, \"isPaused\": false}";
                 Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", responseJson);
@@ -680,11 +680,11 @@ import fi.iki.elonen.NanoHTTPD;
             } else if (isRecording) {
                 // Stop recording
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_STOP_RECORDING);
-                Log.d(TAG, "Recording in progress - sending STOP_RECORDING intent");
+                FLog.d(TAG, "Recording in progress - sending STOP_RECORDING intent");
             } else {
                 // Start recording
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_START_RECORDING);
-                Log.d(TAG, "Recording not in progress - sending START_RECORDING intent");
+                FLog.d(TAG, "Recording not in progress - sending START_RECORDING intent");
             }
             
             // Start/stop action dispatch via unified policy.
@@ -694,13 +694,13 @@ import fi.iki.elonen.NanoHTTPD;
             String responseJson = String.format(java.util.Locale.US, "{\"status\": \"success\", \"action\": \"%s\", \"isRecording\": %s, \"isPaused\": false}", 
                 action, !isRecording);
             
-            Log.i(TAG, "✅ Recording " + action + " intent sent");
+            FLog.i(TAG, "✅ Recording " + action + " intent sent");
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", responseJson);
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error toggling recording", e);
+            FLog.e(TAG, "Error toggling recording", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -712,7 +712,7 @@ import fi.iki.elonen.NanoHTTPD;
     @NonNull
     private Response pauseRecording() {
         try {
-            Log.i(TAG, "⏸️ Recording pause requested via web interface");
+            FLog.i(TAG, "⏸️ Recording pause requested via web interface");
             
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
             boolean isRecording = spManager.isRecordingInProgress();
@@ -726,14 +726,14 @@ import fi.iki.elonen.NanoHTTPD;
             intent.setAction(com.fadcam.Constants.INTENT_ACTION_PAUSE_RECORDING);
             ServiceStartPolicy.startRecordingAction(context, intent);
             
-            Log.i(TAG, "✅ Pause recording intent sent");
+            FLog.i(TAG, "✅ Pause recording intent sent");
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
                 "{\"status\": \"success\", \"action\": \"pause\", \"isRecording\": true, \"isPaused\": true}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error pausing recording", e);
+            FLog.e(TAG, "Error pausing recording", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8",
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -745,7 +745,7 @@ import fi.iki.elonen.NanoHTTPD;
     @NonNull
     private Response resumeRecording() {
         try {
-            Log.i(TAG, "▶️ Recording resume requested via web interface");
+            FLog.i(TAG, "▶️ Recording resume requested via web interface");
             
             boolean isPaused = RemoteStreamManager.getInstance().isPaused();
             
@@ -758,14 +758,14 @@ import fi.iki.elonen.NanoHTTPD;
             intent.setAction(com.fadcam.Constants.INTENT_ACTION_RESUME_RECORDING);
             ServiceStartPolicy.startRecordingAction(context, intent);
             
-            Log.i(TAG, "✅ Resume recording intent sent");
+            FLog.i(TAG, "✅ Resume recording intent sent");
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
                 "{\"status\": \"success\", \"action\": \"resume\", \"isRecording\": true, \"isPaused\": false}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error resuming recording", e);
+            FLog.e(TAG, "Error resuming recording", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8",
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -798,7 +798,7 @@ import fi.iki.elonen.NanoHTTPD;
                 org.json.JSONObject json = new org.json.JSONObject(body);
                 mode = json.getString("mode");
             } catch (Exception e) {
-                Log.e(TAG, "Failed to parse recording mode JSON", e);
+                FLog.e(TAG, "Failed to parse recording mode JSON", e);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid JSON\"}");
             }
             
@@ -818,14 +818,14 @@ import fi.iki.elonen.NanoHTTPD;
             spManager.setStreamingMode(streamingMode);
             streamManager.setStreamingMode(streamingMode);
             
-            Log.i(TAG, "✅ Recording mode set to: " + mode);
+            FLog.i(TAG, "✅ Recording mode set to: " + mode);
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Recording mode set to " + mode + "\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error setting recording mode", e);
+            FLog.e(TAG, "Error setting recording mode", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -851,7 +851,7 @@ import fi.iki.elonen.NanoHTTPD;
                 org.json.JSONObject json = new org.json.JSONObject(body);
                 quality = json.getString("quality");
             } catch (Exception e) {
-                Log.e(TAG, "Failed to parse stream quality JSON", e);
+                FLog.e(TAG, "Failed to parse stream quality JSON", e);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid JSON\"}");
             }
             
@@ -860,18 +860,18 @@ import fi.iki.elonen.NanoHTTPD;
                 StreamQuality.Preset preset = StreamQuality.Preset.valueOf(quality.toUpperCase());
                 streamManager.setStreamQuality(preset, context);
             } catch (IllegalArgumentException e) {
-                Log.e(TAG, "Invalid stream quality preset: " + quality);
+                FLog.e(TAG, "Invalid stream quality preset: " + quality);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid quality preset\"}");
             }
             
-            Log.i(TAG, "✅ Stream quality set to: " + quality);
+            FLog.i(TAG, "✅ Stream quality set to: " + quality);
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Stream quality set to " + quality + "\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error setting stream quality", e);
+            FLog.e(TAG, "Error setting stream quality", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -888,44 +888,44 @@ import fi.iki.elonen.NanoHTTPD;
             
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
-                Log.w(TAG, "❌ Battery warning: No body received");
+                FLog.w(TAG, "❌ Battery warning: No body received");
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"No body\"}");
             }
             
-            Log.d(TAG, "[Battery] Received body: " + body);
+            FLog.d(TAG, "[Battery] Received body: " + body);
             
             // Parse JSON threshold from body
             int threshold = 20; // Default
             try {
                 org.json.JSONObject json = new org.json.JSONObject(body);
                 threshold = json.getInt("threshold");
-                Log.d(TAG, "[Battery] Parsed threshold: " + threshold);
+                FLog.d(TAG, "[Battery] Parsed threshold: " + threshold);
             } catch (Exception e) {
-                Log.e(TAG, "Failed to parse battery warning threshold JSON", e);
+                FLog.e(TAG, "Failed to parse battery warning threshold JSON", e);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Invalid JSON\"}");
             }
             
             // Validate threshold
             if (threshold < 5 || threshold > 100) {
-                Log.w(TAG, "❌ Battery warning: Invalid threshold " + threshold);
+                FLog.w(TAG, "❌ Battery warning: Invalid threshold " + threshold);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", "{\"error\": \"Threshold must be between 5 and 100\"}");
             }
             
             // Store battery warning threshold using SharedPreferencesManager
             com.fadcam.SharedPreferencesManager spManager = com.fadcam.SharedPreferencesManager.getInstance(context);
             spManager.setBatteryWarningThreshold(threshold);
-            Log.i(TAG, "✅ Battery warning threshold set to: " + threshold + "%");
+            FLog.i(TAG, "✅ Battery warning threshold set to: " + threshold + "%");
             
             // Verify it was stored
             int storedValue = spManager.getBatteryWarningThreshold();
-            Log.d(TAG, "[Battery] Verified stored value: " + storedValue);
+            FLog.d(TAG, "[Battery] Verified stored value: " + storedValue);
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Battery warning set to " + threshold + "%\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error setting battery warning", e);
+            FLog.e(TAG, "Error setting battery warning", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
     }
@@ -951,7 +951,7 @@ import fi.iki.elonen.NanoHTTPD;
                 org.json.JSONObject json = new org.json.JSONObject(body);
                 codec = json.getString("codec");
             } catch (Exception e) {
-                Log.e(TAG, "Failed to parse video codec JSON", e);
+                FLog.e(TAG, "Failed to parse video codec JSON", e);
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"status\": \"error\", \"message\": \"Invalid JSON\"}");
             }
@@ -975,18 +975,18 @@ import fi.iki.elonen.NanoHTTPD;
             editor.putString(com.fadcam.Constants.PREF_VIDEO_CODEC, codec);
             editor.apply();
             
-            Log.i(TAG, "✅ Video codec set to: " + codec);
+            FLog.i(TAG, "✅ Video codec set to: " + codec);
             
             // Verify it was stored
             String storedCodec = spManager.getVideoCodec().toString();
-            Log.d(TAG, "[VideoCodec] Verified stored codec: " + storedCodec);
+            FLog.d(TAG, "[VideoCodec] Verified stored codec: " + storedCodec);
             
             Response response = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8", 
                 "{\"status\": \"success\", \"message\": \"Video codec set to " + codec + "\"}");
             response.addHeader("Cache-Control", "no-cache");
             return response;
         } catch (Exception e) {
-            Log.e(TAG, "Error setting video codec", e);
+            FLog.e(TAG, "Error setting video codec", e);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json; charset=utf-8", 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1035,7 +1035,7 @@ import fi.iki.elonen.NanoHTTPD;
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_SWITCH_CAMERA);
                 intent.putExtra(com.fadcam.Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH, target.toString());
                 com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-                Log.i(TAG, "✅ Camera switch (live): " + current + " → " + target);
+                FLog.i(TAG, "✅ Camera switch (live): " + current + " → " + target);
             } else {
                 spManager.sharedPreferences.edit()
                         .putString(com.fadcam.Constants.PREF_CAMERA_SELECTION, target.toString())
@@ -1049,13 +1049,13 @@ import fi.iki.elonen.NanoHTTPD;
                         target.toString());
                 androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context)
                         .sendBroadcast(broadcastIntent);
-                Log.i(TAG, "✅ Camera switch (preference + broadcast): " + current + " → " + target);
+                FLog.i(TAG, "✅ Camera switch (preference + broadcast): " + current + " → " + target);
             }
 
             return jsonResponse(Response.Status.OK,
                     "{\"status\": \"success\", \"camera\": \"" + target.toString().toLowerCase() + "\"}");
         } catch (Exception e) {
-            Log.e(TAG, "Error switching camera", e);
+            FLog.e(TAG, "Error switching camera", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR,
                     "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1116,9 +1116,9 @@ import fi.iki.elonen.NanoHTTPD;
                     intent.putExtra(com.fadcam.Constants.EXTRA_PAN_Y, requestedPanY);
                 }
                 com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-                Log.i(TAG, "✅ Zoom dispatched (live): ratio=" + ratio + " pan=" + effectivePanX + "," + effectivePanY);
+                FLog.i(TAG, "✅ Zoom dispatched (live): ratio=" + ratio + " pan=" + effectivePanX + "," + effectivePanY);
             } else {
-                Log.i(TAG, "✅ Zoom saved (preference): ratio=" + ratio);
+                FLog.i(TAG, "✅ Zoom saved (preference): ratio=" + ratio);
             }
 
             android.content.Intent zoomBcast = new android.content.Intent(com.fadcam.Constants.BROADCAST_ON_ZOOM_CHANGED);
@@ -1136,7 +1136,7 @@ import fi.iki.elonen.NanoHTTPD;
                             effectivePanX,
                             effectivePanY));
         } catch (Exception e) {
-            Log.e(TAG, "Error setting zoom", e);
+            FLog.e(TAG, "Error setting zoom", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR,
                     "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1150,7 +1150,7 @@ import fi.iki.elonen.NanoHTTPD;
             session.parseBody(files);
             String body = files.get("postData");
             if (body == null || body.isEmpty()) {
-                Log.w(TAG, "❌ [/config/exposure] Empty or missing body");
+                FLog.w(TAG, "❌ [/config/exposure] Empty or missing body");
                 return jsonResponse(Response.Status.BAD_REQUEST, "{\"error\": \"No body\"}");
             }
 
@@ -1159,7 +1159,7 @@ import fi.iki.elonen.NanoHTTPD;
             int exposureMin = spMgr != null ? spMgr.getExposureCompensationMin() : -12;
             int exposureMax = spMgr != null ? spMgr.getExposureCompensationMax() : 12;
             int ev = Math.max(exposureMin, Math.min(exposureMax, json.optInt("ev", 0)));
-            Log.i(TAG, "→ [/config/exposure] Received ev: " + ev);
+            FLog.i(TAG, "→ [/config/exposure] Received ev: " + ev);
 
             // CRITICAL: Save exposure to SharedPreferences so status endpoint returns correct value
             if (spMgr != null) {
@@ -1167,15 +1167,15 @@ import fi.iki.elonen.NanoHTTPD;
                     spMgr.setSavedExposureCompensation(ev);
                     // Verify write was successful
                     int verify = spMgr.getSavedExposureCompensation();
-                    Log.i(TAG, "💾 Exposure saved: " + ev + ", verified read-back: " + verify);
+                    FLog.i(TAG, "💾 Exposure saved: " + ev + ", verified read-back: " + verify);
                     if (verify != ev) {
-                        Log.w(TAG, "⚠️ Exposure verification FAILED! Wrote: " + ev + ", Read: " + verify);
+                        FLog.w(TAG, "⚠️ Exposure verification FAILED! Wrote: " + ev + ", Read: " + verify);
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "❌ Error saving exposure to SharedPreferences: " + e.getMessage(), e);
+                    FLog.e(TAG, "❌ Error saving exposure to SharedPreferences: " + e.getMessage(), e);
                 }
             } else {
-                Log.e(TAG, "❌ SharedPreferencesManager is null!");
+                FLog.e(TAG, "❌ SharedPreferencesManager is null!");
             }
 
                 android.content.Intent exposureBroadcast = new android.content.Intent(
@@ -1192,10 +1192,10 @@ import fi.iki.elonen.NanoHTTPD;
             intent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION);
             intent.putExtra(com.fadcam.Constants.EXTRA_EXPOSURE_COMPENSATION, ev);
             com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-            Log.i(TAG, "✅ Exposure compensation intent sent: " + ev);
+            FLog.i(TAG, "✅ Exposure compensation intent sent: " + ev);
             
             // CRITICAL: Invalidate status cache so next /status request returns new exposure value
-            Log.d(TAG, "🗑️ [setExposure] Invalidating status cache due to exposure change from " + json.optInt("ev", -999) + " to " + ev);
+            FLog.d(TAG, "🗑️ [setExposure] Invalidating status cache due to exposure change from " + json.optInt("ev", -999) + " to " + ev);
             RemoteStreamManager.getInstance().invalidateStatusCache();
 
             // Compute display EV value for web confirmation (so web doesn't have to guess)
@@ -1205,7 +1205,7 @@ import fi.iki.elonen.NanoHTTPD;
             // Return actual display value so web can confirm immediately without unit confusion
             return jsonResponse(Response.Status.OK, "{\"status\": \"success\", \"ev\": " + ev + ", \"evDisplay\": " + String.format("%.2f", displayEv) + "}");
         } catch (Exception e) {
-            Log.e(TAG, "❌ [/config/exposure] Exception: " + e.getMessage(), e);
+            FLog.e(TAG, "❌ [/config/exposure] Exception: " + e.getMessage(), e);
             return jsonResponse(Response.Status.INTERNAL_ERROR,
                     "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1241,7 +1241,7 @@ import fi.iki.elonen.NanoHTTPD;
             // CRITICAL: Save mirror state to SharedPreferences so status endpoint returns correct value
             if (spManager != null) {
                 spManager.setFrontVideoMirrorEnabled(enabled);
-                Log.i(TAG, "💾 Mirror state saved to SharedPreferences: " + enabled);
+                FLog.i(TAG, "💾 Mirror state saved to SharedPreferences: " + enabled);
             }
 
             android.content.Intent intent = new android.content.Intent(
@@ -1249,12 +1249,12 @@ import fi.iki.elonen.NanoHTTPD;
             intent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR);
             intent.putExtra(com.fadcam.Constants.EXTRA_FRONT_VIDEO_MIRROR_ENABLED, enabled);
             com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-            Log.i(TAG, "✅ Front mirror set to: " + enabled);
+            FLog.i(TAG, "✅ Front mirror set to: " + enabled);
 
             return jsonResponse(Response.Status.OK,
                     "{\"status\": \"success\", \"mirrorEnabled\": " + enabled + "}");
         } catch (Exception e) {
-            Log.e(TAG, "Error setting mirror", e);
+            FLog.e(TAG, "Error setting mirror", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR,
                     "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1272,7 +1272,7 @@ import fi.iki.elonen.NanoHTTPD;
             com.fadcam.SharedPreferencesManager spManager =
                     com.fadcam.SharedPreferencesManager.getInstance(context);
             if (spManager == null) {
-                Log.e(TAG, "❌ SharedPreferencesManager is null in toggleAeLock!");
+                FLog.e(TAG, "❌ SharedPreferencesManager is null in toggleAeLock!");
                 return jsonResponse(Response.Status.INTERNAL_ERROR,
                         "{\"status\": \"error\", \"message\": \"SharedPreferencesManager unavailable\"}");
             }
@@ -1284,12 +1284,12 @@ import fi.iki.elonen.NanoHTTPD;
                 spManager.setSavedAeLock(newLocked);
                 // Verify write was successful
                 boolean verify = spManager.isAeLockedSaved();
-                Log.i(TAG, "💾 AE lock saved: " + newLocked + ", verified read-back: " + verify);
+                FLog.i(TAG, "💾 AE lock saved: " + newLocked + ", verified read-back: " + verify);
                 if (verify != newLocked) {
-                    Log.w(TAG, "⚠️ AE lock verification FAILED! Wrote: " + newLocked + ", Read: " + verify);
+                    FLog.w(TAG, "⚠️ AE lock verification FAILED! Wrote: " + newLocked + ", Read: " + verify);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "❌ Error saving AE lock to SharedPreferences: " + e.getMessage(), e);
+                FLog.e(TAG, "❌ Error saving AE lock to SharedPreferences: " + e.getMessage(), e);
             }
 
             android.content.Intent intent = new android.content.Intent(
@@ -1297,7 +1297,7 @@ import fi.iki.elonen.NanoHTTPD;
             intent.setAction(com.fadcam.Constants.INTENT_ACTION_TOGGLE_AE_LOCK);
             intent.putExtra(com.fadcam.Constants.EXTRA_AE_LOCK, newLocked);
             com.fadcam.utils.ServiceStartPolicy.startRecordingAction(context, intent);
-            Log.i(TAG, "✅ AE lock set to: " + newLocked);
+            FLog.i(TAG, "✅ AE lock set to: " + newLocked);
             
             // CRITICAL: Invalidate status cache so next /status request returns new AE lock state
             RemoteStreamManager.getInstance().invalidateStatusCache();
@@ -1305,7 +1305,7 @@ import fi.iki.elonen.NanoHTTPD;
             return jsonResponse(Response.Status.OK,
                     "{\"status\": \"success\", \"aeLockEnabled\": " + newLocked + "}");
         } catch (Exception e) {
-            Log.e(TAG, "❌ [/config/aeLock] Exception: " + e.getMessage(), e);
+            FLog.e(TAG, "❌ [/config/aeLock] Exception: " + e.getMessage(), e);
             return jsonResponse(Response.Status.INTERNAL_ERROR,
                     "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1315,16 +1315,16 @@ import fi.iki.elonen.NanoHTTPD;
     private Response serveStatus() {
         try {
             long startTime = System.currentTimeMillis();
-            Log.d(TAG, "📊 [/status] Request received");
+            FLog.d(TAG, "📊 [/status] Request received");
             
             String statusJson = streamManager.getStatusJson();
             long jsonTime = System.currentTimeMillis();
-            Log.d(TAG, "📊 [/status] JSON generated in " + (jsonTime - startTime) + "ms, size: " + statusJson.length() + " bytes");
+            FLog.d(TAG, "📊 [/status] JSON generated in " + (jsonTime - startTime) + "ms, size: " + statusJson.length() + " bytes");
             
-            Log.d(TAG, "📊 [/status] Response prepared, sending to client");
+            FLog.d(TAG, "📊 [/status] Response prepared, sending to client");
             return jsonResponse(Response.Status.OK, statusJson);
         } catch (Exception e) {
-            Log.e(TAG, "❌ [/status] Error in serveStatus: " + e.getMessage(), e);
+            FLog.e(TAG, "❌ [/status] Error in serveStatus: " + e.getMessage(), e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, "{\"error\": \"Failed to generate status\"}");
         }
     }
@@ -1366,7 +1366,7 @@ import fi.iki.elonen.NanoHTTPD;
                     password = password.trim();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Failed to parse login JSON", e);
+                FLog.e(TAG, "Failed to parse login JSON", e);
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Invalid JSON");
                 return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
@@ -1374,7 +1374,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             // Verify password
             if (!authManager.verifyPassword(password)) {
-                Log.w(TAG, "Invalid login attempt from " + clientIP + " (password mismatch)");
+                FLog.w(TAG, "Invalid login attempt from " + clientIP + " (password mismatch)");
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.invalidCredentials();
                 return jsonResponse(Response.Status.UNAUTHORIZED, authResponse.toJson());
@@ -1385,14 +1385,14 @@ import fi.iki.elonen.NanoHTTPD;
             String deviceInfo = clientIP + " - " + (userAgent != null ? userAgent : "unknown");
             com.fadcam.streaming.model.SessionToken token = authManager.createSession(deviceInfo);
             
-            Log.i(TAG, "✅ Successful login from " + clientIP);
+            FLog.i(TAG, "✅ Successful login from " + clientIP);
             
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.success(token.getToken(), token.getExpiresAtMs());
             return jsonResponse(Response.Status.OK, authResponse.toJson());
             
         } catch (Exception e) {
-            Log.e(TAG, "Error handling login", e);
+            FLog.e(TAG, "Error handling login", e);
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.failure("Internal error");
             return jsonResponse(Response.Status.INTERNAL_ERROR, authResponse.toJson());
@@ -1409,14 +1409,14 @@ import fi.iki.elonen.NanoHTTPD;
             if (token != null) {
                 RemoteAuthManager authManager = RemoteAuthManager.getInstance(context);
                 authManager.revokeSession(token);
-                Log.i(TAG, "Session logged out");
+                FLog.i(TAG, "Session logged out");
             }
             
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 new com.fadcam.streaming.model.AuthResponse(true, "Logged out successfully");
             return jsonResponse(Response.Status.OK, authResponse.toJson());
         } catch (Exception e) {
-            Log.e(TAG, "Error handling logout", e);
+            FLog.e(TAG, "Error handling logout", e);
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.failure("Internal error");
             return jsonResponse(Response.Status.INTERNAL_ERROR, authResponse.toJson());
@@ -1447,7 +1447,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             return jsonResponse(Response.Status.OK, json);
         } catch (Exception e) {
-            Log.e(TAG, "Error checking auth", e);
+            FLog.e(TAG, "Error checking auth", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"error\":\"Internal error\"}");
         }
@@ -1484,7 +1484,7 @@ import fi.iki.elonen.NanoHTTPD;
                 oldPassword = json.getString("oldPassword");
                 newPassword = json.getString("newPassword");
             } catch (Exception e) {
-                Log.e(TAG, "Failed to parse change password JSON", e);
+                FLog.e(TAG, "Failed to parse change password JSON", e);
                 com.fadcam.streaming.model.AuthResponse authResponse = 
                     com.fadcam.streaming.model.AuthResponse.failure("Invalid JSON");
                 return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
@@ -1506,13 +1506,13 @@ import fi.iki.elonen.NanoHTTPD;
                 return jsonResponse(Response.Status.BAD_REQUEST, authResponse.toJson());
             }
             
-            Log.i(TAG, "Password changed successfully");
+            FLog.i(TAG, "Password changed successfully");
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 new com.fadcam.streaming.model.AuthResponse(true, "Password changed successfully");
             return jsonResponse(Response.Status.OK, authResponse.toJson());
             
         } catch (Exception e) {
-            Log.e(TAG, "Error changing password", e);
+            FLog.e(TAG, "Error changing password", e);
             com.fadcam.streaming.model.AuthResponse authResponse = 
                 com.fadcam.streaming.model.AuthResponse.failure("Internal error");
             return jsonResponse(Response.Status.INTERNAL_ERROR, authResponse.toJson());
@@ -1569,7 +1569,7 @@ import fi.iki.elonen.NanoHTTPD;
             String mimeType = getMimeType(uri);
             
             // Load from assets
-            Log.d(TAG, "🔍 Attempting to load asset: " + assetPath);
+            FLog.d(TAG, "🔍 Attempting to load asset: " + assetPath);
             InputStream fileStream = context.getAssets().open(assetPath);
             Response response = newFixedLengthResponse(Response.Status.OK, mimeType, fileStream, -1);
             
@@ -1578,10 +1578,10 @@ import fi.iki.elonen.NanoHTTPD;
                 response.addHeader("Cache-Control", "public, max-age=3600");
             }
             
-            Log.d(TAG, "✅ Served static file: " + assetPath + " (" + mimeType + ")");
+            FLog.d(TAG, "✅ Served static file: " + assetPath + " (" + mimeType + ")");
             return response;
         } catch (IOException e) {
-            Log.e(TAG, "❌ Failed to load static file: " + uri + " (asset path: web" + uri + ")", e);
+            FLog.e(TAG, "❌ Failed to load static file: " + uri + " (asset path: web" + uri + ")", e);
             return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found: " + uri);
         }
     }
@@ -1604,7 +1604,7 @@ import fi.iki.elonen.NanoHTTPD;
     }
     
     private Response serveLandingPage() {
-        Log.i(TAG, "🏠 [/] Dashboard page requested");
+        FLog.i(TAG, "🏠 [/] Dashboard page requested");
         try {
             // Load from assets/web/index.html at runtime
             InputStream htmlStream = context.getAssets().open("web/index.html");
@@ -1612,10 +1612,10 @@ import fi.iki.elonen.NanoHTTPD;
             response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             response.addHeader("Pragma", "no-cache");
             response.addHeader("Expires", "0");
-            Log.i(TAG, "🏠 [/] Dashboard served successfully");
+            FLog.i(TAG, "🏠 [/] Dashboard served successfully");
             return response;
         } catch (IOException e) {
-            Log.e(TAG, "❌ [/] Failed to load index.html from assets/web", e);
+            FLog.e(TAG, "❌ [/] Failed to load index.html from assets/web", e);
             // Fallback to simple error message
             String html = "<!DOCTYPE html>\n" +
                     "<html><head><title>Error</title></head><body>\n" +
@@ -1650,13 +1650,13 @@ import fi.iki.elonen.NanoHTTPD;
                     // Get any IPv4 address that's not loopback (works with any private IP range)
                     if (!address.isLoopbackAddress() && address instanceof java.net.Inet4Address) {
                         String ip = address.getHostAddress();
-                        Log.d(TAG, "Found network interface IP: " + ip);
+                        FLog.d(TAG, "Found network interface IP: " + ip);
                         return ip; // Return first valid local IP found
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error getting host address", e);
+            FLog.e(TAG, "Error getting host address", e);
         }
         return "localhost";
     }
@@ -1667,7 +1667,7 @@ import fi.iki.elonen.NanoHTTPD;
      */
     private Response ringAlarm(IHTTPSession session) {
         try {
-            Log.i(TAG, "🚨 Alarm ring requested via web interface");
+            FLog.i(TAG, "🚨 Alarm ring requested via web interface");
             
             // Parse JSON body
             java.util.Map<String, String> files = new java.util.HashMap<>();
@@ -1709,9 +1709,9 @@ import fi.iki.elonen.NanoHTTPD;
                 } else {
                     context.startService(alarmIntent);
                 }
-                Log.i(TAG, "AlarmService started");
+                FLog.i(TAG, "AlarmService started");
             } catch (Exception e) {
-                Log.e(TAG, "Error starting AlarmService", e);
+                FLog.e(TAG, "Error starting AlarmService", e);
                 return jsonResponse(Response.Status.INTERNAL_ERROR, 
                     "{\"status\": \"error\", \"message\": \"Failed to start alarm service\"}");
             }
@@ -1720,7 +1720,7 @@ import fi.iki.elonen.NanoHTTPD;
                 "{\"status\": \"success\", \"message\": \"Alarm ringing\", \"sound\": \"" + soundFile + "\", \"duration_ms\": " + durationMs + "}");
             
         } catch (Exception e) {
-            Log.e(TAG, "Error ringing alarm", e);
+            FLog.e(TAG, "Error ringing alarm", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1731,7 +1731,7 @@ import fi.iki.elonen.NanoHTTPD;
      */
     private Response stopAlarm() {
         try {
-            Log.i(TAG, "🔇 Alarm stop requested via web interface");
+            FLog.i(TAG, "🔇 Alarm stop requested via web interface");
             
             // Update stream manager state
             streamManager.setAlarmRinging(false);
@@ -1741,13 +1741,13 @@ import fi.iki.elonen.NanoHTTPD;
             alarmIntent.setAction("com.fadcam.action.STOP_ALARM");
             context.startService(alarmIntent);
             
-            Log.i(TAG, "Stop alarm service command sent");
+            FLog.i(TAG, "Stop alarm service command sent");
             
             return jsonResponse(Response.Status.OK, 
                 "{\"status\": \"success\", \"message\": \"Alarm stopped\"}");
             
         } catch (Exception e) {
-            Log.e(TAG, "Error stopping alarm", e);
+            FLog.e(TAG, "Error stopping alarm", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1758,7 +1758,7 @@ import fi.iki.elonen.NanoHTTPD;
      */
     private Response scheduleAlarm(IHTTPSession session) {
         try {
-            Log.i(TAG, "📅 Alarm schedule requested via web interface");
+            FLog.i(TAG, "📅 Alarm schedule requested via web interface");
             
             // Parse JSON body
             java.util.Map<String, String> files = new java.util.HashMap<>();
@@ -1827,7 +1827,7 @@ import fi.iki.elonen.NanoHTTPD;
                 );
             }
             
-            Log.i(TAG, "✅ Alarm scheduled for " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(scheduledTime)) + 
+            FLog.i(TAG, "✅ Alarm scheduled for " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(scheduledTime)) + 
                 " (in " + (delayMs / 1000) + " seconds)");
             
             return jsonResponse(Response.Status.OK, 
@@ -1835,7 +1835,7 @@ import fi.iki.elonen.NanoHTTPD;
                 "\", \"duration_ms\": " + durationMs + ", \"scheduled_for\": " + scheduledTime + "}");
             
         } catch (Exception e) {
-            Log.e(TAG, "Error scheduling alarm", e);
+            FLog.e(TAG, "Error scheduling alarm", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1866,13 +1866,13 @@ import fi.iki.elonen.NanoHTTPD;
                 // Save notification history
                 String history = request.optString("history", "[]");
                 prefs.saveNotificationHistory(history);
-                Log.d(TAG, "✅ Notification history saved from JS");
+                FLog.d(TAG, "✅ Notification history saved from JS");
                 return jsonResponse(Response.Status.OK, 
                     "{\"status\": \"success\", \"message\": \"Notifications saved\"}");
             } else if ("clear".equals(action)) {
                 // Clear all notifications
                 prefs.clearNotificationHistory();
-                Log.d(TAG, "✅ Notification history cleared");
+                FLog.d(TAG, "✅ Notification history cleared");
                 return jsonResponse(Response.Status.OK, 
                     "{\"status\": \"success\", \"message\": \"Notifications cleared\"}");
             } else {
@@ -1880,7 +1880,7 @@ import fi.iki.elonen.NanoHTTPD;
                     "{\"status\": \"error\", \"message\": \"Unknown action\"}");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error handling notifications", e);
+            FLog.e(TAG, "Error handling notifications", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1898,7 +1898,7 @@ import fi.iki.elonen.NanoHTTPD;
             return jsonResponse(Response.Status.OK, 
                 "{\"status\": \"success\", \"history\": " + history + "}");
         } catch (Exception e) {
-            Log.e(TAG, "Error getting notifications", e);
+            FLog.e(TAG, "Error getting notifications", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }
@@ -1936,7 +1936,7 @@ import fi.iki.elonen.NanoHTTPD;
             
             return jsonResponse(Response.Status.OK, json);
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error fetching GitHub notification", e);
+            FLog.e(TAG, "❌ Error fetching GitHub notification", e);
             return jsonResponse(Response.Status.INTERNAL_ERROR, 
                 "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
         }

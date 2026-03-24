@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.animation.ObjectAnimator;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -11,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -130,7 +131,7 @@ public class RemoteFragment extends BaseFragment {
             serviceBound = true;
             streamStartTime = System.currentTimeMillis();
             updateUI();
-            Log.d(TAG, "Service connected");
+            FLog.d(TAG, "Service connected");
         }
         
         @Override
@@ -138,7 +139,7 @@ public class RemoteFragment extends BaseFragment {
             streamService = null;
             serviceBound = false;
             streamStartTime = 0;
-            Log.d(TAG, "Service disconnected");
+            FLog.d(TAG, "Service disconnected");
         }
     };
     
@@ -157,7 +158,7 @@ public class RemoteFragment extends BaseFragment {
                     Intent data = result.getData();
                     if (data != null && data.getBooleanExtra("linked", false)) {
                         String email = data.getStringExtra("email");
-                        Log.i(TAG, "Device linked to: " + email);
+                        FLog.i(TAG, "Device linked to: " + email);
                         Toast.makeText(requireContext(), R.string.cloud_account_link_success, Toast.LENGTH_SHORT).show();
                         updateCloudButtonState();
                     }
@@ -328,7 +329,7 @@ public class RemoteFragment extends BaseFragment {
         
         // Set up cloud status error listener to show auth errors to user
         CloudStatusManager.getInstance(requireContext()).setAuthErrorListener(reason -> {
-            Log.e(TAG, "Cloud auth error: " + reason);
+            FLog.e(TAG, "Cloud auth error: " + reason);
             Toast.makeText(requireContext(), "⚠️ " + reason, Toast.LENGTH_LONG).show();
         });
     }
@@ -341,7 +342,7 @@ public class RemoteFragment extends BaseFragment {
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        Log.d(TAG, "onHiddenChanged: hidden=" + hidden);
+        FLog.d(TAG, "onHiddenChanged: hidden=" + hidden);
         
         if (!isAdded() || getContext() == null || getActivity() == null) {
             return;
@@ -417,7 +418,7 @@ public class RemoteFragment extends BaseFragment {
             try {
                 requireContext().unbindService(serviceConnection);
             } catch (Exception e) {
-                Log.e(TAG, "Error unbinding service in onHiddenChanged", e);
+                FLog.e(TAG, "Error unbinding service in onHiddenChanged", e);
             }
             serviceBound = false;
         }
@@ -438,7 +439,7 @@ public class RemoteFragment extends BaseFragment {
         // With hide/show navigation, onResume fires for ALL fragments on app resume.
         // Only perform heavy ops if this fragment is actually visible.
         if (isHidden()) {
-            Log.d(TAG, "onResume: Fragment is hidden, skipping heavy operations");
+            FLog.d(TAG, "onResume: Fragment is hidden, skipping heavy operations");
             return;
         }
         
@@ -469,7 +470,7 @@ public class RemoteFragment extends BaseFragment {
         super.onPause();
         
         // Mark remote feature as seen when user leaves the Remote tab
-        Log.d(TAG, "onPause: Marking remote feature as seen");
+        FLog.d(TAG, "onPause: Marking remote feature as seen");
         NewFeatureManager.markFeatureAsSeen(requireContext(), "remote");
         
         // Refresh badge UI
@@ -488,7 +489,7 @@ public class RemoteFragment extends BaseFragment {
     }
     
     private void startStreaming() {
-        Log.i(TAG, "Starting streaming");
+        FLog.i(TAG, "Starting streaming");
         
         RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
         RemoteStreamManager.getInstance().setStreamingMode(mode);
@@ -502,7 +503,7 @@ public class RemoteFragment extends BaseFragment {
     }
     
     private void stopStreaming() {
-        Log.i(TAG, "Stopping streaming");
+        FLog.i(TAG, "Stopping streaming");
         
         // Guard unbind on serviceBound (not streamService != null).
         // stopService() alone will NOT destroy a still-bound service — the service stays alive
@@ -511,7 +512,7 @@ public class RemoteFragment extends BaseFragment {
             try {
                 requireContext().unbindService(serviceConnection);
             } catch (Exception e) {
-                Log.e(TAG, "Error unbinding service", e);
+                FLog.e(TAG, "Error unbinding service", e);
             }
             serviceBound = false;
         }
@@ -1261,7 +1262,7 @@ public class RemoteFragment extends BaseFragment {
             @Override
             public void onError(String error) {
                 // Sync failed, show picker with cached data anyway
-                Log.w(TAG, "Failed to sync device info: " + error);
+                FLog.w(TAG, "Failed to sync device info: " + error);
                 showCloudAccountPicker();
             }
         });
@@ -1527,10 +1528,10 @@ public class RemoteFragment extends BaseFragment {
         // SECURITY FIX: Call updateStreamingMode on service to immediately stop/start HTTP server
         // This ensures proper enforcement of cloud-only mode (no local access)
         if (streamService != null && serviceBound) {
-            Log.i(TAG, "🔄 Updating streaming mode in service...");
+            FLog.i(TAG, "🔄 Updating streaming mode in service...");
             streamService.updateStreamingMode();
         } else {
-            Log.w(TAG, "⚠️ Service not bound, mode persisted but server state may not update immediately");
+            FLog.w(TAG, "⚠️ Service not bound, mode persisted but server state may not update immediately");
         }
         
         // Start/stop cloud status manager if server is already running
@@ -1546,7 +1547,7 @@ public class RemoteFragment extends BaseFragment {
         // Update display
         updateStreamingModeDisplay();
         
-        Log.i(TAG, "Streaming mode set to: " + (mode == MODE_CLOUD ? "Cloud" : "Local"));
+        FLog.i(TAG, "Streaming mode set to: " + (mode == MODE_CLOUD ? "Cloud" : "Local"));
     }
     
     /**
@@ -1582,11 +1583,11 @@ public class RemoteFragment extends BaseFragment {
         boolean hasRefreshToken = cloudAuthManager.getRefreshToken() != null;
         
         if (!hasValidToken && hasRefreshToken) {
-            Log.i(TAG, "Token expired, triggering background refresh...");
+            FLog.i(TAG, "Token expired, triggering background refresh...");
             cloudAuthManager.refreshTokenAsync(new CloudAuthManager.TokenRefreshListener() {
                 @Override
                 public void onRefreshSuccess(String newToken, long newExpiry) {
-                    Log.i(TAG, "Token refreshed successfully");
+                    FLog.i(TAG, "Token refreshed successfully");
                     // Update streaming mode display after refresh
                     if (isAdded()) {
                         requireActivity().runOnUiThread(() -> updateStreamingModeDisplay());
@@ -1595,7 +1596,7 @@ public class RemoteFragment extends BaseFragment {
                 
                 @Override
                 public void onRefreshFailed(String error) {
-                    Log.e(TAG, "Token refresh failed: " + error);
+                    FLog.e(TAG, "Token refresh failed: " + error);
                 }
             });
         }

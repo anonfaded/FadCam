@@ -1,10 +1,11 @@
 package com.fadcam.utils.camera;
 
+import com.fadcam.Log;
+import com.fadcam.FLog;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
-import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 
@@ -55,7 +56,7 @@ public class FrameRateHelper {
                 addSamsungFrameRates(supportedRates);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error detecting supported frame rates", e);
+            FLog.e(TAG, "Error detecting supported frame rates", e);
         }
 
         Set<Integer> uniqueRates = new TreeSet<>(supportedRates);
@@ -68,7 +69,7 @@ public class FrameRateHelper {
         try {
             Range<Integer>[] fpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
             if (fpsRanges == null || fpsRanges.length == 0) {
-                Log.w(TAG, "No FPS ranges available, using default");
+                FLog.w(TAG, "No FPS ranges available, using default");
                 return bestRange;
             }
 
@@ -96,7 +97,7 @@ public class FrameRateHelper {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error finding best FPS range", e);
+            FLog.e(TAG, "Error finding best FPS range", e);
         }
         return bestRange;
     }
@@ -106,7 +107,7 @@ public class FrameRateHelper {
             Collections.sort(allRates);
             return allRates;
         }
-        Log.w(TAG, "Large number of frame rates detected (" + allRates.size() + "), filtering");
+        FLog.w(TAG, "Large number of frame rates detected (" + allRates.size() + "), filtering");
         Set<Integer> filteredRates = new TreeSet<>();
         int[] standardRates = {24, 25, 30, 50, 60, 90, 120, 240};
         for (int rate : standardRates) {
@@ -122,14 +123,14 @@ public class FrameRateHelper {
         try {
             if (!supportedRates.contains(60)) {
                 supportedRates.add(60);
-                Log.d(TAG, "Added 60fps for Samsung device");
+                FLog.d(TAG, "Added 60fps for Samsung device");
             }
             if (DeviceHelper.isHighEndDevice() && !supportedRates.contains(120)) {
                 supportedRates.add(120);
-                Log.d(TAG, "Added 120fps for high-end Samsung device");
+                FLog.d(TAG, "Added 120fps for high-end Samsung device");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error adding Samsung frame rates", e);
+            FLog.e(TAG, "Error adding Samsung frame rates", e);
         }
     }
 
@@ -145,7 +146,7 @@ public class FrameRateHelper {
                 appliedVendorSettings = applySamsungFrameRate(builder, targetFrameRate);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error applying vendor-specific frame rate settings", e);
+            FLog.e(TAG, "Error applying vendor-specific frame rate settings", e);
         }
         return appliedVendorSettings;
     }
@@ -158,10 +159,10 @@ public class FrameRateHelper {
                     new CaptureRequest.Key<>("samsung.android.control.recordingMinFps", Integer.class);
             builder.set(samsungMaxFpsKey, targetFrameRate);
             builder.set(samsungMinFpsKey, targetFrameRate);
-            Log.d(TAG, "Applied Samsung-specific frame rate settings for " + targetFrameRate + "fps");
+            FLog.d(TAG, "Applied Samsung-specific frame rate settings for " + targetFrameRate + "fps");
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to apply Samsung frame rate settings: " + e.getMessage());
+            FLog.e(TAG, "Failed to apply Samsung frame rate settings: " + e.getMessage());
             return false;
         }
     }
