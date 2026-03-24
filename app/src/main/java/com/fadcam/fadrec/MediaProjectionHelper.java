@@ -101,6 +101,14 @@ public class MediaProjectionHelper {
      * @param data Intent data from permission request (MUST be the original permission intent)
      */
     public void startScreenRecording(int resultCode, Intent data) {
+        startScreenRecording(resultCode, data, false);
+    }
+
+    /**
+     * Start screen recording service with permission result.
+     * @param forceNoAudio If true, recording will start without audio even if mic is enabled.
+     */
+    public void startScreenRecording(int resultCode, Intent data, boolean forceNoAudio) {
         Log.d(TAG, "Starting ScreenRecordingService with resultCode=" + resultCode);
         
         if (data == null) {
@@ -112,6 +120,7 @@ public class MediaProjectionHelper {
             Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
             serviceIntent.setAction(Constants.INTENT_ACTION_START_SCREEN_RECORDING);
             serviceIntent.putExtra("resultCode", resultCode);
+            serviceIntent.putExtra(Constants.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO, forceNoAudio);
             
             // CRITICAL: Copy the exact data from permission request
             // MediaProjectionManager.getMediaProjection() needs this exact intent structure

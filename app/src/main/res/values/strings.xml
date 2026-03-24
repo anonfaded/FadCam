@@ -126,6 +126,9 @@
     <string name="fadrec_mode_title">FadRec • Screen Recording</string>
     <string name="fadrec_mute_audio">Mute recording audio</string>
     <string name="fadrec_unmute_audio">Unmute recording audio</string>
+    <string name="fadrec_mic_permission_needed_title">Microphone Permission Needed</string>
+    <string name="fadrec_mic_permission_needed_message">FadRec can\'t access your mic. You can record muted - no audio will be saved.</string>
+    <string name="fadrec_record_muted">Record Muted</string>
 
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>

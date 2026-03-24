@@ -9,6 +9,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.content.pm.PackageManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -26,6 +27,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
@@ -70,6 +72,8 @@ public class ScreenRecordingService extends Service {
     private long recordingStartTime;
     private long pauseStartTime; // Track when pause started
     private long totalPausedTime; // Accumulate total paused duration
+    private boolean forceNoAudioForThisStart = false;
+    private boolean enableAudioForSession = false;
     
     // Configuration
     private SharedPreferencesManager sharedPreferencesManager;
@@ -213,6 +217,10 @@ public class ScreenRecordingService extends Service {
         
         // Get MediaProjection result data from intent
         int resultCode = intent.getIntExtra("resultCode", Activity.RESULT_CANCELED);
+        forceNoAudioForThisStart = intent.getBooleanExtra(
+            Constants.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO,
+            false
+        );
         
         // RESULT_OK is -1, RESULT_CANCELED is 0
         if (resultCode != Activity.RESULT_OK) {
@@ -311,8 +319,21 @@ public class ScreenRecordingService extends Service {
         
         // Get audio config
         String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
-        boolean enableAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
+        boolean prefersAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
+        boolean hasMicPermission = ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED;
+        boolean enableAudio = prefersAudio && !forceNoAudioForThisStart && hasMicPermission;
+        enableAudioForSession = enableAudio;
         boolean initialMuted = sharedPreferencesManager.isScreenRecordingMuted();
+        if (prefersAudio && !hasMicPermission) {
+            Log.w(TAG, "Mic permission missing - forcing muted screen recording");
+            sharedPreferencesManager.setScreenRecordingMuted(true);
+        }
+        if (forceNoAudioForThisStart) {
+            Log.d(TAG, "Force-no-audio flag set for this recording session");
+        }
         
         // Calculate bitrate based on resolution
         int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
@@ -377,9 +398,11 @@ public class ScreenRecordingService extends Service {
                 acquireWakeLock();
                 
                 // Start foreground service with notification
-                startForeground(NOTIFICATION_ID, createNotification(), 
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | 
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+                int fgTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+                if (enableAudioForSession) {
+                    fgTypes |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+                }
+                startForeground(NOTIFICATION_ID, createNotification(), fgTypes);
                 
                 // Start notification updates
                 startNotificationUpdates();
@@ -509,6 +532,8 @@ public class ScreenRecordingService extends Service {
             
             // Cleanup resources
             cleanupPipeline();
+            forceNoAudioForThisStart = false;
+            enableAudioForSession = false;
 
             // Persist state on background thread before any UI callbacks.
             sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());

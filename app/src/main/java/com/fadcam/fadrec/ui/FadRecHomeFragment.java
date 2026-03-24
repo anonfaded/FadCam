@@ -78,6 +78,8 @@ public class FadRecHomeFragment extends HomeFragment {
     
     // Material loading dialog for annotation service startup
     private androidx.appcompat.app.AlertDialog loadingDialog;
+    private boolean forceMutedNoAudioThisStart = false;
+    private boolean isRecordingForcedMuted = false;
 
     /**
      * Create a new instance of FadRecHomeFragment.
@@ -131,7 +133,11 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     // Log.d(TAG, "Screen capture permission granted, starting recording");
                     // RESULT_OK is -1, so we pass Activity.RESULT_OK constant instead
-                    mediaProjectionHelper.startScreenRecording(Activity.RESULT_OK, data);
+                    boolean forceNoAudio = forceMutedNoAudioThisStart;
+                    isRecordingForcedMuted = forceNoAudio;
+                    forceMutedNoAudioThisStart = false;
+                    mediaProjectionHelper.startScreenRecording(Activity.RESULT_OK, data, forceNoAudio);
+                    syncMuteUiState();
                 } else {
                     // Log.w(TAG, "Screen capture permission denied: resultCode=" + resultCode);
                     Toast.makeText(requireContext(), 
@@ -1018,10 +1024,9 @@ public class FadRecHomeFragment extends HomeFragment {
         // Check audio permission first if microphone is enabled
         String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
         if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) 
-                != PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Requesting audio permission");
-                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO);
+            if (!isMicPermissionGranted()) {
+                Log.d(TAG, "Mic permission not granted - showing muted recording dialog");
+                showMicPermissionDeniedDialog();
                 return;
             }
         }
@@ -1051,6 +1056,35 @@ public class FadRecHomeFragment extends HomeFragment {
                 "Error starting screen recording", 
                 Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showMicPermissionDeniedDialog() {
+        if (!isAdded()) return;
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(com.fadcam.R.string.fadrec_mic_permission_needed_title)
+            .setMessage(com.fadcam.R.string.fadrec_mic_permission_needed_message)
+            .setPositiveButton(com.fadcam.R.string.fadrec_record_muted, (dialog, which) -> {
+                forceMutedNoAudioThisStart = true;
+                if (sharedPreferencesManager != null) {
+                    sharedPreferencesManager.setScreenRecordingMuted(true);
+                }
+                syncMuteUiState();
+                requestScreenCapturePermission();
+            })
+            .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.dismiss())
+            .show();
+    }
+
+    private boolean isMicPermissionGranted() {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
+            == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean isAudioEffectivelyAvailable() {
+        if (sharedPreferencesManager == null) return false;
+        String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
+        boolean prefersAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
+        return prefersAudio && isMicPermissionGranted() && !isRecordingForcedMuted;
     }
 
     /**
@@ -1100,6 +1134,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
+                            syncMuteUiState();
                             // Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_started, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
@@ -1108,7 +1143,9 @@ public class FadRecHomeFragment extends HomeFragment {
                             // Log.d(TAG, "Broadcast: SCREEN_RECORDING_STOPPED");
                             screenRecordingState = ScreenRecordingState.NONE;
                             persistRecordingState(screenRecordingState);
+                            isRecordingForcedMuted = false;
                             updateUIForRecordingState();
+                            syncMuteUiState();
                             // Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_stopped, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
@@ -1118,6 +1155,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             screenRecordingState = ScreenRecordingState.PAUSED;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
+                            syncMuteUiState();
                             // Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_paused, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
@@ -1127,6 +1165,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
+                            syncMuteUiState();
                             // Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_resumed, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
@@ -1146,10 +1185,13 @@ public class FadRecHomeFragment extends HomeFragment {
                             // Log.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_GRANTED");
                             // Permission granted, start recording with the provided Intent
                             Intent permissionData = intent.getParcelableExtra("data");
+                            if (permissionData == null) {
+                                permissionData = intent.getParcelableExtra("mediaProjectionData");
+                            }
                             if (permissionData != null && mediaProjectionHelper != null) {
                                 int resultCode = intent.getIntExtra("resultCode", -1);
                                 // Log.d(TAG, "Starting recording with resultCode: " + resultCode);
-                                mediaProjectionHelper.startScreenRecording(resultCode, permissionData);
+                                mediaProjectionHelper.startScreenRecording(resultCode, permissionData, false);
                             } else {
                                 // Log.e(TAG, "Permission granted but data or helper is null");
                             }
@@ -1187,7 +1229,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             }
                             break;
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED:
-                            updateMuteButtonUi();
+                            syncMuteUiState();
                             break;
                     }
                 }
@@ -1300,9 +1342,7 @@ public class FadRecHomeFragment extends HomeFragment {
 
         if (buttonFadRecMute != null) {
             buttonFadRecMute.setVisibility(View.VISIBLE);
-            buttonFadRecMute.setEnabled(true);
-            buttonFadRecMute.setAlpha(1.0f);
-            updateMuteButtonUi();
+            syncMuteUiState();
         }
         
         Log.d(TAG, "UI updated for state: " + screenRecordingState);
@@ -1362,6 +1402,28 @@ public class FadRecHomeFragment extends HomeFragment {
                 : 0xFF3A3A3A
         ));
         buttonFadRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+    }
+
+    private void syncMuteUiState() {
+        if (buttonFadRecMute == null || !isAdded()) return;
+        boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
+            || screenRecordingState == ScreenRecordingState.PAUSED;
+        boolean audioAvailable = isAudioEffectivelyAvailable();
+
+        if (isRecordingActive && !audioAvailable) {
+            if (sharedPreferencesManager != null && !sharedPreferencesManager.isScreenRecordingMuted()) {
+                sharedPreferencesManager.setScreenRecordingMuted(true);
+                if (mediaProjectionHelper != null) {
+                    mediaProjectionHelper.setScreenRecordingMuted(true);
+                }
+            }
+            buttonFadRecMute.setEnabled(false);
+            buttonFadRecMute.setAlpha(0.5f);
+        } else {
+            buttonFadRecMute.setEnabled(true);
+            buttonFadRecMute.setAlpha(1.0f);
+        }
+        updateMuteButtonUi();
     }
     
     /**

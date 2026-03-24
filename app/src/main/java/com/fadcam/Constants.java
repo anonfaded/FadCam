@@ -325,6 +325,8 @@ public abstract class Constants {
     public static final String AUDIO_SOURCE_MIC = "microphone";
     public static final String EXTRA_SCREEN_RECORDING_MUTED =
         "com.fadcam.EXTRA_SCREEN_RECORDING_MUTED";
+    public static final String EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO =
+        "com.fadcam.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO";
     // -------------- FadRec (Screen Recording) Constants End --------------
     public static final String EXTRA_FOCUS_X = "com.fadcam.EXTRA_FOCUS_X"; // float (normalized 0..1)
     public static final String EXTRA_FOCUS_Y = "com.fadcam.EXTRA_FOCUS_Y"; // float (normalized 0..1)
