@@ -40,8 +40,28 @@ public class WatchMainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // WATCH-SPECIFIC FIX: Override manifest theme for better Wear OS compatibility
+        // Material3 has rendering issues on small round Wear OS screens
+        // MaterialComponents (Material 2) works better on all screen sizes including watch
+        android.util.Log.d("WatchMainActivity", "Overriding theme to MaterialComponents for Wear OS");
+        setTheme(R.style.Theme_FadCam_WatchCompat);
+        
         super.onCreate(savedInstanceState);
 
+        // DEBUG: Log device characteristics for Wear OS diagnosis
+        android.util.Log.d("WatchMainActivity", "=== WATCH ACTIVITY LIFECYCLE ===");
+        android.util.Log.d("WatchMainActivity", "Display dimensions: " + 
+            getResources().getDisplayMetrics().widthPixels + "x" + 
+            getResources().getDisplayMetrics().heightPixels);
+        android.util.Log.d("WatchMainActivity", "Screen density: " + 
+            getResources().getDisplayMetrics().density);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            android.util.Log.d("WatchMainActivity", "Is round watch: " + 
+                getResources().getConfiguration().isScreenRound());
+        }
+        android.util.Log.d("WatchMainActivity", "API level: " + android.os.Build.VERSION.SDK_INT);
+        android.util.Log.d("WatchMainActivity", "Device: " + android.os.Build.DEVICE);
+        
         // Check for onboarding BEFORE applying theme or setting content view
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
 
@@ -95,14 +115,17 @@ public class WatchMainActivity extends AppCompatActivity {
     private void initializeUI() {
         if (uiInitialized) return; // Already initialized
 
-        applyTheme(); // Must be called before setContentView()
+        android.util.Log.d("WatchMainActivity", "Initializing UI...");
         setContentView(R.layout.activity_watch_main);
+        android.util.Log.d("WatchMainActivity", "Content view set");
 
         viewPager = findViewById(R.id.watch_viewpager);
         dots[0]   = findViewById(R.id.dot_0);
         dots[1]   = findViewById(R.id.dot_1);
         dots[2]   = findViewById(R.id.dot_2);
         dots[3]   = findViewById(R.id.dot_3);
+
+        android.util.Log.d("WatchMainActivity", "ViewPager and dots found");
 
         viewPager.setAdapter(new WatchPagerAdapter(this));
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -154,48 +177,5 @@ public class WatchMainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Applies the user-selected theme before any views are created.
-     * Mirrors the logic in {@link com.fadcam.MainActivity#applyTheme()}.
-     * Must be called BEFORE {@link #setContentView}.
-     */
-    private void applyTheme() {
-        SharedPreferencesManager sp = SharedPreferencesManager.getInstance(this);
-        String themeName = sp.sharedPreferences.getString(
-                Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
-        if (themeName == null || themeName.isEmpty()) {
-            themeName = Constants.DEFAULT_APP_THEME;
-        }
-        
-        // Apply theme and set window colors to prevent red overlay on small watch screens
-        if ("Faded Night".equals(themeName) || "AMOLED".equals(themeName) || "amoled".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_Amoled);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.amoled_background, getTheme()));
-        } else if ("Crimson Bloom".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_Red);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
-        } else if ("Premium Gold".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_Gold);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.gold_theme_background_dark, getTheme()));
-        } else if ("Silent Forest".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_SilentForest);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.silentforest_theme_background_dark, getTheme()));
-        } else if ("Shadow Alloy".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_ShadowAlloy);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.shadowalloy_theme_background_dark, getTheme()));
-        } else if ("Pookie Pink".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_PookiePink);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.pookiepink_theme_background_dark, getTheme()));
-        } else if ("Snow Veil".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_SnowVeil);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.snowveil_theme_background_light, getTheme()));
-        } else if ("Midnight Dusk".equals(themeName)) {
-            setTheme(R.style.Theme_FadCam_MidnightDusk);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.gray, getTheme()));
-        } else {
-            // Default fallback — matches Constants.DEFAULT_APP_THEME
-            setTheme(R.style.Theme_FadCam_Red);
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.red_theme_background_dark, getTheme()));
-        }
-    }
+
 }

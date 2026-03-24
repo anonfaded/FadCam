@@ -41,7 +41,7 @@
     <style name="Theme.FadCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Solid dark background -->
         <item name="android:windowBackground">@color/black</item>
-        <!-- New SplashScreen API attrs -->
+        <!-- SplashScreen API attrs -->
         <item name="windowSplashScreenBackground">@color/black</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/fadseclab_flag</item>
         <item name="android:statusBarColor">@color/black</item>
@@ -778,4 +778,29 @@
         <item name="android:textColor">#B0B0B0</item>
         <item name="fontFamily">@font/ubuntu_regular</item>
     </style>
+
+    <!-- WATCH-SPECIFIC THEME: MaterialComponents for better Wear OS compatibility
+         Material3 has rendering issues on small round Wear OS screens.
+         This theme is applied programmatically in WatchMainActivity.onCreate(). -->
+    <style name="Theme.FadCam.WatchCompat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Explicit window background to prevent rendering issues -->
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimary</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
+        <item name="colorSecondaryVariant">@color/colorPrimary</item>
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/black</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/black</item>
+        <!-- Text colors -->
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">#BDBDBD</item>
+    </style>
+
 </resources>

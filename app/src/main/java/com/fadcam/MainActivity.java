@@ -1345,6 +1345,13 @@ public class MainActivity extends AppCompatActivity {
      * This ensures the theme is consistently applied across the entire app
      */
     private void applyTheme() {
+        // Guard: Skip theme application for watch devices
+        // Watch uses dedicated WatchMainActivity with Wear OS-optimized themes
+        if (isWatchDevice()) {
+            android.util.Log.w("MainActivity", "applyTheme() called on watch device - skipping phone theme application");
+            return;
+        }
+
         // Get shared preferences and current theme
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
         String themeName = sharedPreferencesManager.sharedPreferences.getString(Constants.PREF_APP_THEME,
@@ -1771,5 +1778,14 @@ public class MainActivity extends AppCompatActivity {
         
         addTx.commitNow();
         Log.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
+    }
+
+    /**
+     * Check if the device is a Wear OS watch.
+     * Prevents phone-specific theme code from running on watch devices.
+     * @return true if device has watch hardware feature, false otherwise
+     */
+    private boolean isWatchDevice() {
+        return getPackageManager().hasSystemFeature("android.hardware.type.watch");
     }
 }
