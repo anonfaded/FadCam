@@ -23,7 +23,7 @@ public class Log {
 
     private static final String TAG = "Log";
     private static final String DEBUG_FILE_NAME = "FADCAM_debug.html";
-    private static final int MAX_LOG_LINES = 1000;
+    private static final int MAX_LOG_LINES = 5000;
 
     // Async logging internals (batched, low-overhead)
     private static final java.util.concurrent.LinkedBlockingQueue<String> PENDING = new java.util.concurrent.LinkedBlockingQueue<>(5000);
@@ -43,7 +43,7 @@ public class Log {
 
     private static boolean isDebugEnabled = false;
     
-    // Auto-disable debug logging during recording/streaming to save CPU and battery
+    // Recording state (used for markers in the debug log)
     private static volatile boolean recordingActive = false;
 
     public static void init(Context context)
@@ -77,6 +77,17 @@ public class Log {
                         if (current > MAX_LOG_LINES) {
                             performTrimNow();
                         }
+                        // Write a session header for easier diagnostics
+                        appendHtmlToFile(
+                            "<font color=\"#8e44ad\">" + getCurrentTimeStamp()
+                                + " INFO: [Debug] Debug logging enabled. "
+                                + "App=" + BuildConfig.VERSION_NAME
+                                + " (" + BuildConfig.VERSION_CODE + "), "
+                                + "Device=" + Build.MANUFACTURER + " " + Build.MODEL
+                                + ", Android=" + Build.VERSION.RELEASE
+                                + " (API " + Build.VERSION.SDK_INT + ")"
+                                + "</font>"
+                        );
                     });
                 }
             }
@@ -96,27 +107,26 @@ public class Log {
     
     /**
      * Signal to Log system that recording/streaming is active.
-     * Automatically disables debug logging during recording to save CPU/battery.
-     * 
+     * Records a marker when recording/streaming state changes.
+     *
      * @param active true when recording or streaming, false when stopped
      */
     public static void setRecordingActive(boolean active) {
         recordingActive = active;
-        if (active && isDebugEnabled) {
-            // Recording started - pause debug logging to save CPU/battery
-            // Do NOT disable the feature; just pause writes
-            // Re-enable automatically when recording stops
-        } else if (!active && isDebugEnabled) {
-            // Recording stopped - resume normal debug logging
+        if (isDebugEnabled) {
+            appendHtmlToFile(
+                "<font color=\"#8e44ad\">" + getCurrentTimeStamp()
+                    + " INFO: [Debug] Recording active=" + active
+                    + "</font>"
+            );
         }
     }
     
     /**
      * Check if debug logging is actually enabled.
-     * Returns false if recording is active (even if debug mode is on).
      */
     private static boolean isDebugLoggingActive() {
-        return isDebugEnabled && !recordingActive;
+        return isDebugEnabled;
     }
 
     private static String getCurrentTimeStamp() {
