@@ -550,10 +550,13 @@ public class GLRecordingPipeline {
 
             if (encoderInputSurface == null) {
                 // FLog.d(TAG, "Setting up video encoder");
+                FLog.d(TAG, "[GL_INIT] encoderInputSurface is null, calling setupEncoder()");
                 setupEncoder();
                 if (encoderInputSurface == null) {
+                    FLog.e(TAG, "[GL_INIT] CRITICAL: setupEncoder() failed to create encoderInputSurface");
                     throw new RuntimeException("Failed to create encoder input surface");
                 }
+                FLog.d(TAG, "[GL_INIT] setupEncoder() succeeded, encoderInputSurface created");
             }
 
             if (glRenderer == null) {
@@ -632,6 +635,7 @@ public class GLRecordingPipeline {
                             }
                         }
                     } catch (Throwable t) {
+                        FLog.e(TAG, "[GL_INIT] Exception during EGL initialization on GL thread", t);
                         initError[0] = t;
                     } finally {
                         initLatch.countDown();
@@ -640,21 +644,26 @@ public class GLRecordingPipeline {
                 // Wait for GL init to complete so we can return a valid camera surface for
                 // Camera2 session
                 try {
+                    FLog.d(TAG, "[GL_INIT] Waiting for EGL initialization to complete (timeout: 1500ms)");
                     if (!initLatch.await(1500, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        FLog.e(TAG, "[GL_INIT] CRITICAL: Timed out waiting for GL renderer initialization on GL thread");
                         throw new RuntimeException("Timed out initializing GL renderer on GL thread");
                     }
+                    FLog.d(TAG, "[GL_INIT] EGL initialization completed within timeout");
                 } catch (InterruptedException ie) {
+                    FLog.e(TAG, "[GL_INIT] Interrupted while waiting for EGL init", ie);
                     Thread.currentThread().interrupt();
                 }
                 if (initError[0] != null) {
+                    FLog.e(TAG, "[GL_INIT] CRITICAL: GL initialization failed with exception", initError[0]);
                     throw new RuntimeException("GL initialization failed", initError[0]);
                 }
                 // Validate camera surface
                 if (cameraInputSurface == null || !cameraInputSurface.isValid()) {
-                    FLog.e(TAG, "Camera input surface is invalid after GL init");
+                    FLog.e(TAG, "[GL_INIT] CRITICAL: Camera input surface is invalid after GL init (null=" + (cameraInputSurface == null) + ")");
                     throw new RuntimeException("Camera input surface invalid");
                 }
-                FLog.d(TAG, "Successfully obtained valid camera input surface");
+                FLog.d(TAG, "[GL_INIT] Successfully obtained valid camera input surface");
 
                 // Set up the frame listener to trigger rendering when new frames arrive
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
@@ -1257,12 +1266,17 @@ public class GLRecordingPipeline {
             configureBasicEncoder(format);
 
             videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
+            FLog.d(TAG, "[GL_INIT] Attempting to configure " + currentMimeType + " encoder: " + encoderWidth + "x" + encoderHeight);
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            FLog.d(TAG, "[GL_INIT] mediaCodec.configure() succeeded for " + currentMimeType);
+            
             encoderInputSurface = videoEncoder.createInputSurface();
+            FLog.d(TAG, "[GL_INIT] createInputSurface() succeeded: " + (encoderInputSurface != null ? "valid Surface" : "NULL SURFACE"));
+            
             encoderConfigured = true;
             // FLog.d(TAG, "Successfully configured " + currentMimeType + " encoder with basic settings");
         } catch (Exception e) {
-            FLog.w(TAG, "Failed to configure " + currentMimeType + " with minimal settings: " + e.getMessage());
+            FLog.w(TAG, "[GL_INIT] Failed to configure " + currentMimeType + " encoder: " + e.getMessage(), e);
             if (videoEncoder != null) {
                 try {
                     videoEncoder.release();
@@ -1276,17 +1290,22 @@ public class GLRecordingPipeline {
         if (!encoderConfigured && currentMimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
             try {
                 currentMimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
-                FLog.d(TAG, "Falling back to H.264 encoder");
+                FLog.d(TAG, "[GL_INIT] Falling back to H.264 encoder");
                 MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
                 configureBasicEncoder(format);
 
                 videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
+                FLog.d(TAG, "[GL_INIT] Attempting fallback: configure H.264 encoder: " + encoderWidth + "x" + encoderHeight);
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                FLog.d(TAG, "[GL_INIT] mediaCodec.configure() succeeded for H.264");
+                
                 encoderInputSurface = videoEncoder.createInputSurface();
+                FLog.d(TAG, "[GL_INIT] createInputSurface() succeeded for H.264: " + (encoderInputSurface != null ? "valid Surface" : "NULL SURFACE"));
+                
                 encoderConfigured = true;
                 // FLog.d(TAG, "Successfully configured H.264 fallback encoder");
             } catch (Exception e) {
-                FLog.e(TAG, "Failed to configure H.264 fallback encoder: " + e.getMessage());
+                FLog.e(TAG, "[GL_INIT] Failed to configure H.264 fallback encoder: " + e.getMessage(), e);
                 if (videoEncoder != null) {
                     try {
                         videoEncoder.release();
@@ -1298,6 +1317,7 @@ public class GLRecordingPipeline {
         }
 
         if (!encoderConfigured) {
+            FLog.e(TAG, "[GL_INIT] CRITICAL: Failed to configure ANY video encoder. Device may not support video recording.");
             throw new IOException("Failed to configure any video encoder. Device may not support video recording.");
         }
 
@@ -2583,10 +2603,12 @@ public class GLRecordingPipeline {
             }
             
             audioEncoder = MediaCodec.createEncoderByType(android.media.MediaFormat.MIMETYPE_AUDIO_AAC);
+            FLog.d(TAG, "[GL_INIT] Attempting to configure AAC audio encoder: sample_rate=" + audioSampleRate + ", channels=" + audioChannelCount);
             audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            FLog.d(TAG, "[GL_INIT] mediaCodec.configure() succeeded for AAC audio encoder");
             audioEncoder.start();
             audioEncoderStarted = true;
-            FLog.d(TAG, "DEBUG: Audio encoder created and started successfully");
+            FLog.d(TAG, "[GL_INIT] Audio encoder started successfully");
 
             // Setup AudioRecord
             int channelConfig = audioChannelCount == 2 ? android.media.AudioFormat.CHANNEL_IN_STEREO
