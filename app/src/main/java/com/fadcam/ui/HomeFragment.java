@@ -1534,9 +1534,7 @@ public class HomeFragment extends BaseFragment {
         // Always start the info update timer to keep elapsed time current
         startUpdatingInfo();
 
-        // Always force preview enabled on first recording start
-        isPreviewEnabled = true;
-        savePreviewState();
+        // Respect user's preview preference; only flag animation for preview transitions
         animateNextPreviewTransition = true;
         updatePreviewVisibility();
 
@@ -2600,11 +2598,10 @@ public class HomeFragment extends BaseFragment {
         // Update UI elements based on the state
         switch (reportedState) {
             case IN_PROGRESS:
-                // On a fresh recording start (not re-delivering the same state), force preview
-                // on and flag the transition for the avatar → preview animation.
+                // On a fresh recording start (not re-delivering the same state), respect user's preview
+                // preference and flag the transition for the avatar → preview animation.
                 if (previousState != RecordingState.IN_PROGRESS) {
-                    isPreviewEnabled = true;
-                    savePreviewState();
+                    // Only set animation flag; respect user's saved preview preference
                     animateNextPreviewTransition = true;
                 }
                 setUIForRecordingActive(); // Call helper to set Stop/Pause buttons etc.
