@@ -459,7 +459,8 @@ public class RecordsFragment extends BaseFragment implements
                                 if (recordsAdapter != null) {
                                     recordsAdapter.clearCaches();
                                 }
-                                loadRecordsList();
+                                // Force reload to bypass the "already have data" guard and ensure UI updates
+                                loadRecordsList(true);
                             }
                             if (isInSelectionMode && selectedUris.contains(videoItem.uri)) {
                                 selectedUris.remove(videoItem.uri);
@@ -3637,7 +3638,8 @@ public class RecordsFragment extends BaseFragment implements
                     if (recordsAdapter != null) {
                         recordsAdapter.clearCaches(); // Clear any cached data
                     }
-                    loadRecordsList(); // This will completely rebuild the list with proper serial numbers
+                    // Force reload to bypass the "already have data" guard and ensure UI updates
+                    loadRecordsList(true); // This will completely rebuild the list with proper serial numbers
                 });
             }
         });
@@ -3738,7 +3740,8 @@ public class RecordsFragment extends BaseFragment implements
                     if (recordsAdapter != null) {
                         recordsAdapter.clearCaches(); // Clear any cached data
                     }
-                    loadRecordsList(); // This will completely rebuild the list with proper serial numbers
+                    // Force reload to bypass the "already have data" guard and ensure UI updates
+                    loadRecordsList(true); // This will completely rebuild the list with proper serial numbers
                 });
             }
         });
