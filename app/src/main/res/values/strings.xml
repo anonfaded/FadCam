@@ -78,9 +78,11 @@
     <string name="mainpage_video_info" formatted="false">\n                                            <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
-    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used:</font>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
+    <string name="stats_label_videos">Videos:</string>
+    <string name="stats_label_used">Used:</string>
     <string name="button_start">Start</string>
     <string name="button_pause">Pause</string>
     <string name="button_stop">Stop</string>

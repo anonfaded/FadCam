@@ -1681,6 +1681,7 @@ public class RecordingService extends Service {
         // First update the state to prevent any new operations
         recordingState = RecordingState.NONE;
         sharedPreferencesManager.setRecordingInProgress(false);
+        com.fadcam.ActiveRecordingStats.clearActiveSegment();
         
         // Notify RemoteStreamManager that recording stopped
         try {
@@ -5813,6 +5814,7 @@ public class RecordingService extends Service {
                 currentSegmentUriString = safUri.toString();
                 currentSegmentPath = safUri.toString();
                 currentSegmentFile = null;
+                com.fadcam.ActiveRecordingStats.rolloverToNewSegment(null, safUri.toString(), RecordingService.this);
                 // Track SAF URI for STREAM_ONLY cleanup during segment rollover
                 boolean isStreamOnlyRollover = isStreamingActive
                         && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
@@ -5899,6 +5901,7 @@ public class RecordingService extends Service {
                 currentSegmentFile = nextFile;
                 currentSegmentPath = nextFile.getAbsolutePath();
                 currentSegmentUriString = Uri.fromFile(nextFile).toString();
+                com.fadcam.ActiveRecordingStats.rolloverToNewSegment(nextFile.getAbsolutePath(), null, RecordingService.this);
                 
                 if (glRecordingPipeline != null) {
                     glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
@@ -6061,6 +6064,7 @@ public class RecordingService extends Service {
                 currentSegmentUriString = safUri.toString();
                 currentSegmentPath = safUri.toString();
                 currentSegmentFile = null;
+                com.fadcam.ActiveRecordingStats.setActiveSegment(null, safUri.toString());
                 // Track SAF URI for STREAM_ONLY cleanup (0-byte files created but no data written)
                 boolean isStreamOnlySaf = isStreamingActive
                         && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
@@ -6132,6 +6136,7 @@ public class RecordingService extends Service {
                 currentSegmentFile = outputFile;
                 currentSegmentPath = outputFile.getAbsolutePath();
                 currentSegmentUriString = Uri.fromFile(outputFile).toString();
+                com.fadcam.ActiveRecordingStats.setActiveSegment(outputFile.getAbsolutePath(), null);
                 
                 FLog.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
                     " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);

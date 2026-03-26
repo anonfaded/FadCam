@@ -29,7 +29,7 @@ import com.fadcam.fadrec.ui.annotation.objects.TextObject;
 
 /**
  * Inline text editor overlay for creating and editing text annotations.
- * Provides Instagram/Telegram-style text editing with:
+ * Provides center-aligned text editing with:
  * - Center-aligned text input with dashed border
  * - Real-time text preview
  * - Color picker

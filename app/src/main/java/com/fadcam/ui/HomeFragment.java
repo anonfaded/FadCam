@@ -298,7 +298,25 @@ public class HomeFragment extends BaseFragment {
 
     private int currentTipIndex = 0;
 
-    private TextView tvStats;
+    /** Animated value showing video count (label is static in layout) */
+    private TextView tvVideoCount;
+    /** Animated value showing total recording size (label is static in layout) */
+    private TextView tvVideoSize;
+    /** Static view showing "/ XX.X GB" total device storage after tvSpaceTitle */
+    private TextView tvSpaceTotal;
+
+    // Track last known good values for stats to prevent 0-value display during scans
+    /**
+     * Last known video stats for fallback when 0 is detected (race condition)
+     */
+    private long lastKnownVideoCount = 0;
+    private long lastKnownSizeMB = 0;
+
+    /**
+     * Last animated stats for smooth transitions
+     */
+    private int lastAnimatedVideoCount = 0;
+    private long lastAnimatedSizeMB = 0;
 
     // Recording tile controls
     private TextView tileAfToggle;
@@ -1981,6 +1999,9 @@ public class HomeFragment extends BaseFragment {
         clearPreviewOnlyPendingState(true);
 
         registerBroadcastReceivers(); // Centralized registration
+        
+        // Resume update handlers when fragment returns to foreground
+        resumeUpdateHandlers();
 
         // Refresh header logo style in case user changed it in settings
         applyHeaderLogoStyle();
@@ -3508,6 +3529,9 @@ public class HomeFragment extends BaseFragment {
                 isTorchReceiverRegistered = false;
             }
         }
+        
+        // Pause update handlers to save battery when app is backgrounded
+        pauseUpdateHandlers();
     }
 
     /**
@@ -4865,6 +4889,9 @@ public class HomeFragment extends BaseFragment {
         } else if ("Midnight Dusk".equals(tileTheme)) {
             applyMidnightDuskThemeToTiles();
         }
+        
+        // Setup lifecycle observer for background/foreground handling
+        setupLifecycleObserver();
 
         // Attempt to find camera with flash
         try {
@@ -6239,7 +6266,11 @@ public class HomeFragment extends BaseFragment {
             Locale.getDefault()
         );
         String currentTime = timeFormat.format(new Date());
-        tvClock.setText(currentTime);
+        if (tvClock instanceof com.fadcam.ui.utils.AnimatedTextView) {
+            ((com.fadcam.ui.utils.AnimatedTextView) tvClock).animateSlot(currentTime, 400);
+        } else {
+            tvClock.setText(currentTime);
+        }
 
         // OPTIMIZATION: Cache color calculation (only recalculate every 1 second)
         // This reduces expensive isLightColor() calls from 1/sec to 0.001/sec
@@ -6298,9 +6329,14 @@ public class HomeFragment extends BaseFragment {
         }
 
         // Set text visibility based on user choice
-        tvDateEnglish.setText(
-            displayOption == 1 || displayOption == 2 ? currentDateEnglish : ""
-        );
+        String displayDateEnglish = displayOption == 1 || displayOption == 2 ? currentDateEnglish : "";
+        String displayDateArabic = displayOption == 2 ? currentDateArabic : "";
+
+        if (tvDateEnglish instanceof com.fadcam.ui.utils.AnimatedTextView) {
+            ((com.fadcam.ui.utils.AnimatedTextView) tvDateEnglish).animateSlot(displayDateEnglish, 400);
+        } else {
+            tvDateEnglish.setText(displayDateEnglish);
+        }
         tvDateEnglish.setPadding(
             5,
             tvPreviewPlaceholder.getPaddingTop(),
@@ -6308,7 +6344,11 @@ public class HomeFragment extends BaseFragment {
             tvPreviewPlaceholder.getPaddingBottom()
         );
 
-        tvDateArabic.setText(displayOption == 2 ? currentDateArabic : "");
+        if (tvDateArabic instanceof com.fadcam.ui.utils.AnimatedTextView) {
+            ((com.fadcam.ui.utils.AnimatedTextView) tvDateArabic).animateSlot(displayDateArabic, 400);
+        } else {
+            tvDateArabic.setText(displayDateArabic);
+        }
     }
 
     /**
@@ -6619,68 +6659,71 @@ public class HomeFragment extends BaseFragment {
                         getString(R.string.recording_estimated_time)
                     );
 
-                    // Space row with styled text
+                    // Space row — value only on tvSpaceTitle, static total on tvSpaceTotal.
+                    // Available space decreases during recording, so we animate DOWN.
                     if (tvSpaceTitle != null) {
-                        try {
-                            String avail = availableSpace;
-                            String totalStr = String.format(
-                                numberFormatLocale,
-                                "%.2f GB",
-                                gbTotal
-                            );
-                            String combined = avail + " / " + totalStr;
-                            android.text.SpannableString ss =
-                                new android.text.SpannableString(combined);
-
-                            int slashIndex = combined.indexOf("/");
-                            int start = (slashIndex >= 0)
-                                ? slashIndex
-                                : (combined.indexOf("/ ") + 2);
-                            int end = combined.length();
-                            if (start >= 0 && end > start) {
-                                ss.setSpan(
-                                    new android.text.style.ForegroundColorSpan(
-                                        android.graphics.Color.parseColor(
-                                            "#9E9E9E"
-                                        )
-                                    ),
-                                    start,
-                                    end,
-                                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                                );
-                                ss.setSpan(
-                                    new android.text.style.RelativeSizeSpan(
-                                        0.85f
-                                    ),
-                                    start,
-                                    end,
-                                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                                );
+                        String oldSpaceValue = tvSpaceTitle.getText() != null ? tvSpaceTitle.getText().toString() : "";
+                        if (!oldSpaceValue.equals(availableSpace)) {
+                            if (tvSpaceTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvSpaceTitle).animateSlotDown(availableSpace, 400);
+                            } else {
+                                tvSpaceTitle.setText(availableSpace);
                             }
-                            tvSpaceTitle.setText(ss);
-                        } catch (Exception e) {
-                            tvSpaceTitle.setText(availableSpace);
                         }
                     }
-                    if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText(
-                        getString(R.string.storage_available_space)
-                    );
+                    if (tvSpaceTotal != null) {
+                        // Show static "/ XX.X GB" — set once, never animate.
+                        String totalStr = String.format(numberFormatLocale, "/ %.2f GB", gbTotal);
+                        tvSpaceTotal.setText(totalStr);
+                    }
+                    if (tvSpaceSubtitle != null) {
+                        String newSubtitle = getString(R.string.storage_available_space);
+                        if (tvSpaceSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                            ((com.fadcam.ui.utils.AnimatedTextView) tvSpaceSubtitle).animateSlot(newSubtitle, 400);
+                        } else {
+                            tvSpaceSubtitle.setText(newSubtitle);
+                        }
+                    }
 
-                    // Elapsed row
-                    if (tvElapsedTitle != null) tvElapsedTitle.setText(
-                        elapsedTimeText
-                    );
-                    if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText(
-                        getString(R.string.recording_elapsed_time)
-                    );
+                    // Elapsed row — time increases, animate UP.
+                    if (tvElapsedTitle != null) {
+                        String oldElapsed = tvElapsedTitle.getText() != null ? tvElapsedTitle.getText().toString() : "";
+                        if (!oldElapsed.equals(elapsedTimeText)) {
+                            if (tvElapsedTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedTitle).animateSlot(elapsedTimeText, 400);
+                            } else {
+                                tvElapsedTitle.setText(elapsedTimeText);
+                            }
+                        }
+                    }
+                    if (tvElapsedSubtitle != null) {
+                        String newElapsedSub = getString(R.string.recording_elapsed_time);
+                        if (tvElapsedSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                            ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedSubtitle).animateSlot(newElapsedSub, 400);
+                        } else {
+                            tvElapsedSubtitle.setText(newElapsedSub);
+                        }
+                    }
 
-                    // Remaining row
-                    if (tvRemainingTitle != null) tvRemainingTitle.setText(
-                        remainingTimeText
-                    );
-                    if (
-                        tvRemainingSubtitle != null
-                    ) tvRemainingSubtitle.setText(getString(R.string.recording_remaining_time));
+                    // Remaining row — time decreases, animate DOWN.
+                    if (tvRemainingTitle != null) {
+                        String oldRemaining = tvRemainingTitle.getText() != null ? tvRemainingTitle.getText().toString() : "";
+                        if (!oldRemaining.equals(remainingTimeText)) {
+                            if (tvRemainingTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvRemainingTitle).animateSlotDown(remainingTimeText, 400);
+                            } else {
+                                tvRemainingTitle.setText(remainingTimeText);
+                            }
+                        }
+                    }
+                    if (tvRemainingSubtitle != null) {
+                        String newRemainingSub = getString(R.string.recording_remaining_time);
+                        if (tvRemainingSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                            ((com.fadcam.ui.utils.AnimatedTextView) tvRemainingSubtitle).animateSlot(newRemainingSub, 400);
+                        } else {
+                            tvRemainingSubtitle.setText(newRemainingSub);
+                        }
+                    }
                 });
         }
     }
@@ -6871,28 +6914,37 @@ public class HomeFragment extends BaseFragment {
 
             @Override
             public void run() {
-                if ((isRecording() || isPaused()) && isAdded()) {
+                boolean isFragmentAdded = isAdded();
+                boolean isRecordingActive = isRecording();
+                boolean isPausedActive = isPaused();
+                boolean shouldUpdate = (isRecordingActive || isPausedActive) && isFragmentAdded;
+                
+                if (shouldUpdate) {
                     // Always update storage info (lightweight)
                     // Timer calculation now reads directly from SharedPreferences in updateStorageUiWithCachedInfo
                     updateStorageInfo();
 
-                    // Update stats every 10 seconds during recording to avoid performance impact
-                    // OPTIMIZATION: Increased from 5 to 10 seconds to reduce CPU load during streaming
+                    // Update stats every 3 seconds during recording for live feedback
                     updateCounter++;
-                    if (updateCounter >= 10) {
+                    if (updateCounter >= 3) {
                         FLog.d(
                             TAG,
-                            "Update timer: Refreshing stats during recording (every 10s)"
+                            "📊 Stats Update Trigger: counter=" + updateCounter + 
+                            " (should call updateStats() every 3s for live data)"
                         );
                         updateStats();
                         updateCounter = 0;
+                    } else {
+                        FLog.d(TAG, "⏱️  Storage update only (counter=" + updateCounter + "/3)");
                     }
 
                     handlerClock.postDelayed(this, 1000); // Update storage every second
                 } else {
                     FLog.d(
                         TAG,
-                        "Update timer: Not recording or fragment detached, stopping updates"
+                        "⛔ Update Loop Stopped: isAdded=" + isFragmentAdded + 
+                        ", isRecording=" + isRecordingActive + 
+                        ", isPaused=" + isPausedActive
                     );
                     stopUpdatingInfo(); // Clean up if recording state changed
                 }
@@ -6910,6 +6962,147 @@ public class HomeFragment extends BaseFragment {
             updateInfoRunnable = null;
             // Only log when we actually stop (not at every opportunity)
             FLog.d(TAG, "stopUpdatingInfo: Stopped real-time storage/stats updates");
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────────
+    // Lifecycle Management - Pause/Resume handlers when app backgrounded
+    // ────────────────────────────────────────────────────────────────────────────────
+    
+    /**
+     * Setup lifecycle observer to pause/resume update handlers.
+     * Prevents battery drain when app is backgrounded.
+     */
+    private void setupLifecycleObserver() {
+        getLifecycle().addObserver(new androidx.lifecycle.LifecycleEventObserver() {
+            @Override
+            public void onStateChanged(@NonNull androidx.lifecycle.LifecycleOwner source, 
+                                       @NonNull androidx.lifecycle.Lifecycle.Event event) {
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
+                    FLog.d(TAG, "[LifecycleObserver] Fragment paused - pausing update handlers");
+                    pauseUpdateHandlers();
+                } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    FLog.d(TAG, "[LifecycleObserver] Fragment resumed - resuming update handlers");
+                    resumeUpdateHandlers();
+                } else if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+                    FLog.d(TAG, "[LifecycleObserver] Fragment destroyed - cleaning up handlers");
+                    cleanupUpdateHandlers();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Pause all update handlers (clock, storage, stats) when fragment is backgrounded.
+     * This prevents unnecessary CPU/battery drain while app is not visible.
+     */
+    private void pauseUpdateHandlers() {
+        FLog.d(TAG, "pauseUpdateHandlers: Pausing clock and info handlers");
+        
+        // Stop clock updates
+        if (updateClockRunnable != null) {
+            handlerClock.removeCallbacks(updateClockRunnable);
+            FLog.d(TAG, "pauseUpdateHandlers: Clock handler paused");
+        }
+        
+        // Stop storage + stats updates
+        if (updateInfoRunnable != null) {
+            handlerClock.removeCallbacks(updateInfoRunnable);
+            FLog.d(TAG, "pauseUpdateHandlers: Info handler (storage + stats) paused");
+        }
+        
+        // Pause background executor for file scanning
+        if (executorService != null && !executorService.isShutdown()) {
+            FLog.d(TAG, "pauseUpdateHandlers: Shutting down executor service");
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                    FLog.w(TAG, "pauseUpdateHandlers: Executor service shutdown timeout");
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            executorService = null;
+        }
+    }
+    
+    /**
+     * Resume all update handlers when fragment is foreground again.
+     * Only resumes if recording or paused.
+     */
+    private void resumeUpdateHandlers() {
+        FLog.d(TAG, "resumeUpdateHandlers: Attempting to resume handlers");
+        
+        if (!isAdded()) {
+            FLog.w(TAG, "resumeUpdateHandlers: Fragment not attached, skipping");
+            return;
+        }
+        
+        // Resume clock updates
+        if (isRecording() || isPaused()) {
+            if (updateClockRunnable != null) {
+                handlerClock.post(updateClockRunnable);
+                FLog.d(TAG, "resumeUpdateHandlers: Clock handler resumed");
+            } else {
+                startUpdatingClock();
+            }
+            
+            // Resume storage + stats updates
+            if (updateInfoRunnable != null) {
+                handlerClock.post(updateInfoRunnable);
+                FLog.d(TAG, "resumeUpdateHandlers: Info handler (storage + stats) resumed");
+            } else {
+                startUpdatingInfo();
+            }
+        } else {
+            FLog.d(TAG, "resumeUpdateHandlers: Not recording or paused, handlers remain stopped");
+        }
+        
+        // Re-create executor service if needed
+        if (executorService == null || executorService.isShutdown()) {
+            executorService = java.util.concurrent.Executors.newSingleThreadExecutor();
+            FLog.d(TAG, "resumeUpdateHandlers: Executor service re-created");
+        }
+    }
+    
+    /**
+     * Cleanup all handlers before fragment is destroyed.
+     * Ensures no handler leaks or dangling background tasks.
+     */
+    private void cleanupUpdateHandlers() {
+        FLog.d(TAG, "cleanupUpdateHandlers: Cleaning up all handlers");
+        
+        // Remove all pending clock callbacks
+        if (updateClockRunnable != null) {
+            handlerClock.removeCallbacks(updateClockRunnable);
+            updateClockRunnable = null;
+            FLog.d(TAG, "cleanupUpdateHandlers: Clock handler cleaned");
+        }
+        
+        // Remove all pending info callbacks
+        if (updateInfoRunnable != null) {
+            handlerClock.removeCallbacks(updateInfoRunnable);
+            updateInfoRunnable = null;
+            FLog.d(TAG, "cleanupUpdateHandlers: Info handler cleaned");
+        }
+        
+        // Shutdown executor service completely
+        if (executorService != null && !executorService.isShutdown()) {
+            FLog.d(TAG, "cleanupUpdateHandlers: Shutting down executor service");
+            try {
+                executorService.shutdown();
+                if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    List<java.lang.Runnable> remaining = executorService.shutdownNow();
+                    FLog.w(TAG, "cleanupUpdateHandlers: Force shutdown, " + remaining.size() + 
+                           " tasks not executed");
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            executorService = null;
         }
     }
 
@@ -6974,53 +7167,62 @@ public class HomeFragment extends BaseFragment {
         }
 
         executorService.submit(() -> {
-            // --- Primary source: Room DB (sub-millisecond, persistent, accurate) ---
-            // The Room DB is kept in sync by RecordsFragment's delta scan.
-            // This is the fastest and most reliable source for video stats.
-            if (!isRecording) {
-                try {
-                    com.fadcam.data.VideoIndexRepository repo =
-                        com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
-                    long[] quickStats = repo.getQuickStats();
-                    int dbCount = (int) quickStats[0];
-                    long dbTotalBytes = quickStats[1];
-                    long dbTotalMB = dbTotalBytes / (1024 * 1024);
-                    FLog.d(TAG, "updateStats BG: Room DB stats: " + dbCount + " videos, " + dbTotalMB + "MB");
-                    VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, dbTotalMB);
-                    updateStatsUI(dbCount, dbTotalMB);
+            // --- Primary source: Room DB (always, regardless of recording state) ---
+            try {
+                com.fadcam.data.VideoIndexRepository repo =
+                    com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+                long[] quickStats = repo.getQuickStats();
+                int dbCount = (int) quickStats[0];
+                long dbTotalBytes = quickStats[1];
+                long dbTotalMB = dbTotalBytes / (1024 * 1024);
 
-                    // If the video index was just invalidated (e.g. after recording
-                    // stopped), run a background delta scan to pick up the new file,
-                    // then re-query stats so the card auto-updates.
-                    if (repo.isIndexInvalidated()) {
-                        FLog.d(TAG, "updateStats BG: Index invalidated, running delta scan to pick up new files");
-                        repo.getVideos(sharedPreferencesManager); // Consumes invalidation flag + delta scans
-                        long[] freshStats = repo.getQuickStats();
-                        int freshCount = (int) freshStats[0];
-                        long freshMB = freshStats[1] / (1024 * 1024);
-                        if (freshCount != dbCount || freshMB != dbTotalMB) {
-                            FLog.d(TAG, "updateStats BG: Delta scan found changes: " + freshCount + " videos, " + freshMB + "MB");
-                            VideoStatsCache.updateStats(sharedPreferencesManager, freshCount, freshMB);
-                            updateStatsUI(freshCount, freshMB);
-                        }
-                    }
-                    return; // DB is the source of truth — done
-                } catch (Exception e) {
-                    FLog.w(TAG, "updateStats BG: Room DB query failed, falling back to scan: " + e.getMessage());
+                if (isRecording) {
+                    // Add the live size of the in-progress segment so "Used" updates in real time.
+                    // ActiveRecordingStats.getActiveFileSizeBytes() is cheap (File.length() or a
+                    // SAF ContentResolver query — both well under 1 ms on the background thread).
+                    long activeBytes = com.fadcam.ActiveRecordingStats.getActiveFileSizeBytes(requireContext());
+                    long activeMB = activeBytes / (1024 * 1024);
+                    long totalMBWithActive = dbTotalMB + activeMB;
+                    FLog.d(TAG, "updateStats BG: Recording — DB=" + dbTotalMB + "MB + live=" + activeMB + "MB = " + totalMBWithActive + "MB, count=" + dbCount);
+                    VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, totalMBWithActive);
+                    updateStatsUI(dbCount, totalMBWithActive);
+                    return;
                 }
+
+                FLog.d(TAG, "updateStats BG: Room DB stats: " + dbCount + " videos, " + dbTotalMB + "MB");
+                VideoStatsCache.updateStats(sharedPreferencesManager, dbCount, dbTotalMB);
+                updateStatsUI(dbCount, dbTotalMB);
+
+                // Not recording: also run delta scan if index was invalidated
+                // (e.g. immediately after recording stopped, to pick up the new file).
+                if (repo.isIndexInvalidated()) {
+                    FLog.d(TAG, "updateStats BG: Index invalidated, running delta scan to pick up new files");
+                    repo.getVideos(sharedPreferencesManager); // Consumes invalidation flag + delta scans
+                    long[] freshStats = repo.getQuickStats();
+                    int freshCount = (int) freshStats[0];
+                    long freshMB = freshStats[1] / (1024 * 1024);
+                    if (freshCount != dbCount || freshMB != dbTotalMB) {
+                        FLog.d(TAG, "updateStats BG: Delta scan found changes: " + freshCount + " videos, " + freshMB + "MB");
+                        VideoStatsCache.updateStats(sharedPreferencesManager, freshCount, freshMB);
+                        updateStatsUI(freshCount, freshMB);
+                    }
+                }
+                return; // DB is the source of truth — done
+            } catch (Exception e) {
+                FLog.w(TAG, "updateStats BG: Room DB query failed, falling back to scan: " + e.getMessage());
             }
 
-            // --- Fallback: Full scan (only during recording or if DB failed) ---
-            // During recording, we need a live scan to capture the growing file.
+            // --- Fallback: Full scan (only if Room DB failed) ---
             String storageMode = sharedPreferencesManager.getStorageMode();
             String customUriString =
                 sharedPreferencesManager.getCustomStorageUri();
             List<VideoItem> primaryItems;
-            List<VideoItem> tempItems;
 
             // --- Try to use shared session cache first (from VideoSessionCache) ---
-            FLog.d(TAG, "updateStats BG: Checking for shared session cache...");
-            if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid()) {
+            // IMPORTANT: Skip cache during active recording to ensure fresh file scans
+            // for live size updates. Only use cache when not recording.
+            FLog.d(TAG, "updateStats BG: Checking for shared session cache... (isRecording=" + isRecording + ")");
+            if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid() && !isRecording) {
                 FLog.d(
                     TAG,
                     "updateStats BG: Using shared session cache (" +
@@ -7030,7 +7232,6 @@ public class HomeFragment extends BaseFragment {
                 primaryItems = new ArrayList<>(
                     com.fadcam.utils.VideoSessionCache.getSessionCachedVideos()
                 );
-                tempItems = getTempCacheRecordsList();
 
                 // CRITICAL FIX: Since we're using shared cache, populate it for future
                 // cross-fragment use
@@ -7038,6 +7239,9 @@ public class HomeFragment extends BaseFragment {
                     primaryItems
                 );
             } else {
+                if (isRecording) {
+                    FLog.d(TAG, "updateStats BG: Skipping session cache during active recording - forcing fresh file scan for live updates");
+                }
                 // --- Load File Lists (Same logic as RecordsFragment) ---
                 FLog.d(
                     TAG,
@@ -7075,7 +7279,6 @@ public class HomeFragment extends BaseFragment {
                 } else {
                     primaryItems = getInternalRecordsList();
                 }
-                tempItems = getTempCacheRecordsList();
 
                 // Update shared session cache for other fragments
                 com.fadcam.utils.VideoSessionCache.updateSessionCache(
@@ -7083,11 +7286,8 @@ public class HomeFragment extends BaseFragment {
                 );
             }
 
-            // Combine (ok to run on background thread)
-            List<VideoItem> combinedItems = combineVideoLists(
-                primaryItems,
-                tempItems
-            );
+            // Use only primary items (temp files are deprecated - OpenGL pipeline no longer uses temp_ prefix)
+            List<VideoItem> combinedItems = primaryItems;
 
             // --- Calculate Stats (Count and Size) ---
             int numVideos = combinedItems.size();
@@ -7162,67 +7362,57 @@ public class HomeFragment extends BaseFragment {
      */
     private void updateStatsUI(int numVideos, long totalSizeMB) {
         if (getActivity() != null) {
+            final int[] videoCount = {numVideos};
+            final long[] sizeInMB = {totalSizeMB};
+
+            FLog.d(TAG, "updateStatsUI CALLED: Input values = " + videoCount[0] + " videos, " + sizeInMB[0] + "MB");
+
             getActivity().runOnUiThread(() -> {
-                    if (tvStats == null) {
-                        FLog.w(TAG, "updateStatsUI: tvStats is null.");
-                        return;
-                    }
+                if (tvVideoCount == null && tvVideoSize == null) {
+                    FLog.w(TAG, "updateStatsUI: stat views are null, skipping.");
+                    return;
+                }
 
-                    long totalSizeBytes = totalSizeMB * 1024 * 1024;
-                    String totalSizeFormatted = (getContext() != null)
-                        ? Formatter.formatFileSize(getContext(), totalSizeBytes)
-                        : String.format(
-                            Locale.US,
-                            "%.2f GB",
-                            totalSizeBytes / (1024.0 * 1024.0 * 1024.0)
-                        );
+                // Defensive 0-value check: never show 0 if previous was >0
+                if (videoCount[0] == 0 && lastKnownVideoCount > 0) {
+                    FLog.w(TAG, "updateStatsUI: Detected 0 videos but previous was " +
+                           lastKnownVideoCount + " - suppressing possible race condition");
+                    videoCount[0] = (int) lastKnownVideoCount;
+                }
+                if (sizeInMB[0] == 0 && lastKnownSizeMB > 0) {
+                    FLog.w(TAG, "updateStatsUI: Detected 0 MB but previous was " +
+                           lastKnownSizeMB + " - suppressing possible race condition");
+                    sizeInMB[0] = lastKnownSizeMB;
+                }
 
-                    // Get current theme
-                    String currentTheme =
-                        sharedPreferencesManager.sharedPreferences.getString(
-                            com.fadcam.Constants.PREF_APP_THEME,
-                            Constants.DEFAULT_APP_THEME
-                        );
-                    boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
+                if (videoCount[0] > 0) lastKnownVideoCount = videoCount[0];
+                if (sizeInMB[0] > 0) lastKnownSizeMB = sizeInMB[0];
 
-                    String statsText;
-                    if (isSnowVeilTheme) {
-                        // Create a custom black text version for Snow Veil theme
-                        statsText =
-                            "\n    " +
-                            "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
-                            "<font color='#333333' style='font-size:11sp;'>" +
-                            numVideos +
-                            "</font><br>" +
-                            "<font color='#000000' style='font-size:12sp;'><b>Used: </font>" +
-                            "<font color='#333333' style='font-size:11sp;'>" +
-                            totalSizeFormatted +
-                            "</font>" +
-                            "\n";
-                    } else {
-                        // Use the standard resource for other themes
-                        statsText = String.format(
-                            Locale.getDefault(),
-                            getString(R.string.mainpage_video_info), // Using your existing string resource
-                            numVideos,
-                            totalSizeFormatted
-                        );
-                    }
+                long totalSizeBytes = sizeInMB[0] * 1024L * 1024L;
+                String totalSizeFormatted = (getContext() != null)
+                    ? Formatter.formatFileSize(getContext(), totalSizeBytes)
+                    : String.format(Locale.US, "%.2f GB", totalSizeBytes / (1024.0 * 1024.0 * 1024.0));
 
-                    Spanned formattedText = Html.fromHtml(
-                        statsText,
-                        Html.FROM_HTML_MODE_LEGACY
-                    );
-                    tvStats.setText(formattedText);
+                lastAnimatedVideoCount = videoCount[0];
+                lastAnimatedSizeMB = sizeInMB[0];
 
-                    FLog.d(
-                        TAG,
-                        "updateStatsUI: Updated tvStats - " +
-                        numVideos +
-                        " videos, " +
-                        totalSizeFormatted
-                    );
-                });
+                // Video count — increases, animate UP.
+                String countText = String.valueOf(videoCount[0]);
+                if (tvVideoCount instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                    ((com.fadcam.ui.utils.AnimatedTextView) tvVideoCount).animateSlot(countText, 400);
+                } else if (tvVideoCount != null) {
+                    tvVideoCount.setText(countText);
+                }
+
+                // Used size — increases, animate UP.
+                if (tvVideoSize instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                    ((com.fadcam.ui.utils.AnimatedTextView) tvVideoSize).animateSlot(totalSizeFormatted, 400);
+                } else if (tvVideoSize != null) {
+                    tvVideoSize.setText(totalSizeFormatted);
+                }
+
+                FLog.d(TAG, "updateStatsUI: ✅ Updated stats - " + videoCount[0] + " videos, " + totalSizeFormatted);
+            });
         }
     }
 
@@ -7324,6 +7514,8 @@ public class HomeFragment extends BaseFragment {
             return items;
         }
 
+        FLog.d(TAG, "SAF scan: Starting scan for URI: " + treeUri);
+
         DocumentFile dir = DocumentFile.fromTreeUri(context, treeUri);
         if (dir == null || !dir.isDirectory() || !dir.canRead()) {
             FLog.e(
@@ -7345,7 +7537,7 @@ public class HomeFragment extends BaseFragment {
                 TAG,
                 "Progressive SAF scan starting: " +
                 allFiles.length +
-                " files to process"
+                " files to process in " + dir.getName()
             );
 
             // Process files in chunks to avoid blocking
@@ -7358,26 +7550,30 @@ public class HomeFragment extends BaseFragment {
                 // Process chunk
                 for (int j = i; j < endIndex; j++) {
                     DocumentFile file = allFiles[j];
-                    if (
-                        file != null &&
-                        file.isFile() &&
-                        file.getName() != null &&
-                        (file
-                                .getName()
-                                .endsWith(
-                                    "." + Constants.RECORDING_FILE_EXTENSION
-                                ) ||
-                            "video/mp4".equals(file.getType())) &&
-                        !file.getName().startsWith("temp_")
-                    ) {
-                        items.add(
-                            new VideoItem(
-                                file.getUri(),
-                                file.getName(),
-                                file.length(),
-                                file.lastModified()
-                            )
+                    if (file != null && file.isFile()) {
+                        String fileName = file.getName();
+                        String mimeType = file.getType();
+                        boolean isValidExtension = fileName != null && (
+                            fileName.endsWith("." + Constants.RECORDING_FILE_EXTENSION) ||
+                            "video/mp4".equals(mimeType)
                         );
+                        
+                        // Debug logging: show why each file was accepted or rejected
+                        if (!isValidExtension) {
+                            FLog.d(TAG, "SAF scan: Skipped '" + fileName + "' - extension=" + isValidExtension + ", mime=" + mimeType);
+                        }
+                        
+                        if (isValidExtension) {
+                            items.add(
+                                new VideoItem(
+                                    file.getUri(),
+                                    fileName,
+                                    file.length(),
+                                    file.lastModified()
+                                )
+                            );
+                            FLog.d(TAG, "SAF scan: Added '" + fileName + "' (" + file.length() + " bytes)");
+                        }
                     }
                 }
 
@@ -7404,7 +7600,9 @@ public class HomeFragment extends BaseFragment {
                 TAG,
                 "Progressive SAF scan completed: " +
                 items.size() +
-                " video items found"
+                " video items found (out of " +
+                allFiles.length +
+                " total files)"
             );
         } catch (Exception e) {
             FLog.e(TAG, "Error in progressive SAF scan for " + treeUri, e);
@@ -7420,71 +7618,7 @@ public class HomeFragment extends BaseFragment {
     }
 
 
-    private List<VideoItem> getTempCacheRecordsList() {
-        List<VideoItem> items = new ArrayList<>();
-        Context context = getContext();
-        if (context == null) return items;
-        File cacheBaseDir = context.getExternalCacheDir();
-        if (cacheBaseDir == null) return items;
-        File recordingTempDir = new File(cacheBaseDir, "recording_temp");
-        scanDirectoryForTempVideos(recordingTempDir, items);
-        // Scan other temp dirs if needed based on RecordingService logic
-        return items;
-    }
 
-    private void scanDirectoryForTempVideos(
-        File directory,
-        List<VideoItem> items
-    ) {
-        if (directory.exists() && directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (
-                        file.isFile() &&
-                        file.getName().startsWith("temp_") &&
-                        file
-                            .getName()
-                            .endsWith("." + Constants.RECORDING_FILE_EXTENSION)
-                    ) {
-                        if (file.length() > 0) {
-                            items.add(
-                                new VideoItem(
-                                    Uri.fromFile(file),
-                                    file.getName(),
-                                    file.length(),
-                                    file.lastModified()
-                                )
-                            );
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private List<VideoItem> combineVideoLists(
-        List<VideoItem> primary,
-        List<VideoItem> temp
-    ) {
-        List<VideoItem> combined = new ArrayList<>();
-        Set<Uri> existingUris = new HashSet<>();
-        for (VideoItem item : primary) {
-            if (
-                item != null && item.uri != null && existingUris.add(item.uri)
-            ) {
-                combined.add(item);
-            }
-        }
-        for (VideoItem item : temp) {
-            if (
-                item != null && item.uri != null && existingUris.add(item.uri)
-            ) {
-                combined.add(item);
-            }
-        }
-        return combined;
-    }
 
     private void pauseRecording() {
         FLog.d(TAG, "pauseRecording: Pausing video recording");
@@ -8653,8 +8787,8 @@ public class HomeFragment extends BaseFragment {
             executorService = null;
         }
 
-        stopUpdatingInfo();
-        stopUpdatingClock();
+        // Clean up all update handlers to prevent leaks
+        cleanupUpdateHandlers();
         updateMainSwipeGestureGate(false);
         if (pendingPreviewOnlyStartTimeoutRunnable != null) {
             previewOnlyStartHandler.removeCallbacks(pendingPreviewOnlyStartTimeoutRunnable);
@@ -9534,8 +9668,10 @@ public class HomeFragment extends BaseFragment {
         tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
         tvDateArabic = view.findViewById(R.id.tvDateArabic);
 
-        // Stats view
-        tvStats = view.findViewById(R.id.tvStats); // Assuming R.id.tvStats for video count/size
+        // Stats views — split label/value layout
+        tvVideoCount = view.findViewById(R.id.tvVideoCount);
+        tvVideoSize = view.findViewById(R.id.tvVideoSize);
+        tvSpaceTotal = view.findViewById(R.id.tvSpaceTotal);
 
         // Torch button (already initialized elsewhere, but good to have it
         // consistently)
@@ -11122,71 +11258,11 @@ public class HomeFragment extends BaseFragment {
         CardView cardStorage = rootView.findViewById(R.id.cardStorage);
         CardView cardClock = rootView.findViewById(R.id.cardClock);
 
-        // Stats card text - this card shows videos space info below the clock
+        // Stats card text — tvVideoCount and tvVideoSize preserve their XML colors
+        // via android:tag="preserve_color" so no extra colour handling is needed here.
         if (cardStats != null) {
-            // Force all text in the stats card to black, including headings
+            // Force all text in the stats card to black (Snow Veil theme — white background).
             forceForceMakeAllTextBlack(cardStats);
-
-            // Extra handling for the HTML/styled text in tvStats which might need special
-            // handling
-            if (tvStats != null) {
-                // For Snow Veil theme, we need to override the HTML color codes
-                if (tvStats.getText() != null) {
-                    // Get current stats data
-                    String currentText = tvStats.getText().toString();
-
-                    // Extract the numbers from the current text
-                    int videoCount = 0;
-                    String usedSpace = "";
-                    try {
-                        // Try to parse out the values from the formatted text
-                        String[] lines = currentText.split("\\n");
-                        for (String line : lines) {
-                            if (line.contains("Videos:")) {
-                                // Extract number after "Videos:"
-                                String[] parts = line.trim().split(":");
-                                if (parts.length > 1) {
-                                    videoCount = Integer.parseInt(
-                                        parts[1].trim()
-                                    );
-                                }
-                            } else if (line.contains("Used Space:")) {
-                                // Extract text after "Used Space:"
-                                String[] parts = line.trim().split(":");
-                                if (parts.length > 1) {
-                                    usedSpace = parts[1].trim();
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        FLog.e(
-                            TAG,
-                            "Error parsing stats text: " + e.getMessage()
-                        );
-                    }
-
-                    // Create a custom black text version for Snow Veil theme
-                    String blackStatsText =
-                        "\n    " +
-                        "<font color='#000000' style='font-size:12sp;'><b>Videos: </b></font>" +
-                        "<font color='#333333' style='font-size:11sp;'>" +
-                        videoCount +
-                        "</font><br>" +
-                        "<font color='#000000' style='font-size:12sp;'><b>Used: </font>" +
-                        "<font color='#333333' style='font-size:11sp;'>" +
-                        usedSpace +
-                        "</font>" +
-                        "\n";
-
-                    // Apply the black text version
-                    tvStats.setText(
-                        Html.fromHtml(
-                            blackStatsText,
-                            Html.FROM_HTML_MODE_LEGACY
-                        )
-                    );
-                }
-            }
         }
 
         // Storage info card text - use white text since it has dark background

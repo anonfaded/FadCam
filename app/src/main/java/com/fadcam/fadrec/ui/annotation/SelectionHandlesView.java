@@ -12,7 +12,7 @@ import android.view.View;
 import com.fadcam.fadrec.ui.annotation.objects.AnnotationObject;
 
 /**
- * Telegram/Instagram-style selection handles overlay.
+ * Selection handles overlay for annotation objects.
  * Shows dotted border with corner handles for scaling and top handle for rotation.
  */
 public class SelectionHandlesView extends View {

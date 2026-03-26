@@ -686,7 +686,7 @@ public class AnnotationView extends View {
     }
     
     /**
-     * Draw Telegram/Instagram-style selection handles with dotted border
+     * Draw selection handles with dotted border
      * Border rotates and scales with the object, but handles stay consistent size
      */
     private void drawSelectionHandles(Canvas canvas, AnnotationObject obj) {
