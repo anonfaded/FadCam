@@ -1629,7 +1629,7 @@ public class HomeFragment extends BaseFragment {
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded)
             );
             buttonStartStop.setEnabled(true);
-        });
+        }, true);
 
         // Re-enable camera switch button (may have been disabled during WAITING_FOR_CAMERA)
         if (buttonCamSwitch != null) {
@@ -1672,7 +1672,7 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setIcon(
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded)
             );
-        });
+        }, true);
     }
 
     // --- Receiver for MediaRecorder Stopped signal ---
@@ -1789,7 +1789,7 @@ public class HomeFragment extends BaseFragment {
                     // Force enable the button when resetting to idle state, regardless of any debouncing
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
-                });
+                }, false);
                 FLog.d(TAG, "Start button force-enabled in resetUIButtonsToIdleState");
             }
             if (buttonPauseResume != null) {
@@ -2689,7 +2689,7 @@ public class HomeFragment extends BaseFragment {
                         R.drawable.stop_rounded
                     )
                 );
-            });
+            }, true);
 
             buttonPauseResume.setEnabled(true); // Enable PAUSE
             buttonPauseResume.setIcon(
@@ -2747,7 +2747,7 @@ public class HomeFragment extends BaseFragment {
                         R.drawable.stop_rounded
                     )
                 );
-            });
+            }, true);
 
             buttonPauseResume.setEnabled(true); // Enable RESUME
             buttonPauseResume.setIcon(
@@ -2811,7 +2811,7 @@ public class HomeFragment extends BaseFragment {
                         R.drawable.stop_rounded
                     )
                 );
-            });
+            }, true);
 
             // Disable pause button during camera interruption (doesn't make sense)
             buttonPauseResume.setEnabled(false);
@@ -6645,7 +6645,7 @@ public class HomeFragment extends BaseFragment {
                         String oldCamTitle = tvCameraTitle.getText() != null ? tvCameraTitle.getText().toString() : "";
                         if (!oldCamTitle.equals(finalCameraLabel)) {
                             if (tvCameraTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvCameraTitle).animateSlot(finalCameraLabel, 400);
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvCameraTitle).animateSlotFull(finalCameraLabel, 400);
                             } else {
                                 tvCameraTitle.setText(finalCameraLabel);
                             }
@@ -6655,7 +6655,7 @@ public class HomeFragment extends BaseFragment {
                         String oldCamSub = tvCameraSubtitle.getText() != null ? tvCameraSubtitle.getText().toString() : "";
                         if (!oldCamSub.equals(cameraSubtitle)) {
                             if (tvCameraSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvCameraSubtitle).animateSlot(cameraSubtitle, 400);
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvCameraSubtitle).animateSlotFull(cameraSubtitle, 400);
                             } else {
                                 tvCameraSubtitle.setText(cameraSubtitle);
                             }
@@ -6667,12 +6667,23 @@ public class HomeFragment extends BaseFragment {
                         com.fadcam.CameraType camType =
                             sharedPreferencesManager.getCameraSelection();
                         if (ivCameraIcon != null) {
+                            String newIconText;
                             if (camType == com.fadcam.CameraType.FRONT) {
-                                ivCameraIcon.setText("camera_front");
+                                newIconText = "camera_front";
                             } else if (camType.isDual()) {
-                                ivCameraIcon.setText("switch_video");
+                                newIconText = "switch_video";
                             } else {
-                                ivCameraIcon.setText("camera_alt");
+                                newIconText = "camera_alt";
+                            }
+                            String oldIconText = ivCameraIcon.getText() != null
+                                    ? ivCameraIcon.getText().toString() : "";
+                            if (!oldIconText.equals(newIconText)) {
+                                if (ivCameraIcon instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                    ((com.fadcam.ui.utils.AnimatedTextView) ivCameraIcon)
+                                            .animateSlotFull(newIconText, 400);
+                                } else {
+                                    ivCameraIcon.setText(newIconText);
+                                }
                             }
                         }
                     } catch (Exception ignored) {}
@@ -6771,23 +6782,36 @@ public class HomeFragment extends BaseFragment {
      * @param newText      The text that {@code applyChanges} will set — used to decide
      *                     whether an animation is actually needed.
      * @param applyChanges Runnable that sets all visual properties (text, icon, tint…).
+     * @param slideUp      {@code true} → outgoing content exits upward and incoming
+     *                     comes from below (matches slot-UP for increasing state, e.g.
+     *                     Start → Stop).  {@code false} → inverse (Stop → Start).
      */
     private void animateButtonTransition(
             @NonNull MaterialButton button,
             @NonNull CharSequence newText,
-            @NonNull Runnable applyChanges) {
+            @NonNull Runnable applyChanges,
+            boolean slideUp) {
         CharSequence current = button.getText();
         if (current != null && current.toString().equals(newText.toString())) {
             applyChanges.run();
             return;
         }
         button.animate().cancel();
+        button.setTranslationY(0f); // reset any leftover from previous implementation
+        // Fade only — button stays in place, only its content (text + icon) appears
+        // to change. The alpha goes to 0 during the brief content swap.
         button.animate()
-                .alpha(0.08f)
-                .setDuration(110)
+                .alpha(0f)
+                .setDuration(100)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f))
                 .withEndAction(() -> {
                     applyChanges.run();
-                    button.animate().alpha(1f).setDuration(180).start();
+                    button.setAlpha(0f);
+                    button.animate()
+                            .alpha(1f)
+                            .setDuration(180)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                            .start();
                 })
                 .start();
     }

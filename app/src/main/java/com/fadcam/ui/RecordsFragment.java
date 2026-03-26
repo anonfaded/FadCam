@@ -2935,7 +2935,19 @@ public class RecordsFragment extends BaseFragment implements
 
     private void setChipLabelWithCount(@Nullable Chip chip, int baseLabelRes, int count) {
         if (chip == null) return;
-        chip.setText(getString(baseLabelRes) + " (" + count + ")");
+        String newLabel = getString(baseLabelRes) + " (" + count + ")";
+        CharSequence current = chip.getText();
+        if (current != null && current.toString().equals(newLabel)) return;
+        chip.animate().cancel();
+        chip.animate()
+                .alpha(0f)
+                .setDuration(80)
+                .withEndAction(() -> {
+                    chip.setText(newLabel);
+                    chip.setAlpha(0f);
+                    chip.animate().alpha(1f).setDuration(150).start();
+                })
+                .start();
     }
 
     private int getShotSubtypeCount(@NonNull VideoItem.ShotSubtype subtype) {
@@ -4244,9 +4256,31 @@ public class RecordsFragment extends BaseFragment implements
                 totalBytes += Math.max(0L, item.size);
             }
         }
-        if (statsPhotosText != null) statsPhotosText.setText(String.valueOf(photos));
-        if (statsVideosText != null) statsVideosText.setText(String.valueOf(videos));
-        if (statsSizeText != null) statsSizeText.setText(Formatter.formatShortFileSize(requireContext(), totalBytes));
+        String photosStr = String.valueOf(photos);
+        String videosStr = String.valueOf(videos);
+        String sizeStr   = Formatter.formatShortFileSize(requireContext(), totalBytes);
+
+        if (statsVideosText != null) {
+            if (statsVideosText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) statsVideosText).animateSlotFull(videosStr, 350);
+            } else {
+                statsVideosText.setText(videosStr);
+            }
+        }
+        if (statsPhotosText != null) {
+            if (statsPhotosText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) statsPhotosText).animateSlotFull(photosStr, 350);
+            } else {
+                statsPhotosText.setText(photosStr);
+            }
+        }
+        if (statsSizeText != null) {
+            if (statsSizeText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) statsSizeText).animateSlotFull(sizeStr, 350);
+            } else {
+                statsSizeText.setText(sizeStr);
+            }
+        }
     }
 
     // Add the missing SpacesItemDecoration class back into the RecordsFragment

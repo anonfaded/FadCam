@@ -64,7 +64,7 @@
                     android:src="@drawable/ic_stat_playback"
                     android:tint="#CCFFFFFF" />
 
-                <TextView
+                <com.fadcam.ui.utils.AnimatedTextView
                     android:id="@+id/text_records_stat_videos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -81,7 +81,7 @@
                     android:src="@drawable/ic_photo"
                     android:tint="#CCFFFFFF" />
 
-                <TextView
+                <com.fadcam.ui.utils.AnimatedTextView
                     android:id="@+id/text_records_stat_photos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -98,7 +98,7 @@
                     android:src="@drawable/database_24px"
                     android:tint="#CCFFFFFF" />
 
-                <TextView
+                <com.fadcam.ui.utils.AnimatedTextView
                     android:id="@+id/text_records_stat_size"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

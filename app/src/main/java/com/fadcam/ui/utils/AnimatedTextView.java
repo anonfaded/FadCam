@@ -83,10 +83,35 @@ public class AnimatedTextView extends AppCompatTextView {
      * @param durationMs Animation duration in milliseconds
      */
     public void animateSlotDown(CharSequence newText, long durationMs) {
-        animateSlotInternal(newText, durationMs, false);
+        animateSlotInternal(newText, durationMs, false, false);
+    }
+
+    /**
+     * Like {@link #animateSlot} but always animates the full string as a single unit
+     * (no differential prefix/suffix detection).  Useful when the strings share a
+     * common suffix in their character sequence but differ enough in rendered width
+     * that partial animation would cause visible overlap, e.g. "Front Camera" →
+     * "Rear Camera".
+     *
+     * @param newText    The new text to display
+     * @param durationMs Animation duration in milliseconds
+     */
+    public void animateSlotFull(CharSequence newText, long durationMs) {
+        animateSlotInternal(newText, durationMs, true, true);
+    }
+
+    /**
+     * Like {@link #animateSlotFull} but slides DOWN.
+     */
+    public void animateSlotFullDown(CharSequence newText, long durationMs) {
+        animateSlotInternal(newText, durationMs, false, true);
     }
 
     private void animateSlotInternal(CharSequence newText, long durationMs, boolean upward) {
+        animateSlotInternal(newText, durationMs, upward, false);
+    }
+
+    private void animateSlotInternal(CharSequence newText, long durationMs, boolean upward, boolean forceFull) {
         // Debounce rapid updates — if a new value arrives too quickly just set it.
         long now = System.currentTimeMillis();
         if (now - lastUpdateTime < DEBOUNCE_MS) {
@@ -137,23 +162,32 @@ public class AnimatedTextView extends AppCompatTextView {
         int usableW = getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight();
         if (usableW < 1) usableW = 1;
 
+        // Compute a layout width that fits both texts on a single line.
+        // Using usableW alone causes the new (wider) text to wrap during animation when the
+        // view is wrap_content-sized for the old shorter text — e.g. animating
+        // "Back Camera" → "Front Camera" wraps "Camera" to line 2 so it appears late.
+        int maxNeededW = (int) Math.ceil(Math.max(
+                oldStr.isEmpty() ? 0f : paint.measureText(oldStr),
+                newStr.isEmpty() ? 0f : paint.measureText(newStr)));
+        int layoutW = Math.max(usableW, maxNeededW);
+
         // Always build FULL-STRING layouts so every region (prefix, column, suffix) is
         // rendered by the same StaticLayout engine — identical baselines everywhere.
         // Using partial-string layouts for the column caused a per-pixel Y mismatch with
         // canvas.drawText() for the prefix/suffix due to StaticLayout includeFontPadding,
         // which manifested as the whole row jiggling during animation.
         slotOldLayout = StaticLayout.Builder
-                .obtain(oldStr, 0, oldStr.length(), paint, usableW)
+                .obtain(oldStr, 0, oldStr.length(), paint, layoutW)
                 .setAlignment(alignment)
                 .setIncludePad(includePad)
                 .build();
         slotNewLayout = StaticLayout.Builder
-                .obtain(newStr, 0, newStr.length(), paint, usableW)
+                .obtain(newStr, 0, newStr.length(), paint, layoutW)
                 .setAlignment(alignment)
                 .setIncludePad(includePad)
                 .build();
 
-        boolean hasDiff = prefixLen > 0 || suffixLen > 0;
+        boolean hasDiff = !forceFull && (prefixLen > 0 || suffixLen > 0);
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
             slotPrefixWidth     = prefixW;
@@ -162,8 +196,8 @@ public class AnimatedTextView extends AppCompatTextView {
         } else {
             // Full-string animation — no stable prefix or suffix.
             slotPrefixWidth     = 0f;
-            slotColumnWidth     = usableW;
-            slotNewChangedWidth = usableW;       // effectively no suffix
+            slotColumnWidth     = layoutW;       // cover the full rendered width
+            slotNewChangedWidth = layoutW;       // effectively no suffix
         }
 
         slotPendingFinalText = newText;
@@ -269,8 +303,9 @@ public class AnimatedTextView extends AppCompatTextView {
         // Column bounds derived from prefix/changed-text widths.
         float colLeft     = left + slotPrefixWidth;
         float colRight    = colLeft + slotColumnWidth;
-        // suffixStart is where newStr's suffix begins inside the full layout.
-        float suffixStart = colLeft + slotNewChangedWidth;
+        // Suffix always starts at colRight so it never encroaches on the animated column,
+        // even when the old changed-text is wider than the new one (prevents overlap).
+        float suffixStart = colRight;
 
         canvas.save();
         canvas.clipRect(left, top, right, bottom); // never bleed outside view bounds
