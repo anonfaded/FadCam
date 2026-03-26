@@ -5732,11 +5732,15 @@ public class RecordingService extends Service {
     private String currentSegmentPath;
     private String currentSegmentUriString;
     
-    // ⚠️ CRITICAL: Track ParcelFileDescriptor for SAF segments to prevent premature closure
+    // ⚠️ CRITICAL: Track ParcelFileDescriptors for SAF segments to prevent premature closure
     // The try-with-resources was auto-closing the PFD while the raw FileDescriptor was still
     // being used by the GL pipeline, causing EBADF (Bad File Descriptor) errors on write.
-    // Keep the PFD alive until the next segment starts, then close it.
+    // Keep TWO references:
+    // - currentSegmentParcelFileDescriptor: NEW PFD that GL pipeline will use
+    // - previousSegmentParcelFileDescriptor: OLD PFD that old muxer is still finalizing
+    // Only close previousSegmentParcelFileDescriptor AFTER old muxer is completely stopped
     private ParcelFileDescriptor currentSegmentParcelFileDescriptor;
+    private ParcelFileDescriptor previousSegmentParcelFileDescriptor;
     
     // Track all temporary files created during STREAM_ONLY mode for cleanup
     // In STREAM_ONLY, 0-byte segment files are created (GL pipeline needs a handle)
@@ -5817,23 +5821,30 @@ public class RecordingService extends Service {
                     FLog.i(TAG, "📺 STREAM_ONLY (SAF rollover): Tracking temp URI: " + safUri);
                 }
                 
-                // ⚠️ CRITICAL FIX: Manage ParcelFileDescriptor lifecycle manually
-                // Previously: try-with-resources auto-closed PFD while GL pipeline was still using raw FD
-                // Result: EBADF (Bad File Descriptor) errors
-                // Solution: Keep PFD alive until next segment starts, then close it
+                // ⚠️ CRITICAL FIX v2: Defer closing old PFD until muxer is completely done
+                // Timeline:
+                // 1. onSegmentRollover(N) called - GL pipeline switches to new segment
+                // 2. Old muxer (segment N-1) still needs its PFD for async finalization
+                // 3. onSegmentRollover(N+1) called - NOW it's safe to close segment N-1's PFD
+                //    because GLRecordingPipeline has already completed rollover for segment N
                 
-                // First, close the previous segment's PFD if it exists
-                if (currentSegmentParcelFileDescriptor != null) {
+                // Close the PREVIOUS segment's PFD (segment N-1)
+                // Safe because GL pipeline finished handling it during the last transition
+                if (previousSegmentParcelFileDescriptor != null) {
                     try {
-                        currentSegmentParcelFileDescriptor.close();
-                        FLog.d(TAG, "Closed previous segment's ParcelFileDescriptor");
+                        previousSegmentParcelFileDescriptor.close();
+                        FLog.d(TAG, "Closed previous-previous segment's ParcelFileDescriptor (deferred close)");
                     } catch (Exception e) {
-                        FLog.w(TAG, "Error closing previous segment PFD", e);
+                        FLog.w(TAG, "Error closing deferred PFD", e);
                     }
-                    currentSegmentParcelFileDescriptor = null;
+                    previousSegmentParcelFileDescriptor = null;
                 }
                 
-                // Now open the new PFD and KEEP IT alive
+                // Move current PFD to previous before opening new one
+                previousSegmentParcelFileDescriptor = currentSegmentParcelFileDescriptor;
+                currentSegmentParcelFileDescriptor = null;
+                
+                // Now open the new PFD for the new segment
                 try {
                     ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w");
                     if (pfd == null) {
@@ -5842,7 +5853,7 @@ public class RecordingService extends Service {
                         return;
                     }
                     
-                    // Store the PFD so it stays alive (won't be auto-closed)
+                    // Store the NEW PFD as current
                     currentSegmentParcelFileDescriptor = pfd;
                     FLog.d(TAG, "Successfully created new segment file with SAF: " + videoFile.getName());
                     
