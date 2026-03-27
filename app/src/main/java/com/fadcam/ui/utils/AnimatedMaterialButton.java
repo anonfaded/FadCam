@@ -3,11 +3,14 @@ package com.fadcam.ui.utils;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import androidx.annotation.Nullable;
 import com.google.android.material.button.MaterialButton;
 
 /**
@@ -69,6 +72,56 @@ public class AnimatedMaterialButton extends MaterialButton {
     /** Differential slot (shared-prefix stays static, only changed part animates UP). */
     public void animateSlot(CharSequence newText, long durationMs) {
         animateSlotInternal(newText, durationMs, true, false);
+    }
+
+    /**
+     * Crossfades the button icon from the current icon to {@code newIcon}.
+     * Fades the current icon out, swaps drawables, then fades the new icon in.
+     *
+     * @param newIcon    The new icon drawable (may be null to clear the icon)
+     * @param durationMs Total duration; each half-cycle takes durationMs/2 ms
+     */
+    public void animateIcon(@Nullable Drawable newIcon, long durationMs) {
+        Drawable current = getIcon();
+        if (current == null || newIcon == null) {
+            setIcon(newIcon);
+            return;
+        }
+        ValueAnimator fadeOut = ValueAnimator.ofInt(255, 0);
+        fadeOut.setDuration(durationMs / 2);
+        fadeOut.setInterpolator(new AccelerateInterpolator());
+        fadeOut.addUpdateListener(a -> {
+            current.setAlpha((int) a.getAnimatedValue());
+            invalidate();
+        });
+        fadeOut.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                // Prepare the new drawable at alpha=0 BEFORE installing it so the very
+                // first rendered frame after setIcon() starts from invisible, not full alpha.
+                Drawable fresh = newIcon.mutate();
+                fresh.setAlpha(0);
+                setIcon(fresh);
+                // 'current' lost its Drawable.Callback after setIcon(), so this reset
+                // does NOT trigger a redraw of the old icon — no blink.
+                current.setAlpha(255);
+                ValueAnimator fadeIn = ValueAnimator.ofInt(0, 255);
+                fadeIn.setDuration(durationMs / 2);
+                fadeIn.setInterpolator(new DecelerateInterpolator());
+                fadeIn.addUpdateListener(a2 -> {
+                    fresh.setAlpha((int) a2.getAnimatedValue());
+                    invalidate();
+                });
+                fadeIn.addListener(new android.animation.AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(android.animation.Animator animation) {
+                        fresh.setAlpha(255); // ensure full alpha on completion
+                    }
+                });
+                fadeIn.start();
+            }
+        });
+        fadeOut.start();
     }
 
     /** Cancel any running animation and reset state. */
@@ -222,13 +275,19 @@ public class AnimatedMaterialButton extends MaterialButton {
         // so super draws only background, ripple and icon — no text visible.
         super.onDraw(canvas);
 
-        // Compute vertical center for the animated text (same as how the button centers it).
-        int left   = getCompoundPaddingLeft();
-        int textH  = Math.max(slotOldLayout.getHeight(), slotNewLayout.getHeight());
-        int top    = Math.max(0, (getHeight() - textH) / 2);
-        int bottom = top + textH;
+        // Use the same Y origin as TextView.onDraw() for a CENTER_VERTICAL button:
+        // extendedPaddingTop + (available - textH) / 2.  This accounts for the extra
+        // height that Material buttons gain from insetTop/insetBottom touch-target sizing
+        // and minHeight — without it, text would animate above the true center.
+        int left     = getCompoundPaddingLeft();
+        int textH    = Math.max(slotOldLayout.getHeight(), slotNewLayout.getHeight());
+        int extTop   = getExtendedPaddingTop();
+        int extBot   = getExtendedPaddingBottom();
+        int available = Math.max(0, getHeight() - extTop - extBot);
+        int top      = extTop + Math.max(0, (available - textH) / 2);
+        int bottom   = top + textH;
 
-        int slideDistance = textH > 0 ? textH : getHeight();
+        int slideDistance = textH > 0 ? textH : bottom - top;
 
         float oldY, newY;
         if (slotUpward) {

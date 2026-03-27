@@ -208,13 +208,15 @@ public class AnimatedChip extends Chip {
         super.onDraw(canvas);
 
         // Now draw our animated text on top.
-        int left = getCompoundPaddingLeft();
-        // Vertically center the animated text the same way ChipDrawable centers it.
+        // ChipDrawable centers text at (chipHeight - textH) / 2.  Mirror that here so
+        // the last animated frame and the post-animation ChipDrawable frame are at the
+        // same Y — no position snap.
+        int left  = getCompoundPaddingLeft();
         int textH = Math.max(slotOldLayout.getHeight(), slotNewLayout.getHeight());
-        int top    = Math.max(0, (getHeight() - textH) / 2);
+        int top   = Math.max(0, (getHeight() - textH) / 2);
         int bottom = top + textH;
 
-        int slideDistance = textH > 0 ? textH : getHeight();
+        int slideDistance = textH > 0 ? textH : bottom - top;
 
         float oldY, newY;
         if (slotUpward) {
