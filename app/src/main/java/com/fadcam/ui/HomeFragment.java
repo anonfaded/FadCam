@@ -1624,7 +1624,6 @@ public class HomeFragment extends BaseFragment {
                     ContextCompat.getColor(requireContext(), R.color.button_stop)
                 )
             );
-            buttonStartStop.setText(getString(R.string.button_stop));
             buttonStartStop.setIcon(
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded)
             );
@@ -1668,7 +1667,6 @@ public class HomeFragment extends BaseFragment {
                     ContextCompat.getColor(requireContext(), R.color.button_stop)
                 )
             );
-            buttonStartStop.setText(getString(R.string.button_stop));
             buttonStartStop.setIcon(
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded)
             );
@@ -1774,7 +1772,6 @@ public class HomeFragment extends BaseFragment {
                 "Faded Night".equalsIgnoreCase(themeName);
             if (buttonStartStop != null) {
                 animateButtonTransition(buttonStartStop, getString(R.string.button_start), () -> {
-                    buttonStartStop.setText(R.string.button_start);
                     buttonStartStop.setIcon(
                         AppCompatResources.getDrawable(
                             getContext(),
@@ -2682,7 +2679,6 @@ public class HomeFragment extends BaseFragment {
                         R.color.button_stop
                     )
                 );
-                buttonStartStop.setText(getString(R.string.button_stop));
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(
                         requireContext(),
@@ -2740,7 +2736,6 @@ public class HomeFragment extends BaseFragment {
                         R.color.button_stop
                     )
                 );
-                buttonStartStop.setText(getString(R.string.button_stop));
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(
                         requireContext(),
@@ -2804,7 +2799,6 @@ public class HomeFragment extends BaseFragment {
                         R.color.button_stop
                     )
                 );
-                buttonStartStop.setText(getString(R.string.button_stop));
                 buttonStartStop.setIcon(
                     AppCompatResources.getDrawable(
                         requireContext(),
@@ -6680,7 +6674,7 @@ public class HomeFragment extends BaseFragment {
                             if (!oldIconText.equals(newIconText)) {
                                 if (ivCameraIcon instanceof com.fadcam.ui.utils.AnimatedTextView) {
                                     ((com.fadcam.ui.utils.AnimatedTextView) ivCameraIcon)
-                                            .animateSlotFull(newIconText, 400);
+                                            .animateCrossfade(newIconText, 300);
                                 } else {
                                     ivCameraIcon.setText(newIconText);
                                 }
@@ -6773,47 +6767,40 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
-     * Applies changes to a {@link com.google.android.material.button.MaterialButton}
-     * with a brief fade-out → apply → fade-in transition so users notice the function
-     * change (e.g. Start ↔ Stop).  If {@code newText} matches the button's current text
-     * the changes are applied immediately without animation to avoid needless flicker.
+     * Transitions the Start/Stop button between states.
      *
-     * @param button       Target button.
-     * @param newText      The text that {@code applyChanges} will set — used to decide
-     *                     whether an animation is actually needed.
-     * @param applyChanges Runnable that sets all visual properties (text, icon, tint…).
-     * @param slideUp      {@code true} → outgoing content exits upward and incoming
-     *                     comes from below (matches slot-UP for increasing state, e.g.
-     *                     Start → Stop).  {@code false} → inverse (Stop → Start).
+     * <p>The button icon and background tint are applied immediately via {@code applyChanges}.
+     * If the button is an {@link com.fadcam.ui.utils.AnimatedMaterialButton}, the text label
+     * animates with a slot-machine slide.  Otherwise {@link MaterialButton#setText} is called
+     * directly.
+     *
+     * @param button       The target button.
+     * @param newText      New label text.
+     * @param applyChanges Runnable that sets icon, backgroundTint, enabled state, etc.
+     * @param slideUp      {@code true} → label slides UP (Start → Stop); {@code false} → DOWN.
      */
     private void animateButtonTransition(
             @NonNull MaterialButton button,
             @NonNull CharSequence newText,
             @NonNull Runnable applyChanges,
             boolean slideUp) {
-        CharSequence current = button.getText();
-        if (current != null && current.toString().equals(newText.toString())) {
-            applyChanges.run();
-            return;
+        // Apply icon / tint / enabled-state changes immediately.
+        applyChanges.run();
+        // Animate the text label with slot machine if the button supports it.
+        if (button instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
+            com.fadcam.ui.utils.AnimatedMaterialButton animated =
+                    (com.fadcam.ui.utils.AnimatedMaterialButton) button;
+            CharSequence current = animated.getText();
+            if (current == null || !current.toString().equals(newText.toString())) {
+                if (slideUp) {
+                    animated.animateSlotFull(newText, 300);
+                } else {
+                    animated.animateSlotFullDown(newText, 300);
+                }
+            }
+        } else {
+            button.setText(newText);
         }
-        button.animate().cancel();
-        button.setTranslationY(0f); // reset any leftover from previous implementation
-        // Fade only — button stays in place, only its content (text + icon) appears
-        // to change. The alpha goes to 0 during the brief content swap.
-        button.animate()
-                .alpha(0f)
-                .setDuration(100)
-                .setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f))
-                .withEndAction(() -> {
-                    applyChanges.run();
-                    button.setAlpha(0f);
-                    button.animate()
-                            .alpha(1f)
-                            .setDuration(180)
-                            .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
-                            .start();
-                })
-                .start();
     }
 
     private String formatRemainingTime(

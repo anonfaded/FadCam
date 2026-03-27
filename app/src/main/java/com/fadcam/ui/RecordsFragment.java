@@ -353,30 +353,30 @@ public class RecordsFragment extends BaseFragment implements
     private View selectAllContainer;
     private android.widget.ImageView selectAllCheck;
     private CharSequence originalToolbarTitle;
-    private Chip chipFilterAll;
-    private Chip chipFilterCamera;
-    private Chip chipFilterScreen;
-    private Chip chipFilterFaditor;
-    private Chip chipFilterStream;
-    private Chip chipFilterShot;
+    private com.fadcam.ui.utils.AnimatedChip chipFilterAll;
+    private com.fadcam.ui.utils.AnimatedChip chipFilterCamera;
+    private com.fadcam.ui.utils.AnimatedChip chipFilterScreen;
+    private com.fadcam.ui.utils.AnimatedChip chipFilterFaditor;
+    private com.fadcam.ui.utils.AnimatedChip chipFilterStream;
+    private com.fadcam.ui.utils.AnimatedChip chipFilterShot;
     private ChipGroup chipGroupRecordsFilter;
     private View cameraFilterRow;
     private ChipGroup chipGroupCameraFilter;
-    private Chip chipCameraAll;
-    private Chip chipCameraBack;
-    private Chip chipCameraFront;
-    private Chip chipCameraDual;
+    private com.fadcam.ui.utils.AnimatedChip chipCameraAll;
+    private com.fadcam.ui.utils.AnimatedChip chipCameraBack;
+    private com.fadcam.ui.utils.AnimatedChip chipCameraFront;
+    private com.fadcam.ui.utils.AnimatedChip chipCameraDual;
     private View faditorFilterRow;
     private ChipGroup chipGroupFaditorFilter;
-    private Chip chipFaditorAll;
-    private Chip chipFaditorConverted;
-    private Chip chipFaditorMerge;
+    private com.fadcam.ui.utils.AnimatedChip chipFaditorAll;
+    private com.fadcam.ui.utils.AnimatedChip chipFaditorConverted;
+    private com.fadcam.ui.utils.AnimatedChip chipFaditorMerge;
     private View shotFilterRow;
     private ChipGroup chipGroupShotFilter;
-    private Chip chipShotAll;
-    private Chip chipShotBack;
-    private Chip chipShotSelfie;
-    private Chip chipShotFadrec;
+    private com.fadcam.ui.utils.AnimatedChip chipShotAll;
+    private com.fadcam.ui.utils.AnimatedChip chipShotBack;
+    private com.fadcam.ui.utils.AnimatedChip chipShotSelfie;
+    private com.fadcam.ui.utils.AnimatedChip chipShotFadrec;
     private TextView filterHelperText;
     private TextView filterChecklistButton;
     private View selectionActionsRow;
@@ -2933,21 +2933,12 @@ public class RecordsFragment extends BaseFragment implements
         setChipLabelWithCount(chipFaditorMerge, R.string.records_filter_faditor_merge, merge);
     }
 
-    private void setChipLabelWithCount(@Nullable Chip chip, int baseLabelRes, int count) {
+    private void setChipLabelWithCount(@Nullable com.fadcam.ui.utils.AnimatedChip chip, int baseLabelRes, int count) {
         if (chip == null) return;
         String newLabel = getString(baseLabelRes) + " (" + count + ")";
         CharSequence current = chip.getText();
         if (current != null && current.toString().equals(newLabel)) return;
-        chip.animate().cancel();
-        chip.animate()
-                .alpha(0f)
-                .setDuration(80)
-                .withEndAction(() -> {
-                    chip.setText(newLabel);
-                    chip.setAlpha(0f);
-                    chip.animate().alpha(1f).setDuration(150).start();
-                })
-                .start();
+        chip.animateSlot(newLabel, 300);
     }
 
     private int getShotSubtypeCount(@NonNull VideoItem.ShotSubtype subtype) {
