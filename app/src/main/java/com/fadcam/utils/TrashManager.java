@@ -268,23 +268,21 @@ public class TrashManager {
         }
 
         if (success) {
+            int minutes = com.fadcam.SharedPreferencesManager.getInstance(context).getTrashAutoDeleteMinutes();
+            if (minutes == 0) {
+                FLog.i(TAG, "moveToTrash: Immediate auto-delete active. Deleting trash file without metadata round-trip.");
+                if (targetTrashFile.exists() && targetTrashFile.delete()) {
+                    FLog.d(TAG, "moveToTrash: Immediate auto-delete removed " + targetTrashFile.getAbsolutePath());
+                    return true;
+                }
+                FLog.w(TAG, "moveToTrash: Immediate auto-delete failed; falling back to tracked trash metadata flow.");
+            }
+
             List<TrashItem> trashItems = loadTrashMetadata(context);
             trashItems.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName,
                     System.currentTimeMillis(), isSafSource));
             if (saveTrashMetadata(context, trashItems)) {
                 FLog.i(TAG, "moveToTrash: Successfully moved and updated metadata for: " + originalDisplayName);
-                // If auto-delete is set to Immediate (0 minutes), delete this item right away
-                int minutes = com.fadcam.SharedPreferencesManager.getInstance(context).getTrashAutoDeleteMinutes();
-                if (minutes == 0) {
-                    FLog.i(TAG, "moveToTrash: Immediate auto-delete active. Deleting trashed item now.");
-                    List<TrashItem> single = new ArrayList<>();
-                    // Last added item is this file (by trash file name)
-                    single.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName,
-                            System.currentTimeMillis(), isSafSource));
-                    // Reload current list to ensure consistency in internal delete
-                    List<TrashItem> all = loadTrashMetadata(context);
-                    permanentlyDeleteItemsInternal(context, single, all);
-                }
                 return true;
             } else {
                 FLog.e(TAG, "moveToTrash: File moved/copied, but FAILED to save trash metadata for: "

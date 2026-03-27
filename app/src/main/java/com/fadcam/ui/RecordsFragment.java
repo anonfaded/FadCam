@@ -540,6 +540,42 @@ public class RecordsFragment extends BaseFragment implements
         FLog.d(TAG, "onMoveToTrashFinished. Success: " + success + ", Msg: " + message);
     }
 
+    private void applyDeletedItemsToUi(@NonNull List<Uri> deletedUris) {
+        if (deletedUris.isEmpty()) {
+            updateUiVisibility();
+            return;
+        }
+
+        HashSet<String> deletedUriStrings = new HashSet<>(deletedUris.size());
+        for (Uri uri : deletedUris) {
+            if (uri != null) {
+                deletedUriStrings.add(uri.toString());
+            }
+        }
+
+        if (deletedUriStrings.isEmpty()) {
+            updateUiVisibility();
+            return;
+        }
+
+        allLoadedItems.removeIf(item ->
+                item == null || item.uri == null || deletedUriStrings.contains(item.uri.toString()));
+        videoItems.removeIf(item ->
+                item == null || item.uri == null || deletedUriStrings.contains(item.uri.toString()));
+        selectedUris.removeIf(uri -> uri != null && deletedUriStrings.contains(uri.toString()));
+
+        totalItems = allLoadedItems.size();
+
+        if (recordsAdapter != null) {
+            recordsAdapter.evictCachesForUris(deletedUris);
+        }
+
+        com.fadcam.utils.VideoSessionCache.updateSessionCache(allLoadedItems);
+        applyActiveFilterToUi();
+        FLog.d(TAG, "applyDeletedItemsToUi: removed " + deletedUriStrings.size()
+                + " items without forcing a full records reload");
+    }
+
     // *** Register in onStart ***
     @Override
     public void onStart() {
@@ -3595,6 +3631,7 @@ public class RecordsFragment extends BaseFragment implements
             int failCount = 0;
             List<VideoItem> allCurrentItems = new ArrayList<>(videoItems); // Copy for safe iteration
             List<String> trashedUris = new ArrayList<>();
+            List<Uri> successfullyDeletedUris = new ArrayList<>();
 
             for (Uri uri : itemsToDeleteUris) {
                 VideoItem itemToTrash = findVideoItemByUri(allCurrentItems, uri);
@@ -3602,6 +3639,7 @@ public class RecordsFragment extends BaseFragment implements
                     if (moveToTrashVideoItem(itemToTrash)) {
                         successCount++;
                         trashedUris.add(uri.toString());
+                        successfullyDeletedUris.add(uri);
                     } else {
                         failCount++;
                     }
@@ -3626,6 +3664,7 @@ public class RecordsFragment extends BaseFragment implements
             // Post results and UI refresh back to main thread
             final int finalSuccessCount = successCount;
             final int finalFailCount = failCount;
+            final List<Uri> finalDeletedUris = new ArrayList<>(successfullyDeletedUris);
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     // Hide the progress dialog
@@ -3636,13 +3675,7 @@ public class RecordsFragment extends BaseFragment implements
                             : getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
 
-                    // Perform a complete refresh of the data to ensure proper serial numbers
-                    FLog.d(TAG, "Performing full refresh after deletion to update serial numbers");
-                    if (recordsAdapter != null) {
-                        recordsAdapter.clearCaches(); // Clear any cached data
-                    }
-                    // Force reload to bypass the "already have data" guard and ensure UI updates
-                    loadRecordsList(true); // This will completely rebuild the list with proper serial numbers
+                    applyDeletedItemsToUi(finalDeletedUris);
                 });
             }
         });
@@ -3700,11 +3733,13 @@ public class RecordsFragment extends BaseFragment implements
             int successCount = 0;
             int failCount = 0;
             List<String> trashedUris = new ArrayList<>();
+            List<Uri> successfullyDeletedUris = new ArrayList<>();
             for (VideoItem item : itemsToTrash) {
                 if (item != null && item.uri != null) {
                     if (moveToTrashVideoItem(item)) { // Pass the whole VideoItem
                         successCount++;
                         trashedUris.add(item.uri.toString());
+                        successfullyDeletedUris.add(item.uri);
                     } else {
                         failCount++;
                     }
@@ -3728,6 +3763,7 @@ public class RecordsFragment extends BaseFragment implements
             // Final status update on main thread
             final int finalSuccessCount = successCount;
             final int finalFailCount = failCount;
+            final List<Uri> finalDeletedUris = new ArrayList<>(successfullyDeletedUris);
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     // Hide the progress dialog
@@ -3738,13 +3774,7 @@ public class RecordsFragment extends BaseFragment implements
                             : getString(R.string.delete_videos_success_toast, finalSuccessCount);
                     Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
 
-                    // Perform a complete refresh of the data to ensure proper serial numbers
-                    FLog.d(TAG, "Performing full refresh after deletion to update serial numbers");
-                    if (recordsAdapter != null) {
-                        recordsAdapter.clearCaches(); // Clear any cached data
-                    }
-                    // Force reload to bypass the "already have data" guard and ensure UI updates
-                    loadRecordsList(true); // This will completely rebuild the list with proper serial numbers
+                    applyDeletedItemsToUi(finalDeletedUris);
                 });
             }
         });
@@ -4537,10 +4567,11 @@ public class RecordsFragment extends BaseFragment implements
         // MMR returns incorrect values for FadCam's fragmented MP4 files (e.g. 26s for a 4s
         // recording). This async call resets them so the adapter's FFprobe path re-probes
         // and stores correct values. Runs once per app process, has no effect on next calls.
-        repository.clearStaleMMRDurationsOnce();
-        // Also clear the adapter's in-memory duration cache so the stale disk values loaded
-        // on construction are flushed and FFprobe gets a chance to re-probe this session.
-        if (recordsAdapter != null) {
+        boolean staleDurationsReset = repository.clearStaleMMRDurationsOnce();
+        // Only clear adapter duration caches when the one-time stale-duration cleanup actually runs.
+        // Flushing these caches on every reload causes unnecessary FFprobe work and makes delete
+        // refreshes much slower than they need to be.
+        if (staleDurationsReset && recordsAdapter != null) {
             recordsAdapter.invalidateDurationCache();
         }
 

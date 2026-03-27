@@ -3169,6 +3169,28 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         FLog.d(TAG, "Cleared all adapter caches including duration and position caches");
     }
 
+    public void evictCachesForUris(@NonNull List<Uri> uris) {
+        if (uris.isEmpty()) {
+            return;
+        }
+
+        synchronized (durationCache) {
+            synchronized (savedPositionCache) {
+                for (Uri uri : uris) {
+                    if (uri == null) {
+                        continue;
+                    }
+                    String uriString = uri.toString();
+                    loadedThumbnailCache.remove(uriString);
+                    durationCache.remove(uriString);
+                    savedPositionCache.remove(uriString);
+                }
+            }
+        }
+
+        FLog.d(TAG, "evictCachesForUris: removed cache entries for " + uris.size() + " deleted items");
+    }
+
     // For dialogs, use themed MaterialAlertDialogBuilder as in SettingsFragment
     private MaterialAlertDialogBuilder themedDialogBuilder(Context context) {
         int dialogTheme = R.style.ThemeOverlay_FadCam_Dialog;

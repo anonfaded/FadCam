@@ -468,10 +468,10 @@ public class VideoIndexRepository {
      * <p>
      * This is safe to call from any thread. Runs once per app process lifetime.
      */
-    public void clearStaleMMRDurationsOnce() {
-        if (staleMMRDurationsClearedOnce) return;
+    public boolean clearStaleMMRDurationsOnce() {
+        if (staleMMRDurationsClearedOnce) return false;
         synchronized (VideoIndexRepository.class) {
-            if (staleMMRDurationsClearedOnce) return;
+            if (staleMMRDurationsClearedOnce) return false;
             staleMMRDurationsClearedOnce = true;
         }
         enrichmentExecutor.submit(() -> {
@@ -490,6 +490,7 @@ public class VideoIndexRepository {
                 FLog.w(TAG, "clearStaleMMRDurationsOnce failed (non-fatal)", e);
             }
         });
+        return true;
     }
 
     /**
