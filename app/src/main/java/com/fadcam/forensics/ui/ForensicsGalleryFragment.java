@@ -75,7 +75,7 @@ public class ForensicsGalleryFragment extends Fragment {
         void onSummaryChanged(int totalCount, long totalBytes);
     }
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
     private final ForensicsGalleryAdapter adapter = new ForensicsGalleryAdapter();
 
     private RecyclerView recycler;
@@ -370,7 +370,10 @@ public class ForensicsGalleryFragment extends Fragment {
             invalidationCoordinator.stop();
             invalidationCoordinator = null;
         }
-        executor.shutdownNow();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdownNow();
+        }
+        executor = null;
     }
 
     public void clearSelectionFromHost() {
@@ -737,7 +740,7 @@ public class ForensicsGalleryFragment extends Fragment {
         }
         isLoading = true;
         final android.content.Context context = requireContext().getApplicationContext();
-        executor.execute(() -> {
+        ensureExecutor().execute(() -> {
             List<ForensicsSnapshotWithMedia> rows = ForensicsDatabase.getInstance(context)
                     .aiEventSnapshotDao()
                     .getGallerySnapshots(null, 0f, null, 0L, 3000);
@@ -758,6 +761,14 @@ public class ForensicsGalleryFragment extends Fragment {
                 }
             });
         });
+    }
+
+    @NonNull
+    private ExecutorService ensureExecutor() {
+        if (executor == null || executor.isShutdown() || executor.isTerminated()) {
+            executor = Executors.newSingleThreadExecutor();
+        }
+        return executor;
     }
 
     private void applyFiltersAndRender() {
