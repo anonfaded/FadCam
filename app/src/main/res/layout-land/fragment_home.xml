@@ -90,14 +90,14 @@
     <LinearLayout android:id="@+id/layoutCards" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar" app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Left Panel: Stats and Info (Half Screen) -->
-    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginTop="4dp" android:layout_marginEnd="0dp" android:layout_marginBottom="6dp" android:background="@drawable/bg_home_card_rail_section" android:orientation="vertical" android:paddingStart="4dp" android:paddingTop="4dp" android:paddingEnd="4dp" android:paddingBottom="4dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/rightPanel" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
+    <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginTop="4dp" android:layout_marginEnd="0dp" android:layout_marginBottom="72dp" android:background="@drawable/bg_home_card_rail_section" android:orientation="vertical" android:paddingStart="4dp" android:paddingTop="4dp" android:paddingEnd="4dp" android:paddingBottom="4dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/cardRailToggleLandscape" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Mode Switcher (FadCam, FadRec, FadMic) - Compact for landscape -->
         <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
 
         <!-- Scrollable content area (landscape-only):
              Wrap the two-column section in a NestedScrollView so smaller landscape heights don't truncate controls. -->
-        <androidx.core.widget.NestedScrollView android:id="@+id/leftScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true" android:overScrollMode="ifContentScrolls" android:clipToPadding="false">
+        <androidx.core.widget.NestedScrollView android:id="@+id/leftScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true" android:overScrollMode="ifContentScrolls" android:clipToPadding="false" android:paddingBottom="8dp">
 
             <!-- 2-Column Layout within Left Panel -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
@@ -105,7 +105,7 @@
                 <!-- Left Column: Original Storage Widget -->
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="3dp" android:orientation="vertical">
 
-                <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="12dp" app:cardElevation="3dp" app:strokeWidth="0dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="12dp" app:cardElevation="3dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="6dp">
 
@@ -125,7 +125,16 @@
                         </LinearLayout>
 
                         <!-- Estimated Time Row -->
-                        <LinearLayout android:id="@+id/rowEstimateTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="38dp"
+                            android:layout_marginEnd="2dp"
+                            android:layout_marginBottom="3dp"
+                            android:alpha="0.5"
+                            android:background="#22FFFFFF" />
+
+                        <LinearLayout android:id="@+id/rowEstimateTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp" android:background="@drawable/bg_home_row_ripple" android:clickable="true" android:focusable="true" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                             <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
                                 <ImageView android:id="@+id/ivEstimateIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:padding="4dp" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
@@ -139,8 +148,17 @@
                             </LinearLayout>
                         </LinearLayout>
 
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginStart="38dp"
+                            android:layout_marginEnd="2dp"
+                            android:layout_marginBottom="3dp"
+                            android:alpha="0.5"
+                            android:background="#22FFFFFF" />
+
                         <!-- Available Space Row -->
-                        <LinearLayout android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                        <LinearLayout android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_home_row_ripple" android:clickable="true" android:focusable="true" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                             <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
                                 <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="center" android:contentDescription="Available space progress" />
@@ -273,7 +291,7 @@
                     </com.google.android.material.card.MaterialCardView>
 
                     <!-- Stats Card -->
-                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeWidth="0dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
@@ -293,7 +311,7 @@
                     </com.google.android.material.card.MaterialCardView>
 
                     <!-- Recording Controls Card -->
-                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeWidth="0dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="6dp">
 
@@ -314,7 +332,7 @@
         android:layout_width="20dp"
         android:layout_height="48dp"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="72dp"
         android:background="@drawable/bg_home_fold_toggle_right"
         android:clickable="true"
         android:contentDescription="@string/home_cards_fold_toggle"

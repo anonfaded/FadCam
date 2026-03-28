@@ -23,18 +23,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use subtle gray for night theme -->
         <item name="sectionHeaderColor">#888888</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#E2606B</item>
         <item name="homeRailSegmentActiveText">#FFF7F8</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#BFCBDA</item>
         
         <!-- Picker component overrides for better contrast in Faded Night theme ONLY -->

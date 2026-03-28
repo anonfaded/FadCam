@@ -11186,6 +11186,9 @@ public class HomeFragment extends BaseFragment {
         }
 
         if (rowStorageAvailable != null) {
+            rowStorageAvailable.setOnClickListener(v -> {
+                // Keep the row visually pressable so ripple feedback works with long press.
+            });
             rowStorageAvailable.setOnLongClickListener(v -> {
                 animatePressBounce(v, () -> {
                     performHapticFeedback();
@@ -11196,6 +11199,9 @@ public class HomeFragment extends BaseFragment {
         }
 
         if (rowEstimateTime != null) {
+            rowEstimateTime.setOnClickListener(v -> {
+                // Keep the row visually pressable so ripple feedback works with long press.
+            });
             rowEstimateTime.setOnLongClickListener(v -> {
                 animatePressBounce(v, () -> {
                     performHapticFeedback();
@@ -11344,10 +11350,10 @@ public class HomeFragment extends BaseFragment {
 
         set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
         set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
-        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(6));
+        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(72));
 
         set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(6));
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(72));
         set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
         set.connect(R.id.rightPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
         set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPxInt(6));

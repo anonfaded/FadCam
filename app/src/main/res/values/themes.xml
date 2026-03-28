@@ -29,18 +29,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use base theme primary -->
         <item name="sectionHeaderColor">@color/colorPrimary</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#E2606B</item>
         <item name="homeRailSegmentActiveText">#FFF7F8</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#BFCBDA</item>
         <!-- Default picker component colors for base theme with proper contrast -->
         <item name="pickerButtonBackground">@color/colorPrimary</item>
@@ -121,18 +121,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use subtle gray for AMOLED -->
         <item name="sectionHeaderColor">#888888</item>
-        <item name="homeRailBgStart">#14181D</item>
-        <item name="homeRailBgEnd">#14181D</item>
-        <item name="homeRailCardSurface">#1E242C</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#262D36</item>
-        <item name="homeRailSegmentedSurface">#1B2027</item>
-        <item name="homeRailSegmentedBorder">#2F3640</item>
+        <item name="homeRailBgStart">#0E1012</item>
+        <item name="homeRailBgEnd">#0E1012</item>
+        <item name="homeRailCardSurface">#15191D</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#1D2228</item>
+        <item name="homeRailSegmentedSurface">#14171B</item>
+        <item name="homeRailSegmentedBorder">#262B31</item>
         <item name="homeRailSegmentActive">#D65B68</item>
         <item name="homeRailSegmentActiveText">#FFF8F9</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B3BDC8</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#AFB4BA</item>
         <item name="homeRailAccent">#C2CEDA</item>
         <!-- AMOLED theme picker colors with proper contrast for Faded Night -->
         <item name="pickerButtonBackground">@color/amoled_picker_button_background</item>
@@ -217,18 +217,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use red theme primary -->
         <item name="sectionHeaderColor">@color/red_theme_primary</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#F05563</item>
         <item name="homeRailSegmentActiveText">#FFF7F8</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#F06B76</item>
         <!-- Red theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/red_theme_primary</item>
@@ -309,18 +309,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use gold theme primary -->
         <item name="sectionHeaderColor">@color/gold_theme_primary</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#D8AA48</item>
         <item name="homeRailSegmentActiveText">#1B150B</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#E4BE66</item>
         <!-- Gold theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/gold_theme_primary</item>
@@ -395,18 +395,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use forest theme primary -->
         <item name="sectionHeaderColor">@color/silentforest_theme_primary</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#58AA72</item>
         <item name="homeRailSegmentActiveText">#07130A</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#84CC9B</item>
         <!-- Silent Forest theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/silentforest_theme_primary</item>
@@ -481,18 +481,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use shadow alloy theme primary -->
         <item name="sectionHeaderColor">@color/shadowalloy_theme_primary</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#8AA0B9</item>
         <item name="homeRailSegmentActiveText">#0E1318</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#B0C1D3</item>
         <!-- Shadow Alloy theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/shadowalloy_theme_primary</item>
@@ -567,18 +567,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use pookie pink theme primary -->
         <item name="sectionHeaderColor">@color/pookiepink_theme_primary</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#DE76A7</item>
         <item name="homeRailSegmentActiveText">#180F14</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#E5A0C0</item>
         <!-- Pookie Pink theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/pookiepink_theme_primary</item>
@@ -666,10 +666,10 @@
         <item name="sectionHeaderColor">@color/snowveil_theme_primary</item>
         <item name="homeRailBgStart">#D9E2EB</item>
         <item name="homeRailBgEnd">#D9E2EB</item>
-        <item name="homeRailCardSurface">#F5F8FC</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#E8EEF5</item>
+        <item name="homeRailCardSurface">#F3F7FB</item>
+        <item name="homeRailCardBorder">#D4DCE5</item>
+        <item name="homeRailCardStroke">#D4DCE5</item>
+        <item name="homeRailTileSurface">#E5ECF4</item>
         <item name="homeRailSegmentedSurface">#EEF3F8</item>
         <item name="homeRailSegmentedBorder">#C3D0DC</item>
         <item name="homeRailSegmentActive">#5E7FA5</item>
@@ -852,18 +852,18 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use purple accent for midnight dusk -->
         <item name="sectionHeaderColor">#cfbafd</item>
-        <item name="homeRailBgStart">#171B20</item>
-        <item name="homeRailBgEnd">#171B20</item>
-        <item name="homeRailCardSurface">#232932</item>
-        <item name="homeRailCardBorder">#00000000</item>
-        <item name="homeRailCardStroke">#00000000</item>
-        <item name="homeRailTileSurface">#2A303A</item>
-        <item name="homeRailSegmentedSurface">#20252D</item>
-        <item name="homeRailSegmentedBorder">#343B46</item>
+        <item name="homeRailBgStart">#121417</item>
+        <item name="homeRailBgEnd">#121417</item>
+        <item name="homeRailCardSurface">#191D22</item>
+        <item name="homeRailCardBorder">#2B3139</item>
+        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailTileSurface">#23282F</item>
+        <item name="homeRailSegmentedSurface">#191D22</item>
+        <item name="homeRailSegmentedBorder">#2C3138</item>
         <item name="homeRailSegmentActive">#8D6EE0</item>
         <item name="homeRailSegmentActiveText">#FAF8FF</item>
-        <item name="homeRailTextPrimary">#F2F5F8</item>
-        <item name="homeRailTextSecondary">#B7C0CB</item>
+        <item name="homeRailTextPrimary">#F3F4F6</item>
+        <item name="homeRailTextSecondary">#B4B8BE</item>
         <item name="homeRailAccent">#B8A3EF</item>
     </style>
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
