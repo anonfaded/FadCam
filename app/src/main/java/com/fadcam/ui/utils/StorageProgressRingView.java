@@ -22,6 +22,7 @@ public class StorageProgressRingView extends View {
 
     public static final int STYLE_RING = 0;
     public static final int STYLE_MICRO_PILL_BAR = 1;
+    public static final int STYLE_VERTICAL_BAR = 2;
 
     private static final float START_ANGLE = -90f;
     private static final float FULL_SWEEP = 360f;
@@ -34,6 +35,8 @@ public class StorageProgressRingView extends View {
     private final RectF arcBounds = new RectF();
     private final RectF barTrackBounds = new RectF();
     private final RectF barProgressBounds = new RectF();
+    private final RectF verticalTrackBounds = new RectF();
+    private final RectF verticalProgressBounds = new RectF();
 
     private float progress = 0f;
     private float strokeWidthPx;
@@ -45,6 +48,7 @@ public class StorageProgressRingView extends View {
     private int textColor = Color.parseColor("#EAF4FF");
     private SweepGradient sweepGradient;
     private LinearGradient barGradient;
+    private LinearGradient verticalGradient;
     private int indicatorStyle = STYLE_RING;
 
     public StorageProgressRingView(Context context) {
@@ -82,15 +86,21 @@ public class StorageProgressRingView extends View {
     }
 
     public void setIndicatorStyle(int style) {
-        int normalized = (style == STYLE_MICRO_PILL_BAR)
-                ? STYLE_MICRO_PILL_BAR
-                : STYLE_RING;
+        int normalized;
+        if (style == STYLE_MICRO_PILL_BAR) {
+            normalized = STYLE_MICRO_PILL_BAR;
+        } else if (style == STYLE_VERTICAL_BAR) {
+            normalized = STYLE_VERTICAL_BAR;
+        } else {
+            normalized = STYLE_RING;
+        }
         if (indicatorStyle == normalized) {
             return;
         }
         indicatorStyle = normalized;
         sweepGradient = null;
         barGradient = null;
+        verticalGradient = null;
         invalidate();
     }
 
@@ -135,8 +145,14 @@ public class StorageProgressRingView extends View {
         float barLeft = (w - barWidth) / 2f;
         float barTop = (h - barHeight) / 2f;
         barTrackBounds.set(barLeft, barTop, barLeft + barWidth, barTop + barHeight);
+        float verticalWidth = Math.min(dpToPx(9f), Math.max(dpToPx(7f), w * 0.40f));
+        float verticalHeight = Math.max(dpToPx(18f), h - dpToPx(3f));
+        float verticalLeft = (w - verticalWidth) / 2f;
+        float verticalTop = (h - verticalHeight) / 2f;
+        verticalTrackBounds.set(verticalLeft, verticalTop, verticalLeft + verticalWidth, verticalTop + verticalHeight);
         sweepGradient = null;
         barGradient = null;
+        verticalGradient = null;
     }
 
     @Override
@@ -151,11 +167,15 @@ public class StorageProgressRingView extends View {
             drawMicroPillBar(canvas);
             return;
         }
+        if (indicatorStyle == STYLE_VERTICAL_BAR) {
+            drawVerticalBar(canvas);
+            return;
+        }
 
         canvas.drawArc(arcBounds, START_ANGLE, FULL_SWEEP, false, trackPaint);
 
         if (progress <= 0f) {
-            drawCenterText(canvas);
+            drawCenterText(canvas, textColor, dpToPx(7.5f));
             return;
         }
 
@@ -175,7 +195,7 @@ public class StorageProgressRingView extends View {
         canvas.drawArc(arcBounds, 0f, sweep, false, progressPaint);
         canvas.restore();
 
-        drawCenterText(canvas);
+        drawCenterText(canvas, textColor, dpToPx(7.5f));
     }
 
     private void drawMicroPillBar(Canvas canvas) {
@@ -185,6 +205,9 @@ public class StorageProgressRingView extends View {
         canvas.drawRoundRect(barTrackBounds, barCornerRadiusPx, barCornerRadiusPx, trackPaint);
 
         if (progress <= 0f) {
+            drawCenterText(canvas, Color.parseColor("#F5FBFF"), dpToPx(5.1f));
+            progressPaint.setStyle(Paint.Style.STROKE);
+            trackPaint.setStyle(Paint.Style.STROKE);
             return;
         }
 
@@ -215,10 +238,51 @@ public class StorageProgressRingView extends View {
         progressPaint.setShader(null);
         progressPaint.setStyle(Paint.Style.STROKE);
         trackPaint.setStyle(Paint.Style.STROKE);
+        drawCenterText(canvas, resolveOverlayTextColor(gradientMidColor), dpToPx(5.1f));
     }
 
-    private void drawCenterText(Canvas canvas) {
+    private void drawVerticalBar(Canvas canvas) {
+        trackPaint.setShader(null);
+        trackPaint.setStyle(Paint.Style.FILL);
+        trackPaint.setColor(Color.parseColor("#7AA9B9C4"));
+        canvas.drawRoundRect(verticalTrackBounds, barCornerRadiusPx, barCornerRadiusPx, trackPaint);
+
+        if (progress > 0f) {
+            if (verticalGradient == null) {
+                verticalGradient = new LinearGradient(
+                        verticalTrackBounds.centerX(),
+                        verticalTrackBounds.bottom,
+                        verticalTrackBounds.centerX(),
+                        verticalTrackBounds.top,
+                        new int[]{gradientEndColor, gradientMidColor, gradientStartColor},
+                        new float[]{0f, 0.55f, 1f},
+                        Shader.TileMode.CLAMP
+                );
+            }
+
+            float progressTop = verticalTrackBounds.bottom - (verticalTrackBounds.height() * progress);
+            verticalProgressBounds.set(
+                    verticalTrackBounds.left,
+                    Math.min(verticalTrackBounds.bottom - dpToPx(2f), progressTop),
+                    verticalTrackBounds.right,
+                    verticalTrackBounds.bottom
+            );
+
+            progressPaint.setShader(verticalGradient);
+            progressPaint.setStyle(Paint.Style.FILL);
+            canvas.drawRoundRect(verticalProgressBounds, barCornerRadiusPx, barCornerRadiusPx, progressPaint);
+        }
+
+        progressPaint.setShader(null);
+        progressPaint.setStyle(Paint.Style.STROKE);
+        trackPaint.setStyle(Paint.Style.STROKE);
+        drawCenterText(canvas, progress > 0f ? resolveOverlayTextColor(gradientMidColor) : Color.parseColor("#F5FBFF"), dpToPx(4.9f));
+    }
+
+    private void drawCenterText(Canvas canvas, int color, float sizePx) {
         String percentText = Math.round(progress * 100f) + "%";
+        textPaint.setColor(color);
+        textPaint.setTextSize(sizePx);
         Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
         float textBaseline = (getHeight() / 2f) - ((fontMetrics.ascent + fontMetrics.descent) / 2f);
         canvas.drawText(percentText, getWidth() / 2f, textBaseline, textPaint);
@@ -243,5 +307,14 @@ public class StorageProgressRingView extends View {
         int g = (int) (Color.green(from) + (Color.green(to) - Color.green(from)) * t);
         int b = (int) (Color.blue(from) + (Color.blue(to) - Color.blue(from)) * t);
         return Color.argb(a, r, g, b);
+    }
+
+    private int resolveOverlayTextColor(int backgroundColor) {
+        double luminance = ((0.299 * Color.red(backgroundColor))
+                + (0.587 * Color.green(backgroundColor))
+                + (0.114 * Color.blue(backgroundColor))) / 255d;
+        return luminance > 0.58d
+                ? Color.parseColor("#12202A")
+                : Color.parseColor("#F5FBFF");
     }
 }

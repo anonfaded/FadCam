@@ -123,11 +123,25 @@ public class HomeFragment extends BaseFragment {
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
+    private static final String ELAPSED_SIZE_RESULT_KEY = "home_elapsed_size_picker";
+    private static final String ELAPSED_CUSTOMIZE_RESULT_KEY = "home_elapsed_customize_picker";
     private static final String STORAGE_INDICATOR_STYLE_RESULT_KEY = "home_storage_indicator_style_picker";
+    private static final String STORAGE_CUSTOMIZE_RESULT_KEY = "home_storage_customize_picker";
+    private static final String STORAGE_TOTAL_RESULT_KEY = "home_storage_total_picker";
+    private static final String TIME_LEFT_COLOR_RESULT_KEY = "home_time_left_color_picker";
+    private static final String CLOCK_CUSTOMIZE_RESULT_KEY = "home_clock_customize_picker";
+    private static final String CLOCK_DISPLAY_RESULT_KEY = "home_clock_display_picker";
+    private static final String CLOCK_COLOR_RESULT_KEY = "home_clock_color_picker";
     private static final String ELAPSED_ALIGNMENT_CENTER = "center";
     private static final String ELAPSED_ALIGNMENT_START = "start";
+    private static final String ELAPSED_SIZE_SMALL = "small";
+    private static final String ELAPSED_SIZE_MEDIUM = "medium";
+    private static final String ELAPSED_SIZE_LARGE = "large";
     private static final String STORAGE_INDICATOR_RING = "ring";
     private static final String STORAGE_INDICATOR_MICRO_PILL = "micro_pill_bar";
+    private static final String STORAGE_INDICATOR_VERTICAL_BAR = "vertical_bar";
+    private static final String STORAGE_TOTAL_VISIBLE = "visible";
+    private static final String STORAGE_TOTAL_HIDDEN = "hidden";
 
     private HomeFragmentHelper fragmentHelper;
 
@@ -192,6 +206,7 @@ public class HomeFragment extends BaseFragment {
     private TextView ivCameraIcon;
     private TextView tvEstimateTitle;
     private TextView tvEstimateSubtitle;
+    private ImageView ivEstimateIcon;
     private TextView tvSpaceTitle;
     private TextView tvSpaceSubtitle;
     private com.fadcam.ui.utils.StorageProgressRingView storageProgressRing;
@@ -209,6 +224,7 @@ public class HomeFragment extends BaseFragment {
     private LinearLayout layoutElapsedContent;
     private LinearLayout layoutElapsedMetaRow;
     private View rowStorageAvailable;
+    private View rowEstimateTime;
     
     private ImageView btnHamburgerMenu;
     private View hamburgerBadgeDot;
@@ -6039,177 +6055,123 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void showClockAppearanceDialog() {
-        final String[] appearanceOptions = {
-            "Change Clock Display",
-            "Change Clock Color",
-        };
-        int white = ContextCompat.getColor(
-            requireContext(),
-            android.R.color.white
-        );
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-            requireContext(),
-            android.R.layout.simple_list_item_1,
-            appearanceOptions
-        ) {
-            @Override
-            public View getView(
-                int position,
-                View convertView,
-                ViewGroup parent
-            ) {
-                View view = super.getView(position, convertView, parent);
-                TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(white);
-                return view;
-            }
-        };
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(
-            requireContext(),
-            R.style.ThemeOverlay_FadCam_Dialog
-        )
-            .setTitle("Clock Appearance")
-            .setAdapter(adapter, (dialog, which) -> {
-                if (which == 0) {
-                    // Change Clock Display
-                    showDisplayOptionsDialog();
-                } else if (which == 1) {
-                    // Change Clock Color
-                    showClockColorChooserDialog();
-                }
-            })
-            .setNegativeButton(R.string.universal_cancel, null);
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> {
-            // Set button text color to white
-            dialog
-                .getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(Color.WHITE);
-        });
-        dialog.show();
+        if (!isAdded()) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "clock_display",
+                getString(R.string.home_clock_display_option),
+                getString(R.string.home_clock_display_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "schedule"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "clock_color",
+                getString(R.string.home_clock_color_option),
+                getString(R.string.home_clock_color_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "palette"));
+
+        getParentFragmentManager().setFragmentResultListener(
+                CLOCK_CUSTOMIZE_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            "");
+                    if ("clock_display".equals(selected)) {
+                        showDisplayOptionsDialog();
+                    } else if ("clock_color".equals(selected)) {
+                        showClockColorChooserDialog();
+                    }
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_clock_customize_title),
+                        items,
+                        null,
+                        CLOCK_CUSTOMIZE_RESULT_KEY,
+                        getString(R.string.home_clock_customize_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_clock_customize_sheet");
     }
 
     private void showDisplayOptionsDialog() {
-        final String[] items = {
+        if (!isAdded()) return;
+
+        final String[] labels = {
             getString(R.string.dialog_clock_timeonly),
             getString(R.string.dialog_clock_englishtime),
             getString(R.string.dialog_clock_Islamic_calendar),
         };
+        final String[] ids = {"clock_time_only", "clock_english", "clock_islamic"};
         int currentOption = getCurrentDisplayOption();
-        int white = ContextCompat.getColor(
-            requireContext(),
-            android.R.color.white
-        );
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-            requireContext(),
-            android.R.layout.simple_list_item_single_choice,
-            items
-        ) {
-            @Override
-            public View getView(
-                int position,
-                View convertView,
-                ViewGroup parent
-            ) {
-                View view = super.getView(position, convertView, parent);
-                TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) text1.setTextColor(white);
-                return view;
-            }
-        };
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(
-            requireContext(),
-            R.style.ThemeOverlay_FadCam_Dialog
-        )
-            .setTitle(getString(R.string.dialog_clock_title))
-            .setSingleChoiceItems(adapter, currentOption, (dialog, which) -> {
-                saveDisplayOption(which);
-                updateClock();
-                dialog.dismiss();
-            })
-            .setNegativeButton(R.string.universal_cancel, null);
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> {
-            // Set button text color to white
-            dialog
-                .getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(Color.WHITE);
-        });
-        dialog.show();
+        String selectedId = ids[Math.max(0, Math.min(currentOption, ids.length - 1))];
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(ids[0], labels[0], getString(R.string.home_clock_display_timeonly_desc), null, null, null, null, null, "schedule"));
+        items.add(new com.fadcam.ui.picker.OptionItem(ids[1], labels[1], getString(R.string.home_clock_display_english_desc), null, null, null, null, null, "calendar_month"));
+        items.add(new com.fadcam.ui.picker.OptionItem(ids[2], labels[2], getString(R.string.home_clock_display_islamic_desc), null, null, null, null, null, "event"));
+
+        getParentFragmentManager().setFragmentResultListener(
+                CLOCK_DISPLAY_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            ids[0]);
+                    int which = Arrays.asList(ids).indexOf(selected);
+                    if (which < 0) which = 0;
+                    saveDisplayOption(which);
+                    updateClock();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_clock_display_option),
+                        items,
+                        selectedId,
+                        CLOCK_DISPLAY_RESULT_KEY,
+                        getString(R.string.home_clock_display_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_clock_display_sheet");
     }
 
     private void showClockColorChooserDialog() {
-        String currentSelectedColorHex =
-            sharedPreferencesManager.getClockCardColor();
-        int currentSelectedColorIndex = -1;
+        if (!isAdded()) return;
+
+        String currentSelectedColorHex = sharedPreferencesManager.getClockCardColor();
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
         for (int i = 0; i < CLOCK_COLOR_HEX_VALUES.length; i++) {
-            if (
-                CLOCK_COLOR_HEX_VALUES[i].equalsIgnoreCase(
-                    currentSelectedColorHex
-                )
-            ) {
-                currentSelectedColorIndex = i;
-                break;
-            }
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    CLOCK_COLOR_HEX_VALUES[i],
+                    CLOCK_COLOR_NAMES[i],
+                    getString(R.string.home_clock_color_choice_desc, CLOCK_COLOR_HEX_VALUES[i]),
+                    Color.parseColor(CLOCK_COLOR_HEX_VALUES[i]),
+                    null, null, null, null, "palette"));
         }
-        int white = ContextCompat.getColor(
-            requireContext(),
-            android.R.color.white
-        );
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-            requireContext(),
-            android.R.layout.simple_list_item_single_choice,
-            CLOCK_COLOR_NAMES
-        ) {
-            @Override
-            public View getView(
-                int position,
-                View convertView,
-                ViewGroup parent
-            ) {
-                View view = super.getView(position, convertView, parent);
-                TextView text1 = view.findViewById(android.R.id.text1);
-                if (text1 != null) {
-                    text1.setTextColor(white);
-                    int size = (int) (text1.getTextSize() * 1.2f);
-                    GradientDrawable circle = new GradientDrawable();
-                    circle.setShape(GradientDrawable.OVAL);
-                    circle.setColor(
-                        Color.parseColor(CLOCK_COLOR_HEX_VALUES[position])
-                    );
-                    circle.setSize(size, size);
-                    // Set as left drawable
-                    text1.setCompoundDrawablesWithIntrinsicBounds(
-                        circle,
-                        null,
-                        null,
-                        null
-                    );
-                    text1.setCompoundDrawablePadding(24);
-                }
-                return view;
-            }
-        };
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(
-            requireContext(),
-            R.style.ThemeOverlay_FadCam_Dialog
-        )
-            .setTitle("Choose Clock Background Color")
-            .setSingleChoiceItems(
-                adapter,
-                currentSelectedColorIndex,
-                (dialog, which) -> {
-                    String selectedColorHex = CLOCK_COLOR_HEX_VALUES[which];
-                    sharedPreferencesManager.setClockCardColor(
-                        selectedColorHex
-                    );
+
+        getParentFragmentManager().setFragmentResultListener(
+                CLOCK_COLOR_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selectedColorHex = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            currentSelectedColorHex);
+                    sharedPreferencesManager.setClockCardColor(selectedColorHex);
                     applyClockCardColor(selectedColorHex);
 
-                    // Update clock text colors based on background brightness
                     int selectedColor = Color.parseColor(selectedColorHex);
                     boolean isLightColor = isLightColor(selectedColor);
-
-                    // Set text colors based on background brightness
                     if (isLightColor) {
                         tvClock.setTextColor(Color.BLACK);
                         tvDateEnglish.setTextColor(Color.BLACK);
@@ -6219,27 +6181,21 @@ public class HomeFragment extends BaseFragment {
                         tvDateEnglish.setTextColor(Color.WHITE);
                         tvDateArabic.setTextColor(Color.WHITE);
                     }
+                });
 
-                    FLog.d(
-                        TAG,
-                        "User selected clock color: " +
-                        CLOCK_COLOR_NAMES[which] +
-                        " (" +
-                        selectedColorHex +
-                        ")"
-                    );
-                    dialog.dismiss();
-                }
-            )
-            .setNegativeButton(R.string.universal_cancel, null);
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> {
-            // Set button text color to white
-            dialog
-                .getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(Color.WHITE);
-        });
-        dialog.show();
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_clock_color_option),
+                        items,
+                        currentSelectedColorHex,
+                        CLOCK_COLOR_RESULT_KEY,
+                        getString(R.string.home_clock_color_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_clock_color_sheet");
     }
 
     /**
@@ -6257,6 +6213,15 @@ public class HomeFragment extends BaseFragment {
             (Color.blue(color) * 0.114);
         // If the brightness is greater than 160, consider it a light color
         return brightness > 160;
+    }
+
+    private int dpToPxInt(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    private boolean isLandscapeMode() {
+        return getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
     }
 
     private int getCurrentDisplayOption() {
@@ -6729,6 +6694,7 @@ public class HomeFragment extends BaseFragment {
                     if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(
                         getString(R.string.recording_time_left)
                     );
+                    applyTimeLeftAccentPreference();
 
                     // Space row — value only on tvSpaceTitle, static total on tvSpaceTotal.
                     // Available space decreases during recording, so we animate DOWN.
@@ -6747,6 +6713,7 @@ public class HomeFragment extends BaseFragment {
                         String totalStr = String.format(numberFormatLocale, "/ %.2f GB", gbTotal);
                         tvSpaceTotal.setText(totalStr);
                     }
+                    applyStorageTotalVisibilityPreference();
                     if (tvSpaceSubtitle != null) {
                         String newSubtitle = getString(R.string.storage_available_space);
                         if (tvSpaceSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
@@ -6758,6 +6725,7 @@ public class HomeFragment extends BaseFragment {
                     if (storageProgressRing != null) {
                         storageProgressRing.setProgress(availableFraction);
                     }
+                    applyStorageIndicatorStylePreference();
 
                     // Elapsed row — time increases, animate UP.
                     if (tvElapsedTitle != null) {
@@ -6779,6 +6747,8 @@ public class HomeFragment extends BaseFragment {
                         }
                     }
                     updateElapsedHeroAppearance();
+                    applyElapsedAlignmentPreference();
+                    applyElapsedSizePreference();
 
                 });
         }
@@ -9737,6 +9707,7 @@ public class HomeFragment extends BaseFragment {
         ivCameraIcon = view.findViewById(R.id.ivCameraIcon);
         tvEstimateTitle = view.findViewById(R.id.tvEstimateTitle);
         tvEstimateSubtitle = view.findViewById(R.id.tvEstimateSubtitle);
+        ivEstimateIcon = view.findViewById(R.id.ivEstimateIcon);
         tvSpaceTitle = view.findViewById(R.id.tvSpaceTitle);
         tvSpaceSubtitle = view.findViewById(R.id.tvSpaceSubtitle);
         storageProgressRing = view.findViewById(R.id.storageProgressRing);
@@ -9748,6 +9719,7 @@ public class HomeFragment extends BaseFragment {
         layoutElapsedContent = view.findViewById(R.id.layoutElapsedContent);
         layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
+        rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
@@ -9815,7 +9787,10 @@ public class HomeFragment extends BaseFragment {
         tvSpaceTotal = view.findViewById(R.id.tvSpaceTotal);
         setupHomeCustomizationListeners();
         applyElapsedAlignmentPreference();
+        applyElapsedSizePreference();
         applyStorageIndicatorStylePreference();
+        applyStorageTotalVisibilityPreference();
+        applyTimeLeftAccentPreference();
         updateElapsedHeroAppearance();
 
         // Torch button (already initialized elsewhere, but good to have it
@@ -11434,9 +11409,7 @@ public class HomeFragment extends BaseFragment {
         if (tvCameraSubtitle != null) tvCameraSubtitle.setTextColor(
             Color.WHITE
         );
-        if (tvEstimateTitle != null) tvEstimateTitle.setTextColor(
-            Color.parseColor("#F44336")
-        );
+        applyTimeLeftAccentPreference();
         if (tvEstimateSubtitle != null) tvEstimateSubtitle.setTextColor(
             Color.parseColor("#B0B0B0")
         );
@@ -11498,7 +11471,7 @@ public class HomeFragment extends BaseFragment {
         if (cardElapsedHero != null) {
             cardElapsedHero.setOnLongClickListener(v -> {
                 performHapticFeedback();
-                showElapsedAlignmentSheet();
+                showElapsedCustomizeSheet();
                 return true;
             });
         }
@@ -11506,31 +11479,79 @@ public class HomeFragment extends BaseFragment {
         if (rowStorageAvailable != null) {
             rowStorageAvailable.setOnLongClickListener(v -> {
                 performHapticFeedback();
-                showStorageIndicatorStyleSheet();
+                showStorageCustomizeSheet();
+                return true;
+            });
+        }
+
+        if (rowEstimateTime != null) {
+            rowEstimateTime.setOnLongClickListener(v -> {
+                performHapticFeedback();
+                showTimeLeftColorSheet();
                 return true;
             });
         }
     }
 
-    private void showElapsedAlignmentSheet() {
+    private void showElapsedCustomizeSheet() {
         if (!isAdded() || getActivity() == null) return;
-        if (!(getActivity() instanceof androidx.fragment.app.FragmentActivity)) return;
 
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
-        items.add(com.fadcam.ui.picker.OptionItem.withLigature(
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "elapsed_alignment",
+                getString(R.string.home_elapsed_alignment_option),
+                getString(R.string.home_elapsed_alignment_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "format_align_left"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "elapsed_size",
+                getString(R.string.home_elapsed_size_option),
+                getString(R.string.home_elapsed_size_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "format_size"));
+
+        getParentFragmentManager().setFragmentResultListener(
+                ELAPSED_CUSTOMIZE_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            "");
+                    if ("elapsed_alignment".equals(selected)) {
+                        showElapsedAlignmentSheet();
+                    } else if ("elapsed_size".equals(selected)) {
+                        showElapsedSizeSheet();
+                    }
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_elapsed_customize_title),
+                        items,
+                        null,
+                        ELAPSED_CUSTOMIZE_RESULT_KEY,
+                        getString(R.string.home_elapsed_customize_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_elapsed_customize_sheet");
+    }
+
+    private void showElapsedAlignmentSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
                 ELAPSED_ALIGNMENT_CENTER,
                 getString(R.string.home_elapsed_align_center),
-                "format_align_center"));
+                getString(R.string.home_elapsed_align_center_desc),
+                null, null, null, null, null, "format_align_center"));
         items.add(new com.fadcam.ui.picker.OptionItem(
                 ELAPSED_ALIGNMENT_START,
                 getString(R.string.home_elapsed_align_left),
                 getString(R.string.home_elapsed_align_left_desc),
-                null,
-                null,
-                null,
-                null,
-                null,
-                "format_align_left"));
+                null, null, null, null, null, "format_align_left"));
 
         String selectedId = sharedPreferencesManager != null
                 ? sharedPreferencesManager.sharedPreferences.getString(
@@ -11556,11 +11577,11 @@ public class HomeFragment extends BaseFragment {
 
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
                 com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
-                        getString(R.string.home_elapsed_customize_title),
+                        getString(R.string.home_elapsed_alignment_option),
                         items,
                         selectedId,
                         ELAPSED_ALIGNMENT_RESULT_KEY,
-                        getString(R.string.recording_elapsed_time),
+                        getString(R.string.home_elapsed_alignment_helper),
                         true);
         Bundle args = sheet.getArguments();
         if (args != null) {
@@ -11569,25 +11590,127 @@ public class HomeFragment extends BaseFragment {
         sheet.show(getParentFragmentManager(), "home_elapsed_alignment_sheet");
     }
 
-    private void showStorageIndicatorStyleSheet() {
+    private void showElapsedSizeSheet() {
         if (!isAdded() || getActivity() == null) return;
-        if (!(getActivity() instanceof androidx.fragment.app.FragmentActivity)) return;
 
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
-        items.add(com.fadcam.ui.picker.OptionItem.withLigature(
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_SIZE_SMALL,
+                getString(R.string.home_elapsed_size_small),
+                getString(R.string.home_elapsed_size_small_desc),
+                null, null, null, null, null, "text_fields"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_SIZE_MEDIUM,
+                getString(R.string.home_elapsed_size_medium),
+                getString(R.string.home_elapsed_size_medium_desc),
+                null, null, null, null, null, "format_size"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_SIZE_LARGE,
+                getString(R.string.home_elapsed_size_large),
+                getString(R.string.home_elapsed_size_large_desc),
+                null, null, null, null, null, "match_case"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_ELAPSED_SIZE,
+                        ELAPSED_SIZE_MEDIUM)
+                : ELAPSED_SIZE_MEDIUM;
+
+        getParentFragmentManager().setFragmentResultListener(
+                ELAPSED_SIZE_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            ELAPSED_SIZE_MEDIUM);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putString(Constants.PREF_HOME_ELAPSED_SIZE, selected)
+                                .apply();
+                    }
+                    applyElapsedSizePreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_elapsed_size_option),
+                        items,
+                        selectedId,
+                        ELAPSED_SIZE_RESULT_KEY,
+                        getString(R.string.home_elapsed_size_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_elapsed_size_sheet");
+    }
+
+    private void showStorageCustomizeSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "storage_style",
+                getString(R.string.home_storage_indicator_option),
+                getString(R.string.home_storage_indicator_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "donut_large"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "storage_total",
+                getString(R.string.home_storage_total_option),
+                getString(R.string.home_storage_total_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "storage"));
+
+        getParentFragmentManager().setFragmentResultListener(
+                STORAGE_CUSTOMIZE_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            "");
+                    if ("storage_style".equals(selected)) {
+                        showStorageIndicatorStyleSheet();
+                    } else if ("storage_total".equals(selected)) {
+                        showStorageTotalSheet();
+                    }
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_storage_customize_title),
+                        items,
+                        null,
+                        STORAGE_CUSTOMIZE_RESULT_KEY,
+                        getString(R.string.home_storage_customize_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_storage_customize_sheet");
+    }
+
+    private void showStorageIndicatorStyleSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
                 STORAGE_INDICATOR_RING,
                 getString(R.string.home_storage_indicator_ring),
-                "donut_large"));
+                getString(R.string.home_storage_indicator_ring_desc),
+                null, null, null, null, null, "donut_large"));
         items.add(new com.fadcam.ui.picker.OptionItem(
                 STORAGE_INDICATOR_MICRO_PILL,
                 getString(R.string.home_storage_indicator_bar),
                 getString(R.string.home_storage_indicator_bar_desc),
-                null,
-                null,
-                null,
-                null,
-                null,
-                "view_stream"));
+                null, null, null, null, null, "view_stream"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                STORAGE_INDICATOR_VERTICAL_BAR,
+                getString(R.string.home_storage_indicator_vertical),
+                getString(R.string.home_storage_indicator_vertical_desc),
+                null, null, null, null, null, "align_vertical_bottom"));
 
         String selectedId = sharedPreferencesManager != null
                 ? sharedPreferencesManager.sharedPreferences.getString(
@@ -11613,17 +11736,119 @@ public class HomeFragment extends BaseFragment {
 
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
                 com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
-                        getString(R.string.home_storage_indicator_title),
+                        getString(R.string.home_storage_indicator_option),
                         items,
                         selectedId,
                         STORAGE_INDICATOR_STYLE_RESULT_KEY,
-                        getString(R.string.storage_available_space),
+                        getString(R.string.home_storage_indicator_helper),
                         true);
         Bundle args = sheet.getArguments();
         if (args != null) {
             args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         }
         sheet.show(getParentFragmentManager(), "home_storage_indicator_style_sheet");
+    }
+
+    private void showStorageTotalSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                STORAGE_TOTAL_VISIBLE,
+                getString(R.string.home_storage_total_show),
+                getString(R.string.home_storage_total_show_desc),
+                null, null, null, null, null, "visibility"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                STORAGE_TOTAL_HIDDEN,
+                getString(R.string.home_storage_total_hide),
+                getString(R.string.home_storage_total_hide_desc),
+                null, null, null, null, null, "visibility_off"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? (sharedPreferencesManager.sharedPreferences.getBoolean(
+                        Constants.PREF_HOME_STORAGE_SHOW_TOTAL, true)
+                        ? STORAGE_TOTAL_VISIBLE : STORAGE_TOTAL_HIDDEN)
+                : STORAGE_TOTAL_VISIBLE;
+
+        getParentFragmentManager().setFragmentResultListener(
+                STORAGE_TOTAL_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            STORAGE_TOTAL_VISIBLE);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putBoolean(Constants.PREF_HOME_STORAGE_SHOW_TOTAL, STORAGE_TOTAL_VISIBLE.equals(selected))
+                                .apply();
+                    }
+                    applyStorageTotalVisibilityPreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_storage_total_option),
+                        items,
+                        selectedId,
+                        STORAGE_TOTAL_RESULT_KEY,
+                        getString(R.string.home_storage_total_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_storage_total_sheet");
+    }
+
+    private void showTimeLeftColorSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        String currentHex = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_TIME_LEFT_COLOR,
+                        "#F44336")
+                : "#F44336";
+        String selectedId = currentHex;
+        for (int i = 0; i < CLOCK_COLOR_HEX_VALUES.length; i++) {
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    CLOCK_COLOR_HEX_VALUES[i],
+                    CLOCK_COLOR_NAMES[i],
+                    getString(R.string.home_time_left_color_choice_desc, CLOCK_COLOR_HEX_VALUES[i]),
+                    Color.parseColor(CLOCK_COLOR_HEX_VALUES[i]),
+                    null, null, null, null, "palette"));
+        }
+
+        getParentFragmentManager().setFragmentResultListener(
+                TIME_LEFT_COLOR_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            "#F44336");
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putString(Constants.PREF_HOME_TIME_LEFT_COLOR, selected)
+                                .apply();
+                    }
+                    applyTimeLeftAccentPreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_time_left_color_title),
+                        items,
+                        selectedId,
+                        TIME_LEFT_COLOR_RESULT_KEY,
+                        getString(R.string.home_time_left_color_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_time_left_color_sheet");
     }
 
     private void applyElapsedAlignmentPreference() {
@@ -11635,8 +11860,10 @@ public class HomeFragment extends BaseFragment {
                 Constants.PREF_HOME_ELAPSED_ALIGNMENT,
                 ELAPSED_ALIGNMENT_CENTER);
         boolean startAligned = ELAPSED_ALIGNMENT_START.equals(alignment);
+        int startInset = startAligned ? dpToPxInt(38) : 0;
 
         layoutElapsedContent.setGravity(startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL);
+        layoutElapsedContent.setPadding(startInset, 0, 0, 0);
 
         if (layoutElapsedMetaRow != null) {
             layoutElapsedMetaRow.setGravity(startAligned
@@ -11659,6 +11886,25 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    private void applyElapsedSizePreference() {
+        if (sharedPreferencesManager == null || tvElapsedTitle == null) {
+            return;
+        }
+
+        String size = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HOME_ELAPSED_SIZE,
+                ELAPSED_SIZE_MEDIUM);
+        float textSizeSp;
+        if (ELAPSED_SIZE_SMALL.equals(size)) {
+            textSizeSp = isLandscapeMode() ? 19f : 21f;
+        } else if (ELAPSED_SIZE_LARGE.equals(size)) {
+            textSizeSp = isLandscapeMode() ? 23f : 25f;
+        } else {
+            textSizeSp = isLandscapeMode() ? 21f : 23f;
+        }
+        tvElapsedTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+    }
+
     private void applyStorageIndicatorStylePreference() {
         if (sharedPreferencesManager == null || storageProgressRing == null) {
             return;
@@ -11667,10 +11913,41 @@ public class HomeFragment extends BaseFragment {
         String style = sharedPreferencesManager.sharedPreferences.getString(
                 Constants.PREF_HOME_STORAGE_INDICATOR_STYLE,
                 STORAGE_INDICATOR_RING);
-        int viewStyle = STORAGE_INDICATOR_MICRO_PILL.equals(style)
-                ? com.fadcam.ui.utils.StorageProgressRingView.STYLE_MICRO_PILL_BAR
-                : com.fadcam.ui.utils.StorageProgressRingView.STYLE_RING;
+        int viewStyle;
+        if (STORAGE_INDICATOR_MICRO_PILL.equals(style)) {
+            viewStyle = com.fadcam.ui.utils.StorageProgressRingView.STYLE_MICRO_PILL_BAR;
+        } else if (STORAGE_INDICATOR_VERTICAL_BAR.equals(style)) {
+            viewStyle = com.fadcam.ui.utils.StorageProgressRingView.STYLE_VERTICAL_BAR;
+        } else {
+            viewStyle = com.fadcam.ui.utils.StorageProgressRingView.STYLE_RING;
+        }
         storageProgressRing.setIndicatorStyle(viewStyle);
+    }
+
+    private void applyStorageTotalVisibilityPreference() {
+        if (sharedPreferencesManager == null || tvSpaceTotal == null) {
+            return;
+        }
+        boolean showTotal = sharedPreferencesManager.sharedPreferences.getBoolean(
+                Constants.PREF_HOME_STORAGE_SHOW_TOTAL,
+                true);
+        tvSpaceTotal.setVisibility(showTotal ? View.VISIBLE : View.GONE);
+    }
+
+    private void applyTimeLeftAccentPreference() {
+        if (sharedPreferencesManager == null) {
+            return;
+        }
+        String colorHex = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HOME_TIME_LEFT_COLOR,
+                "#F44336");
+        int accentColor = Color.parseColor(colorHex);
+        if (tvEstimateTitle != null) {
+            tvEstimateTitle.setTextColor(accentColor);
+        }
+        if (ivEstimateIcon != null) {
+            ivEstimateIcon.setColorFilter(accentColor);
+        }
     }
 
     private void updateElapsedHeroAppearance() {
@@ -11695,9 +11972,9 @@ public class HomeFragment extends BaseFragment {
         } else if (isRecording()) {
             backgroundColor = Color.TRANSPARENT;
             strokeColor = Color.TRANSPARENT;
-            titleColor = Color.parseColor("#E7FFF2");
-            subtitleColor = Color.parseColor("#95D6B0");
-            iconColor = Color.parseColor("#63C890");
+            titleColor = Color.parseColor("#EDFFF4");
+            subtitleColor = Color.parseColor("#8DE0AC");
+            iconColor = Color.parseColor("#56C889");
             stateIconRes = R.drawable.play_button_rounded;
         } else {
             backgroundColor = Color.TRANSPARENT;

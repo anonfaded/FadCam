@@ -125,10 +125,10 @@
                         </LinearLayout>
 
                         <!-- Estimated Time Row -->
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+                        <LinearLayout android:id="@+id/rowEstimateTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
 
                             <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
-                                <ImageView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:padding="4dp" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
+                                <ImageView android:id="@+id/ivEstimateIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:padding="4dp" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
                             </FrameLayout>
 
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
@@ -175,9 +175,9 @@
                         android:layout_height="wrap_content"
                         android:clipChildren="true"
                         android:clipToPadding="true"
-                        android:paddingStart="4dp"
+                        android:paddingStart="3dp"
                         android:paddingTop="0dp"
-                        android:paddingEnd="4dp"
+                        android:paddingEnd="3dp"
                         android:paddingBottom="0dp">
 
                         <ImageView
@@ -185,11 +185,11 @@
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:layout_gravity="bottom|end"
-                            android:alpha="0.22"
+                            android:alpha="0.16"
                             android:contentDescription="@null"
                             android:src="@drawable/fadseclab_flag"
                             android:translationX="10dp"
-                            android:translationY="16dp" />
+                            android:translationY="10dp" />
 
                         <LinearLayout
                             android:id="@+id/layoutElapsedContent"
@@ -208,9 +208,9 @@
 
                             <ImageView
                                 android:id="@+id/tvElapsedStateIcon"
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:layout_marginEnd="4dp"
+                                android:layout_width="10dp"
+                                android:layout_height="10dp"
+                                android:layout_marginEnd="3dp"
                                 android:contentDescription="@null"
                                 android:scaleType="fitCenter"
                                 android:src="@drawable/play_button_rounded"
@@ -223,7 +223,7 @@
                                 android:text="@string/recording_elapsed_time"
                                 android:textAllCaps="true"
                                 android:textColor="#90A4AE"
-                                android:textSize="9sp"
+                                android:textSize="8sp"
                                 android:textStyle="bold" />
                             </LinearLayout>
 
@@ -237,7 +237,7 @@
                                 android:letterSpacing="0.005"
                                 android:text="00:00"
                                 android:textColor="#D6E2EA"
-                                android:textSize="22sp"
+                                android:textSize="21sp"
                                 android:textStyle="bold" />
 
                         </LinearLayout>
