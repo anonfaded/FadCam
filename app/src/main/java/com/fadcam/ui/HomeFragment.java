@@ -12090,6 +12090,7 @@ public class HomeFragment extends BaseFragment {
 
         int backgroundColor;
         int strokeColor;
+        int railStrokeColor = resolveThemeColor(R.attr.homeRailCardBorder);
         int titleColor;
         int subtitleColor;
         int iconColor;
@@ -12099,7 +12100,7 @@ public class HomeFragment extends BaseFragment {
             backgroundColor = useBlackCard
                     ? Color.parseColor("#E6000000")
                     : useWhiteCard ? Color.parseColor("#F7F3EE") : Color.TRANSPARENT;
-            strokeColor = useBlackCard || useWhiteCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
+            strokeColor = useBlackCard || useWhiteCard ? railStrokeColor : Color.TRANSPARENT;
             titleColor = useWhiteCard ? Color.parseColor("#6C4B12") : Color.parseColor("#FFF6E2");
             subtitleColor = useWhiteCard ? Color.parseColor("#A07024") : Color.parseColor("#D8B06C");
             iconColor = useWhiteCard ? Color.parseColor("#A07024") : Color.parseColor("#C8923A");
@@ -12108,7 +12109,7 @@ public class HomeFragment extends BaseFragment {
             backgroundColor = useBlackCard
                     ? Color.parseColor("#E6000000")
                     : useWhiteCard ? Color.parseColor("#F7FBF8") : Color.TRANSPARENT;
-            strokeColor = useBlackCard || useWhiteCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
+            strokeColor = useBlackCard || useWhiteCard ? railStrokeColor : Color.TRANSPARENT;
             titleColor = useWhiteCard ? Color.parseColor("#165B36") : Color.parseColor("#EDFFF4");
             subtitleColor = useWhiteCard ? Color.parseColor("#2F8A5A") : Color.parseColor("#8DE0AC");
             iconColor = useWhiteCard ? Color.parseColor("#2F8A5A") : Color.parseColor("#56C889");
@@ -12117,7 +12118,7 @@ public class HomeFragment extends BaseFragment {
             backgroundColor = useBlackCard
                     ? Color.parseColor("#E6000000")
                     : useWhiteCard ? Color.parseColor("#F4F6F8") : Color.TRANSPARENT;
-            strokeColor = useBlackCard || useWhiteCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
+            strokeColor = useBlackCard || useWhiteCard ? railStrokeColor : Color.TRANSPARENT;
             titleColor = useWhiteCard ? Color.parseColor("#33424C") : Color.parseColor("#C9D5DE");
             subtitleColor = useWhiteCard ? Color.parseColor("#667682") : Color.parseColor("#90A4AE");
             iconColor = useWhiteCard ? Color.parseColor("#667682") : Color.parseColor("#6B7C88");

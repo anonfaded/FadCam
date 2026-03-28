@@ -562,6 +562,12 @@ public class FadRecHomeFragment extends HomeFragment {
                     startAnnotationService();
                 }
             }
+
+            cardFloatingControls.setOnClickListener(v -> {
+                if (switchFloatingControls != null) {
+                    switchFloatingControls.performClick();
+                }
+            });
             
             FLog.d(TAG, "Floating controls card added");
         }

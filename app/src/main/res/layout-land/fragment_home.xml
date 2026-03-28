@@ -134,7 +134,7 @@
                             android:alpha="0.5"
                             android:background="#22FFFFFF" />
 
-                        <LinearLayout android:id="@+id/rowEstimateTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp" android:background="@drawable/bg_home_row_ripple" android:clickable="true" android:focusable="true" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
+                        <LinearLayout android:id="@+id/rowEstimateTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="3dp" android:background="@android:color/transparent" android:foreground="@drawable/bg_home_row_ripple" android:clickable="true" android:focusable="true" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                             <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
                                 <ImageView android:id="@+id/ivEstimateIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:padding="4dp" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
@@ -158,7 +158,7 @@
                             android:background="#22FFFFFF" />
 
                         <!-- Available Space Row -->
-                        <LinearLayout android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_home_row_ripple" android:clickable="true" android:focusable="true" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
+                        <LinearLayout android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:background="@android:color/transparent" android:foreground="@drawable/bg_home_row_ripple" android:clickable="true" android:focusable="true" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                             <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
                                 <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="center" android:contentDescription="Available space progress" />
