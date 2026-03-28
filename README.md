@@ -430,6 +430,6 @@ We look forward to your contributions!
 - 🖼️ App screenshots and banner design by [T010](https://ko-fi.com/t010nl)
 - The 3D text in icon is from <a href="https://www.textstudio.com/">Font generator</a>.
 - Icons used in app by <a target="_blank" href="https://icons8.com">Icons8</a> and <a target="_blank" href="https://www.flaticon.com/">Flaticon</a>.
-
+- Elapsed timer font option includes Doto by The Doto Project Authors (https://github.com/oliverlalan/Doto).
 
 

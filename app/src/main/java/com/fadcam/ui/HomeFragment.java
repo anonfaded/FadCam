@@ -126,6 +126,7 @@ public class HomeFragment extends BaseFragment {
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
     private static final String ELAPSED_SIZE_RESULT_KEY = "home_elapsed_size_picker";
     private static final String ELAPSED_FONT_RESULT_KEY = "home_elapsed_font_picker";
+    private static final String ELAPSED_FLAG_RESULT_KEY = "home_elapsed_flag_picker";
     private static final String ELAPSED_CUSTOMIZE_RESULT_KEY = "home_elapsed_customize_picker";
     private static final String STORAGE_INDICATOR_STYLE_RESULT_KEY = "home_storage_indicator_style_picker";
     private static final String STORAGE_CUSTOMIZE_RESULT_KEY = "home_storage_customize_picker";
@@ -141,6 +142,9 @@ public class HomeFragment extends BaseFragment {
     private static final String ELAPSED_SIZE_LARGE = "large";
     private static final String ELAPSED_FONT_UBUNTU = "ubuntu";
     private static final String ELAPSED_FONT_MONOSPACE = "monospace";
+    private static final String ELAPSED_FONT_DOTO = "doto";
+    private static final String ELAPSED_FLAG_SHOW = "show";
+    private static final String ELAPSED_FLAG_HIDE = "hide";
     private static final String STORAGE_INDICATOR_RING = "ring";
     private static final String STORAGE_INDICATOR_MICRO_PILL = "micro_pill_bar";
     private static final String STORAGE_INDICATOR_VERTICAL_BAR = "vertical_bar";
@@ -225,6 +229,7 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvRemainingSubtitle;
     private MaterialCardView cardElapsedHero;
     private ImageView tvElapsedStateIcon;
+    private ImageView ivElapsedAccent;
     private LinearLayout layoutElapsedContent;
     private LinearLayout layoutElapsedMetaRow;
     private View rowStorageAvailable;
@@ -327,6 +332,8 @@ public class HomeFragment extends BaseFragment {
 
     private CardView cardClock;
     private TextView tvClock, tvDateEnglish, tvDateArabic;
+    private LinearLayout layoutClockInner;
+    private LinearLayout layoutClockContent;
 
     // FragmentActivity tipres = requireActivity();
     private String[] tips;
@@ -6160,7 +6167,7 @@ public class HomeFragment extends BaseFragment {
                     CLOCK_COLOR_NAMES[i],
                     getString(R.string.home_clock_color_choice_desc, CLOCK_COLOR_HEX_VALUES[i]),
                     Color.parseColor(CLOCK_COLOR_HEX_VALUES[i]),
-                    null, null, null, null, "palette"));
+                    null, null, null, null, null));
         }
 
         getParentFragmentManager().setFragmentResultListener(
@@ -6185,6 +6192,7 @@ public class HomeFragment extends BaseFragment {
                         tvDateEnglish.setTextColor(Color.WHITE);
                         tvDateArabic.setTextColor(Color.WHITE);
                     }
+                    updateClock();
                 });
 
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
@@ -6335,7 +6343,7 @@ public class HomeFragment extends BaseFragment {
 
         if (displayOption == 0) {
             tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 18f : 16f);
-            tvClock.setPadding(0, dpToPxInt(2), 0, dpToPxInt(2));
+            tvClock.setPadding(0, 0, 0, 0);
         } else if (displayOption == 1) {
             tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 16f : 14f);
             tvClock.setPadding(0, 0, 0, 0);
@@ -6344,23 +6352,39 @@ public class HomeFragment extends BaseFragment {
             tvClock.setPadding(0, 0, 0, 0);
         }
 
+        if (layoutClockInner != null) {
+            int horizontalPadding = dpToPxInt(4);
+            int verticalPadding = displayOption == 0 ? dpToPxInt(3) : dpToPxInt(2);
+            layoutClockInner.setPadding(
+                    horizontalPadding,
+                    verticalPadding,
+                    horizontalPadding,
+                    verticalPadding);
+        }
+        if (layoutClockContent != null) {
+            layoutClockContent.setGravity(displayOption == 0
+                    ? Gravity.CENTER_VERTICAL
+                    : Gravity.NO_GRAVITY);
+        }
+
         if (tvDateEnglish instanceof com.fadcam.ui.utils.AnimatedTextView) {
             ((com.fadcam.ui.utils.AnimatedTextView) tvDateEnglish).animateSlot(displayDateEnglish, 400);
         } else {
             tvDateEnglish.setText(displayDateEnglish);
         }
-        tvDateEnglish.setPadding(
-            5,
-            tvPreviewPlaceholder.getPaddingTop(),
-            5,
-            tvPreviewPlaceholder.getPaddingBottom()
-        );
+        tvDateEnglish.setPadding(0, 0, 0, 0);
+        tvDateEnglish.setSingleLine(true);
+        tvDateEnglish.setEllipsize(null);
+        tvDateEnglish.setHorizontallyScrolling(false);
+        tvDateEnglish.setGravity(Gravity.START);
 
         if (tvDateArabic instanceof com.fadcam.ui.utils.AnimatedTextView) {
             ((com.fadcam.ui.utils.AnimatedTextView) tvDateArabic).animateSlot(displayDateArabic, 400);
         } else {
             tvDateArabic.setText(displayDateArabic);
         }
+        tvDateArabic.setPadding(0, 0, 0, 0);
+        tvDateArabic.setGravity(Gravity.END);
     }
 
     /**
@@ -6770,6 +6794,7 @@ public class HomeFragment extends BaseFragment {
                     applyElapsedAlignmentPreference();
                     applyElapsedSizePreference();
                     applyElapsedFontPreference();
+                    applyElapsedFlagPreference();
 
                 });
         }
@@ -9737,6 +9762,7 @@ public class HomeFragment extends BaseFragment {
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
         cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
         tvElapsedStateIcon = view.findViewById(R.id.tvElapsedStateIcon);
+        ivElapsedAccent = view.findViewById(R.id.ivElapsedAccent);
         layoutElapsedContent = view.findViewById(R.id.layoutElapsedContent);
         layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
@@ -9801,6 +9827,8 @@ public class HomeFragment extends BaseFragment {
         tvClock = view.findViewById(R.id.tvClock);
         tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
         tvDateArabic = view.findViewById(R.id.tvDateArabic);
+        layoutClockInner = view.findViewById(R.id.layoutClockInner);
+        layoutClockContent = view.findViewById(R.id.layoutClockContent);
 
         // Stats views — split label/value layout
         tvVideoCount = view.findViewById(R.id.tvVideoCount);
@@ -9810,6 +9838,7 @@ public class HomeFragment extends BaseFragment {
         applyElapsedAlignmentPreference();
         applyElapsedSizePreference();
         applyElapsedFontPreference();
+        applyElapsedFlagPreference();
         applyStorageIndicatorStylePreference();
         applyStorageTotalVisibilityPreference();
         applyTimeLeftAccentPreference();
@@ -11534,6 +11563,11 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_elapsed_font_option),
                 getString(R.string.home_elapsed_font_option_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "font_download"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "elapsed_flag",
+                getString(R.string.home_elapsed_flag_option),
+                getString(R.string.home_elapsed_flag_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "flag"));
 
         getParentFragmentManager().setFragmentResultListener(
                 ELAPSED_CUSTOMIZE_RESULT_KEY,
@@ -11549,6 +11583,8 @@ public class HomeFragment extends BaseFragment {
                         showElapsedSizeSheet();
                     } else if ("elapsed_font".equals(selected)) {
                         showElapsedFontSheet();
+                    } else if ("elapsed_flag".equals(selected)) {
+                        showElapsedFlagSheet();
                     }
                 });
 
@@ -11690,6 +11726,11 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_elapsed_font_monospace),
                 getString(R.string.home_elapsed_font_monospace_desc),
                 null, null, null, null, null, "code"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_FONT_DOTO,
+                getString(R.string.home_elapsed_font_doto),
+                getString(R.string.home_elapsed_font_doto_desc),
+                null, null, null, null, null, "auto_awesome"));
 
         String selectedId = sharedPreferencesManager != null
                 ? sharedPreferencesManager.sharedPreferences.getString(
@@ -11726,6 +11767,58 @@ public class HomeFragment extends BaseFragment {
             args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         }
         sheet.show(getParentFragmentManager(), "home_elapsed_font_sheet");
+    }
+
+    private void showElapsedFlagSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_FLAG_SHOW,
+                getString(R.string.home_elapsed_flag_show),
+                getString(R.string.home_elapsed_flag_show_desc),
+                null, null, null, null, null, "flag"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_FLAG_HIDE,
+                getString(R.string.home_elapsed_flag_hide),
+                getString(R.string.home_elapsed_flag_hide_desc),
+                null, null, null, null, null, "hide_image"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? (sharedPreferencesManager.sharedPreferences.getBoolean(
+                        Constants.PREF_HOME_ELAPSED_SHOW_FLAG, true)
+                        ? ELAPSED_FLAG_SHOW : ELAPSED_FLAG_HIDE)
+                : ELAPSED_FLAG_SHOW;
+
+        getParentFragmentManager().setFragmentResultListener(
+                ELAPSED_FLAG_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            ELAPSED_FLAG_SHOW);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, ELAPSED_FLAG_SHOW.equals(selected))
+                                .apply();
+                    }
+                    applyElapsedFlagPreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_elapsed_flag_option),
+                        items,
+                        selectedId,
+                        ELAPSED_FLAG_RESULT_KEY,
+                        getString(R.string.home_elapsed_flag_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_elapsed_flag_sheet");
     }
 
     private void showStorageCustomizeSheet() {
@@ -11941,7 +12034,7 @@ public class HomeFragment extends BaseFragment {
                 Constants.PREF_HOME_ELAPSED_ALIGNMENT,
                 ELAPSED_ALIGNMENT_CENTER);
         boolean startAligned = ELAPSED_ALIGNMENT_START.equals(alignment);
-        int startInset = startAligned ? dpToPxInt(41) : 0;
+        int startInset = startAligned ? dpToPxInt(24) : 0;
 
         layoutElapsedContent.setGravity(startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL);
         layoutElapsedContent.setPadding(startInset, 0, 0, 0);
@@ -11995,11 +12088,36 @@ public class HomeFragment extends BaseFragment {
                 ELAPSED_FONT_UBUNTU);
         if (ELAPSED_FONT_MONOSPACE.equals(fontPref)) {
             tvElapsedTitle.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+        } else if (ELAPSED_FONT_DOTO.equals(fontPref)) {
+            try {
+                android.graphics.Typeface doto = android.graphics.Typeface.createFromAsset(
+                        requireContext().getAssets(),
+                        "doto.ttf");
+                tvElapsedTitle.setTypeface(doto, android.graphics.Typeface.BOLD);
+            } catch (Exception e) {
+                android.graphics.Typeface ubuntu = ResourcesCompat.getFont(requireContext(), R.font.ubuntu_regular);
+                if (ubuntu != null) {
+                    tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
+                }
+            }
         } else {
             android.graphics.Typeface ubuntu = ResourcesCompat.getFont(requireContext(), R.font.ubuntu_regular);
             if (ubuntu != null) {
                 tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
             }
+        }
+    }
+
+    private void applyElapsedFlagPreference() {
+        if (sharedPreferencesManager == null || ivElapsedAccent == null) {
+            return;
+        }
+        boolean showFlag = sharedPreferencesManager.sharedPreferences.getBoolean(
+                Constants.PREF_HOME_ELAPSED_SHOW_FLAG,
+                true);
+        ivElapsedAccent.setVisibility(showFlag ? View.VISIBLE : View.GONE);
+        if (cardElapsedHero != null) {
+            cardElapsedHero.setMinimumHeight(dpToPxInt(isLandscapeMode() ? 42 : 44));
         }
     }
 

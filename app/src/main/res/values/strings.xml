@@ -170,6 +170,15 @@
     <string name="home_elapsed_font_ubuntu_desc">Uses the app’s default Ubuntu font for the timer</string>
     <string name="home_elapsed_font_monospace">Monospace</string>
     <string name="home_elapsed_font_monospace_desc">Uses Android’s built-in monospace font for clearer fixed-width digits</string>
+    <string name="home_elapsed_font_doto">Doto</string>
+    <string name="home_elapsed_font_doto_desc">Uses the Doto font for a more distinctive digital timer look</string>
+    <string name="home_elapsed_flag_option">Flag accent</string>
+    <string name="home_elapsed_flag_option_desc">Show or hide the FadSec Lab flag accent behind the timer</string>
+    <string name="home_elapsed_flag_helper">Choose whether the FadSec Lab flag accent is shown behind the elapsed timer.</string>
+    <string name="home_elapsed_flag_show">Show FadSec Lab flag (Default)</string>
+    <string name="home_elapsed_flag_show_desc">Display the branded flag accent behind the timer</string>
+    <string name="home_elapsed_flag_hide">Hide FadSec Lab flag</string>
+    <string name="home_elapsed_flag_hide_desc">Keep the elapsed timer area clean without the flag accent</string>
     <string name="home_storage_customize_title">Storage Display</string>
     <string name="home_storage_customize_helper">Customize the storage indicator style and total-storage visibility.</string>
     <string name="home_storage_indicator_option">Indicator style</string>

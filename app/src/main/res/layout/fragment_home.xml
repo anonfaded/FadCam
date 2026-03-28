@@ -171,6 +171,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="44dp"
                 android:clipChildren="true"
                 android:clipToPadding="true"
                 android:paddingStart="3dp"
@@ -183,11 +184,11 @@
                     android:layout_width="52dp"
                     android:layout_height="52dp"
                     android:layout_gravity="bottom|end"
-                    android:alpha="0.24"
+                    android:alpha="0.62"
                     android:contentDescription="@null"
                     android:src="@drawable/fadseclab_flag"
-                    android:translationX="10dp"
-                    android:translationY="6dp" />
+                    android:translationX="8dp"
+                    android:translationY="-4dp" />
 
                 <LinearLayout
                     android:id="@+id/layoutElapsedContent"
@@ -231,6 +232,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
                         android:fontFamily="@font/ubuntu_regular"
+                        android:includeFontPadding="false"
                         android:gravity="center"
                         android:letterSpacing="0.005"
                         android:text="00:00"
@@ -250,17 +252,17 @@
 
             <androidx.cardview.widget.CardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/colorSurface" app:cardCornerRadius="8dp" app:cardElevation="4dp" app:strokeColor="#4CAF50" app:strokeWidth="2dp">
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
+                <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
                     <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center_vertical" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="access_time" android:textColor="?attr/colorOnSurface" android:textSize="20sp" android:gravity="center" />
 
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
+                    <LinearLayout android:id="@+id/layoutClockContent" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="13sp" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" android:includeFontPadding="false" />
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:layout_gravity="left" android:textColor="?attr/colorOnSurface" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:layout_gravity="left" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="right" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="?attr/colorOnSurface" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="match_parent" android:layout_gravity="right" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
 
                     </LinearLayout>
                 </LinearLayout>
