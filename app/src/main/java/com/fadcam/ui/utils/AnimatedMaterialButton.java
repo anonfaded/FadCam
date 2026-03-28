@@ -161,8 +161,10 @@ public class AnimatedMaterialButton extends MaterialButton {
         TextPaint paint = new TextPaint(getPaint());
         int usableW = getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight();
         if (usableW < 1) usableW = 1;
-
-        int layoutW = usableW;
+        int maxNeededW = (int) Math.ceil(Math.max(
+                oldStr.isEmpty() ? 0f : paint.measureText(oldStr),
+                newStr.isEmpty() ? 0f : paint.measureText(newStr)));
+        int layoutW = Math.max(usableW, maxNeededW);
 
         slotOldLayout = StaticLayout.Builder
                 .obtain(oldStr, 0, oldStr.length(), paint, layoutW)

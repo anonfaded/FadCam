@@ -247,10 +247,11 @@ public class HomeFragment extends BaseFragment {
     private View rowStorageAvailable;
     private View rowEstimateTime;
     private View layoutCards;
+    private View layoutCardRailSection;
     private View leftPanel;
     private View rightPanel;
-    private MaterialCardView cardRailTogglePortrait;
-    private MaterialCardView cardRailToggleLandscape;
+    private View cardRailTogglePortrait;
+    private View cardRailToggleLandscape;
     private ImageView ivCardRailTogglePortrait;
     private ImageView ivCardRailToggleLandscape;
     
@@ -9919,6 +9920,7 @@ public class HomeFragment extends BaseFragment {
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
         layoutCards = view.findViewById(R.id.layoutCards);
+        layoutCardRailSection = view.findViewById(R.id.layoutCardRailSection);
         leftPanel = view.findViewById(R.id.leftPanel);
         rightPanel = view.findViewById(R.id.rightPanel);
         cardRailTogglePortrait = view.findViewById(R.id.cardRailTogglePortrait);
@@ -11747,47 +11749,41 @@ public class HomeFragment extends BaseFragment {
 
         boolean folded = isCardRailCurrentlyFolded();
         boolean showTimerOnButton = folded && (isRecording() || isPaused());
-        if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
-            ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop).cancelAnimation();
-        }
+        CharSequence currentText = buttonStartStop.getText();
+        String currentValue = currentText != null ? currentText.toString() : "";
+        boolean currentShowsTimer = currentValue.matches("\\d{2}:\\d{2}");
 
         if (showTimerOnButton) {
             buttonStartStop.setIcon(AppCompatResources.getDrawable(
                     requireContext(),
                     R.drawable.stop_rounded));
-            if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
-                CharSequence current = buttonStartStop.getText();
-                String oldText = current != null ? current.toString() : "";
-                if (!oldText.equals(latestElapsedDisplay)) {
-                    if (oldText.matches("\\d{2}:\\d{2}")) {
-                        ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop)
-                                .animateSlot(latestElapsedDisplay, 400);
-                    } else {
-                        buttonStartStop.setText(latestElapsedDisplay);
-                    }
+            if (!currentValue.equals(latestElapsedDisplay)) {
+                if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton
+                        && currentShowsTimer) {
+                    // Timer updates should behave like the elapsed card: only the
+                    // changed digits move while the stable prefix/suffix stay put.
+                    ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop)
+                            .animateSlot(latestElapsedDisplay, 400);
+                } else {
+                    buttonStartStop.setText(latestElapsedDisplay);
                 }
-            } else {
-                buttonStartStop.setText(latestElapsedDisplay);
             }
-            buttonStartStop.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
-            buttonStartStop.setIconPadding(dpToPxInt(4));
-            buttonStartStop.setPadding(dpToPxInt(12), dpToPxInt(8), dpToPxInt(12), dpToPxInt(8));
-        } else {
-            android.graphics.drawable.Drawable icon = AppCompatResources.getDrawable(
-                    requireContext(),
-                    recordingState == RecordingState.NONE
-                            ? R.drawable.play_button_rounded
-                            : R.drawable.stop_rounded);
-            buttonStartStop.setIcon(icon);
-            buttonStartStop.setText(recordingState == RecordingState.NONE
-                    ? getString(R.string.button_start)
-                    : getString(R.string.button_stop));
-            buttonStartStop.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
-            buttonStartStop.setIconPadding(dpToPxInt(4));
-            buttonStartStop.setPadding(dpToPxInt(12), dpToPxInt(8), dpToPxInt(12), dpToPxInt(8));
+            return;
         }
+
+        if (!currentShowsTimer) {
+            return;
+        }
+
+        android.graphics.drawable.Drawable icon = AppCompatResources.getDrawable(
+                requireContext(),
+                recordingState == RecordingState.NONE
+                        ? R.drawable.play_button_rounded
+                        : R.drawable.stop_rounded);
+        buttonStartStop.setIcon(icon);
+        buttonStartStop.setText(recordingState == RecordingState.NONE
+                ? getString(R.string.button_start)
+                : getString(R.string.button_stop));
     }
 
     private void applyCardRailFoldedState(boolean animate) {
@@ -11818,7 +11814,9 @@ public class HomeFragment extends BaseFragment {
                 cardRailTogglePortrait.setVisibility(View.GONE);
             }
         } else {
-            if (layoutCards != null) {
+            if (layoutCardRailSection != null) {
+                layoutCardRailSection.setVisibility(folded ? View.GONE : View.VISIBLE);
+            } else if (layoutCards != null) {
                 layoutCards.setVisibility(folded ? View.GONE : View.VISIBLE);
             }
             if (ivCardRailTogglePortrait != null) {
@@ -11863,7 +11861,7 @@ public class HomeFragment extends BaseFragment {
         if (folded) {
             set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
         } else {
-            set.connect(R.id.leftPanel, ConstraintSet.END, R.id.cardRailToggleLandscape, ConstraintSet.START, dpToPxInt(3));
+            set.connect(R.id.leftPanel, ConstraintSet.END, R.id.cardRailToggleLandscape, ConstraintSet.START, 0);
             set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
         }
         set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END, R.id.rightPanel, ConstraintSet.START, dpToPxInt(3));
