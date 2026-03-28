@@ -153,6 +153,7 @@ public class HomeFragment extends BaseFragment {
     private static final String ELAPSED_FLAG_HIDE = "hide";
     private static final String ELAPSED_BACKGROUND_TRANSPARENT = "transparent";
     private static final String ELAPSED_BACKGROUND_BLACK = "black";
+    private static final String ELAPSED_BACKGROUND_WHITE = "white";
     private static final String STORAGE_INDICATOR_RING = "ring";
     private static final String STORAGE_INDICATOR_MICRO_PILL = "micro_pill_bar";
     private static final String STORAGE_INDICATOR_VERTICAL_BAR = "vertical_bar";
@@ -5544,22 +5545,42 @@ public class HomeFragment extends BaseFragment {
             }, 1500); // 1.5 second cooldown
 
             if (recordingState.equals(RecordingState.NONE)) {
-                animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
-                        AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                    buttonStartStop.setBackgroundTintList(
-                            ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                    );
-                    buttonStartStop.setAlpha(1.0f);
-                }, true);
+                if (isCardRailCurrentlyFolded()) {
+                    applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                        buttonStartStop.setBackgroundTintList(
+                                ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
+                        );
+                        buttonStartStop.setAlpha(1.0f);
+                    });
+                } else {
+                    animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                        buttonStartStop.setBackgroundTintList(
+                                ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
+                        );
+                        buttonStartStop.setAlpha(1.0f);
+                    }, true);
+                }
                 debouncedStartRecording.run();
             } else {
-                animateButtonTransition(buttonStartStop, getString(R.string.button_start),
-                        AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                    buttonStartStop.setBackgroundTintList(
-                            ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                    );
-                    buttonStartStop.setAlpha(1.0f);
-                }, false);
+                if (isCardRailCurrentlyFolded()) {
+                    applyButtonTransition(buttonStartStop, getString(R.string.button_start),
+                            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                        buttonStartStop.setBackgroundTintList(
+                                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                        );
+                        buttonStartStop.setAlpha(1.0f);
+                    });
+                } else {
+                    animateButtonTransition(buttonStartStop, getString(R.string.button_start),
+                            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                        buttonStartStop.setBackgroundTintList(
+                                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                        );
+                        buttonStartStop.setAlpha(1.0f);
+                    }, false);
+                }
                 debouncedStopRecording.run();
             }
         });
@@ -6026,12 +6047,37 @@ public class HomeFragment extends BaseFragment {
     private void setupClockLongPressListener() {
         if (cardClock != null) {
             cardClock.setOnLongClickListener(v -> {
-                performHapticFeedback();
-                // Show existing display options and new color chooser
-                showClockAppearanceDialog();
+                animatePressBounce(v, () -> {
+                    performHapticFeedback();
+                    showClockAppearanceDialog();
+                });
                 return true;
             });
         }
+    }
+
+    private void animatePressBounce(@NonNull View target, @Nullable Runnable endAction) {
+        target.animate().cancel();
+        AnimatorSet bounce = new AnimatorSet();
+        ObjectAnimator scaleDownX = ObjectAnimator.ofFloat(target, "scaleX", 0.97f);
+        ObjectAnimator scaleDownY = ObjectAnimator.ofFloat(target, "scaleY", 0.97f);
+        scaleDownX.setDuration(50);
+        scaleDownY.setDuration(50);
+        ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(target, "scaleX", 1.0f);
+        ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(target, "scaleY", 1.0f);
+        scaleUpX.setDuration(70);
+        scaleUpY.setDuration(70);
+        bounce.play(scaleDownX).with(scaleDownY);
+        bounce.play(scaleUpX).with(scaleUpY).after(scaleDownX);
+        bounce.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                target.setScaleX(1f);
+                target.setScaleY(1f);
+                if (endAction != null) endAction.run();
+            }
+        });
+        bounce.start();
     }
 
     private void addWobbleAnimation() {
@@ -6457,6 +6503,7 @@ public class HomeFragment extends BaseFragment {
             layoutClockContent.setGravity(Gravity.CENTER_VERTICAL);
             int contentVerticalPadding = displayOption == 0 ? dpToPxInt(1) : 0;
             layoutClockContent.setPadding(0, contentVerticalPadding, 0, contentVerticalPadding);
+            layoutClockContent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
 
         if (tvDateEnglish instanceof com.fadcam.ui.utils.AnimatedTextView) {
@@ -6479,6 +6526,7 @@ public class HomeFragment extends BaseFragment {
         tvDateArabic.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         tvDateArabic.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_END);
         tvDateArabic.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        tvDateArabic.setTextDirection(View.TEXT_DIRECTION_RTL);
         ViewGroup.LayoutParams arabicParams = tvDateArabic.getLayoutParams();
         if (arabicParams instanceof LinearLayout.LayoutParams) {
             ((LinearLayout.LayoutParams) arabicParams).gravity = Gravity.END;
@@ -9831,16 +9879,17 @@ public class HomeFragment extends BaseFragment {
             stats.setClickable(true);
             stats.setFocusable(true);
             stats.setOnClickListener(v -> {
-                performHapticFeedback();
-                try {
-                    if (getActivity() instanceof com.fadcam.MainActivity) {
-                        com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
-                        // Switch to Records tab (index 1)
-                        act.switchFragment(1, true);
+                animatePressBounce(v, () -> {
+                    performHapticFeedback();
+                    try {
+                        if (getActivity() instanceof com.fadcam.MainActivity) {
+                            com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
+                            act.switchFragment(1, true);
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Failed to navigate to Records from Stats card", e);
                     }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Failed to navigate to Records from Stats card", e);
-                }
+                });
             });
         } catch (Exception e) {
             FLog.e(TAG, "setupStatsCardNavigation error", e);
@@ -11632,24 +11681,30 @@ public class HomeFragment extends BaseFragment {
     private void setupHomeCustomizationListeners() {
         if (cardElapsedHero != null) {
             cardElapsedHero.setOnLongClickListener(v -> {
-                performHapticFeedback();
-                showElapsedCustomizeSheet();
+                animatePressBounce(v, () -> {
+                    performHapticFeedback();
+                    showElapsedCustomizeSheet();
+                });
                 return true;
             });
         }
 
         if (rowStorageAvailable != null) {
             rowStorageAvailable.setOnLongClickListener(v -> {
-                performHapticFeedback();
-                showStorageCustomizeSheet();
+                animatePressBounce(v, () -> {
+                    performHapticFeedback();
+                    showStorageCustomizeSheet();
+                });
                 return true;
             });
         }
 
         if (rowEstimateTime != null) {
             rowEstimateTime.setOnLongClickListener(v -> {
-                performHapticFeedback();
-                showTimeLeftColorSheet();
+                animatePressBounce(v, () -> {
+                    performHapticFeedback();
+                    showTimeLeftColorSheet();
+                });
                 return true;
             });
         }
@@ -11692,13 +11747,32 @@ public class HomeFragment extends BaseFragment {
 
         boolean folded = isCardRailCurrentlyFolded();
         boolean showTimerOnButton = folded && (isRecording() || isPaused());
+        if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
+            ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop).cancelAnimation();
+        }
 
         if (showTimerOnButton) {
-            buttonStartStop.setIcon(null);
-            buttonStartStop.setText(latestElapsedDisplay);
+            buttonStartStop.setIcon(AppCompatResources.getDrawable(
+                    requireContext(),
+                    R.drawable.stop_rounded));
+            if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
+                CharSequence current = buttonStartStop.getText();
+                String oldText = current != null ? current.toString() : "";
+                if (!oldText.equals(latestElapsedDisplay)) {
+                    if (oldText.matches("\\d{2}:\\d{2}")) {
+                        ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop)
+                                .animateSlot(latestElapsedDisplay, 400);
+                    } else {
+                        buttonStartStop.setText(latestElapsedDisplay);
+                    }
+                }
+            } else {
+                buttonStartStop.setText(latestElapsedDisplay);
+            }
             buttonStartStop.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f);
-            buttonStartStop.setPadding(dpToPxInt(14), dpToPxInt(8), dpToPxInt(14), dpToPxInt(8));
+            buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            buttonStartStop.setIconPadding(dpToPxInt(4));
+            buttonStartStop.setPadding(dpToPxInt(12), dpToPxInt(8), dpToPxInt(12), dpToPxInt(8));
         } else {
             android.graphics.drawable.Drawable icon = AppCompatResources.getDrawable(
                     requireContext(),
@@ -11709,7 +11783,9 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setText(recordingState == RecordingState.NONE
                     ? getString(R.string.button_start)
                     : getString(R.string.button_stop));
+            buttonStartStop.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            buttonStartStop.setIconPadding(dpToPxInt(4));
             buttonStartStop.setPadding(dpToPxInt(12), dpToPxInt(8), dpToPxInt(12), dpToPxInt(8));
         }
     }
@@ -11736,6 +11812,7 @@ public class HomeFragment extends BaseFragment {
             }
             if (cardRailToggleLandscape != null) {
                 cardRailToggleLandscape.setVisibility(View.VISIBLE);
+                cardRailToggleLandscape.setAlpha(0.9f);
             }
             if (cardRailTogglePortrait != null) {
                 cardRailTogglePortrait.setVisibility(View.GONE);
@@ -11752,7 +11829,8 @@ public class HomeFragment extends BaseFragment {
             }
             if (cardRailTogglePortrait != null) {
                 cardRailTogglePortrait.setVisibility(View.VISIBLE);
-                cardRailTogglePortrait.setTranslationY(dpToPxInt(-8));
+                cardRailTogglePortrait.setTranslationY(0f);
+                cardRailTogglePortrait.setAlpha(0.9f);
             }
             if (cardRailToggleLandscape != null) {
                 cardRailToggleLandscape.setVisibility(View.GONE);
@@ -12092,21 +12170,26 @@ public class HomeFragment extends BaseFragment {
 
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem(
-                ELAPSED_BACKGROUND_TRANSPARENT,
-                getString(R.string.home_elapsed_background_transparent),
-                getString(R.string.home_elapsed_background_transparent_desc),
-                null, null, null, null, null, "texture"));
-        items.add(new com.fadcam.ui.picker.OptionItem(
                 ELAPSED_BACKGROUND_BLACK,
                 getString(R.string.home_elapsed_background_black),
                 getString(R.string.home_elapsed_background_black_desc),
                 null, null, null, null, null, "crop_portrait"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_BACKGROUND_WHITE,
+                getString(R.string.home_elapsed_background_white),
+                getString(R.string.home_elapsed_background_white_desc),
+                null, null, null, null, null, "crop_portrait"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_BACKGROUND_TRANSPARENT,
+                getString(R.string.home_elapsed_background_transparent),
+                getString(R.string.home_elapsed_background_transparent_desc),
+                null, null, null, null, null, "texture"));
 
         String selectedId = sharedPreferencesManager != null
                 ? sharedPreferencesManager.sharedPreferences.getString(
                         Constants.PREF_HOME_ELAPSED_BACKGROUND,
-                        ELAPSED_BACKGROUND_TRANSPARENT)
-                : ELAPSED_BACKGROUND_TRANSPARENT;
+                        ELAPSED_BACKGROUND_BLACK)
+                : ELAPSED_BACKGROUND_BLACK;
 
         getParentFragmentManager().setFragmentResultListener(
                 ELAPSED_BACKGROUND_RESULT_KEY,
@@ -12115,7 +12198,7 @@ public class HomeFragment extends BaseFragment {
                     if (bundle == null) return;
                     String selected = bundle.getString(
                             com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
-                            ELAPSED_BACKGROUND_TRANSPARENT);
+                            ELAPSED_BACKGROUND_BLACK);
                     if (sharedPreferencesManager != null) {
                         sharedPreferencesManager.sharedPreferences.edit()
                                 .putString(Constants.PREF_HOME_ELAPSED_BACKGROUND, selected)
@@ -12502,9 +12585,10 @@ public class HomeFragment extends BaseFragment {
         String backgroundPref = sharedPreferencesManager != null
                 ? sharedPreferencesManager.sharedPreferences.getString(
                         Constants.PREF_HOME_ELAPSED_BACKGROUND,
-                        ELAPSED_BACKGROUND_TRANSPARENT)
-                : ELAPSED_BACKGROUND_TRANSPARENT;
+                        ELAPSED_BACKGROUND_BLACK)
+                : ELAPSED_BACKGROUND_BLACK;
         boolean useBlackCard = ELAPSED_BACKGROUND_BLACK.equals(backgroundPref);
+        boolean useWhiteCard = ELAPSED_BACKGROUND_WHITE.equals(backgroundPref);
 
         int backgroundColor;
         int strokeColor;
@@ -12514,33 +12598,39 @@ public class HomeFragment extends BaseFragment {
         int stateIconRes;
 
         if (isPaused()) {
-            backgroundColor = useBlackCard ? Color.parseColor("#E6000000") : Color.TRANSPARENT;
-            strokeColor = useBlackCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
-            titleColor = Color.parseColor("#FFF6E2");
-            subtitleColor = Color.parseColor("#D8B06C");
-            iconColor = Color.parseColor("#C8923A");
+            backgroundColor = useBlackCard
+                    ? Color.parseColor("#E6000000")
+                    : useWhiteCard ? Color.parseColor("#F7F3EE") : Color.TRANSPARENT;
+            strokeColor = useBlackCard || useWhiteCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
+            titleColor = useWhiteCard ? Color.parseColor("#6C4B12") : Color.parseColor("#FFF6E2");
+            subtitleColor = useWhiteCard ? Color.parseColor("#A07024") : Color.parseColor("#D8B06C");
+            iconColor = useWhiteCard ? Color.parseColor("#A07024") : Color.parseColor("#C8923A");
             stateIconRes = R.drawable.pause_rounded;
         } else if (isRecording()) {
-            backgroundColor = useBlackCard ? Color.parseColor("#E6000000") : Color.TRANSPARENT;
-            strokeColor = useBlackCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
-            titleColor = Color.parseColor("#EDFFF4");
-            subtitleColor = Color.parseColor("#8DE0AC");
-            iconColor = Color.parseColor("#56C889");
+            backgroundColor = useBlackCard
+                    ? Color.parseColor("#E6000000")
+                    : useWhiteCard ? Color.parseColor("#F7FBF8") : Color.TRANSPARENT;
+            strokeColor = useBlackCard || useWhiteCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
+            titleColor = useWhiteCard ? Color.parseColor("#165B36") : Color.parseColor("#EDFFF4");
+            subtitleColor = useWhiteCard ? Color.parseColor("#2F8A5A") : Color.parseColor("#8DE0AC");
+            iconColor = useWhiteCard ? Color.parseColor("#2F8A5A") : Color.parseColor("#56C889");
             stateIconRes = R.drawable.play_button_rounded;
         } else {
-            backgroundColor = useBlackCard ? Color.parseColor("#E6000000") : Color.TRANSPARENT;
-            strokeColor = useBlackCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
-            titleColor = Color.parseColor("#C9D5DE");
-            subtitleColor = Color.parseColor("#90A4AE");
-            iconColor = Color.parseColor("#6B7C88");
+            backgroundColor = useBlackCard
+                    ? Color.parseColor("#E6000000")
+                    : useWhiteCard ? Color.parseColor("#F4F6F8") : Color.TRANSPARENT;
+            strokeColor = useBlackCard || useWhiteCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
+            titleColor = useWhiteCard ? Color.parseColor("#33424C") : Color.parseColor("#C9D5DE");
+            subtitleColor = useWhiteCard ? Color.parseColor("#667682") : Color.parseColor("#90A4AE");
+            iconColor = useWhiteCard ? Color.parseColor("#667682") : Color.parseColor("#6B7C88");
             stateIconRes = R.drawable.play_button_rounded;
         }
 
         cardElapsedHero.setCardBackgroundColor(backgroundColor);
         cardElapsedHero.setStrokeColor(strokeColor);
-        cardElapsedHero.setStrokeWidth(useBlackCard ? dpToPxInt(1) : 0);
+        cardElapsedHero.setStrokeWidth((useBlackCard || useWhiteCard) ? dpToPxInt(1) : 0);
         cardElapsedHero.setRadius(dpToPxInt(12));
-        cardElapsedHero.setCardElevation(useBlackCard ? dpToPxInt(4) : 0);
+        cardElapsedHero.setCardElevation((useBlackCard || useWhiteCard) ? dpToPxInt(4) : 0);
         cardElapsedHero.setMinimumHeight(dpToPxInt(isLandscapeMode() ? 46 : 48));
 
         if (tvElapsedTitle != null) {

@@ -183,14 +183,15 @@
 
                         <ImageView
                             android:id="@+id/ivElapsedAccent"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
                             android:layout_gravity="bottom|end"
                             android:alpha="0.72"
+                            android:scaleType="fitCenter"
                             android:contentDescription="@null"
                             android:src="@drawable/fadseclab_flag"
-                            android:translationX="1dp"
-                            android:translationY="4dp" />
+                            android:translationX="0dp"
+                            android:translationY="6dp" />
 
                         <LinearLayout
                             android:id="@+id/layoutElapsedContent"
@@ -266,7 +267,7 @@
 
                                 <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" android:layout_gravity="left" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="match_parent" android:layout_gravity="right" android:layout_height="wrap_content" android:textSize="13sp" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="13sp" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
                             </LinearLayout>
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
@@ -310,28 +311,29 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardRailToggleLandscape"
-        android:layout_width="18dp"
-        android:layout_height="48dp"
+        android:layout_width="20dp"
+        android:layout_height="46dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="4dp"
         android:clickable="true"
         android:contentDescription="@string/home_cards_fold_toggle"
         android:focusable="true"
-        app:cardBackgroundColor="?attr/colorDialog"
+        app:cardBackgroundColor="#12000000"
         app:cardCornerRadius="9dp"
-        app:cardElevation="1dp"
+        app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/leftPanel"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
-        app:strokeColor="#4CAF50"
-        app:strokeWidth="1dp">
+        app:strokeWidth="0dp">
 
         <ImageView
             android:id="@+id/ivCardRailToggleLandscape"
-            android:layout_width="11dp"
-            android:layout_height="18dp"
+            android:layout_width="14dp"
+            android:layout_height="19dp"
             android:layout_gravity="center"
             android:rotation="180"
             android:src="@drawable/ic_double_chevron"
-            android:tint="?attr/colorOnSurface" />
+            android:tint="#9FB0B8" />
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Right Panel: Camera Preview and Controls (Half Screen) -->

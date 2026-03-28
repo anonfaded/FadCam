@@ -4,6 +4,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.view.Gravity;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -161,19 +162,16 @@ public class AnimatedMaterialButton extends MaterialButton {
         int usableW = getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight();
         if (usableW < 1) usableW = 1;
 
-        int maxNeededW = (int) Math.ceil(Math.max(
-                oldStr.isEmpty() ? 0f : paint.measureText(oldStr),
-                newStr.isEmpty() ? 0f : paint.measureText(newStr)));
-        int layoutW = Math.max(usableW, maxNeededW);
+        int layoutW = usableW;
 
         slotOldLayout = StaticLayout.Builder
                 .obtain(oldStr, 0, oldStr.length(), paint, layoutW)
-                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                .setAlignment(resolveLayoutAlignment())
                 .setIncludePad(getIncludeFontPadding())
                 .build();
         slotNewLayout = StaticLayout.Builder
                 .obtain(newStr, 0, newStr.length(), paint, layoutW)
-                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                .setAlignment(resolveLayoutAlignment())
                 .setIncludePad(getIncludeFontPadding())
                 .build();
 
@@ -345,6 +343,13 @@ public class AnimatedMaterialButton extends MaterialButton {
         }
 
         canvas.restore(); // end Y clip
+    }
+
+    private Layout.Alignment resolveLayoutAlignment() {
+        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        if (gravity == Gravity.CENTER_HORIZONTAL) return Layout.Alignment.ALIGN_CENTER;
+        if (gravity == Gravity.END) return Layout.Alignment.ALIGN_OPPOSITE;
+        return Layout.Alignment.ALIGN_NORMAL;
     }
 
     // ---- Diff helpers ----------------------------------------------------------
