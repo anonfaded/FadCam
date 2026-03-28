@@ -114,9 +114,9 @@
 
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="#B0B0B0" android:textSize="11sp" />
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="#B0B0B0" android:textSize="11sp" />
                             </LinearLayout>
                         </LinearLayout>
 
