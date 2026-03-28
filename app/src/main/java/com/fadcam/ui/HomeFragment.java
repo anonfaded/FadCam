@@ -197,7 +197,7 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvRemainingTitle;
     protected TextView tvRemainingSubtitle;
     private MaterialCardView cardElapsedHero;
-    private View viewElapsedStateDot;
+    private ImageView tvElapsedStateIcon;
     
     private ImageView btnHamburgerMenu;
     private View hamburgerBadgeDot;
@@ -1650,6 +1650,7 @@ public class HomeFragment extends BaseFragment {
         updatePreviewVisibility();
 
         startUpdatingInfo();
+        updateStorageInfo();
     }
 
     private void onRecordingPaused() {
@@ -1671,6 +1672,8 @@ public class HomeFragment extends BaseFragment {
                 )
             );
         });
+        updateStorageInfo();
+        updateElapsedHeroAppearance();
     }
 
     // --- Receiver for MediaRecorder Stopped signal ---
@@ -2299,14 +2302,16 @@ public class HomeFragment extends BaseFragment {
                     // Get timestamp from the service with current time as fallback
                     long startTimeFromService = i.getLongExtra(
                         Constants.INTENT_EXTRA_RECORDING_START_TIME,
-                        SystemClock.elapsedRealtime()
+                        0L
                     );
-                    recordingStartTime = startTimeFromService;
-                    FLog.d(
-                        TAG,
-                        "initializeRecordingStateReceivers: Setting recordingStartTime=" +
-                        recordingStartTime
-                    );
+                    if (startTimeFromService > 0L) {
+                        recordingStartTime = startTimeFromService;
+                        FLog.d(
+                            TAG,
+                            "initializeRecordingStateReceivers: Setting recordingStartTime=" +
+                            recordingStartTime
+                        );
+                    }
 
                     // Perform non-UI actions previously in onRecordingStarted(true)
                     // WakeLock moved to service
@@ -2379,6 +2384,14 @@ public class HomeFragment extends BaseFragment {
                     );
                     if (serviceState == null) serviceState =
                         RecordingState.NONE; // Default to NONE
+
+                    long callbackStartTime = i.getLongExtra(
+                        Constants.INTENT_EXTRA_RECORDING_START_TIME,
+                        0L
+                    );
+                    if (callbackStartTime > 0L) {
+                        recordingStartTime = callbackStartTime;
+                    }
 
                     // *** CALL the handler method ***
                     handleServiceStateUpdate(serviceState);
@@ -2706,6 +2719,7 @@ public class HomeFragment extends BaseFragment {
             // Manage preview and timers
             updatePreviewVisibility();
             startUpdatingInfo();
+            updateStorageInfo();
         } catch (Exception e) {
             FLog.e(TAG, "Error setting UI for Active state", e);
         }
@@ -2761,6 +2775,8 @@ public class HomeFragment extends BaseFragment {
             // Manage preview and timers
             updatePreviewVisibility();
             stopUpdatingInfo(); // Show placeholder/last frame, stop timers
+            updateStorageInfo();
+            updateElapsedHeroAppearance();
         } catch (Exception e) {
             FLog.e(TAG, "Error setting UI for Paused state", e);
         }
@@ -6413,15 +6429,27 @@ public class HomeFragment extends BaseFragment {
 
         if (isRecording() || isPaused()) {
             // Always read from SharedPreferences - service is the source of truth
-            long serviceStartTime = sharedPreferencesManager.sharedPreferences.getLong(
+            android.content.SharedPreferences prefs = sharedPreferencesManager.sharedPreferences;
+            long serviceStartTime = prefs.getLong(
                 Constants.PREF_RECORDING_START_TIME,
+                0
+            );
+            long pauseStartedAt = prefs.getLong(
+                Constants.PREF_RECORDING_PAUSE_STARTED_AT,
+                0
+            );
+            long accumulatedPausedDuration = prefs.getLong(
+                Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION,
                 0
             );
             
             if (serviceStartTime > 0) {
+                long anchorTime = (isPaused() && pauseStartedAt > 0L)
+                    ? pauseStartedAt
+                    : SystemClock.elapsedRealtime();
                 elapsedTime = Math.max(
                     0,
-                    SystemClock.elapsedRealtime() - serviceStartTime
+                    anchorTime - serviceStartTime - accumulatedPausedDuration
                 );
                 // Verbose timer logging removed - called too frequently (every 1s during recording)
             } else {
@@ -9705,7 +9733,7 @@ public class HomeFragment extends BaseFragment {
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
         cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
-        viewElapsedStateDot = view.findViewById(R.id.viewElapsedStateDot);
+        tvElapsedStateIcon = view.findViewById(R.id.tvElapsedStateIcon);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
@@ -11458,26 +11486,30 @@ public class HomeFragment extends BaseFragment {
         int strokeColor;
         int titleColor;
         int subtitleColor;
-        int dotColor;
+        int iconColor;
+        int stateIconRes;
 
         if (isPaused()) {
             backgroundColor = Color.TRANSPARENT;
             strokeColor = Color.TRANSPARENT;
             titleColor = Color.parseColor("#FFF6E2");
-            subtitleColor = Color.parseColor("#F6C56B");
-            dotColor = Color.parseColor("#F59E0B");
+            subtitleColor = Color.parseColor("#D8B06C");
+            iconColor = Color.parseColor("#C8923A");
+            stateIconRes = R.drawable.pause_rounded;
         } else if (isRecording()) {
             backgroundColor = Color.TRANSPARENT;
             strokeColor = Color.TRANSPARENT;
-            titleColor = Color.parseColor("#E8FFF5");
-            subtitleColor = Color.parseColor("#A7F3D0");
-            dotColor = Color.parseColor("#34D399");
+            titleColor = Color.parseColor("#D7F1E8");
+            subtitleColor = Color.parseColor("#8FB9A7");
+            iconColor = Color.parseColor("#5E9B83");
+            stateIconRes = R.drawable.play_button_rounded;
         } else {
             backgroundColor = Color.TRANSPARENT;
             strokeColor = Color.TRANSPARENT;
-            titleColor = Color.parseColor("#D6E2EA");
+            titleColor = Color.parseColor("#C9D5DE");
             subtitleColor = Color.parseColor("#90A4AE");
-            dotColor = Color.parseColor("#6B7C88");
+            iconColor = Color.parseColor("#6B7C88");
+            stateIconRes = R.drawable.play_button_rounded;
         }
 
         cardElapsedHero.setCardBackgroundColor(backgroundColor);
@@ -11489,8 +11521,9 @@ public class HomeFragment extends BaseFragment {
         if (tvElapsedSubtitle != null) {
             tvElapsedSubtitle.setTextColor(subtitleColor);
         }
-        if (viewElapsedStateDot != null && viewElapsedStateDot.getBackground() != null) {
-            viewElapsedStateDot.getBackground().mutate().setTint(dotColor);
+        if (tvElapsedStateIcon != null) {
+            tvElapsedStateIcon.setImageResource(stateIconRes);
+            tvElapsedStateIcon.setColorFilter(iconColor);
         }
     }
 

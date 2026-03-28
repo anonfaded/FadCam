@@ -37,6 +37,8 @@ public abstract class Constants {
         "pref_front_video_mirror_enabled";
     public static final String PREF_IS_PREVIEW_ENABLED = "isPreviewEnabled";
     public static final String PREF_RECORDING_START_TIME = "recording_start_time"; // Stores recording start timestamp for orientation changes
+    public static final String PREF_RECORDING_PAUSE_STARTED_AT = "recording_pause_started_at";
+    public static final String PREF_RECORDING_ACCUMULATED_PAUSED_DURATION = "recording_accumulated_paused_duration";
     public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for FadRec
     public static final String PREF_BOTH_TORCHES_ENABLED =
         "pref_both_torches_enabled";
@@ -351,6 +353,10 @@ public abstract class Constants {
     public static final String INTENT_EXTRA_RECORDING_STATE = "RECORDING_STATE";
     public static final String INTENT_EXTRA_RECORDING_START_TIME =
         "RECORDING_START_TIME";
+    public static final String INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT =
+        "RECORDING_PAUSE_STARTED_AT";
+    public static final String INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION =
+        "RECORDING_ACCUMULATED_PAUSED_DURATION";
     public static final String INTENT_EXTRA_TORCH_STATE = "torch_state";
     public static final String INTENT_EXTRA_TORCH_STATE_CHANGED =
         "TORCH_STATE_CHANGED";

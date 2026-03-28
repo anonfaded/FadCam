@@ -68,7 +68,7 @@ public class StorageProgressRingView extends View {
         textPaint.setColor(textColor);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setFakeBoldText(true);
-        textPaint.setTextSize(dpToPx(5.5f));
+        textPaint.setTextSize(dpToPx(7.5f));
     }
 
     public void setProgress(float value) {

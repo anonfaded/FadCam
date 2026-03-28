@@ -146,6 +146,8 @@ public class RecordingService extends Service {
     private HandlerThread backgroundThread; // Background thread for camera operations
 
     private long recordingStartTime;
+    private long pauseStartedAt;
+    private long accumulatedPausedDurationMs;
 
     private SharedPreferencesManager sharedPreferencesManager; // Your settings manager
 
@@ -1671,10 +1673,7 @@ public class RecordingService extends Service {
                     + ", detectorAvailable=" + (efficientDetDetector != null && efficientDetDetector.isAvailable()));
         }
         if (digitalForensicsEventRecorder != null) {
-            long timelineMs = 0L;
-            if (recordingStartTime > 0L) {
-                timelineMs = Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime);
-            }
+            long timelineMs = getEffectiveTimelineMs();
             digitalForensicsEventRecorder.flush(timelineMs);
         }
 
@@ -1691,13 +1690,10 @@ public class RecordingService extends Service {
             FLog.e(TAG, "Failed to notify RemoteStreamManager about recording stop", e);
         }
 
-        // ✅ SERVICE CLEANUP: Clear timer from SharedPreferences
-        // CRITICAL: Must use same prefs name as SharedPreferencesManager
-        getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .remove(Constants.PREF_RECORDING_START_TIME)
-            .apply();
-        FLog.d(TAG, "✅ SERVICE: Cleared recordingStartTime from SharedPreferences");
+        recordingStartTime = 0L;
+        pauseStartedAt = 0L;
+        accumulatedPausedDurationMs = 0L;
+        clearRecordingTimelineState();
 
         // Stop foreground service and cancel notification early to improve
         // responsiveness
@@ -1899,6 +1895,10 @@ public class RecordingService extends Service {
             return;
         if (glRecordingPipeline != null)
             glRecordingPipeline.pauseRecording(); // if supported
+        if (pauseStartedAt <= 0L) {
+            pauseStartedAt = SystemClock.elapsedRealtime();
+        }
+        persistRecordingTimelineState();
         recordingState = RecordingState.PAUSED;
         sharedPreferencesManager.setRecordingInProgress(false);
         // Notify RemoteStreamManager so status JSON reflects paused state
@@ -1913,6 +1913,11 @@ public class RecordingService extends Service {
             return;
         if (glRecordingPipeline != null)
             glRecordingPipeline.resumeRecording(); // if supported
+        if (pauseStartedAt > 0L) {
+            accumulatedPausedDurationMs += Math.max(0L, SystemClock.elapsedRealtime() - pauseStartedAt);
+            pauseStartedAt = 0L;
+        }
+        persistRecordingTimelineState();
         recordingState = RecordingState.IN_PROGRESS;
         sharedPreferencesManager.setRecordingInProgress(true);
         // Notify RemoteStreamManager so status JSON reflects resumed (recording) state
@@ -2694,9 +2699,7 @@ public class RecordingService extends Service {
 
             if (shouldEmitForensicsSnapshot) {
                 motionLastForensicsHeartbeatMs = nowMs;
-                long timelineMs = recordingStartTime > 0L
-                        ? Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime)
-                        : 0L;
+                long timelineMs = getEffectiveTimelineMs();
                 digitalForensicsEventRecorder.onDetections(
                         getCurrentRecordingMediaUri(),
                         timelineMs,
@@ -2764,10 +2767,7 @@ public class RecordingService extends Service {
             return;
         }
         String activeMediaUri = getCurrentRecordingMediaUri();
-        long timelineMs = 0L;
-        if (recordingStartTime > 0L) {
-            timelineMs = Math.max(0L, SystemClock.elapsedRealtime() - recordingStartTime);
-        }
+        long timelineMs = getEffectiveTimelineMs();
 
         if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
             // Real-time recorder updates are now driven by per-frame detection heartbeats.
@@ -4328,6 +4328,35 @@ public class RecordingService extends Service {
                 .replace("%", "%%"); // Escape percent signs
     }
 
+    private void persistRecordingTimelineState() {
+        getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putLong(Constants.PREF_RECORDING_START_TIME, recordingStartTime)
+            .putLong(Constants.PREF_RECORDING_PAUSE_STARTED_AT, pauseStartedAt)
+            .putLong(Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs)
+            .commit();
+    }
+
+    private void clearRecordingTimelineState() {
+        getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(Constants.PREF_RECORDING_START_TIME)
+            .remove(Constants.PREF_RECORDING_PAUSE_STARTED_AT)
+            .remove(Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION)
+            .apply();
+        FLog.d(TAG, "✅ SERVICE: Cleared recording timeline state from SharedPreferences");
+    }
+
+    private long getEffectiveTimelineMs() {
+        if (recordingStartTime <= 0L) {
+            return 0L;
+        }
+        long anchor = (recordingState == RecordingState.PAUSED && pauseStartedAt > 0L)
+                ? pauseStartedAt
+                : SystemClock.elapsedRealtime();
+        return Math.max(0L, anchor - recordingStartTime - accumulatedPausedDurationMs);
+    }
+
     // --- End Helper Methods ---
 
     // --- Broadcasts ---
@@ -4335,18 +4364,26 @@ public class RecordingService extends Service {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STARTED");
     }
 
     private void broadcastOnRecordingResumed() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_RESUMED);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_RESUMED");
     }
 
     private void broadcastOnRecordingPaused() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_PAUSED);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_PAUSED");
     }
@@ -4379,6 +4416,8 @@ public class RecordingService extends Service {
         if (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED) {
             broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
         }
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
         FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState +
                 ", startTime=" + (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED ? recordingStartTime : -1));
@@ -5560,15 +5599,11 @@ public class RecordingService extends Service {
                 // Use SystemClock.elapsedRealtime() instead of System.currentTimeMillis() for
                 // consistency with HomeFragment
                 recordingStartTime = SystemClock.elapsedRealtime();
+                pauseStartedAt = 0L;
+                accumulatedPausedDurationMs = 0L;
                 FLog.d(TAG, "Recording started with recordingStartTime=" + recordingStartTime);
 
-                // ✅ SERVICE PERSISTENCE: Save to SharedPreferences immediately
-                // This is the AUTHORITATIVE source for fragment timer recovery
-                // CRITICAL: Must use same prefs name as SharedPreferencesManager (Constants.PREFS_NAME = "app_prefs")
-                getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putLong(Constants.PREF_RECORDING_START_TIME, recordingStartTime)
-                    .commit(); // Use commit() for immediate write
+                persistRecordingTimelineState();
                 
                 // Verify it was saved
                 long verify = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
