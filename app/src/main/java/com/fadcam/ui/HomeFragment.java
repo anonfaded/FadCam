@@ -69,6 +69,7 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.cardview.widget.CardView; // Add this
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
@@ -124,6 +125,7 @@ public class HomeFragment extends BaseFragment {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
     private static final String ELAPSED_SIZE_RESULT_KEY = "home_elapsed_size_picker";
+    private static final String ELAPSED_FONT_RESULT_KEY = "home_elapsed_font_picker";
     private static final String ELAPSED_CUSTOMIZE_RESULT_KEY = "home_elapsed_customize_picker";
     private static final String STORAGE_INDICATOR_STYLE_RESULT_KEY = "home_storage_indicator_style_picker";
     private static final String STORAGE_CUSTOMIZE_RESULT_KEY = "home_storage_customize_picker";
@@ -137,6 +139,8 @@ public class HomeFragment extends BaseFragment {
     private static final String ELAPSED_SIZE_SMALL = "small";
     private static final String ELAPSED_SIZE_MEDIUM = "medium";
     private static final String ELAPSED_SIZE_LARGE = "large";
+    private static final String ELAPSED_FONT_UBUNTU = "ubuntu";
+    private static final String ELAPSED_FONT_MONOSPACE = "monospace";
     private static final String STORAGE_INDICATOR_RING = "ring";
     private static final String STORAGE_INDICATOR_MICRO_PILL = "micro_pill_bar";
     private static final String STORAGE_INDICATOR_VERTICAL_BAR = "vertical_bar";
@@ -6324,6 +6328,22 @@ public class HomeFragment extends BaseFragment {
         String displayDateEnglish = displayOption == 1 || displayOption == 2 ? currentDateEnglish : "";
         String displayDateArabic = displayOption == 2 ? currentDateArabic : "";
 
+        boolean showEnglish = displayOption == 1 || displayOption == 2;
+        boolean showArabic = displayOption == 2;
+        tvDateEnglish.setVisibility(showEnglish ? View.VISIBLE : View.GONE);
+        tvDateArabic.setVisibility(showArabic ? View.VISIBLE : View.GONE);
+
+        if (displayOption == 0) {
+            tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 18f : 16f);
+            tvClock.setPadding(0, dpToPxInt(2), 0, dpToPxInt(2));
+        } else if (displayOption == 1) {
+            tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 16f : 14f);
+            tvClock.setPadding(0, 0, 0, 0);
+        } else {
+            tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 15f : 13f);
+            tvClock.setPadding(0, 0, 0, 0);
+        }
+
         if (tvDateEnglish instanceof com.fadcam.ui.utils.AnimatedTextView) {
             ((com.fadcam.ui.utils.AnimatedTextView) tvDateEnglish).animateSlot(displayDateEnglish, 400);
         } else {
@@ -6749,6 +6769,7 @@ public class HomeFragment extends BaseFragment {
                     updateElapsedHeroAppearance();
                     applyElapsedAlignmentPreference();
                     applyElapsedSizePreference();
+                    applyElapsedFontPreference();
 
                 });
         }
@@ -9788,6 +9809,7 @@ public class HomeFragment extends BaseFragment {
         setupHomeCustomizationListeners();
         applyElapsedAlignmentPreference();
         applyElapsedSizePreference();
+        applyElapsedFontPreference();
         applyStorageIndicatorStylePreference();
         applyStorageTotalVisibilityPreference();
         applyTimeLeftAccentPreference();
@@ -11507,6 +11529,11 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_elapsed_size_option),
                 getString(R.string.home_elapsed_size_option_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "format_size"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "elapsed_font",
+                getString(R.string.home_elapsed_font_option),
+                getString(R.string.home_elapsed_font_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "font_download"));
 
         getParentFragmentManager().setFragmentResultListener(
                 ELAPSED_CUSTOMIZE_RESULT_KEY,
@@ -11520,6 +11547,8 @@ public class HomeFragment extends BaseFragment {
                         showElapsedAlignmentSheet();
                     } else if ("elapsed_size".equals(selected)) {
                         showElapsedSizeSheet();
+                    } else if ("elapsed_font".equals(selected)) {
+                        showElapsedFontSheet();
                     }
                 });
 
@@ -11598,7 +11627,7 @@ public class HomeFragment extends BaseFragment {
                 ELAPSED_SIZE_SMALL,
                 getString(R.string.home_elapsed_size_small),
                 getString(R.string.home_elapsed_size_small_desc),
-                null, null, null, null, null, "text_fields"));
+                null, null, null, null, null, "short_text"));
         items.add(new com.fadcam.ui.picker.OptionItem(
                 ELAPSED_SIZE_MEDIUM,
                 getString(R.string.home_elapsed_size_medium),
@@ -11608,7 +11637,7 @@ public class HomeFragment extends BaseFragment {
                 ELAPSED_SIZE_LARGE,
                 getString(R.string.home_elapsed_size_large),
                 getString(R.string.home_elapsed_size_large_desc),
-                null, null, null, null, null, "match_case"));
+                null, null, null, null, null, "title"));
 
         String selectedId = sharedPreferencesManager != null
                 ? sharedPreferencesManager.sharedPreferences.getString(
@@ -11645,6 +11674,58 @@ public class HomeFragment extends BaseFragment {
             args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         }
         sheet.show(getParentFragmentManager(), "home_elapsed_size_sheet");
+    }
+
+    private void showElapsedFontSheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_FONT_UBUNTU,
+                getString(R.string.home_elapsed_font_ubuntu),
+                getString(R.string.home_elapsed_font_ubuntu_desc),
+                null, null, null, null, null, "font_download"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_FONT_MONOSPACE,
+                getString(R.string.home_elapsed_font_monospace),
+                getString(R.string.home_elapsed_font_monospace_desc),
+                null, null, null, null, null, "code"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_ELAPSED_FONT,
+                        ELAPSED_FONT_UBUNTU)
+                : ELAPSED_FONT_UBUNTU;
+
+        getParentFragmentManager().setFragmentResultListener(
+                ELAPSED_FONT_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            ELAPSED_FONT_UBUNTU);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putString(Constants.PREF_HOME_ELAPSED_FONT, selected)
+                                .apply();
+                    }
+                    applyElapsedFontPreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_elapsed_font_option),
+                        items,
+                        selectedId,
+                        ELAPSED_FONT_RESULT_KEY,
+                        getString(R.string.home_elapsed_font_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_elapsed_font_sheet");
     }
 
     private void showStorageCustomizeSheet() {
@@ -11817,7 +11898,7 @@ public class HomeFragment extends BaseFragment {
                     CLOCK_COLOR_NAMES[i],
                     getString(R.string.home_time_left_color_choice_desc, CLOCK_COLOR_HEX_VALUES[i]),
                     Color.parseColor(CLOCK_COLOR_HEX_VALUES[i]),
-                    null, null, null, null, "palette"));
+                    null, null, null, null, null));
         }
 
         getParentFragmentManager().setFragmentResultListener(
@@ -11860,7 +11941,7 @@ public class HomeFragment extends BaseFragment {
                 Constants.PREF_HOME_ELAPSED_ALIGNMENT,
                 ELAPSED_ALIGNMENT_CENTER);
         boolean startAligned = ELAPSED_ALIGNMENT_START.equals(alignment);
-        int startInset = startAligned ? dpToPxInt(38) : 0;
+        int startInset = startAligned ? dpToPxInt(41) : 0;
 
         layoutElapsedContent.setGravity(startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL);
         layoutElapsedContent.setPadding(startInset, 0, 0, 0);
@@ -11896,13 +11977,30 @@ public class HomeFragment extends BaseFragment {
                 ELAPSED_SIZE_MEDIUM);
         float textSizeSp;
         if (ELAPSED_SIZE_SMALL.equals(size)) {
-            textSizeSp = isLandscapeMode() ? 19f : 21f;
+            textSizeSp = isLandscapeMode() ? 16f : 18f;
         } else if (ELAPSED_SIZE_LARGE.equals(size)) {
-            textSizeSp = isLandscapeMode() ? 23f : 25f;
+            textSizeSp = isLandscapeMode() ? 26f : 29f;
         } else {
             textSizeSp = isLandscapeMode() ? 21f : 23f;
         }
         tvElapsedTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+    }
+
+    private void applyElapsedFontPreference() {
+        if (sharedPreferencesManager == null || tvElapsedTitle == null) {
+            return;
+        }
+        String fontPref = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HOME_ELAPSED_FONT,
+                ELAPSED_FONT_UBUNTU);
+        if (ELAPSED_FONT_MONOSPACE.equals(fontPref)) {
+            tvElapsedTitle.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+        } else {
+            android.graphics.Typeface ubuntu = ResourcesCompat.getFont(requireContext(), R.font.ubuntu_regular);
+            if (ubuntu != null) {
+                tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
+            }
+        }
     }
 
     private void applyStorageIndicatorStylePreference() {

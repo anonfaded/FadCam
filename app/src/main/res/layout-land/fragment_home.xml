@@ -185,11 +185,11 @@
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:layout_gravity="bottom|end"
-                            android:alpha="0.16"
+                            android:alpha="0.24"
                             android:contentDescription="@null"
                             android:src="@drawable/fadseclab_flag"
                             android:translationX="10dp"
-                            android:translationY="10dp" />
+                            android:translationY="6dp" />
 
                         <LinearLayout
                             android:id="@+id/layoutElapsedContent"
@@ -232,7 +232,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="0dp"
-                                android:fontFamily="monospace"
+                                android:fontFamily="@font/ubuntu_regular"
                                 android:gravity="center"
                                 android:letterSpacing="0.005"
                                 android:text="00:00"
