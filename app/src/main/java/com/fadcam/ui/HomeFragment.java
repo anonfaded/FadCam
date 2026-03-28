@@ -6611,18 +6611,15 @@ public class HomeFragment extends BaseFragment {
         final float availableFraction = gbTotal > 0d
             ? (float) Math.max(0d, Math.min(1d, gbAvailable / gbTotal))
             : 0f;
-        final String finalSelectedEstimate = selectedEstimate;
+        final boolean showLiveRemaining = isRecording() || isPaused();
+        final String finalTimeLeftText = showLiveRemaining
+            ? formatRemainingTime(days, hours, minutes, seconds)
+            : selectedEstimate;
         final String elapsedTimeText = String.format(
             Locale.getDefault(),
             "%02d:%02d",
             elapsedMinutes,
             elapsedSeconds
-        );
-        final String remainingTimeText = formatRemainingTime(
-            days,
-            hours,
-            minutes,
-            seconds
         );
 
         // Update UI on main thread
@@ -6676,19 +6673,19 @@ public class HomeFragment extends BaseFragment {
                         }
                     } catch (Exception ignored) {}
 
-                    // Estimate row
+                    // Time-left row
                     if (tvEstimateTitle != null) {
                         String oldEstimate = tvEstimateTitle.getText() != null ? tvEstimateTitle.getText().toString() : "";
-                        if (!oldEstimate.equals(finalSelectedEstimate)) {
+                        if (!oldEstimate.equals(finalTimeLeftText)) {
                             if (tvEstimateTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlot(finalSelectedEstimate, 400);
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotDown(finalTimeLeftText, 400);
                             } else {
-                                tvEstimateTitle.setText(finalSelectedEstimate);
+                                tvEstimateTitle.setText(finalTimeLeftText);
                             }
                         }
                     }
                     if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(
-                        getString(R.string.recording_estimated_time)
+                        getString(R.string.recording_time_left)
                     );
 
                     // Space row — value only on tvSpaceTitle, static total on tvSpaceTotal.
@@ -6740,25 +6737,6 @@ public class HomeFragment extends BaseFragment {
                         }
                     }
 
-                    // Remaining row — time decreases, animate DOWN.
-                    if (tvRemainingTitle != null) {
-                        String oldRemaining = tvRemainingTitle.getText() != null ? tvRemainingTitle.getText().toString() : "";
-                        if (!oldRemaining.equals(remainingTimeText)) {
-                            if (tvRemainingTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvRemainingTitle).animateSlotDown(remainingTimeText, 400);
-                            } else {
-                                tvRemainingTitle.setText(remainingTimeText);
-                            }
-                        }
-                    }
-                    if (tvRemainingSubtitle != null) {
-                        String newRemainingSub = getString(R.string.recording_remaining_time);
-                        if (tvRemainingSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                            ((com.fadcam.ui.utils.AnimatedTextView) tvRemainingSubtitle).animateSlot(newRemainingSub, 400);
-                        } else {
-                            tvRemainingSubtitle.setText(newRemainingSub);
-                        }
-                    }
                 });
         }
     }
@@ -6852,15 +6830,10 @@ public class HomeFragment extends BaseFragment {
         long minutes,
         long seconds
     ) {
-        // When not recording, show 00:00 format like elapsed time for consistency
-        if (days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
-            return "00:00";
-        }
-
         StringBuilder remainingTime = new StringBuilder();
         if (days > 0) {
             remainingTime.append(
-                String.format(Locale.getDefault(), "%d days ", days)
+                String.format(Locale.getDefault(), "%dd ", days)
             );
         }
         if (hours > 0) {
@@ -6925,7 +6898,7 @@ public class HomeFragment extends BaseFragment {
     private String getRecordingTimeEstimate(long availableBytes, long bitrate) {
         // Prevent division by zero
         if (bitrate <= 0) {
-            return "∞ h ∞ min"; // Infinite time if bitrate is zero
+            return "\u221e";
         }
 
         // Calculate seconds, handling potential overflow
@@ -6940,14 +6913,15 @@ public class HomeFragment extends BaseFragment {
         // Ensure non-negative values
         recordingSeconds = Math.max(0, recordingSeconds);
 
-        long recordingHours = recordingSeconds / 3600;
+        long recordingDays = recordingSeconds / (24 * 3600);
+        long recordingHours = (recordingSeconds % (24 * 3600)) / 3600;
         long recordingMinutes = (recordingSeconds % 3600) / 60;
-
-        return String.format(
-            Locale.getDefault(),
-            "%d h %d min",
+        long remainingSeconds = recordingSeconds % 60;
+        return formatRemainingTime(
+            recordingDays,
             recordingHours,
-            recordingMinutes
+            recordingMinutes,
+            remainingSeconds
         );
     }
 
@@ -9726,8 +9700,8 @@ public class HomeFragment extends BaseFragment {
         // ...existing code...
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
-        tvRemainingTitle = view.findViewById(R.id.tvRemainingTitle);
-        tvRemainingSubtitle = view.findViewById(R.id.tvRemainingSubtitle);
+        tvRemainingTitle = null;
+        tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
@@ -11408,9 +11382,11 @@ public class HomeFragment extends BaseFragment {
         if (tvCameraSubtitle != null) tvCameraSubtitle.setTextColor(
             Color.WHITE
         );
-        if (tvEstimateTitle != null) tvEstimateTitle.setTextColor(Color.WHITE);
+        if (tvEstimateTitle != null) tvEstimateTitle.setTextColor(
+            Color.parseColor("#F44336")
+        );
         if (tvEstimateSubtitle != null) tvEstimateSubtitle.setTextColor(
-            Color.WHITE
+            Color.parseColor("#B0B0B0")
         );
         if (tvSpaceTitle != null) tvSpaceTitle.setTextColor(Color.WHITE);
         if (tvSpaceSubtitle != null) tvSpaceSubtitle.setTextColor(Color.WHITE);

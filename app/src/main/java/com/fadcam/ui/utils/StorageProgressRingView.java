@@ -21,6 +21,8 @@ public class StorageProgressRingView extends View {
 
     private static final float START_ANGLE = -90f;
     private static final float FULL_SWEEP = 360f;
+    private static final float GRADIENT_ROTATION_DEGREES = -88f;
+    private static final float MIN_VISIBLE_SWEEP = 1f;
 
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -29,7 +31,7 @@ public class StorageProgressRingView extends View {
 
     private float progress = 0f;
     private float strokeWidthPx;
-    private int trackColor = Color.parseColor("#5A9FB3C8");
+    private int trackColor = Color.parseColor("#66D7E4F2");
     private int gradientStartColor = Color.parseColor("#7BED9F");
     private int gradientMidColor = Color.parseColor("#F7DC6F");
     private int gradientEndColor = Color.parseColor("#FF6B6B");
@@ -52,21 +54,21 @@ public class StorageProgressRingView extends View {
     }
 
     private void init() {
-        strokeWidthPx = dpToPx(3f);
+        strokeWidthPx = dpToPx(2.6f);
 
         trackPaint.setStyle(Paint.Style.STROKE);
-        trackPaint.setStrokeCap(Paint.Cap.ROUND);
+        trackPaint.setStrokeCap(Paint.Cap.BUTT);
         trackPaint.setStrokeWidth(strokeWidthPx);
         trackPaint.setColor(trackColor);
 
         progressPaint.setStyle(Paint.Style.STROKE);
-        progressPaint.setStrokeCap(Paint.Cap.ROUND);
+        progressPaint.setStrokeCap(Paint.Cap.BUTT);
         progressPaint.setStrokeWidth(strokeWidthPx);
 
         textPaint.setColor(textColor);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setFakeBoldText(true);
-        textPaint.setTextSize(dpToPx(7f));
+        textPaint.setTextSize(dpToPx(5.5f));
     }
 
     public void setProgress(float value) {
@@ -118,6 +120,7 @@ public class StorageProgressRingView extends View {
         canvas.drawArc(arcBounds, START_ANGLE, FULL_SWEEP, false, trackPaint);
 
         if (progress <= 0f) {
+            drawCenterText(canvas);
             return;
         }
 
@@ -132,10 +135,15 @@ public class StorageProgressRingView extends View {
         progressPaint.setShader(sweepGradient);
 
         canvas.save();
-        canvas.rotate(START_ANGLE, getWidth() / 2f, getHeight() / 2f);
-        canvas.drawArc(arcBounds, 0f, FULL_SWEEP * progress, false, progressPaint);
+        canvas.rotate(GRADIENT_ROTATION_DEGREES, getWidth() / 2f, getHeight() / 2f);
+        float sweep = Math.max(MIN_VISIBLE_SWEEP, FULL_SWEEP * progress);
+        canvas.drawArc(arcBounds, 0f, sweep, false, progressPaint);
         canvas.restore();
 
+        drawCenterText(canvas);
+    }
+
+    private void drawCenterText(Canvas canvas) {
         String percentText = Math.round(progress * 100f) + "%";
         Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
         float textBaseline = (getHeight() / 2f) - ((fontMetrics.ascent + fontMetrics.descent) / 2f);

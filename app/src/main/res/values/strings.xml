@@ -142,6 +142,7 @@
     <string name="mainpage_camera_back">Back Camera</string>
     <string name="storage_available_space">Available space</string>
     <string name="recording_estimated_time">Estimated time</string>
+    <string name="recording_time_left">Time left</string>
     <string name="recording_elapsed_time">Elapsed time</string>
     <string name="recording_remaining_time">Remaining time</string>
     <string name="mainpage_recording_to_sd">Recording to SD card</string>

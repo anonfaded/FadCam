@@ -123,20 +123,20 @@
                         <!-- Estimated Time Row -->
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="4dp">
 
-                            <ImageView android:layout_width="28dp" android:layout_height="28dp" android:layout_marginEnd="4dp" android:padding="4dp" android:src="@drawable/hourglass_top_24px" android:tint="#FF9800" android:contentDescription="Estimated time icon" android:scaleType="centerInside" />
+                            <ImageView android:layout_width="28dp" android:layout_height="28dp" android:layout_marginEnd="4dp" android:padding="4dp" android:src="@drawable/hourglass_top_24px" android:tint="#F44336" android:contentDescription="Time left icon" android:scaleType="centerInside" />
 
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30min" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30m" android:textColor="#F44336" android:textSize="13sp" android:textStyle="bold" />
 
-                                <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_estimated_time" android:textColor="#B0B0B0" android:textSize="11sp" />
+                                <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="#B0B0B0" android:textSize="11sp" />
                             </LinearLayout>
                         </LinearLayout>
 
                         <!-- Available Space Row -->
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="4dp">
 
-                            <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="26dp" android:layout_height="26dp" android:layout_marginEnd="4dp" android:contentDescription="Available space progress" />
+                            <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="22dp" android:layout_height="22dp" android:layout_marginEnd="4dp" android:contentDescription="Available space progress" />
 
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
@@ -162,18 +162,6 @@
                             </LinearLayout>
                         </LinearLayout>
 
-                        <!-- Remaining Time Row -->
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-
-                            <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_marginEnd="8dp" android:fontFamily="@font/materialicons" android:text="timer" android:textColor="#F44336" android:textSize="20sp" android:gravity="center" />
-
-                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvRemainingTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="20m 27s" android:textColor="#F44336" android:textSize="13sp" android:textStyle="bold" />
-
-                                <TextView android:id="@+id/tvRemainingSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Remaining time" android:textColor="#B0B0B0" android:textSize="11sp" />
-                            </LinearLayout>
-                        </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
