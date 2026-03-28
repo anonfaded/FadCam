@@ -26,8 +26,8 @@
         <item name="homeRailBgStart">#121417</item>
         <item name="homeRailBgEnd">#121417</item>
         <item name="homeRailCardSurface">#191D22</item>
-        <item name="homeRailCardBorder">#2B3139</item>
-        <item name="homeRailCardStroke">#2B3139</item>
+        <item name="homeRailCardBorder">#252A31</item>
+        <item name="homeRailCardStroke">#252A31</item>
         <item name="homeRailTileSurface">#23282F</item>
         <item name="homeRailSegmentedSurface">#191D22</item>
         <item name="homeRailSegmentedBorder">#2C3138</item>

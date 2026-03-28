@@ -7,7 +7,7 @@
             <corners android:radius="8dp" />
             <stroke
                 android:width="1dp"
-                android:color="?attr/homeRailCardBorder" />
+                android:color="?attr/homeRailSegmentedBorder" />
         </shape>
     </item>
 </ripple>

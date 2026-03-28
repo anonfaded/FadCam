@@ -11301,10 +11301,15 @@ public class HomeFragment extends BaseFragment {
             }
             applyLandscapeFoldConstraints(folded);
             if (ivCardRailToggleLandscape != null) {
-                ivCardRailToggleLandscape.animate()
-                        .rotation(folded ? 0f : 180f)
-                        .setDuration(220)
-                        .start();
+                ivCardRailToggleLandscape.animate().cancel();
+                if (animate) {
+                    ivCardRailToggleLandscape.animate()
+                            .rotation(folded ? 0f : 180f)
+                            .setDuration(220)
+                            .start();
+                } else {
+                    ivCardRailToggleLandscape.setRotation(folded ? 0f : 180f);
+                }
             }
             if (cardRailToggleLandscape != null) {
                 cardRailToggleLandscape.setVisibility(View.VISIBLE);
@@ -11320,10 +11325,15 @@ public class HomeFragment extends BaseFragment {
                 layoutCards.setVisibility(folded ? View.GONE : View.VISIBLE);
             }
             if (ivCardRailTogglePortrait != null) {
-                ivCardRailTogglePortrait.animate()
-                        .rotation(folded ? 0f : 180f)
-                        .setDuration(220)
-                        .start();
+                ivCardRailTogglePortrait.animate().cancel();
+                if (animate) {
+                    ivCardRailTogglePortrait.animate()
+                            .rotation(folded ? 0f : 180f)
+                            .setDuration(220)
+                            .start();
+                } else {
+                    ivCardRailTogglePortrait.setRotation(folded ? 0f : 180f);
+                }
             }
             if (cardRailTogglePortrait != null) {
                 cardRailTogglePortrait.setVisibility(View.VISIBLE);
