@@ -29,6 +29,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use base theme primary -->
         <item name="sectionHeaderColor">@color/colorPrimary</item>
+        <item name="homeRailBgStart">#22242A</item>
+        <item name="homeRailBgEnd">#1A1C21</item>
+        <item name="homeRailCardSurface">#2B2E35</item>
+        <item name="homeRailCardBorder">#3B414C</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#343842</item>
+        <item name="homeRailSegmentedSurface">#2E323A</item>
+        <item name="homeRailSegmentedBorder">#454B57</item>
         <!-- Default picker component colors for base theme with proper contrast -->
         <item name="pickerButtonBackground">@color/colorPrimary</item>
         <item name="pickerButtonText">@android:color/white</item>
@@ -104,6 +112,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use subtle gray for AMOLED -->
         <item name="sectionHeaderColor">#888888</item>
+        <item name="homeRailBgStart">#17191D</item>
+        <item name="homeRailBgEnd">#101215</item>
+        <item name="homeRailCardSurface">#202328</item>
+        <item name="homeRailCardBorder">#2E333B</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#292D33</item>
+        <item name="homeRailSegmentedSurface">#24282D</item>
+        <item name="homeRailSegmentedBorder">#343943</item>
         <!-- AMOLED theme picker colors with proper contrast for Faded Night -->
         <item name="pickerButtonBackground">@color/amoled_picker_button_background</item>
         <item name="pickerButtonText">@color/amoled_picker_button_text</item>
@@ -187,6 +203,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use red theme primary -->
         <item name="sectionHeaderColor">@color/red_theme_primary</item>
+        <item name="homeRailBgStart">#21181A</item>
+        <item name="homeRailBgEnd">#181113</item>
+        <item name="homeRailCardSurface">#2A1E22</item>
+        <item name="homeRailCardBorder">#3A2E33</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#34262B</item>
+        <item name="homeRailSegmentedSurface">#2F2327</item>
+        <item name="homeRailSegmentedBorder">#44373C</item>
         <!-- Red theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/red_theme_primary</item>
         <item name="pickerButtonText">@android:color/white</item>
@@ -266,6 +290,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use gold theme primary -->
         <item name="sectionHeaderColor">@color/gold_theme_primary</item>
+        <item name="homeRailBgStart">#211B16</item>
+        <item name="homeRailBgEnd">#18130F</item>
+        <item name="homeRailCardSurface">#2A231D</item>
+        <item name="homeRailCardBorder">#3A332C</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#342D26</item>
+        <item name="homeRailSegmentedSurface">#2F2821</item>
+        <item name="homeRailSegmentedBorder">#453D34</item>
         <!-- Gold theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/gold_theme_primary</item>
         <item name="pickerButtonText">@color/gold_theme_on_primary</item>
@@ -339,6 +371,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use forest theme primary -->
         <item name="sectionHeaderColor">@color/silentforest_theme_primary</item>
+        <item name="homeRailBgStart">#1D221E</item>
+        <item name="homeRailBgEnd">#161A17</item>
+        <item name="homeRailCardSurface">#262D28</item>
+        <item name="homeRailCardBorder">#353D37</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#303732</item>
+        <item name="homeRailSegmentedSurface">#2B312C</item>
+        <item name="homeRailSegmentedBorder">#404841</item>
         <!-- Silent Forest theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/silentforest_theme_primary</item>
         <item name="pickerButtonText">@color/silentforest_theme_on_primary</item>
@@ -412,6 +452,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use shadow alloy theme primary -->
         <item name="sectionHeaderColor">@color/shadowalloy_theme_primary</item>
+        <item name="homeRailBgStart">#1E2229</item>
+        <item name="homeRailBgEnd">#171A20</item>
+        <item name="homeRailCardSurface">#283039</item>
+        <item name="homeRailCardBorder">#39424E</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#323A45</item>
+        <item name="homeRailSegmentedSurface">#2C333D</item>
+        <item name="homeRailSegmentedBorder">#424B58</item>
         <!-- Shadow Alloy theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/shadowalloy_theme_primary</item>
         <item name="pickerButtonText">@color/shadowalloy_theme_on_primary</item>
@@ -485,6 +533,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use pookie pink theme primary -->
         <item name="sectionHeaderColor">@color/pookiepink_theme_primary</item>
+        <item name="homeRailBgStart">#211C21</item>
+        <item name="homeRailBgEnd">#1A151A</item>
+        <item name="homeRailCardSurface">#2A242B</item>
+        <item name="homeRailCardBorder">#3B343D</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#342E36</item>
+        <item name="homeRailSegmentedSurface">#2F2A31</item>
+        <item name="homeRailSegmentedBorder">#443E47</item>
         <!-- Pookie Pink theme picker colors with proper contrast -->
         <item name="pickerButtonBackground">@color/pookiepink_theme_primary</item>
         <item name="pickerButtonText">@color/pookiepink_theme_on_primary</item>
@@ -569,6 +625,14 @@
         <item name="pickerTextSecondary">#CCCCCC</item>
         <!-- Section header color - use snow veil theme primary -->
         <item name="sectionHeaderColor">@color/snowveil_theme_primary</item>
+        <item name="homeRailBgStart">#D6E0EA</item>
+        <item name="homeRailBgEnd">#CBD6E1</item>
+        <item name="homeRailCardSurface">#EEF4FA</item>
+        <item name="homeRailCardBorder">#B3C0CF</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#E2EAF2</item>
+        <item name="homeRailSegmentedSurface">#E5EDF4</item>
+        <item name="homeRailSegmentedBorder">#B6C4D2</item>
         <!-- Snow Veil theme picker colors with proper contrast for dark cards -->
         <item name="pickerButtonBackground">@color/snowveil_theme_primary</item>
         <item name="pickerButtonText">@android:color/white</item>
@@ -744,6 +808,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use purple accent for midnight dusk -->
         <item name="sectionHeaderColor">#cfbafd</item>
+        <item name="homeRailBgStart">#201F2B</item>
+        <item name="homeRailBgEnd">#181723</item>
+        <item name="homeRailCardSurface">#2B2940</item>
+        <item name="homeRailCardBorder">#3D3A58</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#35324B</item>
+        <item name="homeRailSegmentedSurface">#302D45</item>
+        <item name="homeRailSegmentedBorder">#474467</item>
     </style>
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
 

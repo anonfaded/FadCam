@@ -68,6 +68,14 @@
     <color name="segmented_control_background">#2A2A2A</color>
     <color name="segmented_control_border">#404040</color>
     <color name="segment_active_color">@color/redPastel</color>
+
+    <!-- Home rail neutral surfaces -->
+    <color name="home_rail_bg_start">#1B1C21</color>
+    <color name="home_rail_bg_end">#15161A</color>
+    <color name="home_rail_card_surface">#23252C</color>
+    <color name="home_rail_card_border">#343841</color>
+    <color name="home_rail_segmented_surface">#262830</color>
+    <color name="home_rail_segmented_border">#3A3E48</color>
     
     <!-- Annotation Menu Colors (Dynamic) -->
     <color name="annotation_heading_accent">#4CAF50</color> <!-- Green accent for headings -->

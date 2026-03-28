@@ -23,6 +23,14 @@
     <attr name="pickerIconTint" format="color" />
     <attr name="pickerSliderActive" format="color" />
     <attr name="pickerSliderInactive" format="color" />
+    <attr name="homeRailBgStart" format="color" />
+    <attr name="homeRailBgEnd" format="color" />
+    <attr name="homeRailCardSurface" format="color" />
+    <attr name="homeRailCardBorder" format="color" />
+    <attr name="homeRailCardStroke" format="color" />
+    <attr name="homeRailTileSurface" format="color" />
+    <attr name="homeRailSegmentedSurface" format="color" />
+    <attr name="homeRailSegmentedBorder" format="color" />
 
     <declare-styleable name="TornPaperImageView">
         <attr name="tearAmplitude" format="dimension" />

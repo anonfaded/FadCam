@@ -41,7 +41,7 @@
         </FrameLayout>
 
         <!-- App Title (centered) -->
-        <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:src="@drawable/menu_icon_unknown" android:translationX="6dp" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+        <ImageView android:id="@+id/ivAppTitle" android:layout_width="190dp" android:layout_height="40dp" android:src="@drawable/menu_icon_unknown" android:translationX="1dp" app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Golden Pro Button with Shimmer and Badge -->
         <FrameLayout
@@ -105,7 +105,7 @@
                 <!-- Left Column: Original Storage Widget -->
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="3dp" android:orientation="vertical">
 
-                <androidx.cardview.widget.CardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/colorDialog" app:cardCornerRadius="12dp" app:cardElevation="6dp" app:strokeColor="#4CAF50" app:strokeWidth="1dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="12dp" app:cardElevation="3dp" app:strokeWidth="0dp">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="6dp">
 
@@ -158,7 +158,7 @@
                         </LinearLayout>
 
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardElapsedHero"
@@ -255,7 +255,7 @@
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="3dp" android:orientation="vertical">
 
                     <!-- Clock Card -->
-                    <androidx.cardview.widget.CardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/colorSurface" app:cardCornerRadius="8dp" app:cardElevation="4dp" app:strokeColor="#4CAF50" app:strokeWidth="2dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeWidth="0dp">
 
                         <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
@@ -270,10 +270,10 @@
                                 <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="13sp" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <!-- Stats Card -->
-                    <androidx.cardview.widget.CardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/colorSurface" app:cardCornerRadius="8dp" app:cardElevation="4dp" app:strokeColor="#4CAF50" app:strokeWidth="2dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeWidth="0dp">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
@@ -290,10 +290,10 @@
                                 </LinearLayout>
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <!-- Recording Controls Card -->
-                    <androidx.cardview.widget.CardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="0dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/homeRailTileSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeWidth="0dp">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="6dp">
 
@@ -301,7 +301,7 @@
 
                             <include android:id="@+id/includeRecordingTiles" layout="@layout/home_recording_tiles_row" android:layout_width="match_parent" android:layout_height="wrap_content" />
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
                 <!-- Close 2-column container -->
             </LinearLayout>
@@ -319,7 +319,6 @@
         android:clickable="true"
         android:contentDescription="@string/home_cards_fold_toggle"
         android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/leftPanel"
         app:layout_constraintTop_toBottomOf="@id/header_bar">

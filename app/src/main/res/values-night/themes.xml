@@ -23,6 +23,14 @@
         <item name="pickerTextSecondary">#999999</item>
         <!-- Section header color - use subtle gray for night theme -->
         <item name="sectionHeaderColor">#888888</item>
+        <item name="homeRailBgStart">#22242A</item>
+        <item name="homeRailBgEnd">#1A1C21</item>
+        <item name="homeRailCardSurface">#2B2E35</item>
+        <item name="homeRailCardBorder">#3B414C</item>
+        <item name="homeRailCardStroke">#00000000</item>
+        <item name="homeRailTileSurface">#343842</item>
+        <item name="homeRailSegmentedSurface">#2E323A</item>
+        <item name="homeRailSegmentedBorder">#454B57</item>
         
         <!-- Picker component overrides for better contrast in Faded Night theme ONLY -->
         <item name="pickerButtonBackground">@color/picker_button_background</item>
