@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +33,7 @@ import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ScreenRecordingState;
 import com.fadcam.fadrec.services.ScreenRecordingService;
 import com.fadcam.ui.HomeFragment;
+import com.fadcam.ui.utils.AnimatedTextView;
 import com.fadcam.utils.ServiceUtils;
 import com.fadcam.utils.StorageInfoCache;
 import com.google.android.material.button.MaterialButton;
@@ -821,12 +823,16 @@ public class FadRecHomeFragment extends HomeFragment {
                     android.graphics.PorterDuff.Mode.SRC_IN
                 );
                 
-                ivScreenRecordIcon.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
+                ivScreenRecordIcon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
                 ivScreenRecordIcon.setPadding((int)(4*d), (int)(4*d), (int)(4*d), (int)(4*d));
                 
                 // Replace the old TextView with new ImageView
                 parent.removeViewAt(index);
                 parent.addView(ivScreenRecordIcon, index);
+                ivScreenRecordIcon.setAlpha(0f);
+                ivScreenRecordIcon.setScaleX(0.9f);
+                ivScreenRecordIcon.setScaleY(0.9f);
+                ivScreenRecordIcon.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).start();
                 
                 FLog.d(TAG, "Card icon replaced with screen_recorder.png");
             }
@@ -840,13 +846,21 @@ public class FadRecHomeFragment extends HomeFragment {
                     int height = metrics.heightPixels;
                     
                     // Update title to show screen recording info
-                    tvCameraTitle.setText("Screen Recording");
+                    if (tvCameraTitle instanceof AnimatedTextView) {
+                        ((AnimatedTextView) tvCameraTitle).animateSlotFull("Screen Recording", 400);
+                    } else {
+                        tvCameraTitle.setText("Screen Recording");
+                    }
                     FLog.d(TAG, "Card title updated to Screen Recording");
                     
                     // Update subtitle with device screen resolution and fps
                     if (tvCameraSubtitle != null) {
                         String subtitle = width + "x" + height + " • 30fps";
-                        tvCameraSubtitle.setText(subtitle);
+                        if (tvCameraSubtitle instanceof AnimatedTextView) {
+                            ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
+                        } else {
+                            tvCameraSubtitle.setText(subtitle);
+                        }
                         FLog.d(TAG, "Card subtitle updated to: " + subtitle);
                     }
                 }

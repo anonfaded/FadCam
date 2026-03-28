@@ -246,6 +246,7 @@ public class HomeFragment extends BaseFragment {
     private LinearLayout layoutElapsedMetaRow;
     private View rowStorageAvailable;
     private View rowEstimateTime;
+    private boolean cameraRowUiInitialized = false;
     private View layoutCards;
     private View layoutCardRailSection;
     private View leftPanel;
@@ -6395,11 +6396,12 @@ public class HomeFragment extends BaseFragment {
         // Update UI on main thread
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
+                    boolean animateCameraRow = cameraRowUiInitialized;
                     // Camera row
                     if (tvCameraTitle != null) {
                         String oldCamTitle = tvCameraTitle.getText() != null ? tvCameraTitle.getText().toString() : "";
                         if (!oldCamTitle.equals(finalCameraLabel)) {
-                            if (tvCameraTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                            if (animateCameraRow && tvCameraTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
                                 ((com.fadcam.ui.utils.AnimatedTextView) tvCameraTitle).animateSlotFull(finalCameraLabel, 400);
                             } else {
                                 tvCameraTitle.setText(finalCameraLabel);
@@ -6409,7 +6411,7 @@ public class HomeFragment extends BaseFragment {
                     if (tvCameraSubtitle != null) {
                         String oldCamSub = tvCameraSubtitle.getText() != null ? tvCameraSubtitle.getText().toString() : "";
                         if (!oldCamSub.equals(cameraSubtitle)) {
-                            if (tvCameraSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                            if (animateCameraRow && tvCameraSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
                                 ((com.fadcam.ui.utils.AnimatedTextView) tvCameraSubtitle).animateSlotFull(cameraSubtitle, 400);
                             } else {
                                 tvCameraSubtitle.setText(cameraSubtitle);
@@ -6433,7 +6435,7 @@ public class HomeFragment extends BaseFragment {
                             String oldIconText = ivCameraIcon.getText() != null
                                     ? ivCameraIcon.getText().toString() : "";
                             if (!oldIconText.equals(newIconText)) {
-                                if (ivCameraIcon instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                if (animateCameraRow && ivCameraIcon instanceof com.fadcam.ui.utils.AnimatedTextView) {
                                     ((com.fadcam.ui.utils.AnimatedTextView) ivCameraIcon)
                                             .animateCrossfade(newIconText, 300);
                                 } else {
@@ -6442,6 +6444,7 @@ public class HomeFragment extends BaseFragment {
                             }
                         }
                     } catch (Exception ignored) {}
+                    cameraRowUiInitialized = true;
 
                     // Time-left row
                     if (tvEstimateTitle != null) {
@@ -9489,6 +9492,7 @@ public class HomeFragment extends BaseFragment {
         layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
+        cameraRowUiInitialized = false;
         layoutCards = view.findViewById(R.id.layoutCards);
         layoutCardRailSection = view.findViewById(R.id.layoutCardRailSection);
         leftPanel = view.findViewById(R.id.leftPanel);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Root CardView for each video item -->
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -12,6 +12,9 @@
     android:foreground="@drawable/ripple_black_rounded"
     app:cardElevation="2dp"
     app:cardCornerRadius="8dp"
+    app:cardBackgroundColor="?attr/homeRailCardSurface"
+    app:strokeColor="?attr/homeRailCardBorder"
+    app:strokeWidth="1dp"
     android:background="@android:color/transparent">
 
     <!-- ConstraintLayout holding all inner content -->
@@ -324,4 +327,4 @@
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
