@@ -1618,7 +1618,7 @@ public class HomeFragment extends BaseFragment {
         );
         buttonPauseResume.setEnabled(true);
 
-        animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+        applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
             buttonStartStop.setBackgroundTintList(
                 ColorStateList.valueOf(
@@ -1626,7 +1626,7 @@ public class HomeFragment extends BaseFragment {
                 )
             );
             buttonStartStop.setEnabled(true);
-        }, true);
+        });
 
         // Re-enable camera switch button (may have been disabled during WAITING_FOR_CAMERA)
         if (buttonCamSwitch != null) {
@@ -1659,14 +1659,14 @@ public class HomeFragment extends BaseFragment {
         // Keep camera switch button ENABLED for live switching even when paused
         // Don't disable it here
 
-        animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+        applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
             buttonStartStop.setBackgroundTintList(
                 ColorStateList.valueOf(
                     ContextCompat.getColor(requireContext(), R.color.button_stop)
                 )
             );
-        }, true);
+        });
     }
 
     // --- Receiver for MediaRecorder Stopped signal ---
@@ -1767,7 +1767,7 @@ public class HomeFragment extends BaseFragment {
                 "Amoled".equalsIgnoreCase(themeName) ||
                 "Faded Night".equalsIgnoreCase(themeName);
             if (buttonStartStop != null) {
-                animateButtonTransition(buttonStartStop, getString(R.string.button_start),
+                applyButtonTransition(buttonStartStop, getString(R.string.button_start),
                         AppCompatResources.getDrawable(getContext(), R.drawable.play_button_rounded), () -> {
                     // Always use green color for start button regardless of theme
                     int btnColor = Color.parseColor("#4CAF50"); // Always green
@@ -1777,7 +1777,7 @@ public class HomeFragment extends BaseFragment {
                     // Force enable the button when resetting to idle state, regardless of any debouncing
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
-                }, false);
+                });
                 FLog.d(TAG, "Start button force-enabled in resetUIButtonsToIdleState");
             }
             if (buttonPauseResume != null) {
@@ -2662,7 +2662,7 @@ public class HomeFragment extends BaseFragment {
         FLog.d(TAG, "Setting UI to: ACTIVE Recording");
         try {
             // Ensure interaction buttons reflect recording
-            animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+            applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP
                 buttonStartStop.setBackgroundTintList(
@@ -2671,7 +2671,7 @@ public class HomeFragment extends BaseFragment {
                         R.color.button_stop
                     )
                 );
-            }, true);
+            });
 
             buttonPauseResume.setEnabled(true); // Enable PAUSE
             buttonPauseResume.setIcon(
@@ -2714,7 +2714,7 @@ public class HomeFragment extends BaseFragment {
         try {
             // Set buttons for Paused state (Stop ON, Resume(Play) ON, Switch OFF, Torch
             // OFF)
-            animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+            applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP
                 buttonStartStop.setBackgroundTintList(
@@ -2723,7 +2723,7 @@ public class HomeFragment extends BaseFragment {
                         R.color.button_stop
                     )
                 );
-            }, true);
+            });
 
             buttonPauseResume.setEnabled(true); // Enable RESUME
             buttonPauseResume.setIcon(
@@ -2772,7 +2772,7 @@ public class HomeFragment extends BaseFragment {
         FLog.d(TAG, "Setting UI to: WAITING_FOR_CAMERA (camera interrupted)");
         try {
             // Similar to PAUSED state but indicates camera is being recaptured
-            animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+            applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP (user can still stop recording)
                 buttonStartStop.setBackgroundTintList(
@@ -2781,7 +2781,7 @@ public class HomeFragment extends BaseFragment {
                         R.color.button_stop
                     )
                 );
-            }, true);
+            });
 
             // Disable pause button during camera interruption (doesn't make sense)
             buttonPauseResume.setEnabled(false);
@@ -5464,8 +5464,22 @@ public class HomeFragment extends BaseFragment {
             }, 1500); // 1.5 second cooldown
 
             if (recordingState.equals(RecordingState.NONE)) {
+                animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                    buttonStartStop.setBackgroundTintList(
+                            ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
+                    );
+                    buttonStartStop.setAlpha(1.0f);
+                }, true);
                 debouncedStartRecording.run();
             } else {
+                animateButtonTransition(buttonStartStop, getString(R.string.button_start),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                    buttonStartStop.setBackgroundTintList(
+                            ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                    );
+                    buttonStartStop.setAlpha(1.0f);
+                }, false);
                 debouncedStopRecording.run();
             }
         });
@@ -6755,19 +6769,39 @@ public class HomeFragment extends BaseFragment {
      * @param applyChanges Runnable that sets icon, backgroundTint, enabled state, etc.
      * @param slideUp      {@code true} → label slides UP (Start → Stop); {@code false} → DOWN.
      */
+    private void applyButtonTransition(
+            @NonNull MaterialButton button,
+            @NonNull CharSequence newText,
+            @Nullable android.graphics.drawable.Drawable newIcon,
+            @NonNull Runnable applyOtherChanges) {
+        // State-sync paths should be deterministic and non-animated. These methods run during
+        // lifecycle restores, service callbacks, and tab switches; animating here causes the
+        // play/stop icon to blink when returning to Home even though the user did not click.
+        applyOtherChanges.run();
+        if (button instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
+            ((com.fadcam.ui.utils.AnimatedMaterialButton) button).cancelAnimation();
+        }
+        if (newIcon != null || button.getIcon() != null) {
+            button.setIcon(newIcon);
+        }
+        button.setText(newText);
+    }
+
     private void animateButtonTransition(
             @NonNull MaterialButton button,
             @NonNull CharSequence newText,
             @Nullable android.graphics.drawable.Drawable newIcon,
             @NonNull Runnable applyOtherChanges,
             boolean slideUp) {
-        // Apply tint, enabled-state etc. immediately; icon is animated separately below.
         applyOtherChanges.run();
+
+        Drawable currentIcon = button.getIcon();
+        boolean iconChanged = !areEquivalentDrawables(currentIcon, newIcon);
+
         if (button instanceof com.fadcam.ui.utils.AnimatedMaterialButton) {
             com.fadcam.ui.utils.AnimatedMaterialButton animated =
                     (com.fadcam.ui.utils.AnimatedMaterialButton) button;
-            // Animate icon crossfade alongside text slot machine.
-            if (newIcon != null) {
+            if (iconChanged) {
                 animated.animateIcon(newIcon, 300);
             }
             CharSequence current = animated.getText();
@@ -6779,9 +6813,30 @@ public class HomeFragment extends BaseFragment {
                 }
             }
         } else {
-            if (newIcon != null) button.setIcon(newIcon);
+            if (iconChanged) {
+                button.setIcon(newIcon);
+            }
             button.setText(newText);
         }
+    }
+
+    private boolean areEquivalentDrawables(@Nullable Drawable current, @Nullable Drawable next) {
+        if (current == next) {
+            return true;
+        }
+        if (current == null || next == null) {
+            return false;
+        }
+
+        Drawable.ConstantState currentState = current.getConstantState();
+        Drawable.ConstantState nextState = next.getConstantState();
+        if (currentState != null && nextState != null) {
+            return currentState.equals(nextState);
+        }
+
+        return current.getClass().equals(next.getClass())
+                && current.getIntrinsicWidth() == next.getIntrinsicWidth()
+                && current.getIntrinsicHeight() == next.getIntrinsicHeight();
     }
 
     private String formatRemainingTime(
@@ -10718,6 +10773,7 @@ public class HomeFragment extends BaseFragment {
             }
         } else {
             // Tab switched away — pause heavy operations
+            pauseUpdateHandlers();
             if (!isLaunchingPhotoCapture) {
                 stopBubbleRotation();
             }
