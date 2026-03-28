@@ -146,7 +146,7 @@
     <string name="recording_elapsed_time">Elapsed time</string>
     <string name="recording_remaining_time">Remaining time</string>
     <string name="home_elapsed_customize_title">Elapsed Display</string>
-    <string name="home_elapsed_customize_helper">Customize elapsed alignment and text size.</string>
+    <string name="home_elapsed_customize_helper">Customize elapsed alignment, size, font, accent flag, and background.</string>
     <string name="home_elapsed_alignment_option">Alignment</string>
     <string name="home_elapsed_alignment_option_desc">Choose how the elapsed content is positioned inside its card</string>
     <string name="home_elapsed_alignment_helper">Pick the alignment for the elapsed label and timer.</string>
@@ -179,6 +179,13 @@
     <string name="home_elapsed_flag_show_desc">Display the branded flag accent behind the timer</string>
     <string name="home_elapsed_flag_hide">Hide FadSec Lab flag</string>
     <string name="home_elapsed_flag_hide_desc">Keep the elapsed timer area clean without the flag accent</string>
+    <string name="home_elapsed_background_option">Background</string>
+    <string name="home_elapsed_background_option_desc">Choose whether the elapsed timer sits on a transparent or black card</string>
+    <string name="home_elapsed_background_helper">Pick the background treatment used by the elapsed timer card.</string>
+    <string name="home_elapsed_background_transparent">Transparent (Default)</string>
+    <string name="home_elapsed_background_transparent_desc">Keep the elapsed timer card visually light and open</string>
+    <string name="home_elapsed_background_black">Black card</string>
+    <string name="home_elapsed_background_black_desc">Give the elapsed timer a solid black card background for a stronger container</string>
     <string name="home_storage_customize_title">Storage Display</string>
     <string name="home_storage_customize_helper">Customize the storage indicator style and total-storage visibility.</string>
     <string name="home_storage_indicator_option">Indicator style</string>

@@ -171,7 +171,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="44dp"
+                android:minHeight="48dp"
                 android:clipChildren="true"
                 android:clipToPadding="true"
                 android:paddingStart="3dp"
@@ -184,11 +184,11 @@
                     android:layout_width="52dp"
                     android:layout_height="52dp"
                     android:layout_gravity="bottom|end"
-                    android:alpha="0.62"
+                    android:alpha="0.72"
                     android:contentDescription="@null"
                     android:src="@drawable/fadseclab_flag"
                     android:translationX="8dp"
-                    android:translationY="-4dp" />
+                    android:translationY="-2dp" />
 
                 <LinearLayout
                     android:id="@+id/layoutElapsedContent"
