@@ -185,6 +185,7 @@ public class HomeFragment extends BaseFragment {
     private TextView tvEstimateSubtitle;
     private TextView tvSpaceTitle;
     private TextView tvSpaceSubtitle;
+    private com.fadcam.ui.utils.StorageProgressRingView storageProgressRing;
     // inline total will be rendered in tvSpaceTitle using spans
     
     /**
@@ -6607,6 +6608,9 @@ public class HomeFragment extends BaseFragment {
             "%.2f GB",
             gbAvailable
         );
+        final float availableFraction = gbTotal > 0d
+            ? (float) Math.max(0d, Math.min(1d, gbAvailable / gbTotal))
+            : 0f;
         final String finalSelectedEstimate = selectedEstimate;
         final String elapsedTimeText = String.format(
             Locale.getDefault(),
@@ -6711,6 +6715,9 @@ public class HomeFragment extends BaseFragment {
                         } else {
                             tvSpaceSubtitle.setText(newSubtitle);
                         }
+                    }
+                    if (storageProgressRing != null) {
+                        storageProgressRing.setProgress(availableFraction);
                     }
 
                     // Elapsed row — time increases, animate UP.
@@ -9715,6 +9722,7 @@ public class HomeFragment extends BaseFragment {
         tvEstimateSubtitle = view.findViewById(R.id.tvEstimateSubtitle);
         tvSpaceTitle = view.findViewById(R.id.tvSpaceTitle);
         tvSpaceSubtitle = view.findViewById(R.id.tvSpaceSubtitle);
+        storageProgressRing = view.findViewById(R.id.storageProgressRing);
         // ...existing code...
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
