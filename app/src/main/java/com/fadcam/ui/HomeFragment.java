@@ -70,6 +70,7 @@ import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
+import com.google.android.material.card.MaterialCardView;
 import com.fadcam.CameraType;
 import com.fadcam.MainActivity;
 import com.fadcam.Constants;
@@ -195,6 +196,8 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvElapsedSubtitle;
     protected TextView tvRemainingTitle;
     protected TextView tvRemainingSubtitle;
+    private MaterialCardView cardElapsedHero;
+    private View viewElapsedStateDot;
     
     private ImageView btnHamburgerMenu;
     private View hamburgerBadgeDot;
@@ -6736,6 +6739,7 @@ public class HomeFragment extends BaseFragment {
                             tvElapsedSubtitle.setText(newElapsedSub);
                         }
                     }
+                    updateElapsedHeroAppearance();
 
                 });
         }
@@ -9700,6 +9704,8 @@ public class HomeFragment extends BaseFragment {
         // ...existing code...
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
+        cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
+        viewElapsedStateDot = view.findViewById(R.id.viewElapsedStateDot);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
@@ -9765,6 +9771,7 @@ public class HomeFragment extends BaseFragment {
         tvVideoCount = view.findViewById(R.id.tvVideoCount);
         tvVideoSize = view.findViewById(R.id.tvVideoSize);
         tvSpaceTotal = view.findViewById(R.id.tvSpaceTotal);
+        updateElapsedHeroAppearance();
 
         // Torch button (already initialized elsewhere, but good to have it
         // consistently)
@@ -11390,16 +11397,7 @@ public class HomeFragment extends BaseFragment {
         );
         if (tvSpaceTitle != null) tvSpaceTitle.setTextColor(Color.WHITE);
         if (tvSpaceSubtitle != null) tvSpaceSubtitle.setTextColor(Color.WHITE);
-        if (tvElapsedTitle != null) tvElapsedTitle.setTextColor(Color.WHITE);
-        if (tvElapsedSubtitle != null) tvElapsedSubtitle.setTextColor(
-            Color.WHITE
-        );
-        if (tvRemainingTitle != null) tvRemainingTitle.setTextColor(
-            Color.WHITE
-        );
-        if (tvRemainingSubtitle != null) tvRemainingSubtitle.setTextColor(
-            Color.WHITE
-        );
+        updateElapsedHeroAppearance();
 
         // Keep semantic colors for icons but ensure they're visible on light background
         if (ivCameraIcon != null) {
@@ -11448,6 +11446,51 @@ public class HomeFragment extends BaseFragment {
             }
         } catch (Exception e) {
             FLog.e(TAG, "Error coloring icons: " + e.getMessage());
+        }
+    }
+
+    private void updateElapsedHeroAppearance() {
+        if (cardElapsedHero == null) {
+            return;
+        }
+
+        int backgroundColor;
+        int strokeColor;
+        int titleColor;
+        int subtitleColor;
+        int dotColor;
+
+        if (isPaused()) {
+            backgroundColor = Color.TRANSPARENT;
+            strokeColor = Color.TRANSPARENT;
+            titleColor = Color.parseColor("#FFF6E2");
+            subtitleColor = Color.parseColor("#F6C56B");
+            dotColor = Color.parseColor("#F59E0B");
+        } else if (isRecording()) {
+            backgroundColor = Color.TRANSPARENT;
+            strokeColor = Color.TRANSPARENT;
+            titleColor = Color.parseColor("#E8FFF5");
+            subtitleColor = Color.parseColor("#A7F3D0");
+            dotColor = Color.parseColor("#34D399");
+        } else {
+            backgroundColor = Color.TRANSPARENT;
+            strokeColor = Color.TRANSPARENT;
+            titleColor = Color.parseColor("#D6E2EA");
+            subtitleColor = Color.parseColor("#90A4AE");
+            dotColor = Color.parseColor("#6B7C88");
+        }
+
+        cardElapsedHero.setCardBackgroundColor(backgroundColor);
+        cardElapsedHero.setStrokeColor(strokeColor);
+
+        if (tvElapsedTitle != null) {
+            tvElapsedTitle.setTextColor(titleColor);
+        }
+        if (tvElapsedSubtitle != null) {
+            tvElapsedSubtitle.setTextColor(subtitleColor);
+        }
+        if (viewElapsedStateDot != null && viewElapsedStateDot.getBackground() != null) {
+            viewElapsedStateDot.getBackground().mutate().setTint(dotColor);
         }
     }
 
