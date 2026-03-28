@@ -124,9 +124,9 @@
 
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" />
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="#B0B0B0" android:textSize="11sp" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -143,7 +143,7 @@
 
                         <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30m" android:textColor="#F44336" android:textSize="13sp" android:textStyle="bold" />
 
-                        <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="#B0B0B0" android:textSize="11sp" />
+                        <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
 
                     </LinearLayout>
 
@@ -159,11 +159,11 @@
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
-                            <TextView android:id="@+id/tvSpaceTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="2dp" android:textColor="#9E9E9E" android:textSize="11sp" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" />
+                            <TextView android:id="@+id/tvSpaceTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="2dp" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                         </LinearLayout>
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="#B0B0B0" android:textSize="11sp" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
 
                         <!-- Dimmer smaller total storage value -->
                         <!-- total shown inline with available space (rendered programmatically) -->
@@ -273,15 +273,15 @@
 
                 <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
-                    <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center_vertical" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="access_time" android:textColor="?attr/colorOnSurface" android:textSize="20sp" android:gravity="center" />
+                    <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center_vertical" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="access_time" android:textColor="?attr/homeRailTextPrimary" android:textSize="20sp" android:gravity="center" />
 
                     <LinearLayout android:id="@+id/layoutClockContent" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
                         <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" android:includeFontPadding="false" />
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:layout_gravity="left" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:layout_gravity="left" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
 
-                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="?attr/colorOnSurface" android:includeFontPadding="false" />
+                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
 
                     </LinearLayout>
                 </LinearLayout>
@@ -291,16 +291,16 @@
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
-                    <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="folder" android:textColor="?attr/colorOnSurface" android:textSize="20sp" android:gravity="center" />
+                    <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="folder" android:textColor="?attr/sectionHeaderColor" android:textSize="20sp" android:gravity="center" />
 
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_videos" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="#D3D3D3" android:textSize="13sp" android:tag="preserve_color" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_videos" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="1dp">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_used" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="#D3D3D3" android:textSize="13sp" android:tag="preserve_color" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_used" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -308,7 +308,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Recording controls card: small horizontal tiles row placed below Stats -->
-            <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailTileSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeWidth="0dp">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeWidth="0dp">
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="6dp">
 
@@ -344,7 +344,7 @@
             android:layout_height="16dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_expand_more"
-            android:tint="#9FB0B8" />
+            android:tint="?attr/homeRailTextSecondary" />
     </FrameLayout>
 
     <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/cardRailTogglePortrait" app:strokeColor="#4CAF50" app:strokeWidth="15dp">
@@ -462,7 +462,7 @@
             <TextureView android:id="@+id/textureView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
 
             <!-- Hidden placeholder text (replaced by icons) -->
-            <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/colorOnSurface" android:textSize="24sp" android:visibility="gone" />
+            <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/homeRailTextPrimary" android:textSize="24sp" android:visibility="gone" />
 
             <!-- Hint text for long press to enable preview (shown when recording with preview disabled) -->
             <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="48dp" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="13sp" android:alpha="0.75" android:letterSpacing="0.05" android:visibility="gone" />

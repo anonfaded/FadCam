@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="#33FFFFFF">
+    android:color="#26FFFFFF">
     <item>
         <shape>
-            <solid android:color="?attr/homeRailBgEnd" />
+            <solid android:color="?attr/homeRailBgStart" />
             <corners
                 android:topLeftRadius="0dp"
                 android:topRightRadius="0dp"

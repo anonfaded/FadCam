@@ -4406,442 +4406,23 @@ public class HomeFragment extends BaseFragment {
         initializeMessages();
 
         CardView cardPreview = view.findViewById(R.id.cardPreview);
-        CardView cardStats = view.findViewById(R.id.cardStats);
-        CardView cardStorage = view.findViewById(R.id.cardStorage);
-        // Clock card is intentionally NOT included here as it has its own color logic
 
         String themeName = sharedPreferencesManager.sharedPreferences.getString(
             com.fadcam.Constants.PREF_APP_THEME,
             Constants.DEFAULT_APP_THEME
         );
 
-        int colorDialog = resolveThemeColor(R.attr.colorDialog);
-        int colorButton = resolveThemeColor(R.attr.colorButton);
-        int colorTransparent = android.graphics.Color.TRANSPARENT;
-        int colorTextPrimary = resolveThemeColor(R.attr.colorHeading);
-        int colorTextSecondary = ContextCompat.getColor(
-            requireContext(),
-            R.color.gray_text_light
-        );
-
-        // override for AMOLED and Red, use *_surface_dark) -----
-        if ("Crimson Bloom".equals(themeName)) {
-            int redSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.red_theme_surface_dark
-            );
-            int redHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.red_theme_heading
-            );
-            int redTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.red_theme_text_secondary_dark
-            );
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     redSurface
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(redSurface);
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                redSurface
-            );
-            setTextColorsRecursive(cardPreview, redHeading, redTextSecondary);
-            setTextColorsRecursive(cardStats, redHeading, redTextSecondary);
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, redHeading, redTextSecondary);
-        } else if ("Premium Gold".equals(themeName)) {
-            int goldSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.gold_theme_surface_dark
-            );
-            int goldHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.gold_theme_heading
-            );
-            int goldTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.gold_theme_text_secondary_dark
-            );
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     goldSurface
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                goldSurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                goldSurface
-            );
-            setTextColorsRecursive(cardPreview, goldHeading, goldTextSecondary);
-            setTextColorsRecursive(cardStats, goldHeading, goldTextSecondary);
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, goldHeading, goldTextSecondary);
-        } else if ("Silent Forest".equals(themeName)) {
-            // Silent Forest theme (green/teal)
-            int forestSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.silentforest_theme_surface_dark
-            );
-            int forestHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.silentforest_theme_heading
-            );
-            int forestTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.silentforest_theme_text_secondary_dark
-            );
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     forestSurface
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                forestSurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                forestSurface
-            );
-            setTextColorsRecursive(
-                cardPreview,
-                forestHeading,
-                forestTextSecondary
-            );
-            setTextColorsRecursive(
-                cardStats,
-                forestHeading,
-                forestTextSecondary
-            );
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, forestHeading, forestTextSecondary);
-        } else if ("Shadow Alloy".equals(themeName)) {
-            // Shadow Alloy theme (silver/metallic)
-            int alloySurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.shadowalloy_theme_surface_dark
-            );
-            int alloyHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.shadowalloy_theme_heading
-            );
-            int alloyTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.shadowalloy_theme_text_secondary_dark
-            );
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     alloySurface
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                alloySurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                alloySurface
-            );
-            setTextColorsRecursive(
-                cardPreview,
-                alloyHeading,
-                alloyTextSecondary
-            );
-            setTextColorsRecursive(cardStats, alloyHeading, alloyTextSecondary);
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, alloyHeading, alloyTextSecondary);
-        } else if ("Pookie Pink".equals(themeName)) {
-            // Pookie Pink theme (pink)
-            int pinkSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.pookiepink_theme_surface_dark
-            );
-            int pinkHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.pookiepink_theme_heading
-            );
-            int pinkTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.pookiepink_theme_text_secondary_dark
-            );
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     pinkSurface
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                pinkSurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                pinkSurface
-            );
-            setTextColorsRecursive(cardPreview, pinkHeading, pinkTextSecondary);
-            setTextColorsRecursive(cardStats, pinkHeading, pinkTextSecondary);
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, pinkHeading, pinkTextSecondary);
-        } else if ("Snow Veil".equals(themeName)) {
-            // Snow Veil theme (white/light)
-            int snowSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.snowveil_theme_preview_area
-            ); // Darker
-            // gray for
-            // preview
-            int snowCardBackground = ContextCompat.getColor(
-                requireContext(),
-                R.color.snowveil_theme_card_background
-            ); // White
-            // for
-            // other
-            // cards
-            int snowHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.snowveil_theme_text_primary
-            );
-            int snowTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.snowveil_theme_text_secondary
-            );
-
-            // Preview area gets darker gray for better contrast
-            // Commented: Keep preview transparent with layered icons
-            // if (cardPreview != null) {
-            //     cardPreview.setCardBackgroundColor(snowSurface);
-            //     // Also set the background of the FrameLayout inside the CardView
-            //     View frameLayout = cardPreview.getChildAt(0);
-            //     if (frameLayout != null) {
-            //         frameLayout.setBackgroundColor(snowSurface);
-            //     }
-            //     // Use a post-layout runnable to ensure the color is applied after all layout
-            //     // operations
-            //     cardPreview.post(() -> {
-            //         cardPreview.setCardBackgroundColor(snowSurface);
-            //         if (frameLayout != null) {
-            //             frameLayout.setBackgroundColor(snowSurface);
-            //         }
-            //     });
-            // }
-
-            // Other cards get white background
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                snowCardBackground
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                snowCardBackground
-            );
-
-            // Set text colors - preview area gets white text, other cards get black text
-            setTextColorsRecursive(
-                cardPreview,
-                Color.WHITE,
-                Color.parseColor("#E0E0E0")
-            ); // White text on dark gray
-            setTextColorsRecursive(cardStats, snowHeading, snowTextSecondary); // Black text on white
-            setTextColorsRecursive(cardStorage, snowHeading, snowTextSecondary); // Black text on white - FIXED!
-
-            // Apply additional contrast improvements for the Snow Veil theme
-            applySnowVeilThemeToUI(view);
-        } else if ("Faded Night".equals(themeName)) {
-            // Faded Night theme - use a proper gray instead of pure black
-            int fadedNightSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.amoled_card
-            ); // Use card color
-            // instead of pure
-            // black
-            int fadedNightHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.amoled_heading
-            );
-            int fadedNightTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.amoled_text_secondary_dark
-            );
-            // Commented: Keep preview transparent with layered icons
-            // if (cardPreview != null) {
-            //     cardPreview.setCardBackgroundColor(fadedNightSurface);
-            //     // Also set the background of the FrameLayout inside the CardView to ensure it
-            //     // overrides the layout attribute
-            //     View frameLayout = cardPreview.getChildAt(0);
-            //     if (frameLayout != null) {
-            //         frameLayout.setBackgroundColor(fadedNightSurface);
-            //     }
-            //     // Use a post-layout runnable to ensure the color is applied after all layout
-            //     // operations
-            //     cardPreview.post(() -> {
-            //         cardPreview.setCardBackgroundColor(fadedNightSurface);
-            //         if (frameLayout != null) {
-            //             frameLayout.setBackgroundColor(fadedNightSurface);
-            //         }
-            //     });
-            // }
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                fadedNightSurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                fadedNightSurface
-            );
-            setTextColorsRecursive(
-                cardPreview,
-                fadedNightHeading,
-                fadedNightTextSecondary
-            );
-            setTextColorsRecursive(
-                cardStats,
-                fadedNightHeading,
-                fadedNightTextSecondary
-            );
-
-            // Apply Faded Night theme to recording tiles
-            applyFadedNightThemeToTiles();
-        } else if (isAmoledTheme) {
-            // Pure AMOLED theme - keep pure black for battery saving
-            int amoledSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.amoled_surface_dark
-            );
-            int amoledHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.amoled_heading
-            );
-            int amoledTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.amoled_text_secondary_dark
-            );
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     amoledSurface
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                amoledSurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                amoledSurface
-            );
-            setTextColorsRecursive(
-                cardPreview,
-                amoledHeading,
-                amoledTextSecondary
-            );
-            setTextColorsRecursive(
-                cardStats,
-                amoledHeading,
-                amoledTextSecondary
-            );
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, amoledHeading, amoledTextSecondary);
-        } else if ("Midnight Dusk".equals(themeName)) {
-            int darkSurface = ContextCompat.getColor(
-                requireContext(),
-                R.color.dark_purple_bar
-            );
-            int darkHeading = ContextCompat.getColor(
-                requireContext(),
-                R.color.colorHeading
-            );
-            int darkTextSecondary = ContextCompat.getColor(
-                requireContext(),
-                R.color.gray_text_light
-            );
-            // Commented: Keep preview transparent with layered icons
-            // if (cardPreview != null) {
-            //     cardPreview.setCardBackgroundColor(darkSurface);
-            //     // Also set the background of the FrameLayout inside the CardView to ensure it
-            //     // overrides the layout attribute
-            //     View frameLayout = cardPreview.getChildAt(0);
-            //     if (frameLayout != null) {
-            //         frameLayout.setBackgroundColor(darkSurface);
-            //     }
-            //     // Use a post-layout runnable to ensure the color is applied after all layout
-            //     // operations
-            //     cardPreview.post(() -> {
-            //         cardPreview.setCardBackgroundColor(darkSurface);
-            //         if (frameLayout != null) {
-            //             frameLayout.setBackgroundColor(darkSurface);
-            //         }
-            //     });
-            // }
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                darkSurface
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                darkSurface
-            );
-            setTextColorsRecursive(cardPreview, darkHeading, darkTextSecondary);
-            setTextColorsRecursive(cardStats, darkHeading, darkTextSecondary);
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, darkHeading, darkTextSecondary);
-
-            // Apply Midnight Dusk theme to recording tiles
-            applyMidnightDuskThemeToTiles();
-        } else {
-            // Fallback for other themes: use dialog color for cards
-            // if (cardPreview != null) cardPreview.setCardBackgroundColor(
-            //     colorDialog
-            // ); // Commented: Keep preview transparent with layered icons
-            if (cardStats != null) cardStats.setCardBackgroundColor(
-                colorDialog
-            );
-            if (cardStorage != null) cardStorage.setCardBackgroundColor(
-                colorDialog
-            );
-            setTextColorsRecursive(
-                cardPreview,
-                colorTextPrimary,
-                colorTextSecondary
-            );
-            setTextColorsRecursive(
-                cardStats,
-                colorTextPrimary,
-                colorTextSecondary
-            );
-            // Skip storage widget to preserve semantic colors
-            // setTextColorsRecursive(cardStorage, colorTextPrimary, colorTextSecondary);
-        }
-
-    // Enable tap on the Stats card to navigate to the Records tab
-    setupStatsCardNavigation(view);
-        // override for AMOLED and Red, use *_surface_dark) -----
-
-        // Force transparent background for preview card (override theme colors)
         if (cardPreview != null) {
-            cardPreview.setCardBackgroundColor(android.graphics.Color.TRANSPARENT);
+            cardPreview.setCardBackgroundColor(Color.TRANSPARENT);
         }
 
-        // Apply theme-specific colors to mode switcher
         applyModeSwitcherTheming(themeName);
 
-        // colors) -----
-        if (cardStorage != null) {
-            if ("Crimson Bloom".equals(themeName)) {
-                // Use an even darker background for Crimson Bloom theme
-                cardStorage.setCardBackgroundColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.crimson_dark_card_background
-                    )
-                );
-            } else if ("Premium Gold".equals(themeName)) {
-                // Use the gold theme specific card background
-                cardStorage.setCardBackgroundColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.gold_theme_card_background
-                    )
-                );
-            } else if ("Faded Night".equals(themeName)) {
-                // Keep the Faded Night theme color that was already set
-                // Don't override it with dark_card_background
-            } else if ("Midnight Dusk".equals(themeName)) {
-                // Use consistent dark background like other themes
-                cardStorage.setCardBackgroundColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.dark_card_background
-                    )
-                );
-            } else if ("Snow Veil".equals(themeName)) {
-                // Keep the Snow Veil theme color that was already set
-                // Don't override it with dark_card_background
-            } else {
-                // Standard dark background for other themes that don't have specific theming
-                cardStorage.setCardBackgroundColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.dark_card_background
-                    )
-                );
-            }
+        if ("Snow Veil".equals(themeName)) {
+            applySnowVeilThemeToUI(view);
         }
-        // colors) -----
+
+        setupStatsCardNavigation(view);
 
         // theme styling -----
         // This ensures the clock card maintains its own independent color regardless of
@@ -4943,17 +4524,6 @@ public class HomeFragment extends BaseFragment {
         // Setup the small recording tiles row and listeners
         setupRecordingTiles(view);
 
-        // Apply tile theming after tiles are initialized
-        String tileTheme = sharedPreferencesManager.sharedPreferences.getString(
-            Constants.PREF_APP_THEME,
-            Constants.DEFAULT_APP_THEME
-        );
-        if ("Faded Night".equals(tileTheme)) {
-            applyFadedNightThemeToTiles();
-        } else if ("Midnight Dusk".equals(tileTheme)) {
-            applyMidnightDuskThemeToTiles();
-        }
-        
         // Setup lifecycle observer for background/foreground handling
         setupLifecycleObserver();
 
@@ -10732,6 +10302,7 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+
     /**
      * Override the onBackPressed method from BaseFragment
      */
@@ -11165,7 +10736,7 @@ public class HomeFragment extends BaseFragment {
             );
         } else {
             // Fallback to default
-            result = CLOCK_COLOR_HEX_VALUES[0]; // Default to Purple (#673AB7)
+            result = CLOCK_COLOR_HEX_VALUES[0]; // Purple (#673AB7)
             FLog.w(
                 TAG,
                 "No specific theme match found for [" +
@@ -11475,105 +11046,28 @@ public class HomeFragment extends BaseFragment {
      */
     private void applyModeSwitcherTheming(String themeName) {
         try {
-            // Find the active segment (FadCam)
-            View segmentFadCam = getView().findViewById(R.id.segment_fadcam);
+            View root = getView();
+            if (root == null) return;
+
+            View segmentFadCam = root.findViewById(R.id.segment_fadcam);
             if (segmentFadCam == null) return;
 
-            // Determine the theme color and text color for the active segment
-            int activeColor;
-            int textColor;
-            switch (themeName) {
-                case "Crimson Bloom":
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.red_theme_primary
-                    );
-                    textColor = Color.WHITE; // Red background with white text
-                    break;
-                case "Premium Gold":
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.gold_theme_primary
-                    );
-                    textColor = Color.BLACK; // Bright gold background with black text
-                    break;
-                case "Silent Forest":
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.silentforest_theme_primary
-                    );
-                    textColor = Color.WHITE; // Green background with white text
-                    break;
-                case "Shadow Alloy":
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.shadowalloy_theme_primary
-                    );
-                    textColor = Color.BLACK; // Bright silver background with black text
-                    break;
-                case "Pookie Pink":
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.pookiepink_theme_primary
-                    );
-                    textColor = Color.BLACK; // Bright pink background with black text
-                    break;
-                case "Snow Veil":
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.snowveil_theme_primary
-                    );
-                    textColor = Color.WHITE; // Gray background with white text
-                    break;
-                case "Midnight Dusk":
-                    // Use the same purple color as the clock card
-                    activeColor = Color.parseColor("#673AB7"); // Same purple as clock card
-                    textColor = Color.WHITE; // Purple background with white text
-                    break;
-                case "Faded Night":
-                    // Use the original red color for Faded Night
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.redPastel
-                    );
-                    textColor = Color.WHITE; // Red background with white text
-                    break;
-                case "AMOLED":
-                    // For AMOLED theme, use a lighter accent color
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.amoled_accent
-                    );
-                    textColor = Color.WHITE; // Dark background with white text
-                    break;
-                default:
-                    // Default to the original red color for unknown themes
-                    activeColor = ContextCompat.getColor(
-                        requireContext(),
-                        R.color.redPastel
-                    );
-                    textColor = Color.WHITE;
-                    break;
-            }
+            int activeColor = resolveThemeColor(R.attr.homeRailSegmentActive);
+            int textColor = resolveThemeColor(R.attr.homeRailSegmentActiveText);
 
-            // Create a new background drawable with the theme color
             GradientDrawable activeBackground = new GradientDrawable();
             activeBackground.setShape(GradientDrawable.RECTANGLE);
             activeBackground.setColor(activeColor);
             activeBackground.setCornerRadius(
                 14 * getResources().getDisplayMetrics().density
-            ); // 14dp radius
-
-            // Apply the themed background to the active segment
+            );
             segmentFadCam.setBackground(activeBackground);
 
-            // Find and update the text color for the active segment
             TextView textFadCam = segmentFadCam.findViewById(R.id.text_fadcam);
             if (textFadCam != null) {
                 textFadCam.setTextColor(textColor);
             }
         } catch (Exception e) {
-            // Silently handle any errors to avoid crashes
             FLog.w(
                 "HomeFragment",
                 "Error applying mode switcher theming",

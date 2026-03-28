@@ -31,6 +31,11 @@
     <attr name="homeRailTileSurface" format="color" />
     <attr name="homeRailSegmentedSurface" format="color" />
     <attr name="homeRailSegmentedBorder" format="color" />
+    <attr name="homeRailSegmentActive" format="color" />
+    <attr name="homeRailSegmentActiveText" format="color" />
+    <attr name="homeRailTextPrimary" format="color" />
+    <attr name="homeRailTextSecondary" format="color" />
+    <attr name="homeRailAccent" format="color" />
 
     <declare-styleable name="TornPaperImageView">
         <attr name="tearAmplitude" format="dimension" />

@@ -20,7 +20,7 @@
         android:fontFamily="@font/materialicons"
         android:text="center_focus_strong"
         android:contentDescription="Autofocus toggle"
-        android:textColor="?attr/colorOnSurface"
+        android:textColor="?attr/homeRailTextPrimary"
     android:textSize="24sp"
         android:padding="6dp"
         android:clickable="true"
@@ -41,7 +41,7 @@
         android:fontFamily="@font/materialicons"
     android:textSize="24sp"
         android:contentDescription="Exposure compensation"
-        android:textColor="?attr/colorOnSurface"
+        android:textColor="?attr/homeRailTextPrimary"
         android:padding="6dp"
         android:clickable="true"
         android:focusable="true" />
@@ -59,7 +59,7 @@
         android:fontFamily="@font/materialicons"
         android:textSize="24sp"
         android:contentDescription="Zoom ratio"
-        android:textColor="?attr/colorOnSurface"
+        android:textColor="?attr/homeRailTextPrimary"
         android:clickable="true"
         android:focusable="true" />
 
