@@ -166,7 +166,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     app:cardBackgroundColor="@android:color/transparent"
-                    app:cardCornerRadius="0dp"
+                    app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
                     app:strokeWidth="0dp">
 
@@ -189,8 +189,8 @@
                             android:alpha="0.72"
                             android:contentDescription="@null"
                             android:src="@drawable/fadseclab_flag"
-                            android:translationX="8dp"
-                            android:translationY="-2dp" />
+                            android:translationX="3dp"
+                            android:translationY="1dp" />
 
                         <LinearLayout
                             android:id="@+id/layoutElapsedContent"
@@ -308,8 +308,34 @@
 
     </LinearLayout>
 
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardRailToggleLandscape"
+        android:layout_width="24dp"
+        android:layout_height="72dp"
+        android:clickable="true"
+        android:contentDescription="@string/home_cards_fold_toggle"
+        android:focusable="true"
+        app:cardBackgroundColor="?attr/colorDialog"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/leftPanel"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:strokeColor="#4CAF50"
+        app:strokeWidth="1dp">
+
+        <ImageView
+            android:id="@+id/ivCardRailToggleLandscape"
+            android:layout_width="16dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:rotation="180"
+            android:src="@drawable/ic_double_chevron"
+            android:tint="?attr/colorOnSurface" />
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- Right Panel: Camera Preview and Controls (Half Screen) -->
-    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="3dp" android:layout_marginTop="4dp" android:layout_marginEnd="6dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/leftPanel" app:layout_constraintTop_toBottomOf="@id/header_bar">
+    <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="3dp" android:layout_marginTop="4dp" android:layout_marginEnd="6dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/cardRailToggleLandscape" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Camera Preview Area -->
         <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:strokeColor="#4CAF50" app:strokeWidth="15dp">

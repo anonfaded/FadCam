@@ -47,6 +47,8 @@ public abstract class Constants {
     public static final String PREF_HOME_STORAGE_INDICATOR_STYLE = "pref_home_storage_indicator_style";
     public static final String PREF_HOME_STORAGE_SHOW_TOTAL = "pref_home_storage_show_total";
     public static final String PREF_HOME_TIME_LEFT_COLOR = "pref_home_time_left_color";
+    public static final String PREF_HOME_CLOCK_HOUR_FORMAT = "pref_home_clock_hour_format";
+    public static final String PREF_HOME_CARD_RAIL_FOLDED = "pref_home_card_rail_folded";
     public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for FadRec
     public static final String PREF_BOTH_TORCHES_ENABLED =
         "pref_both_torches_enabled";

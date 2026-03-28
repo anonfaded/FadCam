@@ -37,6 +37,8 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -68,6 +70,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.cardview.widget.CardView; // Add this
 import androidx.core.app.ActivityCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
@@ -136,6 +140,7 @@ public class HomeFragment extends BaseFragment {
     private static final String CLOCK_CUSTOMIZE_RESULT_KEY = "home_clock_customize_picker";
     private static final String CLOCK_DISPLAY_RESULT_KEY = "home_clock_display_picker";
     private static final String CLOCK_COLOR_RESULT_KEY = "home_clock_color_picker";
+    private static final String CLOCK_HOUR_FORMAT_RESULT_KEY = "home_clock_hour_format_picker";
     private static final String ELAPSED_ALIGNMENT_CENTER = "center";
     private static final String ELAPSED_ALIGNMENT_START = "start";
     private static final String ELAPSED_SIZE_SMALL = "small";
@@ -153,6 +158,8 @@ public class HomeFragment extends BaseFragment {
     private static final String STORAGE_INDICATOR_VERTICAL_BAR = "vertical_bar";
     private static final String STORAGE_TOTAL_VISIBLE = "visible";
     private static final String STORAGE_TOTAL_HIDDEN = "hidden";
+    private static final String CLOCK_HOUR_FORMAT_12 = "12h";
+    private static final String CLOCK_HOUR_FORMAT_24 = "24h";
 
     private HomeFragmentHelper fragmentHelper;
 
@@ -231,12 +238,20 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvRemainingTitle;
     protected TextView tvRemainingSubtitle;
     private MaterialCardView cardElapsedHero;
+    private ConstraintLayout homeRootLayout;
     private ImageView tvElapsedStateIcon;
     private ImageView ivElapsedAccent;
     private LinearLayout layoutElapsedContent;
     private LinearLayout layoutElapsedMetaRow;
     private View rowStorageAvailable;
     private View rowEstimateTime;
+    private View layoutCards;
+    private View leftPanel;
+    private View rightPanel;
+    private MaterialCardView cardRailTogglePortrait;
+    private MaterialCardView cardRailToggleLandscape;
+    private ImageView ivCardRailTogglePortrait;
+    private ImageView ivCardRailToggleLandscape;
     
     private ImageView btnHamburgerMenu;
     private View hamburgerBadgeDot;
@@ -6082,6 +6097,11 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_clock_color_option),
                 getString(R.string.home_clock_color_option_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "palette"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "clock_hour_format",
+                getString(R.string.home_clock_hour_format_option),
+                getString(R.string.home_clock_hour_format_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "schedule"));
 
         getParentFragmentManager().setFragmentResultListener(
                 CLOCK_CUSTOMIZE_RESULT_KEY,
@@ -6095,6 +6115,8 @@ public class HomeFragment extends BaseFragment {
                         showDisplayOptionsDialog();
                     } else if ("clock_color".equals(selected)) {
                         showClockColorChooserDialog();
+                    } else if ("clock_hour_format".equals(selected)) {
+                        showClockHourFormatSheet();
                     }
                 });
 
@@ -6213,6 +6235,50 @@ public class HomeFragment extends BaseFragment {
         sheet.show(getParentFragmentManager(), "home_clock_color_sheet");
     }
 
+    private void showClockHourFormatSheet() {
+        if (!isAdded()) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                CLOCK_HOUR_FORMAT_12,
+                getString(R.string.home_clock_hour_format_12),
+                getString(R.string.home_clock_hour_format_12_desc),
+                null, null, null, null, null, "schedule"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                CLOCK_HOUR_FORMAT_24,
+                getString(R.string.home_clock_hour_format_24),
+                getString(R.string.home_clock_hour_format_24_desc),
+                null, null, null, null, null, "schedule"));
+
+        String selectedId = getCurrentClockHourFormat();
+
+        getParentFragmentManager().setFragmentResultListener(
+                CLOCK_HOUR_FORMAT_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            CLOCK_HOUR_FORMAT_12);
+                    saveClockHourFormat(selected);
+                    updateClock();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_clock_hour_format_option),
+                        items,
+                        selectedId,
+                        CLOCK_HOUR_FORMAT_RESULT_KEY,
+                        getString(R.string.home_clock_hour_format_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_clock_hour_format_sheet");
+    }
+
     /**
      * Determines if a color is light or dark.
      *
@@ -6245,11 +6311,25 @@ public class HomeFragment extends BaseFragment {
             .getInt("display_option", 2); // Default to "Everything"
     }
 
+    private String getCurrentClockHourFormat() {
+        return requireActivity()
+            .getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            .getString(Constants.PREF_HOME_CLOCK_HOUR_FORMAT, CLOCK_HOUR_FORMAT_12);
+    }
+
     private void saveDisplayOption(int option) {
         SharedPreferences.Editor editor = requireActivity()
             .getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
             .edit();
         editor.putInt("display_option", option);
+        editor.apply();
+    }
+
+    private void saveClockHourFormat(@NonNull String format) {
+        SharedPreferences.Editor editor = requireActivity()
+            .getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+            .edit();
+        editor.putString(Constants.PREF_HOME_CLOCK_HOUR_FORMAT, format);
         editor.apply();
     }
 
@@ -6266,10 +6346,14 @@ public class HomeFragment extends BaseFragment {
             Context.MODE_PRIVATE
         );
         int displayOption = prefs.getInt("display_option", 2); // Default to "Everything"
+        String hourFormatPref = prefs.getString(
+            Constants.PREF_HOME_CLOCK_HOUR_FORMAT,
+            CLOCK_HOUR_FORMAT_12
+        );
 
         // Update the time
         SimpleDateFormat timeFormat = new SimpleDateFormat(
-            "hh:mm a",
+            CLOCK_HOUR_FORMAT_24.equals(hourFormatPref) ? "HH:mm" : "hh:mm a",
             Locale.getDefault()
         );
         String currentTime = timeFormat.format(new Date());
@@ -6357,20 +6441,18 @@ public class HomeFragment extends BaseFragment {
 
         if (layoutClockInner != null) {
             int horizontalPadding = dpToPxInt(4);
-            int verticalPadding = displayOption == 0 ? dpToPxInt(2) : dpToPxInt(2);
+            int verticalPadding = displayOption == 0 ? dpToPxInt(4) : dpToPxInt(3);
             layoutClockInner.setPadding(
                     horizontalPadding,
                     verticalPadding,
                     horizontalPadding,
                     verticalPadding);
-            layoutClockInner.setGravity(displayOption == 0
-                    ? Gravity.CENTER_VERTICAL
-                    : Gravity.NO_GRAVITY);
+            layoutClockInner.setGravity(Gravity.CENTER_VERTICAL);
         }
         if (layoutClockContent != null) {
-            layoutClockContent.setGravity(displayOption == 0
-                    ? Gravity.CENTER_VERTICAL
-                    : Gravity.NO_GRAVITY);
+            layoutClockContent.setGravity(Gravity.CENTER_VERTICAL);
+            int contentVerticalPadding = displayOption == 0 ? dpToPxInt(1) : 0;
+            layoutClockContent.setPadding(0, contentVerticalPadding, 0, contentVerticalPadding);
         }
 
         if (tvDateEnglish instanceof com.fadcam.ui.utils.AnimatedTextView) {
@@ -6391,6 +6473,8 @@ public class HomeFragment extends BaseFragment {
         }
         tvDateArabic.setPadding(0, 0, 0, 0);
         tvDateArabic.setGravity(Gravity.END);
+        tvDateArabic.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+        tvDateArabic.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
     }
 
     /**
@@ -9754,6 +9838,7 @@ public class HomeFragment extends BaseFragment {
 
     private void initializeViews(View view) {
         FLog.d(TAG, "initializeViews: Finding UI elements.");
+        homeRootLayout = (view instanceof ConstraintLayout) ? (ConstraintLayout) view : null;
         tvCameraTitle = view.findViewById(R.id.tvCameraTitle);
         tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
         ivCameraIcon = view.findViewById(R.id.ivCameraIcon);
@@ -9773,6 +9858,13 @@ public class HomeFragment extends BaseFragment {
         layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
+        layoutCards = view.findViewById(R.id.layoutCards);
+        leftPanel = view.findViewById(R.id.leftPanel);
+        rightPanel = view.findViewById(R.id.rightPanel);
+        cardRailTogglePortrait = view.findViewById(R.id.cardRailTogglePortrait);
+        cardRailToggleLandscape = view.findViewById(R.id.cardRailToggleLandscape);
+        ivCardRailTogglePortrait = view.findViewById(R.id.ivCardRailTogglePortrait);
+        ivCardRailToggleLandscape = view.findViewById(R.id.ivCardRailToggleLandscape);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
@@ -9849,6 +9941,8 @@ public class HomeFragment extends BaseFragment {
         applyStorageTotalVisibilityPreference();
         applyTimeLeftAccentPreference();
         updateElapsedHeroAppearance();
+        applyCardRailFoldedState(false);
+        setupCardRailToggle();
 
         // Torch button (already initialized elsewhere, but good to have it
         // consistently)
@@ -11550,6 +11644,109 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    private void setupCardRailToggle() {
+        View.OnClickListener listener = v -> {
+            performHapticFeedback();
+            boolean folded = sharedPreferencesManager != null
+                    && sharedPreferencesManager.sharedPreferences.getBoolean(
+                    Constants.PREF_HOME_CARD_RAIL_FOLDED,
+                    false);
+            boolean next = !folded;
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.sharedPreferences.edit()
+                        .putBoolean(Constants.PREF_HOME_CARD_RAIL_FOLDED, next)
+                        .apply();
+            }
+            applyCardRailFoldedState(true);
+        };
+        if (cardRailTogglePortrait != null) {
+            cardRailTogglePortrait.setOnClickListener(listener);
+        }
+        if (cardRailToggleLandscape != null) {
+            cardRailToggleLandscape.setOnClickListener(listener);
+        }
+    }
+
+    private void applyCardRailFoldedState(boolean animate) {
+        boolean folded = sharedPreferencesManager != null
+                && sharedPreferencesManager.sharedPreferences.getBoolean(
+                Constants.PREF_HOME_CARD_RAIL_FOLDED,
+                false);
+
+        if (homeRootLayout != null && animate) {
+            AutoTransition transition = new AutoTransition();
+            transition.setDuration(220);
+            TransitionManager.beginDelayedTransition(homeRootLayout, transition);
+        }
+
+        if (isLandscapeMode()) {
+            if (leftPanel != null) {
+                leftPanel.setVisibility(folded ? View.GONE : View.VISIBLE);
+            }
+            applyLandscapeFoldConstraints(folded);
+            if (ivCardRailToggleLandscape != null) {
+                ivCardRailToggleLandscape.animate()
+                        .rotation(folded ? 0f : 180f)
+                        .setDuration(220)
+                        .start();
+            }
+            if (cardRailToggleLandscape != null) {
+                cardRailToggleLandscape.setVisibility(View.VISIBLE);
+            }
+            if (cardRailTogglePortrait != null) {
+                cardRailTogglePortrait.setVisibility(View.GONE);
+            }
+        } else {
+            if (layoutCards != null) {
+                layoutCards.setVisibility(folded ? View.GONE : View.VISIBLE);
+            }
+            if (ivCardRailTogglePortrait != null) {
+                ivCardRailTogglePortrait.animate()
+                        .rotation(folded ? 0f : 180f)
+                        .setDuration(220)
+                        .start();
+            }
+            if (cardRailTogglePortrait != null) {
+                cardRailTogglePortrait.setVisibility(View.VISIBLE);
+            }
+            if (cardRailToggleLandscape != null) {
+                cardRailToggleLandscape.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void applyLandscapeFoldConstraints(boolean folded) {
+        if (homeRootLayout == null || leftPanel == null || rightPanel == null || cardRailToggleLandscape == null) {
+            return;
+        }
+        ConstraintSet set = new ConstraintSet();
+        set.clone(homeRootLayout);
+        set.clear(R.id.leftPanel, ConstraintSet.END);
+        set.clear(R.id.cardRailToggleLandscape, ConstraintSet.START);
+        set.clear(R.id.cardRailToggleLandscape, ConstraintSet.END);
+        set.clear(R.id.rightPanel, ConstraintSet.START);
+
+        set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
+        set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
+        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(6));
+
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(6));
+        set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
+        set.connect(R.id.rightPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
+        set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPxInt(6));
+
+        if (folded) {
+            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
+        } else {
+            set.connect(R.id.leftPanel, ConstraintSet.END, R.id.cardRailToggleLandscape, ConstraintSet.START, dpToPxInt(3));
+            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
+        }
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END, R.id.rightPanel, ConstraintSet.START, dpToPxInt(3));
+        set.connect(R.id.rightPanel, ConstraintSet.START, R.id.cardRailToggleLandscape, ConstraintSet.END, dpToPxInt(3));
+        set.applyTo(homeRootLayout);
+    }
+
     private void showElapsedCustomizeSheet() {
         if (!isAdded() || getActivity() == null) return;
 
@@ -11573,7 +11770,9 @@ public class HomeFragment extends BaseFragment {
                 "elapsed_flag",
                 getString(R.string.home_elapsed_flag_option),
                 getString(R.string.home_elapsed_flag_option_desc),
-                null, null, R.drawable.ic_arrow_right, null, null, "flag"));
+                null, null, null, true,
+                sharedPreferencesManager != null && sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, true),
+                "flag"));
         items.add(new com.fadcam.ui.picker.OptionItem(
                 "elapsed_background",
                 getString(R.string.home_elapsed_background_option),
@@ -11595,7 +11794,15 @@ public class HomeFragment extends BaseFragment {
                     } else if ("elapsed_font".equals(selected)) {
                         showElapsedFontSheet();
                     } else if ("elapsed_flag".equals(selected)) {
-                        showElapsedFlagSheet();
+                        boolean enabled = bundle.getBoolean(
+                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE,
+                                true);
+                        if (sharedPreferencesManager != null) {
+                            sharedPreferencesManager.sharedPreferences.edit()
+                                    .putBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, enabled)
+                                    .apply();
+                        }
+                        applyElapsedFlagPreference();
                     } else if ("elapsed_background".equals(selected)) {
                         showElapsedBackgroundSheet();
                     }
@@ -11899,7 +12106,9 @@ public class HomeFragment extends BaseFragment {
                 "storage_total",
                 getString(R.string.home_storage_total_option),
                 getString(R.string.home_storage_total_option_desc),
-                null, null, R.drawable.ic_arrow_right, null, null, "storage"));
+                null, null, null, true,
+                sharedPreferencesManager != null && sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_HOME_STORAGE_SHOW_TOTAL, true),
+                "storage"));
 
         getParentFragmentManager().setFragmentResultListener(
                 STORAGE_CUSTOMIZE_RESULT_KEY,
@@ -11912,7 +12121,15 @@ public class HomeFragment extends BaseFragment {
                     if ("storage_style".equals(selected)) {
                         showStorageIndicatorStyleSheet();
                     } else if ("storage_total".equals(selected)) {
-                        showStorageTotalSheet();
+                        boolean enabled = bundle.getBoolean(
+                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE,
+                                true);
+                        if (sharedPreferencesManager != null) {
+                            sharedPreferencesManager.sharedPreferences.edit()
+                                    .putBoolean(Constants.PREF_HOME_STORAGE_SHOW_TOTAL, enabled)
+                                    .apply();
+                        }
+                        applyStorageTotalVisibilityPreference();
                     }
                 });
 
@@ -12252,21 +12469,21 @@ public class HomeFragment extends BaseFragment {
 
         if (isPaused()) {
             backgroundColor = useBlackCard ? Color.parseColor("#E6000000") : Color.TRANSPARENT;
-            strokeColor = Color.TRANSPARENT;
+            strokeColor = useBlackCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
             titleColor = Color.parseColor("#FFF6E2");
             subtitleColor = Color.parseColor("#D8B06C");
             iconColor = Color.parseColor("#C8923A");
             stateIconRes = R.drawable.pause_rounded;
         } else if (isRecording()) {
             backgroundColor = useBlackCard ? Color.parseColor("#E6000000") : Color.TRANSPARENT;
-            strokeColor = Color.TRANSPARENT;
+            strokeColor = useBlackCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
             titleColor = Color.parseColor("#EDFFF4");
             subtitleColor = Color.parseColor("#8DE0AC");
             iconColor = Color.parseColor("#56C889");
             stateIconRes = R.drawable.play_button_rounded;
         } else {
             backgroundColor = useBlackCard ? Color.parseColor("#E6000000") : Color.TRANSPARENT;
-            strokeColor = Color.TRANSPARENT;
+            strokeColor = useBlackCard ? Color.parseColor("#1FFFFFFF") : Color.TRANSPARENT;
             titleColor = Color.parseColor("#C9D5DE");
             subtitleColor = Color.parseColor("#90A4AE");
             iconColor = Color.parseColor("#6B7C88");
@@ -12275,6 +12492,9 @@ public class HomeFragment extends BaseFragment {
 
         cardElapsedHero.setCardBackgroundColor(backgroundColor);
         cardElapsedHero.setStrokeColor(strokeColor);
+        cardElapsedHero.setStrokeWidth(useBlackCard ? dpToPxInt(1) : 0);
+        cardElapsedHero.setRadius(dpToPxInt(12));
+        cardElapsedHero.setCardElevation(useBlackCard ? dpToPxInt(4) : 0);
         cardElapsedHero.setMinimumHeight(dpToPxInt(isLandscapeMode() ? 46 : 48));
 
         if (tvElapsedTitle != null) {

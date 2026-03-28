@@ -938,13 +938,18 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
 
                 // Handle switch vs subtitle display
                 if (item.hasSwitch != null && item.hasSwitch) {
-                    // Show switch instead of subtitle
-                    tvSubtitle.setVisibility(View.GONE);
+                    // Show switch and keep helper subtitle when provided
                     itemSwitch.setVisibility(View.VISIBLE);
                     applyThemedSwitchColors(itemSwitch);
                     itemSwitch.setChecked(
                         item.switchState != null && item.switchState
                     );
+                    if (item.subtitle != null && !item.subtitle.isEmpty()) {
+                        tvSubtitle.setText(item.subtitle);
+                        tvSubtitle.setVisibility(View.VISIBLE);
+                    } else {
+                        tvSubtitle.setVisibility(View.GONE);
+                    }
                     // Make the switch functional but prevent row click
                     itemSwitch.setOnCheckedChangeListener(
                         (switchView, isChecked) -> {
@@ -960,6 +965,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             // Post switch result without dismissing
                             Bundle result = new Bundle();
                             result.putString(BUNDLE_SELECTED_ID, item.id);
+                            result.putBoolean(BUNDLE_SWITCH_STATE, isChecked);
                             getParentFragmentManager().setFragmentResult(
                                 resultKey,
                                 result

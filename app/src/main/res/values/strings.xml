@@ -209,7 +209,7 @@
     <string name="home_time_left_color_helper">Choose the accent color for the time-left row. Red is the default.</string>
     <string name="home_time_left_color_choice_desc">Accent color %1$s</string>
     <string name="home_clock_customize_title">Clock Appearance</string>
-    <string name="home_clock_customize_helper">Change the clock display format or background color.</string>
+    <string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
     <string name="home_clock_display_option">Clock display</string>
     <string name="home_clock_display_option_desc">Choose which date and time lines appear in the clock card</string>
     <string name="home_clock_display_helper">Pick the layout used by the clock card.</string>
@@ -220,6 +220,14 @@
     <string name="home_clock_color_option_desc">Choose the accent/background color used by the clock card</string>
     <string name="home_clock_color_helper">Choose a clock card color from the Home palette.</string>
     <string name="home_clock_color_choice_desc">Clock color %1$s</string>
+    <string name="home_clock_hour_format_option">Hour format</string>
+    <string name="home_clock_hour_format_option_desc">Choose whether the clock shows 12-hour or 24-hour time</string>
+    <string name="home_clock_hour_format_helper">Pick the hour format used by the Home clock.</string>
+    <string name="home_clock_hour_format_12">12-hour (Default)</string>
+    <string name="home_clock_hour_format_12_desc">Show time with AM and PM</string>
+    <string name="home_clock_hour_format_24">24-hour</string>
+    <string name="home_clock_hour_format_24_desc">Show time in 24-hour format without AM or PM</string>
+    <string name="home_cards_fold_toggle">Toggle Home cards</string>
     <string name="mainpage_recording_to_sd">Recording to SD card</string>
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Helpful usage tips</string>
