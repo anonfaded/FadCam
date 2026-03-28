@@ -189,8 +189,8 @@
                             android:alpha="0.72"
                             android:contentDescription="@null"
                             android:src="@drawable/fadseclab_flag"
-                            android:translationX="3dp"
-                            android:translationY="1dp" />
+                            android:translationX="1dp"
+                            android:translationY="4dp" />
 
                         <LinearLayout
                             android:id="@+id/layoutElapsedContent"
@@ -310,14 +310,14 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardRailToggleLandscape"
-        android:layout_width="24dp"
-        android:layout_height="72dp"
+        android:layout_width="18dp"
+        android:layout_height="48dp"
         android:clickable="true"
         android:contentDescription="@string/home_cards_fold_toggle"
         android:focusable="true"
         app:cardBackgroundColor="?attr/colorDialog"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
+        app:cardCornerRadius="9dp"
+        app:cardElevation="1dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/leftPanel"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
@@ -326,8 +326,8 @@
 
         <ImageView
             android:id="@+id/ivCardRailToggleLandscape"
-            android:layout_width="16dp"
-            android:layout_height="24dp"
+            android:layout_width="11dp"
+            android:layout_height="18dp"
             android:layout_gravity="center"
             android:rotation="180"
             android:src="@drawable/ic_double_chevron"

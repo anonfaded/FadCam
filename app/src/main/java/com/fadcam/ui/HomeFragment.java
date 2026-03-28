@@ -352,6 +352,7 @@ public class HomeFragment extends BaseFragment {
     private TextView tvClock, tvDateEnglish, tvDateArabic;
     private LinearLayout layoutClockInner;
     private LinearLayout layoutClockContent;
+    private String latestElapsedDisplay = "00:00";
 
     // FragmentActivity tipres = requireActivity();
     private String[] tips;
@@ -1687,6 +1688,7 @@ public class HomeFragment extends BaseFragment {
             );
             buttonStartStop.setEnabled(true);
         });
+        updateStartStopButtonForFoldedState();
 
         // Re-enable camera switch button (may have been disabled during WAITING_FOR_CAMERA)
         if (buttonCamSwitch != null) {
@@ -1728,6 +1730,7 @@ public class HomeFragment extends BaseFragment {
                 )
             );
         });
+        updateStartStopButtonForFoldedState();
         updateStorageInfo();
         updateElapsedHeroAppearance();
     }
@@ -1841,6 +1844,7 @@ public class HomeFragment extends BaseFragment {
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
                 });
+                updateStartStopButtonForFoldedState();
                 FLog.d(TAG, "Start button force-enabled in resetUIButtonsToIdleState");
             }
             if (buttonPauseResume != null) {
@@ -6472,9 +6476,14 @@ public class HomeFragment extends BaseFragment {
             tvDateArabic.setText(displayDateArabic);
         }
         tvDateArabic.setPadding(0, 0, 0, 0);
-        tvDateArabic.setGravity(Gravity.END);
-        tvDateArabic.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+        tvDateArabic.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        tvDateArabic.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_END);
         tvDateArabic.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        ViewGroup.LayoutParams arabicParams = tvDateArabic.getLayoutParams();
+        if (arabicParams instanceof LinearLayout.LayoutParams) {
+            ((LinearLayout.LayoutParams) arabicParams).gravity = Gravity.END;
+            tvDateArabic.setLayoutParams(arabicParams);
+        }
     }
 
     /**
@@ -6762,6 +6771,7 @@ public class HomeFragment extends BaseFragment {
             elapsedMinutes,
             elapsedSeconds
         );
+        latestElapsedDisplay = elapsedTimeText;
 
         // Update UI on main thread
         if (getActivity() != null) {
@@ -6885,6 +6895,7 @@ public class HomeFragment extends BaseFragment {
                     applyElapsedSizePreference();
                     applyElapsedFontPreference();
                     applyElapsedFlagPreference();
+                    updateStartStopButtonForFoldedState();
 
                 });
         }
@@ -11667,11 +11678,44 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    private void applyCardRailFoldedState(boolean animate) {
-        boolean folded = sharedPreferencesManager != null
+    private boolean isCardRailCurrentlyFolded() {
+        return sharedPreferencesManager != null
                 && sharedPreferencesManager.sharedPreferences.getBoolean(
                 Constants.PREF_HOME_CARD_RAIL_FOLDED,
                 false);
+    }
+
+    private void updateStartStopButtonForFoldedState() {
+        if (buttonStartStop == null || !isAdded()) {
+            return;
+        }
+
+        boolean folded = isCardRailCurrentlyFolded();
+        boolean showTimerOnButton = folded && (isRecording() || isPaused());
+
+        if (showTimerOnButton) {
+            buttonStartStop.setIcon(null);
+            buttonStartStop.setText(latestElapsedDisplay);
+            buttonStartStop.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f);
+            buttonStartStop.setPadding(dpToPxInt(14), dpToPxInt(8), dpToPxInt(14), dpToPxInt(8));
+        } else {
+            android.graphics.drawable.Drawable icon = AppCompatResources.getDrawable(
+                    requireContext(),
+                    recordingState == RecordingState.NONE
+                            ? R.drawable.play_button_rounded
+                            : R.drawable.stop_rounded);
+            buttonStartStop.setIcon(icon);
+            buttonStartStop.setText(recordingState == RecordingState.NONE
+                    ? getString(R.string.button_start)
+                    : getString(R.string.button_stop));
+            buttonStartStop.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            buttonStartStop.setPadding(dpToPxInt(12), dpToPxInt(8), dpToPxInt(12), dpToPxInt(8));
+        }
+    }
+
+    private void applyCardRailFoldedState(boolean animate) {
+        boolean folded = isCardRailCurrentlyFolded();
 
         if (homeRootLayout != null && animate) {
             AutoTransition transition = new AutoTransition();
@@ -11708,11 +11752,13 @@ public class HomeFragment extends BaseFragment {
             }
             if (cardRailTogglePortrait != null) {
                 cardRailTogglePortrait.setVisibility(View.VISIBLE);
+                cardRailTogglePortrait.setTranslationY(dpToPxInt(-8));
             }
             if (cardRailToggleLandscape != null) {
                 cardRailToggleLandscape.setVisibility(View.GONE);
             }
         }
+        updateStartStopButtonForFoldedState();
     }
 
     private void applyLandscapeFoldConstraints(boolean folded) {
