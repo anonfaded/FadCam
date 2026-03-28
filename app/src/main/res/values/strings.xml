@@ -145,6 +145,16 @@
     <string name="recording_time_left">Time left</string>
     <string name="recording_elapsed_time">Elapsed time</string>
     <string name="recording_remaining_time">Remaining time</string>
+    <string name="home_elapsed_customize_title">Elapsed Display</string>
+    <string name="home_elapsed_align_center">Centered</string>
+    <string name="home_elapsed_align_center_desc">Keep the elapsed label and timer centered</string>
+    <string name="home_elapsed_align_left">Left aligned</string>
+    <string name="home_elapsed_align_left_desc">Anchor the elapsed label and timer to the start</string>
+    <string name="home_storage_indicator_title">Storage Indicator</string>
+    <string name="home_storage_indicator_ring">Ring</string>
+    <string name="home_storage_indicator_ring_desc">Show available space as a compact circular ring</string>
+    <string name="home_storage_indicator_bar">Micro pill bar</string>
+    <string name="home_storage_indicator_bar_desc">Show available space as a tiny horizontal pill bar</string>
     <string name="mainpage_recording_to_sd">Recording to SD card</string>
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Helpful usage tips</string>

@@ -44,6 +44,7 @@ import android.text.format.Formatter;
 import android.text.style.ForegroundColorSpan;
 import android.util.Range;
 import android.util.Size;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -55,6 +56,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView; // <<< ADD IMPORT FOR ImageView
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -120,6 +122,12 @@ public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
+    private static final String STORAGE_INDICATOR_STYLE_RESULT_KEY = "home_storage_indicator_style_picker";
+    private static final String ELAPSED_ALIGNMENT_CENTER = "center";
+    private static final String ELAPSED_ALIGNMENT_START = "start";
+    private static final String STORAGE_INDICATOR_RING = "ring";
+    private static final String STORAGE_INDICATOR_MICRO_PILL = "micro_pill_bar";
 
     private HomeFragmentHelper fragmentHelper;
 
@@ -198,6 +206,9 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvRemainingSubtitle;
     private MaterialCardView cardElapsedHero;
     private ImageView tvElapsedStateIcon;
+    private LinearLayout layoutElapsedContent;
+    private LinearLayout layoutElapsedMetaRow;
+    private View rowStorageAvailable;
     
     private ImageView btnHamburgerMenu;
     private View hamburgerBadgeDot;
@@ -9734,6 +9745,9 @@ public class HomeFragment extends BaseFragment {
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
         cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
         tvElapsedStateIcon = view.findViewById(R.id.tvElapsedStateIcon);
+        layoutElapsedContent = view.findViewById(R.id.layoutElapsedContent);
+        layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
+        rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
@@ -9799,6 +9813,9 @@ public class HomeFragment extends BaseFragment {
         tvVideoCount = view.findViewById(R.id.tvVideoCount);
         tvVideoSize = view.findViewById(R.id.tvVideoSize);
         tvSpaceTotal = view.findViewById(R.id.tvSpaceTotal);
+        setupHomeCustomizationListeners();
+        applyElapsedAlignmentPreference();
+        applyStorageIndicatorStylePreference();
         updateElapsedHeroAppearance();
 
         // Torch button (already initialized elsewhere, but good to have it
@@ -11477,6 +11494,185 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    private void setupHomeCustomizationListeners() {
+        if (cardElapsedHero != null) {
+            cardElapsedHero.setOnLongClickListener(v -> {
+                performHapticFeedback();
+                showElapsedAlignmentSheet();
+                return true;
+            });
+        }
+
+        if (rowStorageAvailable != null) {
+            rowStorageAvailable.setOnLongClickListener(v -> {
+                performHapticFeedback();
+                showStorageIndicatorStyleSheet();
+                return true;
+            });
+        }
+    }
+
+    private void showElapsedAlignmentSheet() {
+        if (!isAdded() || getActivity() == null) return;
+        if (!(getActivity() instanceof androidx.fragment.app.FragmentActivity)) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(com.fadcam.ui.picker.OptionItem.withLigature(
+                ELAPSED_ALIGNMENT_CENTER,
+                getString(R.string.home_elapsed_align_center),
+                "format_align_center"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_ALIGNMENT_START,
+                getString(R.string.home_elapsed_align_left),
+                getString(R.string.home_elapsed_align_left_desc),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "format_align_left"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_ELAPSED_ALIGNMENT,
+                        ELAPSED_ALIGNMENT_CENTER)
+                : ELAPSED_ALIGNMENT_CENTER;
+
+        getParentFragmentManager().setFragmentResultListener(
+                ELAPSED_ALIGNMENT_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            ELAPSED_ALIGNMENT_CENTER);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putString(Constants.PREF_HOME_ELAPSED_ALIGNMENT, selected)
+                                .apply();
+                    }
+                    applyElapsedAlignmentPreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_elapsed_customize_title),
+                        items,
+                        selectedId,
+                        ELAPSED_ALIGNMENT_RESULT_KEY,
+                        getString(R.string.recording_elapsed_time),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_elapsed_alignment_sheet");
+    }
+
+    private void showStorageIndicatorStyleSheet() {
+        if (!isAdded() || getActivity() == null) return;
+        if (!(getActivity() instanceof androidx.fragment.app.FragmentActivity)) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(com.fadcam.ui.picker.OptionItem.withLigature(
+                STORAGE_INDICATOR_RING,
+                getString(R.string.home_storage_indicator_ring),
+                "donut_large"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                STORAGE_INDICATOR_MICRO_PILL,
+                getString(R.string.home_storage_indicator_bar),
+                getString(R.string.home_storage_indicator_bar_desc),
+                null,
+                null,
+                null,
+                null,
+                null,
+                "view_stream"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_STORAGE_INDICATOR_STYLE,
+                        STORAGE_INDICATOR_RING)
+                : STORAGE_INDICATOR_RING;
+
+        getParentFragmentManager().setFragmentResultListener(
+                STORAGE_INDICATOR_STYLE_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            STORAGE_INDICATOR_RING);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putString(Constants.PREF_HOME_STORAGE_INDICATOR_STYLE, selected)
+                                .apply();
+                    }
+                    applyStorageIndicatorStylePreference();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_storage_indicator_title),
+                        items,
+                        selectedId,
+                        STORAGE_INDICATOR_STYLE_RESULT_KEY,
+                        getString(R.string.storage_available_space),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_storage_indicator_style_sheet");
+    }
+
+    private void applyElapsedAlignmentPreference() {
+        if (sharedPreferencesManager == null || layoutElapsedContent == null) {
+            return;
+        }
+
+        String alignment = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HOME_ELAPSED_ALIGNMENT,
+                ELAPSED_ALIGNMENT_CENTER);
+        boolean startAligned = ELAPSED_ALIGNMENT_START.equals(alignment);
+
+        layoutElapsedContent.setGravity(startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL);
+
+        if (layoutElapsedMetaRow != null) {
+            layoutElapsedMetaRow.setGravity(startAligned
+                    ? (Gravity.START | Gravity.CENTER_VERTICAL)
+                    : Gravity.CENTER);
+        }
+
+        if (tvElapsedTitle != null) {
+            tvElapsedTitle.setGravity(startAligned ? Gravity.START : Gravity.CENTER);
+            ViewGroup.LayoutParams params = tvElapsedTitle.getLayoutParams();
+            if (params instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) params).gravity = startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL;
+                tvElapsedTitle.setLayoutParams(params);
+            }
+            tvElapsedTitle.setTextAlignment(startAligned ? View.TEXT_ALIGNMENT_VIEW_START : View.TEXT_ALIGNMENT_CENTER);
+        }
+
+        if (tvElapsedSubtitle != null) {
+            tvElapsedSubtitle.setTextAlignment(startAligned ? View.TEXT_ALIGNMENT_VIEW_START : View.TEXT_ALIGNMENT_CENTER);
+        }
+    }
+
+    private void applyStorageIndicatorStylePreference() {
+        if (sharedPreferencesManager == null || storageProgressRing == null) {
+            return;
+        }
+
+        String style = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HOME_STORAGE_INDICATOR_STYLE,
+                STORAGE_INDICATOR_RING);
+        int viewStyle = STORAGE_INDICATOR_MICRO_PILL.equals(style)
+                ? com.fadcam.ui.utils.StorageProgressRingView.STYLE_MICRO_PILL_BAR
+                : com.fadcam.ui.utils.StorageProgressRingView.STYLE_RING;
+        storageProgressRing.setIndicatorStyle(viewStyle);
+    }
+
     private void updateElapsedHeroAppearance() {
         if (cardElapsedHero == null) {
             return;
@@ -11499,9 +11695,9 @@ public class HomeFragment extends BaseFragment {
         } else if (isRecording()) {
             backgroundColor = Color.TRANSPARENT;
             strokeColor = Color.TRANSPARENT;
-            titleColor = Color.parseColor("#D7F1E8");
-            subtitleColor = Color.parseColor("#8FB9A7");
-            iconColor = Color.parseColor("#5E9B83");
+            titleColor = Color.parseColor("#E7FFF2");
+            subtitleColor = Color.parseColor("#95D6B0");
+            iconColor = Color.parseColor("#63C890");
             stateIconRes = R.drawable.play_button_rounded;
         } else {
             backgroundColor = Color.TRANSPARENT;

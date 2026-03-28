@@ -140,7 +140,7 @@
                         </LinearLayout>
 
                         <!-- Available Space Row -->
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                        <LinearLayout android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
 
                             <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
                                 <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="center" android:contentDescription="Available space progress" />
@@ -173,22 +173,26 @@
                     <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingStart="6dp"
-                        android:paddingTop="2dp"
-                        android:paddingEnd="6dp"
-                        android:paddingBottom="2dp">
+                        android:clipChildren="true"
+                        android:clipToPadding="true"
+                        android:paddingStart="4dp"
+                        android:paddingTop="0dp"
+                        android:paddingEnd="4dp"
+                        android:paddingBottom="0dp">
 
                         <ImageView
                             android:id="@+id/ivElapsedAccent"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_gravity="bottom|end"
-                            android:alpha="0.12"
+                            android:alpha="0.22"
                             android:contentDescription="@null"
                             android:src="@drawable/fadseclab_flag"
-                            android:tint="#FFFFFF" />
+                            android:translationX="10dp"
+                            android:translationY="16dp" />
 
                         <LinearLayout
+                            android:id="@+id/layoutElapsedContent"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -196,6 +200,7 @@
                             android:orientation="vertical">
 
                             <LinearLayout
+                                android:id="@+id/layoutElapsedMetaRow"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
@@ -203,10 +208,11 @@
 
                             <ImageView
                                 android:id="@+id/tvElapsedStateIcon"
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:layout_marginEnd="4dp"
                                 android:contentDescription="@null"
+                                android:scaleType="fitCenter"
                                 android:src="@drawable/play_button_rounded"
                                 android:tint="#90A4AE" />
 
@@ -231,7 +237,7 @@
                                 android:letterSpacing="0.005"
                                 android:text="00:00"
                                 android:textColor="#D6E2EA"
-                                android:textSize="24sp"
+                                android:textSize="22sp"
                                 android:textStyle="bold" />
 
                         </LinearLayout>
