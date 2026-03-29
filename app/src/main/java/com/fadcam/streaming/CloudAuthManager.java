@@ -35,6 +35,9 @@ public class CloudAuthManager {
     // Stream token keys (for relay server uploads)
     private static final String KEY_STREAM_TOKEN = "cloud_stream_token";
     private static final String KEY_STREAM_TOKEN_EXPIRY = "cloud_stream_token_expiry";
+
+    // E2E verify tag — HMAC-SHA256(master_key, "fadcam-e2e-v1"), fetched from public.users
+    private static final String KEY_E2E_VERIFY_TAG = "e2e_verify_tag";
     
     // Supabase API for token refresh (using new publishable key)
     private static final String SUPABASE_URL = "https://vfhehknmxxedvesdvpew.supabase.co";
@@ -217,7 +220,120 @@ public class CloudAuthManager {
     public long getLinkedAt() {
         return prefs.getLong(KEY_LINKED_AT, 0);
     }
+
+    /**
+     * Get the locally-cached e2e_verify_tag (64-char hex). May be null if not yet fetched.
+     */
+    @Nullable
+    public String getStoredE2EVerifyTag() {
+        return prefs.getString(KEY_E2E_VERIFY_TAG, null);
+    }
+
+    /**
+     * Cache the e2e_verify_tag locally so password validation doesn't need a network round-trip
+     * on every attempt after the first fetch.
+     */
+    public void storeE2EVerifyTag(@Nullable String tag) {
+        if (tag == null) {
+            prefs.edit().remove(KEY_E2E_VERIFY_TAG).apply();
+        } else {
+            prefs.edit().putString(KEY_E2E_VERIFY_TAG, tag).apply();
+        }
+    }
+
+    /**
+     * Synchronous (blocking) fetch of {@code e2e_verify_tag} from {@code public.users}.
+     * Must be called from a background thread.
+     *
+     * <p>Returns the 64-char hex tag, or {@code null} if the user has not yet configured E2E
+     * on the dashboard (the column is NULL). Throws {@link Exception} on network or auth errors.
+     *
+     * @return 64-char hex string, or {@code null} if E2E not configured on dashboard.
+     * @throws Exception on HTTP error, JSON parse failure, or missing auth token.
+     */
+    @Nullable
+    public String fetchE2EVerifyTagSync() throws Exception {
+        String token = getJwtToken();
+        String userId = getUserId();
+        if (token == null || userId == null) {
+            throw new IllegalStateException("Not linked to a FadSec ID account");
+        }
+        String url = SUPABASE_URL + "/rest/v1/users?select=e2e_verify_tag&id=eq." + userId;
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                new java.net.URL(url).openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Authorization", "Bearer " + token);
+        conn.setRequestProperty("apikey", SUPABASE_PUBLISHABLE_KEY);
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setConnectTimeout(10_000);
+        conn.setReadTimeout(10_000);
+        try {
+            int code = conn.getResponseCode();
+            if (code != 200) {
+                throw new Exception("Supabase returned HTTP " + code + " while fetching e2e_verify_tag");
+            }
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) sb.append(line);
+            reader.close();
+            // Response is a JSON array: [{"e2e_verify_tag": "..." | null}]
+            org.json.JSONArray arr = new org.json.JSONArray(sb.toString());
+            if (arr.length() == 0) {
+                throw new Exception("User record not found in Supabase");
+            }
+            String tag = arr.getJSONObject(0).optString("e2e_verify_tag", null);
+            // Cache locally for quick reuse (null removes any stale cached value)
+            storeE2EVerifyTag(tag);
+            return (tag != null && !tag.isEmpty()) ? tag : null;
+        } finally {
+            conn.disconnect();
+        }
+    }
     
+    /**
+     * Write (or update) {@code e2e_verify_tag} in the {@code public.users} Supabase table.
+     *
+     * <p>Must be called from a background thread. Called once during the very first device
+     * link so the dashboard can later validate the user's E2E password.
+     *
+     * @param verifyTag 64-char lower-case hex HMAC tag computed by
+     *                  {@link com.fadcam.security.StreamKeyManager#computeVerifyTag}.
+     * @throws Exception on HTTP or auth error.
+     */
+    public void writeE2EVerifyTagSync(@NonNull String verifyTag) throws Exception {
+        String token = getJwtToken();
+        String userId = getUserId();
+        if (token == null || userId == null) {
+            throw new IllegalStateException("Not linked to a FadSec ID account");
+        }
+        String url = SUPABASE_URL + "/rest/v1/users?id=eq." + userId;
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                new java.net.URL(url).openConnection();
+        conn.setRequestMethod("PATCH");
+        conn.setRequestProperty("Authorization", "Bearer " + token);
+        conn.setRequestProperty("apikey", SUPABASE_PUBLISHABLE_KEY);
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Prefer", "return=minimal");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(10_000);
+        conn.setReadTimeout(10_000);
+        try {
+            byte[] body = ("{\"e2e_verify_tag\":\"" + verifyTag + "\"}").getBytes("UTF-8");
+            conn.getOutputStream().write(body);
+            int code = conn.getResponseCode();
+            if (code < 200 || code >= 300) {
+                throw new Exception("Supabase PATCH e2e_verify_tag returned HTTP " + code);
+            }
+            // Cache locally so further reads hit SharedPrefs
+            storeE2EVerifyTag(verifyTag);
+            FLog.i(TAG, "e2e_verify_tag written to Supabase and cached locally");
+        } finally {
+            conn.disconnect();
+        }
+    }
+
     /**
      * Clear the stored token (keeps device linked status for retry)
      */
@@ -227,6 +343,7 @@ public class CloudAuthManager {
             .remove(KEY_JWT_EXPIRY)
             .remove(KEY_REFRESH_TOKEN)
             .remove(KEY_USER_ID)
+            .remove(KEY_E2E_VERIFY_TAG)
             .apply();
         FLog.i(TAG, "JWT token cleared");
     }
@@ -251,6 +368,7 @@ public class CloudAuthManager {
             .remove(KEY_USER_EMAIL)
             .remove(KEY_IS_LINKED)
             .remove(KEY_LINKED_AT)
+            .remove(KEY_E2E_VERIFY_TAG)
             .apply();
         
         clearStreamToken();

@@ -1975,6 +1975,15 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="cloud_streaming_status_off">Stream locally only</string>
     <string name="cloud_streaming_status_on">Uploading to FadSec Cloud</string>
     <string name="cloud_streaming_not_linked">Link device first to enable</string>
+
+    <!-- E2E Stream Encryption -->
+    <string name="e2e_encryption_title">E2E Stream Encryption</string>
+    <string name="e2e_encryption_not_configured">Not configured — configure to enable cloud streaming</string>
+    <string name="e2e_encryption_configured">Configured — segments are encrypted end-to-end</string>
+    <string name="e2e_encryption_setup_title">Set E2E Encryption Password</string>
+    <string name="e2e_encryption_setup_hint">Enter your FadSec ID password</string>
+    <string name="e2e_encryption_setup_desc">Your FadSec ID password is used to derive the stream encryption key. This must match the password you use on the FadCam dashboard to view streams.</string>
+    <string name="e2e_encryption_change_title">Change E2E Encryption Password</string>
     
     <!-- Streaming Mode Selector -->
     <string name="streaming_mode_title">Streaming Mode</string>

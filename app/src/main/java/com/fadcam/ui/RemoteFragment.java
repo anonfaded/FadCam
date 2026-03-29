@@ -43,6 +43,7 @@ import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
 import com.fadcam.streaming.model.StreamQuality;
 import com.fadcam.streaming.util.NetworkMonitor;
+import com.fadcam.security.StreamKeyManager;
 import com.fadcam.ui.bottomsheet.BatteryInfoBottomSheet;
 import com.fadcam.ui.bottomsheet.QualityPresetBottomSheet;
 import com.fadcam.ui.bottomsheet.UptimeInfoBottomSheet;
@@ -105,6 +106,10 @@ public class RemoteFragment extends BaseFragment {
     private LinearLayout cloudStreamingRow;
     private AvatarToggleView cloudStreamingToggle;
     private TextView cloudStreamingStatus;
+
+    // E2E Stream Encryption UI
+    private LinearLayout e2eEncryptionRow;
+    private TextView e2eEncryptionStatus;
     
     // Streaming Mode Selector UI
     private LinearLayout streamingModeRow;
@@ -166,6 +171,7 @@ public class RemoteFragment extends BaseFragment {
                         FLog.i(TAG, "Device linked to: " + email);
                         Toast.makeText(requireContext(), R.string.cloud_account_link_success, Toast.LENGTH_SHORT).show();
                         updateCloudButtonState();
+                        // E2E encryption is auto-configured during device linking
                     }
                 }
             }
@@ -251,6 +257,13 @@ public class RemoteFragment extends BaseFragment {
         cloudStreamingRow = view.findViewById(R.id.cloud_streaming_row);
         cloudStreamingToggle = view.findViewById(R.id.cloud_streaming_toggle);
         cloudStreamingStatus = view.findViewById(R.id.cloud_streaming_status);
+
+        // Initialize E2E Encryption row
+        e2eEncryptionRow = view.findViewById(R.id.e2e_encryption_row);
+        if (e2eEncryptionRow != null) {
+            // E2E is now auto-configured during device linking — hide the row
+            e2eEncryptionRow.setVisibility(View.GONE);
+        }
         
         // Initialize Streaming Mode Selector
         streamingModeRow = view.findViewById(R.id.streaming_mode_row);
@@ -1062,6 +1075,117 @@ public class RemoteFragment extends BaseFragment {
         });
         
         sheet.show(getParentFragmentManager(), "set_password_sheet");
+    }
+
+    /**
+     * Bind the E2E encryption row and update its status label.
+     */
+    private void setupE2EEncryptionRow() {
+        if (e2eEncryptionRow == null) return;
+        updateE2EStatusLabel();
+        e2eEncryptionRow.setOnClickListener(v -> showE2EPasswordSheet());
+    }
+
+    /** Refresh the E2E status subtitle text. */
+    private void updateE2EStatusLabel() {
+        if (e2eEncryptionStatus == null) return;
+        boolean configured = StreamKeyManager.getInstance(requireContext()).isInitialized();
+        e2eEncryptionStatus.setText(configured
+                ? R.string.e2e_encryption_configured
+                : R.string.e2e_encryption_not_configured);
+    }
+
+    /**
+     * Show an input sheet so the user can set (or change) the E2E stream encryption password.
+     * The entered password is used to derive the master key via PBKDF2 and stored in Keystore.
+     */
+    private void showE2EPasswordSheet() {
+        StreamKeyManager keyManager = StreamKeyManager.getInstance(requireContext());
+        boolean isChange = keyManager.isInitialized();
+
+        String titleRes = isChange
+                ? getString(R.string.e2e_encryption_change_title)
+                : getString(R.string.e2e_encryption_setup_title);
+
+        InputActionBottomSheetFragment sheet = InputActionBottomSheetFragment.newInput(
+                titleRes,
+                /* initialValue= */ "",
+                getString(R.string.e2e_encryption_setup_hint),
+                getString(android.R.string.ok),
+                getString(R.string.e2e_encryption_setup_desc),
+                android.R.drawable.ic_lock_idle_lock,
+                getString(R.string.e2e_encryption_setup_desc)
+        );
+
+        sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+            @Override public void onImportConfirmed(JSONObject json) {}
+            @Override public void onResetConfirmed() {}
+
+            @Override
+            public void onInputConfirmed(String password) {
+                if (password == null || password.trim().isEmpty()) {
+                    Toast.makeText(requireContext(),
+                            "Password cannot be empty", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String userUuid = cloudAuthManager.getUserId();
+                if (userUuid == null || userUuid.isEmpty()) {
+                    Toast.makeText(requireContext(),
+                            "Link your FadSec ID account first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Fetch verify_tag and derive key on a background thread (PBKDF2 is slow)
+                new Thread(() -> {
+                    try {
+                        // Use the verify_tag cached during device-link (set by CloudAccountActivity).
+                        // This avoids a separate Supabase REST call here.
+                        String verifyTag = cloudAuthManager.getStoredE2EVerifyTag();
+                        if (verifyTag == null) {
+                            FLog.w(TAG, "No cached e2e_verify_tag — E2E not configured on dashboard, or device needs re-linking");
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() ->
+                                        Toast.makeText(requireContext(),
+                                                "Set up E2E encryption in the FadCam dashboard first, then re-link this device",
+                                                Toast.LENGTH_LONG).show());
+                            }
+                            return;
+                        }
+
+                        // Derive + verify + store (throws SecurityException on wrong password)
+                        keyManager.initFromPassword(password.trim(), userUuid, verifyTag);
+
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                updateE2EStatusLabel();
+                                Toast.makeText(requireContext(),
+                                        "E2E encryption configured", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    } catch (SecurityException e) {
+                        // Wrong password — verify_tag mismatch
+                        FLog.e(TAG, "E2E password incorrect: " + e.getMessage());
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() ->
+                                    Toast.makeText(requireContext(),
+                                            "Incorrect password — please try again",
+                                            Toast.LENGTH_LONG).show());
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "E2E key setup failed", e);
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() ->
+                                    Toast.makeText(requireContext(),
+                                            "Setup failed: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show());
+                        }
+                    }
+                }, "e2e-key-derive").start();
+            }
+        });
+
+        sheet.show(getParentFragmentManager(), "e2e_password_sheet");
     }
     
     /**

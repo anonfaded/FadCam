@@ -12,6 +12,9 @@ import androidx.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.fadcam.security.SegmentEncryptor;
+import com.fadcam.security.StreamKeyManager;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -225,31 +228,55 @@ public class CloudStreamUploader {
     }
     
     /**
-     * Upload a media segment (moof + mdat).
-     * 
-     * @param sequenceNumber Segment sequence number
-     * @param segmentData Segment bytes
-     * @param callback Optional callback for upload result
+     * Upload a media segment (moof + mdat), AES-256-GCM encrypted.
+     *
+     * <p>Each segment is encrypted with a per-device key derived by
+     * {@link StreamKeyManager#deriveDeviceKey}. If the E2E key is not
+     * initialised, the upload is aborted and {@code callback.onError()} is called
+     * — plaintext segments are <strong>never</strong> uploaded.
+     *
+     * @param sequenceNumber Segment sequence number.
+     * @param segmentData    Raw {@code seg-N.m4s} bytes from the muxer.
+     * @param callback       Optional result callback.
      */
     public void uploadSegment(int sequenceNumber, byte[] segmentData, @Nullable UploadCallback callback) {
         if (!isEnabled) {
             return;
         }
-        
+
         if (!initSegmentUploaded) {
             FLog.w(TAG, "Init segment not uploaded yet, skipping segment " + sequenceNumber);
             return;
         }
-        
+
+        // ── E2E Encryption (mandatory — no plaintext uploads) ─────────────────
+        StreamKeyManager keyManager = StreamKeyManager.getInstance(context);
+        if (!keyManager.isInitialized()) {
+            FLog.e(TAG, "E2E key not initialised — refusing to upload plaintext segment " + sequenceNumber);
+            if (callback != null) callback.onError("E2E key not initialized");
+            return;
+        }
+
+        byte[] uploadData;
+        try {
+            String deviceId = authManager.getDeviceId();
+            byte[] deviceKey = keyManager.deriveDeviceKey(deviceId);
+            uploadData = SegmentEncryptor.encrypt(segmentData, deviceKey);
+        } catch (Exception e) {
+            FLog.e(TAG, "E2E encryption failed for segment " + sequenceNumber, e);
+            if (callback != null) callback.onError("E2E encryption failed: " + e.getMessage());
+            return;
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         String filename = "seg-" + sequenceNumber + ".m4s";
         String url = buildUploadUrl(filename);
         if (url == null) {
             if (callback != null) callback.onError("Failed to build upload URL");
             return;
         }
-        
-        // FLog.d(TAG, "Uploading segment " + sequenceNumber + ": " + segmentData.length + " bytes");
-        uploadBytes(url, segmentData, MEDIA_TYPE_M4S, callback);
+
+        uploadBytes(url, uploadData, MEDIA_TYPE_M4S, callback);
     }
     
     /**
