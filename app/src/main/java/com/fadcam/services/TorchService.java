@@ -196,6 +196,12 @@ public class TorchService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         FLog.d(TAG, "onStartCommand called. Intent: " + intent);
+
+        // Android 8+ requires startForeground() within 5 seconds of startForegroundService().
+        // Call it immediately here — manageServiceNotification() will update it later on the
+        // background thread once the actual torch state is known.
+        startForegroundNow();
+
         if (intent != null) {
             String action = intent.getAction();
             FLog.d(TAG, "onStartCommand received action: " + action);
@@ -210,6 +216,38 @@ public class TorchService extends Service {
         }
         // Ensure service stays alive
         return START_STICKY;
+    }
+
+    /**
+     * Post a minimal foreground notification immediately to satisfy Android 8+ 5-second rule.
+     * manageServiceNotification() will update this notification once the torch state is known.
+     */
+    private void startForegroundNow() {
+        boolean currentState = isTorchOn.get();
+        Notification notification = buildTorchNotification(currentState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
+        FLog.d(TAG, "startForeground() called immediately in onStartCommand, torchState=" + currentState);
+    }
+
+    private Notification buildTorchNotification(boolean torchOn) {
+        Intent toggleIntent = new Intent(this, TorchService.class);
+        toggleIntent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
+        PendingIntent pendingIntent = PendingIntent.getService(
+            this, 0, toggleIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(torchOn ? "Torch is On" : "Torch Service")
+            .setContentText(torchOn ? "Tap to turn off" : "Toggling torch…")
+            .setSmallIcon(torchOn ? R.drawable.ic_flashlight_on : R.drawable.ic_flashlight_off)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)
+            .build();
     }
 
     // Check if camera is currently in use
@@ -260,36 +298,16 @@ public class TorchService extends Service {
 
     private void manageServiceNotification(boolean isTorchOn) {
         if (isTorchOn) {
-            // Create an intent for turning off the torch
-            Intent turnOffIntent = new Intent(this, TorchService.class);
-            turnOffIntent.setAction(Constants.INTENT_ACTION_TOGGLE_TORCH);
-            
-            // Create a PendingIntent for the notification
-            PendingIntent pendingIntent = PendingIntent.getService(
-                this, 
-                0, 
-                turnOffIntent, 
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-
-            // Create and show foreground notification with tap-to-turn-off functionality
-            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Torch is On")
-                .setContentText("Tap to turn off")
-                .setSmallIcon(R.drawable.ic_flashlight_on)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
-                .setContentIntent(pendingIntent)  // Add tap action to turn off
-                .build();
-
-            // For Android 13 and above, explicitly start as a foreground service with a type
+            // Update the already-started foreground notification to reflect "torch on" state
+            Notification notification = buildTorchNotification(true);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA);
             } else {
                 startForeground(NOTIFICATION_ID, notification);
             }
         } else {
-            // Stop foreground service
+            // Torch is off — update notification to reflect "off" state, then stop foreground
+            notificationManager.notify(NOTIFICATION_ID, buildTorchNotification(false));
             stopForeground(true);
         }
     }
