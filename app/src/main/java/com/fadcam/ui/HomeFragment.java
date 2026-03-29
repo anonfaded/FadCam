@@ -11053,24 +11053,18 @@ public class HomeFragment extends BaseFragment {
             View root = getView();
             if (root == null) return;
 
-            View segmentFadCam = root.findViewById(R.id.segment_fadcam);
-            if (segmentFadCam == null) return;
-
-            int activeColor = resolveThemeColor(R.attr.homeRailSegmentActive);
-            int textColor = resolveThemeColor(R.attr.homeRailSegmentActiveText);
-
-            GradientDrawable activeBackground = new GradientDrawable();
-            activeBackground.setShape(GradientDrawable.RECTANGLE);
-            activeBackground.setColor(activeColor);
-            activeBackground.setCornerRadius(
-                14 * getResources().getDisplayMetrics().density
-            );
-            segmentFadCam.setBackground(activeBackground);
-
-            TextView textFadCam = segmentFadCam.findViewById(R.id.text_fadcam);
-            if (textFadCam != null) {
-                textFadCam.setTextColor(textColor);
+            View activeIndicator = root.findViewById(R.id.segment_active_indicator);
+            if (activeIndicator != null) {
+                activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
             }
+
+            View segmentFadCam = root.findViewById(R.id.segment_fadcam);
+            View segmentFadRec = root.findViewById(R.id.segment_fadrec);
+            View segmentFadMic = root.findViewById(R.id.segment_fadmic);
+
+            if (segmentFadCam != null) segmentFadCam.setBackground(null);
+            if (segmentFadRec != null) segmentFadRec.setBackground(null);
+            if (segmentFadMic != null) segmentFadMic.setBackground(null);
         } catch (Exception e) {
             FLog.w(
                 "HomeFragment",

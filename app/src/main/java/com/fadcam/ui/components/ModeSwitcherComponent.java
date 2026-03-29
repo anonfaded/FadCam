@@ -5,13 +5,16 @@ import com.fadcam.FLog;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.graphics.drawable.GradientDrawable;
 import android.view.View;
+import android.view.Gravity;
+import android.view.ViewPropertyAnimator;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.fadcam.Constants;
 import com.fadcam.R;
@@ -24,7 +27,7 @@ import com.fadcam.SharedPreferencesManager;
  */
 public class ModeSwitcherComponent {
     private static final String TAG = "ModeSwitcherComponent";
-    private static final int ANIMATION_DURATION = 160; // Text color fade only
+    private static final int ANIMATION_DURATION = 180;
     
     private final Context context;
     private final SharedPreferencesManager sharedPreferencesManager;
@@ -35,6 +38,10 @@ public class ModeSwitcherComponent {
     private FrameLayout segmentFadCam;
     private FrameLayout segmentFadRec;
     private FrameLayout segmentFadMic;
+    private FrameLayout switcherRoot;
+    private View activeIndicator;
+    private LinearLayout segmentsContainer;
+    private ViewPropertyAnimator activeIndicatorAnimator;
 
     // Guard during initialization
     private boolean isInitializing = false;
@@ -67,6 +74,20 @@ public class ModeSwitcherComponent {
             segmentFadCam = rootView.findViewById(R.id.segment_fadcam);
             segmentFadRec = rootView.findViewById(R.id.segment_fadrec);
             segmentFadMic = rootView.findViewById(R.id.segment_fadmic);
+            switcherRoot = rootView.findViewById(R.id.mode_switcher_root);
+            activeIndicator = rootView.findViewById(R.id.segment_active_indicator);
+            segmentsContainer = rootView.findViewById(R.id.mode_switcher_segments);
+            if (switcherRoot == null && activeIndicator != null && activeIndicator.getParent() instanceof FrameLayout) {
+                switcherRoot = (FrameLayout) activeIndicator.getParent();
+                FLog.d(TAG, "initialize: recovered switcherRoot from activeIndicator parent");
+            }
+            if (switcherRoot == null && segmentsContainer != null && segmentsContainer.getParent() instanceof FrameLayout) {
+                switcherRoot = (FrameLayout) segmentsContainer.getParent();
+                FLog.d(TAG, "initialize: recovered switcherRoot from segmentsContainer parent");
+            }
+            FLog.d(TAG, "initialize: switcherRoot=" + (switcherRoot != null)
+                    + " activeIndicator=" + (activeIndicator != null)
+                    + " segmentsContainer=" + (segmentsContainer != null));
 
             if (segmentFadCam == null || segmentFadRec == null || segmentFadMic == null) {
                 FLog.e(TAG, "Segment views missing");
@@ -91,7 +112,6 @@ public class ModeSwitcherComponent {
             if (Constants.MODE_FADMIC.equals(persisted)) persisted = Constants.MODE_FADCAM;
             currentMode = persisted;
 
-            // Force clear all backgrounds first to prevent any hardcoded/cached backgrounds
             segmentFadCam.setBackground(null);
             segmentFadRec.setBackground(null);
             segmentFadMic.setBackground(null);
@@ -122,7 +142,7 @@ public class ModeSwitcherComponent {
             // Use post() to ensure view is fully laid out
             // Keep isInitializing true until post() completes to prevent animation
             rootView.post(() -> {
-                setExclusiveSelected(currentMode);
+                setExclusiveSelected(currentMode, null);
                 isInitializing = false; // Now allow animations on user clicks
             });
 
@@ -135,36 +155,38 @@ public class ModeSwitcherComponent {
     }
 
     /**
-     * Set one mode as active, others as inactive
-     * Uses simple programmatic backgrounds - no drawable files
+     * Set one mode as active, others as inactive.
+     * The moving indicator is the only visual active-pill source.
      */
-    private void setExclusiveSelected(String mode) {
-        // Apply backgrounds to all segments
-        applyBackground(segmentFadCam, Constants.MODE_FADCAM.equals(mode));
-        applyBackground(segmentFadRec, Constants.MODE_FADREC.equals(mode));
-        applyBackground(segmentFadMic, Constants.MODE_FADMIC.equals(mode));
-        
-        // During initialization, ONLY set backgrounds, don't touch text at all
-        // Text will be set by the layout inflation and doesn't need animation
+    private void setExclusiveSelected(String mode, Runnable onTransitionComplete) {
+        String previousMode = currentMode;
+        boolean shouldAnimateTransition = !isInitializing && previousMode != null && !previousMode.equals(mode);
+
+        if (shouldAnimateTransition) {
+            animatePillFlow(previousMode, mode, onTransitionComplete);
+        } else {
+            updateActiveIndicator(mode, false, null);
+            if (onTransitionComplete != null) {
+                onTransitionComplete.run();
+            }
+        }
+
         if (isInitializing) {
             FLog.d(TAG, "setExclusiveSelected - isInitializing=true, only backgrounds applied, skipping text");
         } else {
-            // User click: instantly deactivate previous button, animate new one
-            FLog.d(TAG, "setExclusiveSelected - user click, current=" + currentMode + ", new=" + mode);
-            
-            // Deactivate the previously active button instantly
-            if (Constants.MODE_FADCAM.equals(currentMode) && !Constants.MODE_FADCAM.equals(mode)) {
+            FLog.d(TAG, "setExclusiveSelected - user click, current=" + previousMode + ", new=" + mode);
+
+            if (Constants.MODE_FADCAM.equals(previousMode) && !Constants.MODE_FADCAM.equals(mode)) {
                 styleText(segmentFadCam, false, false);
                 FLog.d(TAG, "Deactivating FadCam (was active)");
-            } else if (Constants.MODE_FADREC.equals(currentMode) && !Constants.MODE_FADREC.equals(mode)) {
+            } else if (Constants.MODE_FADREC.equals(previousMode) && !Constants.MODE_FADREC.equals(mode)) {
                 styleText(segmentFadRec, false, false);
                 FLog.d(TAG, "Deactivating FadRec (was active)");
-            } else if (Constants.MODE_FADMIC.equals(currentMode) && !Constants.MODE_FADMIC.equals(mode)) {
+            } else if (Constants.MODE_FADMIC.equals(previousMode) && !Constants.MODE_FADMIC.equals(mode)) {
                 styleText(segmentFadMic, false, false);
                 FLog.d(TAG, "Deactivating FadMic (was active)");
             }
-            
-            // Animate the newly clicked button
+
             if (Constants.MODE_FADCAM.equals(mode)) {
                 styleText(segmentFadCam, true, true);
                 FLog.d(TAG, "Activating FadCam (animating)");
@@ -176,10 +198,10 @@ public class ModeSwitcherComponent {
                 FLog.d(TAG, "Activating FadMic (animating)");
             }
         }
-        
-        FLog.d(TAG, String.format("setExclusiveSelected(%s): FadCam=%b FadRec=%b FadMic=%b", 
-            mode, Constants.MODE_FADCAM.equals(mode), 
-            Constants.MODE_FADREC.equals(mode), 
+
+        FLog.d(TAG, String.format("setExclusiveSelected(%s): FadCam=%b FadRec=%b FadMic=%b",
+            mode, Constants.MODE_FADCAM.equals(mode),
+            Constants.MODE_FADREC.equals(mode),
             Constants.MODE_FADMIC.equals(mode)));
     }
     
@@ -187,28 +209,108 @@ public class ModeSwitcherComponent {
      * Apply background programmatically - no drawable files needed
      * Creates a simple rounded rectangle with solid color
      */
-    private void applyBackground(FrameLayout segment, boolean active) {
+    private void applyBackground(FrameLayout segment, boolean active, boolean animate) {
         if (segment == null) return;
-        
-        // Force clear existing background first
-        segment.setBackground(null);
-        
-        GradientDrawable background = new GradientDrawable();
-        background.setShape(GradientDrawable.RECTANGLE);
-        background.setCornerRadius(32f); // 32dp radius for rounded corners
-        
-        if (active) {
-            // Active: Red fill (#E43C3C)
-            background.setColor(ContextCompat.getColor(context, R.color.redPastel));
-        } else {
-            // Inactive: Transparent, no border
-            background.setColor(ContextCompat.getColor(context, android.R.color.transparent));
-        }
-        
-        segment.setBackground(background);
         segment.setSelected(active);
-        
-        FLog.d(TAG, "applyBackground: " + segment.getId() + " active=" + active);
+        segment.setBackground(null);
+        FLog.d(TAG, "applyBackground: " + segment.getId() + " active=" + active + " animate=" + animate);
+    }
+
+    private void updateActiveIndicator(String mode, boolean animate) {
+        updateActiveIndicator(mode, animate, null);
+    }
+
+    private void updateActiveIndicator(String mode, boolean animate, Runnable onAnimationComplete) {
+        if (switcherRoot == null || activeIndicator == null) return;
+        FrameLayout target = getSegmentForMode(mode);
+        if (target == null) return;
+
+        Runnable apply = () -> {
+            int targetLeft = switcherRoot.getPaddingLeft() + target.getLeft();
+            int targetTop = 0;
+            int targetWidth = target.getWidth();
+            int resolvedTargetHeight = switcherRoot.getHeight();
+            if (resolvedTargetHeight <= 0) {
+                resolvedTargetHeight = target.getHeight();
+            }
+            final int targetHeight = resolvedTargetHeight;
+            if (targetWidth <= 0 || targetHeight <= 0) {
+                FLog.w(TAG, "updateActiveIndicator: invalid target size mode=" + mode
+                        + " width=" + targetWidth + " height=" + targetHeight);
+                return;
+            }
+
+            cancelActiveIndicatorAnimation();
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) activeIndicator.getLayoutParams();
+            lp.gravity = Gravity.TOP | Gravity.START;
+            lp.leftMargin = 0;
+            lp.topMargin = 0;
+            lp.width = targetWidth;
+            lp.height = targetHeight;
+            activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
+            activeIndicator.setVisibility(View.VISIBLE);
+            activeIndicator.setLayoutParams(lp);
+            activeIndicator.setY(targetTop);
+
+            if (!animate) {
+                activeIndicator.setX(targetLeft);
+                FLog.d(TAG, "updateActiveIndicator: positioned mode=" + mode + " left=" + targetLeft);
+                if (onAnimationComplete != null) {
+                    onAnimationComplete.run();
+                }
+                return;
+            }
+
+            float startLeft = activeIndicator.getX();
+            activeIndicatorAnimator = activeIndicator.animate()
+                    .x(targetLeft)
+                    .setDuration(ANIMATION_DURATION + 70L)
+                    .setInterpolator(new FastOutSlowInInterpolator())
+                    .withEndAction(() -> {
+                        activeIndicatorAnimator = null;
+                        activeIndicator.setX(targetLeft);
+                        FLog.d(TAG, "updateActiveIndicator: animation end mode=" + mode + " left=" + targetLeft);
+                        if (onAnimationComplete != null) {
+                            onAnimationComplete.run();
+                        }
+                    });
+            FLog.d(TAG, "updateActiveIndicator: animating mode=" + mode + " fromLeft=" + Math.round(startLeft) + " toLeft=" + targetLeft);
+        };
+
+        if (target.getWidth() > 0 && target.getHeight() > 0) {
+            apply.run();
+        } else {
+            switcherRoot.post(apply);
+        }
+    }
+
+    private void cancelActiveIndicatorAnimation() {
+        if (activeIndicatorAnimator != null) {
+            activeIndicator.animate().cancel();
+            activeIndicatorAnimator = null;
+        }
+    }
+
+    private void animatePillFlow(String fromMode, String toMode, Runnable onTransitionComplete) {
+        applyBackground(segmentFadCam, false, false);
+        applyBackground(segmentFadRec, false, false);
+        applyBackground(segmentFadMic, false, false);
+
+        FrameLayout fromSegment = getSegmentForMode(fromMode);
+        FrameLayout toSegment = getSegmentForMode(toMode);
+        int fromLeft = fromSegment != null ? switcherRoot.getPaddingLeft() + fromSegment.getLeft() : -1;
+        int toLeft = toSegment != null ? switcherRoot.getPaddingLeft() + toSegment.getLeft() : -1;
+        int fromWidth = fromSegment != null ? fromSegment.getWidth() : -1;
+        int toWidth = toSegment != null ? toSegment.getWidth() : -1;
+        FLog.d(TAG, "animatePillFlow: from=" + fromMode + " to=" + toMode
+                + " fromLeft=" + fromLeft + " toLeft=" + toLeft
+                + " fromWidth=" + fromWidth + " toWidth=" + toWidth);
+
+        updateActiveIndicator(toMode, true, () -> {
+            if (onTransitionComplete != null) {
+                onTransitionComplete.run();
+            }
+        });
     }
 
     /**
@@ -281,52 +383,40 @@ public class ModeSwitcherComponent {
             return;
         }
 
+        Runnable modeSelectionAction = () -> {
+            if (listener == null) return;
+            switch (mode) {
+                case Constants.MODE_FADCAM:
+                    listener.onModeSelected(mode);
+                    break;
+                case Constants.MODE_FADREC:
+                    try {
+                        com.fadcam.ui.utils.NewFeatureManager.markFeatureAsSeen(context, "fadrec");
+                        View badgeFadRec = segmentFadRec.getRootView().findViewById(R.id.badge_fadrec);
+                        if (badgeFadRec != null) {
+                            badgeFadRec.setVisibility(View.GONE);
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error marking FadRec badge as seen", e);
+                    }
+                    listener.onModeSelected(mode);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        setExclusiveSelected(mode, modeSelectionAction);
         currentMode = mode;
-        setExclusiveSelected(currentMode);
         sharedPreferencesManager.setCurrentRecordingMode(currentMode);
         FLog.d(TAG, "Mode switched -> " + currentMode);
-        
-        switch (mode) {
-            case Constants.MODE_FADCAM:
-                // FadCam mode selected
-                if (listener != null) {
-                    listener.onModeSelected(mode);
-                }
-                break;
-                
-            case Constants.MODE_FADREC:
-                // FadRec (Screen Recording) mode selected
-                // Mark FadRec feature as seen to hide the NEW badge
-                try {
-                    com.fadcam.ui.utils.NewFeatureManager.markFeatureAsSeen(context, "fadrec");
-                    // Hide the badge immediately
-                    View badgeFadRec = segmentFadRec.getRootView().findViewById(R.id.badge_fadrec);
-                    if (badgeFadRec != null) {
-                        badgeFadRec.setVisibility(View.GONE);
-                    }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error marking FadRec badge as seen", e);
-                }
-                if (listener != null) {
-                    listener.onModeSelected(mode);
-                }
-                break;
-                
-            case Constants.MODE_FADMIC:
-                // Show coming soon for FadMic (Mic Recording)
-                showComingSoonToast("FadMic (Mic Recording)");
-                if (listener != null) {
-                    listener.onComingSoonRequested("FadMic");
-                }
-                break;
-        }
     }
     
     /**
      * Update the active state visual indicator
      * @param activeMode The currently active mode
      */
-    private void updateActiveState(String activeMode) { setExclusiveSelected(activeMode); }
+    private void updateActiveState(String activeMode) { setExclusiveSelected(activeMode, null); }
     
     /**
      * Reset segment to inactive state with smooth animation

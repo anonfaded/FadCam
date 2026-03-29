@@ -31,7 +31,7 @@
         <item name="homeRailTileSurface">#23282F</item>
         <item name="homeRailSegmentedSurface">#191D22</item>
         <item name="homeRailSegmentedBorder">#2C3138</item>
-        <item name="homeRailSegmentActive">#E2606B</item>
+        <item name="homeRailSegmentActive">#F44336</item>
         <item name="homeRailSegmentActiveText">#FFF7F8</item>
         <item name="homeRailTextPrimary">#F3F4F6</item>
         <item name="homeRailTextSecondary">#B4B8BE</item>

@@ -78,6 +78,7 @@ public class FadRecHomeFragment extends HomeFragment {
     private android.os.Handler timerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable timerUpdateRunnable;
     private MaterialButton buttonFadRecMute;
+    private boolean screenCardInfoInitialized = false;
     
     // Material loading dialog for annotation service startup
     private androidx.appcompat.app.AlertDialog loadingDialog;
@@ -191,6 +192,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // Apply FadRec-specific UI customizations
         // FLog.d(TAG, "Customizing UI for screen recording...");
         customizeUIForScreenRecording(view);
+        view.post(this::updateScreenRecordingCardInfo);
         
         // Setup button click handlers
         // FLog.d(TAG, "Setting up button handlers...");
@@ -199,6 +201,7 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // NOTE: Receiver registration moved to onStart() to avoid double-registration
         // on fragment recreation and to maintain proper lifecycle coordination
+        screenCardInfoInitialized = false;
     }
     
     @Override
@@ -881,9 +884,14 @@ public class FadRecHomeFragment extends HomeFragment {
             View rootView = getView();
             TextView tvCameraTitle = rootView.findViewById(com.fadcam.R.id.tvCameraTitle);
             TextView tvCameraSubtitle = rootView.findViewById(com.fadcam.R.id.tvCameraSubtitle);
+            boolean animate = !screenCardInfoInitialized;
             
             if (tvCameraTitle != null) {
-                tvCameraTitle.setText("Screen Recording");
+                if (animate && tvCameraTitle instanceof AnimatedTextView) {
+                    ((AnimatedTextView) tvCameraTitle).animateSlotFull("Screen Recording", 400);
+                } else {
+                    tvCameraTitle.setText("Screen Recording");
+                }
             }
             
             if (tvCameraSubtitle != null) {
@@ -894,9 +902,14 @@ public class FadRecHomeFragment extends HomeFragment {
                     int width = metrics.widthPixels;
                     int height = metrics.heightPixels;
                     String subtitle = width + "x" + height + " • 30fps";
-                    tvCameraSubtitle.setText(subtitle);
+                    if (animate && tvCameraSubtitle instanceof AnimatedTextView) {
+                        ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
+                    } else {
+                        tvCameraSubtitle.setText(subtitle);
+                    }
                 }
             }
+            screenCardInfoInitialized = true;
         } catch (Exception e) {
             FLog.e(TAG, "Error updating screen recording card info", e);
         }

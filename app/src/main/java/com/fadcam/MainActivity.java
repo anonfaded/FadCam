@@ -1755,28 +1755,22 @@ public class MainActivity extends AppCompatActivity {
         androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
         String tag = FRAGMENT_TAG_PREFIX + position;
         Fragment existingFragment = fm.findFragmentByTag(tag);
-        
-        if (existingFragment != null) {
-            // Remove the existing fragment
-            androidx.fragment.app.FragmentTransaction removeTx = fm.beginTransaction();
-            removeTx.remove(existingFragment);
-            removeTx.commitNow();
-            FLog.d("FragmentNav", "forceRecreateFragment: Removed existing fragment: " + existingFragment.getClass().getSimpleName());
-        }
-        
-        // Create and add the new fragment
         Fragment newFragment = createFragmentForPosition(position);
-        androidx.fragment.app.FragmentTransaction addTx = fm.beginTransaction();
-        addTx.add(R.id.fragment_container, newFragment, tag);
+        androidx.fragment.app.FragmentTransaction tx = fm.beginTransaction();
+        tx.setReorderingAllowed(true);
+        tx.replace(R.id.fragment_container, newFragment, tag);
         
         // Apply visibility state: only show if it's the current position
         if (position == currentFragmentPosition) {
-            addTx.show(newFragment);
+            tx.show(newFragment);
         } else {
-            addTx.hide(newFragment);
+            tx.hide(newFragment);
         }
-        
-        addTx.commitNow();
+
+        tx.commitNow();
+        if (existingFragment != null) {
+            FLog.d("FragmentNav", "forceRecreateFragment: Replaced existing fragment: " + existingFragment.getClass().getSimpleName());
+        }
         FLog.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
     }
 
