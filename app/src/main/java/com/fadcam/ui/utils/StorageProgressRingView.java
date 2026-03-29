@@ -39,6 +39,7 @@ public class StorageProgressRingView extends View {
     private final RectF verticalProgressBounds = new RectF();
 
     private float progress = 0f;
+    private boolean invertColors = false;
     private float strokeWidthPx;
     private float barCornerRadiusPx;
     private int trackColor = Color.parseColor("#66D7E4F2");
@@ -118,13 +119,28 @@ public class StorageProgressRingView extends View {
         return progress;
     }
 
+    /**
+     * When true, the color gradient is inverted so that high progress = red (used/bad)
+     * and low progress = green (free/good). Use this when progress represents a "used" fraction.
+     */
+    public void setColorsInverted(boolean inverted) {
+        if (invertColors == inverted) return;
+        invertColors = inverted;
+        sweepGradient = null;
+        barGradient = null;
+        verticalGradient = null;
+        updateGradientColors();
+        invalidate();
+    }
+
     private void updateGradientColors() {
+        float colorProgress = invertColors ? (1f - progress) : progress;
         int baseColor;
-        if (progress >= 0.5f) {
-            float t = (progress - 0.5f) / 0.5f;
+        if (colorProgress >= 0.5f) {
+            float t = (colorProgress - 0.5f) / 0.5f;
             baseColor = blendColors(Color.parseColor("#F5B041"), Color.parseColor("#2ECC71"), t);
         } else {
-            float t = progress / 0.5f;
+            float t = colorProgress / 0.5f;
             baseColor = blendColors(Color.parseColor("#E74C3C"), Color.parseColor("#F5B041"), t);
         }
 

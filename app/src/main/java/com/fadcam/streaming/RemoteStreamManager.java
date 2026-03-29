@@ -1801,12 +1801,11 @@ public class RemoteStreamManager {
         if (activityManager == null) return "unknown";
         
         activityManager.getMemoryInfo(memInfo);
-        long totalMB = memInfo.totalMem / (1024 * 1024);
-        long availMB = memInfo.availMem / (1024 * 1024);
-        long usedMB = totalMB - availMB;
-        int percentage = (int)((usedMB * 100.0f) / totalMB);
+        float totalGB = memInfo.totalMem / (1024.0f * 1024.0f * 1024.0f);
+        float usedGB = (memInfo.totalMem - memInfo.availMem) / (1024.0f * 1024.0f * 1024.0f);
+        int percentage = totalGB > 0 ? (int)((usedGB / totalGB) * 100) : 0;
         
-        return percentage + "% (" + usedMB + "/" + totalMB + " MB)";
+        return String.format(java.util.Locale.US, "%d%% (%.1f/%.1f GB)", percentage, usedGB, totalGB);
     }
     
     /**
