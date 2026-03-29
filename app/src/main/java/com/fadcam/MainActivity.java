@@ -583,6 +583,7 @@ public class MainActivity extends AppCompatActivity {
             FLog.d("FragmentNav", "onCreate: No saved state, loading Home fragment");
             switchFragment(0, false); // Uses commitNow() for instant, synchronous load
             FLog.d("FragmentNav", "onCreate: Initial fragment load completed");
+            scheduleTabPrewarm();
         } else {
             // Configuration change / process death — FragmentManager restores all added fragments
             // We need to find which was the current one and ensure others are hidden
@@ -608,6 +609,7 @@ public class MainActivity extends AppCompatActivity {
             }
             currentFragmentPosition = restoredPosition;
             FLog.d("FragmentNav", "onCreate: Restored current position to " + restoredPosition);
+            scheduleTabPrewarm();
         }
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -1607,6 +1609,43 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return null;
+    }
+
+    private void scheduleTabPrewarm() {
+        View container = findViewById(R.id.fragment_container);
+        if (container == null) {
+            return;
+        }
+        container.postDelayed(() -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+            prewarmFragmentIfMissing(1);
+        }, 400L);
+    }
+
+    private void prewarmFragmentIfMissing(int position) {
+        if (position == currentFragmentPosition) {
+            return;
+        }
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        String targetTag = getFragmentTagForPosition(position);
+        Fragment existing = fm.findFragmentByTag(targetTag);
+        if (existing != null) {
+            FLog.d("FragmentNav", "prewarmFragmentIfMissing: Fragment already exists for position " + position);
+            return;
+        }
+        try {
+            Fragment prewarmedFragment = createFragmentForPosition(position);
+            fm.beginTransaction()
+                    .add(R.id.fragment_container, prewarmedFragment, targetTag)
+                    .hide(prewarmedFragment)
+                    .commitNowAllowingStateLoss();
+            FLog.d("FragmentNav", "prewarmFragmentIfMissing: Prewarmed hidden fragment for position " + position
+                    + ": " + prewarmedFragment.getClass().getSimpleName());
+        } catch (Exception e) {
+            FLog.w("FragmentNav", "prewarmFragmentIfMissing: Failed for position " + position, e);
+        }
     }
     
     /**

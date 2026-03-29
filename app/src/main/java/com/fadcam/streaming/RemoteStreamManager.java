@@ -1828,6 +1828,41 @@ public class RemoteStreamManager {
     }
     
     /**
+     * Returns available storage as a fraction (0.0–1.0) of total storage.
+     * Used to drive the progress ring on the Remote tab.
+     */
+    public float getStorageAvailableFraction() {
+        try {
+            android.os.StatFs stat = new android.os.StatFs(android.os.Environment.getExternalStorageDirectory().getPath());
+            long availBytes = stat.getAvailableBlocksLong() * stat.getBlockSizeLong();
+            long totalBytes = stat.getBlockCountLong() * stat.getBlockSizeLong();
+            if (totalBytes <= 0) return 0f;
+            return Math.max(0f, Math.min(1f, (float) availBytes / totalBytes));
+        } catch (Exception e) {
+            return 0f;
+        }
+    }
+
+    /**
+     * Returns available memory as a fraction (0.0–1.0) of total memory.
+     * Used to drive the progress ring on the Remote tab.
+     */
+    public float getMemoryAvailableFraction(android.content.Context ctx) {
+        if (ctx == null) return 0f;
+        try {
+            android.app.ActivityManager.MemoryInfo memInfo = new android.app.ActivityManager.MemoryInfo();
+            android.app.ActivityManager am = (android.app.ActivityManager)
+                    ctx.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+            if (am == null) return 0f;
+            am.getMemoryInfo(memInfo);
+            if (memInfo.totalMem <= 0) return 0f;
+            return Math.max(0f, Math.min(1f, (float) memInfo.availMem / memInfo.totalMem));
+        } catch (Exception e) {
+            return 0f;
+        }
+    }
+
+    /**
      * Get network health from NetworkMonitor.
      */
     public NetworkHealth getNetworkHealth() {
