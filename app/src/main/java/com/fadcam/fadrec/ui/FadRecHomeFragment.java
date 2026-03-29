@@ -43,10 +43,10 @@ import com.google.android.material.button.MaterialButton;
  * Uses inheritance to reuse camera recording UI while adapting for screen recording.
  * 
  * Key differences from parent HomeFragment:
- * - Hides camera-specific controls (camera switch, flash, zoom)
+ * - Reuses the same base HomeFragment layout/cards
+ * - Hides camera-only controls (camera switch, flash, zoom)
  * - Shows screen resolution instead of camera info
  * - Uses ScreenRecordingService instead of RecordingService
- * - No camera preview (TextureView hidden)
  */
 public class FadRecHomeFragment extends HomeFragment {
     
@@ -465,19 +465,9 @@ public class FadRecHomeFragment extends HomeFragment {
             FLog.d(TAG, "Torch button hidden");
         }
         
-        // Hide entire preview area (TextureView and placeholder from parent layout)
-        View textureView = rootView.findViewById(com.fadcam.R.id.textureView);
-        if (textureView != null) {
-            textureView.setVisibility(View.GONE);
-        }
-        
-        View tvPreviewPlaceholder = rootView.findViewById(com.fadcam.R.id.tvPreviewPlaceholder);
-        if (tvPreviewPlaceholder != null) {
-            tvPreviewPlaceholder.setVisibility(View.GONE);
-        }
-        
         // Update camera info card to show screen recording info instead
         updateCardForScreenRecording(rootView);
+        configurePreviewCardForScreenRecording(rootView);
         
         // Hide recording tiles (AF, exposure, zoom - camera specific)
         View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
@@ -504,10 +494,14 @@ public class FadRecHomeFragment extends HomeFragment {
         // Setup floating controls toggle card in the tiles area
         setupFloatingControlsCard(rootView);
         
-        // Replace preview card content with custom FadRec screen icon
-        replacePreviewWithScreenIcon(rootView);
-        
         FLog.d(TAG, "Camera controls hidden");
+    }
+
+    private void configurePreviewCardForScreenRecording(View rootView) {
+        TextView tvPreviewHint = rootView.findViewById(com.fadcam.R.id.tvPreviewHint);
+        if (tvPreviewHint != null) {
+            tvPreviewHint.setText(com.fadcam.R.string.fadrec_preview_enable_hint);
+        }
     }
     
     /**
@@ -737,56 +731,6 @@ public class FadRecHomeFragment extends HomeFragment {
         stopAnnotationService();
     }
     
-    /**
-     * Replace the preview card content with a custom screen recording icon layout.
-     * This completely overrides the parent's camera preview with FadRec-specific UI.
-     */
-    private void replacePreviewWithScreenIcon(View rootView) {
-        // Find the preview card container
-        android.view.ViewGroup previewCard = 
-            rootView.findViewById(com.fadcam.R.id.cardPreview);
-        
-        if (previewCard != null) {
-            // Make the parent card background transparent for FadRec
-            if (previewCard instanceof androidx.cardview.widget.CardView) {
-                ((androidx.cardview.widget.CardView) previewCard).setCardBackgroundColor(
-                    android.graphics.Color.TRANSPARENT
-                );
-            }
-            previewCard.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-            
-            // Remove all child views from the card
-            previewCard.removeAllViews();
-            
-            // Inflate custom FadRec screen icon layout
-            View screenIconView = getLayoutInflater().inflate(
-                com.fadcam.R.layout.fadrec_screen_icon, 
-                previewCard, 
-                false
-            );
-            
-            // Add the custom layout to the card
-            previewCard.addView(screenIconView);
-            previewCard.setVisibility(View.VISIBLE);
-            
-            // Start rotating bubble animation for modern visual effect
-            android.widget.ImageView bubbleBackground = screenIconView.findViewById(com.fadcam.R.id.ivBubbleBackground);
-            if (bubbleBackground != null) {
-                android.view.animation.Animation rotateAnimation = 
-                    android.view.animation.AnimationUtils.loadAnimation(requireContext(), com.fadcam.R.anim.rotate_slow_left);
-                bubbleBackground.startAnimation(rotateAnimation);
-                FLog.d(TAG, "Started FadRec bubble background rotation animation");
-            }
-            
-            // IMPORTANT: Disable long press listener from parent HomeFragment
-            // FadRec doesn't need camera preview toggle functionality
-            previewCard.setOnLongClickListener(null);
-            previewCard.setLongClickable(false);
-            
-            FLog.d(TAG, "Preview card replaced with screen recording icon, background transparent");
-        }
-    }
-
     /**
      * Update the camera info card to show screen recording information.
      * Modifies icon, title, and subtitle to reflect screen recording mode.
@@ -1632,6 +1576,23 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     @Override
+    protected int getPreviewEnableHintResId() {
+        return com.fadcam.R.string.fadrec_preview_enable_hint;
+    }
+
+    @Override
+    protected boolean handleModeSpecificPreviewLongPress() {
+        if (!isAdded()) {
+            return true;
+        }
+        com.fadcam.Utils.showQuickToast(
+            requireContext(),
+            com.fadcam.R.string.fadrec_preview_not_available
+        );
+        return true;
+    }
+
+    @Override
     protected void updateStartStopButtonForFoldedState() {
         if (buttonStartStop == null || !isAdded()) {
             return;
@@ -1795,11 +1756,7 @@ public class FadRecHomeFragment extends HomeFragment {
         if (tileExp != null) tileExp.setVisibility(View.GONE);
         if (tileZoom != null) tileZoom.setVisibility(View.GONE);
         if (tvRecordingControlsTitle != null) tvRecordingControlsTitle.setVisibility(View.GONE);
-        View textureView = rootView.findViewById(com.fadcam.R.id.textureView);
-        View tvPreviewPlaceholder = rootView.findViewById(com.fadcam.R.id.tvPreviewPlaceholder);
-        if (textureView != null) textureView.setVisibility(View.GONE);
-        if (tvPreviewPlaceholder != null) tvPreviewPlaceholder.setVisibility(View.GONE);
-
+        configurePreviewCardForScreenRecording(rootView);
         if (!animate) {
             screenCardInfoInitialized = true;
         }

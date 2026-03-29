@@ -65,6 +65,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -750,6 +751,10 @@ public class HomeFragment extends BaseFragment {
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
 
+                    if (handleModeSpecificPreviewLongPress()) {
+                        return;
+                    }
+
                     if (!isRecordingOrPaused()) {
                         if (!isAdded() || getContext() == null) {
                             return;
@@ -916,7 +921,7 @@ public class HomeFragment extends BaseFragment {
                 textureView.setVisibility(View.VISIBLE);
                 if (animateNextPreviewTransition) textureView.setAlpha(0f);
                 tvPreviewPlaceholder.setVisibility(View.GONE);
-                if (tvPreviewHint != null) tvPreviewHint.setText(R.string.preview_enable_hint);
+                if (tvPreviewHint != null) tvPreviewHint.setText(getPreviewEnableHintResId());
                 setHintVisibilityAnimated(true);
                 schedulePreviewOnlyStartTimeout();
                 if (textureViewSurface != null && textureViewSurface.isValid()) {
@@ -929,7 +934,7 @@ public class HomeFragment extends BaseFragment {
             textureView.setVisibility(View.INVISIBLE);
             resetPreviewTransform();
             tvPreviewPlaceholder.setVisibility(View.GONE); // Keep hidden
-            if (tvPreviewHint != null) tvPreviewHint.setText(R.string.preview_enable_hint);
+            if (tvPreviewHint != null) tvPreviewHint.setText(getPreviewEnableHintResId());
             setHintVisibilityAnimated(true);
             FLog.d(TAG, "Not recording - showing hint because area is reactive");
         }
@@ -2146,7 +2151,7 @@ public class HomeFragment extends BaseFragment {
             previewOnlyStartHandler.removeCallbacks(pendingPreviewOnlyStartTimeoutRunnable);
         }
         if (resetHintText && tvPreviewHint != null && !isRecordingOrPaused() && !isPreviewOnlyActive) {
-            tvPreviewHint.setText(R.string.preview_enable_hint);
+            tvPreviewHint.setText(getPreviewEnableHintResId());
             setHintVisibilityAnimated(true);
         }
     }
@@ -6162,6 +6167,19 @@ public class HomeFragment extends BaseFragment {
         return false;
     }
 
+    @StringRes
+    protected int getPreviewEnableHintResId() {
+        return R.string.preview_enable_hint;
+    }
+
+    /**
+     * Allows mode-specific fragments to intercept preview long-press without
+     * forking the entire HomeFragment preview interaction flow.
+     */
+    protected boolean handleModeSpecificPreviewLongPress() {
+        return false;
+    }
+
     /**
      * Updates storage UI with cached storage information for instant display
      */
@@ -8144,7 +8162,7 @@ public class HomeFragment extends BaseFragment {
             isPreviewOnlyStartPending = false;
             previewOnlyStartPendingDeadlineMs = 0L;
             if (tvPreviewHint != null) {
-                tvPreviewHint.setText(R.string.preview_enable_hint);
+                tvPreviewHint.setText(getPreviewEnableHintResId());
             }
             setHintVisibilityAnimated(true);
             return;
@@ -8164,7 +8182,7 @@ public class HomeFragment extends BaseFragment {
             isPreviewOnlyStartPending = false;
             previewOnlyStartPendingDeadlineMs = 0L;
             if (tvPreviewHint != null) {
-                tvPreviewHint.setText(R.string.preview_enable_hint);
+                tvPreviewHint.setText(getPreviewEnableHintResId());
             }
             setHintVisibilityAnimated(true);
             Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
