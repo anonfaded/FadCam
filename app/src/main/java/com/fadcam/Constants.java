@@ -259,6 +259,12 @@ public abstract class Constants {
         "com.fadcam.ACTION_RESUME_SCREEN_RECORDING";
     public static final String INTENT_ACTION_SET_SCREEN_RECORDING_MUTE =
         "com.fadcam.ACTION_SET_SCREEN_RECORDING_MUTE";
+    public static final String INTENT_ACTION_START_SCREEN_PREVIEW_ONLY =
+        "com.fadcam.ACTION_START_SCREEN_PREVIEW_ONLY";
+    public static final String INTENT_ACTION_STOP_SCREEN_PREVIEW_ONLY =
+        "com.fadcam.ACTION_STOP_SCREEN_PREVIEW_ONLY";
+    public static final String INTENT_ACTION_CHANGE_SCREEN_PREVIEW_SURFACE =
+        "com.fadcam.ACTION_CHANGE_SCREEN_PREVIEW_SURFACE";
 
     // Query current screen recording state (service will respond via state broadcast)
     public static final String INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE =
@@ -313,6 +319,10 @@ public abstract class Constants {
         "com.fadcam.ON_SCREEN_RECORDING_STATE_CALLBACK";
     public static final String BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED =
         "com.fadcam.ON_SCREEN_RECORDING_MUTE_CHANGED";
+    public static final String EXTRA_SCREEN_PREVIEW_ONLY_ACTIVE =
+        "com.fadcam.EXTRA_SCREEN_PREVIEW_ONLY_ACTIVE";
+    public static final String EXTRA_SCREEN_PREVIEW_ENABLED =
+        "com.fadcam.EXTRA_SCREEN_PREVIEW_ENABLED";
 
     // Screen recording preferences
     public static final String PREF_SCREEN_RECORDING_AUDIO_SOURCE =

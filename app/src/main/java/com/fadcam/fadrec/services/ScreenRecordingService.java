@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.content.pm.PackageManager;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -22,6 +24,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
+import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -60,6 +63,7 @@ public class ScreenRecordingService extends Service {
     // MediaProjection components
     private MediaProjectionManager mediaProjectionManager;
     private MediaProjection mediaProjection;
+    private VirtualDisplay previewOnlyVirtualDisplay;
     
     // Recording pipeline (MediaCodec + FragmentedMp4)
     private ScreenRecordingPipeline recordingPipeline;
@@ -75,6 +79,10 @@ public class ScreenRecordingService extends Service {
     private long totalPausedTime; // Accumulate total paused duration
     private boolean forceNoAudioForThisStart = false;
     private boolean enableAudioForSession = false;
+    private boolean previewOnlyActive = false;
+    private Surface currentPreviewSurface;
+    private int currentPreviewSurfaceWidth = -1;
+    private int currentPreviewSurfaceHeight = -1;
     
     // Configuration
     private SharedPreferencesManager sharedPreferencesManager;
@@ -172,6 +180,18 @@ public class ScreenRecordingService extends Service {
             case Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE:
                 handleQueryRecordingState();
                 break;
+
+            case Constants.INTENT_ACTION_START_SCREEN_PREVIEW_ONLY:
+                handleStartPreviewOnly(intent);
+                break;
+
+            case Constants.INTENT_ACTION_STOP_SCREEN_PREVIEW_ONLY:
+                handleStopPreviewOnly();
+                break;
+
+            case Constants.INTENT_ACTION_CHANGE_SCREEN_PREVIEW_SURFACE:
+                handleChangePreviewSurface(intent);
+                break;
                 
             default:
                 FLog.w(TAG, "Unknown action: " + action);
@@ -191,7 +211,67 @@ public class ScreenRecordingService extends Service {
         // Broadcast current state
         Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
         stateIntent.putExtra("recordingState", recordingState.name());
+        stateIntent.putExtra(Constants.EXTRA_SCREEN_PREVIEW_ONLY_ACTIVE, previewOnlyActive);
+        stateIntent.putExtra(
+            Constants.EXTRA_SCREEN_PREVIEW_ENABLED,
+            currentPreviewSurface != null && currentPreviewSurface.isValid()
+        );
         LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+    }
+
+    private void handleStartPreviewOnly(Intent intent) {
+        FLog.d(TAG, "handleStartPreviewOnly: Starting screen preview-only");
+
+        updatePreviewSurfaceFromIntent(intent);
+
+        if (currentPreviewSurface == null || !currentPreviewSurface.isValid()) {
+            FLog.w(TAG, "handleStartPreviewOnly: No valid preview surface");
+            return;
+        }
+
+        Notification notification = createNotification();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
+
+        if (!ensureMediaProjection(intent)) {
+            return;
+        }
+
+        previewOnlyActive = true;
+        refreshPreviewOnlyVirtualDisplay();
+        handleQueryRecordingState();
+    }
+
+    private void handleStopPreviewOnly() {
+        FLog.d(TAG, "handleStopPreviewOnly");
+        previewOnlyActive = false;
+        releasePreviewOnlyVirtualDisplay();
+        if (recordingState == ScreenRecordingState.NONE) {
+            releaseProjectionIfIdle();
+            stopForeground(STOP_FOREGROUND_REMOVE);
+            stopSelf();
+        } else {
+            handleQueryRecordingState();
+        }
+    }
+
+    private void handleChangePreviewSurface(Intent intent) {
+        updatePreviewSurfaceFromIntent(intent);
+
+        if (recordingPipeline != null) {
+            recordingPipeline.setPreviewSurface(
+                currentPreviewSurface,
+                currentPreviewSurfaceWidth,
+                currentPreviewSurfaceHeight
+            );
+        } else if (previewOnlyActive) {
+            refreshPreviewOnlyVirtualDisplay();
+        }
+
+        handleQueryRecordingState();
     }
 
     /**
@@ -216,66 +296,16 @@ public class ScreenRecordingService extends Service {
             startForeground(NOTIFICATION_ID, notification);
         }
         
-        // Get MediaProjection result data from intent
-        int resultCode = intent.getIntExtra("resultCode", Activity.RESULT_CANCELED);
         forceNoAudioForThisStart = intent.getBooleanExtra(
             Constants.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO,
             false
         );
-        
-        // RESULT_OK is -1, RESULT_CANCELED is 0
-        if (resultCode != Activity.RESULT_OK) {
-            FLog.e(TAG, "MediaProjection permission denied - resultCode: " + resultCode);
-            Toast.makeText(this, "Screen recording permission required", Toast.LENGTH_SHORT).show();
-            stopSelf();
+        updatePreviewSurfaceFromIntent(intent);
+        if (!ensureMediaProjection(intent)) {
             return;
         }
-        
-        FLog.d(TAG, "Got resultCode: " + resultCode + " (RESULT_OK), creating MediaProjection");
-        
-        // Initialize MediaProjection using the intent data
-        try {
-            // Try to get permissionData parcelable first (preferred method)
-            Intent permissionIntent = intent.getParcelableExtra("permissionData");
-            
-            if (permissionIntent == null) {
-                // Fallback: Use the original intent (if extras were copied correctly)
-                FLog.d(TAG, "permissionData not found, using intent extras directly");
-                permissionIntent = intent;
-            }
-            
-            FLog.d(TAG, "Creating MediaProjection with intent: " + (permissionIntent != null ? "valid" : "null"));
-            
-            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
-            if (mediaProjection == null) {
-                String error = "MediaProjectionManager.getMediaProjection() returned null (permission may have been revoked)";
-                FLog.e(TAG, error);
-                throw new RuntimeException(error);
-            }
-            
-            FLog.d(TAG, "MediaProjection created successfully");
-            
-            // Set up callback for when MediaProjection stops
-            mediaProjection.registerCallback(new MediaProjection.Callback() {
-                @Override
-                public void onStop() {
-                    FLog.d(TAG, "MediaProjection stopped externally");
-                    handleStopRecording();
-                }
-            }, backgroundHandler);
-            
-        } catch (SecurityException e) {
-            FLog.e(TAG, "SecurityException creating MediaProjection - permission may have been revoked", e);
-            Toast.makeText(this, "Permission error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            stopSelf();
-            return;
-        } catch (Exception e) {
-            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            FLog.e(TAG, "Error creating MediaProjection: " + errorMsg, e);
-            Toast.makeText(this, "MediaProjection error: " + errorMsg, Toast.LENGTH_SHORT).show();
-            stopSelf();
-            return;
-        }
+        previewOnlyActive = false;
+        releasePreviewOnlyVirtualDisplay();
         
         // Start recording on background thread
         backgroundHandler.post(() -> {
@@ -297,6 +327,115 @@ public class ScreenRecordingService extends Service {
                 });
             }
         });
+    }
+
+    private boolean ensureMediaProjection(Intent intent) {
+        if (mediaProjection != null) {
+            return true;
+        }
+
+        int resultCode = intent.getIntExtra("resultCode", Activity.RESULT_CANCELED);
+        if (resultCode != Activity.RESULT_OK) {
+            FLog.e(TAG, "MediaProjection permission denied - resultCode: " + resultCode);
+            Toast.makeText(this, "Screen recording permission required", Toast.LENGTH_SHORT).show();
+            stopSelf();
+            return false;
+        }
+
+        FLog.d(TAG, "Got resultCode: " + resultCode + " (RESULT_OK), creating MediaProjection");
+
+        try {
+            Intent permissionIntent = intent.getParcelableExtra("permissionData");
+            if (permissionIntent == null) {
+                FLog.d(TAG, "permissionData not found, using intent extras directly");
+                permissionIntent = intent;
+            }
+
+            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, permissionIntent);
+            if (mediaProjection == null) {
+                throw new RuntimeException("MediaProjectionManager.getMediaProjection() returned null");
+            }
+
+            mediaProjection.registerCallback(new MediaProjection.Callback() {
+                @Override
+                public void onStop() {
+                    FLog.d(TAG, "MediaProjection stopped externally");
+                    previewOnlyActive = false;
+                    releasePreviewOnlyVirtualDisplay();
+                    if (recordingState != ScreenRecordingState.NONE) {
+                        handleStopRecording();
+                    } else {
+                        releaseProjectionIfIdle();
+                        stopForeground(STOP_FOREGROUND_REMOVE);
+                        stopSelf();
+                    }
+                }
+            }, backgroundHandler);
+            return true;
+        } catch (SecurityException e) {
+            FLog.e(TAG, "SecurityException creating MediaProjection - permission may have been revoked", e);
+            Toast.makeText(this, "Permission error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            FLog.e(TAG, "Error creating MediaProjection: " + errorMsg, e);
+            Toast.makeText(this, "MediaProjection error: " + errorMsg, Toast.LENGTH_SHORT).show();
+        }
+
+        stopSelf();
+        return false;
+    }
+
+    private void updatePreviewSurfaceFromIntent(@Nullable Intent intent) {
+        if (intent == null || !intent.hasExtra("SURFACE")) {
+            return;
+        }
+        currentPreviewSurface = intent.getParcelableExtra("SURFACE");
+        currentPreviewSurfaceWidth = intent.getIntExtra("SURFACE_WIDTH", -1);
+        currentPreviewSurfaceHeight = intent.getIntExtra("SURFACE_HEIGHT", -1);
+    }
+
+    private void refreshPreviewOnlyVirtualDisplay() {
+        releasePreviewOnlyVirtualDisplay();
+        if (!previewOnlyActive || mediaProjection == null || currentPreviewSurface == null || !currentPreviewSurface.isValid()) {
+            return;
+        }
+        int width = currentPreviewSurfaceWidth > 0 ? currentPreviewSurfaceWidth : screenWidth;
+        int height = currentPreviewSurfaceHeight > 0 ? currentPreviewSurfaceHeight : screenHeight;
+        previewOnlyVirtualDisplay = mediaProjection.createVirtualDisplay(
+            "ScreenPreviewOnly",
+            width,
+            height,
+            screenDensity,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            currentPreviewSurface,
+            null,
+            null
+        );
+    }
+
+    private void releasePreviewOnlyVirtualDisplay() {
+        if (previewOnlyVirtualDisplay != null) {
+            try {
+                previewOnlyVirtualDisplay.release();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error releasing preview-only virtual display", e);
+            }
+            previewOnlyVirtualDisplay = null;
+        }
+    }
+
+    private void releaseProjectionIfIdle() {
+        if (recordingState != ScreenRecordingState.NONE || previewOnlyActive) {
+            return;
+        }
+        if (mediaProjection != null) {
+            try {
+                mediaProjection.stop();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error stopping MediaProjection", e);
+            }
+            mediaProjection = null;
+        }
     }
 
     /**
@@ -365,6 +504,11 @@ public class ScreenRecordingService extends Service {
             
             recordingPipeline = pipelineBuilder.build();
             recordingPipeline.setAudioMuted(initialMuted);
+            recordingPipeline.setPreviewSurface(
+                currentPreviewSurface,
+                currentPreviewSurfaceWidth,
+                currentPreviewSurfaceHeight
+            );
             
             FLog.d(TAG, "ScreenRecordingPipeline built successfully");
             
@@ -468,6 +612,7 @@ public class ScreenRecordingService extends Service {
      * Clean up recording pipeline
      */
     private void cleanupPipeline() {
+        releasePreviewOnlyVirtualDisplay();
         if (recordingPipeline != null) {
             try {
                 recordingPipeline.release();
@@ -479,11 +624,10 @@ public class ScreenRecordingService extends Service {
         
         if (mediaProjection != null) {
             try {
-                mediaProjection.stop();
+                releaseProjectionIfIdle();
             } catch (Exception e) {
                 FLog.e(TAG, "Error stopping MediaProjection", e);
             }
-            mediaProjection = null;
         }
         
         // Close SAF ParcelFileDescriptor if open
@@ -535,6 +679,7 @@ public class ScreenRecordingService extends Service {
             cleanupPipeline();
             forceNoAudioForThisStart = false;
             enableAudioForSession = false;
+            previewOnlyActive = false;
 
             // Persist state on background thread before any UI callbacks.
             sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
@@ -589,6 +734,7 @@ public class ScreenRecordingService extends Service {
                 
                 // Clear SAF URI
                 safRecordingUri = null;
+                releaseProjectionIfIdle();
                 
                 // Stop service
                 stopForeground(true);
@@ -598,6 +744,8 @@ public class ScreenRecordingService extends Service {
         } catch (Exception e) {
             FLog.e(TAG, "Error stopping screen recording", e);
             sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
+            recordingState = ScreenRecordingState.NONE;
+            releaseProjectionIfIdle();
             mainHandler.post(() -> stopSelf());
         }
     }
@@ -1009,41 +1157,25 @@ public class ScreenRecordingService extends Service {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED);
         intent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        
-        // Also send STATE_CALLBACK for FloatingControlsService to update button state
-        Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", recordingState.name());
-        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        handleQueryRecordingState();
     }
 
     private void broadcastRecordingStopped() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        
-        // Also send STATE_CALLBACK for FloatingControlsService to update button state
-        Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", recordingState.name());
-        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        handleQueryRecordingState();
     }
 
     private void broadcastRecordingPaused() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        
-        // Also send STATE_CALLBACK for FloatingControlsService to update button state
-        Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", recordingState.name());
-        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        handleQueryRecordingState();
     }
 
     private void broadcastRecordingResumed() {
         Intent intent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        
-        // Also send STATE_CALLBACK for FloatingControlsService to update button state
-        Intent stateIntent = new Intent(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
-        stateIntent.putExtra("recordingState", recordingState.name());
-        LocalBroadcastManager.getInstance(this).sendBroadcast(stateIntent);
+        handleQueryRecordingState();
     }
 
     @Override
@@ -1058,6 +1190,8 @@ public class ScreenRecordingService extends Service {
         // Release resources
         releaseWakeLock();
         stopNotificationUpdates();
+        releasePreviewOnlyVirtualDisplay();
+        releaseProjectionIfIdle();
         
         // Quit background thread
         if (backgroundThread != null) {

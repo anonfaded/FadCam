@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
+import android.view.Surface;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -203,6 +204,61 @@ public class MediaProjectionHelper {
             FLog.i(TAG, "Mute toggle sent to ScreenRecordingService: " + muted);
         } catch (Exception e) {
             FLog.e(TAG, "Error toggling ScreenRecordingService mute", e);
+        }
+    }
+
+    public void startScreenPreview(int resultCode, Intent data, Surface surface, int width, int height) {
+        FLog.d(TAG, "Starting ScreenRecordingService preview-only with resultCode=" + resultCode);
+
+        if (data == null) {
+            FLog.e(TAG, "ERROR: data Intent is null - cannot start screen preview");
+            return;
+        }
+
+        try {
+            Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
+            serviceIntent.setAction(Constants.INTENT_ACTION_START_SCREEN_PREVIEW_ONLY);
+            serviceIntent.putExtra("resultCode", resultCode);
+            if (data.getExtras() != null) {
+                serviceIntent.putExtras(data.getExtras());
+            }
+            serviceIntent.putExtra("permissionData", data);
+            if (surface != null) {
+                serviceIntent.putExtra("SURFACE", surface);
+                serviceIntent.putExtra("SURFACE_WIDTH", width);
+                serviceIntent.putExtra("SURFACE_HEIGHT", height);
+            }
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent);
+            } else {
+                context.startService(serviceIntent);
+            }
+        } catch (Exception e) {
+            FLog.e(TAG, "Error starting screen preview", e);
+        }
+    }
+
+    public void stopScreenPreview() {
+        try {
+            Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
+            serviceIntent.setAction(Constants.INTENT_ACTION_STOP_SCREEN_PREVIEW_ONLY);
+            context.startService(serviceIntent);
+        } catch (Exception e) {
+            FLog.e(TAG, "Error stopping screen preview", e);
+        }
+    }
+
+    public void updateScreenPreviewSurface(Surface surface, int width, int height) {
+        try {
+            Intent serviceIntent = new Intent(context, ScreenRecordingService.class);
+            serviceIntent.setAction(Constants.INTENT_ACTION_CHANGE_SCREEN_PREVIEW_SURFACE);
+            serviceIntent.putExtra("SURFACE", surface);
+            serviceIntent.putExtra("SURFACE_WIDTH", width);
+            serviceIntent.putExtra("SURFACE_HEIGHT", height);
+            context.startService(serviceIntent);
+        } catch (Exception e) {
+            FLog.e(TAG, "Error updating screen preview surface", e);
         }
     }
     

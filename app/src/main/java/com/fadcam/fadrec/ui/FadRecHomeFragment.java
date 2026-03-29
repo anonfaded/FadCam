@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
+import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -60,6 +61,12 @@ public class FadRecHomeFragment extends HomeFragment {
     
     // Screen recording state
     private ScreenRecordingState screenRecordingState = ScreenRecordingState.NONE;
+    private boolean isScreenPreviewEnabled = false;
+    private boolean isScreenPreviewOnlyActive = false;
+    private boolean pendingPreviewOnlyPermission = false;
+    private Surface previewSurface;
+    private int previewSurfaceWidth = -1;
+    private int previewSurfaceHeight = -1;
     private SharedPreferencesManager sharedPreferencesManager;
     
     // Broadcast receivers for screen recording state
@@ -135,14 +142,33 @@ public class FadRecHomeFragment extends HomeFragment {
                 //       " (RESULT_OK=" + Activity.RESULT_OK + "), data=" + (data != null ? "present" : "null"));
                 
                 if (resultCode == Activity.RESULT_OK && data != null) {
-                    // FLog.d(TAG, "Screen capture permission granted, starting recording");
-                    // RESULT_OK is -1, so we pass Activity.RESULT_OK constant instead
-                    boolean forceNoAudio = forceMutedNoAudioThisStart;
-                    isRecordingForcedMuted = forceNoAudio;
-                    forceMutedNoAudioThisStart = false;
-                    mediaProjectionHelper.startScreenRecording(Activity.RESULT_OK, data, forceNoAudio);
-                    syncMuteUiState();
+                    if (pendingPreviewOnlyPermission) {
+                        pendingPreviewOnlyPermission = false;
+                        if (previewSurface == null || !previewSurface.isValid()) {
+                            Toast.makeText(requireContext(), com.fadcam.R.string.photo_capture_preview_unavailable, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        isScreenPreviewEnabled = true;
+                        isScreenPreviewOnlyActive = true;
+                        mediaProjectionHelper.startScreenPreview(
+                            Activity.RESULT_OK,
+                            data,
+                            previewSurface,
+                            previewSurfaceWidth,
+                            previewSurfaceHeight
+                        );
+                        updateModeSpecificPreviewVisibility();
+                    } else {
+                        // FLog.d(TAG, "Screen capture permission granted, starting recording");
+                        // RESULT_OK is -1, so we pass Activity.RESULT_OK constant instead
+                        boolean forceNoAudio = forceMutedNoAudioThisStart;
+                        isRecordingForcedMuted = forceNoAudio;
+                        forceMutedNoAudioThisStart = false;
+                        mediaProjectionHelper.startScreenRecording(Activity.RESULT_OK, data, forceNoAudio);
+                        syncMuteUiState();
+                    }
                 } else {
+                    pendingPreviewOnlyPermission = false;
                     // FLog.w(TAG, "Screen capture permission denied: resultCode=" + resultCode);
                     Toast.makeText(requireContext(), 
                         com.fadcam.R.string.fadrec_permission_denied, 
@@ -1111,6 +1137,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_STARTED");
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
+                            isScreenPreviewOnlyActive = false;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
                             syncMuteUiState();
@@ -1121,6 +1148,8 @@ public class FadRecHomeFragment extends HomeFragment {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_STOPPED");
                             screenRecordingState = ScreenRecordingState.NONE;
+                            isScreenPreviewOnlyActive = false;
+                            isScreenPreviewEnabled = false;
                             persistRecordingState(screenRecordingState);
                             isRecordingForcedMuted = false;
                             updateUIForRecordingState();
@@ -1132,6 +1161,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_PAUSED");
                             screenRecordingState = ScreenRecordingState.PAUSED;
+                            isScreenPreviewOnlyActive = false;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
                             syncMuteUiState();
@@ -1142,11 +1172,33 @@ public class FadRecHomeFragment extends HomeFragment {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_RESUMED");
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
+                            isScreenPreviewOnlyActive = false;
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
                             syncMuteUiState();
                             // Toast.makeText(context, com.fadcam.R.string.fadrec_screen_recording_resumed, 
                             //     Toast.LENGTH_SHORT).show();
+                            break;
+
+                        case Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK:
+                            String stateName = intent.getStringExtra("recordingState");
+                            if (stateName != null) {
+                                try {
+                                    screenRecordingState = ScreenRecordingState.valueOf(stateName);
+                                    persistRecordingState(screenRecordingState);
+                                } catch (IllegalArgumentException ignored) {
+                                }
+                            }
+                            isScreenPreviewOnlyActive = intent.getBooleanExtra(
+                                Constants.EXTRA_SCREEN_PREVIEW_ONLY_ACTIVE,
+                                false
+                            );
+                            isScreenPreviewEnabled = intent.getBooleanExtra(
+                                Constants.EXTRA_SCREEN_PREVIEW_ENABLED,
+                                isScreenPreviewEnabled
+                            );
+                            updateUIForRecordingState();
+                            syncMuteUiState();
                             break;
                             
                         // Handle overlay actions
@@ -1222,6 +1274,7 @@ public class FadRecHomeFragment extends HomeFragment {
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED);
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED);
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED);
+            filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_STATE_CALLBACK);
             filter.addAction(Constants.BROADCAST_ON_SCREEN_RECORDING_MUTE_CHANGED);
             // Add overlay actions
             filter.addAction(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY);
@@ -1323,6 +1376,11 @@ public class FadRecHomeFragment extends HomeFragment {
             buttonFadRecMute.setVisibility(View.VISIBLE);
             syncMuteUiState();
         }
+
+        if (screenRecordingState == ScreenRecordingState.NONE && !isScreenPreviewOnlyActive) {
+            isScreenPreviewEnabled = false;
+        }
+        updateModeSpecificPreviewVisibility();
         
         FLog.d(TAG, "UI updated for state: " + screenRecordingState);
         
@@ -1576,20 +1634,113 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     @Override
+    protected boolean usesModeSpecificPreviewBehavior() {
+        return true;
+    }
+
+    @Override
     protected int getPreviewEnableHintResId() {
         return com.fadcam.R.string.fadrec_preview_enable_hint;
     }
 
     @Override
     protected boolean handleModeSpecificPreviewLongPress() {
-        if (!isAdded()) {
+        if (!isAdded() || mediaProjectionHelper == null) {
             return true;
         }
-        com.fadcam.Utils.showQuickToast(
-            requireContext(),
-            com.fadcam.R.string.fadrec_preview_not_available
-        );
+
+        if (screenRecordingState == ScreenRecordingState.IN_PROGRESS
+                || screenRecordingState == ScreenRecordingState.PAUSED) {
+            isScreenPreviewEnabled = !isScreenPreviewEnabled;
+            pushPreviewSurfaceToService();
+            updateModeSpecificPreviewVisibility();
+            return true;
+        }
+
+        if (isScreenPreviewOnlyActive) {
+            isScreenPreviewOnlyActive = false;
+            isScreenPreviewEnabled = false;
+            mediaProjectionHelper.stopScreenPreview();
+            updateModeSpecificPreviewVisibility();
+            return true;
+        }
+
+        if (previewSurface == null || !previewSurface.isValid()) {
+            com.fadcam.Utils.showQuickToast(
+                requireContext(),
+                com.fadcam.R.string.photo_capture_preview_unavailable
+            );
+            return true;
+        }
+
+        pendingPreviewOnlyPermission = true;
+        requestScreenCapturePermission();
         return true;
+    }
+
+    @Override
+    protected void updateModeSpecificPreviewVisibility() {
+        if (!isAdded() || getView() == null) {
+            return;
+        }
+
+        View rootView = getView();
+        View textureView = rootView.findViewById(com.fadcam.R.id.textureView);
+        View flPreviewAvatar = rootView.findViewById(com.fadcam.R.id.fl_preview_avatar);
+        View tvPreviewPlaceholder = rootView.findViewById(com.fadcam.R.id.tvPreviewPlaceholder);
+        TextView tvPreviewHint = rootView.findViewById(com.fadcam.R.id.tvPreviewHint);
+        boolean showPreview = isScreenPreviewEnabled
+            && (screenRecordingState == ScreenRecordingState.IN_PROGRESS
+            || screenRecordingState == ScreenRecordingState.PAUSED
+            || isScreenPreviewOnlyActive);
+
+        if (textureView != null) {
+            textureView.setVisibility(showPreview ? View.VISIBLE : View.INVISIBLE);
+            textureView.setAlpha(1f);
+        }
+        if (flPreviewAvatar != null) {
+            flPreviewAvatar.setVisibility(showPreview ? View.GONE : View.VISIBLE);
+            flPreviewAvatar.setAlpha(1f);
+            flPreviewAvatar.setScaleX(1f);
+            flPreviewAvatar.setScaleY(1f);
+        }
+        if (tvPreviewPlaceholder != null) {
+            tvPreviewPlaceholder.setVisibility(View.GONE);
+        }
+        if (tvPreviewHint != null) {
+            tvPreviewHint.setText(getPreviewEnableHintResId());
+            tvPreviewHint.setVisibility(showPreview ? View.GONE : View.VISIBLE);
+            tvPreviewHint.setAlpha(0.75f);
+        }
+    }
+
+    @Override
+    protected void onModeSpecificPreviewSurfaceChanged(@Nullable Surface surface, int width, int height) {
+        previewSurface = surface;
+        previewSurfaceWidth = width;
+        previewSurfaceHeight = height;
+        pushPreviewSurfaceToService();
+    }
+
+    private void pushPreviewSurfaceToService() {
+        if (!isAdded() || mediaProjectionHelper == null) {
+            return;
+        }
+
+        boolean shouldPush = isScreenPreviewEnabled
+            && (screenRecordingState == ScreenRecordingState.IN_PROGRESS
+            || screenRecordingState == ScreenRecordingState.PAUSED
+            || isScreenPreviewOnlyActive);
+
+        if (!shouldPush && screenRecordingState == ScreenRecordingState.NONE && !isScreenPreviewOnlyActive) {
+            return;
+        }
+
+        mediaProjectionHelper.updateScreenPreviewSurface(
+            shouldPush ? previewSurface : null,
+            shouldPush ? previewSurfaceWidth : -1,
+            shouldPush ? previewSurfaceHeight : -1
+        );
     }
 
     @Override
@@ -1730,6 +1881,7 @@ public class FadRecHomeFragment extends HomeFragment {
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
         if (!hidden) {
+            reconcileScreenRecordingStateWithReality();
             reapplyScreenRecordingCardState(false);
             if (getView() != null) {
                 updateCardForScreenRecording(getView());
@@ -1761,6 +1913,7 @@ public class FadRecHomeFragment extends HomeFragment {
             screenCardInfoInitialized = true;
         }
         updateScreenRecordingCardInfo();
+        updateModeSpecificPreviewVisibility();
     }
 
     /**
@@ -1803,19 +1956,13 @@ public class FadRecHomeFragment extends HomeFragment {
         // to broadcast the authoritative current state when we suspect prefs might be stale.
         screenRecordingState = restoredState;
 
-        // If prefs already say NONE, don't spam a query during the START flow; we'll get
-        // real broadcasts from the service as it transitions to IN_PROGRESS.
-        if (restoredState != ScreenRecordingState.NONE || sharedPreferencesManager.isScreenRecordingInProgress()) {
-            FLog.d(TAG, "onResume: ScreenRecordingService running, restoredState=" + restoredState + " - querying");
-            try {
-                Intent queryIntent = new Intent(requireContext(), ScreenRecordingService.class);
-                queryIntent.setAction(Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE);
-                requireContext().startService(queryIntent);
-            } catch (Exception e) {
-                FLog.w(TAG, "Failed to query ScreenRecordingService state", e);
-            }
-        } else {
-            FLog.d(TAG, "onResume: ScreenRecordingService running, restoredState=NONE - waiting for broadcasts");
+        FLog.d(TAG, "onResume: ScreenRecordingService running, restoredState=" + restoredState + " - querying");
+        try {
+            Intent queryIntent = new Intent(requireContext(), ScreenRecordingService.class);
+            queryIntent.setAction(Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE);
+            requireContext().startService(queryIntent);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to query ScreenRecordingService state", e);
         }
     }
 

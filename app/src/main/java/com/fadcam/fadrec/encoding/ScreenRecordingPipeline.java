@@ -15,6 +15,7 @@ import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.Surface;
+import androidx.annotation.Nullable;
 
 import com.fadcam.Constants;
 import com.fadcam.VideoCodec;
@@ -58,10 +59,14 @@ public class ScreenRecordingPipeline {
     // MediaProjection components
     private MediaProjection mediaProjection;
     private VirtualDisplay virtualDisplay;
-    
+    private VirtualDisplay previewVirtualDisplay;
+
     // Video encoding components
     private MediaCodec videoEncoder;
     private Surface encoderInputSurface;
+    private Surface previewSurface;
+    private int previewSurfaceWidth = -1;
+    private int previewSurfaceHeight = -1;
     private FragmentedMp4MuxerWrapper mediaMuxer;
     private int videoTrackIndex = -1;
     
@@ -440,6 +445,7 @@ public class ScreenRecordingPipeline {
         
         // Create VirtualDisplay
         createVirtualDisplay();
+        refreshPreviewVirtualDisplay();
         
         // Start timestamp tracking
         synchronized (timestampLock) {
@@ -481,6 +487,41 @@ public class ScreenRecordingPipeline {
         );
         
         // FLog.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight);
+    }
+
+    public synchronized void setPreviewSurface(@Nullable Surface surface, int width, int height) {
+        previewSurface = surface;
+        previewSurfaceWidth = width;
+        previewSurfaceHeight = height;
+        refreshPreviewVirtualDisplay();
+    }
+
+    private synchronized void refreshPreviewVirtualDisplay() {
+        if (previewVirtualDisplay != null) {
+            try {
+                previewVirtualDisplay.release();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error releasing preview virtual display", e);
+            }
+            previewVirtualDisplay = null;
+        }
+
+        if (!isRecording || mediaProjection == null || previewSurface == null || !previewSurface.isValid()) {
+            return;
+        }
+
+        int targetWidth = previewSurfaceWidth > 0 ? previewSurfaceWidth : screenWidth;
+        int targetHeight = previewSurfaceHeight > 0 ? previewSurfaceHeight : screenHeight;
+        previewVirtualDisplay = mediaProjection.createVirtualDisplay(
+            "ScreenRecordingPreview",
+            targetWidth,
+            targetHeight,
+            screenDensity,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            previewSurface,
+            null,
+            null
+        );
     }
     
     /**
@@ -778,6 +819,10 @@ public class ScreenRecordingPipeline {
         if (virtualDisplay != null) {
             virtualDisplay.release();
             virtualDisplay = null;
+        }
+        if (previewVirtualDisplay != null) {
+            previewVirtualDisplay.release();
+            previewVirtualDisplay = null;
         }
         
         // Release video encoder

@@ -870,6 +870,11 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        if (usesModeSpecificPreviewBehavior()) {
+            updateModeSpecificPreviewVisibility();
+            return;
+        }
+
         // During the iris-close (Preview→Avatar) circular reveal (~480ms), ALL updatePreviewVisibility
         // calls must be ignored.  The service's "recording stopped" broadcast fires ~50ms into the
         // animation and would otherwise hide textureView (losing the camera background) and make
@@ -4984,6 +4989,7 @@ public class HomeFragment extends BaseFragment {
                             "onSurfaceTextureAvailable: Not recording or preview disabled, surface ready for later use"
                         );
                     }
+                    onModeSpecificPreviewSurfaceChanged(textureViewSurface, width, height);
                 }
 
                 @Override
@@ -5015,6 +5021,7 @@ public class HomeFragment extends BaseFragment {
                             height
                         );
                     }
+                    onModeSpecificPreviewSurfaceChanged(textureViewSurface, width, height);
                 }
 
                 @Override
@@ -5048,6 +5055,7 @@ public class HomeFragment extends BaseFragment {
                             "onSurfaceTextureDestroyed: Released local textureViewSurface."
                         );
                     }
+                    onModeSpecificPreviewSurfaceChanged(null, -1, -1);
                     return true; // Surface is released by the listener
                 }
 
@@ -6167,6 +6175,10 @@ public class HomeFragment extends BaseFragment {
         return false;
     }
 
+    protected boolean usesModeSpecificPreviewBehavior() {
+        return false;
+    }
+
     @StringRes
     protected int getPreviewEnableHintResId() {
         return R.string.preview_enable_hint;
@@ -6178,6 +6190,12 @@ public class HomeFragment extends BaseFragment {
      */
     protected boolean handleModeSpecificPreviewLongPress() {
         return false;
+    }
+
+    protected void updateModeSpecificPreviewVisibility() {
+    }
+
+    protected void onModeSpecificPreviewSurfaceChanged(@Nullable Surface surface, int width, int height) {
     }
 
     /**
