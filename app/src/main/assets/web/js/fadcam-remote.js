@@ -333,12 +333,28 @@
     }
   }
 
-  // Listen for decryption failures (wrong key or corrupt segment) → re-prompt
+  // Listen for decryption failures → show unlock modal (debounced, non-destructive).
+  // CRITICAL: Do NOT clear the key on every failure. HLS fires this event for every
+  // segment retry, and clearing the key mid-typing makes it impossible for the user
+  // to enter their password. Only clear the key when the user entered a wrong password
+  // (handled inside showE2EUnlockModal's submit handler).
+  let _e2eModalShowing = false;
   window.addEventListener('e2e-decryption-failed', async (ev) => {
     console.warn('[FadCamRemote] e2e-decryption-failed event received:', ev.detail);
-    // Clear stale key from IndexedDB so the user must re-enter their password
-    if (typeof E2EKeyManager !== 'undefined') await E2EKeyManager.clear();
+    // Skip if the unlock modal is already visible (avoid overlapping prompts)
+    if (_e2eModalShowing || document.getElementById('e2e-unlock-overlay')) {
+      return;
+    }
+    _e2eModalShowing = true;
     showE2EUnlockModal();
+    // Reset flag when modal is dismissed (overlay removed from DOM)
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('e2e-unlock-overlay')) {
+        _e2eModalShowing = false;
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true });
   });
   
   // Initialize stream context for device
