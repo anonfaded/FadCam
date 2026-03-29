@@ -204,6 +204,10 @@ public class GLRecordingPipeline {
     // Location metadata fields
     private Float locationLatitude = null;
     private Float locationLongitude = null;
+    
+    // Location update tracking - SEPARATE from watermark update frequency
+    private long lastLocationUpdateMs = 0;
+    private long locationUpdateIntervalMs = 5000; // Default 5 seconds, will be read from preferences
 
     // Timestamp synchronization fields
     private long recordingStartTimeNanos = -1;       // System.nanoTime() when recording starts (VIDEO reference)
@@ -321,11 +325,18 @@ public class GLRecordingPipeline {
                 public void run() {
                     if ((isRecording || previewOnlyRendering) && !released) {
                         try {
+                            // Update location update interval from preferences
+                            long newInterval = com.fadcam.SharedPreferencesManager.getInstance(context)
+                                .getWatermarkUpdateInterval();
+                            locationUpdateIntervalMs = newInterval;
+                            
                             updateWatermark();
                         } catch (Exception e) {
                             FLog.w(TAG, "Watermark update failed", e);
                         }
-                        watermarkUpdateHandler.postDelayed(this, 1000);
+                        // FIXED: Watermark always updates at 1 second frequency
+                        // Location update frequency is tracked separately via locationUpdateIntervalMs
+                        watermarkUpdateHandler.postDelayed(this, 1000); // 1 second constant
                     }
                 }
             };

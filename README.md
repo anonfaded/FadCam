@@ -431,5 +431,6 @@ We look forward to your contributions!
 - The 3D text in icon is from <a href="https://www.textstudio.com/">Font generator</a>.
 - Icons used in app by <a target="_blank" href="https://icons8.com">Icons8</a> and <a target="_blank" href="https://www.flaticon.com/">Flaticon</a>.
 - Elapsed timer font option includes Doto by The Doto Project Authors (https://github.com/oliverlalan/Doto).
+- Location reverse geocoding powered by <a target="_blank" href="https://nominatim.org/">Nominatim</a> — free, open-source geocoding based on <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> data. Building-level precision (zoom=18) for accurate address watermarking.
 
 

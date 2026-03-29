@@ -678,6 +678,12 @@
     <string name="watermark_style_none_label">No Watermark</string>
     <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
     <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
+    <string name="location_format_title">Location Format</string>
+    <string name="location_format_coordinates">Coordinates Only</string>
+    <string name="location_format_address">Full Address</string>
+    <string name="location_update_interval_title">Location Update Frequency</string>
+    <string name="location_update_interval_helper">How often to update location data in the watermark. Longer intervals use less battery.</string>
+    <string name="helper_location_format">Choose how location appears in the watermark: exact coordinates, or full address via reverse geocoding (zoom=18, building-level precision).</string>
     <string name="location_watermark_sheet_title">Location Overlay</string>
     <string name="location_watermark_switch_label">Location Overlay</string>
     <string name="helper_location_overlay_short">Adds approximate coordinates under the watermark.</string>

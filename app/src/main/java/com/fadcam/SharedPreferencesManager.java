@@ -1034,6 +1034,48 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /**
+     * Get watermark location update interval in milliseconds.
+     * @return Update interval in ms, default 5000ms (5 seconds)
+     */
+    public long getWatermarkUpdateInterval() {
+        return sharedPreferences.getLong(Constants.PREF_WATERMARK_UPDATE_INTERVAL, 5000L);
+    }
+
+    /**
+     * Set watermark location update interval in milliseconds.
+     * @param intervalMs Update interval in ms (500-30000 recommended)
+     */
+    public void setWatermarkUpdateInterval(long intervalMs) {
+        sharedPreferences.edit()
+            .putLong(Constants.PREF_WATERMARK_UPDATE_INTERVAL, Math.max(500, intervalMs))
+            .apply();
+    }
+
+    /**
+     * Get watermark location format preference.
+     * @return Format type: "coordinates" (default) or "address"
+     */
+    public String getWatermarkLocationFormat() {
+        String format = sharedPreferences.getString(Constants.PREF_WATERMARK_LOCATION_FORMAT, "coordinates");
+        // Migrate legacy "city_country" to "address" (format removed)
+        if ("city_country".equals(format)) {
+            format = "address";
+            sharedPreferences.edit().putString(Constants.PREF_WATERMARK_LOCATION_FORMAT, "address").apply();
+        }
+        return format;
+    }
+
+    /**
+     * Set watermark location format preference.
+     * @param format Format type: "coordinates" or "address"
+     */
+    public void setWatermarkLocationFormat(String format) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_WATERMARK_LOCATION_FORMAT, format != null ? format : "coordinates")
+            .apply();
+    }
+
     // Method to retrieve the preview state
     public Boolean isPreviewEnabled() {
         // Default to true if the preference doesn't exist yet

@@ -60,6 +60,8 @@ public abstract class Constants {
     public static final String PREF_DEBUG_DATA = "debug_data";
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
     public static final String PREF_WATERMARK_CUSTOM_TEXT = "watermark_custom_text";
+    public static final String PREF_WATERMARK_UPDATE_INTERVAL = "watermark_update_interval"; // milliseconds
+    public static final String PREF_WATERMARK_LOCATION_FORMAT = "watermark_location_format"; // coordinates|city_country|address
     public static final String PREF_VIDEO_CODEC = "video_codec";
     public static final String PREF_APP_THEME = "app_theme";
     

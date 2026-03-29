@@ -42,6 +42,8 @@ public class WatermarkSettingsFragment extends Fragment {
     private TextView valueLocationWatermark;
     private TextView valueWatermarkStyle;
     private TextView valueCustomText;
+    private TextView valueLocationFormat;
+    private TextView valueLocationInterval;
     private TextView previewText;
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> permissionLauncher;
@@ -62,28 +64,34 @@ public class WatermarkSettingsFragment extends Fragment {
         NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
         
         prefs = SharedPreferencesManager.getInstance(requireContext());
-    valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
-    valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
-    valueCustomText = view.findViewById(R.id.value_custom_text);
-    previewText = view.findViewById(R.id.text_watermark_preview);
-    View rowStyle = view.findViewById(R.id.row_watermark_option);
-    if(rowStyle!=null){ rowStyle.setOnClickListener(v -> showWatermarkStyleBottomSheet()); }
-    locationRow = view.findViewById(R.id.row_location_watermark);
-    if(locationRow!=null){ locationRow.setOnClickListener(v -> { if(locationRow.isEnabled()) showLocationWatermarkSheet(); }); }
-    View rowCustomText = view.findViewById(R.id.row_custom_text);
-    if(rowCustomText!=null){ 
-        rowCustomText.setOnClickListener(v -> {
-            // Mark custom text badge as seen when clicking this specific row
-            NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark_custom_text");
-            // Hide badge immediately
-            TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
-            if (badgeCustomText != null) {
-                badgeCustomText.setVisibility(View.GONE);
-            }
-            // Show the bottom sheet
-            showCustomTextBottomSheet();
-        });
-    }
+        valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
+        valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
+        valueCustomText = view.findViewById(R.id.value_custom_text);
+        valueLocationFormat = view.findViewById(R.id.value_location_format);
+        valueLocationInterval = view.findViewById(R.id.value_location_interval);
+        previewText = view.findViewById(R.id.text_watermark_preview);
+        View rowStyle = view.findViewById(R.id.row_watermark_option);
+        if(rowStyle!=null){ rowStyle.setOnClickListener(v -> showWatermarkStyleBottomSheet()); }
+        locationRow = view.findViewById(R.id.row_location_watermark);
+        if(locationRow!=null){ locationRow.setOnClickListener(v -> { if(locationRow.isEnabled()) showLocationWatermarkSheet(); }); }
+        View rowLocationFormat = view.findViewById(R.id.row_location_format);
+        if(rowLocationFormat!=null){ rowLocationFormat.setOnClickListener(v -> showLocationFormatBottomSheet()); }
+        View rowLocationInterval = view.findViewById(R.id.row_location_interval);
+        if(rowLocationInterval!=null){ rowLocationInterval.setOnClickListener(v -> showLocationIntervalBottomSheet()); }
+        View rowCustomText = view.findViewById(R.id.row_custom_text);
+        if(rowCustomText!=null){ 
+            rowCustomText.setOnClickListener(v -> {
+                // Mark custom text badge as seen when clicking this specific row
+                NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark_custom_text");
+                // Hide badge immediately
+                TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
+                if (badgeCustomText != null) {
+                    badgeCustomText.setVisibility(View.GONE);
+                }
+                // Show the bottom sheet
+                showCustomTextBottomSheet();
+            });
+        }
         View back = view.findViewById(R.id.back_button);
         if (back != null) {
             back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
@@ -106,6 +114,8 @@ public class WatermarkSettingsFragment extends Fragment {
     refreshLocationValue();
     refreshWatermarkStyleValue();
     refreshCustomTextValue();
+    refreshLocationFormatValue();
+    refreshLocationIntervalValue();
     updateLocationRowState();
     updatePreview();
     }
@@ -272,8 +282,15 @@ public class WatermarkSettingsFragment extends Fragment {
             helper.setText(getString(R.string.helper_watermark_preview));
         }
         if(prefs.isLocalisationEnabled()){
-            // Anonymized dummy coordinates (x placeholders prevent revealing real location structure)
-            baseLine += "\nLat: 24.x6xx  Lon: 67.x0xx";
+            // Show location format preview with anonymized/fictional values
+            String format = prefs.getWatermarkLocationFormat();
+            if("address".equals(format)){
+                // Preview with fictional full address (mirrors Nominatim display_name style)
+                baseLine += "\nLat= 48.XXX, Lon= 2.XXX\nMain Street, Sample City, Region, Country";
+            } else {
+                // Coordinates only (default) — partially censored
+                baseLine += "\nLat= 48.XXX, Lon= 2.XXX";
+            }
         }
         // Add custom text on line 2 (or line 3 if location enabled)
         String customText = prefs.getWatermarkCustomText();
@@ -336,6 +353,80 @@ public class WatermarkSettingsFragment extends Fragment {
     private String formatNow(){
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", java.util.Locale.getDefault());
         return sdf.format(new java.util.Date());
+    }
+
+    private void refreshLocationFormatValue(){
+        if(valueLocationFormat==null) return;
+        String format = prefs.getWatermarkLocationFormat();
+        if("address".equals(format)){
+            valueLocationFormat.setText(getString(R.string.location_format_address));
+        } else {
+            valueLocationFormat.setText(getString(R.string.location_format_coordinates));
+        }
+    }
+
+    private void refreshLocationIntervalValue(){
+        if(valueLocationInterval==null) return;
+        long intervalMs = prefs.getWatermarkUpdateInterval();
+        double seconds = intervalMs / 1000.0;
+        valueLocationInterval.setText(String.format("%.1f seconds", seconds));
+    }
+
+    private void showLocationFormatBottomSheet(){
+        final String resultKey = "picker_result_location_format";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(id!=null){
+                    prefs.setWatermarkLocationFormat(id);
+                    refreshLocationFormatValue();
+                    updatePreview();
+                    FLog.d(TAG, "Location format set: " + id);
+                }
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("coordinates", getString(R.string.location_format_coordinates), (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("address", getString(R.string.location_format_address), (String) null));
+        String current = prefs.getWatermarkLocationFormat();
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+            getString(R.string.location_format_title), items, current, resultKey, getString(R.string.helper_location_format));
+        sheet.show(getParentFragmentManager(), "location_format_sheet");
+    }
+
+    private void showLocationIntervalBottomSheet(){
+        final String resultKey = "picker_result_location_interval";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
+                String id = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if(id!=null){
+                    try {
+                        long intervalMs = Long.parseLong(id);
+                        prefs.setWatermarkUpdateInterval(intervalMs);
+                        refreshLocationIntervalValue();
+                        FLog.d(TAG, "Location update interval set: " + intervalMs + "ms");
+                    } catch(NumberFormatException e){
+                        FLog.w(TAG, "Invalid interval value: " + id);
+                    }
+                }
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem("1000", "1 second (minimum — respects Nominatim API rate limit)", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("2000", "2 seconds", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("5000", "5 seconds (Default)", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("10000", "10 seconds", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("15000", "15 seconds", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("30000", "30 seconds", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("60000", "1 minute", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("180000", "3 minutes", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("300000", "5 minutes", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("600000", "10 minutes", (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem("3600000", "1 hour", (String) null));
+        String currentMs = String.valueOf(prefs.getWatermarkUpdateInterval());
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+            getString(R.string.location_update_interval_title), items, currentMs, resultKey, getString(R.string.location_update_interval_helper));
+        sheet.show(getParentFragmentManager(), "location_interval_sheet");
     }
 
     // Removed legacy spinner index/value helpers (unified bottom sheet now)

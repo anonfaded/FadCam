@@ -38,33 +38,34 @@ public class LocationHelper {
 
     public void startLocationUpdates() {
         if (provider != null && !isInitializing.getAndSet(true)) {
-            FLog.d(TAG, "LOCATION_HELPER: Starting location updates");
+            FLog.d(TAG, "🗺️ LOCATION_HELPER: Starting location updates with 300ms polling");
             provider.startLocationProvider(new IMyLocationConsumer() {
                 @Override
                 public void onLocationChanged(Location location, IMyLocationProvider source) {
                     if (location != null) {
                         lastLocationUpdateTime = System.currentTimeMillis();
                         currentLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
-                        FLog.d(TAG, "LOCATION_HELPER: Location updated: " + 
-                            currentLocation.getLatitude() + ", " + 
-                            currentLocation.getLongitude() + 
-                            " (accuracy: " + location.getAccuracy() + "m)");
+                        FLog.d(TAG, "✅ LOCATION_HELPER: GPS updated to " + 
+                            String.format("%.4f", currentLocation.getLatitude()) + ", " + 
+                            String.format("%.4f", currentLocation.getLongitude()) + 
+                            " (accuracy: " + String.format("%.0f", location.getAccuracy()) + "m)");
                     } else {
-                        FLog.w(TAG, "LOCATION_HELPER: Received null location update");
+                        FLog.w(TAG, "❌ LOCATION_HELPER: Received null location update");
                     }
                     isInitializing.set(false);
                 }
             });
 
-            // If we don't get a location update in 5 seconds, log a warning
+            // If we don't get a location update in 30 seconds, log a warning.
+            // Cold GPS start can take 30-60s, so 5s was a false alarm on many devices.
             mainHandler.postDelayed(() -> {
                 if (currentLocation == null) {
-                    FLog.w(TAG, "LOCATION_HELPER: No location updates received after 5 seconds");
+                    FLog.w(TAG, "⚠️ LOCATION_HELPER: No GPS fix after 30 seconds (check permission / GPS enabled)");
                     isInitializing.set(false);
                 }
-            }, 5000);
+            }, 30000);
         } else {
-            FLog.w(TAG, "LOCATION_HELPER: Location provider is null or already initializing");
+            FLog.w(TAG, "❌ LOCATION_HELPER: Provider null or already initializing");
         }
     }
 
@@ -96,15 +97,20 @@ public class LocationHelper {
             return null;
         }
         
-        FLog.d(TAG, "LOCATION_HELPER: Providing location: " + 
-            currentLocation.getLatitude() + ", " + currentLocation.getLongitude());
+        // Redact to ~1km precision for log privacy
+        FLog.d(TAG, "LOCATION_HELPER: Providing location: ~" +
+            String.format(java.util.Locale.US, "%.2f", currentLocation.getLatitude()) + ", ~" +
+            String.format(java.util.Locale.US, "%.2f", currentLocation.getLongitude()));
         return currentLocation;
     }
 
     public String getLocationData() {
         FLog.d(TAG, "LOCATION_HELPER: getLocationData called");
         if (currentLocation != null) {
-            FLog.d(TAG, "LOCATION_HELPER: Location data found");
+            FLog.d(TAG, "LOCATION_HELPER: Location data found (~" +
+                String.format(java.util.Locale.US, "%.2f", currentLocation.getLatitude()) + ", ~" +
+                String.format(java.util.Locale.US, "%.2f", currentLocation.getLongitude()) + ")");
+            // Return full precision for the actual watermark text
             return "\nLat= " + currentLocation.getLatitude() + ", Lon= " + currentLocation.getLongitude();
         }
         FLog.d(TAG, "LOCATION_HELPER: Location data not found");

@@ -1188,7 +1188,7 @@ public class GLWatermarkRenderer {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         watermarkRectBuffer.put(rectVerts).position(0);
-        FLog.d(TAG, "🎬 Watermark viewport: " + vpW + "x" + vpH + "px, ndcSize=" + String.format("%.3f", ndcWidth) + "x" + String.format("%.3f", ndcHeight) + ", targetFraction=" + String.format("%.2f%%", targetFractionOfWidth * 100) + ", portrait=" + isPortrait);
+        FLog.v(TAG, "🎬 Watermark viewport: " + vpW + "x" + vpH + "px, ndcSize=" + String.format("%.3f", ndcWidth) + "x" + String.format("%.3f", ndcHeight) + ", targetFraction=" + String.format("%.2f%%", targetFractionOfWidth * 100) + ", portrait=" + isPortrait);
 
         lastWatermarkVpW = vpW;
         lastWatermarkVpH = vpH;

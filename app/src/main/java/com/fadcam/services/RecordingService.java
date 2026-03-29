@@ -131,7 +131,12 @@ public class RecordingService extends Service {
     private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
 
     private LocationHelper locationHelper;
+    private LocationGeocoder locationGeocoder;
     private GeotagHelper geotagHelper;
+    
+    // Location watermark update tracking - separate from main watermark update
+    private long lastLocationWatermarkUpdateMs = 0;
+    private String cachedLocationWatermarkText = "";
 
     private RecordingState recordingState = RecordingState.NONE;
     private boolean previewOnlyActive = false;
@@ -238,6 +243,9 @@ public class RecordingService extends Service {
         // Only initialize LocationHelper if location is explicitly enabled
         if (sharedPreferencesManager != null && sharedPreferencesManager.isLocalisationEnabled()) {
             locationHelper = new LocationHelper(this); // For watermark text
+            // Also initialize geocoder for reverse geocoding (non-blocking, cached)
+            // Uses Nominatim (free, open-source) - no API keys needed
+            locationGeocoder = new LocationGeocoder();
         } else {
             FLog.d(TAG, "Location feature disabled, skipping LocationHelper initialization");
         }
@@ -1574,6 +1582,15 @@ public class RecordingService extends Service {
             }
         }
 
+        if (locationGeocoder != null) {
+            try {
+                locationGeocoder.shutdown();
+                FLog.d(TAG, "LocationGeocoder: Shutdown geocoding service");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error shutting down LocationGeocoder", e);
+            }
+        }
+
         // Force recording to stop if somehow it's still active
         if (recordingState != RecordingState.NONE) {
             FLog.w(TAG, "Service being destroyed while recording is active. Forcing stop.");
@@ -2856,16 +2873,24 @@ public class RecordingService extends Service {
         String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
         String customText = sharedPreferencesManager.getWatermarkCustomText();
         String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+        String finalText;
         switch (watermarkOption) {
             case "timestamp_fadcam":
-                return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                break;
             case "timestamp":
-                return getCurrentTimestamp() + locationText + customTextLine;
+                finalText = getCurrentTimestamp() + locationText + customTextLine;
+                break;
             case "no_watermark":
-                return "";
+                finalText = "";
+                break;
             default:
-                return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
         }
+        if (!finalText.isEmpty()) {
+            FLog.d(TAG, "🎬 Watermark text generated: [" + finalText.replace("\n", " | ") + "]");
+        }
+        return finalText;
     }
 
     private void ensureWatermarkInfoProvider() {
@@ -2881,17 +2906,24 @@ public class RecordingService extends Service {
                 String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
                 String customText = sharedPreferencesManager.getWatermarkCustomText();
                 String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-
+                String finalText;
                 switch (watermarkOption) {
                     case "timestamp_fadcam":
-                        return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                        finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                        break;
                     case "timestamp":
-                        return getCurrentTimestamp() + locationText + customTextLine;
+                        finalText = getCurrentTimestamp() + locationText + customTextLine;
+                        break;
                     case "no_watermark":
-                        return "";
+                        finalText = "";
+                        break;
                     default:
-                        return "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                        finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                 }
+                if (!finalText.isEmpty()) {
+                    FLog.d(TAG, "🎬 WATERMARK_PROVIDER: " + finalText.replace("\n", " | "));
+                }
+                return finalText;
             }
         };
     }
@@ -4308,13 +4340,78 @@ public class RecordingService extends Service {
 
     private String getLocationData() {
         if (locationHelper == null) {
-            FLog.w(TAG, "LocationHelper not initialized, cannot get location data.");
+            FLog.w(TAG, "❌ LocationHelper not initialized - location watermark DISABLED");
             return ""; // Return empty, not "Not available" to avoid user confusion
         }
-        String locData = locationHelper.getLocationData();
-        // Avoid adding "Location not available" to watermark, just add lat/lon if
-        // present
-        return (locData != null && locData.contains("Lat=")) ? locData : "";
+        
+        long currentTimeMs = System.currentTimeMillis();
+        long locationUpdateIntervalMs = sharedPreferencesManager.getWatermarkUpdateInterval();
+        long timeSinceLastUpdateMs = currentTimeMs - lastLocationWatermarkUpdateMs;
+        
+        FLog.d(TAG, "📍 Location update check: interval=" + locationUpdateIntervalMs + "ms, elapsed=" + timeSinceLastUpdateMs + "ms");
+        
+        // Only refresh location data if enough time has passed
+        if (timeSinceLastUpdateMs >= locationUpdateIntervalMs) {
+            FLog.d(TAG, "📍 Fetching fresh location data (interval elapsed)");
+            
+            String locData = locationHelper.getLocationData();
+            // Avoid logging precise coordinates; getLocationData() already logs a redacted version
+            FLog.d(TAG, "📍 Raw location from helper: " + (locData != null && locData.contains("Lat=") ? "[coords present]" : "[no coords]"));
+            
+            // Avoid adding "Location not available" to watermark, just add lat/lon if present
+            if (locData == null || !locData.contains("Lat=")) {
+                FLog.w(TAG, "❌ Location data invalid or missing GPS coordinates");
+                cachedLocationWatermarkText = "";
+            } else {
+                // Apply format preference
+                String format = sharedPreferencesManager.getWatermarkLocationFormat();
+                FLog.d(TAG, "📍 Location format preference: " + format);
+                
+                if ("address".equals(format)) {
+                    if (locationGeocoder != null) {
+                        // Get coordinates from LocationHelper's current location
+                        org.osmdroid.util.GeoPoint geoPoint = locationHelper.getCurrentLocation();
+                        if (geoPoint != null) {
+                            // Log redacted coords (~1km precision) for privacy
+                            FLog.d(TAG, "📍 Coordinates: ~" + String.format(java.util.Locale.US, "%.2f", geoPoint.getLatitude()) + ", ~" + String.format(java.util.Locale.US, "%.2f", geoPoint.getLongitude()));
+                            
+                            // Trigger async geocoding if not already cached
+                            locationGeocoder.geocodeAsync(geoPoint.getLatitude(), geoPoint.getLongitude(), result -> {
+                                FLog.d(TAG, "🌐 Geocode callback: result ready=" + !result.isEmpty());
+                            });
+                            
+                            // Try to get cached result if available
+                            LocationGeocoder.GeocodeResult result = locationGeocoder.getCurrentResult();
+                            if (!result.isEmpty()) {
+                                cachedLocationWatermarkText = "\nLat= " + geoPoint.getLatitude() + ", Lon= " + geoPoint.getLongitude()
+                                     + "\n" + result.formatted;
+                                FLog.d(TAG, "📍 address format applied");
+                            } else {
+                                cachedLocationWatermarkText = locData;
+                                FLog.d(TAG, "📍 Geocoding result not ready, using coordinates only");
+                            }
+                        } else {
+                            cachedLocationWatermarkText = locData;
+                            FLog.w(TAG, "❌ GeoPoint is null, using coordinates only");
+                        }
+                    } else {
+                        cachedLocationWatermarkText = locData;
+                        FLog.w(TAG, "❌ LocationGeocoder not initialized, using coordinates only");
+                    }
+                } else {
+                    // Default: coordinates only
+                    cachedLocationWatermarkText = locData;
+                    FLog.d(TAG, "📍 Using coordinates-only format");
+                }
+            }
+            
+            lastLocationWatermarkUpdateMs = currentTimeMs;
+            FLog.d(TAG, "📍 Location watermark cache updated");
+        } else {
+            FLog.d(TAG, "📍 Using cached location data (too soon to update)");
+        }
+        
+        return cachedLocationWatermarkText;
     }
 
     private String escapeFFmpegString(String text) {
@@ -5086,9 +5183,15 @@ public class RecordingService extends Service {
                     }
 
                     locationHelper = new LocationHelper(this);
-                    FLog.d(TAG, "Created new LocationHelper for watermark");
+                    // Also initialize geocoder for reverse geocoding
+                    // Uses Nominatim (free, open-source) - no API keys needed
+                    if (locationGeocoder != null) {
+                        locationGeocoder.shutdown();
+                    }
+                    locationGeocoder = new LocationGeocoder();
+                    FLog.d(TAG, "Created new LocationHelper and LocationGeocoder for watermark");
                 } catch (Exception e) {
-                    FLog.e(TAG, "Error initializing LocationHelper", e);
+                    FLog.e(TAG, "Error initializing LocationHelper/Geocoder", e);
                 }
             } else {
                 FLog.d(TAG, "LocationHelper already exists, no need to recreate");
@@ -5101,6 +5204,15 @@ public class RecordingService extends Service {
                     locationHelper = null;
                 } catch (Exception e) {
                     FLog.e(TAG, "Error stopping LocationHelper", e);
+                }
+            }
+            if (locationGeocoder != null) {
+                try {
+                    locationGeocoder.shutdown();
+                    locationGeocoder = null;
+                    FLog.d(TAG, "Shutdown LocationGeocoder");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error shutting down LocationGeocoder", e);
                 }
             }
         }

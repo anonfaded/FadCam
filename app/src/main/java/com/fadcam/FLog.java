@@ -25,6 +25,9 @@ public final class FLog {
 
     // Basic redaction patterns (intentionally conservative)
     private static final Pattern URL_PATTERN = Pattern.compile("(https?://[^\\s\\]]+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern IP_PATTERN = Pattern.compile(
+        "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"
+    );
     private static final Pattern TOKEN_PATTERN = Pattern.compile(
         "(?i)\\b(token|apikey|api_key|access_key|secret|password|pass|auth|bearer)\\b\\s*[:=]\\s*([A-Za-z0-9._\\-+/=]{6,})"
     );
@@ -173,6 +176,9 @@ public final class FLog {
 
         // Scrub URLs
         out = URL_PATTERN.matcher(out).replaceAll("[REDACTED_URL]");
+        
+        // Scrub IP addresses
+        out = IP_PATTERN.matcher(out).replaceAll("[REDACTED_IP]");
 
         // Scrub obvious tokens
         Matcher tokenMatcher = TOKEN_PATTERN.matcher(out);
