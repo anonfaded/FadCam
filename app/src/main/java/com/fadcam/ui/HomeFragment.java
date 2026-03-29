@@ -6198,6 +6198,52 @@ public class HomeFragment extends BaseFragment {
     protected void onModeSpecificPreviewSurfaceChanged(@Nullable Surface surface, int width, int height) {
     }
 
+    protected boolean isModePausedForElapsedAppearance() {
+        return isPaused();
+    }
+
+    protected boolean isModeRecordingForElapsedAppearance() {
+        return isRecording();
+    }
+
+    protected void refreshElapsedHeroAppearance() {
+        updateElapsedHeroAppearance();
+    }
+
+    protected void requestAnimateNextPreviewTransition() {
+        animateNextPreviewTransition = true;
+    }
+
+    protected boolean consumeAnimateNextPreviewTransition() {
+        boolean shouldAnimate = animateNextPreviewTransition;
+        animateNextPreviewTransition = false;
+        return shouldAnimate;
+    }
+
+    protected void setPreviewOpenAnimating(boolean animating) {
+        isPreviewOpenAnimating = animating;
+    }
+
+    protected void setPreviewCloseAnimating(boolean animating) {
+        isPreviewCloseAnimating = animating;
+    }
+
+    protected void setPendingPreviewReveal(boolean pending) {
+        pendingIrisOpenReveal = pending;
+    }
+
+    protected void runHomeAvatarState(boolean enabled, boolean animate) {
+        applyHomeAvatarState(enabled, animate);
+    }
+
+    protected void runHintVisibilityAnimated(boolean show) {
+        setHintVisibilityAnimated(show);
+    }
+
+    protected void runIrisOpenReveal() {
+        performIrisOpenReveal();
+    }
+
     /**
      * Updates storage UI with cached storage information for instant display
      */
@@ -6589,7 +6635,7 @@ public class HomeFragment extends BaseFragment {
      * @param applyChanges Runnable that sets icon, backgroundTint, enabled state, etc.
      * @param slideUp      {@code true} → label slides UP (Start → Stop); {@code false} → DOWN.
      */
-    private void applyButtonTransition(
+    protected void applyButtonTransition(
             @NonNull MaterialButton button,
             @NonNull CharSequence newText,
             @Nullable android.graphics.drawable.Drawable newIcon,
@@ -6607,7 +6653,7 @@ public class HomeFragment extends BaseFragment {
         button.setText(newText);
     }
 
-    private void animateButtonTransition(
+    protected void animateButtonTransition(
             @NonNull MaterialButton button,
             @NonNull CharSequence newText,
             @Nullable android.graphics.drawable.Drawable newIcon,
@@ -11286,7 +11332,7 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    private boolean isCardRailCurrentlyFolded() {
+    protected boolean isCardRailCurrentlyFolded() {
         return sharedPreferencesManager != null
                 && sharedPreferencesManager.sharedPreferences.getBoolean(
                 Constants.PREF_HOME_CARD_RAIL_FOLDED,
@@ -12157,7 +12203,7 @@ public class HomeFragment extends BaseFragment {
         int iconColor;
         int stateIconRes;
 
-        if (isPaused()) {
+        if (isModePausedForElapsedAppearance()) {
             backgroundColor = useBlackCard
                     ? Color.parseColor("#E6000000")
                     : useWhiteCard ? Color.parseColor("#F7F3EE") : Color.TRANSPARENT;
@@ -12166,7 +12212,7 @@ public class HomeFragment extends BaseFragment {
             subtitleColor = useWhiteCard ? Color.parseColor("#A07024") : Color.parseColor("#D8B06C");
             iconColor = useWhiteCard ? Color.parseColor("#A07024") : Color.parseColor("#C8923A");
             stateIconRes = R.drawable.pause_rounded;
-        } else if (isRecording()) {
+        } else if (isModeRecordingForElapsedAppearance()) {
             backgroundColor = useBlackCard
                     ? Color.parseColor("#E6000000")
                     : useWhiteCard ? Color.parseColor("#F7FBF8") : Color.TRANSPARENT;

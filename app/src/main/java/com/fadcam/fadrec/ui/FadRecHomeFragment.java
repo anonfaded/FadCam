@@ -4,6 +4,8 @@ import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.Manifest;
 import android.app.Activity;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -67,6 +69,12 @@ public class FadRecHomeFragment extends HomeFragment {
     private Surface previewSurface;
     private int previewSurfaceWidth = -1;
     private int previewSurfaceHeight = -1;
+    private final android.os.Handler previewUiHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean previewOpenSequenceRunning = false;
+    private boolean previewCloseSequenceRunning = false;
+    private boolean deferredStopPreviewOnly = false;
+    private boolean deferredDetachPreviewSurface = false;
+    private boolean pendingPreviewOpenUntilSurfaceReady = false;
     private SharedPreferencesManager sharedPreferencesManager;
     
     // Broadcast receivers for screen recording state
@@ -86,6 +94,7 @@ public class FadRecHomeFragment extends HomeFragment {
     private Runnable timerUpdateRunnable;
     private MaterialButton buttonFadRecMute;
     private boolean screenCardInfoInitialized = false;
+    private final Runnable pendingStopStateReconcileRunnable = this::queryScreenRecordingState;
     
     // Material loading dialog for annotation service startup
     private androidx.appcompat.app.AlertDialog loadingDialog;
@@ -144,20 +153,11 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (resultCode == Activity.RESULT_OK && data != null) {
                     if (pendingPreviewOnlyPermission) {
                         pendingPreviewOnlyPermission = false;
-                        if (previewSurface == null || !previewSurface.isValid()) {
-                            Toast.makeText(requireContext(), com.fadcam.R.string.photo_capture_preview_unavailable, Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        isScreenPreviewEnabled = true;
-                        isScreenPreviewOnlyActive = true;
-                        mediaProjectionHelper.startScreenPreview(
-                            Activity.RESULT_OK,
-                            data,
-                            previewSurface,
-                            previewSurfaceWidth,
-                            previewSurfaceHeight
-                        );
-                        updateModeSpecificPreviewVisibility();
+                        Toast.makeText(
+                            requireContext(),
+                            com.fadcam.R.string.fullscreen_preview_not_recording,
+                            Toast.LENGTH_LONG
+                        ).show();
                     } else {
                         // FLog.d(TAG, "Screen capture permission granted, starting recording");
                         // RESULT_OK is -1, so we pass Activity.RESULT_OK constant instead
@@ -168,6 +168,8 @@ public class FadRecHomeFragment extends HomeFragment {
                         syncMuteUiState();
                     }
                 } else {
+                    pendingPreviewOnlyPermission = false;
+                    updateUIForRecordingState();
                     pendingPreviewOnlyPermission = false;
                     // FLog.w(TAG, "Screen capture permission denied: resultCode=" + resultCode);
                     Toast.makeText(requireContext(), 
@@ -920,10 +922,17 @@ public class FadRecHomeFragment extends HomeFragment {
                 lastClickTime = currentTime;
                 
                 if (screenRecordingState == ScreenRecordingState.NONE) {
-                    // Start recording
+                    if (buttonPauseResume != null) {
+                        buttonPauseResume.setEnabled(false);
+                        buttonPauseResume.setAlpha(0.5f);
+                    }
                     requestScreenRecordingPermissionAndStart();
-                } else {
-                    // Stop recording
+                } else if (screenRecordingState != ScreenRecordingState.STOPPING) {
+                    renderPrimaryButtonForRecordingState(false);
+                    if (buttonPauseResume != null) {
+                        buttonPauseResume.setEnabled(false);
+                        buttonPauseResume.setAlpha(0.5f);
+                    }
                     stopScreenRecording();
                 }
             });
@@ -951,9 +960,11 @@ public class FadRecHomeFragment extends HomeFragment {
                 
                 if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
                     // Pause recording
+                    buttonPauseResume.setEnabled(false);
                     mediaProjectionHelper.pauseScreenRecording();
                 } else if (screenRecordingState == ScreenRecordingState.PAUSED) {
                     // Resume recording
+                    buttonPauseResume.setEnabled(false);
                     mediaProjectionHelper.resumeScreenRecording();
                 }
             });
@@ -1111,7 +1122,49 @@ public class FadRecHomeFragment extends HomeFragment {
      */
     private void stopScreenRecording() {
         FLog.d(TAG, "Stopping screen recording");
+        timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
         mediaProjectionHelper.stopScreenRecording();
+        timerHandler.postDelayed(pendingStopStateReconcileRunnable, 900L);
+    }
+
+    private void renderPrimaryButtonForRecordingState(boolean recordingActive) {
+        if (!isAdded() || buttonStartStop == null) {
+            return;
+        }
+
+        applyButtonTransition(
+            buttonStartStop,
+            recordingActive
+                ? getString(com.fadcam.R.string.button_stop)
+                : getString(com.fadcam.R.string.fadrec_start_screen_recording),
+            AppCompatResources.getDrawable(
+                requireContext(),
+                recordingActive
+                    ? com.fadcam.R.drawable.stop_rounded
+                    : com.fadcam.R.drawable.play_button_rounded
+            ),
+            () -> {
+                buttonStartStop.setBackgroundTintList(
+                    recordingActive
+                        ? ContextCompat.getColorStateList(requireContext(), com.fadcam.R.color.button_stop)
+                        : ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                );
+                buttonStartStop.setAlpha(1.0f);
+            }
+        );
+    }
+
+    private void queryScreenRecordingState() {
+        if (!isAdded()) {
+            return;
+        }
+        try {
+            Intent queryIntent = new Intent(requireContext(), ScreenRecordingService.class);
+            queryIntent.setAction(Constants.INTENT_ACTION_QUERY_SCREEN_RECORDING_STATE);
+            requireContext().startService(queryIntent);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to query ScreenRecordingService state", e);
+        }
     }
 
     /**
@@ -1136,6 +1189,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     switch (action) {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_STARTED");
+                            timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             isScreenPreviewOnlyActive = false;
                             persistRecordingState(screenRecordingState);
@@ -1147,9 +1201,11 @@ public class FadRecHomeFragment extends HomeFragment {
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_STOPPED");
+                            timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.NONE;
                             isScreenPreviewOnlyActive = false;
                             isScreenPreviewEnabled = false;
+                            pendingPreviewOpenUntilSurfaceReady = false;
                             persistRecordingState(screenRecordingState);
                             isRecordingForcedMuted = false;
                             updateUIForRecordingState();
@@ -1160,6 +1216,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_PAUSED");
+                            timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.PAUSED;
                             isScreenPreviewOnlyActive = false;
                             persistRecordingState(screenRecordingState);
@@ -1171,6 +1228,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
                             // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_RESUMED");
+                            timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             isScreenPreviewOnlyActive = false;
                             persistRecordingState(screenRecordingState);
@@ -1184,19 +1242,26 @@ public class FadRecHomeFragment extends HomeFragment {
                             String stateName = intent.getStringExtra("recordingState");
                             if (stateName != null) {
                                 try {
-                                    screenRecordingState = ScreenRecordingState.valueOf(stateName);
+                                    ScreenRecordingState callbackState = ScreenRecordingState.valueOf(stateName);
+                                    if (callbackState != ScreenRecordingState.STOPPING) {
+                                        screenRecordingState = callbackState;
+                                    }
                                     persistRecordingState(screenRecordingState);
                                 } catch (IllegalArgumentException ignored) {
                                 }
                             }
-                            isScreenPreviewOnlyActive = intent.getBooleanExtra(
+                            boolean previewOnlyActive = intent.getBooleanExtra(
                                 Constants.EXTRA_SCREEN_PREVIEW_ONLY_ACTIVE,
                                 false
                             );
+                            isScreenPreviewOnlyActive = previewOnlyActive;
                             isScreenPreviewEnabled = intent.getBooleanExtra(
                                 Constants.EXTRA_SCREEN_PREVIEW_ENABLED,
                                 isScreenPreviewEnabled
                             );
+                            if (screenRecordingState == ScreenRecordingState.NONE) {
+                                timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
+                            }
                             updateUIForRecordingState();
                             syncMuteUiState();
                             break;
@@ -1230,6 +1295,9 @@ public class FadRecHomeFragment extends HomeFragment {
                             
                         case Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED:
                             // FLog.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_DENIED");
+                            pendingPreviewOnlyPermission = false;
+                            pendingPreviewOpenUntilSurfaceReady = false;
+                            updateUIForRecordingState();
                             Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
                             break;
                             
@@ -1323,24 +1391,23 @@ public class FadRecHomeFragment extends HomeFragment {
             buttonStartStop.setEnabled(true);
             buttonStartStop.setClickable(true);
             buttonStartStop.setAlpha(1.0f);
-            if (screenRecordingState == ScreenRecordingState.NONE) {
-                // IDLE STATE: Green start button
-                buttonStartStop.setText(com.fadcam.R.string.fadrec_start_screen_recording);
-                buttonStartStop.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.play_button_rounded)
-                );
-                // Green color for start button
-                animateButtonColor(buttonStartStop, android.graphics.Color.parseColor("#4CAF50"));
-            } else {
-                // RECORDING STATE: Red stop button
-                buttonStartStop.setText(com.fadcam.R.string.button_stop);
-                buttonStartStop.setIcon(
-                    AppCompatResources.getDrawable(requireContext(), com.fadcam.R.drawable.stop_rounded)
-                );
-                // Red color for stop button
-                animateButtonColor(buttonStartStop, 
-                    androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop));
-            }
+            applyButtonTransition(
+                buttonStartStop,
+                screenRecordingState == ScreenRecordingState.NONE
+                    ? getString(com.fadcam.R.string.fadrec_start_screen_recording)
+                    : getString(com.fadcam.R.string.button_stop),
+                AppCompatResources.getDrawable(
+                    requireContext(),
+                    screenRecordingState == ScreenRecordingState.NONE
+                        ? com.fadcam.R.drawable.play_button_rounded
+                        : com.fadcam.R.drawable.stop_rounded
+                ),
+                () -> buttonStartStop.setBackgroundTintList(
+                    screenRecordingState == ScreenRecordingState.NONE
+                        ? ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                        : ContextCompat.getColorStateList(requireContext(), com.fadcam.R.color.button_stop)
+                )
+            );
         }
         
         // Update Pause/Resume button (always visible, icon-only like FadCam)
@@ -1380,6 +1447,7 @@ public class FadRecHomeFragment extends HomeFragment {
         if (screenRecordingState == ScreenRecordingState.NONE && !isScreenPreviewOnlyActive) {
             isScreenPreviewEnabled = false;
         }
+        refreshElapsedHeroAppearance();
         updateModeSpecificPreviewVisibility();
         
         FLog.d(TAG, "UI updated for state: " + screenRecordingState);
@@ -1399,28 +1467,6 @@ public class FadRecHomeFragment extends HomeFragment {
         }
     }
     
-    /**
-     * Animate button background color change
-     */
-    private void animateButtonColor(MaterialButton button, int toColor) {
-        try {
-            android.animation.ValueAnimator colorAnimator = android.animation.ValueAnimator.ofArgb(
-                ((android.graphics.drawable.ColorDrawable) button.getBackground()).getColor(),
-                toColor
-            );
-            colorAnimator.setDuration(300);
-            colorAnimator.addUpdateListener(animator -> 
-                button.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf((Integer) animator.getAnimatedValue())
-                )
-            );
-            colorAnimator.start();
-        } catch (Exception e) {
-            // Fallback to instant change
-            button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(toColor));
-        }
-    }
-
     private void updateMuteButtonUi() {
         if (buttonFadRecMute == null || !isAdded()) return;
         boolean muted = sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingMuted();
@@ -1614,6 +1660,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     tvRemainingSubtitle.setText(getString(R.string.recording_remaining_time));
                 }
 
+                refreshElapsedHeroAppearance();
                 updateStartStopButtonForFoldedState();
             });
             
@@ -1639,6 +1686,16 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     @Override
+    protected boolean isModePausedForElapsedAppearance() {
+        return screenRecordingState == ScreenRecordingState.PAUSED;
+    }
+
+    @Override
+    protected boolean isModeRecordingForElapsedAppearance() {
+        return screenRecordingState == ScreenRecordingState.IN_PROGRESS;
+    }
+
+    @Override
     protected int getPreviewEnableHintResId() {
         return com.fadcam.R.string.fadrec_preview_enable_hint;
     }
@@ -1652,29 +1709,38 @@ public class FadRecHomeFragment extends HomeFragment {
         if (screenRecordingState == ScreenRecordingState.IN_PROGRESS
                 || screenRecordingState == ScreenRecordingState.PAUSED) {
             isScreenPreviewEnabled = !isScreenPreviewEnabled;
-            pushPreviewSurfaceToService();
-            updateModeSpecificPreviewVisibility();
+            if (isScreenPreviewEnabled) {
+                if (ensurePreviewSurfaceReady()) {
+                    pendingPreviewOpenUntilSurfaceReady = false;
+                    requestAnimateNextPreviewTransition();
+                    pushPreviewSurfaceToService();
+                    updateModeSpecificPreviewVisibility();
+                } else {
+                    pendingPreviewOpenUntilSurfaceReady = true;
+                }
+            } else {
+                pendingPreviewOpenUntilSurfaceReady = false;
+                requestAnimateNextPreviewTransition();
+                deferredDetachPreviewSurface = true;
+                updateModeSpecificPreviewVisibility();
+            }
             return true;
         }
 
         if (isScreenPreviewOnlyActive) {
             isScreenPreviewOnlyActive = false;
             isScreenPreviewEnabled = false;
-            mediaProjectionHelper.stopScreenPreview();
+            requestAnimateNextPreviewTransition();
+            deferredStopPreviewOnly = true;
             updateModeSpecificPreviewVisibility();
             return true;
         }
 
-        if (previewSurface == null || !previewSurface.isValid()) {
-            com.fadcam.Utils.showQuickToast(
-                requireContext(),
-                com.fadcam.R.string.photo_capture_preview_unavailable
-            );
-            return true;
-        }
-
-        pendingPreviewOnlyPermission = true;
-        requestScreenCapturePermission();
+        Toast.makeText(
+            requireContext(),
+            com.fadcam.R.string.fullscreen_preview_not_recording,
+            Toast.LENGTH_LONG
+        ).show();
         return true;
     }
 
@@ -1693,25 +1759,182 @@ public class FadRecHomeFragment extends HomeFragment {
             && (screenRecordingState == ScreenRecordingState.IN_PROGRESS
             || screenRecordingState == ScreenRecordingState.PAUSED
             || isScreenPreviewOnlyActive);
+        boolean shouldAnimate = consumeAnimateNextPreviewTransition();
 
-        if (textureView != null) {
-            textureView.setVisibility(showPreview ? View.VISIBLE : View.INVISIBLE);
-            textureView.setAlpha(1f);
+        if (showPreview && previewOpenSequenceRunning) {
+            return;
         }
-        if (flPreviewAvatar != null) {
-            flPreviewAvatar.setVisibility(showPreview ? View.GONE : View.VISIBLE);
-            flPreviewAvatar.setAlpha(1f);
-            flPreviewAvatar.setScaleX(1f);
-            flPreviewAvatar.setScaleY(1f);
+        if (!showPreview && previewCloseSequenceRunning) {
+            return;
         }
+
         if (tvPreviewPlaceholder != null) {
             tvPreviewPlaceholder.setVisibility(View.GONE);
         }
         if (tvPreviewHint != null) {
             tvPreviewHint.setText(getPreviewEnableHintResId());
-            tvPreviewHint.setVisibility(showPreview ? View.GONE : View.VISIBLE);
-            tvPreviewHint.setAlpha(0.75f);
         }
+
+        if (textureView == null || flPreviewAvatar == null) {
+            if (textureView != null) {
+                textureView.setVisibility(showPreview ? View.VISIBLE : View.INVISIBLE);
+                textureView.setAlpha(1f);
+            }
+            if (tvPreviewHint != null) {
+                tvPreviewHint.setVisibility(showPreview ? View.GONE : View.VISIBLE);
+                tvPreviewHint.setAlpha(0.75f);
+            }
+            return;
+        }
+
+        boolean avatarCurrentlyVisible = flPreviewAvatar.getVisibility() == View.VISIBLE;
+        if (showPreview) {
+            if (shouldAnimate) {
+                if (!avatarCurrentlyVisible) {
+                    flPreviewAvatar.setVisibility(View.VISIBLE);
+                    flPreviewAvatar.setAlpha(1f);
+                    flPreviewAvatar.setScaleX(1f);
+                    flPreviewAvatar.setScaleY(1f);
+                    flPreviewAvatar.setEnabled(true);
+                }
+
+                previewCloseSequenceRunning = false;
+                previewOpenSequenceRunning = true;
+                previewUiHandler.removeCallbacksAndMessages(null);
+                runHintVisibilityAnimated(false);
+                textureView.setVisibility(View.VISIBLE);
+                textureView.setAlpha(0f);
+                setPreviewOpenAnimating(true);
+                runHomeAvatarState(true, true);
+
+                previewUiHandler.postDelayed(() -> {
+                    if (!isAdded() || getView() == null) {
+                        previewOpenSequenceRunning = false;
+                        setPreviewOpenAnimating(false);
+                        return;
+                    }
+                    flPreviewAvatar.animate().cancel();
+                    flPreviewAvatar.animate()
+                        .alpha(0f)
+                        .scaleX(0.72f)
+                        .scaleY(0.72f)
+                        .setDuration(280)
+                        .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                        .withEndAction(() -> {
+                            flPreviewAvatar.setVisibility(View.INVISIBLE);
+                            flPreviewAvatar.setEnabled(false);
+                            flPreviewAvatar.setAlpha(1f);
+                            flPreviewAvatar.setScaleX(1f);
+                            flPreviewAvatar.setScaleY(1f);
+                        })
+                        .start();
+
+                    setPendingPreviewReveal(true);
+                    previewUiHandler.postDelayed(() -> {
+                        if (isAdded()) {
+                            setPendingPreviewReveal(false);
+                            runIrisOpenReveal();
+                        } else {
+                            setPreviewOpenAnimating(false);
+                        }
+                        previewOpenSequenceRunning = false;
+                    }, 2500L);
+                }, 480L);
+            } else {
+                previewOpenSequenceRunning = false;
+                textureView.setVisibility(View.VISIBLE);
+                textureView.setAlpha(1f);
+                flPreviewAvatar.setVisibility(View.INVISIBLE);
+                flPreviewAvatar.setEnabled(false);
+                runHintVisibilityAnimated(false);
+            }
+            return;
+        }
+
+        boolean previewCurrentlyVisible = textureView.getVisibility() == View.VISIBLE;
+        if (shouldAnimate && previewCurrentlyVisible) {
+            previewOpenSequenceRunning = false;
+            previewCloseSequenceRunning = true;
+            previewUiHandler.removeCallbacksAndMessages(null);
+            setPendingPreviewReveal(false);
+            setPreviewCloseAnimating(true);
+
+            runHomeAvatarState(true, false);
+            flPreviewAvatar.setEnabled(true);
+            flPreviewAvatar.setAlpha(1f);
+            flPreviewAvatar.setScaleX(1f);
+            flPreviewAvatar.setScaleY(1f);
+            flPreviewAvatar.setVisibility(View.VISIBLE);
+            textureView.setVisibility(View.VISIBLE);
+            textureView.setAlpha(1f);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP
+                && textureView.getWidth() > 0
+                && textureView.getHeight() > 0) {
+                int cx = textureView.getWidth() / 2;
+                int cy = textureView.getHeight() / 2;
+                float maxR = (float) Math.hypot(cx, cy);
+                android.animation.Animator irisClose = android.view.ViewAnimationUtils.createCircularReveal(
+                    textureView,
+                    cx,
+                    cy,
+                    maxR,
+                    0f
+                );
+                irisClose.setDuration(480L);
+                irisClose.setInterpolator(new android.view.animation.AccelerateInterpolator(1.3f));
+                irisClose.addListener(new android.animation.AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(android.animation.Animator animation) {
+                        setPreviewCloseAnimating(false);
+                        previewCloseSequenceRunning = false;
+                        textureView.setVisibility(View.INVISIBLE);
+                        textureView.setAlpha(1f);
+                        if (!isAdded()) {
+                            finalizeDeferredPreviewActions();
+                            return;
+                        }
+                        runHintVisibilityAnimated(true);
+                        View anchor = flPreviewAvatar;
+                        anchor.postDelayed(() -> {
+                            if (isAdded()) {
+                                runHomeAvatarState(false, true);
+                            }
+                            finalizeDeferredPreviewActions();
+                        }, 650L);
+                    }
+                });
+                irisClose.start();
+            } else {
+                textureView.animate().cancel();
+                textureView.animate()
+                    .alpha(0f)
+                    .setDuration(340L)
+                    .withEndAction(() -> {
+                        setPreviewCloseAnimating(false);
+                        previewCloseSequenceRunning = false;
+                        textureView.setVisibility(View.INVISIBLE);
+                        textureView.setAlpha(1f);
+                        runHintVisibilityAnimated(true);
+                        runHomeAvatarState(false, true);
+                        finalizeDeferredPreviewActions();
+                    })
+                    .start();
+            }
+            return;
+        }
+
+        previewCloseSequenceRunning = false;
+        textureView.setVisibility(View.INVISIBLE);
+        textureView.setAlpha(1f);
+        flPreviewAvatar.setVisibility(View.VISIBLE);
+        flPreviewAvatar.setEnabled(true);
+        flPreviewAvatar.setAlpha(1f);
+        flPreviewAvatar.setScaleX(1f);
+        flPreviewAvatar.setScaleY(1f);
+        runHintVisibilityAnimated(true);
+        runHomeAvatarState(false, false);
+        finalizeDeferredPreviewActions();
     }
 
     @Override
@@ -1719,7 +1942,45 @@ public class FadRecHomeFragment extends HomeFragment {
         previewSurface = surface;
         previewSurfaceWidth = width;
         previewSurfaceHeight = height;
+        if (pendingPreviewOpenUntilSurfaceReady
+            && surface != null
+            && surface.isValid()
+            && isScreenPreviewEnabled
+            && (screenRecordingState == ScreenRecordingState.IN_PROGRESS
+            || screenRecordingState == ScreenRecordingState.PAUSED)) {
+            pendingPreviewOpenUntilSurfaceReady = false;
+            requestAnimateNextPreviewTransition();
+            pushPreviewSurfaceToService();
+            updateModeSpecificPreviewVisibility();
+            return;
+        }
         pushPreviewSurfaceToService();
+    }
+
+    private boolean ensurePreviewSurfaceReady() {
+        if (!isAdded() || getView() == null) {
+            return false;
+        }
+        View maybeTextureView = getView().findViewById(com.fadcam.R.id.textureView);
+        if (!(maybeTextureView instanceof android.view.TextureView)) {
+            return previewSurface != null && previewSurface.isValid();
+        }
+
+        android.view.TextureView textureView = (android.view.TextureView) maybeTextureView;
+        textureView.setVisibility(View.VISIBLE);
+        textureView.setAlpha(0f);
+        textureView.requestLayout();
+        textureView.invalidate();
+
+        if (!textureView.isAvailable() || textureView.getSurfaceTexture() == null) {
+            return previewSurface != null && previewSurface.isValid();
+        }
+
+        Surface freshSurface = new Surface(textureView.getSurfaceTexture());
+        previewSurface = freshSurface;
+        previewSurfaceWidth = textureView.getWidth();
+        previewSurfaceHeight = textureView.getHeight();
+        return previewSurface.isValid();
     }
 
     private void pushPreviewSurfaceToService() {
@@ -1741,6 +2002,19 @@ public class FadRecHomeFragment extends HomeFragment {
             shouldPush ? previewSurfaceWidth : -1,
             shouldPush ? previewSurfaceHeight : -1
         );
+    }
+
+    private void finalizeDeferredPreviewActions() {
+        if (deferredDetachPreviewSurface) {
+            deferredDetachPreviewSurface = false;
+            pushPreviewSurfaceToService();
+        }
+        if (deferredStopPreviewOnly) {
+            deferredStopPreviewOnly = false;
+            if (mediaProjectionHelper != null) {
+                mediaProjectionHelper.stopScreenPreview();
+            }
+        }
     }
 
     @Override
@@ -1973,6 +2247,12 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Stop timer updates when fragment is paused
         stopTimerUpdates();
+        timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
+        previewUiHandler.removeCallbacksAndMessages(null);
+        previewOpenSequenceRunning = false;
+        previewCloseSequenceRunning = false;
+        setPendingPreviewReveal(false);
+        pendingPreviewOpenUntilSurfaceReady = false;
     }
 
     @Override

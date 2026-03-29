@@ -9,6 +9,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
@@ -38,6 +39,7 @@ public class ScreenRecordingPipeline {
     private static final String TAG = "ScreenRecPipeline";
     private static final String VIDEO_MIME_TYPE = "video/avc";
     private static final int VIDEO_IFRAME_INTERVAL = 1;
+    private static volatile boolean preferSoftwareAvcEncoder = false;
     
     private final Context context;
     private final WatermarkInfoProvider watermarkInfoProvider;
@@ -294,15 +296,16 @@ public class ScreenRecordingPipeline {
 
         int[][] candidates = buildEncoderSizeCandidates(displayWidth, displayHeight);
 
-        // Try hardware encoder first with multiple same-aspect resolutions.
-        for (int[] candidate : candidates) {
-            int candidateWidth = candidate[0];
-            int candidateHeight = candidate[1];
+        if (!preferSoftwareAvcEncoder) {
+            // First-start churn was coming from retrying hardware across many resolutions.
+            // Try hardware only once at the native-sized target. If it fails, prefer software
+            // for the rest of this process lifetime.
+            int candidateWidth = candidates[0][0];
+            int candidateHeight = candidates[0][1];
             try {
                 MediaCodec encoder = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
                 configureVideoEncoder(encoder, false, candidateWidth, candidateHeight);
 
-                // Success: adopt this encoder instance + dimensions.
                 videoEncoder = encoder;
                 screenWidth = candidateWidth;
                 screenHeight = candidateHeight;
@@ -311,16 +314,20 @@ public class ScreenRecordingPipeline {
                 return;
             } catch (Exception e) {
                 lastException = new IOException("Hardware encoder failed for " + candidateWidth + "x" + candidateHeight, e);
+                preferSoftwareAvcEncoder = true;
                 FLog.w(TAG, "Hardware encoder failed for " + candidateWidth + "x" + candidateHeight + ": " + e.getMessage());
             }
         }
 
         // Fallback to software encoder (more flexible). Prefer the largest (scale 1.0) size.
+        String softwareCodecName = findSoftwareAvcEncoderName();
         for (int i = 0; i < candidates.length; i++) {
             int candidateWidth = candidates[i][0];
             int candidateHeight = candidates[i][1];
             try {
-                MediaCodec encoder = MediaCodec.createByCodecName("OMX.google.h264.encoder");
+                MediaCodec encoder = softwareCodecName != null
+                        ? MediaCodec.createByCodecName(softwareCodecName)
+                        : MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
                 configureVideoEncoder(encoder, true, candidateWidth, candidateHeight);
 
                 videoEncoder = encoder;
@@ -336,6 +343,26 @@ public class ScreenRecordingPipeline {
         }
 
         throw new IOException("Failed to initialize video encoder (tried hardware and software)", lastException);
+    }
+
+    @Nullable
+    private String findSoftwareAvcEncoderName() {
+        try {
+            MediaCodecList codecList = new MediaCodecList(MediaCodecList.ALL_CODECS);
+            for (MediaCodecInfo info : codecList.getCodecInfos()) {
+                if (!info.isEncoder()) {
+                    continue;
+                }
+                for (String type : info.getSupportedTypes()) {
+                    if (VIDEO_MIME_TYPE.equalsIgnoreCase(type) && info.isSoftwareOnly()) {
+                        return info.getName();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to enumerate software AVC encoders: " + e.getMessage());
+        }
+        return "OMX.google.h264.encoder";
     }
     
     /**
