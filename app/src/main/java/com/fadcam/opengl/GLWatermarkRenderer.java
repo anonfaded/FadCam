@@ -1087,8 +1087,18 @@ public class GLWatermarkRenderer {
             empty.recycle();
             return;
         }
-        int refWidth = Math.max(1, Math.max(encoderWidth, videoWidth));
-        float dynamicTextSize = Math.max(18f, Math.min(24f, refWidth * 0.006f));
+        // CRITICAL FIX: Use encoder width (actual recording resolution), NOT videoWidth
+        // When recording portrait (1440x2560), encoder provides 1440 as width, but videoWidth is 2560 (landscape)
+        // Using Math.max() picked 2560, causing text to scale for wrong resolution
+        // Solution: Use encoderWidth if available (1440), fallback to videoWidth only if encoder not yet set
+        int refWidth = Math.max(1, encoderWidth > 0 ? encoderWidth : videoWidth);
+        // Scale watermark text absolutely (not as percentage of viewport) based on resolution
+        // Formula: 0.020 * refWidth gives: 480p→9.6px (→16min), 1440p→28.8px, 4K→76.8px (→48max)
+        // This ensures text GROWS visibly at higher resolutions (not same % of screen)
+        // Range [16px, 48px] - more aggressive than before to show actual resolution differences
+        float rawCalc = refWidth * 0.020f;
+        float dynamicTextSize = Math.max(16f, Math.min(48f, rawCalc));
+        FLog.d(TAG, "📝 Watermark text size: refWidth=" + refWidth + "px (encoder=" + encoderWidth + ", video=" + videoWidth + "), rawCalc=" + String.format("%.2f", rawCalc) + "px, final=" + String.format("%.2f", dynamicTextSize) + "px");
         watermarkPaint.setTextSize(dynamicTextSize);
         watermarkPaint.setAntiAlias(true);
         watermarkPaint.setARGB(255, 255, 255, 255);
@@ -1115,6 +1125,7 @@ public class GLWatermarkRenderer {
         }
         dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
         dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round((lineHeight * lines.length) + (padding * 1.5f))));
+        FLog.d(TAG, "📋 Watermark bitmap: " + dynamicBitmapWidth + "x" + dynamicBitmapHeight + "px, textSize=" + String.format("%.2f", watermarkPaint.getTextSize()) + "px, lines=" + lines.length + ", lineHeight=" + String.format("%.2f", lineHeight) + "px");
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
@@ -1147,7 +1158,8 @@ public class GLWatermarkRenderer {
         int vpW = Math.max(1, viewportWidth);
         int vpH = Math.max(1, viewportHeight);
 
-        int refWidth = Math.max(1, Math.max(encoderWidth, videoWidth));
+        // CRITICAL FIX: Same as updateWatermarkTexture() — use encoder width, not Math.max
+        int refWidth = Math.max(1, encoderWidth > 0 ? encoderWidth : videoWidth);
         String orientationPref = SharedPreferencesManager.getInstance(context).getVideoOrientation();
         boolean isPortrait = "portrait".equalsIgnoreCase(orientationPref);
 
@@ -1176,6 +1188,7 @@ public class GLWatermarkRenderer {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         watermarkRectBuffer.put(rectVerts).position(0);
+        FLog.d(TAG, "🎬 Watermark viewport: " + vpW + "x" + vpH + "px, ndcSize=" + String.format("%.3f", ndcWidth) + "x" + String.format("%.3f", ndcHeight) + ", targetFraction=" + String.format("%.2f%%", targetFractionOfWidth * 100) + ", portrait=" + isPortrait);
 
         lastWatermarkVpW = vpW;
         lastWatermarkVpH = vpH;
