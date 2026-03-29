@@ -11,7 +11,7 @@ const NotificationConstants = {
      * PRODUCTION: 3600000 (60 minutes)
      * Change to 3600000 after implementation complete
      */
-    POLL_INTERVAL_MS: 2000,
+    POLL_INTERVAL_MS: 3600000, // 60 minutes (was 2000ms — caused excessive GitHub API polling)
 
     /**
      * LocalStorage key for cached notification state

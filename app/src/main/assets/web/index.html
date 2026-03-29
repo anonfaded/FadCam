@@ -3537,8 +3537,11 @@
             if (window._lastStalenessState !== stalenessState) {
                 console.log(`[Status] Staleness changed: ${window._lastStalenessState || 'init'} → ${stalenessState} (age: ${stalenessAge})`);
                 
-                // Handle offline transition - stop HLS player and clear UI
-                if (stalenessState === 'offline' && window._lastStalenessState !== 'offline') {
+                // Handle offline transition - stop HLS player and clear UI.
+                // Skip on very first check (lastStalenessState=undefined) to avoid
+                // destroying the player before it ever loads (lastUpdated=0 race on page load).
+                if (stalenessState === 'offline' && window._lastStalenessState !== 'offline'
+                        && window._lastStalenessState !== undefined) {
                     console.log('[Status] 🔴 Server went OFFLINE - stopping HLS player');
                     if (hlsService && hlsService.hls) {
                         hlsService.destroy();

@@ -59,10 +59,12 @@
        * @param {Object}   callbacks HLS.js callbacks: { onSuccess, onError, onTimeout, onAbort }.
        */
       load(context, config, callbacks) {
-        // Pass init segments and non-fragment requests through unmodified
-        const isMediaSegment = context.type === 'fragment' &&
-          context.frag &&
-          !context.url.endsWith('init.mp4');
+        // Pass init segments through unmodified (never encrypted).
+        // HLS.js sets context.type to a PlaylistLevelType ('main', 'audio', etc.) — never 'fragment'.
+        // Use frag.sn type: numeric = media segment, string 'initSegment' = init segment.
+        const isMediaSegment = context.frag &&
+          typeof context.frag.sn === 'number' &&
+          !context.url.includes('init.mp4');
 
         if (!isMediaSegment) {
           super.load(context, config, callbacks);
