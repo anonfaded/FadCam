@@ -210,8 +210,8 @@
     ].join(';');
 
     const subtitle = noVerifyTag
-      ? 'This stream appears to be end-to-end encrypted. Enter your FadSec ID password to unlock playback.'
-      : 'This stream is end-to-end encrypted. Enter your FadSec ID password to unlock playback.';
+      ? 'This stream appears to be end-to-end encrypted. Enter your FadSec ID password to decrypt & unlock playback.'
+      : 'This stream is end-to-end encrypted. Enter your FadSec ID password to decrypt & unlock playback.';
 
     overlay.innerHTML = `
       <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:32px 28px;
