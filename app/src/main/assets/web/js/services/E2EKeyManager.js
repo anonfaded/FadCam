@@ -208,6 +208,23 @@
   }
 
   /**
+   * Derive master key from password + userUuid and persist it WITHOUT server-side
+   * verify_tag validation. Use this only when the verify_tag is not yet available
+   * (e.g. race condition on first device link while PBKDF2 is still running on device).
+   * If the password is wrong the stream will fail to decrypt and re-prompt the user.
+   *
+   * @param {string} password  Candidate password.
+   * @param {string} userUuid  User UUID.
+   * @returns {Promise<void>}
+   */
+  async function unlockNoVerify(password, userUuid) {
+    const masterBuf   = await pbkdf2(password, userUuid);
+    const masterBytes = new Uint8Array(masterBuf);
+    await dbPut(MASTER_ID, masterBytes);
+    console.log('[E2EKeyManager] unlockNoVerify: master key derived and persisted (no server validation)');
+  }
+
+  /**
    * Derive the 32-byte AES-256-GCM device key for the given deviceId.
    * Returns a non-extractable CryptoKey ready for crypto.subtle.decrypt.
    *
@@ -242,6 +259,6 @@
 
   // ── Export ───────────────────────────────────────────────────────────────────
 
-  window.E2EKeyManager = { initFromPassword, isInitialized, unlock, getDeviceKey, clear };
+  window.E2EKeyManager = { initFromPassword, isInitialized, unlock, unlockNoVerify, getDeviceKey, clear };
 
 })();
