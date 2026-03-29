@@ -534,12 +534,15 @@ public class ScreenRecordingService extends Service {
         
         // Start recording pipeline
         try {
+            // ===== FIX: Set state to IN_PROGRESS BEFORE starting pipeline =====
+            // CRITICAL: If queries arrive during pipeline init (which they do), they must see
+            // IN_PROGRESS state, not NONE. Otherwise MediaCodec fails with CodecException.
+            recordingState = ScreenRecordingState.IN_PROGRESS;
+            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
+            
+            // NOW start recording pipeline with correct internal state
             recordingPipeline.startRecording();
             recordingStartTime = SystemClock.elapsedRealtime();
-            recordingState = ScreenRecordingState.IN_PROGRESS;
-
-            // Persist state immediately so UI can restore reliably across tab switches.
-            sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.IN_PROGRESS.name());
             
             // Reset pause tracking for new recording
             pauseStartTime = 0;
