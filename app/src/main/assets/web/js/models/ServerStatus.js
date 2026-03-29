@@ -18,6 +18,9 @@ class ServerStatus {
         this.serverVersion = data.serverVersion || '1.0.0';  // For compatibility checks
         this.receivedAt = Date.now();  // When dashboard received this status
         this.cloudMode = data.cloudMode || false;  // Whether this is from relay/cloud
+        // Timestamp of last successfully uploaded segment to the cloud relay (0 if never uploaded).
+        // Used to detect stale/dead streams that show state=ready but have no live files on relay.
+        this.lastRelayUploadMs = data.lastRelayUploadMs || 0;
 
         // Core status
         this.state = data.state || 'offline';
@@ -193,17 +196,29 @@ class ServerStatus {
         this.authSessionsCleared = data.authSessionsCleared || false;  // Flag for logout all
 
         // Parse memory and storage from strings
-        // Memory format from backend: "75% (1024/1366 MB)"
+        // Memory format from Android app: "75% (1.2/5.6 GB)" with floating-point GB values
         if (data.memoryUsage) {
-            // Extract percentage: "75% (1024/1366 MB)" → 75
+            // Extract percentage: "75% (1.2/5.6 GB)" → 75
             const percentMatch = data.memoryUsage.match(/(\d+)%/);
             this.memoryPercent = percentMatch ? parseInt(percentMatch[1]) : 0;
 
-            // Extract used/total: "75% (1024/1366 MB)" → [1024, 1366]
-            const memMatch = data.memoryUsage.match(/\((\d+)\/(\d+)\s*MB\)/);
+            // Extract used/total: "75% (1.2/5.6 GB)" → [1.2, 5.6] (floats, in GB)
+            // Handles both old format with integers (MB) and new format with floats (GB)
+            const memMatch = data.memoryUsage.match(/\((\d+(?:\.\d+)?)\/([\d.]+)\s*(MB|GB)\)/i);
             if (memMatch) {
-                this.memoryUsedMb = parseInt(memMatch[1]);
-                this.memoryTotalMb = parseInt(memMatch[2]);
+                const used = parseFloat(memMatch[1]);
+                const total = parseFloat(memMatch[2]);
+                const unit = memMatch[3].toUpperCase();
+                
+                // Convert to MB if in GB
+                if (unit === 'GB') {
+                    this.memoryUsedMb = Math.round(used * 1024);
+                    this.memoryTotalMb = Math.round(total * 1024);
+                } else {
+                    // Already in MB (from old format)
+                    this.memoryUsedMb = Math.round(used);
+                    this.memoryTotalMb = Math.round(total);
+                }
             } else {
                 this.memoryUsedMb = 0;
                 this.memoryTotalMb = 0;
