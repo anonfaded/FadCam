@@ -1817,10 +1817,14 @@ public class RemoteStreamManager {
             android.os.StatFs stat = new android.os.StatFs(android.os.Environment.getExternalStorageDirectory().getPath());
             long availBytes = stat.getAvailableBlocksLong() * stat.getBlockSizeLong();
             long totalBytes = stat.getBlockCountLong() * stat.getBlockSizeLong();
-            long usedBytes = totalBytes - availBytes;  // Calculate used space correctly
-            float usedGB = usedBytes / (1024.0f * 1024.0f * 1024.0f);
+            float usedFraction = totalBytes > 0 ? (float) (totalBytes - availBytes) / totalBytes : 0f;
+            usedFraction = Math.max(0f, Math.min(1f, usedFraction));
+            // Calculate percentage the same way the ring does: Math.round() for consistency
+            int percentage = Math.round(usedFraction * 100f);
+            
+            float usedGB = (totalBytes - availBytes) / (1024.0f * 1024.0f * 1024.0f);
             float totalGB = totalBytes / (1024.0f * 1024.0f * 1024.0f);
-            return String.format(java.util.Locale.US, "%.1f/%.1f GB", usedGB, totalGB);
+            return String.format(java.util.Locale.US, "%d%% (%.1f/%.1f GB)", percentage, usedGB, totalGB);
         } catch (Exception e) {
             return "unknown";
         }

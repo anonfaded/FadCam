@@ -219,14 +219,15 @@ public class RemoteFragment extends BaseFragment {
         wifiBar3 = view.findViewById(R.id.wifi_bar3);
         wifiBar4 = view.findViewById(R.id.wifi_bar4);
 
-        // Metric progress rings — all show USED fraction with inverted colors
-        // (high used = red, low used = green)
+        // Metric progress rings — storage and memory show USED fraction with inverted colors
+        // (high used = red, low used = green).
+        // Battery shows REMAINING % with normal colors (high remaining = green, low = red).
         batteryProgressRing = view.findViewById(R.id.battery_progress_ring);
         remoteStorageProgressRing = view.findViewById(R.id.remote_storage_progress_ring);
         remoteMemoryProgressRing = view.findViewById(R.id.remote_memory_progress_ring);
-        if (batteryProgressRing != null) batteryProgressRing.setColorsInverted(true);
         if (remoteStorageProgressRing != null) remoteStorageProgressRing.setColorsInverted(true);
         if (remoteMemoryProgressRing != null) remoteMemoryProgressRing.setColorsInverted(true);
+        // Battery ring does NOT invert colors — it shows remaining %, not used %
         
         // Initialize Remote Security views
         remoteAuthToggle = view.findViewById(R.id.remote_auth_toggle);
@@ -725,9 +726,9 @@ public class RemoteFragment extends BaseFragment {
         }
         
         batteryText.setText(batteryDisplay);
-        // Ring shows used % (discharged fraction): inverted colors → low used = green, high used = red
+        // Ring shows remaining % (normal colors): high remaining = green, low remaining = red
         if (batteryProgressRing != null && battery > 0) {
-            batteryProgressRing.setProgress(1f - (battery / 100f));
+            batteryProgressRing.setProgress(battery / 100f);
         }
 
         // Get buffered fragments count
