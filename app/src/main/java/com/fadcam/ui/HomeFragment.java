@@ -355,7 +355,7 @@ public class HomeFragment extends BaseFragment {
     private TextView tvClock, tvDateEnglish, tvDateArabic;
     private LinearLayout layoutClockInner;
     private LinearLayout layoutClockContent;
-    private String latestElapsedDisplay = "00:00";
+    protected String latestElapsedDisplay = "00:00";
 
     // FragmentActivity tipres = requireActivity();
     private String[] tips;
@@ -6158,6 +6158,10 @@ public class HomeFragment extends BaseFragment {
         return false;
     }
 
+    protected boolean suppressDefaultElapsedRowUpdates() {
+        return false;
+    }
+
     /**
      * Updates storage UI with cached storage information for instant display
      */
@@ -6502,31 +6506,35 @@ public class HomeFragment extends BaseFragment {
                     }
                     applyStorageIndicatorStylePreference();
 
-                    // Elapsed row — time increases, animate UP.
-                    if (tvElapsedTitle != null) {
-                        String oldElapsed = tvElapsedTitle.getText() != null ? tvElapsedTitle.getText().toString() : "";
-                        if (!oldElapsed.equals(elapsedTimeText)) {
-                            if (tvElapsedTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedTitle).animateSlot(elapsedTimeText, 400);
-                            } else {
-                                tvElapsedTitle.setText(elapsedTimeText);
+                    if (!suppressDefaultElapsedRowUpdates()) {
+                        // Elapsed row — time increases, animate UP.
+                        if (tvElapsedTitle != null) {
+                            String oldElapsed = tvElapsedTitle.getText() != null ? tvElapsedTitle.getText().toString() : "";
+                            if (!oldElapsed.equals(elapsedTimeText)) {
+                                if (tvElapsedTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                    ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedTitle).animateSlot(elapsedTimeText, 400);
+                                } else {
+                                    tvElapsedTitle.setText(elapsedTimeText);
+                                }
                             }
                         }
-                    }
-                    if (tvElapsedSubtitle != null) {
-                        String newElapsedSub = getString(R.string.recording_elapsed_time);
-                        if (tvElapsedSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                            ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedSubtitle).animateSlot(newElapsedSub, 400);
-                        } else {
-                            tvElapsedSubtitle.setText(newElapsedSub);
+                        if (tvElapsedSubtitle != null) {
+                            String newElapsedSub = getString(R.string.recording_elapsed_time);
+                            if (tvElapsedSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedSubtitle).animateSlot(newElapsedSub, 400);
+                            } else {
+                                tvElapsedSubtitle.setText(newElapsedSub);
+                            }
                         }
+                        updateElapsedHeroAppearance();
+                        applyElapsedAlignmentPreference();
+                        applyElapsedSizePreference();
+                        applyElapsedFontPreference();
+                        applyElapsedFlagPreference();
                     }
-                    updateElapsedHeroAppearance();
-                    applyElapsedAlignmentPreference();
-                    applyElapsedSizePreference();
-                    applyElapsedFontPreference();
-                    applyElapsedFlagPreference();
-                    updateStartStopButtonForFoldedState();
+                    if (!suppressDefaultElapsedRowUpdates()) {
+                        updateStartStopButtonForFoldedState();
+                    }
 
                 });
         }
@@ -11249,7 +11257,7 @@ public class HomeFragment extends BaseFragment {
                 false);
     }
 
-    private void updateStartStopButtonForFoldedState() {
+    protected void updateStartStopButtonForFoldedState() {
         if (buttonStartStop == null || !isAdded()) {
             return;
         }

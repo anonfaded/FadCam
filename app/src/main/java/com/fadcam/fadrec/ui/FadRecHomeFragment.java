@@ -1562,6 +1562,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 elapsedMinutes,
                 elapsedSeconds
             );
+            latestElapsedDisplay = elapsedTimeText;
             
             // Format remaining time
             long days = remainingTime / (24 * 3600);
@@ -1610,6 +1611,8 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (tvRemainingSubtitle != null) {
                     tvRemainingSubtitle.setText(getString(R.string.recording_remaining_time));
                 }
+
+                updateStartStopButtonForFoldedState();
             });
             
             FLog.d(TAG, "Timer updated - Elapsed: " + elapsedTimeText + ", Remaining: " + remainingTimeText);
@@ -1623,12 +1626,65 @@ public class FadRecHomeFragment extends HomeFragment {
         return true;
     }
 
+    @Override
+    protected boolean suppressDefaultElapsedRowUpdates() {
+        return true;
+    }
+
+    @Override
+    protected void updateStartStopButtonForFoldedState() {
+        if (buttonStartStop == null || !isAdded()) {
+            return;
+        }
+
+        boolean folded = sharedPreferencesManager != null
+                && sharedPreferencesManager.sharedPreferences.getBoolean(
+                Constants.PREF_HOME_CARD_RAIL_FOLDED,
+                false);
+        boolean showTimerOnButton = folded
+                && (screenRecordingState == ScreenRecordingState.IN_PROGRESS
+                || screenRecordingState == ScreenRecordingState.PAUSED);
+        CharSequence currentText = buttonStartStop.getText();
+        String currentValue = currentText != null ? currentText.toString() : "";
+        boolean currentShowsTimer = currentValue.matches("\\d{2}:\\d{2}");
+
+        if (showTimerOnButton) {
+            buttonStartStop.setIcon(AppCompatResources.getDrawable(
+                    requireContext(),
+                    com.fadcam.R.drawable.stop_rounded));
+            if (!currentValue.equals(latestElapsedDisplay)) {
+                if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton
+                        && currentShowsTimer) {
+                    ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop)
+                            .animateSlot(latestElapsedDisplay, 400);
+                } else {
+                    buttonStartStop.setText(latestElapsedDisplay);
+                }
+            }
+            return;
+        }
+
+        if (!currentShowsTimer) {
+            return;
+        }
+
+        buttonStartStop.setIcon(AppCompatResources.getDrawable(
+                requireContext(),
+                screenRecordingState == ScreenRecordingState.NONE
+                        ? com.fadcam.R.drawable.play_button_rounded
+                        : com.fadcam.R.drawable.stop_rounded));
+        buttonStartStop.setText(screenRecordingState == ScreenRecordingState.NONE
+                ? getString(com.fadcam.R.string.fadrec_start_screen_recording)
+                : getString(com.fadcam.R.string.button_stop));
+    }
+
     /**
      * Start the timer that updates elapsed/remaining time every second during recording.
      */
     private void startTimerUpdates() {
-        // Stop any existing timer first
-        stopTimerUpdates();
+        if (timerUpdateRunnable != null) {
+            return;
+        }
         
         timerUpdateRunnable = new Runnable() {
             @Override
