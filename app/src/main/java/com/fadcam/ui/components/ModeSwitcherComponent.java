@@ -204,6 +204,12 @@ public class ModeSwitcherComponent {
             Constants.MODE_FADREC.equals(mode),
             Constants.MODE_FADMIC.equals(mode)));
     }
+
+    private void applyTextStatesInstant(String mode) {
+        styleText(segmentFadCam, Constants.MODE_FADCAM.equals(mode), false);
+        styleText(segmentFadRec, Constants.MODE_FADREC.equals(mode), false);
+        styleText(segmentFadMic, Constants.MODE_FADMIC.equals(mode), false);
+    }
     
     /**
      * Apply background programmatically - no drawable files needed
@@ -417,6 +423,16 @@ public class ModeSwitcherComponent {
      * @param activeMode The currently active mode
      */
     private void updateActiveState(String activeMode) { setExclusiveSelected(activeMode, null); }
+
+    private void syncActiveStateInstant(String activeMode) {
+        if (activeMode == null) return;
+        currentMode = activeMode;
+        boolean previousInitializing = isInitializing;
+        isInitializing = true;
+        setExclusiveSelected(activeMode, null);
+        applyTextStatesInstant(activeMode);
+        isInitializing = previousInitializing;
+    }
     
     /**
      * Reset segment to inactive state with smooth animation
@@ -496,7 +512,7 @@ public class ModeSwitcherComponent {
      * @param mode The mode to set as active
      */
     public void setActiveMode(String mode) {
-        updateActiveState(mode);
+        syncActiveStateInstant(mode);
     }
     
     /**

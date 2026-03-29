@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +19,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewConfiguration;
 import android.widget.Toast;
+import android.widget.ImageView;
 import com.fadcam.ui.OverlayNavUtil;
 
 import androidx.annotation.NonNull;
@@ -589,15 +592,17 @@ public class MainActivity extends AppCompatActivity {
             
             // Hide all fragments except the current one, and restore currentFragmentPosition
             for (int i = 0; i < 6; i++) {
-                String tag = FRAGMENT_TAG_PREFIX + i;
-                Fragment f = fm.findFragmentByTag(tag);
-                if (f != null) {
-                    if (i == restoredPosition) {
-                        fm.beginTransaction().show(f).commitNow();
-                        FLog.d("FragmentNav", "onCreate: Showing restored fragment at position " + i + ": " + f.getClass().getSimpleName());
-                    } else {
-                        fm.beginTransaction().hide(f).commitNow();
-                        FLog.d("FragmentNav", "onCreate: Hiding restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                String visibleTag = i == 0 ? getHomeFragmentTagForCurrentMode() : FRAGMENT_TAG_PREFIX + i;
+                for (String tag : getFragmentTagsForPosition(i)) {
+                    Fragment f = fm.findFragmentByTag(tag);
+                    if (f != null) {
+                        if (i == restoredPosition && tag.equals(visibleTag)) {
+                            fm.beginTransaction().show(f).commitNow();
+                            FLog.d("FragmentNav", "onCreate: Showing restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                        } else {
+                            fm.beginTransaction().hide(f).commitNow();
+                            FLog.d("FragmentNav", "onCreate: Hiding restored fragment at position " + i + ": " + f.getClass().getSimpleName());
+                        }
                     }
                 }
             }
@@ -1432,11 +1437,12 @@ public class MainActivity extends AppCompatActivity {
             // TRANSACTION 1: Detach all added fragments
             androidx.fragment.app.FragmentTransaction detachTx = fm.beginTransaction();
             for (int i = 0; i < 6; i++) {
-                String tag = FRAGMENT_TAG_PREFIX + i;
-                Fragment f = fm.findFragmentByTag(tag);
-                if (f != null) {
-                    detachTx.detach(f);
-                    FLog.d("MainActivity", "Orientation: detaching fragment at position " + i + ": " + f.getClass().getSimpleName());
+                for (String tag : getFragmentTagsForPosition(i)) {
+                    Fragment f = fm.findFragmentByTag(tag);
+                    if (f != null) {
+                        detachTx.detach(f);
+                        FLog.d("MainActivity", "Orientation: detaching fragment at position " + i + ": " + f.getClass().getSimpleName());
+                    }
                 }
             }
             detachTx.commitNow(); // Must commit before re-attaching
@@ -1444,17 +1450,18 @@ public class MainActivity extends AppCompatActivity {
             // TRANSACTION 2: Re-attach all fragments (they will re-inflate with new orientation's layout)
             androidx.fragment.app.FragmentTransaction attachTx = fm.beginTransaction();
             for (int i = 0; i < 6; i++) {
-                String tag = FRAGMENT_TAG_PREFIX + i;
-                Fragment f = fm.findFragmentByTag(tag);
-                if (f != null) {
-                    attachTx.attach(f);
-                    // Re-apply hidden state: only the current tab is visible
-                    if (i != currentFragmentPosition) {
-                        attachTx.hide(f);
-                    } else {
-                        attachTx.show(f);
+                String visibleTag = i == 0 ? getHomeFragmentTagForCurrentMode() : FRAGMENT_TAG_PREFIX + i;
+                for (String tag : getFragmentTagsForPosition(i)) {
+                    Fragment f = fm.findFragmentByTag(tag);
+                    if (f != null) {
+                        attachTx.attach(f);
+                        if (i != currentFragmentPosition || !tag.equals(visibleTag)) {
+                            attachTx.hide(f);
+                        } else {
+                            attachTx.show(f);
+                        }
+                        FLog.d("MainActivity", "Orientation: re-attached fragment at position " + i + ": " + f.getClass().getSimpleName());
                     }
-                    FLog.d("MainActivity", "Orientation: re-attached fragment at position " + i + ": " + f.getClass().getSimpleName());
                 }
             }
             attachTx.commitNow();
@@ -1568,6 +1575,39 @@ public class MainActivity extends AppCompatActivity {
     
     private int currentFragmentPosition = -1; // -1 means no fragment loaded yet
     private static final String FRAGMENT_TAG_PREFIX = "tab_fragment_";
+    private static final String HOME_FRAGMENT_TAG_FADCAM = FRAGMENT_TAG_PREFIX + "0_fadcam";
+    private static final String HOME_FRAGMENT_TAG_FADREC = FRAGMENT_TAG_PREFIX + "0_fadrec";
+
+    private String getHomeFragmentTagForCurrentMode() {
+        String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
+        return Constants.MODE_FADREC.equals(currentMode)
+                ? HOME_FRAGMENT_TAG_FADREC
+                : HOME_FRAGMENT_TAG_FADCAM;
+    }
+
+    private String getFragmentTagForPosition(int position) {
+        if (position == 0) {
+            return getHomeFragmentTagForCurrentMode();
+        }
+        return FRAGMENT_TAG_PREFIX + position;
+    }
+
+    private java.util.List<String> getFragmentTagsForPosition(int position) {
+        if (position == 0) {
+            return Arrays.asList(HOME_FRAGMENT_TAG_FADCAM, HOME_FRAGMENT_TAG_FADREC);
+        }
+        return Collections.singletonList(FRAGMENT_TAG_PREFIX + position);
+    }
+
+    private Fragment findVisibleFragmentForPosition(androidx.fragment.app.FragmentManager fm, int position) {
+        for (String tag : getFragmentTagsForPosition(position)) {
+            Fragment fragment = fm.findFragmentByTag(tag);
+            if (fragment != null && fragment.isAdded() && !fragment.isHidden()) {
+                return fragment;
+            }
+        }
+        return null;
+    }
     
     /**
      * Switch to a fragment at the specified position using hide/show for instant switching.
@@ -1599,8 +1639,7 @@ public class MainActivity extends AppCompatActivity {
         
         // Hide the currently visible fragment (if any)
         if (currentFragmentPosition >= 0) {
-            String currentTag = FRAGMENT_TAG_PREFIX + currentFragmentPosition;
-            Fragment currentFragment = fm.findFragmentByTag(currentTag);
+            Fragment currentFragment = findVisibleFragmentForPosition(fm, currentFragmentPosition);
             if (currentFragment != null) {
                 transaction.hide(currentFragment);
                 FLog.d("FragmentNav", "switchFragment: Hiding fragment at position " + currentFragmentPosition);
@@ -1608,7 +1647,7 @@ public class MainActivity extends AppCompatActivity {
         }
         
         // Show existing fragment or add new one for the target position
-        String targetTag = FRAGMENT_TAG_PREFIX + position;
+        String targetTag = getFragmentTagForPosition(position);
         Fragment targetFragment = fm.findFragmentByTag(targetTag);
         
         if (targetFragment != null) {
@@ -1749,13 +1788,19 @@ public class MainActivity extends AppCompatActivity {
      * but the position stays the same.
      * @param position Tab position to recreate
      */
-    public void forceRecreateFragment(int position) {
+    public void forceRecreateFragment(int position, View continuityView) {
         FLog.d("FragmentNav", "forceRecreateFragment: Forcing recreation of fragment at position " + position);
+
+        if (position == 0) {
+            switchHomeModeFragment();
+            return;
+        }
         
         androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
         String tag = FRAGMENT_TAG_PREFIX + position;
         Fragment existingFragment = fm.findFragmentByTag(tag);
         Fragment newFragment = createFragmentForPosition(position);
+        View continuityOverlay = createContinuityOverlay(continuityView);
         androidx.fragment.app.FragmentTransaction tx = fm.beginTransaction();
         tx.setReorderingAllowed(true);
         tx.replace(R.id.fragment_container, newFragment, tag);
@@ -1772,6 +1817,101 @@ public class MainActivity extends AppCompatActivity {
             FLog.d("FragmentNav", "forceRecreateFragment: Replaced existing fragment: " + existingFragment.getClass().getSimpleName());
         }
         FLog.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
+        clearContinuityOverlayAfterNextDraw(continuityOverlay, newFragment);
+    }
+
+    private void switchHomeModeFragment() {
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        String targetTag = getHomeFragmentTagForCurrentMode();
+        Fragment currentFragment = findVisibleFragmentForPosition(fm, 0);
+        Fragment targetFragment = fm.findFragmentByTag(targetTag);
+
+        if (targetFragment == currentFragment && targetFragment != null) {
+            FLog.d("FragmentNav", "switchHomeModeFragment: Target fragment already visible");
+            return;
+        }
+
+        androidx.fragment.app.FragmentTransaction tx = fm.beginTransaction();
+        tx.setReorderingAllowed(true);
+
+        if (currentFragment != null) {
+            tx.hide(currentFragment);
+            FLog.d("FragmentNav", "switchHomeModeFragment: Hiding " + currentFragment.getClass().getSimpleName());
+        }
+
+        if (targetFragment != null) {
+            tx.show(targetFragment);
+            FLog.d("FragmentNav", "switchHomeModeFragment: Showing cached " + targetFragment.getClass().getSimpleName());
+        } else {
+            targetFragment = createFragmentForPosition(0);
+            tx.add(R.id.fragment_container, targetFragment, targetTag);
+            FLog.d("FragmentNav", "switchHomeModeFragment: Added new " + targetFragment.getClass().getSimpleName());
+        }
+
+        tx.commitNow();
+    }
+
+    private View createContinuityOverlay(View sourceView) {
+        if (sourceView == null || sourceView.getWidth() <= 0 || sourceView.getHeight() <= 0) {
+            return null;
+        }
+
+        View root = findViewById(R.id.main_root_layout);
+        if (!(root instanceof ViewGroup)) {
+            return null;
+        }
+
+        Bitmap bitmap;
+        try {
+            bitmap = Bitmap.createBitmap(sourceView.getWidth(), sourceView.getHeight(), Bitmap.Config.ARGB_8888);
+        } catch (IllegalArgumentException e) {
+            FLog.w("FragmentNav", "createContinuityOverlay: Unable to allocate bitmap", e);
+            return null;
+        }
+
+        Canvas canvas = new Canvas(bitmap);
+        sourceView.draw(canvas);
+
+        ImageView overlayView = new ImageView(this);
+        overlayView.setImageBitmap(bitmap);
+        overlayView.setClickable(false);
+        overlayView.setFocusable(false);
+        overlayView.setElevation(1000f);
+
+        int[] sourceLocation = new int[2];
+        int[] rootLocation = new int[2];
+        sourceView.getLocationOnScreen(sourceLocation);
+        root.getLocationOnScreen(rootLocation);
+
+        overlayView.layout(0, 0, sourceView.getWidth(), sourceView.getHeight());
+        overlayView.setX(sourceLocation[0] - rootLocation[0]);
+        overlayView.setY(sourceLocation[1] - rootLocation[1]);
+        ((ViewGroup) root).getOverlay().add(overlayView);
+        return overlayView;
+    }
+
+    private void clearContinuityOverlayAfterNextDraw(View overlayView, Fragment newFragment) {
+        if (overlayView == null) {
+            return;
+        }
+
+        View root = findViewById(R.id.main_root_layout);
+        if (!(root instanceof ViewGroup)) {
+            return;
+        }
+
+        View fragmentView = newFragment.getView();
+        View anchorView = fragmentView != null ? fragmentView : findViewById(R.id.fragment_container);
+        if (anchorView == null) {
+            ((ViewGroup) root).getOverlay().remove(overlayView);
+            return;
+        }
+
+        View finalAnchorView = anchorView;
+        finalAnchorView.post(() -> finalAnchorView.postDelayed(() -> overlayView.animate()
+                .alpha(0f)
+                .setDuration(120L)
+                .withEndAction(() -> ((ViewGroup) root).getOverlay().remove(overlayView)), 120L));
     }
 
     /**

@@ -2058,6 +2058,9 @@ public class HomeFragment extends BaseFragment {
                 requireContext()
             );
         }
+        if (fragmentHelper != null) {
+            fragmentHelper.syncModeSwitcherToCurrentPreference();
+        }
         // Always clear stale "starting preview" pending state when Home becomes visible.
         // Service callback is the source of truth and will re-assert active preview state.
         clearPreviewOnlyPendingState(true);
@@ -6151,6 +6154,10 @@ public class HomeFragment extends BaseFragment {
 
     }
 
+    protected boolean suppressDefaultCameraRowUpdates() {
+        return false;
+    }
+
     /**
      * Updates storage UI with cached storage information for instant display
      */
@@ -6397,53 +6404,55 @@ public class HomeFragment extends BaseFragment {
         if (getActivity() != null) {
             getActivity().runOnUiThread(() -> {
                     boolean animateCameraRow = cameraRowUiInitialized;
-                    // Camera row
-                    if (tvCameraTitle != null) {
-                        String oldCamTitle = tvCameraTitle.getText() != null ? tvCameraTitle.getText().toString() : "";
-                        if (!oldCamTitle.equals(finalCameraLabel)) {
-                            if (animateCameraRow && tvCameraTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvCameraTitle).animateSlotFull(finalCameraLabel, 400);
-                            } else {
-                                tvCameraTitle.setText(finalCameraLabel);
-                            }
-                        }
-                    }
-                    if (tvCameraSubtitle != null) {
-                        String oldCamSub = tvCameraSubtitle.getText() != null ? tvCameraSubtitle.getText().toString() : "";
-                        if (!oldCamSub.equals(cameraSubtitle)) {
-                            if (animateCameraRow && tvCameraSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvCameraSubtitle).animateSlotFull(cameraSubtitle, 400);
-                            } else {
-                                tvCameraSubtitle.setText(cameraSubtitle);
-                            }
-                        }
-                    }
-
-                    // Update camera icon
-                    try {
-                        com.fadcam.CameraType camType =
-                            sharedPreferencesManager.getCameraSelection();
-                        if (ivCameraIcon != null) {
-                            String newIconText;
-                            if (camType == com.fadcam.CameraType.FRONT) {
-                                newIconText = "camera_front";
-                            } else if (camType.isDual()) {
-                                newIconText = "switch_video";
-                            } else {
-                                newIconText = "camera_alt";
-                            }
-                            String oldIconText = ivCameraIcon.getText() != null
-                                    ? ivCameraIcon.getText().toString() : "";
-                            if (!oldIconText.equals(newIconText)) {
-                                if (animateCameraRow && ivCameraIcon instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                    ((com.fadcam.ui.utils.AnimatedTextView) ivCameraIcon)
-                                            .animateCrossfade(newIconText, 300);
+                    if (!suppressDefaultCameraRowUpdates()) {
+                        // Camera row
+                        if (tvCameraTitle != null) {
+                            String oldCamTitle = tvCameraTitle.getText() != null ? tvCameraTitle.getText().toString() : "";
+                            if (!oldCamTitle.equals(finalCameraLabel)) {
+                                if (animateCameraRow && tvCameraTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                    ((com.fadcam.ui.utils.AnimatedTextView) tvCameraTitle).animateSlotFull(finalCameraLabel, 400);
                                 } else {
-                                    ivCameraIcon.setText(newIconText);
+                                    tvCameraTitle.setText(finalCameraLabel);
                                 }
                             }
                         }
-                    } catch (Exception ignored) {}
+                        if (tvCameraSubtitle != null) {
+                            String oldCamSub = tvCameraSubtitle.getText() != null ? tvCameraSubtitle.getText().toString() : "";
+                            if (!oldCamSub.equals(cameraSubtitle)) {
+                                if (animateCameraRow && tvCameraSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                    ((com.fadcam.ui.utils.AnimatedTextView) tvCameraSubtitle).animateSlotFull(cameraSubtitle, 400);
+                                } else {
+                                    tvCameraSubtitle.setText(cameraSubtitle);
+                                }
+                            }
+                        }
+    
+                        // Update camera icon
+                        try {
+                            com.fadcam.CameraType camType =
+                                sharedPreferencesManager.getCameraSelection();
+                            if (ivCameraIcon != null) {
+                                String newIconText;
+                                if (camType == com.fadcam.CameraType.FRONT) {
+                                    newIconText = "camera_front";
+                                } else if (camType.isDual()) {
+                                    newIconText = "switch_video";
+                                } else {
+                                    newIconText = "camera_alt";
+                                }
+                                String oldIconText = ivCameraIcon.getText() != null
+                                        ? ivCameraIcon.getText().toString() : "";
+                                if (!oldIconText.equals(newIconText)) {
+                                    if (animateCameraRow && ivCameraIcon instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                        ((com.fadcam.ui.utils.AnimatedTextView) ivCameraIcon)
+                                                .animateCrossfade(newIconText, 300);
+                                    } else {
+                                        ivCameraIcon.setText(newIconText);
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
                     cameraRowUiInitialized = true;
 
                     // Time-left row

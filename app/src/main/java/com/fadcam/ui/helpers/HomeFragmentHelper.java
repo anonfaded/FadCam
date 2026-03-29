@@ -128,9 +128,10 @@ public class HomeFragmentHelper {
             // Use MainActivity to force recreate the Home fragment for mode switch
             if (activity instanceof com.fadcam.MainActivity) {
                 com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) activity;
+                View continuityView = fragment.getView();
                 
                 // Force recreate position 0 (Home tab)
-                mainActivity.forceRecreateFragment(0);
+                mainActivity.forceRecreateFragment(0, continuityView);
                 FLog.d(TAG, "Home fragment recreated for mode switch");
             } else {
                 FLog.w(TAG, "Activity is not MainActivity");
@@ -158,6 +159,17 @@ public class HomeFragmentHelper {
      */
     public ModeSwitcherComponent getModeSwitcherComponent() {
         return modeSwitcherComponent;
+    }
+
+    public void syncModeSwitcherToCurrentPreference() {
+        if (modeSwitcherComponent == null) {
+            return;
+        }
+        String mode = sharedPreferencesManager.getCurrentRecordingMode();
+        if (Constants.MODE_FADMIC.equals(mode)) {
+            mode = Constants.MODE_FADCAM;
+        }
+        modeSwitcherComponent.setActiveMode(mode);
     }
 
     /**

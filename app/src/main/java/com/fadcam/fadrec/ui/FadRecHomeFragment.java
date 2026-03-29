@@ -215,6 +215,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // FLog.e(TAG, "============================================");
         // Note: Broadcast receivers are now registered in onCreate()
         // to ensure they persist and are ready to receive state updates
+        reapplyScreenRecordingCardState(false);
     }
     
     /**
@@ -1617,6 +1618,11 @@ public class FadRecHomeFragment extends HomeFragment {
         }
     }
 
+    @Override
+    protected boolean suppressDefaultCameraRowUpdates() {
+        return true;
+    }
+
     /**
      * Start the timer that updates elapsed/remaining time every second during recording.
      */
@@ -1700,6 +1706,48 @@ public class FadRecHomeFragment extends HomeFragment {
         // This avoids the timing issue where state requests arrive before recording fully starts.
         
         // Timer updates are handled by updateUIForRecordingState().
+        reapplyScreenRecordingCardState(false);
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            reapplyScreenRecordingCardState(false);
+            if (getView() != null) {
+                updateCardForScreenRecording(getView());
+            }
+        }
+    }
+
+    private void reapplyScreenRecordingCardState(boolean animate) {
+        if (!isAdded() || getView() == null) {
+            return;
+        }
+
+        View rootView = getView();
+        View camSwitchBtn = rootView.findViewById(com.fadcam.R.id.buttonCamSwitch);
+        View torchBtn = rootView.findViewById(com.fadcam.R.id.buttonTorchSwitch);
+        View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
+        View tileExp = rootView.findViewById(com.fadcam.R.id.tile_exp);
+        View tileZoom = rootView.findViewById(com.fadcam.R.id.tile_zoom);
+        View tvRecordingControlsTitle = rootView.findViewById(com.fadcam.R.id.tv_recording_controls_title);
+
+        if (camSwitchBtn != null) camSwitchBtn.setVisibility(View.GONE);
+        if (torchBtn != null) torchBtn.setVisibility(View.GONE);
+        if (tileAfToggle != null) tileAfToggle.setVisibility(View.GONE);
+        if (tileExp != null) tileExp.setVisibility(View.GONE);
+        if (tileZoom != null) tileZoom.setVisibility(View.GONE);
+        if (tvRecordingControlsTitle != null) tvRecordingControlsTitle.setVisibility(View.GONE);
+        View textureView = rootView.findViewById(com.fadcam.R.id.textureView);
+        View tvPreviewPlaceholder = rootView.findViewById(com.fadcam.R.id.tvPreviewPlaceholder);
+        if (textureView != null) textureView.setVisibility(View.GONE);
+        if (tvPreviewPlaceholder != null) tvPreviewPlaceholder.setVisibility(View.GONE);
+
+        if (!animate) {
+            screenCardInfoInitialized = true;
+        }
+        updateScreenRecordingCardInfo();
     }
 
     /**
