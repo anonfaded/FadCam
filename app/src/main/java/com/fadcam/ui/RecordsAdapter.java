@@ -176,6 +176,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     // Add field to track scrolling state
     private boolean isScrolling = false;
+    // Avoid FFprobe/progress work during initial first paint.
+    private boolean deferHeavyMetadataWork = false;
     // Add skeleton mode for professional loading experience
     private boolean isSkeletonMode = false;
     // Grid span for dynamic sizing at high column counts
@@ -517,7 +519,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 } else {
                     // Show placeholder immediately — never block the UI thread
                     holder.textViewFileTime.setText("--:--");
-                    if (!(safeMediaProbeMode && isScrolling)) {
+                    if (canRunHeavyMetadataWork()) {
                         // Try DB-backed duration first (instant), fall back to FFprobe only if needed
                         executorService.execute(() -> {
                             long duration = -1;
@@ -609,7 +611,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     if (cachedSaved != null && cachedDur != null) {
                         applyProgressToView(progressBg, progressFill, cachedSaved, cachedDur);
                     } else {
-                        if (safeMediaProbeMode && isScrolling) {
+                        if (!canRunHeavyMetadataWork()) {
                             progressFill.setVisibility(View.GONE);
                             return;
                         }
@@ -2333,6 +2335,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         final List<Object> newEntries = buildEntries(newRecords);
         final List<Object> oldEntries = this.entries;
 
+        if (oldEntries == null || oldEntries.isEmpty()) {
+            this.records = new ArrayList<>(newRecords);
+            this.entries = newEntries;
+            notifyDataSetChanged();
+            FLog.d(TAG, "updateRecords: used immediate first-fill path, entries=" + entries.size());
+            return;
+        }
+
         // Use DiffUtil to calculate the differences on entries
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
@@ -2852,6 +2862,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.isScrolling = scrolling;
     }
 
+    public void setDeferHeavyMetadataWork(boolean deferHeavyMetadataWork) {
+        this.deferHeavyMetadataWork = deferHeavyMetadataWork;
+    }
+
     /**
      * Sets skeleton mode for professional loading experience
      * 
@@ -3175,6 +3189,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // stale value isn't served at bind time before FFprobe can re-probe).
         loadedThumbnailCache.clear();
         FLog.d(TAG, "invalidateDurationCache: cleared durationCache + loadedThumbnailCache — FFprobe will re-probe");
+    }
+
+    private boolean canRunHeavyMetadataWork() {
+        return !deferHeavyMetadataWork && !(safeMediaProbeMode && isScrolling);
     }
 
     public void clearCaches() {
