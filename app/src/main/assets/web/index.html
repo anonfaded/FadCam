@@ -1108,6 +1108,9 @@
     <script src="js/constants/NotificationConstants.js?v=2.5.0"></script>
     <script src="js/services/AuthService.js?v=2.5.0"></script>
     <!-- RealtimeCommandService REMOVED: Commands now use HTTP polling only -->
+    <!-- E2E Stream Encryption: must load before HlsService so FadCamFragLoader is ready -->
+    <script src="js/services/E2EKeyManager.js?v=1.0.0"></script>
+    <script src="js/services/FadCamFragLoader.js?v=1.0.0"></script>
     <script src="js/services/ApiService.js?v=2.8.0"></script>
     <script src="js/services/HlsService.js?v=2.7.0"></script>
     <script src="js/services/FadexNotificationManager.js?v=2.5.0"></script>

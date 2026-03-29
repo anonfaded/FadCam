@@ -54,6 +54,14 @@ class HlsService {
                         xhr.open('GET', authUrl, true);
                     }
                 };
+
+                // Use the E2E-decrypting fragment loader if available
+                if (typeof FadCamFragLoader !== 'undefined') {
+                    baseConfig.fLoader = FadCamFragLoader;
+                    console.log('[HlsService] 🔐 E2E fragment loader attached');
+                } else {
+                    console.warn('[HlsService] FadCamFragLoader not loaded — segments will NOT be decrypted');
+                }
             } else {
                 console.warn('[HlsService] ☁️ Cloud mode but no stream token available!');
             }
