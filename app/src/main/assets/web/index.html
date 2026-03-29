@@ -515,7 +515,7 @@
             <div class="video-container">
                 <!-- No autoplay - we call play() manually when stream is ready. This prevents MIME type errors on empty video -->
                 <video id="videoPlayer" playsinline muted controls></video>
-                <div class="video-overlay" id="videoOverlay" onclick="if (currentStatus?.state === 'ready' && currentStatus?.isRecording) playStream(); else console.log('[Video] Stream not ready yet');">
+                <div class="video-overlay" id="videoOverlay" onclick="(function(){ const s = currentStatus; const cloud = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode(); const age = s?.lastRelayUploadMs > 0 ? (Date.now() - s.lastRelayUploadMs) : -1; const fresh = !cloud || age === -1 || age < 60000; if (s?.state === 'ready' && s?.isRecording && fresh) playStream(); else console.log('[Video] Stream not ready or relay stale'); })()">>
                     <div class="overlay-content">
                         <div class="overlay-icon" id="overlayIcon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -2981,8 +2981,12 @@
                 console.log('[HlsService] 📱 Local mode: Loading stream from:', streamUrl);
             }
             
-            // Debug: Fetch manifest to see what's being served
-            fetch(streamUrl)
+            // Debug: Fetch manifest to see what's being served (cloud mode uses token in xhrSetup)
+            const _debugIsCloud = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode();
+            const debugUrl = _debugIsCloud
+                ? (() => { const t = FadCamRemote.getStreamToken(); return t ? `${streamUrl}?token=${encodeURIComponent(t)}` : streamUrl; })()
+                : streamUrl;
+            fetch(debugUrl)
                 .then(r => r.text())
                 .then(manifest => {
                     console.log('[DEBUG] Raw M3U8 Manifest:');
@@ -3367,12 +3371,28 @@
             const overlayIcon = document.getElementById('overlayIcon');
             const overlaySpinner = document.getElementById('overlaySpinner');
 
-            if (status.state === 'ready' && status.isRecording && !status.isPaused) {
+            // In cloud mode, verify the relay is receiving fresh segment uploads.
+            // If no segment was uploaded in the last 60 seconds, the stream is stale/dead
+            // (recording may have stopped or uploads failed) even if state=ready.
+            // lastRelayUploadMs=0 means it's a new session that hasn't uploaded yet — allow through.
+            const isCloudStream = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode();
+            const relayAge = status.lastRelayUploadMs > 0 ? (Date.now() - status.lastRelayUploadMs) : -1;
+            const isRelayFresh = !isCloudStream || relayAge === -1 || relayAge < 60000;
+
+            if (status.state === 'ready' && status.isRecording && !status.isPaused && isRelayFresh) {
                 videoOverlay.classList.remove('disabled', 'loading');
                 overlayIcon.style.display = '';
                 overlaySpinner.style.display = 'none';
                 overlayTitle.textContent = 'Stream ready';
                 overlayText.textContent = 'Tap to play';
+            } else if (status.state === 'ready' && status.isRecording && !status.isPaused && !isRelayFresh) {
+                // Cloud relay has no fresh uploads — recording stopped or uploads failed
+                videoOverlay.classList.add('disabled');
+                videoOverlay.classList.remove('loading');
+                overlayIcon.style.display = '';
+                overlaySpinner.style.display = 'none';
+                overlayTitle.textContent = 'Stream offline';
+                overlayText.textContent = 'No recent video from device';
             } else if (status.isPaused) {
                 // Recording paused — show paused overlay over frozen frame
                 videoOverlay.classList.remove('hidden', 'loading');
@@ -3479,7 +3499,7 @@
             // NOTE: This MUST run AFTER recording state sync above, so that
             // lastRecordingState is already set and won't trigger a destroy
             // immediately after playStream() creates the HLS instance.
-            if (status.state === 'ready' && status.isRecording && !hlsLoaded) {
+            if (status.state === 'ready' && status.isRecording && !hlsLoaded && isRelayFresh) {
                 console.log('📺 Stream ready! Loading now...');
                 playStream();
             }

@@ -94,6 +94,7 @@ import com.fadcam.services.TorchService;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
+import com.fadcam.ui.components.ModeSwitcherComponent;
 import com.fadcam.utils.DebouncedRunnable;
 import com.fadcam.utils.DeviceHelper;
 import com.fadcam.utils.ServiceStartPolicy;
@@ -11442,6 +11443,13 @@ public class HomeFragment extends BaseFragment {
             }
         }
         updateStartStopButtonForFoldedState();
+        
+        // Refresh ModeSwitcherComponent indicator position after layout changes
+        // This ensures the red pill is repositioned when rail is folded/unfolded
+        if (fragmentHelper != null && fragmentHelper.getModeSwitcherComponent() != null) {
+            ModeSwitcherComponent modeSwitcher = fragmentHelper.getModeSwitcherComponent();
+            modeSwitcher.setActiveMode(modeSwitcher.getCurrentMode());
+        }
     }
 
     private void applyLandscapeFoldConstraints(boolean folded) {

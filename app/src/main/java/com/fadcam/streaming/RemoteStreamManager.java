@@ -97,6 +97,10 @@ public class RemoteStreamManager {
     private int cloudViewerCount = 0;
     private long cloudViewerCountUpdatedAt = 0; // Timestamp of last update
     private long cloudBytesServed = 0; // Total bytes served by relay to all cloud viewers
+
+    // Tracks the timestamp of the last successfully uploaded segment to the cloud relay.
+    // Used by the dashboard to detect when the relay stream has gone stale/dead.
+    private volatile long lastRelayUploadMs = 0;
     
     /**
      * Streaming mode options.
@@ -482,7 +486,9 @@ public class RemoteStreamManager {
                     uploader.uploadSegment(sequenceNumber, fragmentData, new CloudStreamUploader.UploadCallback() {
                         @Override
                         public void onSuccess() {
-                            // Segment uploaded successfully - NOW upload the playlist
+                            // Segment uploaded successfully - update relay freshness timestamp
+                            lastRelayUploadMs = System.currentTimeMillis();
+                            // NOW upload the playlist
                             if (playlist != null) {
                                 uploader.uploadPlaylist(playlist, null);
                             }
@@ -907,7 +913,8 @@ public class RemoteStreamManager {
                 "\"events\": %s, " +
                 "\"clients\": %s, " +
                 "\"memoryUsage\": %s, \"storage\": %s, " +
-                "\"totalDataTransferredMb\": %d}",
+                "\"totalDataTransferredMb\": %d, " +
+                "\"lastRelayUploadMs\": %d}",
                 streamingEnabled,
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(streamingMode.toString().toLowerCase()),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(state),
@@ -960,7 +967,8 @@ public class RemoteStreamManager {
                 clientsJson.toString(),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(memoryUsage),
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(storageInfo),
-                totalDataMB
+                totalDataMB,
+                lastRelayUploadMs
             );
             
             // ULTRA-CRITICAL DIAGNOSTIC: Check String.format output immediately

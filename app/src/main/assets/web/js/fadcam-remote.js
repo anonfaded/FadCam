@@ -210,8 +210,8 @@
     ].join(';');
 
     const subtitle = noVerifyTag
-      ? 'This stream appears to be end-to-end encrypted. Enter your FadSec ID password to unlock playback.'
-      : 'This stream is end-to-end encrypted. Enter your FadSec ID password to unlock playback.';
+      ? 'This stream appears to be end-to-end encrypted. Enter your FadSec ID password to decrypt & unlock playback.'
+      : 'This stream is end-to-end encrypted. Enter your FadSec ID password to decrypt & unlock playback.';
 
     overlay.innerHTML = `
       <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:32px 28px;
@@ -614,13 +614,9 @@
     getSessionUserId,
     getRelayHlsUrl: () => {
       if (!streamContext?.userId || !streamContext?.deviceId) return null;
-      let url = `https://live.fadseclab.com:8443/stream/${streamContext.userId}/${streamContext.deviceId}/live.m3u8`;
-      // Append token as query parameter for auth (avoids CORS issues with headers)
-      const token = streamContext?.streamToken || getStreamToken();
-      if (token) {
-        url += `?token=${encodeURIComponent(token)}`;
-      }
-      return url;
+      // Return the base URL without token — HlsService.xhrSetup handles auth injection.
+      // This prevents token duplication when xhrSetup and the URL both carry the token.
+      return `https://live.fadseclab.com:8443/stream/${streamContext.userId}/${streamContext.deviceId}/live.m3u8`;
     },
     getRelayStatusUrl: () => {
       if (!streamContext?.userId || !streamContext?.deviceId) return null;
