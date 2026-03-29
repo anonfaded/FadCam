@@ -134,7 +134,7 @@ public final class FLog {
                 break;
             case android.util.Log.VERBOSE:
                 android.util.Log.v(safeTag, safeMsg);
-                Log.d(safeTag, safeMsg);
+                Log.v(safeTag, safeMsg);
                 break;
             case android.util.Log.ASSERT:
                 android.util.Log.wtf(safeTag, safeMsg);

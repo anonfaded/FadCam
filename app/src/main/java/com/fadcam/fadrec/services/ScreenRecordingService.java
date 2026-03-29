@@ -444,6 +444,14 @@ public class ScreenRecordingService extends Service {
      */
     private void startScreenRecording() throws IOException {
         FLog.d(TAG, "startScreenRecording: Initializing ScreenRecordingPipeline");
+        FLog.i(
+            TAG,
+            "Diagnostics: brand=" + Build.BRAND
+                + " manufacturer=" + Build.MANUFACTURER
+                + " model=" + Build.MODEL
+                + " sdk=" + Build.VERSION.SDK_INT
+                + " preferSoftwareAvc=" + ScreenRecordingPipeline.isPreferringSoftwareAvcEncoder()
+        );
         
         // Validate MediaProjection
         if (mediaProjection == null) {
@@ -513,7 +521,14 @@ public class ScreenRecordingService extends Service {
             FLog.d(TAG, "ScreenRecordingPipeline built successfully");
             
         } catch (IOException e) {
-            FLog.e(TAG, "Failed to build ScreenRecordingPipeline", e);
+            FLog.e(
+                TAG,
+                "Failed to build ScreenRecordingPipeline"
+                    + " display=" + screenWidth + "x" + screenHeight
+                    + " density=" + screenDensity
+                    + " audio=" + enableAudio,
+                e
+            );
             throw new IOException("Pipeline build error: " + e.getMessage(), e);
         }
         
@@ -571,13 +586,27 @@ public class ScreenRecordingService extends Service {
             }
             
         } catch (IllegalStateException e) {
-            FLog.e(TAG, "IllegalStateException - Pipeline in wrong state: " + e.getMessage(), e);
+            FLog.e(
+                TAG,
+                "IllegalStateException - Pipeline in wrong state"
+                    + " recordingState=" + recordingState
+                    + " previewOnly=" + previewOnlyActive
+                    + " audioSession=" + enableAudioForSession,
+                e
+            );
             cleanupPipeline();
             recordingState = ScreenRecordingState.NONE;
             sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
             throw new IOException("Pipeline error: " + e.getMessage(), e);
         } catch (Exception e) {
-            FLog.e(TAG, "Unexpected error starting pipeline: " + e.getMessage(), e);
+            FLog.e(
+                TAG,
+                "Unexpected error starting pipeline"
+                    + " recordingState=" + recordingState
+                    + " previewOnly=" + previewOnlyActive
+                    + " audioSession=" + enableAudioForSession,
+                e
+            );
             cleanupPipeline();
             recordingState = ScreenRecordingState.NONE;
             sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());

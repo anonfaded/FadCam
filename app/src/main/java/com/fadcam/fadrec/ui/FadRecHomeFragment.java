@@ -75,6 +75,7 @@ public class FadRecHomeFragment extends HomeFragment {
     private boolean deferredStopPreviewOnly = false;
     private boolean deferredDetachPreviewSurface = false;
     private boolean pendingPreviewOpenUntilSurfaceReady = false;
+    private boolean pendingPreviewCloseSleepAnimation = false;
     private SharedPreferencesManager sharedPreferencesManager;
     
     // Broadcast receivers for screen recording state
@@ -1206,6 +1207,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             isScreenPreviewOnlyActive = false;
                             isScreenPreviewEnabled = false;
                             pendingPreviewOpenUntilSurfaceReady = false;
+                            pendingPreviewCloseSleepAnimation = false;
                             persistRecordingState(screenRecordingState);
                             isRecordingForcedMuted = false;
                             updateUIForRecordingState();
@@ -1712,6 +1714,7 @@ public class FadRecHomeFragment extends HomeFragment {
             if (isScreenPreviewEnabled) {
                 if (ensurePreviewSurfaceReady()) {
                     pendingPreviewOpenUntilSurfaceReady = false;
+                    pendingPreviewCloseSleepAnimation = false;
                     requestAnimateNextPreviewTransition();
                     pushPreviewSurfaceToService();
                     updateModeSpecificPreviewVisibility();
@@ -1720,6 +1723,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 }
             } else {
                 pendingPreviewOpenUntilSurfaceReady = false;
+                pendingPreviewCloseSleepAnimation = true;
                 requestAnimateNextPreviewTransition();
                 deferredDetachPreviewSurface = true;
                 updateModeSpecificPreviewVisibility();
@@ -1730,6 +1734,7 @@ public class FadRecHomeFragment extends HomeFragment {
         if (isScreenPreviewOnlyActive) {
             isScreenPreviewOnlyActive = false;
             isScreenPreviewEnabled = false;
+            pendingPreviewCloseSleepAnimation = true;
             requestAnimateNextPreviewTransition();
             deferredStopPreviewOnly = true;
             updateModeSpecificPreviewVisibility();
@@ -1760,6 +1765,15 @@ public class FadRecHomeFragment extends HomeFragment {
             || screenRecordingState == ScreenRecordingState.PAUSED
             || isScreenPreviewOnlyActive);
         boolean shouldAnimate = consumeAnimateNextPreviewTransition();
+        FLog.d(
+            TAG,
+            "updateModeSpecificPreviewVisibility: showPreview=" + showPreview
+                + " shouldAnimate=" + shouldAnimate
+                + " closePending=" + pendingPreviewCloseSleepAnimation
+                + " openPendingSurface=" + pendingPreviewOpenUntilSurfaceReady
+                + " previewOnly=" + isScreenPreviewOnlyActive
+                + " state=" + screenRecordingState
+        );
 
         if (showPreview && previewOpenSequenceRunning) {
             return;
@@ -1852,12 +1866,19 @@ public class FadRecHomeFragment extends HomeFragment {
         }
 
         boolean previewCurrentlyVisible = textureView.getVisibility() == View.VISIBLE;
-        if (shouldAnimate && previewCurrentlyVisible) {
+        boolean shouldAnimateClose = (shouldAnimate || pendingPreviewCloseSleepAnimation)
+            && (previewCurrentlyVisible || pendingPreviewCloseSleepAnimation);
+        if (shouldAnimateClose) {
             previewOpenSequenceRunning = false;
             previewCloseSequenceRunning = true;
             previewUiHandler.removeCallbacksAndMessages(null);
             setPendingPreviewReveal(false);
             setPreviewCloseAnimating(true);
+            FLog.d(
+                TAG,
+                "Preview close animation start: textureVisible=" + previewCurrentlyVisible
+                    + " avatarVisible=" + avatarCurrentlyVisible
+            );
 
             runHomeAvatarState(true, false);
             flPreviewAvatar.setEnabled(true);
@@ -1887,10 +1908,11 @@ public class FadRecHomeFragment extends HomeFragment {
                     @Override
                     public void onAnimationEnd(android.animation.Animator animation) {
                         setPreviewCloseAnimating(false);
-                        previewCloseSequenceRunning = false;
                         textureView.setVisibility(View.INVISIBLE);
                         textureView.setAlpha(1f);
                         if (!isAdded()) {
+                            previewCloseSequenceRunning = false;
+                            pendingPreviewCloseSleepAnimation = false;
                             finalizeDeferredPreviewActions();
                             return;
                         }
@@ -1900,6 +1922,8 @@ public class FadRecHomeFragment extends HomeFragment {
                             if (isAdded()) {
                                 runHomeAvatarState(false, true);
                             }
+                            previewCloseSequenceRunning = false;
+                            pendingPreviewCloseSleepAnimation = false;
                             finalizeDeferredPreviewActions();
                         }, 650L);
                     }
@@ -1912,12 +1936,23 @@ public class FadRecHomeFragment extends HomeFragment {
                     .setDuration(340L)
                     .withEndAction(() -> {
                         setPreviewCloseAnimating(false);
-                        previewCloseSequenceRunning = false;
                         textureView.setVisibility(View.INVISIBLE);
                         textureView.setAlpha(1f);
+                        if (!isAdded()) {
+                            previewCloseSequenceRunning = false;
+                            pendingPreviewCloseSleepAnimation = false;
+                            finalizeDeferredPreviewActions();
+                            return;
+                        }
                         runHintVisibilityAnimated(true);
-                        runHomeAvatarState(false, true);
-                        finalizeDeferredPreviewActions();
+                        previewUiHandler.postDelayed(() -> {
+                            if (isAdded()) {
+                                runHomeAvatarState(false, true);
+                            }
+                            previewCloseSequenceRunning = false;
+                            pendingPreviewCloseSleepAnimation = false;
+                            finalizeDeferredPreviewActions();
+                        }, 650L);
                     })
                     .start();
             }
@@ -1925,6 +1960,7 @@ public class FadRecHomeFragment extends HomeFragment {
         }
 
         previewCloseSequenceRunning = false;
+        pendingPreviewCloseSleepAnimation = false;
         textureView.setVisibility(View.INVISIBLE);
         textureView.setAlpha(1f);
         flPreviewAvatar.setVisibility(View.VISIBLE);
@@ -2253,6 +2289,7 @@ public class FadRecHomeFragment extends HomeFragment {
         previewCloseSequenceRunning = false;
         setPendingPreviewReveal(false);
         pendingPreviewOpenUntilSurfaceReady = false;
+        pendingPreviewCloseSleepAnimation = false;
     }
 
     @Override

@@ -40,6 +40,10 @@ public class ScreenRecordingPipeline {
     private static final String VIDEO_MIME_TYPE = "video/avc";
     private static final int VIDEO_IFRAME_INTERVAL = 1;
     private static volatile boolean preferSoftwareAvcEncoder = false;
+
+    public static boolean isPreferringSoftwareAvcEncoder() {
+        return preferSoftwareAvcEncoder;
+    }
     
     private final Context context;
     private final WatermarkInfoProvider watermarkInfoProvider;
@@ -295,6 +299,8 @@ public class ScreenRecordingPipeline {
         IOException lastException = null;
 
         int[][] candidates = buildEncoderSizeCandidates(displayWidth, displayHeight);
+        FLog.i(TAG, "Encoder init start: display=" + displayWidth + "x" + displayHeight
+                + " preferSoftware=" + preferSoftwareAvcEncoder);
 
         if (!preferSoftwareAvcEncoder) {
             // First-start churn was coming from retrying hardware across many resolutions.
@@ -321,6 +327,7 @@ public class ScreenRecordingPipeline {
 
         // Fallback to software encoder (more flexible). Prefer the largest (scale 1.0) size.
         String softwareCodecName = findSoftwareAvcEncoderName();
+        FLog.i(TAG, "Falling back to software AVC encoder: " + softwareCodecName);
         for (int i = 0; i < candidates.length; i++) {
             int candidateWidth = candidates[i][0];
             int candidateHeight = candidates[i][1];

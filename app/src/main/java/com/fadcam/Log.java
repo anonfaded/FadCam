@@ -423,10 +423,16 @@ public class Log {
         return null;
     }
 
-    public static void v(String sharedPrefs, String s) {
+    public static void v(String tag, String message) {
+        if (!isDebugLoggingActive()) return;
+        String logMessage = "<font color=\"7f8c8d\">" + getCurrentTimeStamp() + " VERBOSE: [" + tag + "]" + message + "</font>";
+        appendHtmlToFile(logMessage);
     }
 
     public static void i(String tag, String s) {
+        if (!isDebugLoggingActive()) return;
+        String logMessage = "<font color=\"2c3e50\">" + getCurrentTimeStamp() + " INFO: [" + tag + "]" + s + "</font>";
+        appendHtmlToFile(logMessage);
     }
 
     // -------------------- Async logger worker helpers --------------------
