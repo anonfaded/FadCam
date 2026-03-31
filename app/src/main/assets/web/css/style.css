@@ -3544,7 +3544,7 @@ input[type="range"].zoom-slider::-moz-range-progress {
 }
 
 .status-value.recording-text-paused {
-    color: #d29922;
+    color: #ffffff;
 }
 
 /* Staleness text colors (Step 6.11) */
