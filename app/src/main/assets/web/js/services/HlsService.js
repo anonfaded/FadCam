@@ -319,6 +319,8 @@ class HlsService {
         setTimeout(() => {
             console.log('[HlsService] 🎬 Creating new HLS instance...');
             this.load(url, videoElement);
+            // Auto-play after reload (e.g., after E2E key unlock)
+            videoElement.play().catch(err => console.log('[HlsService] Play after reload deferred:', err.message));
         }, 1000);
     }
     

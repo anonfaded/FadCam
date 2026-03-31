@@ -515,7 +515,7 @@
             <div class="video-container">
                 <!-- No autoplay - we call play() manually when stream is ready. This prevents MIME type errors on empty video -->
                 <video id="videoPlayer" playsinline muted controls></video>
-                <div class="video-overlay" id="videoOverlay" onclick="(function(){ const s = currentStatus; const cloud = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode(); const age = s?.lastRelayUploadMs > 0 ? (Date.now() - s.lastRelayUploadMs) : -1; const fresh = !cloud || age === -1 || age < 60000; if (s?.state === 'ready' && s?.isRecording && fresh) playStream(); else console.log('[Video] Stream not ready or relay stale'); })()">>
+                <div class="video-overlay" id="videoOverlay" onclick="(function(){ const s = currentStatus; const cloud = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode(); const age = s?.lastRelayUploadMs > 0 ? (Date.now() - s.lastRelayUploadMs) : -1; const fresh = !cloud || age === -1 || age < 60000; if (s?.state === 'ready' && s?.isRecording && fresh) playStream(); else console.log('[Video] Stream not ready or relay stale'); })()">
                     <div class="overlay-content">
                         <div class="overlay-icon" id="overlayIcon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -3560,16 +3560,21 @@
                 // Handle offline transition - stop HLS player and clear UI.
                 // Skip on very first check (lastStalenessState=undefined) to avoid
                 // destroying the player before it ever loads (lastUpdated=0 race on page load).
+                // IMPORTANT: Only destroy HLS if the status itself says NOT streaming.
+                // If status.json says streaming=true but lastUpdated is old, the phone
+                // is still recording — just the status push is lagging. Keep HLS alive.
                 if (stalenessState === 'offline' && window._lastStalenessState !== 'offline'
                         && window._lastStalenessState !== undefined) {
-                    console.log('[Status] 🔴 Server went OFFLINE - stopping HLS player');
-                    if (hlsService && hlsService.hls) {
-                        hlsService.destroy();
-                        hlsLoaded = false;
+                    if (!status.isRecording) {
+                        console.log('[Status] 🔴 Server went OFFLINE (not recording) - stopping HLS player');
+                        if (hlsService && hlsService.hls) {
+                            hlsService.destroy();
+                            hlsLoaded = false;
+                        }
+                        clearStaleUIValues();
+                    } else {
+                        console.log('[Status] ⚠️ Status age exceeded offline threshold but streaming=true — keeping HLS alive');
                     }
-                    
-                    // Clear stale UI values using shared function
-                    clearStaleUIValues();
                 }
                 
                 // Handle online transition - log recovery
@@ -3582,7 +3587,7 @@
             
             // Also clear UI if this is the first check and server is already offline
             // (handles page load when server was already down)
-            if (stalenessState === 'offline' && !window._offlineUICleared) {
+            if (stalenessState === 'offline' && !window._offlineUICleared && !status.isRecording) {
                 clearStaleUIValues();
                 window._offlineUICleared = true;
             }
@@ -3592,8 +3597,9 @@
                 window._offlineUICleared = false;
             }
             
-            // Gray out controls when offline (Step 6.11.3.2)
-            const isOffline = stalenessState === 'offline';
+            // Gray out controls when offline, but only if NOT recording
+            // (stale lastUpdated + streaming=true = phone is still live, just status push lagging)
+            const isOffline = stalenessState === 'offline' && !status.isRecording;
             updateControlsDisabledState(isOffline);
 
             // Recording status LED - show unknown when offline

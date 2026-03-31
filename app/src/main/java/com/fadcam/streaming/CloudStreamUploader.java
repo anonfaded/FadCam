@@ -16,8 +16,13 @@ import com.fadcam.security.SegmentEncryptor;
 import com.fadcam.security.StreamKeyManager;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -65,6 +70,7 @@ public class CloudStreamUploader {
     private final Context context;
     private final OkHttpClient httpClient;
     private final CloudAuthManager authManager;
+    private final ExecutorService uploadExecutor;
     
     // Cached user UUID (extracted from JWT)
     private String cachedUserUuid = null;
@@ -87,12 +93,18 @@ public class CloudStreamUploader {
         this.context = context.getApplicationContext();
         this.authManager = CloudAuthManager.getInstance(context);
         
+        // Executor for segment uploads via HttpURLConnection (2 threads for parallel uploads)
+        this.uploadExecutor = Executors.newFixedThreadPool(2);
+        
         // Configure OkHttp with generous timeouts for poor mobile connections
-        // User reported latency ~419ms and 0.06 Mbps upload - needs longer timeouts
+        // NOTE: OkHttp is kept for legacy command API methods only.
+        // Segment/init/playlist uploads use HttpURLConnection (matches CloudStatusManager)
+        // because OkHttp has known connectivity issues on some Android devices/networks
+        // where HttpURLConnection connects fine to the same host:port.
         this.httpClient = new OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)  // Increased from 5s for slow connections
-            .writeTimeout(30, TimeUnit.SECONDS)    // Increased from 10s for large segments
-            .readTimeout(15, TimeUnit.SECONDS)     // Increased from 5s
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build();
         
@@ -349,6 +361,12 @@ public class CloudStreamUploader {
     
     /**
      * Actually perform the HTTP upload with the provided stream token.
+     *
+     * <p>Uses {@link HttpURLConnection} instead of OkHttp because OkHttp's
+     * connection/DNS resolver can fail with {@code ConnectException} on some
+     * Android devices/networks while {@code HttpURLConnection} (used by
+     * {@link CloudStatusManager} for status pushes) connects fine to the same
+     * host:port.  Switching to the same HTTP stack eliminates this mismatch.
      */
     private void doUploadWithToken(String url, byte[] data, MediaType mediaType, String token, @Nullable UploadCallback callback) {
         // Check if we're in auth backoff mode
@@ -365,92 +383,107 @@ public class CloudStreamUploader {
             consecutive401Count = 0;
         }
         
-        RequestBody body = RequestBody.create(data, mediaType);
-        Request request = new Request.Builder()
-            .url(url)
-            .put(body)
-            .addHeader("Authorization", "Bearer " + token)
-            .build();
-        
         FLog.i(TAG, "📤 Sending HTTP PUT to: " + url.substring(0, Math.min(80, url.length())) + "...");
-        long startTime = System.currentTimeMillis();
+        final long startTime = System.currentTimeMillis();
         
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+        uploadExecutor.execute(() -> {
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) java.net.URI.create(url).toURL().openConnection();
+                conn.setRequestMethod("PUT");
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+                conn.setRequestProperty("Content-Type", mediaType.toString());
+                conn.setRequestProperty("Content-Length", String.valueOf(data.length));
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(15000);  // 15s for slow mobile connections
+                conn.setReadTimeout(30000);     // 30s for large segment writes
+                
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(data);
+                }
+                
+                int responseCode = conn.getResponseCode();
+                long elapsed = System.currentTimeMillis() - startTime;
+                FLog.i(TAG, "📥 Upload response received: HTTP " + responseCode + " after " + elapsed + "ms");
+                
+                if (responseCode >= 200 && responseCode < 300) {
+                    successfulUploads++;
+                    totalBytesUploaded += data.length;
+                    consecutive401Count = 0;
+                    if (callback != null) callback.onSuccess();
+                } else if (responseCode == 401) {
+                    failedUploads++;
+                    consecutive401Count++;
+                    FLog.w(TAG, "Stream token 401 error (attempt " + consecutive401Count + "/" + MAX_401_RETRIES + ")");
+                    
+                    if (consecutive401Count > MAX_401_RETRIES) {
+                        FLog.e(TAG, "Max 401 retries exceeded, entering backoff mode");
+                        lastAuthFailureTime = System.currentTimeMillis();
+                        authBackoffActive = true;
+                        if (callback != null) callback.onError("Auth failed after " + MAX_401_RETRIES + " attempts");
+                        return;
+                    }
+                    
+                    // Clear stream token and fetch a new one, then retry
+                    authManager.clearStreamToken();
+                    authManager.fetchStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
+                        @Override
+                        public void onSuccess(String newStreamToken) {
+                            FLog.i(TAG, "New stream token fetched after 401, retrying upload...");
+                            cachedUserUuid = null;
+                            doUploadWithToken(url, data, mediaType, newStreamToken, callback);
+                        }
+                        
+                        @Override
+                        public void onError(String fetchError) {
+                            FLog.e(TAG, "Stream token fetch failed after 401: " + fetchError);
+                            lastAuthFailureTime = System.currentTimeMillis();
+                            authBackoffActive = true;
+                            if (callback != null) callback.onError("Auth failed: " + fetchError);
+                        }
+                    });
+                } else {
+                    failedUploads++;
+                    String error = "HTTP " + responseCode;
+                    // Read error body for diagnostics
+                    try (InputStream es = conn.getErrorStream()) {
+                        if (es != null) {
+                            byte[] errBytes = new byte[512];
+                            int read = es.read(errBytes);
+                            if (read > 0) {
+                                error += ": " + new String(errBytes, 0, read, "UTF-8").trim();
+                            }
+                        }
+                    } catch (Exception ignored) { /* best-effort */ }
+                    FLog.e(TAG, "Upload error: " + error);
+                    if (callback != null) callback.onError(error);
+                }
+            } catch (java.net.SocketTimeoutException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                failedUploads++;
+                FLog.e(TAG, "❌ Upload TIMEOUT after " + elapsed + "ms: " + e.getMessage());
+                FLog.e(TAG, "   ⏱️ TIMEOUT: Connection or read timeout - network may be too slow");
+                if (callback != null) callback.onError("SocketTimeoutException: " + e.getMessage());
+            } catch (java.net.ConnectException e) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                failedUploads++;
+                FLog.e(TAG, "❌ Upload CONNECT failure after " + elapsed + "ms: " + e.getMessage());
+                FLog.e(TAG, "   🔌 CONNECT: Failed to connect to server - check network connectivity");
+                if (callback != null) callback.onError("ConnectException: " + e.getMessage());
+            } catch (java.net.UnknownHostException e) {
+                failedUploads++;
+                FLog.e(TAG, "❌ Upload DNS failure: " + e.getMessage());
+                FLog.e(TAG, "   🌐 DNS: Failed to resolve hostname - no internet?");
+                if (callback != null) callback.onError("UnknownHostException: " + e.getMessage());
+            } catch (Exception e) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 failedUploads++;
                 String errorType = e.getClass().getSimpleName();
-                FLog.e(TAG, "❌ Upload network failure after " + elapsed + "ms: " + errorType + ": " + e.getMessage());
-                
-                // Log specific timeout types for debugging
-                if (e instanceof java.net.SocketTimeoutException) {
-                    FLog.e(TAG, "   ⏱️ TIMEOUT: Connection or read timeout - network may be too slow");
-                } else if (e instanceof java.net.ConnectException) {
-                    FLog.e(TAG, "   🔌 CONNECT: Failed to connect to server - check network connectivity");
-                } else if (e instanceof java.net.UnknownHostException) {
-                    FLog.e(TAG, "   🌐 DNS: Failed to resolve hostname - no internet?");
-                }
-                
+                FLog.e(TAG, "❌ Upload failure after " + elapsed + "ms: " + errorType + ": " + e.getMessage());
                 if (callback != null) callback.onError(errorType + ": " + e.getMessage());
-            }
-            
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                FLog.i(TAG, "📥 Upload response received: HTTP " + response.code() + " after " + elapsed + "ms");
-                try {
-                    if (response.isSuccessful()) {
-                        successfulUploads++;
-                        totalBytesUploaded += data.length;
-                        // Reset 401 counter on success
-                        consecutive401Count = 0;
-                        if (callback != null) callback.onSuccess();
-                    } else {
-                        failedUploads++;
-                        String error = "HTTP " + response.code() + ": " + response.message();
-                        FLog.e(TAG, "Upload error: " + error);
-                        
-                        // Handle 401 - clear stream token and retry with new one
-                        if (response.code() == 401) {
-                            consecutive401Count++;
-                            FLog.w(TAG, "Stream token 401 error (attempt " + consecutive401Count + "/" + MAX_401_RETRIES + ")");
-                            
-                            // Check if we've exceeded retry limit
-                            if (consecutive401Count > MAX_401_RETRIES) {
-                                FLog.e(TAG, "Max 401 retries exceeded, entering backoff mode");
-                                lastAuthFailureTime = System.currentTimeMillis();
-                                authBackoffActive = true;
-                                if (callback != null) callback.onError("Auth failed after " + MAX_401_RETRIES + " attempts");
-                                return;
-                            }
-                            
-                            // Clear stream token and fetch a new one
-                            authManager.clearStreamToken();
-                            authManager.fetchStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
-                                @Override
-                                public void onSuccess(String newStreamToken) {
-                                    FLog.i(TAG, "New stream token fetched after 401, retrying upload...");
-                                    cachedUserUuid = null; // Clear cache
-                                    // Retry upload with new token
-                                    doUploadWithToken(url, data, mediaType, newStreamToken, callback);
-                                }
-                                
-                                @Override
-                                public void onError(String fetchError) {
-                                    FLog.e(TAG, "Stream token fetch failed after 401: " + fetchError);
-                                    lastAuthFailureTime = System.currentTimeMillis();
-                                    authBackoffActive = true;
-                                    if (callback != null) callback.onError("Auth failed: " + fetchError);
-                                }
-                            });
-                            return; // Don't call callback yet
-                        }
-                        
-                        if (callback != null) callback.onError(error);
-                    }
-                } finally {
-                    response.close();
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
                 }
             }
         });

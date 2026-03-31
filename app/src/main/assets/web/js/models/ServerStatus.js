@@ -378,7 +378,7 @@ class ServerStatus {
             FRESH: 5000,      // < 5s = green (fresh)
             DELAYED: 15000,   // 5-15s = yellow (delayed)
             STALE: 30000,     // 15-30s = orange (stale)
-            OFFLINE: 30000    // > 30s = red (offline)
+            OFFLINE: 120000   // > 120s = red (offline) — generous to tolerate upload lag
         };
     }
 

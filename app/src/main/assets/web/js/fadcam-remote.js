@@ -415,6 +415,7 @@
         // This ensures users with revoked access cannot bypass tier restrictions
         // If tier/beta status changed since last login, this will catch it
         console.log('[FadCamRemote] 🔐 Validating stored session with server...');
+        let validationPassed = false;
         try {
           const validationResponse = await fetch(`${CLOUD_CONFIG.SUPABASE_URL}/functions/v1/verify-stream-token`, {
             method: 'POST',
@@ -427,33 +428,56 @@
             body: JSON.stringify({ device_id: deviceId, user_id: session.user_id })
           });
           
-          if (!validationResponse.ok) {
-            console.error(`[FadCamRemote] ❌ Session validation failed: HTTP ${validationResponse.status}`);
-            console.log('[FadCamRemote] User loses access: tier changed, beta revoked, or quota exceeded');
-            // Clear stored session and E2E key — user no longer has access
+          if (validationResponse.ok) {
+            console.log('[FadCamRemote] ✅ Session validated - user has current access');
+            validationPassed = true;
+          } else if (validationResponse.status === 401) {
+            // 401 = Token truly expired or invalid — hard fail
+            console.error('[FadCamRemote] ❌ Token rejected (401) — clearing session');
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.USER);
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.E2E_VERIFY_TAG);
             if (typeof E2EKeyManager !== 'undefined') E2EKeyManager.clear();
-            
-            showStreamOverlay('Access Revoked', 'Your streaming access has been revoked or expired. Please log in again from Lab.');
-            setTimeout(() => {
-              window.location.href = CLOUD_CONFIG.LAB_URL;
-            }, 3000);
+            showStreamOverlay('Session Expired', 'Your session has expired. Redirecting to login...');
+            setTimeout(() => { window.location.href = CLOUD_CONFIG.LAB_URL; }, 3000);
+            return;
+          } else {
+            // 403 or other = could be CORS/routing issue (X-Original-URI missing)
+            // Fall back to client-side JWT expiry check
+            console.warn(`[FadCamRemote] ⚠️ Server validation returned ${validationResponse.status} — checking token locally`);
+          }
+        } catch (validationError) {
+          console.warn('[FadCamRemote] ⚠️ Session validation network error:', validationError.message);
+          // Network error — fall back to client-side check instead of hard fail
+        }
+        
+        // If server validation didn't pass, check JWT expiry client-side as fallback
+        if (!validationPassed) {
+          try {
+            const parts = storedStreamToken.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              const now = Math.floor(Date.now() / 1000);
+              if (payload.exp && payload.exp < now) {
+                console.error('[FadCamRemote] ❌ Token expired locally — clearing session');
+                localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
+                localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.USER);
+                localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
+                showStreamOverlay('Session Expired', 'Your session has expired. Redirecting to login...');
+                setTimeout(() => { window.location.href = CLOUD_CONFIG.LAB_URL; }, 3000);
+                return;
+              }
+              console.log('[FadCamRemote] ✅ Token not expired locally — proceeding with stored session');
+            }
+          } catch (e) {
+            console.error('[FadCamRemote] ❌ Cannot decode stored token — clearing session');
+            localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
+            localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
+            showStreamOverlay('Invalid Session', 'Redirecting to login...');
+            setTimeout(() => { window.location.href = CLOUD_CONFIG.LAB_URL; }, 2000);
             return;
           }
-          
-          console.log('[FadCamRemote] ✅ Session validated - user has current access');
-        } catch (validationError) {
-          console.error('[FadCamRemote] Session validation error:', validationError);
-          // Network error or server issue - fail safely by requiring re-auth
-          console.log('[FadCamRemote] 🛡️ Failing safe - network error, redirecting to login');
-          showStreamOverlay('Connection Failed', 'Unable to verify access. Please try again from Lab.');
-          setTimeout(() => {
-            window.location.href = CLOUD_CONFIG.LAB_URL;
-          }, 3000);
-          return;
         }
         
         // We have a valid, server-verified stored session, use it
