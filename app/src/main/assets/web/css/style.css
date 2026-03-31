@@ -795,6 +795,160 @@ body {
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.08), 0 4px 10px rgba(239, 68, 68, 0.04);
 }
 
+/* E2E stream footer — shown below the video player in cloud mode */
+.e2e-stream-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    background: rgba(220, 38, 38, 0.07);
+    border: 1px solid rgba(220, 38, 38, 0.18);
+    font-size: 12px;
+    color: #a1a1aa;
+    letter-spacing: 0.3px;
+    flex-wrap: wrap;
+}
+
+.e2e-footer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.e2e-footer-badge .fas.fa-lock {
+    font-size: 11px;
+}
+
+.e2e-footer-sep {
+    color: #3f3f46;
+    font-size: 13px;
+}
+
+.e2e-footer-brand {
+    color: #71717a;
+    font-size: 12px;
+}
+
+.e2e-footer-brand strong {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Info button + animated tooltip */
+.e2e-footer-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+    cursor: pointer;
+    color: #52525b;
+    font-size: 13px;
+    line-height: 1;
+    border-radius: 50%;
+    transition: color 0.15s ease;
+}
+
+.e2e-footer-info:hover,
+.e2e-footer-info:focus {
+    color: #dc2626;
+    outline: none;
+}
+
+.e2e-footer-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    width: 300px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 500;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Arrow pointing down */
+.e2e-footer-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #3f3f46;
+}
+
+.e2e-footer-info:hover .e2e-footer-tooltip,
+.e2e-footer-info:focus .e2e-footer-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.e2e-tooltip-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.e2e-tooltip-row:last-of-type {
+    margin-bottom: 10px;
+}
+
+.e2e-tooltip-icon {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+}
+
+.e2e-tooltip-row strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #e4e4e7;
+    margin-bottom: 3px;
+}
+
+.e2e-tooltip-row p {
+    margin: 0;
+    font-size: 11px;
+    color: #71717a;
+    line-height: 1.55;
+}
+
+.e2e-tooltip-brand {
+    border-top: 1px solid #27272a;
+    padding-top: 10px;
+    font-size: 11px;
+    color: #52525b;
+    text-align: center;
+    letter-spacing: 0.2px;
+}
+
+.e2e-tooltip-brand .fa-shield-halved {
+    color: #dc2626;
+    margin-right: 4px;
+}
+
+.e2e-tooltip-brand strong {
+    color: #dc2626;
+    font-weight: 600;
+}
+
 video {
     width: 100%;
     height: 100%;
@@ -3365,10 +3519,12 @@ input[type="range"].zoom-slider::-moz-range-progress {
     margin-bottom: 12px;
     background: linear-gradient(135deg, #0f1217 0%, #0a0d11 100%);
     border: 1px solid #30363d;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 14px 16px;
     padding-bottom: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25),
+                0 8px 32px rgba(0, 0, 0, 0.18),
+                0 20px 48px rgba(0, 0, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.04);
     width: 100%;
     max-width: 100%;
@@ -3415,7 +3571,7 @@ input[type="range"].zoom-slider::-moz-range-progress {
     margin-right: -16px;
     margin-bottom: -16px;
     margin-top: 8px;
-    border-radius: 0 0 10px 10px;
+    border-radius: 0 0 12px 12px;
     transition: width 30ms linear;
     box-shadow: 0 0 8px rgba(63, 185, 80, 0.3);
 }

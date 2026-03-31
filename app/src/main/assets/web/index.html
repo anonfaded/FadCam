@@ -85,8 +85,8 @@
         <div class="profile-item" onclick="showSecuritySettingsModal()">
             <i class="fas fa-shield-alt"></i> Security
         </div>
-        <div class="profile-item" onclick="logoutNow()">
-            <i class="fas fa-sign-out-alt"></i> Logout
+        <div class="profile-item" id="profileLogoutItem" onclick="logoutNow()">
+            <i class="fas fa-sign-out-alt" id="profileLogoutIcon"></i> <span id="profileLogoutLabel">Logout</span>
         </div>
     </div>
 
@@ -539,6 +539,45 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <!-- E2E stream footer: shown in cloud mode only when stream has E2E encryption -->
+            <div id="e2eStreamFooter" class="e2e-stream-footer" style="display:none;">
+                <span class="e2e-footer-badge">
+                    <i class="fas fa-lock"></i>
+                    End-to-end encrypted
+                </span>
+                <span class="e2e-footer-sep">·</span>
+                <span class="e2e-footer-brand">Powered by <strong>FadSec Lab</strong></span>
+                <span class="e2e-footer-info" id="e2eFooterInfo" tabindex="0" aria-label="About encryption">
+                    <i class="fas fa-circle-info"></i>
+                    <div class="e2e-footer-tooltip" role="tooltip">
+                        <div class="e2e-tooltip-row">
+                            <i class="fas fa-lock e2e-tooltip-icon"></i>
+                            <div>
+                                <strong>Decrypted only on your device</strong>
+                                <p>Segments are encrypted on your phone before upload. Your LabPass derivation and the decryption key never leave your browser — FadSec Lab's infrastructure only ever receives and relays ciphertext.</p>
+                            </div>
+                        </div>
+                        <div class="e2e-tooltip-row">
+                            <i class="fas fa-shield-halved e2e-tooltip-icon"></i>
+                            <div>
+                                <strong>Not even FadSec Lab can watch</strong>
+                                <p>FadSec Lab's authentication infrastructure stores only a one-way HMAC verification tag — not your password or decryption key. It is mathematically impossible to reconstruct the stream key from what the server holds.</p>
+                            </div>
+                        </div>
+                        <div class="e2e-tooltip-row">
+                            <i class="fas fa-eye-slash e2e-tooltip-icon"></i>
+                            <div>
+                                <strong>Zero IP Logging</strong>
+                                <p>The relay does not log, store, or inspect any viewer IP addresses. Your privacy is protected end-to-end — both the content and the connection.</p>
+                            </div>
+                        </div>
+                        <div class="e2e-tooltip-brand">
+                            <i class="fas fa-shield-halved"></i>
+                            Security infrastructure by <strong>FadSec Lab</strong>
+                        </div>
+                    </div>
+                </span>
             </div>
         </div>
     </div>
@@ -3035,9 +3074,11 @@
                     if (hlsService) {
                         hlsService.reloadStream();
                     }
+                    updateE2EFooterVisibility();
                 };
                 window.addEventListener('e2e-stream-ready', window.__e2eStreamReadyHandler);
             }
+            updateE2EFooterVisibility();
         }
 
         /**
@@ -3851,6 +3892,115 @@
         // Toast Stack Management
         const MAX_TOASTS = 5;
         const toastStack = [];
+
+        /**
+         * Show/hide the E2E stream footer based on cloud mode + encryption state.
+         * Displayed only when streaming via relay with E2E enabled.
+         */
+        function updateE2EFooterVisibility() {
+            const footer = document.getElementById('e2eStreamFooter');
+            if (!footer) return;
+            const isCloud = typeof FadCamRemote !== 'undefined' &&
+                            typeof FadCamRemote.isCloudMode === 'function' &&
+                            FadCamRemote.isCloudMode();
+            const hasE2E = typeof FadCamRemote !== 'undefined' &&
+                           typeof FadCamRemote.getE2EVerifyTag === 'function' &&
+                           !!FadCamRemote.getE2EVerifyTag();
+            footer.style.display = (isCloud && hasE2E) ? 'flex' : 'none';
+        }
+
+        /**
+         * Reusable confirmation dialog matching id codebase design system.
+         * Returns a Promise<boolean> — true = confirmed, false = cancelled.
+         */
+        function showConfirmOverlay(options) {
+            return new Promise((resolve) => {
+                const existing = document.getElementById('confirm-overlay-backdrop');
+                if (existing) existing.remove();
+
+                const {
+                    title,
+                    message,
+                    confirmText = 'Confirm',
+                    cancelText  = 'Cancel',
+                    destructive = false,
+                    iconHtml    = ''
+                } = options;
+
+                const confirmBg = destructive
+                    ? 'background:#dc2626;'
+                    : 'background:#ffffff;color:#09090b;';
+                const confirmHover = destructive ? 'hoverred' : 'hoverwhite';
+
+                const el = document.createElement('div');
+                el.id = 'confirm-overlay-backdrop';
+                el.style.cssText = [
+                    'position:fixed', 'inset:0', 'z-index:11000',
+                    'display:flex', 'align-items:center', 'justify-content:center', 'padding:16px',
+                    'background:rgba(0,0,0,0.7)', 'backdrop-filter:blur(6px)',
+                    'animation:cfFadeIn 0.18s ease-out',
+                    'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'
+                ].join(';');
+
+                el.innerHTML = `
+                  <style>
+                    @keyframes cfFadeIn  { from{opacity:0}           to{opacity:1} }
+                    @keyframes cfScaleIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+                    #confirm-overlay-dialog { animation: cfScaleIn 0.18s ease-out; }
+                    #cf-confirm-btn:hover:not(:disabled) {
+                      box-shadow: ${destructive
+                        ? '0 0 14px rgba(220,38,38,0.75),0 0 28px rgba(220,38,38,0.4)'
+                        : '0 0 14px rgba(255,255,255,0.45),0 0 28px rgba(255,255,255,0.2)'};
+                    }
+                    #cf-cancel-btn:hover:not(:disabled) {
+                      background:#ffffff !important; color:#09090b !important;
+                      box-shadow:0 0 14px rgba(255,255,255,0.35),0 0 28px rgba(255,255,255,0.15);
+                    }
+                    #cf-confirm-btn:disabled, #cf-cancel-btn:disabled { opacity:0.5; cursor:not-allowed; }
+                  </style>
+                  <div id="confirm-overlay-dialog"
+                       style="width:100%;max-width:380px;background:#18181b;border:1px solid #3f3f46;
+                              border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.6);color:#fff;">
+                    <div style="padding:24px 24px 16px;">
+                      ${iconHtml ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">${iconHtml}<h3 style="margin:0;font-size:17px;font-weight:700;">${title}</h3></div>` : `<h3 style="margin:0 0 12px;font-size:17px;font-weight:700;">${title}</h3>`}
+                      <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.6;">${message}</p>
+                    </div>
+                    <div style="display:flex;gap:10px;padding:12px 24px 24px;">
+                      <button id="cf-cancel-btn"
+                              style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;
+                                     background:#27272a;border:none;border-radius:10px;
+                                     color:#e4e4e7;cursor:pointer;transition:all 0.2s;">
+                        ${cancelText}
+                      </button>
+                      <button id="cf-confirm-btn"
+                              style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;
+                                     ${confirmBg}border:none;border-radius:10px;
+                                     cursor:pointer;transition:all 0.2s;">
+                        <span id="cf-btn-text">${confirmText}</span>
+                      </button>
+                    </div>
+                  </div>`;
+
+                document.body.appendChild(el);
+
+                const finish = (confirmed) => {
+                    const bd = document.getElementById('confirm-overlay-backdrop');
+                    if (bd) {
+                        bd.style.opacity = '0';
+                        bd.style.transition = 'opacity 0.18s';
+                        setTimeout(() => bd.remove(), 180);
+                    }
+                    resolve(confirmed);
+                };
+
+                document.getElementById('cf-confirm-btn').addEventListener('click', () => finish(true));
+                document.getElementById('cf-cancel-btn').addEventListener('click',  () => finish(false));
+                el.addEventListener('click', (e) => { if (e.target === el) finish(false); });
+                document.addEventListener('keydown', function esc(e) {
+                    if (e.key === 'Escape') { finish(false); document.removeEventListener('keydown', esc); }
+                });
+            });
+        }
 
         function showToast(message, duration = 5000) {
             const container = document.getElementById('toastContainer');
@@ -5365,16 +5515,60 @@
          * Logout and clear session
          */
         async function logoutNow() {
-            try {
-                await authService.logout();
-                showLockScreen();
-                showToast('👋 Logged out', 1500);
-                
-                // DON'T pause polling - we need to continue checking auth status changes
-                // for real-time updates (e.g., when auth is disabled on phone side)
-                // Polling will pause stream but will keep checking auth state
-            } catch (error) {
-                console.error('[Auth] Logout failed:', error);
+            const isCloud = typeof FadCamRemote !== 'undefined' &&
+                            typeof FadCamRemote.isCloudMode === 'function' &&
+                            FadCamRemote.isCloudMode();
+
+            // Close the profile dropdown before showing dialog
+            document.getElementById('profileDropdown')?.classList.remove('visible');
+
+            if (isCloud) {
+                const confirmed = await showConfirmOverlay({
+                    title: 'Clear Encryption Key',
+                    message: 'This will remove your decryption key from this browser. The stream will pause and you will need to re-enter your LabPass the next time you watch. Your recordings and account remain completely untouched.',
+                    confirmText: 'Clear Key',
+                    cancelText: 'Keep Watching',
+                    destructive: true,
+                    iconHtml: '<div style="padding:8px;background:#27272a;border:1px solid #3f3f46;border-radius:10px;color:#dc2626;"><i class="fas fa-lock" style="font-size:16px;"></i></div>'
+                });
+                if (!confirmed) return;
+
+                // Cloud mode: clear the E2E master key from IndexedDB, then re-prompt
+                try {
+                    if (typeof E2EKeyManager !== 'undefined') {
+                        await E2EKeyManager.clear();
+                        console.log('[Auth] Cloud mode — E2E key cleared from IndexedDB');
+                    }
+                    showToast('🔒 Encryption key cleared — re-enter LabPass to resume', 3000);
+                    // Re-show the unlock modal so the user can enter a different LabPass
+                    if (typeof FadCamRemote.showE2EUnlockModal === 'function') {
+                        FadCamRemote.showE2EUnlockModal();
+                    }
+                } catch (error) {
+                    console.error('[Auth] Failed to clear E2E key:', error);
+                }
+            } else {
+                const confirmed = await showConfirmOverlay({
+                    title: 'Sign Out',
+                    message: 'This will end your session and return you to the lock screen. Your device will keep recording if it is currently active — signing out here only closes your browser session.',
+                    confirmText: 'Sign Out',
+                    cancelText: 'Stay',
+                    destructive: true,
+                    iconHtml: '<div style="padding:8px;background:#27272a;border:1px solid #3f3f46;border-radius:10px;color:#a1a1aa;"><i class="fas fa-sign-out-alt" style="font-size:16px;"></i></div>'
+                });
+                if (!confirmed) return;
+
+                try {
+                    await authService.logout();
+                    showLockScreen();
+                    showToast('👋 Signed out', 1500);
+
+                    // DON'T pause polling - we need to continue checking auth status changes
+                    // for real-time updates (e.g., when auth is disabled on phone side)
+                    // Polling will pause stream but will keep checking auth state
+                } catch (error) {
+                    console.error('[Auth] Logout failed:', error);
+                }
             }
         }
 
@@ -5485,7 +5679,21 @@
                 profileBtn.addEventListener('click', (e) => {
                     console.log('[Profile] Button clicked!');
                     e.stopPropagation();
-                    
+
+                    // Update logout item label based on mode
+                    const isCloud = typeof FadCamRemote !== 'undefined' &&
+                                    typeof FadCamRemote.isCloudMode === 'function' &&
+                                    FadCamRemote.isCloudMode();
+                    const logoutIcon  = document.getElementById('profileLogoutIcon');
+                    const logoutLabel = document.getElementById('profileLogoutLabel');
+                    if (isCloud) {
+                        if (logoutIcon)  logoutIcon.className  = 'fas fa-lock';
+                        if (logoutLabel) logoutLabel.textContent = 'Lock Stream';
+                    } else {
+                        if (logoutIcon)  logoutIcon.className  = 'fas fa-sign-out-alt';
+                        if (logoutLabel) logoutLabel.textContent = 'Logout';
+                    }
+
                     const isVisible = profileDropdown.classList.contains('visible');
                     console.log('[Profile] Current state - isVisible:', isVisible);
                     console.log('[Profile] Current classes:', profileDropdown.className);

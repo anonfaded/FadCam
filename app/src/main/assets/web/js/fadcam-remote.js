@@ -210,40 +210,91 @@
     ].join(';');
 
     const subtitle = noVerifyTag
-      ? 'This stream appears to be end-to-end encrypted. Enter your FadSec ID password to decrypt & unlock playback.'
-      : 'This stream is end-to-end encrypted. Enter your FadSec ID password to decrypt & unlock playback.';
+      ? 'This stream appears to be end-to-end encrypted. Enter your LabPass to decrypt &amp; unlock playback.'
+      : 'This stream is end-to-end encrypted. Enter your LabPass to decrypt &amp; unlock playback.';
 
     overlay.innerHTML = `
-      <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:32px 28px;
-                  max-width:400px;width:90%;color:#fff;text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">&#x1F512;</div>
-        <h2 style="margin:0 0 8px;font-size:18px;font-weight:700;">
-          E2E Stream Encryption
+      <div style="
+        background: rgba(9,9,11,0.96);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid #27272a;
+        border-radius: 16px;
+        padding: 32px 28px 24px;
+        max-width: 420px;
+        width: 90%;
+        color: #fff;
+        text-align: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      ">
+        <div style="
+          width: 52px; height: 52px;
+          background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+          border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 16px;
+          box-shadow: 0 0 0 1px rgba(220,38,38,0.3), 0 8px 32px rgba(220,38,38,0.35);
+          font-size: 22px; line-height: 1;
+        ">&#x1F512;</div>
+        <h2 style="margin:0 0 8px;font-size:18px;font-weight:700;letter-spacing:-0.2px;">
+          Encrypted Stream
         </h2>
-        <p style="margin:0 0 24px;font-size:13px;color:#aaa;">
+        <p style="margin:0 0 24px;font-size:13px;color:#a1a1aa;line-height:1.55;">
           ${subtitle}
         </p>
-        <input
-          id="e2e-unlock-input"
-          type="password"
-          placeholder="FadSec ID password"
-          autocomplete="current-password"
-          style="width:100%;box-sizing:border-box;padding:10px 14px;
-                 background:#0d0d1a;border:1px solid #444;border-radius:8px;
-                 color:#fff;font-size:14px;margin-bottom:12px;
-                 outline:none;transition:border-color .2s;"
-        />
+        <div style="text-align:left;margin-bottom:6px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#e4e4e7;margin-bottom:2px;letter-spacing:0.4px;text-transform:uppercase;">
+            LabPass
+          </label>
+          <p style="margin:0 0 8px;font-size:11px;color:#71717a;line-height:1.4;">
+            Your <strong style="color:#a1a1aa;font-weight:600;">FadSec ID</strong> password — the one you use to sign in at <span style="color:#dc2626;">id.fadseclab.com</span>
+          </p>
+          <input
+            id="e2e-unlock-input"
+            type="password"
+            placeholder="Enter your LabPass…"
+            autocomplete="current-password"
+            style="
+              width:100%; box-sizing:border-box;
+              padding: 10px 14px;
+              background: #09090b;
+              border: 1px solid #27272a;
+              border-radius: 8px;
+              color: #fff;
+              font-size: 14px;
+              outline: none;
+              transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            "
+            onfocus="this.style.borderColor='transparent';this.style.boxShadow='0 0 0 2px #dc2626';"
+            onblur="this.style.borderColor='#27272a';this.style.boxShadow='none';"
+          />
+        </div>
         <div id="e2e-unlock-error"
-             style="color:#ff5555;font-size:12px;min-height:20px;margin-bottom:12px;"></div>
+             style="color:#ef4444;font-size:12px;min-height:20px;margin-bottom:12px;text-align:left;"></div>
         <button
           id="e2e-unlock-btn"
           onclick="window.__e2eUnlockSubmit()"
-          style="width:100%;padding:11px;background:#3a86ff;border:none;
-                 border-radius:8px;color:#fff;font-size:14px;font-weight:600;
-                 cursor:pointer;transition:background .2s;"
+          style="
+            width: 100%; padding: 11px;
+            background: #dc2626;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.2px;
+            transition: box-shadow 0.2s ease, background 0.2s ease;
+          "
+          onmouseover="if(!this.disabled){this.style.boxShadow='0 0 12px rgba(220,38,38,0.8),0 0 28px rgba(220,38,38,0.45)';}"
+          onmouseout="this.style.boxShadow='none';"
         >
-          Unlock
+          Unlock Stream
         </button>
+        <p style="margin:16px 0 0;font-size:11px;color:#3f3f46;letter-spacing:0.5px;">
+          POWERED BY <span style="color:#dc2626;font-weight:600;">FADSEC LAB</span>
+        </p>
       </div>`;
 
     document.body.appendChild(overlay);
@@ -264,7 +315,7 @@
       const pw    = (document.getElementById('e2e-unlock-input') || {}).value || '';
 
       if (!pw) {
-        if (errEl) errEl.textContent = 'Password is required.';
+        if (errEl) errEl.textContent = 'LabPass is required.';
         return;
       }
 
@@ -283,8 +334,8 @@
         } else {
           const ok = await E2EKeyManager.unlock(pw, userId, verifyTag);
           if (!ok) {
-            if (errEl) errEl.textContent = 'Incorrect password. Please try again.';
-            if (btn) { btn.disabled = false; btn.textContent = 'Unlock'; }
+            if (errEl) errEl.textContent = 'Incorrect LabPass. Please try again.';
+            if (btn) { btn.disabled = false; btn.textContent = 'Unlock Stream'; }
             return;
           }
         }
@@ -303,7 +354,7 @@
       } catch (err) {
         console.error('[FadCamRemote] E2E unlock error:', err);
         if (errEl) errEl.textContent = err.message || 'Unlock failed. Please try again.';
-        if (btn) { btn.disabled = false; btn.textContent = 'Unlock'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Unlock Stream'; }
       }
     };
   }
@@ -649,6 +700,8 @@
     getRelayCommandUrl: () => {
       if (!streamContext?.userId || !streamContext?.deviceId) return null;
       return `https://live.fadseclab.com:8443/api/command/${streamContext.userId}/${streamContext.deviceId}`;
-    }
+    },
+    showE2EUnlockModal,
+    checkAndShowE2EUnlock,
   };
 })();
