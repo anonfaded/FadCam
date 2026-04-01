@@ -132,6 +132,13 @@
     <string name="fadrec_mic_permission_needed_message">FadRec can\'t access your mic. You can record muted - no audio will be saved.</string>
     <string name="fadrec_record_muted">Record Muted</string>
 
+    <!-- FadRec audio source picker -->
+    <string name="fadrec_audio_source_title">Audio Source</string>
+    <string name="fadrec_audio_source_choose">Choose audio source</string>
+    <string name="fadrec_audio_source_none">No Audio</string>
+    <string name="fadrec_audio_source_mic">Microphone</string>
+    <string name="fadrec_audio_source_internal">Device Audio (Internal)</string>
+
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>
     <string name="video_recording_paused">Recording paused</string>

@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
@@ -36,10 +37,14 @@ import com.fadcam.fadrec.MediaProjectionHelper;
 import com.fadcam.fadrec.ScreenRecordingState;
 import com.fadcam.fadrec.services.ScreenRecordingService;
 import com.fadcam.ui.HomeFragment;
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.ui.utils.AnimatedTextView;
 import com.fadcam.utils.ServiceUtils;
 import com.fadcam.utils.StorageInfoCache;
+import java.util.ArrayList;
 import com.google.android.material.button.MaterialButton;
+import android.os.Parcelable;
 
 /**
  * FadRec Home Fragment - Extends HomeFragment for screen recording functionality.
@@ -977,12 +982,16 @@ public class FadRecHomeFragment extends HomeFragment {
         if (buttonFadRecMute != null) {
             buttonFadRecMute.setVisibility(View.VISIBLE);
             buttonFadRecMute.setOnClickListener(v -> {
-                boolean newMuted = !sharedPreferencesManager.isScreenRecordingMuted();
-                sharedPreferencesManager.setScreenRecordingMuted(newMuted);
-                if (mediaProjectionHelper != null && screenRecordingState != ScreenRecordingState.NONE) {
-                    mediaProjectionHelper.setScreenRecordingMuted(newMuted);
+                boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
+                    || screenRecordingState == ScreenRecordingState.PAUSED;
+                
+                if (isRecordingActive) {
+                    // During recording: show mute toggle only
+                    showAudioMuteToggle();
+                } else {
+                    // Show audio source picker when not recording
+                    showAudioSourcePicker();
                 }
-                updateMuteButtonUi();
             });
             updateMuteButtonUi();
         }
@@ -1038,14 +1047,22 @@ public class FadRecHomeFragment extends HomeFragment {
             return;
         }
         
-        // Check audio permission first if microphone is enabled
+        // Check audio permission first if audio source requires it
         String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
-        if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
+        if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)
+                || Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)) {
             if (!isMicPermissionGranted()) {
-                FLog.d(TAG, "Mic permission not granted - showing muted recording dialog");
+                FLog.d(TAG, "Audio permission not granted - showing muted recording dialog (source: " + audioSource + ")");
                 showMicPermissionDeniedDialog();
                 return;
             }
+        }
+        
+        // Internal audio requires API 29+
+        if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)
+                && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            FLog.w(TAG, "Internal audio requires Android 10+ - falling back to mic");
+            sharedPreferencesManager.setScreenRecordingAudioSource(Constants.AUDIO_SOURCE_MIC);
         }
         
         // Audio permission granted or not needed, proceed with screen capture
@@ -1100,7 +1117,8 @@ public class FadRecHomeFragment extends HomeFragment {
     private boolean isAudioEffectivelyAvailable() {
         if (sharedPreferencesManager == null) return false;
         String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
-        boolean prefersAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
+        boolean prefersAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource)
+            || Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource);
         return prefersAudio && isMicPermissionGranted() && !isRecordingForcedMuted;
     }
 
@@ -1471,22 +1489,178 @@ public class FadRecHomeFragment extends HomeFragment {
     
     private void updateMuteButtonUi() {
         if (buttonFadRecMute == null || !isAdded()) return;
+        String audioSource = sharedPreferencesManager != null
+            ? sharedPreferencesManager.getScreenRecordingAudioSource()
+            : Constants.AUDIO_SOURCE_MIC;
         boolean muted = sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingMuted();
+        boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
+            || screenRecordingState == ScreenRecordingState.PAUSED;
+        
+        // Choose icon based on audio source and mute state
+        int iconRes;
+        if (Constants.AUDIO_SOURCE_NONE.equals(audioSource)) {
+            iconRes = com.fadcam.R.drawable.ic_volume_off_24;
+        } else if (muted && isRecordingActive) {
+            iconRes = com.fadcam.R.drawable.ic_volume_off_24;
+        } else if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)) {
+            iconRes = com.fadcam.R.drawable.ic_volume_up_24;
+        } else {
+            // Microphone
+            iconRes = com.fadcam.R.drawable.ic_mic;
+        }
+        
         buttonFadRecMute.setIcon(
-            AppCompatResources.getDrawable(
-                requireContext(),
-                muted ? com.fadcam.R.drawable.ic_volume_off_24 : com.fadcam.R.drawable.ic_volume_up_24
-            )
+            AppCompatResources.getDrawable(requireContext(), iconRes)
         );
-        buttonFadRecMute.setContentDescription(
-            muted ? getString(com.fadcam.R.string.fadrec_unmute_audio) : getString(com.fadcam.R.string.fadrec_mute_audio)
-        );
+        
+        // Button always enabled - behavior changes based on recording state
+        buttonFadRecMute.setEnabled(true);
+        buttonFadRecMute.setAlpha(1.0f);
+        if (isRecordingActive) {
+            buttonFadRecMute.setContentDescription("Toggle mute (during recording)");
+        } else {
+            buttonFadRecMute.setContentDescription(
+                getString(com.fadcam.R.string.fadrec_audio_source_choose)
+            );
+        }
+        
+        // Tint: red when off, default when active
+        boolean isOff = Constants.AUDIO_SOURCE_NONE.equals(audioSource);
         buttonFadRecMute.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-            muted
+            isOff
                 ? androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop)
                 : 0xFF3A3A3A
         ));
         buttonFadRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+    }
+
+    /**
+     * Show audio source picker bottom sheet.
+     * Allows user to choose between No Audio, Microphone, and Device Audio (internal).
+     * Device Audio option requires Android 10+ (API 29).
+     * Only available when not recording.
+     */
+    private void showAudioSourcePicker() {
+        if (!isAdded()) return;
+        
+        String currentSource = sharedPreferencesManager.getScreenRecordingAudioSource();
+        ArrayList<OptionItem> items = new ArrayList<>();
+        
+        // Add audio source options with icons
+        items.add(new OptionItem(
+            Constants.AUDIO_SOURCE_NONE,
+            getString(R.string.fadrec_audio_source_none),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "volume_off"  // Material Symbol icon
+        ));
+        items.add(new OptionItem(
+            Constants.AUDIO_SOURCE_MIC,
+            getString(R.string.fadrec_audio_source_mic),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "mic"  // Material Symbol icon
+        ));
+        items.add(new OptionItem(
+            Constants.AUDIO_SOURCE_INTERNAL,
+            getString(R.string.fadrec_audio_source_internal),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "speaker"  // Material Symbol icon
+        ));
+        
+        final String resultKey = "picker_result_audio_source";
+        
+        // Set up fragment result listener
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            String selectedSource = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selectedSource != null && !selectedSource.equals(currentSource)) {
+                sharedPreferencesManager.setScreenRecordingAudioSource(selectedSource);
+                FLog.d(TAG, "Audio source changed to: " + selectedSource);
+                updateMuteButtonUi();
+            }
+        });
+        
+        PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
+            getString(R.string.fadrec_audio_source_title),
+            items,
+            currentSource,
+            resultKey,
+            getString(R.string.fadrec_audio_source_choose)
+        );
+        picker.show(getParentFragmentManager(), "audio_source_picker");
+    }
+    
+    /**
+     * Show mute toggle picker during recording.
+     * Allows user to toggle mute on/off without changing audio source.
+     */
+    private void showAudioMuteToggle() {
+        if (!isAdded()) return;
+        
+        boolean isMuted = sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingMuted();
+        ArrayList<OptionItem> items = new ArrayList<>();
+        
+        // Add mute/unmute options with icons
+        items.add(new OptionItem(
+            "unmute",
+            "Audio On",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "volume_up"  // Material Symbol icon
+        ));
+        items.add(new OptionItem(
+            "mute",
+            "Mute",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "volume_off"  // Material Symbol icon
+        ));
+        
+        final String resultKey = "picker_result_mute_toggle";
+        
+        // Set up fragment result listener
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            String selectedAction = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selectedAction != null) {
+                boolean shouldMute = "mute".equals(selectedAction);
+                if (sharedPreferencesManager != null) {
+                    sharedPreferencesManager.setScreenRecordingMuted(shouldMute);
+                    FLog.d(TAG, "Mute toggled to: " + shouldMute);
+                    updateMuteButtonUi();
+                }
+            }
+        });
+        
+        String currentId = isMuted ? "mute" : "unmute";
+        PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
+            "Audio Control",
+            items,
+            currentId,
+            resultKey,
+            "Mute or unmute audio during recording"
+        );
+        picker.show(getParentFragmentManager(), "mute_toggle_picker");
     }
 
     private void syncMuteUiState() {

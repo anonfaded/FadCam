@@ -467,16 +467,19 @@ public class ScreenRecordingService extends Service {
         
         // Get audio config
         String audioSource = sharedPreferencesManager.getScreenRecordingAudioSource();
-        boolean prefersAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
+        boolean prefersAudio = Constants.AUDIO_SOURCE_MIC.equals(audioSource)
+            || Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource);
+        boolean needsMicPermission = Constants.AUDIO_SOURCE_MIC.equals(audioSource);
         boolean hasMicPermission = ContextCompat.checkSelfPermission(
             this,
             android.Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED;
+        // Internal audio only requires RECORD_AUDIO permission too (for AudioRecord)
         boolean enableAudio = prefersAudio && !forceNoAudioForThisStart && hasMicPermission;
         enableAudioForSession = enableAudio;
         boolean initialMuted = sharedPreferencesManager.isScreenRecordingMuted();
         if (prefersAudio && !hasMicPermission) {
-            FLog.w(TAG, "Mic permission missing - forcing muted screen recording");
+            FLog.w(TAG, "Audio permission missing - forcing muted screen recording (source: " + audioSource + ")");
             sharedPreferencesManager.setScreenRecordingMuted(true);
         }
         if (forceNoAudioForThisStart) {
@@ -486,11 +489,12 @@ public class ScreenRecordingService extends Service {
         // Calculate bitrate based on resolution
         int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
         
-        FLog.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d, audio=%s",
+        FLog.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d, audio=%s (source=%s)",
             screenWidth, screenHeight,
             Constants.DEFAULT_SCREEN_RECORDING_FPS,
             calculatedBitrate,
-            enableAudio ? "enabled" : "disabled"));
+            enableAudio ? "enabled" : "disabled",
+            audioSource));
         
         // Build recording pipeline
         try {
@@ -498,6 +502,7 @@ public class ScreenRecordingService extends Service {
                 .setScreenDimensions(screenWidth, screenHeight, screenDensity)
                 .setVideoConfig(Constants.DEFAULT_SCREEN_RECORDING_FPS, calculatedBitrate)
                 .setEnableAudio(enableAudio)
+                .setAudioSource(audioSource)
                 .setMediaProjection(mediaProjection)
                 .setWatermarkInfoProvider(createWatermarkInfoProvider());
             

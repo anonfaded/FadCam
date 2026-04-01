@@ -5,7 +5,9 @@ import com.fadcam.FLog;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioPlaybackCaptureConfiguration;
 import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -13,6 +15,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.Surface;
@@ -59,6 +62,7 @@ public class ScreenRecordingPipeline {
     private final int videoFramerate;
     private final int videoBitrate;
     private final boolean enableAudio;
+    private final String audioSource;
     private final String outputFilePath;
     private final FileDescriptor outputFd;
     
@@ -119,6 +123,7 @@ public class ScreenRecordingPipeline {
         private int videoFramerate = Constants.DEFAULT_SCREEN_RECORDING_FPS;
         private int videoBitrate;
         private boolean enableAudio = false;
+        private String audioSource = Constants.AUDIO_SOURCE_MIC;
         private String outputFilePath;
         private FileDescriptor outputFd;
         private MediaProjection mediaProjection;
@@ -147,6 +152,15 @@ public class ScreenRecordingPipeline {
         
         public Builder setEnableAudio(boolean enable) {
             this.enableAudio = enable;
+            return this;
+        }
+        
+        /**
+         * Set the audio source type for recording.
+         * @param source One of Constants.AUDIO_SOURCE_MIC, AUDIO_SOURCE_INTERNAL, or AUDIO_SOURCE_NONE
+         */
+        public Builder setAudioSource(String source) {
+            this.audioSource = source;
             return this;
         }
         
@@ -201,6 +215,7 @@ public class ScreenRecordingPipeline {
         this.videoFramerate = builder.videoFramerate;
         this.videoBitrate = builder.videoBitrate;
         this.enableAudio = builder.enableAudio;
+        this.audioSource = builder.audioSource;
         this.outputFilePath = builder.outputFilePath;
         this.outputFd = builder.outputFd;
         this.mediaProjection = builder.mediaProjection;
@@ -427,17 +442,42 @@ public class ScreenRecordingPipeline {
             int minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
             int bufferSize = minBufferSize * 2; // Double buffer for safety
             
-            // Create AudioRecord
-            audioRecord = new AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                sampleRate,
-                channelConfig,
-                audioFormat,
-                bufferSize
-            );
+            // Create AudioRecord based on audio source type
+            if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Internal/device audio via AudioPlaybackCapture (API 29+)
+                AudioPlaybackCaptureConfiguration playbackConfig =
+                    new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
+                        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                        .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                        .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                        .build();
+                
+                audioRecord = new AudioRecord.Builder()
+                    .setAudioPlaybackCaptureConfig(playbackConfig)
+                    .setAudioFormat(new AudioFormat.Builder()
+                        .setEncoding(audioFormat)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                        .build())
+                    .setBufferSizeInBytes(bufferSize)
+                    .build();
+                
+                FLog.d(TAG, "AudioRecord initialized with AudioPlaybackCapture (internal audio)");
+            } else {
+                // Microphone audio (default)
+                audioRecord = new AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    sampleRate,
+                    channelConfig,
+                    audioFormat,
+                    bufferSize
+                );
+                FLog.d(TAG, "AudioRecord initialized with microphone source");
+            }
             
             if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-                throw new IOException("AudioRecord not initialized");
+                throw new IOException("AudioRecord not initialized - source: " + audioSource);
             }
             
             // Create audio encoder (AAC)
@@ -451,10 +491,10 @@ public class ScreenRecordingPipeline {
             audioEncoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);
             audioEncoder.configure(audioFormat_encoder, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             
-            // FLog.d(TAG, "Audio encoder initialized: AAC, " + sampleRate + "Hz");
+            FLog.d(TAG, "Audio encoder initialized: AAC, " + sampleRate + "Hz, source=" + audioSource);
             
         } catch (IOException e) {
-            FLog.e(TAG, "Failed to initialize audio encoder", e);
+            FLog.e(TAG, "Failed to initialize audio encoder (source: " + audioSource + ")", e);
             throw e;
         }
     }

@@ -347,6 +347,7 @@ public abstract class Constants {
     // Screen recording audio source options
     public static final String AUDIO_SOURCE_NONE = "none";
     public static final String AUDIO_SOURCE_MIC = "microphone";
+    public static final String AUDIO_SOURCE_INTERNAL = "internal"; // Device/system audio via AudioPlaybackCapture (API 29+)
     public static final String EXTRA_SCREEN_RECORDING_MUTED =
         "com.fadcam.EXTRA_SCREEN_RECORDING_MUTED";
     public static final String EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO =
