@@ -207,9 +207,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="0dp"
             android:layout_marginBottom="2dp"
+            android:clickable="true"
+            android:focusable="true"
             app:cardBackgroundColor="@android:color/transparent"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
+            app:rippleColor="#22FFFFFF"
             app:strokeWidth="0dp">
 
             <FrameLayout
@@ -284,6 +287,17 @@
                         android:textColor="#D6E2EA"
                         android:textSize="23sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvElapsedReadable"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:includeFontPadding="false"
+                        android:gravity="center"
+                        android:text="m • s"
+                        android:textColor="#B0BEC5"
+                        android:textSize="10sp" />
 
                 </LinearLayout>
 

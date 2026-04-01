@@ -238,6 +238,7 @@ public class HomeFragment extends BaseFragment {
      */
     protected TextView tvElapsedTitle;
     protected TextView tvElapsedSubtitle;
+    protected TextView tvElapsedReadable;
     protected TextView tvRemainingTitle;
     protected TextView tvRemainingSubtitle;
     private MaterialCardView cardElapsedHero;
@@ -9585,6 +9586,7 @@ public class HomeFragment extends BaseFragment {
         // ...existing code...
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
+        tvElapsedReadable = view.findViewById(R.id.tvElapsedReadable);
         cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
         tvElapsedStateIcon = view.findViewById(R.id.tvElapsedStateIcon);
         ivElapsedAccent = view.findViewById(R.id.ivElapsedAccent);
@@ -11274,38 +11276,29 @@ public class HomeFragment extends BaseFragment {
 
     private void setupHomeCustomizationListeners() {
         if (cardElapsedHero != null) {
-            cardElapsedHero.setOnLongClickListener(v -> {
+            cardElapsedHero.setOnClickListener(v -> {
                 animatePressBounce(v, () -> {
                     performHapticFeedback();
                     showElapsedCustomizeSheet();
                 });
-                return true;
             });
         }
 
         if (rowStorageAvailable != null) {
             rowStorageAvailable.setOnClickListener(v -> {
-                // Keep the row visually pressable so ripple feedback works with long press.
-            });
-            rowStorageAvailable.setOnLongClickListener(v -> {
                 animatePressBounce(v, () -> {
                     performHapticFeedback();
                     showStorageCustomizeSheet();
                 });
-                return true;
             });
         }
 
         if (rowEstimateTime != null) {
             rowEstimateTime.setOnClickListener(v -> {
-                // Keep the row visually pressable so ripple feedback works with long press.
-            });
-            rowEstimateTime.setOnLongClickListener(v -> {
                 animatePressBounce(v, () -> {
                     performHapticFeedback();
                     showTimeLeftColorSheet();
                 });
-                return true;
             });
         }
     }
@@ -11511,6 +11504,13 @@ public class HomeFragment extends BaseFragment {
                 sharedPreferencesManager != null && sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, true),
                 "flag"));
         items.add(new com.fadcam.ui.picker.OptionItem(
+                "elapsed_labels",
+                "Timer Labels",
+                "Show time unit labels (d/h/m/s) below timer",
+                null, null, null, true,
+                sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible(),
+                "label"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
                 "elapsed_background",
                 getString(R.string.home_elapsed_background_option),
                 getString(R.string.home_elapsed_background_option_desc),
@@ -11540,6 +11540,17 @@ public class HomeFragment extends BaseFragment {
                                     .apply();
                         }
                         applyElapsedFlagPreference();
+                    } else if ("elapsed_labels".equals(selected)) {
+                        boolean showLabels = bundle.getBoolean(
+                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE,
+                                true);
+                        if (sharedPreferencesManager != null) {
+                            sharedPreferencesManager.setScreenRecordingElapsedTimeLabelsVisible(showLabels);
+                            // Trigger immediate UI refresh
+                            if (this instanceof com.fadcam.fadrec.ui.FadRecHomeFragment) {
+                                ((com.fadcam.fadrec.ui.FadRecHomeFragment) this).refreshTimerDisplay();
+                            }
+                        }
                     } else if ("elapsed_background".equals(selected)) {
                         showElapsedBackgroundSheet();
                     }

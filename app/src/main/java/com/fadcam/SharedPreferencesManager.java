@@ -1984,6 +1984,28 @@ public class SharedPreferencesManager {
     }
 
     /**
+     * Gets the elapsed time labels visibility preference for screen recording.
+     * @return true to show labels (d/h/m/s), false to hide
+     */
+    public boolean isScreenRecordingElapsedTimeLabelsVisible() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS,
+            true // Default to showing labels
+        );
+    }
+
+    /**
+     * Sets the elapsed time labels visibility preference for screen recording.
+     * @param visible true to show labels, false to hide
+     */
+    public void setScreenRecordingElapsedTimeLabelsVisible(boolean visible) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS, visible)
+            .apply();
+    }
+
+    /**
      * Checks if watermark is enabled for screen recordings.
      * @return true if watermark is enabled
      */

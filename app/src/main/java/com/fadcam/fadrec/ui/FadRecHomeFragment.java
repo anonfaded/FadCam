@@ -1713,6 +1713,63 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     /**
+     * Generate dynamic labels string for elapsed time (e.g., "d • h • m • s").
+     * Only includes labels for non-zero units to keep display clean.
+     * @param elapsedTimeMs elapsed time in milliseconds
+     * @return labels string aligned with timer display, or empty if all units are zero
+     */
+    private String generateElapsedTimeLabels(long elapsedTimeMs) {
+        long totalSeconds = elapsedTimeMs / 1000;
+        long days = totalSeconds / (24 * 3600);
+        long hours = (totalSeconds % (24 * 3600)) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        
+        if (totalSeconds == 0) return "";
+        
+        // Build labels for active units only with bullet separator (matching camera controls style)
+        if (days > 0) {
+            return "d • h • m • s";
+        } else if (hours > 0) {
+            return "h • m • s";
+        } else if (minutes > 0) {
+            return "m • s";
+        } else {
+            return "s";
+        }
+    }
+
+    /**
+     * Format elapsed time as timer display (MM:SS or HH:MM:SS or DD:HH:MM:SS once it hits 24 hours).
+     * @param elapsedTimeMs elapsed time in milliseconds
+     * @return formatted time string
+     */
+    private String formatElapsedTimeDisplay(long elapsedTimeMs) {
+        long totalSeconds = elapsedTimeMs / 1000;
+        long days = totalSeconds / (24 * 3600);
+        long hours = (totalSeconds % (24 * 3600)) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        
+        if (days > 0) {
+            return String.format(java.util.Locale.getDefault(), "%d:%02d:%02d:%02d", days, hours, minutes, seconds);
+        } else if (hours > 0) {
+            return String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds);
+        }
+    }
+
+    /**
+     * Immediately refresh the timer display (e.g., after toggling labels preference).
+     * Called from HomeFragment when user changes labels visibility setting.
+     */
+    public void refreshTimerDisplay() {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(this::updateStorageInfo);
+        }
+    }
+
+    /**
      * Override parent's storage/timer update to show screen recording elapsed/remaining time.
      * This updates the timer cards with screen recording-specific data instead of camera data.
      */
@@ -1777,15 +1834,18 @@ public class FadRecHomeFragment extends HomeFragment {
                 }
             }
             
-            // Format elapsed time
-            long elapsedMinutes = elapsedTime / 60000;
-            long elapsedSeconds = (elapsedTime / 1000) % 60;
-            final String elapsedTimeText = String.format(
-                java.util.Locale.getDefault(),
-                "%02d:%02d",
-                elapsedMinutes,
-                elapsedSeconds
-            );
+            // Format elapsed time - always use timer format, dynamic labels below
+            final String elapsedTimeText = formatElapsedTimeDisplay(elapsedTime);
+            final String elapsedTimeLabels;
+            
+            // Check if user wants labels visible
+            boolean showLabels = sharedPreferencesManager != null 
+                ? sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible()
+                : true; // Default to showing labels
+            
+            elapsedTimeLabels = showLabels ? generateElapsedTimeLabels(elapsedTime) : "";
+            
+            
             latestElapsedDisplay = elapsedTimeText;
             
             // Format remaining time
@@ -1826,6 +1886,14 @@ public class FadRecHomeFragment extends HomeFragment {
                 }
                 if (tvElapsedSubtitle != null) {
                     tvElapsedSubtitle.setText(getString(R.string.recording_elapsed_time));
+                }
+                if (tvElapsedReadable != null) {
+                    if (!elapsedTimeLabels.isEmpty()) {
+                        tvElapsedReadable.setText(elapsedTimeLabels);
+                        tvElapsedReadable.setVisibility(View.VISIBLE);
+                    } else {
+                        tvElapsedReadable.setVisibility(View.GONE);
+                    }
                 }
                 
                 // Update remaining time

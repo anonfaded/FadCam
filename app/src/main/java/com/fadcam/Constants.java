@@ -352,6 +352,8 @@ public abstract class Constants {
         "com.fadcam.EXTRA_SCREEN_RECORDING_MUTED";
     public static final String EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO =
         "com.fadcam.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO";
+    public static final String PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS =
+        "pref_screen_recording_elapsed_time_labels"; // true to show labels (d/h/m/s), false to hide
     // -------------- FadRec (Screen Recording) Constants End --------------
     public static final String EXTRA_FOCUS_X = "com.fadcam.EXTRA_FOCUS_X"; // float (normalized 0..1)
     public static final String EXTRA_FOCUS_Y = "com.fadcam.EXTRA_FOCUS_Y"; // float (normalized 0..1)
