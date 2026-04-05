@@ -34,6 +34,8 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.provider.DocumentsContract;
+
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
@@ -80,6 +82,12 @@ public class ScreenRecordingService extends Service {
     private boolean forceNoAudioForThisStart = false;
     private boolean enableAudioForSession = false;
     private boolean previewOnlyActive = false;
+    /**
+     * True when the current session was started while the remote server was active AND the
+     * user had selected STREAM_ONLY mode.  Captured once at {@link #startScreenRecording()} so
+     * the stop path never deletes a recording that was started without an active server.
+     */
+    private boolean isStreamOnlySession = false;
     private Surface currentPreviewSurface;
     private int currentPreviewSurfaceWidth = -1;
     private int currentPreviewSurfaceHeight = -1;
@@ -552,6 +560,23 @@ public class ScreenRecordingService extends Service {
             // Reset pause tracking for new recording
             pauseStartTime = 0;
             totalPausedTime = 0;
+
+            // Capture stream-only intent at session start.  We only go stream-only when the
+            // remote server is *currently active* AND the user chose STREAM_ONLY mode.  Storing
+            // this once prevents a stale SharedPreference from deleting a recording that was
+            // made without an active server.
+            try {
+                boolean serverOn = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode sessionMode =
+                    sharedPreferencesManager.getStreamingMode();
+                isStreamOnlySession = serverOn &&
+                    (sessionMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                FLog.d(TAG, "Session stream-only flag: " + isStreamOnlySession
+                    + " (serverOn=" + serverOn + ", mode=" + sessionMode + ")");
+            } catch (Exception e) {
+                FLog.e(TAG, "Failed to determine streaming mode at session start", e);
+                isStreamOnlySession = false;
+            }
             
             // Save recording start time to SharedPreferences for UI timer updates
             sharedPreferencesManager.sharedPreferences.edit()
@@ -724,7 +749,38 @@ public class ScreenRecordingService extends Service {
             // Calculate duration
             long duration = SystemClock.elapsedRealtime() - recordingStartTime;
             FLog.i(TAG, String.format("Recording stopped. Duration: %.1f seconds", duration / 1000.0));
-            
+
+            // STREAM_ONLY: delete the temporary recording file so it is never kept on disk.
+            // Only do this when he session was started with an active server in STREAM_ONLY mode
+            // (isStreamOnlySession is captured at recording-start so a stale pref never deletes
+            // a recording that was made without an active server).
+            boolean isStreamOnly = isStreamOnlySession;
+            isStreamOnlySession = false; // Reset for next session
+            if (isStreamOnly) {
+                if (outputFile != null && outputFile.exists()) {
+                    boolean deleted = outputFile.delete();
+                    FLog.i(TAG, "🗑️ STREAM_ONLY: " + (deleted ? "Deleted" : "FAILED to delete")
+                        + " temp file: " + outputFile.getName());
+                    outputFile = null;
+                }
+                if (safRecordingUri != null) {
+                    try {
+                        // Use the correct SAF API — DocumentsContract.deleteDocument() respects
+                        // FLAG_SUPPORTS_DELETE and works reliably on all API levels.
+                        boolean deleted = DocumentsContract.deleteDocument(
+                            getContentResolver(), safRecordingUri);
+                        FLog.i(TAG, "🗑️ STREAM_ONLY: SAF delete " + (deleted ? "succeeded" : "returned false"));
+                    } catch (Exception e) {
+                        FLog.e(TAG, "STREAM_ONLY: Failed to delete SAF recording", e);
+                    }
+                    safRecordingUri = null;
+                }
+                // Invalidate storage cache so the UI immediately reflects reclaimed bytes.
+                com.fadcam.utils.StorageInfoCache.clearCache();
+            }
+
+            final boolean streamOnlySkipNotify = isStreamOnly;
+
             // Update UI on main thread
             mainHandler.post(() -> {
                 // Stop notification updates
@@ -745,30 +801,35 @@ public class ScreenRecordingService extends Service {
                 sharedPreferencesManager.sharedPreferences.edit()
                     .remove("screen_recording_start_time")
                     .apply();
-                
-                // Show completion notification and broadcast (for both internal and SAF storage)
-                boolean recordingSuccessful = (outputFile != null && outputFile.exists()) || (safRecordingUri != null);
-                
-                if (recordingSuccessful) {
-                    // Broadcast recording complete for RecordsFragment to refresh
-                    try {
-                        Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
-                        if (outputFile != null) {
-                            recordingCompleteIntent.putExtra("videoPath", outputFile.getAbsolutePath());
-                        } else if (safRecordingUri != null) {
-                            recordingCompleteIntent.putExtra("videoUri", safRecordingUri.toString());
+
+                if (streamOnlySkipNotify) {
+                    // STREAM_ONLY: file was deleted above — no library entry, no notification.
+                    FLog.i(TAG, "STREAM_ONLY: skipping recording-complete broadcast and notification");
+                } else {
+                    // Show completion notification and broadcast (for both internal and SAF storage)
+                    boolean recordingSuccessful = (outputFile != null && outputFile.exists()) || (safRecordingUri != null);
+
+                    if (recordingSuccessful) {
+                        // Broadcast recording complete for RecordsFragment to refresh
+                        try {
+                            Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                            if (outputFile != null) {
+                                recordingCompleteIntent.putExtra("videoPath", outputFile.getAbsolutePath());
+                            } else if (safRecordingUri != null) {
+                                recordingCompleteIntent.putExtra("videoUri", safRecordingUri.toString());
+                            }
+                            sendBroadcast(recordingCompleteIntent);
+                            FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for list refresh");
+                        } catch (Exception e) {
+                            FLog.e(TAG, "Error broadcasting recording complete", e);
                         }
-                        sendBroadcast(recordingCompleteIntent);
-                        FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for list refresh");
-                    } catch (Exception e) {
-                        FLog.e(TAG, "Error broadcasting recording complete", e);
+
+                        // Show completion notification with action to view recording
+                        // For SAF mode, pass null (notification still opens Records tab)
+                        showCompletionNotification(outputFile);
                     }
-                    
-                    // Show completion notification with action to view recording
-                    // For SAF mode, pass null (notification still opens Records tab)
-                    showCompletionNotification(outputFile);
                 }
-                
+
                 // Clear SAF URI
                 safRecordingUri = null;
                 releaseProjectionIfIdle();

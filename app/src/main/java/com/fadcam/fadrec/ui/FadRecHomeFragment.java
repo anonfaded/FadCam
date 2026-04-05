@@ -43,6 +43,7 @@ import com.fadcam.ui.utils.AnimatedTextView;
 import com.fadcam.utils.ServiceUtils;
 import com.fadcam.utils.StorageInfoCache;
 import java.util.ArrayList;
+import java.util.Locale;
 import com.google.android.material.button.MaterialButton;
 import android.os.Parcelable;
 
@@ -1718,7 +1719,7 @@ public class FadRecHomeFragment extends HomeFragment {
      * @param elapsedTimeMs elapsed time in milliseconds
      * @return labels string aligned with timer display, or empty if all units are zero
      */
-    private String generateElapsedTimeLabels(long elapsedTimeMs) {
+    protected String generateElapsedTimeLabels(long elapsedTimeMs) {
         long totalSeconds = elapsedTimeMs / 1000;
         long days = totalSeconds / (24 * 3600);
         long hours = (totalSeconds % (24 * 3600)) / 3600;
@@ -1775,143 +1776,187 @@ public class FadRecHomeFragment extends HomeFragment {
      */
     @Override
     protected void updateStorageInfo() {
-        // Call parent first to update storage info (estimate time card)
-        super.updateStorageInfo();
-        
-        // Now override elapsed and remaining time for screen recording
+        boolean isStreamOnlyMode = false;
+        if (sharedPreferencesManager != null) {
+            try {
+                // STREAM_ONLY UI ("Unlimited" label, no storage deduction) is only meaningful
+                // when the remote server is actually active.  If the server is off we always
+                // behave like STREAM_AND_SAVE so the UI stays accurate.
+                boolean serverActive =
+                    com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                    sharedPreferencesManager.getStreamingMode();
+                isStreamOnlyMode = serverActive &&
+                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+            } catch (Exception e) {
+                FLog.e(TAG, "Error checking streaming mode", e);
+            }
+        }
+        updateStorageInfoForScreenRecording(isStreamOnlyMode);
+    }
+
+    /**
+     * Unified storage/timer UI update for FadRec (screen recording).
+     *
+     * <p>Both STREAM_ONLY and STREAM_AND_SAVE share the same view bindings; only the
+     * deduction logic and the remaining-time label differ:
+     * <ul>
+     *   <li>STREAM_ONLY  – no bytes written to disk → no deduction, show ∞ for time-left.</li>
+     *   <li>STREAM_AND_SAVE – deduct estimated bytes (bitrate × elapsed) and show live countdown.</li>
+     * </ul>
+     *
+     * <p>Reads elapsed time from {@code "screen_recording_start_time"} saved by
+     * {@link com.fadcam.fadrec.services.ScreenRecordingService}, uses
+     * {@code tvEstimateTitle} / {@code tvEstimateSubtitle} (the actual layout views) for
+     * the time-left row, and respects the elapsed-labels visibility preference.
+     */
+    private void updateStorageInfoForScreenRecording(boolean isStreamOnly) {
         if (!isAdded() || getActivity() == null) {
             return;
         }
-        
+
         try {
+            // Get storage info — prefer cache, fall back to fresh calculation.
+            StorageInfoCache.StorageInfo storageInfo = StorageInfoCache.getCachedStorageInfo();
+            if (storageInfo == null) {
+                storageInfo = StorageInfoCache.calculateAndCacheStorageInfo(
+                    requireContext(), sharedPreferencesManager);
+            }
+            if (storageInfo == null) {
+                FLog.w(TAG, "updateStorageInfoForScreenRecording: storage info null, skipping");
+                return;
+            }
+
+            // ── Elapsed time ─────────────────────────────────────────────────────────
+            // ScreenRecordingService writes "screen_recording_start_time" on start and
+            // shifts it forward on resume so a simple subtraction gives true elapsed.
+            long screenStartTime = sharedPreferencesManager.sharedPreferences.getLong(
+                "screen_recording_start_time", 0);
+            boolean isActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
+                || screenRecordingState == ScreenRecordingState.PAUSED;
             long elapsedTime = 0;
-            long remainingTime = 0;
-            
-            // Calculate elapsed time if recording
-            if (screenRecordingState == ScreenRecordingState.IN_PROGRESS || 
-                screenRecordingState == ScreenRecordingState.PAUSED) {
-                
-                // Get recording start time from SharedPreferences (set by service)
-                long recordingStartTime = sharedPreferencesManager.sharedPreferences.getLong(
-                    "screen_recording_start_time", 0
-                );
-                
-                if (recordingStartTime > 0) {
-                    elapsedTime = Math.max(0, SystemClock.elapsedRealtime() - recordingStartTime);
-                }
-                
-                // Calculate remaining time based on storage and bitrate
-                // For screen recording, we use video bitrate from settings
-                try {
-                    // Get storage info from cache
-                    StorageInfoCache.StorageInfo storageInfo = 
-                        StorageInfoCache.getCachedStorageInfo();
-                    
-                    if (storageInfo == null) {
-                        // No cache, skip remaining time calculation
-                        remainingTime = 0;
-                    } else {
-                        long availableBytes = storageInfo.availableBytes;
-                        
-                        // Estimate bytes used so far
-                        long videoBitrate = sharedPreferencesManager.getCurrentBitrate(); // bits per second
-                        long audioBitrate = sharedPreferencesManager.getAudioBitrate(); // bits per second
-                        long totalBitrate = videoBitrate + audioBitrate;
-                        
-                        if (elapsedTime > 0 && totalBitrate > 0) {
-                            long estimatedBytesUsed = (elapsedTime * totalBitrate) / 8000; // Convert to bytes
-                            availableBytes = Math.max(0, availableBytes - estimatedBytesUsed);
-                        }
-                        
-                        // Calculate remaining time
-                        if (totalBitrate > 0 && availableBytes > 0) {
-                            remainingTime = (availableBytes * 8) / totalBitrate; // Convert bytes to seconds
-                        }
-                    }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error calculating remaining time", e);
-                    remainingTime = 0;
-                }
+            if (screenStartTime > 0 && isActive) {
+                elapsedTime = Math.max(0, SystemClock.elapsedRealtime() - screenStartTime);
             }
-            
-            // Format elapsed time - always use timer format, dynamic labels below
-            final String elapsedTimeText = formatElapsedTimeDisplay(elapsedTime);
-            final String elapsedTimeLabels;
-            
-            // Check if user wants labels visible
-            boolean showLabels = sharedPreferencesManager != null 
-                ? sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible()
-                : true; // Default to showing labels
-            
-            elapsedTimeLabels = showLabels ? generateElapsedTimeLabels(elapsedTime) : "";
-            
-            
-            latestElapsedDisplay = elapsedTimeText;
-            
-            // Format remaining time
-            long days = remainingTime / (24 * 3600);
-            long hours = (remainingTime % (24 * 3600)) / 3600;
-            long minutes = (remainingTime % 3600) / 60;
-            long seconds = remainingTime % 60;
-            
+
+            // ── Storage deduction & remaining time ───────────────────────────────────
+            long adjustedAvailable;
             String remainingTimeText;
-            if (days > 0) {
-                remainingTimeText = String.format(
-                    java.util.Locale.getDefault(),
-                    "%dd %02dh %02dm",
-                    days, hours, minutes
-                );
-            } else if (hours > 0) {
-                remainingTimeText = String.format(
-                    java.util.Locale.getDefault(),
-                    "%02dh %02dm",
-                    hours, minutes
-                );
+
+            if (isStreamOnly) {
+                // Nothing is written to disk — show full available space and infinite time.
+                adjustedAvailable = storageInfo.availableBytes;
+                remainingTimeText = "Unlimited"; // More readable than ∞ symbol
             } else {
-                remainingTimeText = String.format(
-                    java.util.Locale.getDefault(),
-                    "%02d:%02d",
-                    minutes, seconds
-                );
+                // Deduct estimated bytes written so far.
+                long bitrateBps = calculateScreenRecordingBitrateBps();
+                long estimatedBytesUsed = 0;
+                if (elapsedTime > 0 && bitrateBps > 0) {
+                    estimatedBytesUsed = (elapsedTime * bitrateBps) / 8000L;
+                    estimatedBytesUsed = Math.min(estimatedBytesUsed, storageInfo.availableBytes);
+                }
+                adjustedAvailable = Math.max(0, storageInfo.availableBytes - estimatedBytesUsed);
+
+                // Live countdown while recording; static estimate otherwise.
+                if (bitrateBps > 0) {
+                    long totalSecs = (adjustedAvailable * 8L) / bitrateBps;
+                    totalSecs = Math.max(0, totalSecs);
+                    remainingTimeText = formatScreenRemainingTime(totalSecs);
+                } else {
+                    remainingTimeText = "\u221e";
+                }
             }
-            
-            // Update UI on main thread
+
+            // ── Format UI strings ────────────────────────────────────────────────────
+            double gbAvailable = Math.max(0, adjustedAvailable / (1024.0 * 1024.0 * 1024.0));
+            double gbTotal = storageInfo.getTotalGB();
+            Locale numLocale = "fr".equalsIgnoreCase(Locale.getDefault().getLanguage())
+                ? Locale.US : Locale.getDefault();
+            String availableSpace = String.format(numLocale, "%.2f GB", gbAvailable);
+            float availableFraction = gbTotal > 0
+                ? (float) Math.max(0, Math.min(1, gbAvailable / gbTotal)) : 0f;
+
+            String elapsedTimeText   = formatElapsedTimeDisplay(elapsedTime);
+            String elapsedTimeLabels = generateElapsedTimeLabels(elapsedTime);
+            boolean showLabels = sharedPreferencesManager == null
+                || sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible();
+
+            final String finalRemaining   = remainingTimeText;
+            final String finalNumLocaleStr = String.format(numLocale, "/ %.2f GB", gbTotal);
+
             getActivity().runOnUiThread(() -> {
-                // Update camera info card (override parent's camera text)
+                if (getActivity() == null || !isAdded()) return;
+
+                // Screen info card (resolution, fps, etc.)
                 updateScreenRecordingCardInfo();
-                
-                // Update elapsed time
-                if (tvElapsedTitle != null) {
-                    tvElapsedTitle.setText(elapsedTimeText);
-                }
-                if (tvElapsedSubtitle != null) {
-                    tvElapsedSubtitle.setText(getString(R.string.recording_elapsed_time));
-                }
+
+                // Elapsed row
+                if (tvElapsedTitle != null)    tvElapsedTitle.setText(elapsedTimeText);
+                if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText(getString(R.string.recording_elapsed_time));
                 if (tvElapsedReadable != null) {
-                    if (!elapsedTimeLabels.isEmpty()) {
+                    if (showLabels && !elapsedTimeLabels.isEmpty()) {
                         tvElapsedReadable.setText(elapsedTimeLabels);
                         tvElapsedReadable.setVisibility(View.VISIBLE);
                     } else {
                         tvElapsedReadable.setVisibility(View.GONE);
                     }
                 }
-                
-                // Update remaining time
-                if (tvRemainingTitle != null) {
-                    tvRemainingTitle.setText(remainingTimeText);
-                }
-                if (tvRemainingSubtitle != null) {
-                    tvRemainingSubtitle.setText(getString(R.string.recording_remaining_time));
-                }
+
+                // Remaining / estimate row — tvEstimateTitle is the real layout view
+                // (tvRemainingTitle is never bound to any view and is always null).
+                if (tvEstimateTitle != null)    tvEstimateTitle.setText(finalRemaining);
+                if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(getString(R.string.recording_time_left));
+
+                // Storage row
+                if (tvSpaceTitle != null)    tvSpaceTitle.setText(availableSpace);
+                if (tvSpaceTotal != null)    tvSpaceTotal.setText(finalNumLocaleStr);
+                if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText(getString(R.string.storage_available_space));
+                if (storageProgressRing != null) storageProgressRing.setProgress(availableFraction);
 
                 refreshElapsedHeroAppearance();
                 updateStartStopButtonForFoldedState();
             });
-            
-            FLog.d(TAG, "Timer updated - Elapsed: " + elapsedTimeText + ", Remaining: " + remainingTimeText);
+
+            FLog.d(TAG, "Screen recording UI updated [" + (isStreamOnly ? "STREAM_ONLY" : "STREAM_AND_SAVE")
+                + "] available=" + availableSpace + " elapsed=" + elapsedTimeText
+                + " remaining=" + remainingTimeText);
         } catch (Exception e) {
-            FLog.e(TAG, "Error in updateStorageInfo override", e);
+            FLog.e(TAG, "Error in updateStorageInfoForScreenRecording", e);
         }
+    }
+
+    /**
+     * Estimate the screen recording bitrate in bits per second.
+     * Mirrors {@code ScreenRecordingService.calculateBitrate()} so deduction is accurate.
+     */
+    private long calculateScreenRecordingBitrateBps() {
+        try {
+            android.view.WindowManager wm = (android.view.WindowManager)
+                requireContext().getSystemService(android.content.Context.WINDOW_SERVICE);
+            android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+            wm.getDefaultDisplay().getRealMetrics(dm);
+            long pixels   = (long) dm.widthPixels * dm.heightPixels;
+            long fps       = Constants.DEFAULT_SCREEN_RECORDING_FPS;
+            long bitrate   = (long) (pixels * fps * 0.07);
+            return Math.max(2_000_000L, Math.min(16_000_000L, bitrate));
+        } catch (Exception e) {
+            FLog.e(TAG, "calculateScreenRecordingBitrateBps failed", e);
+            return 8_000_000L; // 8 Mbps safe fallback
+        }
+    }
+
+    /** Format total seconds as a human-readable remaining-time string (e.g. "1h 23m 45s"). */
+    private String formatScreenRemainingTime(long totalSeconds) {
+        long days    = totalSeconds / (24 * 3600);
+        long hours   = (totalSeconds % (24 * 3600)) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long secs    = totalSeconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (days    > 0) sb.append(days).append("d ");
+        if (hours   > 0) sb.append(hours).append("h ");
+        if (minutes > 0) sb.append(minutes).append("m ");
+        if (secs    > 0 || sb.length() == 0) sb.append(secs).append("s");
+        return sb.toString().trim();
     }
 
     @Override
@@ -1921,6 +1966,11 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     protected boolean suppressDefaultElapsedRowUpdates() {
+        return true;
+    }
+
+    @Override
+    protected boolean suppressDefaultTimeLeftRowUpdates() {
         return true;
     }
 
@@ -2372,7 +2422,7 @@ public class FadRecHomeFragment extends HomeFragment {
     }
     
     /**
-     * Stop the timer updates.
+     * Stop the timer updates. Preserves elapsed time but hides live labels.
      */
     private void stopTimerUpdates() {
         if (timerUpdateRunnable != null) {
@@ -2380,6 +2430,14 @@ public class FadRecHomeFragment extends HomeFragment {
             timerUpdateRunnable = null;
             FLog.d(TAG, "Timer updates stopped");
         }
+        
+        // Hide elapsed time labels when recording stops (but preserve the elapsed time value)
+        if (tvElapsedReadable != null) {
+            tvElapsedReadable.setVisibility(View.GONE);
+            tvElapsedReadable.setText("");
+        }
+        // NOTE: tvElapsedTitle is NOT cleared - preserves the final elapsed time value
+        // NOTE: tvRemainingTitle is NOT cleared - preserves state when paused
     }
 
     @Override

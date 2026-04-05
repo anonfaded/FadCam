@@ -650,9 +650,13 @@ public class FragmentedMp4MuxerWrapper {
             byte[] data = new byte[payload.remaining()];
             payload.get(data);
             
-            // Check streaming mode to determine if we should save to disk
+            // Check streaming mode to determine if we should save to disk.
+            // Always write when the server is not running – a stale STREAM_ONLY setting from a
+            // previous streaming session must never silently suppress local saves.
             RemoteStreamManager.StreamingMode streamingMode = RemoteStreamManager.getInstance().getStreamingMode();
-            boolean shouldSaveToDisk = (streamingMode == RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+            boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean shouldSaveToDisk = !serverActive
+                || (streamingMode == RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
             
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)

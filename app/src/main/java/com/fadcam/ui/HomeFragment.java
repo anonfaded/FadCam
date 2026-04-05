@@ -225,12 +225,12 @@ public class HomeFragment extends BaseFragment {
     private TextView tvCameraTitle;
     private TextView tvCameraSubtitle;
     private TextView ivCameraIcon;
-    private TextView tvEstimateTitle;
-    private TextView tvEstimateSubtitle;
+    protected TextView tvEstimateTitle;
+    protected TextView tvEstimateSubtitle;
     private ImageView ivEstimateIcon;
-    private TextView tvSpaceTitle;
-    private TextView tvSpaceSubtitle;
-    private com.fadcam.ui.utils.StorageProgressRingView storageProgressRing;
+    protected TextView tvSpaceTitle;
+    protected TextView tvSpaceSubtitle;
+    protected com.fadcam.ui.utils.StorageProgressRingView storageProgressRing;
     // inline total will be rendered in tvSpaceTitle using spans
     
     /**
@@ -370,7 +370,7 @@ public class HomeFragment extends BaseFragment {
     /** Animated value showing total recording size (label is static in layout) */
     private TextView tvVideoSize;
     /** Static view showing "/ XX.X GB" total device storage after tvSpaceTitle */
-    private TextView tvSpaceTotal;
+    protected TextView tvSpaceTotal;
 
     // Track last known good values for stats to prevent 0-value display during scans
     /**
@@ -1791,6 +1791,7 @@ public class HomeFragment extends BaseFragment {
             }
             updatePreviewVisibility(); // Triggers iris-close or direct hide
             stopUpdatingInfo(); // Stop updating storage info
+            updateStorageInfo(); // Update UI to hide labels per preference (recording is now stopped)
 
             FLog.d(
                 TAG,
@@ -6173,6 +6174,10 @@ public class HomeFragment extends BaseFragment {
         return false;
     }
 
+    protected boolean suppressDefaultTimeLeftRowUpdates() {
+        return false;
+    }
+
     protected boolean suppressDefaultElapsedRowUpdates() {
         return false;
     }
@@ -6244,6 +6249,32 @@ public class HomeFragment extends BaseFragment {
 
     protected void runIrisOpenReveal() {
         performIrisOpenReveal();
+    }
+
+    /**
+     * Generate dynamic labels string for elapsed time (e.g., "d • h • m • s").
+     * Only includes labels for non-zero units to keep display clean.
+     * @param elapsedTimeMs elapsed time in milliseconds
+     * @return labels string aligned with timer display, or empty if all units are zero
+     */
+    protected String generateElapsedTimeLabels(long elapsedTimeMs) {
+        long totalSeconds = elapsedTimeMs / 1000;
+        long days = totalSeconds / (24 * 3600);
+        long hours = (totalSeconds % (24 * 3600)) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        
+        if (totalSeconds == 0) return "";
+        
+        // Build labels for active units only with bullet separator
+        if (days > 0) {
+            return "d • h • m • s";
+        } else if (hours > 0) {
+            return "h • m • s";
+        } else if (minutes > 0) {
+            return "m • s";
+        } else {
+            return "s";
+        }
     }
 
     /**
@@ -6333,8 +6364,25 @@ public class HomeFragment extends BaseFragment {
         // Resetting here causes race condition during orientation changes.
 
         // Adjust available bytes for recording
-        long adjustedAvailable =
-            storageInfo.availableBytes - estimatedBytesUsed;
+        long adjustedAvailable;
+        if (isRecording() || isPaused()) {
+            // Check if streaming is active in STREAM_ONLY mode - if so, don't deduct estimated bytes
+            boolean isStreamOnlyMode = false;
+            try {
+                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                    sharedPreferencesManager.getStreamingMode();
+                isStreamOnlyMode = serverActive &&
+                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+            } catch (Exception e) {
+                FLog.e(TAG, "Error checking streaming mode for storage calculation", e);
+            }
+            adjustedAvailable = isStreamOnlyMode
+                ? storageInfo.availableBytes
+                : storageInfo.availableBytes - estimatedBytesUsed;
+        } else {
+            adjustedAvailable = storageInfo.availableBytes;
+        }
 
         // Skip subtracting if using custom removable storage that can't be probed
         if (
@@ -6477,9 +6525,23 @@ public class HomeFragment extends BaseFragment {
             ? (float) Math.max(0d, Math.min(1d, gbAvailable / gbTotal))
             : 0f;
         final boolean showLiveRemaining = isRecording() || isPaused();
-        final String finalTimeLeftText = showLiveRemaining
-            ? formatRemainingTime(days, hours, minutes, seconds)
-            : selectedEstimate;
+        final String finalTimeLeftText;
+        if (showLiveRemaining) {
+            // Check if streaming is active in STREAM_ONLY mode - if so, show "Unlimited"
+            boolean isStreamOnlyMode = false;
+            try {
+                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                    sharedPreferencesManager.getStreamingMode();
+                isStreamOnlyMode = serverActive &&
+                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+            } catch (Exception e) {
+                FLog.e(TAG, "Error checking streaming mode in camera recording UI", e);
+            }
+            finalTimeLeftText = isStreamOnlyMode ? "Unlimited" : formatRemainingTime(days, hours, minutes, seconds);
+        } else {
+            finalTimeLeftText = selectedEstimate;
+        }
         final String elapsedTimeText = String.format(
             Locale.getDefault(),
             "%02d:%02d",
@@ -6487,6 +6549,9 @@ public class HomeFragment extends BaseFragment {
             elapsedSeconds
         );
         latestElapsedDisplay = elapsedTimeText;
+
+        // Capture final value for lambda (lambda variables must be final or effectively final)
+        final long elapsedTimeMillis = elapsedTime;
 
         // Update UI on main thread
         if (getActivity() != null) {
@@ -6544,20 +6609,22 @@ public class HomeFragment extends BaseFragment {
                     cameraRowUiInitialized = true;
 
                     // Time-left row
-                    if (tvEstimateTitle != null) {
-                        String oldEstimate = tvEstimateTitle.getText() != null ? tvEstimateTitle.getText().toString() : "";
-                        if (!oldEstimate.equals(finalTimeLeftText)) {
-                            if (tvEstimateTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotDown(finalTimeLeftText, 400);
-                            } else {
-                                tvEstimateTitle.setText(finalTimeLeftText);
+                    if (!suppressDefaultTimeLeftRowUpdates()) {
+                        if (tvEstimateTitle != null) {
+                            String oldEstimate = tvEstimateTitle.getText() != null ? tvEstimateTitle.getText().toString() : "";
+                            if (!oldEstimate.equals(finalTimeLeftText)) {
+                                if (tvEstimateTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                                    ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotDown(finalTimeLeftText, 400);
+                                } else {
+                                    tvEstimateTitle.setText(finalTimeLeftText);
+                                }
                             }
                         }
+                        if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(
+                            getString(R.string.recording_time_left)
+                        );
+                        applyTimeLeftAccentPreference();
                     }
-                    if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(
-                        getString(R.string.recording_time_left)
-                    );
-                    applyTimeLeftAccentPreference();
 
                     // Space row — value only on tvSpaceTitle, static total on tvSpaceTotal.
                     // Available space decreases during recording, so we animate DOWN.
@@ -6610,6 +6677,26 @@ public class HomeFragment extends BaseFragment {
                                 tvElapsedSubtitle.setText(newElapsedSub);
                             }
                         }
+                        
+                        // Update elapsed time labels (d • h • m • s) below timer
+                        if (tvElapsedReadable != null) {
+                            boolean showLabels = sharedPreferencesManager != null 
+                                ? sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible()
+                                : true; // Default to showing labels
+                            
+                            if (showLabels) {
+                                String elapsedTimeLabels = generateElapsedTimeLabels(elapsedTimeMillis);
+                                if (!elapsedTimeLabels.isEmpty()) {
+                                    tvElapsedReadable.setText(elapsedTimeLabels);
+                                    tvElapsedReadable.setVisibility(View.VISIBLE);
+                                } else {
+                                    tvElapsedReadable.setVisibility(View.GONE);
+                                }
+                            } else {
+                                tvElapsedReadable.setVisibility(View.GONE);
+                            }
+                        }
+                        
                         updateElapsedHeroAppearance();
                         applyElapsedAlignmentPreference();
                         applyElapsedSizePreference();
@@ -11546,9 +11633,12 @@ public class HomeFragment extends BaseFragment {
                                 true);
                         if (sharedPreferencesManager != null) {
                             sharedPreferencesManager.setScreenRecordingElapsedTimeLabelsVisible(showLabels);
-                            // Trigger immediate UI refresh
+                            // Trigger immediate UI refresh for both HomeFragment and FadRecHomeFragment
                             if (this instanceof com.fadcam.fadrec.ui.FadRecHomeFragment) {
                                 ((com.fadcam.fadrec.ui.FadRecHomeFragment) this).refreshTimerDisplay();
+                            } else {
+                                // For HomeFragment (camera recording), update storage info to refresh labels
+                                updateStorageInfo();
                             }
                         }
                     } else if ("elapsed_background".equals(selected)) {
