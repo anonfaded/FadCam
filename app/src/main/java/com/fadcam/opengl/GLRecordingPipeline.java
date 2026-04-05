@@ -573,7 +573,7 @@ public class GLRecordingPipeline {
             if (glRenderer == null) {
                 // FLog.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation,
-                        videoWidth, videoHeight);
+                        videoWidth, videoHeight, false);
                 glRenderer.setUserOrientationSetting(orientation);
                 glRenderer.setRecordingPipeline(this); // Set reference for timestamp synchronization
                 glRenderer.setFrontVideoMirrorEnabled(frontVideoMirrorEnabled);

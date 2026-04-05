@@ -62,21 +62,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:baselineAligned="false">
 
             <!-- Start/Stop Button -->
             <LinearLayout
                 android:id="@+id/btnStartStopRec"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="64dp"
+                android:layout_height="wrap_content"
+                android:minHeight="68dp"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="6dp"
+                android:padding="8dp"
                 android:background="@drawable/floating_button_item_bg"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_marginEnd="4dp">
+                android:layout_marginEnd="6dp"
+                android:layout_marginStart="0dp">
 
                 <TextView
                     android:id="@+id/iconStartStop"
@@ -90,12 +93,16 @@
 
                 <TextView
                     android:id="@+id/labelStartStop"
-                    android:layout_width="wrap_content"
+                    android:layout_width="68dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
                     android:text="@string/floating_menu_start_short"
-                    android:textSize="10sp"
-                    android:textColor="#FFFFFF" />
+                    android:textSize="8sp"
+                    android:textColor="#FFFFFF"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:ellipsize="none"
+                    android:breakStrategy="balanced" />
             </LinearLayout>
 
             <!-- Pause/Resume Button -->
@@ -103,14 +110,16 @@
                 android:id="@+id/btnPauseResumeRec"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="64dp"
+                android:layout_height="wrap_content"
+                android:minHeight="68dp"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="6dp"
+                android:padding="8dp"
                 android:background="@drawable/floating_button_item_bg"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_marginStart="4dp">
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="0dp">
 
                 <TextView
                     android:id="@+id/iconPauseResume"
@@ -124,12 +133,16 @@
 
                 <TextView
                     android:id="@+id/labelPauseResume"
-                    android:layout_width="wrap_content"
+                    android:layout_width="68dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
                     android:text="@string/floating_menu_pause"
-                    android:textSize="10sp"
-                    android:textColor="#FFFFFF" />
+                    android:textSize="8sp"
+                    android:textColor="#FFFFFF"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:ellipsize="none"
+                    android:breakStrategy="balanced" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
@@ -209,22 +222,27 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp">
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/enable_annotations"
-                    android:textSize="12sp"
-                    android:textColor="#FFFFFF" />
+                    android:textSize="13sp"
+                    android:textColor="#FFFFFF"
+                    android:maxLines="2"
+                    android:breakStrategy="balanced" />
 
                 <com.fadcam.ui.AvatarToggleView
                     android:id="@+id/annotationSwitch"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginStart="12dp" />
             </LinearLayout>
 
             <!-- Snap Guides Switch -->

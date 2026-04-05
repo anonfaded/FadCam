@@ -269,6 +269,9 @@ public class ScreenRecordingService extends Service {
     private void handleChangePreviewSurface(Intent intent) {
         updatePreviewSurfaceFromIntent(intent);
 
+        boolean surfaceValid = currentPreviewSurface != null && currentPreviewSurface.isValid();
+        FLog.d(TAG, "handleChangePreviewSurface: surface=" + (surfaceValid ? "valid " + currentPreviewSurfaceWidth + "x" + currentPreviewSurfaceHeight : "null/invalid"));
+
         if (recordingPipeline != null) {
             recordingPipeline.setPreviewSurface(
                 currentPreviewSurface,
@@ -278,8 +281,9 @@ public class ScreenRecordingService extends Service {
         } else if (previewOnlyActive) {
             refreshPreviewOnlyVirtualDisplay();
         }
-
-        handleQueryRecordingState();
+        // NOTE: do NOT call handleQueryRecordingState() here — the recording state has not changed,
+        // only the preview surface. Broadcasting state on every surface-size change (animation
+        // frames) floods logcat and causes redundant SharedPrefs writes.
     }
 
     /**
@@ -660,14 +664,34 @@ public class ScreenRecordingService extends Service {
     }
     
     /**
-     * Creates watermark info provider for screen recordings
+     * Creates watermark info provider for screen recordings.
+     * Respects the same watermark settings as FadCam mode.
      */
     private WatermarkInfoProvider createWatermarkInfoProvider() {
         return () -> {
-            // For now, return simple "FadRec" text
-            // Will be enhanced with timestamp and user customization later
-            return "FadRec";
+            String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+            if ("no_watermark".equals(watermarkOption)) {
+                return "";
+            }
+            String timestamp = getRecordingTimestamp();
+            String customText = sharedPreferencesManager.getWatermarkCustomText();
+            String customLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+            switch (watermarkOption) {
+                case "timestamp":
+                    return timestamp + customLine;
+                case "timestamp_fadcam":
+                default:
+                    return "Recorded by FadRec - " + timestamp + customLine;
+            }
         };
+    }
+
+    /**
+     * Returns the current date/time as a formatted timestamp string for the watermark.
+     */
+    private String getRecordingTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH);
+        return sdf.format(new Date());
     }
     
     /**

@@ -19,23 +19,27 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.Surface;
+import com.fadcam.opengl.GLWatermarkRenderer;
 import androidx.annotation.Nullable;
 
 import com.fadcam.Constants;
 import com.fadcam.VideoCodec;
 import com.fadcam.media.FragmentedMp4MuxerWrapper;
-import com.fadcam.opengl.GLWatermarkRenderer;
 import com.fadcam.opengl.WatermarkInfoProvider;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * ScreenRecordingPipeline manages screen recording with MediaCodec, OpenGL watermarking,
- * and fragmented MP4 output for crash-safety and streaming support.
- * 
- * Architecture: MediaProjection → VirtualDisplay → GLWatermarkRenderer → MediaCodec → FragmentedMp4Muxer
+ * ScreenRecordingPipeline manages screen recording with OpenGL watermarking via
+ * {@link com.fadcam.opengl.GLWatermarkRenderer} and fragmented MP4 output.
+ *
+ * Architecture: MediaProjection → VirtualDisplay → GLWatermarkRenderer
+ *               → MediaCodec encoder (watermarked recording) + preview TextureView
  */
 public class ScreenRecordingPipeline {
     
@@ -69,8 +73,6 @@ public class ScreenRecordingPipeline {
     // MediaProjection components
     private MediaProjection mediaProjection;
     private VirtualDisplay virtualDisplay;
-    private VirtualDisplay previewVirtualDisplay;
-
     // Video encoding components
     private MediaCodec videoEncoder;
     private Surface encoderInputSurface;
@@ -80,10 +82,54 @@ public class ScreenRecordingPipeline {
     private FragmentedMp4MuxerWrapper mediaMuxer;
     private int videoTrackIndex = -1;
     
-    // OpenGL watermarking
+    // OpenGL watermarking pipeline: GLWatermarkRenderer handles watermarks + preview for all Android versions
     private GLWatermarkRenderer glWatermarkRenderer;
-    private Surface watermarkInputSurface;
-    
+    private HandlerThread glRenderThread;
+    private Handler glRenderHandler;
+    private final AtomicBoolean renderRunnableQueued = new AtomicBoolean(false);
+    private volatile boolean glInitialized = false;
+    /** Surface that VirtualDisplay writes screen frames into (GLWatermarkRenderer's camera input). */
+    private Surface glScreenInputSurface;
+
+    /**
+     * Render runnable posted to glRenderHandler whenever a new screen frame is available.
+     * Calls GLWatermarkRenderer.renderFrame() which renders watermarks to the encoder surface
+     * and to the preview surface if one is attached.
+     */
+    private final Runnable renderRunnable = new Runnable() {
+        private int frameCount = 0;
+
+        @Override
+        public void run() {
+            try {
+                if (isStopped || !isRecording) {
+                    return;
+                }
+                // Refresh watermark text periodically (every ~30 frames ≈ 1 s at 30 fps)
+                if (++frameCount % 30 == 0 && watermarkInfoProvider != null && glWatermarkRenderer != null) {
+                    try {
+                        String text = watermarkInfoProvider.getWatermarkText();
+                        if (text != null) {
+                            glWatermarkRenderer.setWatermarkText(text);
+                        }
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Watermark text refresh failed", e);
+                    }
+                }
+                if (glWatermarkRenderer != null) {
+                    glWatermarkRenderer.renderFrame();
+                }
+            } catch (Exception e) {
+                FLog.e(TAG, "Error in GL render loop", e);
+            } finally {
+                renderRunnableQueued.set(false);
+            }
+        }
+    };
+
+    /** Serialises drainVideoEncoder() calls from the video-encoding poll thread and stop thread. */
+    private final Object encoderDrainLock = new Object();
+
     // Audio recording components
     private AudioRecord audioRecord;
     private MediaCodec audioEncoder;
@@ -278,15 +324,12 @@ public class ScreenRecordingPipeline {
         // Initialize muxer
         initializeMuxer();
         
-        // Initialize video encoder
+        // Initialize video encoder (must run before GL init — encoderInputSurface required)
         initializeVideoEncoder();
-        
-        // TODO: OpenGL watermark renderer for screen recording
-        // Will be properly integrated with MediaProjection surface in future update
-        // if (watermarkInfoProvider != null) {
-        //     initializeWatermarkRenderer();
-        // }
-        
+
+        // Initialize GL watermark renderer (uses encoderInputSurface as the GL output target)
+        initializeGLRenderer();
+
         // Initialize audio encoder if enabled
         if (enableAudio) {
             initializeAudioEncoder();
@@ -420,14 +463,109 @@ public class ScreenRecordingPipeline {
     }
     
     /**
-     * Initialize OpenGL watermark renderer
-     * TODO: Implement proper watermarking for screen recording
+     * Initialize OpenGL watermark renderer pipeline.
+     * <p>
+     * Creates a GL thread, initialises {@link GLWatermarkRenderer} with the encoder input
+     * surface, and obtains the surface that {@link VirtualDisplay} should write screen frames
+     * into ({@link #glScreenInputSurface}).  The renderer then applies watermarks on every
+     * frame and outputs the composited result to the MediaCodec encoder surface.
+     * <p>
+     * Falls back gracefully to direct encoding (without watermarks) if GL setup fails.
      */
-    // private void initializeWatermarkRenderer() {
-    //     // Will be properly integrated with MediaProjection surface
-    //     FLog.d(TAG, "GLWatermarkRenderer initialization deferred");
-    // }
-    
+    private void initializeGLRenderer() {
+        glRenderThread = new HandlerThread("ScreenGLRender");
+        glRenderThread.start();
+        glRenderHandler = new Handler(glRenderThread.getLooper());
+
+        final CountDownLatch initLatch = new CountDownLatch(1);
+        final Throwable[] initError = new Throwable[1];
+
+        glRenderHandler.post(() -> {
+            try {
+                // orientation="portrait", sensorOrientation=0:
+                // For screen capture the VirtualDisplay SurfaceTexture already provides the
+                // correct coordinate transform via getTransformMatrix().  The "portrait" path
+                // in GLWatermarkRenderer uses that texMatrix as-is, which is exactly what we
+                // need — no extra rotation or flip should be applied to screen content.
+                glWatermarkRenderer = new GLWatermarkRenderer(
+                        context, encoderInputSurface, "portrait", 0, screenWidth, screenHeight, true);
+
+                glWatermarkRenderer.initializeEGL();
+
+                // The surface returned here is backed by GLWatermarkRenderer's internal
+                // SurfaceTexture (cameraSurfaceTexture). VirtualDisplay will write compressed
+                // screen frames into it, and the GL render loop reads them back via
+                // updateTexImage(), applies watermarks, and pushes the result to the encoder.
+                glScreenInputSurface = glWatermarkRenderer.getCameraInputSurface();
+                if (glScreenInputSurface == null || !glScreenInputSurface.isValid()) {
+                    throw new RuntimeException("GLWatermarkRenderer returned an invalid camera input surface");
+                }
+
+                // Apply initial watermark text so the first frame is already watermarked.
+                if (watermarkInfoProvider != null) {
+                    try {
+                        String text = watermarkInfoProvider.getWatermarkText();
+                        glWatermarkRenderer.setWatermarkText(text != null ? text : "");
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Failed to apply initial watermark text", e);
+                    }
+                }
+
+                // Frame-available callback is invoked on the GL handler thread (same Looper
+                // that GLWatermarkRenderer's SurfaceTexture listener uses).  We post
+                // renderRunnable via the same handler to keep all GL operations serial.
+                glWatermarkRenderer.setOnFrameAvailableListener(() -> {
+                    if (!isStopped && isRecording
+                            && renderRunnableQueued.compareAndSet(false, true)) {
+                        glRenderHandler.post(renderRunnable);
+                    }
+                });
+
+                glInitialized = true;
+                FLog.d(TAG, "GL watermark renderer ready: " + screenWidth + "x" + screenHeight);
+            } catch (Throwable t) {
+                initError[0] = t;
+                FLog.e(TAG, "GL renderer init failed — falling back to direct encoding", t);
+            } finally {
+                initLatch.countDown();
+            }
+        });
+
+        try {
+            if (!initLatch.await(3, TimeUnit.SECONDS)) {
+                FLog.e(TAG, "GL renderer init timed out — falling back to direct encoding");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            FLog.w(TAG, "GL renderer init interrupted");
+        }
+
+        if (!glInitialized) {
+            cleanupGLRenderer();
+        }
+    }
+
+    /**
+     * Release GL renderer resources. Safe to call even if GL was never fully initialised.
+     */
+    private void cleanupGLRenderer() {
+        glInitialized = false;
+        glScreenInputSurface = null;
+        if (glWatermarkRenderer != null) {
+            try {
+                glWatermarkRenderer.release();
+            } catch (Exception e) {
+                FLog.w(TAG, "Error releasing GL renderer", e);
+            }
+            glWatermarkRenderer = null;
+        }
+        if (glRenderThread != null) {
+            glRenderThread.quitSafely();
+            glRenderThread = null;
+        }
+        glRenderHandler = null;
+    }
+
     /**
      * Initialize audio recording and encoding
      */
@@ -499,6 +637,7 @@ public class ScreenRecordingPipeline {
         }
     }
     
+    
     /**
      * Start recording
      */
@@ -542,60 +681,66 @@ public class ScreenRecordingPipeline {
     }
     
     /**
-     * Create VirtualDisplay for screen capture
+     * Create VirtualDisplay for screen capture.
+     * <p>
+     * When the GL watermark renderer is active, frames are sent to
+     * {@link #glScreenInputSurface} (the renderer's internal SurfaceTexture).  The renderer
+     * then composites watermarks and pushes the result to the MediaCodec encoder surface.
+     * If GL initialisation failed we fall back to writing directly to the encoder surface.
      */
     private void createVirtualDisplay() {
-        // For now, render directly to encoder surface
-        // Watermarking will be added later with proper GL pipeline
-        Surface targetSurface = encoderInputSurface;
-        
+        // Route screen frames through the GL watermark renderer when available.
+        Surface targetSurface = (glInitialized && glScreenInputSurface != null
+                && glScreenInputSurface.isValid())
+                ? glScreenInputSurface
+                : encoderInputSurface;
+
         virtualDisplay = mediaProjection.createVirtualDisplay(
-            "ScreenRecording",
-            screenWidth,
-            screenHeight,
-            screenDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            targetSurface,
-            null,
-            null
-        );
-        
-        // FLog.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight);
+                "ScreenRecording",
+                screenWidth,
+                screenHeight,
+                screenDensity,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                targetSurface,
+                null,
+                null);
+
+        FLog.d(TAG, "VirtualDisplay created: " + screenWidth + "x" + screenHeight
+                + " (GL=" + glInitialized + ")");
     }
 
+    /**
+     * Attach or detach the live-preview surface.
+     * <p>
+     * Delegates to {@link GLWatermarkRenderer#setPreviewSurface(Surface)} on the GL thread
+     * so every watermarked frame is written to both the encoder surface and the preview
+     * TextureView.
+     *
+     * @param surface preview surface, or {@code null} to stop preview
+     * @param width   surface width (informational)
+     * @param height  surface height (informational)
+     */
     public synchronized void setPreviewSurface(@Nullable Surface surface, int width, int height) {
         previewSurface = surface;
         previewSurfaceWidth = width;
         previewSurfaceHeight = height;
-        refreshPreviewVirtualDisplay();
+
+        if (glRenderHandler != null) {
+            final Surface surf = surface;
+            glRenderHandler.post(() -> {
+                if (glWatermarkRenderer != null) {
+                    glWatermarkRenderer.setPreviewSurface(surf);
+                }
+            });
+        }
     }
 
-    private synchronized void refreshPreviewVirtualDisplay() {
-        if (previewVirtualDisplay != null) {
-            try {
-                previewVirtualDisplay.release();
-            } catch (Exception e) {
-                FLog.e(TAG, "Error releasing preview virtual display", e);
-            }
-            previewVirtualDisplay = null;
-        }
-
-        if (!isRecording || mediaProjection == null || previewSurface == null || !previewSurface.isValid()) {
-            return;
-        }
-
-        int targetWidth = previewSurfaceWidth > 0 ? previewSurfaceWidth : screenWidth;
-        int targetHeight = previewSurfaceHeight > 0 ? previewSurfaceHeight : screenHeight;
-        previewVirtualDisplay = mediaProjection.createVirtualDisplay(
-            "ScreenRecordingPreview",
-            targetWidth,
-            targetHeight,
-            screenDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            previewSurface,
-            null,
-            null
-        );
+    /**
+     * No-op: the VirtualDisplay always writes to {@link #glScreenInputSurface}.
+     * Preview is rendered as a side-output by {@link GLWatermarkRenderer}.
+     */
+    private void refreshPreviewVirtualDisplay() {
+        // GL pipeline: nothing to switch.
     }
     
     /**
@@ -620,9 +765,13 @@ public class ScreenRecordingPipeline {
     }
     
     /**
-     * Drain video encoder output
+     * Drain video encoder output.
+     * <p>
+     * Synchronised on {@link #encoderDrainLock} to prevent concurrent access from the
+     * video-encoding poll thread and the stop / release thread.
      */
     private void drainVideoEncoder(boolean endOfStream) {
+        synchronized (encoderDrainLock) {
         if (endOfStream) {
             videoEncoder.signalEndOfInputStream();
         }
@@ -667,6 +816,7 @@ public class ScreenRecordingPipeline {
                 break;
             }
         }
+        } // end synchronized (encoderDrainLock)
     }
     
     /**
@@ -889,14 +1039,15 @@ public class ScreenRecordingPipeline {
      * Release all resources
      */
     public void release() {
+        // Release GL renderer first — this stops frame callbacks and clears the GL thread.
+        // Must happen before releasing the encoder surface (GLWatermarkRenderer holds a
+        // reference to encoderInputSurface via its EGL window surface).
+        cleanupGLRenderer();
+
         // Release VirtualDisplay
         if (virtualDisplay != null) {
             virtualDisplay.release();
             virtualDisplay = null;
-        }
-        if (previewVirtualDisplay != null) {
-            previewVirtualDisplay.release();
-            previewVirtualDisplay = null;
         }
         
         // Release video encoder
@@ -944,13 +1095,7 @@ public class ScreenRecordingPipeline {
             mediaMuxer = null;
         }
         
-        // Release watermark renderer
-        if (glWatermarkRenderer != null) {
-            glWatermarkRenderer.release();
-            glWatermarkRenderer = null;
-        }
-        
-        // Stop threads
+        // Stop encoding threads
         if (videoEncodingThread != null) {
             videoEncodingThread.quitSafely();
             videoEncodingThread = null;

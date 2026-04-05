@@ -45,6 +45,7 @@ public class WatermarkSettingsFragment extends Fragment {
     private TextView valueLocationFormat;
     private TextView valueLocationInterval;
     private TextView previewText;
+    private boolean currentPreviewMode = false; // false = FadCam, true = FadRec
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> permissionLauncher;
     private Runnable pendingGrantAction;
@@ -103,6 +104,24 @@ public class WatermarkSettingsFragment extends Fragment {
                 onPermissionDeniedPostRequest();
             }
         });
+        
+        // Setup preview mode tabs (FadCam / FadRec)
+        com.google.android.material.tabs.TabLayout previewModeTabs = view.findViewById(R.id.preview_mode_tabs);
+        if (previewModeTabs != null) {
+            previewModeTabs.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+                @Override
+                public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                    currentPreviewMode = (tab.getPosition() == 1); // 0 = FadCam, 1 = FadRec
+                    updatePreview();
+                }
+
+                @Override
+                public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+
+                @Override
+                public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+            });
+        }
         
     // Manage badge visibility for custom text row
     TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
@@ -264,14 +283,22 @@ public class WatermarkSettingsFragment extends Fragment {
         if(previewText==null) return;
         String v = prefs.getWatermarkOption();
         // Static sample timestamp (preview only; not live updating)
-    String formatted = "10/Jul/2024 04:47:00 PM"; // static sample in original format
+        String formatted = "10/Jul/2024 04:47:00 PM"; // static sample in original format
         String baseLine = null;
+        
+        // Determine prefix based on current preview mode
+        String modePrefix = currentPreviewMode 
+            ? "Recorded by FadRec" 
+            : "Captured by FadCam";
+        
         if("timestamp_fadcam".equals(v)){
-            baseLine = getString(R.string.watermark_preview_sample_fadcam, formatted);
+            // For both modes, use the mode-specific prefix + timestamp
+            baseLine = modePrefix + " - " + formatted;
         } else if("timestamp".equals(v)) {
-            baseLine = getString(R.string.watermark_preview_sample_timeonly, formatted);
+            baseLine = formatted;
         }
-    TextView helper = getView()!=null? getView().findViewById(R.id.text_preview_helper):null;
+        
+        TextView helper = getView()!=null? getView().findViewById(R.id.text_preview_helper):null;
         if(baseLine==null){
             // Show a UI-only placeholder instead of hiding the preview when no watermark is selected.
             previewText.setText(getString(R.string.watermark_preview_funny));

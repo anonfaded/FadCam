@@ -191,7 +191,6 @@ public class AnnotationService extends Service {
     // Broadcast receiver for floating menu actions
     private BroadcastReceiver menuActionReceiver;
     private BroadcastReceiver recordingStateReceiver;
-    private BroadcastReceiver permissionResultReceiver;
     private BroadcastReceiver colorPickerReceiver;
     private BroadcastReceiver projectNamingReceiver;
     private BroadcastReceiver projectSelectionReceiver;
@@ -737,7 +736,6 @@ public class AnnotationService extends Service {
                 startAutoSave();
                 registerMenuActionReceiver();
                 registerRecordingStateReceiver();
-                registerPermissionResultReceiver();
                 registerColorPickerReceiver();
                 registerProjectNamingReceiver();
                 registerProjectSelectionReceiver();
@@ -3207,61 +3205,7 @@ public class AnnotationService extends Service {
         FLog.d(TAG, "[BROADCAST] Recording state receiver registered via LocalBroadcastManager");
     }
 
-    /**
-     * Register broadcast receiver for permission results from
-     * TransparentPermissionActivity.
-     * This allows the service to start recording even when app is removed from
-     * recents.
-     */
-    private void registerPermissionResultReceiver() {
-        permissionResultReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action == null)
-                    return;
 
-                if (com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED.equals(action)) {
-                    FLog.d(TAG, "Permission granted in service, starting recording");
-
-                    // Extract permission data - try both old and new key names
-                    Intent permissionData = intent.getParcelableExtra("mediaProjectionData");
-                    if (permissionData == null) {
-                        permissionData = intent.getParcelableExtra("data");
-                    }
-
-                    int resultCode = intent.getIntExtra("resultCode", -1);
-
-                    FLog.d(TAG, "Extracted: resultCode=" + resultCode + ", data="
-                            + (permissionData != null ? "present" : "null"));
-
-                    // RESULT_OK is -1, not 0!
-                    if (permissionData != null && resultCode == -1) {
-                        // Start recording using MediaProjectionHelper
-                        MediaProjectionHelper helper = new MediaProjectionHelper(context);
-                        helper.startScreenRecording(resultCode, permissionData);
-                        // FLog.i(TAG, "Screen recording started from overlay service");
-                    } else {
-                        FLog.e(TAG, "Permission granted but invalid data - resultCode: " + resultCode + ", data: "
-                                + (permissionData != null));
-                        Toast.makeText(context, "Failed to start recording - invalid permission data",
-                                Toast.LENGTH_SHORT).show();
-                    }
-
-                } else if (com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED.equals(action)) {
-                    FLog.d(TAG, "Permission denied in service");
-                    Toast.makeText(context, "Screen recording permission denied", Toast.LENGTH_SHORT).show();
-                }
-            }
-        };
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED);
-        filter.addAction(com.fadcam.Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED);
-        // Use LocalBroadcastManager for guaranteed delivery on Android 12+
-        LocalBroadcastManager.getInstance(this).registerReceiver(permissionResultReceiver, filter);
-        FLog.d(TAG, "[BROADCAST] Permission result receiver registered via LocalBroadcastManager");
-    }
 
     private void registerColorPickerReceiver() {
         colorPickerReceiver = new BroadcastReceiver() {
@@ -3878,6 +3822,7 @@ public class AnnotationService extends Service {
 
         switch (recordingState) {
             case NONE:
+            case STOPPING:
                 // Collapsed state - show green "Ready to record" button
                 if (isRecordingControlsExpanded) {
                     toggleRecordingControlsExpansion(); // Collapse to single button
@@ -4413,9 +4358,6 @@ public class AnnotationService extends Service {
         }
         if (recordingStateReceiver != null) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(recordingStateReceiver);
-        }
-        if (permissionResultReceiver != null) {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(permissionResultReceiver);
         }
         if (colorPickerReceiver != null) {
             unregisterReceiver(colorPickerReceiver);

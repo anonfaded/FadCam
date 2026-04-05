@@ -235,12 +235,24 @@ public class GLWatermarkRenderer {
     }
 
     private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight) {
-        // Top left corner at (-1, 1), width ndcWidth, height ndcHeight
+        // For screen recording (FadRec), position watermark with padding below the statusbar.
+        // For camera recording (FadCam), position at the very top (no padding).
+        float topY = 1.0f;
+        
+        if (isScreenRecording) {
+            // Position watermark with padding below the statusbar (typically ~25 dp = ~50-65 px at varying densities).
+            // Estimate statusbar as ~3% of vertical screen height, convert to NDC coordinates:
+            // NDC Y range = 2.0 (-1.0 to 1.0), so 3% ≈ 0.06 NDC units below the top.
+            // This ensures watermark sits cleanly below the statusbar on all devices.
+            float statusbarPaddingNdc = 0.06f; // ~50 px equivalent at 420 dpi for typical Android phones
+            topY = 1.0f - statusbarPaddingNdc; // Shift down by statusbar padding
+        }
+        
         return new float[] {
-                -1.0f, 1.0f, // Top left
-                -1.0f + ndcWidth, 1.0f, // Top right
-                -1.0f, 1.0f - ndcHeight, // Bottom left
-                -1.0f + ndcWidth, 1.0f - ndcHeight // Bottom right
+                -1.0f, topY, // Top left
+                -1.0f + ndcWidth, topY, // Top right
+                -1.0f, topY - ndcHeight, // Bottom left
+                -1.0f + ndcWidth, topY - ndcHeight // Bottom right
         };
     }
 
@@ -257,14 +269,21 @@ public class GLWatermarkRenderer {
 
     // Reference to recording pipeline for timestamp synchronization
     private GLRecordingPipeline recordingPipeline;
+    private boolean isScreenRecording = false; // true for ScreenRecordingPipeline, false for GLRecordingPipeline
 
     public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation,
             int videoWidth, int videoHeight) {
+        this(context, outputSurface, orientation, sensorOrientation, videoWidth, videoHeight, false);
+    }
+
+    public GLWatermarkRenderer(Context context, Surface outputSurface, String orientation, int sensorOrientation,
+            int videoWidth, int videoHeight, boolean isScreenRecording) {
         this.context = context;
         this.outputSurface = outputSurface;
         this.sensorOrientation = sensorOrientation;
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
+        this.isScreenRecording = isScreenRecording;
 
         watermarkPaint = new Paint();
         watermarkPaint.setTextSize(20);
@@ -708,11 +727,14 @@ public class GLWatermarkRenderer {
                     previewEglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, currentPreviewSurface,
                             surfaceAttribs, 0);
                     if (previewEglSurface == EGL14.EGL_NO_SURFACE) {
-                        FLog.e(TAG, "Failed to create EGL surface for preview");
+                        int eglErr = EGL14.eglGetError();
+                        FLog.e(TAG, "Failed to create EGL surface for preview, eglError=0x"
+                                + Integer.toHexString(eglErr));
                         // Backoff a bit before next attempt
                         previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L; // 200ms
                         return;
                     }
+                    FLog.d(TAG, "renderToPreview: EGL surface created successfully");
                 } catch (Exception e) {
                     FLog.e(TAG, "Exception creating EGL surface for preview", e);
                     previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
@@ -720,7 +742,9 @@ public class GLWatermarkRenderer {
                 }
             }
             if (!EGL14.eglMakeCurrent(eglDisplay, previewEglSurface, previewEglSurface, eglContext)) {
-                FLog.w(TAG, "renderToPreview: eglMakeCurrent failed, releasing preview surface");
+                int eglErr = EGL14.eglGetError();
+                FLog.w(TAG, "renderToPreview: eglMakeCurrent failed eglError=0x"
+                        + Integer.toHexString(eglErr) + ", releasing preview surface");
                 releasePreviewEGL();
                 previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
                 return;
@@ -1739,22 +1763,47 @@ public class GLWatermarkRenderer {
         synchronized (previewRenderLock) {
             if (currentPreviewSurface == previewSurface)
                 return;
-            // Destroy any existing preview EGLSurface tied to old Surface
-            if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
-                try {
+
+            FLog.d(TAG, "setPreviewSurface: new=" + (previewSurface != null ? "valid=" + previewSurface.isValid() : "null")
+                    + " hasEGL=" + (previewEglSurface != EGL14.EGL_NO_SURFACE));
+
+            if (previewSurface == null) {
+                // Explicit clear: destroy the EGL surface so rendering stops.
+                if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
                     try {
-                        EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
-                                EGL14.EGL_NO_CONTEXT);
-                    } catch (Exception ignore) {
+                        try {
+                            EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
+                                    EGL14.EGL_NO_CONTEXT);
+                        } catch (Exception ignore) {
+                        }
+                        EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Error destroying old preview EGLSurface", e);
                     }
-                    EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
-                } catch (Exception e) {
-                    FLog.w(TAG, "Error destroying old preview EGLSurface", e);
+                    previewEglSurface = EGL14.EGL_NO_SURFACE;
                 }
-                previewEglSurface = EGL14.EGL_NO_SURFACE;
+                currentPreviewSurface = null;
+                previewCreateRetryDeadlineNs = 0L;
+                return;
             }
+
+            // Non-null surface arriving while a valid EGL surface already exists.
+            // When Surfaces are transmitted through Binder/Parcel (e.g. via startService Intent),
+            // each unparcel produces a *new Java object* wrapping the same native window.
+            // Reference equality (==) would see this as a "new" surface every time and
+            // destroy/recreate the EGL surface on every animation frame, causing a blank
+            // preview on Android 14+ where EGL surface recreation is slower / more strict.
+            // Solution: keep the existing EGL surface alive — it is already bound to the
+            // same underlying native window.  renderToPreview() will continue using it.
+            if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
+                currentPreviewSurface = previewSurface;
+                previewCreateRetryDeadlineNs = 0L;
+                return;
+            }
+
+            // No EGL surface yet — just store the surface; renderToPreview() will create
+            // the EGL surface on the next frame.
             currentPreviewSurface = previewSurface;
-            // Reset backoff on new surface
             previewCreateRetryDeadlineNs = 0L;
         }
     }

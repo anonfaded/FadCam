@@ -1881,6 +1881,10 @@ public class FadRecHomeFragment extends HomeFragment {
             boolean showLabels = sharedPreferencesManager == null
                 || sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible();
 
+            // Keep latestElapsedDisplay in sync so the folded-rail start/stop button shows
+            // the live elapsed time (base-class field read by updateStartStopButtonForFoldedState).
+            latestElapsedDisplay = elapsedTimeText;
+
             final String finalRemaining   = remainingTimeText;
             final String finalNumLocaleStr = String.format(numLocale, "/ %.2f GB", gbTotal);
 
@@ -2072,6 +2076,11 @@ public class FadRecHomeFragment extends HomeFragment {
         }
         if (!showPreview && previewCloseSequenceRunning) {
             return;
+        }
+
+        // Send preview surface to service when preview becomes enabled during recording
+        if (showPreview && previewSurface != null && previewSurface.isValid()) {
+            pushPreviewSurfaceToService();
         }
 
         if (tvPreviewPlaceholder != null) {
