@@ -679,9 +679,11 @@ public class ScreenRecordingService extends Service {
             switch (watermarkOption) {
                 case "timestamp":
                     return timestamp + customLine;
+                case "badge_fadcam":
+                    return "Recorded by <ICON>" + customLine;
                 case "timestamp_fadcam":
                 default:
-                    return "Recorded by FadRec - " + timestamp + customLine;
+                    return "Recorded by <ICON> - " + timestamp + customLine;
             }
         };
     }

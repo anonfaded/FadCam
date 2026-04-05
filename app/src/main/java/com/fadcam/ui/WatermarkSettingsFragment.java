@@ -5,11 +5,17 @@ import com.fadcam.FLog;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ImageSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +26,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.fadcam.MainActivity;
 import com.fadcam.ui.OverlayNavUtil;
@@ -44,8 +52,11 @@ public class WatermarkSettingsFragment extends Fragment {
     private TextView valueCustomText;
     private TextView valueLocationFormat;
     private TextView valueLocationInterval;
-    private TextView previewText;
-    private boolean currentPreviewMode = false; // false = FadCam, true = FadRec
+    /** 0 = FadCam page, 1 = FadRec page */
+    private int currentPreviewPage = 0;
+    private ViewPager2 previewPager;
+    private PreviewPagerAdapter previewAdapter;
+    private View dotFadCam, dotFadRec;
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> permissionLauncher;
     private Runnable pendingGrantAction;
@@ -70,7 +81,7 @@ public class WatermarkSettingsFragment extends Fragment {
         valueCustomText = view.findViewById(R.id.value_custom_text);
         valueLocationFormat = view.findViewById(R.id.value_location_format);
         valueLocationInterval = view.findViewById(R.id.value_location_interval);
-        previewText = view.findViewById(R.id.text_watermark_preview);
+        // previewText will be set up in setupButtonHandlers (using new preview card IDs)
         View rowStyle = view.findViewById(R.id.row_watermark_option);
         if(rowStyle!=null){ rowStyle.setOnClickListener(v -> showWatermarkStyleBottomSheet()); }
         locationRow = view.findViewById(R.id.row_location_watermark);
@@ -105,21 +116,41 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         });
         
-        // Setup preview mode tabs (FadCam / FadRec)
+        // Setup preview pager (ViewPager2 — snappy paging)
+        previewPager = view.findViewById(R.id.preview_pager);
+        dotFadCam = view.findViewById(R.id.dot_fadcam);
+        dotFadRec = view.findViewById(R.id.dot_fadrec);
+        previewAdapter = new PreviewPagerAdapter();
+        if (previewPager != null) {
+            previewPager.setAdapter(previewAdapter);
+            previewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                @Override
+                public void onPageSelected(int position) {
+                    currentPreviewPage = position;
+                    updateDots(position);
+                    // Sync tab selection without triggering tab listener recursion
+                    com.google.android.material.tabs.TabLayout tabs = getView() != null
+                            ? getView().findViewById(R.id.preview_mode_tabs) : null;
+                    if (tabs != null && tabs.getSelectedTabPosition() != position) {
+                        com.google.android.material.tabs.TabLayout.Tab t = tabs.getTabAt(position);
+                        if (t != null) t.select();
+                    }
+                }
+            });
+        }
+
+        // Tab clicks navigate the pager
         com.google.android.material.tabs.TabLayout previewModeTabs = view.findViewById(R.id.preview_mode_tabs);
         if (previewModeTabs != null) {
             previewModeTabs.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
                 @Override
                 public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
-                    currentPreviewMode = (tab.getPosition() == 1); // 0 = FadCam, 1 = FadRec
-                    updatePreview();
+                    if (previewPager != null) {
+                        previewPager.setCurrentItem(tab.getPosition(), true);
+                    }
                 }
-
-                @Override
-                public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
-
-                @Override
-                public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+                @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+                @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
             });
         }
         
@@ -247,6 +278,7 @@ public class WatermarkSettingsFragment extends Fragment {
         });
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
     items.add(new com.fadcam.ui.picker.OptionItem("timestamp_fadcam", getString(R.string.watermark_style_time_fadcam_label), (String) null));
+    items.add(new com.fadcam.ui.picker.OptionItem("badge_fadcam", getString(R.string.watermark_style_badge_label), (String) null));
     items.add(new com.fadcam.ui.picker.OptionItem("timestamp", getString(R.string.watermark_style_timeonly_label), (String) null));
     items.add(new com.fadcam.ui.picker.OptionItem("no_watermark", getString(R.string.watermark_style_none_label), (String) null));
         String current = prefs.getWatermarkOption();
@@ -259,6 +291,7 @@ public class WatermarkSettingsFragment extends Fragment {
         if(valueWatermarkStyle==null) return;
         String v = prefs.getWatermarkOption();
         if("timestamp_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_time_fadcam_label));
+        else if("badge_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_badge_label));
         else if("timestamp".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_timeonly_label));
         else valueWatermarkStyle.setText(getString(R.string.watermark_style_none_label));
     }
@@ -279,53 +312,99 @@ public class WatermarkSettingsFragment extends Fragment {
         }
     }
 
+    private void updateDots(int page) {
+        if (dotFadCam != null && dotFadRec != null) {
+            dotFadCam.setBackgroundResource(page == 0
+                    ? R.drawable.indicator_dot_active : R.drawable.indicator_dot_inactive);
+            dotFadRec.setBackgroundResource(page == 1
+                    ? R.drawable.indicator_dot_active : R.drawable.indicator_dot_inactive);
+        }
+    }
+
     private void updatePreview(){
-        if(previewText==null) return;
         String v = prefs.getWatermarkOption();
-        // Static sample timestamp (preview only; not live updating)
-        String formatted = "10/Jul/2024 04:47:00 PM"; // static sample in original format
-        String baseLine = null;
-        
-        // Determine prefix based on current preview mode
-        String modePrefix = currentPreviewMode 
-            ? "Recorded by FadRec" 
-            : "Captured by FadCam";
-        
-        if("timestamp_fadcam".equals(v)){
-            // For both modes, use the mode-specific prefix + timestamp
-            baseLine = modePrefix + " - " + formatted;
-        } else if("timestamp".equals(v)) {
-            baseLine = formatted;
+        String formatted = "10/Jul/2024 04:47:00 PM"; // static sample
+
+        // Build FadCam preview text — [FADCAM_ICON] triggers ImageSpan in adapter
+        String fadcamBase = null;
+        if ("timestamp_fadcam".equals(v)) {
+            fadcamBase = "Captured by [FADCAM_ICON] - " + formatted;
+        } else if ("badge_fadcam".equals(v)) {
+            fadcamBase = "Captured by [FADCAM_ICON]";
+        } else if ("timestamp".equals(v)) {
+            fadcamBase = formatted;
         }
-        
-        TextView helper = getView()!=null? getView().findViewById(R.id.text_preview_helper):null;
-        if(baseLine==null){
-            // Show a UI-only placeholder instead of hiding the preview when no watermark is selected.
-            previewText.setText(getString(R.string.watermark_preview_funny));
-            previewText.setVisibility(View.VISIBLE);
-            if(helper!=null){ helper.setText(getString(R.string.watermark_disabled_message)); }
-            return;
-        } else if(helper!=null){
-            helper.setText(getString(R.string.helper_watermark_preview));
+
+        // Build FadRec preview text — [ICON] triggers ImageSpan in adapter
+        String fadrecBase = null;
+        if ("timestamp_fadcam".equals(v)) {
+            fadrecBase = "Recorded by [ICON] - " + formatted;
+        } else if ("badge_fadcam".equals(v)) {
+            fadrecBase = "Recorded by [ICON]";
+        } else if ("timestamp".equals(v)) {
+            fadrecBase = formatted;
         }
-        if(prefs.isLocalisationEnabled()){
-            // Show location format preview with anonymized/fictional values
-            String format = prefs.getWatermarkLocationFormat();
-            if("address".equals(format)){
-                // Preview with fictional full address (mirrors Nominatim display_name style)
-                baseLine += "\nLat= 48.XXX, Lon= 2.XXX\nMain Street, Sample City, Region, Country";
-            } else {
-                // Coordinates only (default) — partially censored
-                baseLine += "\nLat= 48.XXX, Lon= 2.XXX";
+
+        TextView helper = getView() != null ? getView().findViewById(R.id.text_preview_helper) : null;
+
+        if (fadcamBase == null) {
+            if (previewAdapter != null) {
+                previewAdapter.setContent(
+                        getString(R.string.watermark_preview_funny),
+                        getString(R.string.watermark_preview_funny),
+                        null, null);
             }
+            if (helper != null) helper.setText(getString(R.string.watermark_disabled_message));
+            return;
         }
-        // Add custom text on line 2 (or line 3 if location enabled)
+        if (helper != null) helper.setText(getString(R.string.helper_watermark_preview));
+
+        // Append location lines if enabled
+        if (prefs.isLocalisationEnabled()) {
+            String format = prefs.getWatermarkLocationFormat();
+            String locationLines = "address".equals(format)
+                    ? "\nLat= 48.XXX, Lon= 2.XXX\nMain Street, Sample City, Region, Country"
+                    : "\nLat= 48.XXX, Lon= 2.XXX";
+            fadcamBase += locationLines;
+            fadrecBase += locationLines;
+        }
+
+        // Append custom text
         String customText = prefs.getWatermarkCustomText();
-        if(customText != null && !customText.isEmpty()){
-            baseLine += "\n" + customText;
+        if (customText != null && !customText.isEmpty()) {
+            fadcamBase += "\n" + customText;
+            fadrecBase += "\n" + customText;
         }
-        previewText.setText(baseLine);
-        previewText.setVisibility(View.VISIBLE);
+
+        if (previewAdapter != null) {
+            previewAdapter.setContent(fadcamBase, fadrecBase,
+                    buildIconDrawable(R.drawable.menu_icon_unknown),
+                    buildIconDrawable(R.drawable.fadrec));
+        }
+    }
+
+    /**
+     * Loads and scales the given drawable resource for inline use as an {@link ImageSpan}.
+     * Height is fixed at 16dp; width preserves the native aspect ratio.
+     */
+    @Nullable
+    private Drawable buildIconDrawable(int resId) {
+        try {
+            Context ctx = getContext();
+            if (ctx == null) return null;
+            Bitmap src = BitmapFactory.decodeResource(ctx.getResources(), resId);
+            if (src == null) return null;
+            float density = ctx.getResources().getDisplayMetrics().density;
+            int iconH = Math.round(20 * density); // 20dp — matches visual weight in preview
+            int iconW = Math.round(iconH * ((float) src.getWidth() / src.getHeight()));
+            Bitmap scaled = Bitmap.createScaledBitmap(src, iconW, iconH, true);
+            BitmapDrawable d = new BitmapDrawable(ctx.getResources(), scaled);
+            d.setBounds(0, 0, iconW, iconH);
+            return d;
+        } catch (Exception e) {
+            FLog.w(TAG, "Could not load preview icon res=" + resId, e);
+            return null;
+        }
     }
 
     private void refreshCustomTextValue(){
@@ -457,4 +536,66 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     // Removed legacy spinner index/value helpers (unified bottom sheet now)
+
+    // ---- Inner adapter for the preview ViewPager2 ----
+
+    /**
+     * Two-page adapter: page 0 = FadCam preview, page 1 = FadRec preview.
+     * Content is set via {@link #setContent} and pages update themselves via
+     * {@link RecyclerView.Adapter#notifyItemChanged}.
+     */
+    private class PreviewPagerAdapter extends RecyclerView.Adapter<PreviewPagerAdapter.VH> {
+
+        private CharSequence fadcamContent = "";
+        private CharSequence fadrecContent = "";
+
+        void setContent(String fadcamText, String fadrecRaw,
+                        @Nullable Drawable fadcamIconDrawable,
+                        @Nullable Drawable fadrecIconDrawable) {
+            fadcamContent = buildSpannable(fadcamText, "[FADCAM_ICON]", fadcamIconDrawable, "FadCam");
+            fadrecContent = buildSpannable(fadrecRaw, "[ICON]", fadrecIconDrawable, "FadRec");
+            notifyItemChanged(0);
+            notifyItemChanged(1);
+        }
+
+        private CharSequence buildSpannable(String raw, String token,
+                                            @Nullable Drawable icon, String fallback) {
+            if (raw == null) return "";
+            if (raw.contains(token)) {
+                if (icon != null) {
+                    int idx = raw.indexOf(token);
+                    SpannableString span = new SpannableString(raw.replace(token, "\uFFFD"));
+                    span.setSpan(new ImageSpan(icon, ImageSpan.ALIGN_BASELINE),
+                            idx, idx + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    return span;
+                }
+                return raw.replace(token, fallback);
+            }
+            return raw;
+        }
+
+        @NonNull
+        @Override
+        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_watermark_preview, parent, false);
+            return new VH(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull VH holder, int position) {
+            holder.text.setText(position == 0 ? fadcamContent : fadrecContent);
+        }
+
+        @Override
+        public int getItemCount() { return 2; }
+
+        class VH extends RecyclerView.ViewHolder {
+            final TextView text;
+            VH(View itemView) {
+                super(itemView);
+                text = itemView.findViewById(R.id.text_watermark_preview);
+            }
+        }
+    }
 }

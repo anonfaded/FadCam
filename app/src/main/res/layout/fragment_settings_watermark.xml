@@ -68,19 +68,25 @@
                 android:textColor="?attr/colorHeading"
                 android:textStyle="bold" />
 
-            <!-- Preview Mode Tabs (FadCam / FadRec) -->
+            <!-- Preview Mode Tabs (FadCam / FadRec) — transparent bg, dark ripple -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/preview_mode_tabs"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="12dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginBottom="4dp"
+                android:background="@android:color/transparent"
                 app:tabMode="fixed"
-                app:tabGravity="center"
-                app:tabTextColor="?attr/colorPrimary"
+                app:tabGravity="fill"
+                app:tabIndicatorColor="?attr/colorPrimary"
+                app:tabIndicatorHeight="2dp"
+                app:tabPaddingStart="8dp"
+                app:tabPaddingEnd="8dp"
+                app:tabTextColor="?attr/colorOnSurface"
                 app:tabSelectedTextColor="?attr/colorPrimary"
-                app:tabIndicatorColor="?attr/colorPrimary">
+                app:tabRippleColor="#7A000000"
+                android:elevation="0dp">
                 <com.google.android.material.tabs.TabItem
                     android:id="@+id/tab_fadcam"
                     android:text="FadCam" />
@@ -89,22 +95,34 @@
                     android:text="FadRec" />
             </com.google.android.material.tabs.TabLayout>
 
-            <!-- Preview Card -->
-            <FrameLayout
-                android:id="@+id/group_card_preview"
+            <!-- Preview Cards (ViewPager2 — snappy paging) -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/preview_pager"
                 android:layout_width="match_parent"
                 android:layout_height="160dp"
-                android:background="@drawable/watermark_preview_bg"
-                android:padding="12dp">
-                <TextView
-                    android:id="@+id/text_watermark_preview"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Captured by FadCam - 10/Aug/2025 06:27:43 AM"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold"/>
-            </FrameLayout>
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Page Indicator Dots -->
+            <LinearLayout
+                android:id="@+id/preview_page_dots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginBottom="12dp">
+                <View
+                    android:id="@+id/dot_fadcam"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/indicator_dot_active"
+                    android:layout_marginEnd="8dp" />
+                <View
+                    android:id="@+id/dot_fadrec"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/indicator_dot_inactive" />
+            </LinearLayout>
             <TextView
                 android:id="@+id/text_preview_helper"
                 android:layout_width="match_parent"

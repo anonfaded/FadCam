@@ -428,6 +428,7 @@
     <string name="watermark_preview_sample_timeonly">%1$s</string>
     <string name="watermark_style_time_fadcam_label">Время с FadCam</string>
     <string name="watermark_style_timeonly_label">Временная метка</string>
+    <string name="watermark_style_badge_label">Только метка бренда</string>
     <string name="watermark_style_none_label">Без водяного знака</string>
     <string name="helper_watermark_preview">Так водяной знак будет отображаться в верхнем левом углу вашего записанного видео.\nЗабавный факт: 10/Июл/2024 04:47 PM - когда FadCam v1.0 впервые вышел.</string>
     <string name="helper_location_watermark_option">Переключить добавление местоположения вашего устройства как наложения. Требуется разрешение на местоположение.</string>

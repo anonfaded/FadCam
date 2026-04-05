@@ -165,6 +165,10 @@ public class RecordingService extends Service {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
+    // Cached notification large icon — decoded once and reused to avoid BitmapFactory on every build.
+    private android.graphics.Bitmap cachedNotificationIconBitmap = null;
+    private int cachedNotificationIconResId = -1;
+
     private boolean pendingStartRecording = false;
 
     private volatile boolean isStopping = false;
@@ -2876,7 +2880,10 @@ public class RecordingService extends Service {
         String finalText;
         switch (watermarkOption) {
             case "timestamp_fadcam":
-                finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + locationText + customTextLine;
+                break;
+            case "badge_fadcam":
+                finalText = "Captured by <FADCAM_ICON>" + customTextLine;
                 break;
             case "timestamp":
                 finalText = getCurrentTimestamp() + locationText + customTextLine;
@@ -2909,7 +2916,10 @@ public class RecordingService extends Service {
                 String finalText;
                 switch (watermarkOption) {
                     case "timestamp_fadcam":
-                        finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                        finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + locationText + customTextLine;
+                        break;
+                    case "badge_fadcam":
+                        finalText = "Captured by <FADCAM_ICON>" + customTextLine;
                         break;
                     case "timestamp":
                         finalText = getCurrentTimestamp() + locationText + customTextLine;
@@ -2921,7 +2931,7 @@ public class RecordingService extends Service {
                         finalText = "Captured by FadCam - " + getCurrentTimestamp() + locationText + customTextLine;
                 }
                 if (!finalText.isEmpty()) {
-                    FLog.d(TAG, "🎬 WATERMARK_PROVIDER: " + finalText.replace("\n", " | "));
+                    // Watermark text built; logging omitted (fires every second during recording)
                 }
                 return finalText;
             }
@@ -4723,13 +4733,14 @@ public class RecordingService extends Service {
         // method(createBaseNotificationBuilder_large_icon)-----------
         // Set custom large icon based on currently selected app icon for discretion
         int largeIconResId = getCurrentAppIconResourceId();
-        FLog.d(TAG, "createBaseNotificationBuilder: Using large icon resource ID = " + largeIconResId);
-        android.graphics.Bitmap largeIconBitmap = loadNotificationLargeIconBitmap(largeIconResId);
-        if (largeIconBitmap != null) {
-            builder.setLargeIcon(largeIconBitmap);
-            FLog.d(TAG, "createBaseNotificationBuilder: Successfully set large icon bitmap");
-        } else {
-            FLog.w(TAG, "createBaseNotificationBuilder: Failed to render large icon, proceeding without it");
+        if (largeIconResId != cachedNotificationIconResId || cachedNotificationIconBitmap == null) {
+            android.graphics.Bitmap fresh = loadNotificationLargeIconBitmap(largeIconResId);
+            if (cachedNotificationIconBitmap != null) cachedNotificationIconBitmap.recycle();
+            cachedNotificationIconBitmap = fresh;
+            cachedNotificationIconResId = largeIconResId;
+        }
+        if (cachedNotificationIconBitmap != null) {
+            builder.setLargeIcon(cachedNotificationIconBitmap);
         }
         // method(createBaseNotificationBuilder_large_icon)-----------
 
@@ -4760,11 +4771,7 @@ public class RecordingService extends Service {
      */
     private int getCurrentAppIconResourceId() {
         String currentAppIcon = sharedPreferencesManager.getCurrentAppIcon();
-        FLog.d(TAG, "getCurrentAppIconResourceId: Current app icon preference = " + currentAppIcon);
-        // Map icon key to its resource id via SharedPreferencesManager
-        int resId = sharedPreferencesManager.getAppIconResId(currentAppIcon);
-        FLog.d(TAG, "getCurrentAppIconResourceId: Resolved to resId=" + resId);
-        return resId;
+        return sharedPreferencesManager.getAppIconResId(currentAppIcon);
     }
 
     // method(loadNotificationLargeIconBitmap)-----------

@@ -1096,9 +1096,11 @@ public class DualCameraRecordingService extends Service {
                         return "";
                     case "timestamp":
                         return getDualCamTimestamp() + customTextLine;
+                    case "badge_fadcam":
+                        return "Captured by <FADCAM_ICON>" + customTextLine;
                     case "timestamp_fadcam":
                     default:
-                        return "Captured by FadCam - " + getDualCamTimestamp() + customTextLine;
+                        return "Captured by <FADCAM_ICON> - " + getDualCamTimestamp() + customTextLine;
                 }
             };
             

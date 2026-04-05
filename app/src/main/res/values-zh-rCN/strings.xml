@@ -572,6 +572,7 @@
     <string name="watermark_style_row_title">水印样式</string>
     <string name="watermark_style_time_fadcam_label">FadCam 时间</string>
     <string name="watermark_style_timeonly_label">时间戳</string>
+    <string name="watermark_style_badge_label">仅品牌标签</string>
     <string name="watermark_style_none_label">无水印</string>
     <string name="helper_watermark_preview">水印将以此样式显示在录制视频的左上角。\n冷知识：FadCam v1.0 的首发时间为 2024年7月10日 下午04:47。</string>
     <string name="helper_location_watermark_option">切换是否将设备位置信息叠加在视频上，需要位置权限。</string>

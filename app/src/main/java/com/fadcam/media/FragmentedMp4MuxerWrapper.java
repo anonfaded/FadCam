@@ -596,8 +596,9 @@ public class FragmentedMp4MuxerWrapper {
 
         if ((mediaCodecFlags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
             flags |= C.BUFFER_FLAG_KEY_FRAME;
-            if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && sampleCountDebug < 5) {
-                FLog.w(TAG, "[VLC-VIDEO-CONVERT] Video keyframe flag converted to Media3 C.BUFFER_FLAG_KEY_FRAME");
+            if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && sampleCountDebug < 3) {
+                sampleCountDebug++;
+                FLog.d(TAG, "[VLC-VIDEO-CONVERT] Video keyframe flag mapped to Media3 — first 3 keyframes only");
             }
         }
         

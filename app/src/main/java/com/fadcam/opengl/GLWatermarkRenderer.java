@@ -23,6 +23,7 @@ import android.opengl.EGLExt;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.fadcam.CameraType;
 import com.fadcam.SharedPreferencesManager;
@@ -50,6 +51,11 @@ public class GLWatermarkRenderer {
 
     // Watermark
     private Bitmap watermarkBitmap;
+    private Bitmap flippedWatermarkBitmap;
+    private final android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
+    private android.graphics.Typeface cachedUbuntuTypeface = null;
+    private final java.util.HashMap<String, android.graphics.Bitmap> iconBitmapCache
+        = new java.util.HashMap<>();
     private int watermarkTextureId;
     private String watermarkText = "";
     private Bitmap forensicsOverlayBitmap;
@@ -1122,57 +1128,201 @@ public class GLWatermarkRenderer {
         // Range [16px, 48px] - more aggressive than before to show actual resolution differences
         float rawCalc = refWidth * 0.020f;
         float dynamicTextSize = Math.max(16f, Math.min(48f, rawCalc));
-        FLog.d(TAG, "📝 Watermark text size: refWidth=" + refWidth + "px (encoder=" + encoderWidth + ", video=" + videoWidth + "), rawCalc=" + String.format("%.2f", rawCalc) + "px, final=" + String.format("%.2f", dynamicTextSize) + "px");
         watermarkPaint.setTextSize(dynamicTextSize);
         watermarkPaint.setAntiAlias(true);
         watermarkPaint.setARGB(255, 255, 255, 255);
         watermarkPaint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
         watermarkPaint.setFakeBoldText(true);
         watermarkPaint.setLetterSpacing(0.0f);
-        // Set Ubuntu font for watermark text
-        try {
-            android.graphics.Typeface ubuntuTypeface = android.graphics.Typeface.createFromAsset(context.getAssets(),
-                    "ubuntu_regular.ttf");
-            watermarkPaint.setTypeface(ubuntuTypeface);
-        } catch (Exception e) {
-            // Fallback to default bold if Ubuntu font is not found
-            watermarkPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT_BOLD,
-                    android.graphics.Typeface.BOLD));
+        // Set Ubuntu font for watermark text — cached to avoid asset I/O every update
+        if (cachedUbuntuTypeface == null) {
+            try {
+                cachedUbuntuTypeface = android.graphics.Typeface.createFromAsset(
+                        context.getAssets(), "ubuntu_regular.ttf");
+            } catch (Exception e) {
+                FLog.w(TAG, "Ubuntu font not found, using default bold");
+                cachedUbuntuTypeface = android.graphics.Typeface.create(
+                        android.graphics.Typeface.DEFAULT_BOLD, android.graphics.Typeface.BOLD);
+            }
         }
+        watermarkPaint.setTypeface(cachedUbuntuTypeface);
         int padding = Math.max(14, Math.round(refWidth * 0.012f));
         Paint.FontMetrics fm = watermarkPaint.getFontMetrics();
         float lineHeight = (fm.descent - fm.ascent) + Math.max(4f, dynamicTextSize * 0.12f);
+        
+        // Icon height scaled to 2.7× text size: balanced visibility and alignment.
+        // Ensures icons are visible while maintaining proper line spacing.
+        float iconLineH = dynamicTextSize * 2.7f;
+        
+        // Use standard line height for spacing between rows (no extra buffer)
+        float effectiveLineHeight = lineHeight;
+
         String[] lines = text.split("\n");
         float maxLineWidth = 0f;
         for (String line : lines) {
-            maxLineWidth = Math.max(maxLineWidth, watermarkPaint.measureText(line == null ? "" : line));
+            if (line == null) continue;
+            float lineW = watermarkPaint.measureText(line.replace("<ICON>", "").replace("<FADCAM_ICON>", ""));
+            if (line.contains("<ICON>")) {
+                lineW += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
+            }
+            if (line.contains("<FADCAM_ICON>")) {
+                lineW += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
+            }
+            maxLineWidth = Math.max(maxLineWidth, lineW);
         }
+        // Add top padding for vertical centering of watermark within its layout space
+        float topPadding = Math.max(6f, padding * 0.5f);
         dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
-        dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round((lineHeight * lines.length) + (padding * 1.5f))));
-        FLog.d(TAG, "📋 Watermark bitmap: " + dynamicBitmapWidth + "x" + dynamicBitmapHeight + "px, textSize=" + String.format("%.2f", watermarkPaint.getTextSize()) + "px, lines=" + lines.length + ", lineHeight=" + String.format("%.2f", lineHeight) + "px");
+        dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round((effectiveLineHeight * lines.length) + topPadding + (padding * 1f))));
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
         }
         Canvas canvas = new Canvas(watermarkBitmap);
         canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
-        float textX = padding;
-        float textY = padding - fm.ascent;
+
+        // Start text at topPadding + adjusted position for baseline alignment
+        float textY = topPadding + padding - fm.ascent;
         for (String line : lines) {
-            canvas.drawText(line == null ? "" : line, textX, textY, watermarkPaint);
-            textY += lineHeight;
+            if (line == null || line.isEmpty()) {
+                textY += effectiveLineHeight;
+                continue;
+            }
+
+            if (line.contains("<ICON>") || line.contains("<FADCAM_ICON>")) {
+                drawLineWithIcons(canvas, line, textY, padding, fm, iconLineH, watermarkPaint);
+            } else {
+                canvas.drawText(line, padding, textY, watermarkPaint);
+            }
+            textY += effectiveLineHeight;
         }
-        // Flip the bitmap vertically before uploading to OpenGL
-        android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
-        flipMatrix.preScale(1.0f, -1.0f);
-        Bitmap flippedBitmap = Bitmap.createBitmap(watermarkBitmap, 0, 0, watermarkBitmap.getWidth(),
-                watermarkBitmap.getHeight(), flipMatrix, true);
+        // Flip the bitmap vertically before uploading to OpenGL.
+        // Reuse cached flippedWatermarkBitmap if dimensions match to avoid repeated allocations.
+        if (flippedWatermarkBitmap == null
+                || flippedWatermarkBitmap.getWidth() != watermarkBitmap.getWidth()
+                || flippedWatermarkBitmap.getHeight() != watermarkBitmap.getHeight()) {
+            if (flippedWatermarkBitmap != null) flippedWatermarkBitmap.recycle();
+            flipMatrix.reset();
+            flipMatrix.preScale(1.0f, -1.0f);
+            flippedWatermarkBitmap = Bitmap.createBitmap(watermarkBitmap, 0, 0,
+                    watermarkBitmap.getWidth(), watermarkBitmap.getHeight(), flipMatrix, true);
+        } else {
+            Canvas fc = new Canvas(flippedWatermarkBitmap);
+            fc.save();
+            fc.scale(1f, -1f, 0f, flippedWatermarkBitmap.getHeight() / 2f);
+            fc.drawBitmap(watermarkBitmap, 0f, 0f, null);
+            fc.restore();
+        }
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, watermarkTextureId);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
-        flippedBitmap.recycle();
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedWatermarkBitmap, 0);
         int fallbackVpW = mSurfaceWidth > 0 ? mSurfaceWidth : (encoderWidth > 0 ? encoderWidth : videoWidth);
         int fallbackVpH = mSurfaceHeight > 0 ? mSurfaceHeight : (encoderHeight > 0 ? encoderHeight : videoHeight);
         updateWatermarkRectForViewport(fallbackVpW, fallbackVpH);
+    }
+
+    /**
+     * Returns a cached Bitmap for the given drawable name, loading from resources on first use.
+     * Returns null if the drawable cannot be found. Bitmaps are released in {@link #release()}.
+     */
+    private android.graphics.Bitmap getIconBitmap(String drawableName) {
+        if (!iconBitmapCache.containsKey(drawableName)) {
+            try {
+                int resId = context.getResources().getIdentifier(
+                        drawableName, "drawable", context.getPackageName());
+                android.graphics.Bitmap bmp = (resId != 0)
+                        ? android.graphics.BitmapFactory.decodeResource(context.getResources(), resId)
+                        : null;
+                iconBitmapCache.put(drawableName, bmp);
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to load icon bitmap: " + drawableName, e);
+                iconBitmapCache.put(drawableName, null);
+            }
+        }
+        return iconBitmapCache.get(drawableName);
+    }
+
+    /**
+     * Measures the rendered width of a drawable icon scaled to the given height.
+     * Returns 0 if the drawable cannot be loaded.
+     */
+    private float measureIconWidth(String drawableName, float targetH) {
+        android.graphics.Bitmap bmp = getIconBitmap(drawableName);
+        if (bmp != null) {
+            return targetH * ((float) bmp.getWidth() / (float) bmp.getHeight());
+        }
+        return 0f;
+    }
+
+    /**
+     * Draws a watermark line that may contain {@code <ICON>} (FadRec icon) and/or
+     * {@code <FADCAM_ICON>} (FadCam icon) placeholders inline with the text.
+     * Icons are scaled to the font bounding-box height so they align flush with glyphs.
+     */
+    private void drawLineWithIcons(Canvas canvas, String line, float textY, int padding,
+                                   Paint.FontMetrics fm, float iconH, Paint paint) {
+        // Tokenise the line: split on the two placeholder tokens, keeping which token was found
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        java.util.List<Boolean> tokenIsFadrec = new java.util.ArrayList<>();  // true=<ICON>, false=<FADCAM_ICON>
+        String remaining = line;
+        while (!remaining.isEmpty()) {
+            int idx1 = remaining.indexOf("<ICON>");
+            int idx2 = remaining.indexOf("<FADCAM_ICON>");
+            // Pick whichever placeholder comes first
+            boolean hasIcon = idx1 >= 0;
+            boolean hasFadcam = idx2 >= 0;
+            if (!hasIcon && !hasFadcam) {
+                tokens.add(remaining);
+                tokenIsFadrec.add(null); // plain text segment
+                break;
+            }
+            int first = hasIcon && hasFadcam ? Math.min(idx1, idx2)
+                    : (hasIcon ? idx1 : idx2);
+            boolean firstIsFadrec = hasIcon && (!hasFadcam || idx1 <= idx2);
+            // Text before the placeholder
+            if (first > 0) {
+                tokens.add(remaining.substring(0, first));
+                tokenIsFadrec.add(null);
+            }
+            // The icon token itself
+            String token = firstIsFadrec ? "<ICON>" : "<FADCAM_ICON>";
+            tokens.add(token);
+            tokenIsFadrec.add(firstIsFadrec);
+            remaining = remaining.substring(first + token.length());
+        }
+
+        // Centre the icon vertically to align with the text baseline (not top-aligned).
+        // Calculate text vertical center and position icon around that point.
+        float textHeight = fm.descent - fm.ascent;
+        float textVertCenter = textY + fm.ascent + (textHeight / 2f);
+        // Position icon so its vertical center aligns with text's vertical center
+        float iconTop = textVertCenter - (iconH / 2f);
+        float currentX = padding;
+        for (int i = 0; i < tokens.size(); i++) {
+            String tok = tokens.get(i);
+            Boolean isFadrec = tokenIsFadrec.get(i);
+            if (isFadrec == null) {
+                // Plain text segment
+                if (!tok.isEmpty()) {
+                    canvas.drawText(tok, currentX, textY, paint);
+                    currentX += paint.measureText(tok);
+                }
+            } else {
+                // Icon segment
+                String drawableName = isFadrec ? "fadrec" : "menu_icon_unknown";
+                android.graphics.Bitmap iconBmp = getIconBitmap(drawableName);
+                if (iconBmp != null) {
+                    float iconW = iconH * ((float) iconBmp.getWidth() / (float) iconBmp.getHeight());
+                    android.graphics.Rect src = new android.graphics.Rect(0, 0, iconBmp.getWidth(), iconBmp.getHeight());
+                    android.graphics.Rect dst = new android.graphics.Rect(
+                            Math.round(currentX), Math.round(iconTop),
+                            Math.round(currentX + iconW), Math.round(iconTop + iconH));
+                    canvas.drawBitmap(iconBmp, src, dst, null);
+                    currentX += iconW + (padding * 0.25f);
+                } else {
+                    FLog.w(TAG, "⚠️ Icon not available: " + drawableName);
+                }
+            }
+        }
     }
 
     private void updateWatermarkRectForViewport(int viewportWidth, int viewportHeight) {
@@ -1212,7 +1362,8 @@ public class GLWatermarkRenderer {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         watermarkRectBuffer.put(rectVerts).position(0);
-        FLog.v(TAG, "🎬 Watermark viewport: " + vpW + "x" + vpH + "px, ndcSize=" + String.format("%.3f", ndcWidth) + "x" + String.format("%.3f", ndcHeight) + ", targetFraction=" + String.format("%.2f%%", targetFractionOfWidth * 100) + ", portrait=" + isPortrait);
+        // OPTIMIZATION: Removed FLog.v() for viewport logging - was causing excessive I/O blocking rendering thread
+        // The early return optimization above prevents unnecessary recalculations anyway
 
         lastWatermarkVpW = vpW;
         lastWatermarkVpH = vpH;
@@ -1855,6 +2006,14 @@ public class GLWatermarkRenderer {
             if (forensicsOverlayBitmap != null) {
                 forensicsOverlayBitmap.recycle();
             }
+            if (flippedWatermarkBitmap != null) {
+                flippedWatermarkBitmap.recycle();
+                flippedWatermarkBitmap = null;
+            }
+            for (android.graphics.Bitmap bmp : iconBitmapCache.values()) {
+                if (bmp != null) bmp.recycle();
+            }
+            iconBitmapCache.clear();
             watermarkBitmap = null;
             forensicsOverlayBitmap = null;
             watermarkTextureId = 0;

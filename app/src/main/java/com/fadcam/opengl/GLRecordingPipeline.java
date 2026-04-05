@@ -325,17 +325,10 @@ public class GLRecordingPipeline {
                 public void run() {
                     if ((isRecording || previewOnlyRendering) && !released) {
                         try {
-                            // Update location update interval from preferences
-                            long newInterval = com.fadcam.SharedPreferencesManager.getInstance(context)
-                                .getWatermarkUpdateInterval();
-                            locationUpdateIntervalMs = newInterval;
-                            
                             updateWatermark();
                         } catch (Exception e) {
                             FLog.w(TAG, "Watermark update failed", e);
                         }
-                        // FIXED: Watermark always updates at 1 second frequency
-                        // Location update frequency is tracked separately via locationUpdateIntervalMs
                         watermarkUpdateHandler.postDelayed(this, 1000); // 1 second constant
                     }
                 }
@@ -1042,9 +1035,7 @@ public class GLRecordingPipeline {
                             
                             audioSamplesWritten++;
                             lastAudioPts = bufferInfo.presentationTimeUs;
-                            FLog.d(TAG, String.format("[AUDIO-FINAL] sample #%d, pts=%dus (%.2fs)",
-                                audioSamplesWritten, bufferInfo.presentationTimeUs, 
-                                bufferInfo.presentationTimeUs / 1000000.0));
+                            // Per-sample logging removed — summary logged at EOS below
                         } catch (Exception e) {
                             FLog.e(TAG, "Error writing final audio frame", e);
                         }
@@ -1055,6 +1046,9 @@ public class GLRecordingPipeline {
 
                 // Check for EOS flag
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    FLog.d(TAG, String.format(java.util.Locale.US,
+                            "[AUDIO-FINAL] drain complete: %d samples, final pts=%dus (%.2fs)",
+                            audioSamplesWritten, lastAudioPts, lastAudioPts / 1_000_000.0));
                     FLog.d(TAG, "Audio encoder EOS received - all frames drained");
                     return true;
                 }
@@ -1629,12 +1623,6 @@ public class GLRecordingPipeline {
                                 
                                 videoSamplesWritten++;
                                 lastVideoPts = bufferInfo.presentationTimeUs;
-                                // Log every frame for debugging (can reduce frequency later)
-                                if (videoSamplesWritten % 30 == 0) {
-                                    FLog.i(TAG, String.format("[VIDEO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db, keyframe=%s",
-                                        videoSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0, 
-                                        bufferInfo.presentationTimeUs, bufferInfo.size, isKeyframe));
-                                }
                                 
                                 segmentBytesWritten += bufferInfo.size;
                                 if (!rolloverRequestedByDrain && awaitingKeyframeForRollover && isKeyframe && maxFileSizeBytes > 0 && segmentBytesWritten >= maxFileSizeBytes) {
@@ -2951,17 +2939,11 @@ public class GLRecordingPipeline {
                                 
                                 audioSamplesWritten++;
                                 lastAudioPts = bufferInfo.presentationTimeUs;
-                                // Log every 50 samples for debugging
-                                if (audioSamplesWritten % 50 == 0) {
-                                    FLog.i(TAG, String.format("[AUDIO_WRITE] Sample #%d, PTS=%.3fs (%dus), size=%db",
-                                        audioSamplesWritten, bufferInfo.presentationTimeUs / 1000000.0,
-                                        bufferInfo.presentationTimeUs, bufferInfo.size));
-                                }
-                                // Detect silence pattern (constant 512-byte AAC frames)
+                                // Detect silence pattern: log only on first detection; reset when non-silent
                                 if (bufferInfo.size == 512) {
                                     consecutive512Count++;
                                     if (consecutive512Count == 10) {
-                                        FLog.w(TAG, "⚠️ SILENCE DETECTED: 10 consecutive 512-byte frames at sample #" + audioSamplesWritten + ", " + (bufferInfo.presentationTimeUs / 1000000.0) + "s");
+                                        FLog.w(TAG, "⚠️ SILENCE DETECTED at sample #" + audioSamplesWritten);
                                     }
                                 } else {
                                     consecutive512Count = 0;

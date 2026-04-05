@@ -682,6 +682,7 @@
     <string name="watermark_preview_sample_timeonly">%1$s</string>
     <string name="watermark_style_time_fadcam_label">Time with FadCam</string>
     <string name="watermark_style_timeonly_label">Timestamp</string>
+    <string name="watermark_style_badge_label">Brand Label Only</string>
     <string name="watermark_style_none_label">No Watermark</string>
     <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
     <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
