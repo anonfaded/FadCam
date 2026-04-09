@@ -182,7 +182,6 @@ public class VideoIndexRepository {
         try {
             int count = dao.getCount();
             long totalSize = dao.getTotalSize();
-            FLog.d(TAG, "getQuickStats: count=" + count + ", totalSize=" + totalSize);
             // Also update in-memory cache while we're at it
             cachedCount.set(count);
             return new long[]{count, totalSize};

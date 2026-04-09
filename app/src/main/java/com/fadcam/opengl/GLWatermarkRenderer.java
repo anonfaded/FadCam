@@ -740,7 +740,6 @@ public class GLWatermarkRenderer {
                         previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L; // 200ms
                         return;
                     }
-                    FLog.d(TAG, "renderToPreview: EGL surface created successfully");
                 } catch (Exception e) {
                     FLog.e(TAG, "Exception creating EGL surface for preview", e);
                     previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
@@ -1207,7 +1206,9 @@ public class GLWatermarkRenderer {
             flippedWatermarkBitmap = Bitmap.createBitmap(watermarkBitmap, 0, 0,
                     watermarkBitmap.getWidth(), watermarkBitmap.getHeight(), flipMatrix, true);
         } else {
+            // Clear first — without this, old text shows through transparent regions (ghost/stale artifact)
             Canvas fc = new Canvas(flippedWatermarkBitmap);
+            fc.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR);
             fc.save();
             fc.scale(1f, -1f, 0f, flippedWatermarkBitmap.getHeight() / 2f);
             fc.drawBitmap(watermarkBitmap, 0f, 0f, null);
@@ -1611,7 +1612,6 @@ public class GLWatermarkRenderer {
                                 // Only log when exposure value actually changes
                                 if (Float.isNaN(lastLoggedExposureCompensation) || 
                                     Math.abs(currentExposureCompensation - lastLoggedExposureCompensation) > 0.001f) {
-                                    FLog.d(TAG, "Set exposure compensation to Grafika shader: " + currentExposureCompensation);
                                     lastLoggedExposureCompensation = currentExposureCompensation;
                                 }
                             }
@@ -1914,9 +1914,6 @@ public class GLWatermarkRenderer {
         synchronized (previewRenderLock) {
             if (currentPreviewSurface == previewSurface)
                 return;
-
-            FLog.d(TAG, "setPreviewSurface: new=" + (previewSurface != null ? "valid=" + previewSurface.isValid() : "null")
-                    + " hasEGL=" + (previewEglSurface != EGL14.EGL_NO_SURFACE));
 
             if (previewSurface == null) {
                 // Explicit clear: destroy the EGL surface so rendering stops.
@@ -2511,7 +2508,6 @@ public class GLWatermarkRenderer {
     public void setExposureCompensation(float evStops) {
         // Clamp to reasonable range to prevent shader overflow
         currentExposureCompensation = Math.max(-4.0f, Math.min(4.0f, evStops));
-        FLog.d(TAG, "GL exposure compensation set to " + currentExposureCompensation + " EV stops");
     }
 
     public void setFrontVideoMirrorEnabled(boolean enabled) {
@@ -2609,9 +2605,6 @@ public class GLWatermarkRenderer {
         int rotationDegrees = getRequiredRotation();
         boolean front = isFrontCamera();
         if (rotationDegrees != lastLoggedRotation || front != lastLoggedFront || frontVideoMirrorEnabled != lastLoggedFlip) {
-            FLog.d(TAG, "updateMatrices: rotation=" + rotationDegrees + ", front=" + front
-                    + ", flip=" + frontVideoMirrorEnabled + ", sensor=" + sensorOrientation
-                    + ", device=" + deviceOrientation);
             lastLoggedRotation = rotationDegrees;
             lastLoggedFront = front;
             lastLoggedFlip = frontVideoMirrorEnabled;

@@ -76,8 +76,6 @@ public class VideoStatsCache {
                     .putLong(PREF_STATS_TOTAL_SIZE_MB, totalSizeMB)
                     .putLong(PREF_STATS_LAST_UPDATE, currentTime)
                     .apply();
-                
-                FLog.d(TAG, "Updated cached stats: " + videoCount + " videos, " + totalSizeMB + "MB");
             } catch (Exception e) {
                 FLog.e(TAG, "Error updating cached stats", e);
             }

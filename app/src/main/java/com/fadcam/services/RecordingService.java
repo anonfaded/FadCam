@@ -240,7 +240,6 @@ public class RecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        FLog.d(TAG, "onCreate: Service creating...");
         // Initialize essential components first
         sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
 
@@ -251,7 +250,7 @@ public class RecordingService extends Service {
             // Uses Nominatim (free, open-source) - no API keys needed
             locationGeocoder = new LocationGeocoder();
         } else {
-            FLog.d(TAG, "Location feature disabled, skipping LocationHelper initialization");
+            // location feature disabled
         }
 
         // Initialize GeotagHelper only if location embedding is enabled
@@ -259,12 +258,11 @@ public class RecordingService extends Service {
             try {
                 geotagHelper = new GeotagHelper(this); // For metadata embedding
                 boolean started = geotagHelper.startUpdates();
-                FLog.d(TAG, "Started geotagging updates for metadata embedding: " + started);
             } catch (Exception e) {
                 FLog.e(TAG, "Error initializing GeotagHelper", e);
             }
         } else {
-            FLog.d(TAG, "Location embedding disabled, skipping GeotagHelper initialization");
+            // location embedding disabled
         }
 
         createNotificationChannel(); // Setup notifications early
@@ -280,12 +278,9 @@ public class RecordingService extends Service {
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
 
-        FLog.d(TAG, "Service created successfully.");
-
         // Initialize PowerManager and WakeLock
         android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
-        FLog.d(TAG, "WakeLock initialized in Service.");
 
         try {
             efficientDetDetector = new com.fadcam.motion.domain.detector.EfficientDetLite1Detector(getApplicationContext());
@@ -316,7 +311,6 @@ public class RecordingService extends Service {
 
         // Broadcast initial camera resource availability
         broadcastCameraResourceAvailability(true);
-        FLog.d(TAG, "Broadcasting initial camera resource availability: true");
     }
 
     // method(applyExposureCompensation)-----------
@@ -947,7 +941,6 @@ public class RecordingService extends Service {
             FLog.d(TAG, "onStartCommand received null intent. Ensuring service stays alive.");
             return START_STICKY;
         }
-        FLog.d(TAG, "onStartCommand received: Action=" + intent.getAction());
         String action = intent.getAction();
         if (action == null) {
             FLog.w(TAG, "onStartCommand: Action is null.");
@@ -1069,8 +1062,6 @@ public class RecordingService extends Service {
                 return START_STICKY;
             }
 
-            FLog.i(TAG, "Handling START_RECORDING intent. Service recording state is " + recordingState);
-
             // Reset recording state if it's somehow corrupted or inconsistent
             if (recordingState != RecordingState.NONE && cameraDevice == null) {
                 FLog.w(TAG,
@@ -1096,12 +1087,10 @@ public class RecordingService extends Service {
                 recordingSessionCameraSource = selectedType == CameraType.FRONT
                         ? RecordingStoragePaths.CameraSource.FRONT
                         : RecordingStoragePaths.CameraSource.BACK;
-                FLog.d(TAG, "Recording session camera source resolved to: " + recordingSessionCameraSource);
                 configureMotionLabForSession();
 
                 // Set initial torch state
                 isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
-                FLog.d(TAG, "Initial torch state for recording session: " + isRecordingTorchEnabled);
 
                 // Set up preview surface if provided
                 setupSurfaceTexture(intent);
@@ -1112,8 +1101,6 @@ public class RecordingService extends Service {
                             && sharedPreferencesManager.isPreviewEnabled();
                     boolean hasValidPreview = (previewSurface != null && previewSurface.isValid());
                     waitForPreviewBeforeStart = previewEnabled && !hasValidPreview;
-                    FLog.d(TAG, "Preview enabled=" + previewEnabled + ", validSurface=" + hasValidPreview +
-                            ", waitForPreviewBeforeStart=" + waitForPreviewBeforeStart);
 
                     if (waitForPreviewBeforeStart) {
                         // Install a short timeout to avoid getting stuck if preview never arrives
@@ -1146,10 +1133,8 @@ public class RecordingService extends Service {
                 // Begin camera/recording setup
                 if (cameraDevice == null) {
                     pendingStartRecording = true;
-                    FLog.d(TAG, "Setting pendingStartRecording=true, will start recording after camera opens");
                     openCamera();
                 } else {
-                    FLog.d(TAG, "Camera already open, attempting gated start (may wait for preview)");
                     attemptStartRecordingIfReady();
                 }
 
@@ -1214,7 +1199,6 @@ public class RecordingService extends Service {
             // If we're still in STARTING and were waiting for preview, attempt to start now
             if (recordingState == RecordingState.STARTING && waitForPreviewBeforeStart && previewSurface != null
                     && previewSurface.isValid()) {
-                FLog.d(TAG, "Preview surface became ready during STARTING; attempting gated start now");
                 attemptStartRecordingIfReady();
             }
             // Do NOT recreate camera session here for GL-based recording, as preview is
@@ -2330,18 +2314,7 @@ public class RecordingService extends Service {
             String scope = sharedPreferencesManager.getDfCaptureScope();
             float start = motionPolicy.startThresholdFromSensitivity(sensitivity);
             float stop = motionPolicy.stopThresholdFromSensitivity(sensitivity);
-            FLog.i(TAG, "Forensics capability: motionEnabled=" + motionLabEnabledForSession
-                    + ", dfEnabled=" + sharedPreferencesManager.isDigitalForensicsEnabled()
-                    + ", evidence=" + sharedPreferencesManager.isDfEvidenceCollectionEnabled()
-                    + ", scope=" + scope
-                    + ", sensitivity=" + sensitivity
-                    + ", analysisFps=" + fps
-                    + ", debounceMs=" + debounce
-                    + ", postRollMs=" + postRoll
-                    + ", thresholds=" + String.format(Locale.US, "%.3f/%.3f", start, stop));
         }
-        FLog.d(TAG, "Motion Lab session enabled: " + motionLabEnabledForSession + ", safeMode=" + motionSafeMode
-                + ", detector=" + (motionOpenCvActive ? "opencv_mog2" : "frame_diff"));
     }
 
     private void maybeAttachMotionAnalysisSurface(List<Surface> surfaces, int targetFrameRate) {
@@ -3180,7 +3153,6 @@ public class RecordingService extends Service {
     }
 
     private void openCamera() {
-        FLog.d(TAG, "openCamera: Opening camera");
         if (cameraManager == null) {
             FLog.e(TAG, "openCamera: CameraManager (class field) is null.");
             if (recordingState == RecordingState.STARTING)
@@ -3248,7 +3220,6 @@ public class RecordingService extends Service {
             }
 
             String[] availableCameraIds = allAvailableCameraIds.toArray(new String[0]);
-            FLog.d(TAG, "Available Camera IDs (including physical): " + Arrays.toString(availableCameraIds));
 
             if (selectedType == CameraType.FRONT) {
                 for (String id : availableCameraIds) {
@@ -3256,13 +3227,11 @@ public class RecordingService extends Service {
                     Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                     if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                         cameraToOpenId = id;
-                        FLog.d(TAG, "Found FRONT camera: ID=" + cameraToOpenId);
                         break;
                     }
                 }
             } else { // CameraType.BACK
                 String preferredBackId = sharedPreferencesManager.getSelectedBackCameraId();
-                FLog.d(TAG, "Preferred BACK camera ID from prefs: " + preferredBackId);
                 boolean isValidAndAvailable = false;
 
                 // First, check if the preferred camera ID exists in our available cameras
@@ -3277,8 +3246,6 @@ public class RecordingService extends Service {
                             // in SettingsFragment, we should trust that they're valid back cameras
                             if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
                                 isValidAndAvailable = true;
-                                FLog.d(TAG, "Preferred back camera ID '" + preferredBackId
-                                        + "' validated with LENS_FACING_BACK");
                                 break;
                             } else {
                                 // For physical cameras, check if this ID was part of a logical back camera
@@ -3307,7 +3274,6 @@ public class RecordingService extends Service {
 
                 if (isValidAndAvailable) {
                     cameraToOpenId = preferredBackId;
-                    FLog.d(TAG, "Using preferred BACK camera ID: " + cameraToOpenId);
                 } else {
                     FLog.w(TAG,
                             "Preferred back camera ID '" + preferredBackId
@@ -3356,7 +3322,6 @@ public class RecordingService extends Service {
                 stopSelf();
                 return;
             }
-            FLog.i(TAG, "Attempting to open final Camera ID: " + cameraToOpenId);
 
             if (cameraDevice != null) {
                 FLog.w(TAG, "openCamera: Closing existing cameraDevice instance first.");
@@ -3375,7 +3340,6 @@ public class RecordingService extends Service {
 
             while (attempt < MAX_RETRIES) {
                 try {
-                    FLog.i(TAG, "Opening camera " + finalCameraToOpenId + ", attempt " + (attempt + 1));
                     cameraManager.openCamera(finalCameraToOpenId, cameraStateCallback, backgroundHandler);
                     return;
                 } catch (CameraAccessException e) {
@@ -3460,7 +3424,6 @@ public class RecordingService extends Service {
     private final CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
-            FLog.d(TAG, "Camera device opened successfully");
             cameraDevice = camera;
             isCameraOpen = true;
 
@@ -3521,7 +3484,6 @@ public class RecordingService extends Service {
 
             // Check if we have a pending recording start request
             if (pendingStartRecording) {
-                FLog.d(TAG, "Found pendingStartRecording=true; attempting gated start (may wait for preview)");
                 pendingStartRecording = false; // Reset the flag
                 mainHandler.post(RecordingService.this::attemptStartRecordingIfReady);
             } else {
@@ -3700,17 +3662,14 @@ public class RecordingService extends Service {
             }
             // Ensure camera is opened before starting
             if (cameraDevice == null) {
-                FLog.d(TAG, "attemptStartRecordingIfReady: Camera not opened yet; deferring until onOpened");
                 pendingStartRecording = true;
                 return;
             }
             if (waitForPreviewBeforeStart) {
                 boolean ready = previewSurface != null && previewSurface.isValid();
                 if (!ready) {
-                    FLog.d(TAG, "attemptStartRecordingIfReady: Waiting for preview surface to become valid...");
                     return;
                 }
-                FLog.d(TAG, "attemptStartRecordingIfReady: Preview is now ready; proceeding");
                 waitForPreviewBeforeStart = false;
             }
             // Clear timeout if set
@@ -3721,8 +3680,9 @@ public class RecordingService extends Service {
                 }
                 previewWaitTimeoutRunnable = null;
             }
-            // Finally, start recording
-            startRecording();
+            // Dispatch to background handler — GLRecordingPipeline creation (MediaCodec + EGL + TFLite/OpenCV) is heavy
+            // and must NOT run on the main thread to avoid ~800ms Choreographer frame skips.
+            backgroundHandler.post(this::startRecording);
         } catch (Exception e) {
             FLog.e(TAG, "attemptStartRecordingIfReady: error starting", e);
             stopRecording();
@@ -3788,7 +3748,6 @@ public class RecordingService extends Service {
         }
         // If using OpenGL pipeline for watermarking
         if (glRecordingPipeline != null) {
-            FLog.d(TAG, "createCameraPreviewSession: Using GL pipeline for watermarking");
             Surface glSurface = glRecordingPipeline.getCameraInputSurface();
             List<Surface> surfaces = new ArrayList<>();
             if (glSurface != null) {
@@ -4002,7 +3961,6 @@ public class RecordingService extends Service {
                         "onConfigured: Service is stopping, camera device is null, or recording state is NONE. Aborting.");
                 return;
             }
-            FLog.d(TAG, "Standard capture session configured");
             captureSession = session;
             try {
                 // Set auto control mode
@@ -4013,7 +3971,6 @@ public class RecordingService extends Service {
                 // This ensures AE mode, exposure compensation, and other settings are not lost
                 try {
                     applySavedCameraPrefsToBuilder(captureRequestBuilder);
-                    FLog.d(TAG, "Re-applied camera prefs in session callback");
                 } catch (Exception e) {
                     FLog.w(TAG, "Failed to re-apply camera prefs in callback: " + e.getMessage());
                 }
@@ -4031,11 +3988,7 @@ public class RecordingService extends Service {
                 // Start repeating request
                 try {
                     session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
-                    FLog.d(TAG, "Started repeating request for standard session");
                     maybeApplyDeferredAeLockAfterSessionStart("standard");
-                    if (previewOnlyActive) {
-                        FLog.d(TAG, "Preview-only session is now actively streaming camera frames to preview surface");
-                    }
                 } catch (IllegalStateException ise) {
                     FLog.e(TAG, "setRepeatingRequest failed: session likely closed", ise);
                     if (previewOnlyActive) {
@@ -4276,7 +4229,6 @@ public class RecordingService extends Service {
             } else if (isFullscreenTransition) {
                 FLog.d(TAG, "Surface null due to fullscreen transition - skipping dummy surface creation");
             }
-            FLog.d(TAG, "Preview surface updated: " + validNewSurface);
             int width = intent.getIntExtra("SURFACE_WIDTH", -1);
             int height = intent.getIntExtra("SURFACE_HEIGHT", -1);
             // Update the GL pipeline with the new dimensions if available
@@ -4307,7 +4259,6 @@ public class RecordingService extends Service {
         } else {
             videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(),
                     sharedPreferencesManager.getVideoFrameRate());
-            FLog.d(TAG, "[DEBUG] Using default video bitrate: " + videoBitrate + " bps");
         }
         return videoBitrate;
     }
@@ -4474,7 +4425,6 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
-        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STARTED");
     }
 
     private void broadcastOnRecordingResumed() {
@@ -4550,7 +4500,6 @@ public class RecordingService extends Service {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
-                FLog.d(TAG, "Notification channel created or updated.");
             } else {
                 FLog.e(TAG, "NotificationManager service not found.");
             }
@@ -4636,11 +4585,9 @@ public class RecordingService extends Service {
         } else {
             startForeground(NOTIFICATION_ID, immediateBuilder.build());
         }
-        FLog.d(TAG, "Foreground service started immediately with a placeholder notification.");
-
-        // STEP 2: Now, prepare the full notification with the custom icon in the
-        // background.
-        new Handler(Looper.getMainLooper()).post(() -> {
+        // STEP 2: Build the full notification with custom icon on background thread
+        // (bitmap decode must NOT block the main/GL thread — this was causing Davey! frames)
+        backgroundHandler.post(() -> {
             NotificationCompat.Builder fullNotificationBuilder = createBaseNotificationBuilder(); // This method
                                                                                                   // contains the slow
                                                                                                   // bitmap operations
@@ -4660,7 +4607,6 @@ public class RecordingService extends Service {
 
             // STEP 3: Update the notification with the full content.
             NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, fullNotificationBuilder.build());
-            FLog.d(TAG, "Foreground notification updated with full content (including custom icon).");
         });
     }
 
@@ -5114,7 +5060,6 @@ public class RecordingService extends Service {
         Intent availabilityIntent = new Intent(Constants.ACTION_CAMERA_RESOURCE_AVAILABILITY);
         availabilityIntent.putExtra(Constants.EXTRA_CAMERA_RESOURCES_AVAILABLE, available);
         sendBroadcast(availabilityIntent);
-        FLog.d(TAG, "Broadcasted camera resource availability: " + available);
     }
 
     /**
@@ -5349,8 +5294,6 @@ public class RecordingService extends Service {
     private void createStandardSession(List<Surface> surfaces, int targetFrameRate,
             CameraCharacteristics characteristics, CameraType cameraType) {
         try {
-            FLog.d(TAG, "Creating standard session with optimized frame rate settings");
-
             // Create standard request builder
             captureRequestBuilder = cameraDevice.createCaptureRequest(
                     previewOnlyActive ? CameraDevice.TEMPLATE_PREVIEW : CameraDevice.TEMPLATE_RECORD);
@@ -5367,7 +5310,6 @@ public class RecordingService extends Service {
             // This was missing and causing exposure/AE/AF controls to not work
             try {
                 applySavedCameraPrefsToBuilder(captureRequestBuilder);
-                FLog.d(TAG, "Applied saved camera prefs to standard session");
             } catch (Exception e) {
                 FLog.w(TAG, "Failed to apply saved camera prefs to standard builder: " + e.getMessage());
             }
@@ -5407,7 +5349,6 @@ public class RecordingService extends Service {
         try {
             // CRITICAL: Always enable AE mode for exposure compensation to work
             builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-            FLog.d(TAG, "Set AE_MODE_ON for exposure compensation support");
 
             int savedEv = sharedPreferencesManager.getSavedExposureCompensation();
             Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
@@ -5415,9 +5356,6 @@ public class RecordingService extends Service {
 
             FLog.d(TAG, "applySavedCameraPrefsToBuilder: savedEv=" + savedEv + ", aeLock=" + aeLock +
                     ", afMode=" + afModePref);
-            FLog.d(TAG, "Runtime overrides: runtimeEv=" + runtimeExposureCompensation +
-                    ", runtimeAeLock=" + runtimeAeLock + ", runtimeAfMode=" + runtimeAfMode);
-            FLog.d(TAG, "currentCameraCharacteristics available: " + (currentCameraCharacteristics != null));
 
             if (currentCameraCharacteristics != null) {
                 // Apply EV: use runtime value if available, otherwise saved value
@@ -5427,8 +5365,6 @@ public class RecordingService extends Service {
                     int evToUse = (runtimeExposureCompensation != null) ? runtimeExposureCompensation : savedEv;
                     int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evToUse));
                     builder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
-                    FLog.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") +
-                            " EV=" + clamped + " to request builder (range: " + range + ")");
 
                     // CRITICAL: Also apply EV to GL pipeline for visual effect
                     // Convert EV index to actual EV stops for GL shader
@@ -5450,8 +5386,6 @@ public class RecordingService extends Service {
                     // recording
                     if (glRecordingPipeline != null) {
                         glRecordingPipeline.setExposureCompensation(evStops);
-                        FLog.d(TAG, "Applied " + (runtimeExposureCompensation != null ? "runtime" : "saved") +
-                                " EV to GL pipeline: index=" + clamped + " -> " + evStops + " EV stops");
                     }
                 } else {
                     FLog.w(TAG, "EV compensation range not available from camera characteristics");
@@ -5470,8 +5404,6 @@ public class RecordingService extends Service {
                     } else {
                         builder.set(CaptureRequest.CONTROL_AE_LOCK, lockToUse);
                         pendingDeferredAeLockEnable = false;
-                        FLog.d(TAG, "Applied " + (runtimeAeLock != null ? "runtime" : "saved") +
-                                " AE lock=" + lockToUse + " to request builder");
                     }
                 } else {
                     FLog.w(TAG, "AE lock not supported by camera characteristics");
@@ -5490,8 +5422,6 @@ public class RecordingService extends Service {
                         }
                     if (supported) {
                         builder.set(CaptureRequest.CONTROL_AF_MODE, afModeToUse);
-                        FLog.d(TAG, "Applied " + (runtimeAfMode != null ? "runtime" : "saved") +
-                                " AF mode=" + afModeToUse + " to request builder");
                     } else {
                         FLog.w(TAG, "AF mode " + afModeToUse + " not supported, available modes: "
                                 + java.util.Arrays.toString(modes));
@@ -5621,7 +5551,6 @@ public class RecordingService extends Service {
             chosen = new android.util.Range<>(targetFrameRate, targetFrameRate);
         }
         builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, chosen);
-        FLog.d(TAG, "Set CONTROL_AE_TARGET_FPS_RANGE to " + chosen);
 
         // Apply Samsung-specific keys if applicable
         // Do not apply Samsung vendor keys: unify behavior with standard devices
@@ -5641,7 +5570,6 @@ public class RecordingService extends Service {
         // CONTROL_ZOOM_RATIO was added in Android 11 (API 30)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
-            FLog.d(TAG, "Applied zoom ratio " + zoomRatio + " for " + cameraType + " camera");
         }
     }
 
@@ -5720,14 +5648,8 @@ public class RecordingService extends Service {
                 recordingStartTime = SystemClock.elapsedRealtime();
                 pauseStartedAt = 0L;
                 accumulatedPausedDurationMs = 0L;
-                FLog.d(TAG, "Recording started with recordingStartTime=" + recordingStartTime);
 
                 persistRecordingTimelineState();
-                
-                // Verify it was saved
-                long verify = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
-                    .getLong(Constants.PREF_RECORDING_START_TIME, -999);
-                FLog.d(TAG, "✅ SERVICE: Saved recordingStartTime=" + recordingStartTime + ", verified read back=" + verify);
 
                 // Setup notification
                 setupRecordingInProgressNotification();
@@ -5735,8 +5657,6 @@ public class RecordingService extends Service {
                 // Broadcast that recording has started
                 broadcastOnRecordingStarted();
 
-                FLog.d(TAG, "Recording started successfully");
-                
                 // Notify RemoteStreamManager about active recording file
                 if (currentSegmentFile != null) {
                     try {
@@ -6070,7 +5990,6 @@ public class RecordingService extends Service {
 
     // Update startRecording to use new GLRecordingPipeline constructor
     private void startRecording() {
-        FLog.d(TAG, "startRecording: beginning recording setup");
         if (recordingState != RecordingState.STARTING) {
             FLog.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
             return;
@@ -6086,7 +6005,6 @@ public class RecordingService extends Service {
         runtimeAeLock = null;
         runtimeAfMode = null;
         pendingDeferredAeLockEnable = false;
-        FLog.d(TAG, "Cleared runtime camera overrides for fresh recording session");
 
         createNotificationChannel();
 
@@ -6169,17 +6087,10 @@ public class RecordingService extends Service {
             long splitSizeBytes = 0;
             if (sharedPreferencesManager.isVideoSplittingEnabled()) {
                 splitSizeBytes = sharedPreferencesManager.getVideoSplitSizeBytes();
-                FLog.d(TAG, "Video splitting enabled with size: " + splitSizeBytes + " bytes");
             } else {
-                FLog.d(TAG, "Video splitting disabled");
             }
             int initialSegmentNumber = 1;
             GLSegmentCallback segmentCallback = new GLSegmentCallback();
-
-            FLog.d(TAG, "Creating GLRecordingPipeline with: " +
-                    "width=" + videoWidth + ", height=" + videoHeight +
-                    ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate +
-                    ", orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
 
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
@@ -6245,11 +6156,8 @@ public class RecordingService extends Service {
                         FLog.d(TAG, "Using location for SAF recording: " + latitude + ", " + longitude);
                     }
                 } else {
-                    FLog.d(TAG, "No location available for SAF recording metadata");
                 }
                 
-                FLog.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
-                    " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
                         initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
@@ -6292,14 +6200,11 @@ public class RecordingService extends Service {
                 currentSegmentUriString = Uri.fromFile(outputFile).toString();
                 com.fadcam.ActiveRecordingStats.setActiveSegment(outputFile.getAbsolutePath(), null);
                 
-                FLog.d(TAG, "[DEBUG] Creating GLRecordingPipeline with dimensions: " + videoWidth + "x" + videoHeight + 
-                    " @ " + videoFramerate + "fps, orientation=" + orientation + ", sensorOrientation=" + sensorOrientation);
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
                         segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec, latitude, longitude);
             }
 
-            FLog.d(TAG, "Preparing GLRecordingPipeline surfaces");
             glRecordingPipeline.prepareSurfaces();
 
             // Notify RemoteStreamManager that recording started
@@ -6311,16 +6216,12 @@ public class RecordingService extends Service {
                 } else {
                     // SAF mode: no File object available, use flag-based notification
                     com.fadcam.streaming.RemoteStreamManager.getInstance().startRecordingSaf();
-                    FLog.i(TAG, "🎬 RemoteStreamManager notified: SAF recording started (no File)");
                 }
             } catch (Exception e) {
                 FLog.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
             }
 
-            FLog.d(TAG, "Creating camera preview session");
             createCameraPreviewSession();
-
-            FLog.d(TAG, "Recording setup complete");
         } catch (Exception e) {
             FLog.e(TAG, "CRITICAL FAILURE IN startRecording", e);
 
