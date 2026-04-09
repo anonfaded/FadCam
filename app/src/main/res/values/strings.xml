@@ -283,13 +283,26 @@
     <string name="records_delete_notification_title">Deleting recordings</string>
     <string name="records_delete_notification_progress_text">%1$d of %2$d complete • %3$s</string>
     <string name="records_delete_notification_summary_text">Deleted %1$d • Failed %2$d</string>
+    <string name="records_save_notification_summary_text_copy">Saved %1$d • Failed %2$d</string>
+    <string name="records_save_notification_summary_text_move">Moved %1$d • Failed %2$d</string>
     <string name="records_delete_notification_complete_success">Deletion complete</string>
     <string name="records_delete_notification_complete_partial">Deletion finished with issues</string>
     <string name="records_delete_notification_complete_failed">Deletion failed</string>
     <string name="records_delete_notification_cancelled">Deletion cancelled</string>
     <string name="records_delete_notification_cancel">Cancel</string>
+    <string name="records_save_notification_title_copy">Saving to gallery</string>
+    <string name="records_save_notification_title_move">Moving to gallery</string>
+    <string name="records_save_notification_complete_success_copy">Save complete</string>
+    <string name="records_save_notification_complete_success_move">Move complete</string>
+    <string name="records_save_notification_complete_partial">Save finished with issues</string>
+    <string name="records_save_notification_complete_failed">Save failed</string>
+    <string name="records_save_notification_cancelled">Save cancelled</string>
     <string name="records_delete_error_invalid_item">Could not delete one of the selected items.</string>
     <string name="records_delete_error_failed_item">Could not delete %1$s.</string>
+    <string name="records_save_error_failed_item">Couldn\'t save %1$s.</string>
+    <string name="records_save_error_create_destination">Couldn\'t create destination folder.</string>
+    <string name="records_save_error_open_source">Couldn\'t read source file.</string>
+    <string name="records_save_error_delete_original">Copied, but couldn\'t remove original file.</string>
     <string name="records_delete_header_default_title">Deleting recordings</string>
     <string name="records_delete_header_action_ok">OK</string>
     <string name="records_delete_header_action_cancel">Cancel</string>
@@ -300,6 +313,8 @@
     <string name="records_delete_header_done_body_partial">%1$d removed • %2$d failed.</string>
     <string name="records_delete_header_done_body_failed">%1$d item(s) failed.</string>
     <string name="records_delete_header_preparing">Preparing deletion…</string>
+    <string name="records_save_header_preparing_copy">Preparing save…</string>
+    <string name="records_save_header_preparing_move">Preparing move…</string>
     <string name="records_delete_header_working">Working…</string>
     <string name="records_delete_header_finishing">Finishing…</string>
     <string name="records_delete_header_dismiss_hint">Tap OK to dismiss</string>
@@ -308,6 +323,14 @@
     <string name="records_delete_header_summary">%1$d of %2$d complete • %3$d failed</string>
     <string name="records_delete_header_running_summary">%1$d done • %2$d failed</string>
     <string name="records_delete_header_issue_prefix">Issue: %1$s</string>
+    <string name="records_save_header_done_success_copy">Save complete</string>
+    <string name="records_save_header_done_success_move">Move complete</string>
+    <string name="records_save_header_done_partial">Save finished with issues</string>
+    <string name="records_save_header_done_failed">Save failed</string>
+    <string name="records_save_header_done_body_success_copy">%1$d item(s) saved to gallery.</string>
+    <string name="records_save_header_done_body_success_move">%1$d item(s) moved to gallery.</string>
+    <string name="records_save_header_done_body_partial">%1$d done • %2$d failed.</string>
+    <string name="records_save_header_done_body_failed">%1$d item(s) failed.</string>
     <plurals name="records_delete_header_running_title">
         <item quantity="one">Deleting %d item</item>
         <item quantity="other">Deleting %d items</item>
@@ -315,6 +338,14 @@
     <plurals name="records_delete_header_progress_title">
         <item quantity="one">Deleting %1$d of %2$d item</item>
         <item quantity="other">Deleting %1$d of %2$d items</item>
+    </plurals>
+    <plurals name="records_save_copy_header_progress_title">
+        <item quantity="one">Saving %1$d of %2$d item</item>
+        <item quantity="other">Saving %1$d of %2$d items</item>
+    </plurals>
+    <plurals name="records_save_move_header_progress_title">
+        <item quantity="one">Moving %1$d of %2$d item</item>
+        <item quantity="other">Moving %1$d of %2$d items</item>
     </plurals>
     <plurals name="records_delete_queued_toast">
         <item quantity="one">Deleting 1 item in background.</item>

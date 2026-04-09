@@ -3,6 +3,7 @@ package com.fadcam.service;
 import android.app.Service;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
 
 import androidx.annotation.NonNull;
@@ -11,10 +12,16 @@ import androidx.core.content.ContextCompat;
 
 import com.fadcam.Constants;
 import com.fadcam.FLog;
+import com.fadcam.R;
+import com.fadcam.Utils;
 import com.fadcam.data.VideoIndexRepository;
 import com.fadcam.utils.TrashManager;
 import com.fadcam.utils.VideoStatsCache;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,10 +36,12 @@ public class RecordsDeletionService extends Service {
 
     public static final String ACTION_START_DELETE_SESSION = "com.fadcam.action.START_DELETE_SESSION";
     public static final String ACTION_APPEND_TO_DELETE_SESSION = "com.fadcam.action.APPEND_TO_DELETE_SESSION";
+    public static final String ACTION_START_SAVE_SESSION = "com.fadcam.action.START_SAVE_SESSION";
     public static final String ACTION_ACKNOWLEDGE_DELETE_COMPLETION = "com.fadcam.action.ACKNOWLEDGE_DELETE_COMPLETION";
     public static final String ACTION_CANCEL_DELETE_SESSION = "com.fadcam.action.CANCEL_DELETE_SESSION";
     public static final String EXTRA_DELETE_ITEMS_JSON = "delete_items_json";
     public static final String EXTRA_SESSION_ID = "delete_session_id";
+    public static final String EXTRA_OPERATION_KIND = "operation_kind";
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
     private final AtomicBoolean cancelRequested = new AtomicBoolean(false);
@@ -73,11 +82,15 @@ public class RecordsDeletionService extends Service {
 
         List<RecordsDeletionRequestItem> items = RecordsDeletionRequestItem.fromJson(
                 intent.getStringExtra(EXTRA_DELETE_ITEMS_JSON));
+        RecordsDeletionSessionSnapshot.OperationKind operationKind = parseOperationKind(
+                intent.getStringExtra(EXTRA_OPERATION_KIND),
+                action
+        );
 
         if (ACTION_APPEND_TO_DELETE_SESSION.equals(action)) {
-            appendItems(items);
+            appendItems(items, operationKind);
         } else {
-            startOrReplaceSession(items);
+            startOrReplaceSession(items, operationKind);
         }
 
         maybeResumeProcessing(startId);
@@ -102,14 +115,37 @@ public class RecordsDeletionService extends Service {
             @NonNull android.content.Context context,
             @NonNull List<RecordsDeletionRequestItem> items
     ) {
+        startSession(context, items, RecordsDeletionSessionSnapshot.OperationKind.DELETE);
+    }
+
+    public static void startSaveSession(
+            @NonNull android.content.Context context,
+            @NonNull List<RecordsDeletionRequestItem> items,
+            boolean moveToGallery
+    ) {
+        startSession(
+                context,
+                items,
+                moveToGallery
+                        ? RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
+                        : RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
+        );
+    }
+
+    private static void startSession(
+            @NonNull android.content.Context context,
+            @NonNull List<RecordsDeletionRequestItem> items,
+            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind
+    ) {
         String action = ACTION_START_DELETE_SESSION;
         RecordsDeletionSessionSnapshot snapshot = new RecordsDeletionSessionStore(context).read();
-        if (snapshot != null && snapshot.isActive()) {
+        if (snapshot != null && snapshot.isActive() && snapshot.operationKind == operationKind) {
             action = ACTION_APPEND_TO_DELETE_SESSION;
         }
         Intent intent = new Intent(context, RecordsDeletionService.class);
         intent.setAction(action);
         intent.putExtra(EXTRA_DELETE_ITEMS_JSON, RecordsDeletionRequestItem.toJson(items));
+        intent.putExtra(EXTRA_OPERATION_KIND, operationKind.name());
         ContextCompat.startForegroundService(context, intent);
     }
 
@@ -133,29 +169,43 @@ public class RecordsDeletionService extends Service {
         context.startService(intent);
     }
 
-    private void startOrReplaceSession(@NonNull List<RecordsDeletionRequestItem> items) {
+    private void startOrReplaceSession(
+            @NonNull List<RecordsDeletionRequestItem> items,
+            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind
+    ) {
         if (items.isEmpty()) {
             return;
         }
+        cancelRequested.set(false);
         RecordsDeletionSessionSnapshot existing = sessionStore.read();
         if (existing != null && existing.isActive()) {
+            if (existing.operationKind != operationKind) {
+                // Keep one active session model to avoid mixed-operation progress ambiguity.
+                return;
+            }
             existing.appendItems(items);
             sessionStore.write(existing);
             publishSnapshot(existing, false, false, false);
             return;
         }
-        RecordsDeletionSessionSnapshot snapshot = RecordsDeletionSessionSnapshot.create(items);
+        RecordsDeletionSessionSnapshot snapshot = RecordsDeletionSessionSnapshot.create(items, operationKind);
         sessionStore.write(snapshot);
         publishSnapshot(snapshot, false, false, false);
     }
 
-    private void appendItems(@NonNull List<RecordsDeletionRequestItem> items) {
+    private void appendItems(
+            @NonNull List<RecordsDeletionRequestItem> items,
+            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind
+    ) {
         if (items.isEmpty()) {
             return;
         }
+        cancelRequested.set(false);
         RecordsDeletionSessionSnapshot snapshot = sessionStore.read();
         if (snapshot == null || snapshot.isFinished()) {
-            snapshot = RecordsDeletionSessionSnapshot.create(items);
+            snapshot = RecordsDeletionSessionSnapshot.create(items, operationKind);
+        } else if (snapshot.operationKind != operationKind) {
+            return;
         } else {
             snapshot.appendItems(items);
         }
@@ -219,9 +269,24 @@ public class RecordsDeletionService extends Service {
             @NonNull RecordsDeletionSessionSnapshot snapshot,
             @NonNull RecordsDeletionRequestItem item
     ) {
+        if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.DELETE) {
+            processDeleteItem(snapshot, item);
+            return;
+        }
+        processSaveItem(
+                snapshot,
+                item,
+                snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
+        );
+    }
+
+    private void processDeleteItem(
+            @NonNull RecordsDeletionSessionSnapshot snapshot,
+            @NonNull RecordsDeletionRequestItem item
+    ) {
         Uri uri = item.toUri();
         if (uri == null) {
-            markFailed(snapshot, item, getString(com.fadcam.R.string.records_delete_error_invalid_item));
+            markFailed(snapshot, item, getString(R.string.records_delete_error_invalid_item));
             return;
         }
         final long baselineProcessed = snapshot.processedBytes;
@@ -274,7 +339,111 @@ public class RecordsDeletionService extends Service {
             return;
         }
 
-        markFailed(latest, item, getString(com.fadcam.R.string.records_delete_error_failed_item, item.displayName));
+        markFailed(latest, item, getString(R.string.records_delete_error_failed_item, item.displayName));
+    }
+
+    private void processSaveItem(
+            @NonNull RecordsDeletionSessionSnapshot snapshot,
+            @NonNull RecordsDeletionRequestItem item,
+            boolean moveToGallery
+    ) {
+        Uri uri = item.toUri();
+        if (uri == null) {
+            markFailed(snapshot, item, getString(R.string.records_delete_error_invalid_item));
+            return;
+        }
+
+        final long baselineProcessed = snapshot.processedBytes;
+        final long itemTotalBytes = Math.max(0L, item.sizeBytes);
+        boolean success = false;
+        String failureReason = getString(R.string.records_save_error_failed_item, item.displayName);
+
+        try {
+            File destination = resolveUniqueGalleryDestination(item.displayName);
+            if (destination == null) {
+                throw new IllegalStateException(getString(R.string.records_save_error_create_destination));
+            }
+            try (InputStream in = getContentResolver().openInputStream(uri);
+                 OutputStream out = new FileOutputStream(destination)) {
+                if (in == null) {
+                    throw new IllegalStateException(getString(R.string.records_save_error_open_source));
+                }
+                byte[] buffer = new byte[16 * 1024];
+                int read;
+                long copied = 0L;
+                while ((read = in.read(buffer)) != -1) {
+                    if (cancelRequested.get()) {
+                        throw new CancellationSignalException();
+                    }
+                    out.write(buffer, 0, read);
+                    copied += read;
+                    RecordsDeletionSessionSnapshot live = sessionStore.read();
+                    if (live != null) {
+                        long boundedProgress = itemTotalBytes > 0L
+                                ? Math.max(0L, Math.min(copied, itemTotalBytes))
+                                : copied;
+                        live.processedBytes = baselineProcessed + boundedProgress;
+                        live.currentItemName = item.displayName;
+                        live.currentItemIndex = live.completedItemCount + live.failedItemCount + 1;
+                        live.lastUpdatedAtMs = System.currentTimeMillis();
+                        sessionStore.write(live);
+                        publishSnapshot(live, false, false, false);
+                    }
+                }
+                out.flush();
+            }
+
+            Utils.scanFileWithMediaStore(this, destination.getAbsolutePath());
+
+            if (moveToGallery) {
+                boolean deletedOriginal = false;
+                if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+                    File sourceFile = new File(uri.getPath());
+                    deletedOriginal = !sourceFile.exists() || sourceFile.delete();
+                } else {
+                    deletedOriginal = getContentResolver().delete(uri, null, null) > 0;
+                }
+                if (!deletedOriginal) {
+                    throw new IllegalStateException(getString(R.string.records_save_error_delete_original));
+                }
+            }
+            success = true;
+        } catch (CancellationSignalException cancellationSignalException) {
+            throw cancellationSignalException;
+        } catch (Exception e) {
+            FLog.w(TAG, "processSaveItem failed for " + item.uriString, e);
+            if (e.getMessage() != null && !e.getMessage().trim().isEmpty()) {
+                failureReason = e.getMessage();
+            }
+        }
+
+        RecordsDeletionSessionSnapshot latest = sessionStore.read();
+        if (latest == null) {
+            return;
+        }
+        if (cancelRequested.get()) {
+            finalizeCancelledSession(latest);
+            return;
+        }
+        if (!success) {
+            markFailed(latest, item, failureReason);
+            return;
+        }
+
+        latest.completedItemCount++;
+        latest.processedBytes = baselineProcessed + itemTotalBytes;
+        if (moveToGallery) {
+            latest.completedUriStrings.add(item.uriString);
+            try {
+                VideoIndexRepository.getInstance(this).removeFromIndex(item.uriString);
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to remove moved item from index: " + item.uriString, e);
+            }
+        }
+        latest.lastUpdatedAtMs = System.currentTimeMillis();
+        sessionStore.write(latest);
+        VideoStatsCache.invalidateStats(com.fadcam.SharedPreferencesManager.getInstance(this));
+        publishSnapshot(latest, moveToGallery, false, false);
     }
 
     private void markFailed(
@@ -355,6 +524,57 @@ public class RecordsDeletionService extends Service {
         snapshot.pendingItems.clear();
         snapshot.lastUpdatedAtMs = System.currentTimeMillis();
         sessionStore.write(snapshot);
+    }
+
+    @Nullable
+    private File resolveUniqueGalleryDestination(@Nullable String displayName) {
+        String safeName = (displayName == null || displayName.trim().isEmpty())
+                ? ("FadCam_" + System.currentTimeMillis() + ".mp4")
+                : displayName;
+        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        File fadCamDir = new File(downloadsDir, Constants.RECORDING_DIRECTORY);
+        if (!fadCamDir.exists() && !fadCamDir.mkdirs()) {
+            return null;
+        }
+        File destination = new File(fadCamDir, safeName);
+        if (!destination.exists()) {
+            return destination;
+        }
+
+        String base = safeName;
+        String ext = "";
+        int dot = safeName.lastIndexOf('.');
+        if (dot > 0 && dot < safeName.length() - 1) {
+            base = safeName.substring(0, dot);
+            ext = safeName.substring(dot);
+        }
+        int suffix = 1;
+        while (destination.exists()) {
+            destination = new File(fadCamDir, base + " (" + suffix + ")" + ext);
+            suffix++;
+        }
+        return destination;
+    }
+
+    @NonNull
+    private RecordsDeletionSessionSnapshot.OperationKind parseOperationKind(
+            @Nullable String kindRaw,
+            @Nullable String action
+    ) {
+        if (ACTION_START_SAVE_SESSION.equals(action)) {
+            if (RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY.name().equals(kindRaw)) {
+                return RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY;
+            }
+            return RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY;
+        }
+        if (kindRaw == null || kindRaw.trim().isEmpty()) {
+            return RecordsDeletionSessionSnapshot.OperationKind.DELETE;
+        }
+        try {
+            return RecordsDeletionSessionSnapshot.OperationKind.valueOf(kindRaw);
+        } catch (Exception ignored) {
+            return RecordsDeletionSessionSnapshot.OperationKind.DELETE;
+        }
     }
 
     private void publishSnapshot(

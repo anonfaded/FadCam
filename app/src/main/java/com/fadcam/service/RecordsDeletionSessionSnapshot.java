@@ -23,8 +23,15 @@ public class RecordsDeletionSessionSnapshot {
         COMPLETED_FAILED
     }
 
+    public enum OperationKind {
+        DELETE,
+        SAVE_COPY_TO_GALLERY,
+        SAVE_MOVE_TO_GALLERY
+    }
+
     @NonNull public String sessionId = UUID.randomUUID().toString();
     @NonNull public State state = State.IDLE;
+    @NonNull public OperationKind operationKind = OperationKind.DELETE;
     public int totalItemCount;
     public int completedItemCount;
     public int failedItemCount;
@@ -66,8 +73,17 @@ public class RecordsDeletionSessionSnapshot {
 
     @NonNull
     public static RecordsDeletionSessionSnapshot create(@NonNull List<RecordsDeletionRequestItem> items) {
+        return create(items, OperationKind.DELETE);
+    }
+
+    @NonNull
+    public static RecordsDeletionSessionSnapshot create(
+            @NonNull List<RecordsDeletionRequestItem> items,
+            @NonNull OperationKind operationKind
+    ) {
         RecordsDeletionSessionSnapshot snapshot = new RecordsDeletionSessionSnapshot();
         snapshot.pendingItems = new ArrayList<>(items);
+        snapshot.operationKind = operationKind;
         snapshot.totalItemCount = items.size();
         snapshot.totalBytes = sumBytes(items);
         long now = System.currentTimeMillis();

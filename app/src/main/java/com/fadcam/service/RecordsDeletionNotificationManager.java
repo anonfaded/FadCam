@@ -52,17 +52,17 @@ public class RecordsDeletionNotificationManager {
     public void showCompletion(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         String title;
         if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_SUCCESS) {
-            title = context.getString(R.string.records_delete_notification_complete_success);
+            title = getCompletionSuccessTitle(snapshot);
         } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.CANCELLED) {
-            title = context.getString(R.string.records_delete_notification_cancelled);
+            title = getCompletionCancelledTitle(snapshot);
         } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_PARTIAL) {
-            title = context.getString(R.string.records_delete_notification_complete_partial);
+            title = getCompletionPartialTitle(snapshot);
         } else {
-            title = context.getString(R.string.records_delete_notification_complete_failed);
+            title = getCompletionFailedTitle(snapshot);
         }
         Notification notification = baseBuilder(snapshot)
                 .setContentTitle(title)
-                .setContentText(buildSummaryText(snapshot))
+                .setContentText(buildCompletionSummaryText(snapshot))
                 .setSmallIcon(snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_SUCCESS
                         ? R.drawable.ic_check_circle
                         : R.drawable.ic_error)
@@ -94,8 +94,8 @@ public class RecordsDeletionNotificationManager {
         );
         return new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_notification)
-                .setContentTitle(context.getString(R.string.records_delete_notification_title))
-                .setContentText(buildSummaryText(snapshot))
+                .setContentTitle(getActiveTitle(snapshot))
+                .setContentText(buildActiveSummaryText(snapshot))
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
@@ -133,21 +133,114 @@ public class RecordsDeletionNotificationManager {
     }
 
     @NonNull
-    private String buildSummaryText(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+    private String buildActiveSummaryText(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         String currentItem = snapshot.currentItemName;
         if (currentItem != null && !currentItem.trim().isEmpty() && snapshot.isActive()) {
             return context.getString(
-                    R.string.records_delete_notification_progress_text,
+                    getProgressTextRes(snapshot),
                     Math.max(0, snapshot.completedItemCount + snapshot.failedItemCount),
                     Math.max(1, snapshot.totalItemCount),
                     currentItem
             );
         }
-        return context.getString(
-                R.string.records_delete_notification_summary_text,
-                snapshot.completedItemCount,
-                snapshot.failedItemCount
-        );
+        return getOperationSummaryText(snapshot, snapshot.completedItemCount, snapshot.failedItemCount);
+    }
+
+    @NonNull
+    private String buildCompletionSummaryText(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        return getOperationSummaryText(snapshot, snapshot.completedItemCount, snapshot.failedItemCount);
+    }
+
+    private int getProgressTextRes(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+            case SAVE_MOVE_TO_GALLERY:
+            case DELETE:
+            default:
+                return R.string.records_delete_notification_progress_text;
+        }
+    }
+
+    @NonNull
+    private String getOperationSummaryText(
+            @NonNull RecordsDeletionSessionSnapshot snapshot,
+            int completedCount,
+            int failedCount
+    ) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_summary_text_copy,
+                        completedCount, failedCount);
+            case SAVE_MOVE_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_summary_text_move,
+                        completedCount, failedCount);
+            case DELETE:
+            default:
+                return context.getString(R.string.records_delete_notification_summary_text,
+                        completedCount, failedCount);
+        }
+    }
+
+    @NonNull
+    private String getActiveTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_title_copy);
+            case SAVE_MOVE_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_title_move);
+            case DELETE:
+            default:
+                return context.getString(R.string.records_delete_notification_title);
+        }
+    }
+
+    @NonNull
+    private String getCompletionSuccessTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_complete_success_copy);
+            case SAVE_MOVE_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_complete_success_move);
+            case DELETE:
+            default:
+                return context.getString(R.string.records_delete_notification_complete_success);
+        }
+    }
+
+    @NonNull
+    private String getCompletionPartialTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+            case SAVE_MOVE_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_complete_partial);
+            case DELETE:
+            default:
+                return context.getString(R.string.records_delete_notification_complete_partial);
+        }
+    }
+
+    @NonNull
+    private String getCompletionFailedTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+            case SAVE_MOVE_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_complete_failed);
+            case DELETE:
+            default:
+                return context.getString(R.string.records_delete_notification_complete_failed);
+        }
+    }
+
+    @NonNull
+    private String getCompletionCancelledTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        switch (snapshot.operationKind) {
+            case SAVE_COPY_TO_GALLERY:
+            case SAVE_MOVE_TO_GALLERY:
+                return context.getString(R.string.records_save_notification_cancelled);
+            case DELETE:
+            default:
+                return context.getString(R.string.records_delete_notification_cancelled);
+        }
     }
 
     private void createChannel() {

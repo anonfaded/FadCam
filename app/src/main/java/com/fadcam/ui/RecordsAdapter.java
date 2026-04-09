@@ -88,7 +88,8 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
-import com.fadcam.service.FileOperationService;
+import com.fadcam.service.RecordsDeletionRequestItem;
+import com.fadcam.service.RecordsDeletionService;
 
 // Modify the class declaration to remove the ListPreloader implementation
 public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -1460,12 +1461,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             
             switch (id) {
                 case "save_copy":
-                    // Start copy operation in background
-                    FileOperationService.startCopyToGallery(ctx, videoItem.uri, videoItem.displayName, videoItem.displayName);
+                    enqueueSaveToGallery(videoItem, false);
                     break;
                 case "save_move":
-                    // Start move operation in background
-                    FileOperationService.startMoveToGallery(ctx, videoItem.uri, videoItem.displayName, videoItem.displayName);
+                    enqueueSaveToGallery(videoItem, true);
                     break;
                 case "save_export_custom_location":
                     if (actionListener != null) {
@@ -1886,12 +1885,15 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     // --- Restored Save to Gallery Logic (using actionListener for progress) ---
     // Wrapper for backward compatibility
     private void saveVideoToGalleryInternal(VideoItem videoItem) {
-        // Use background service for copy operation
-        FileOperationService.startCopyToGallery(context, videoItem.uri, videoItem.displayName, videoItem.displayName);
+        enqueueSaveToGallery(videoItem, false);
     }
     
     // Enhanced version with copy/move option
     private void saveVideoToGalleryInternal(VideoItem videoItem, boolean moveFile) {
+        enqueueSaveToGallery(videoItem, moveFile);
+    }
+
+    private void enqueueSaveToGallery(@Nullable VideoItem videoItem, boolean moveFile) {
         if (context == null || videoItem == null || videoItem.uri == null || videoItem.displayName == null) {
             if (actionListener != null) {
                 // Run on UI thread if context is available to show Toast
@@ -1905,132 +1907,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return;
         }
 
-        final Uri sourceUri = videoItem.uri;
-        final String filename = videoItem.displayName;
-
-        if (actionListener != null) {
-            actionListener.onSaveToGalleryStarted(filename); // Notify fragment (UI thread)
-        }
-
-        executorService.submit(() -> {
-            boolean success = false;
-            Uri resultUri = null;
-            String message;
-            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File fadCamDir = new File(downloadsDir, Constants.RECORDING_DIRECTORY); // Use Constant
-            if (!fadCamDir.exists()) {
-                if (!fadCamDir.mkdirs()) {
-                    FLog.e(TAG, "Failed to create FadCam directory in Downloads.");
-                    message = "Save Failed: Cannot create directory.";
-                    final String finalMessageForLambda = message;
-                    // Notify listener on UI thread
-                    if (context instanceof Activity && actionListener != null) {
-                        ((Activity) context).runOnUiThread(
-                                () -> actionListener.onSaveToGalleryFinished(false, finalMessageForLambda, null));
-                    }
-                    return;
-                }
-            }
-            File destFile = new File(fadCamDir, filename);
-            int counter = 0;
-            // Handle potential name conflicts by appending (1), (2), etc.
-            while (destFile.exists()) {
-                counter++;
-                String nameWithoutExt = filename;
-                String extension = "";
-                int dotIndex = filename.lastIndexOf('.');
-                if (dotIndex > 0 && dotIndex < filename.length() - 1) {
-                    nameWithoutExt = filename.substring(0, dotIndex);
-                    extension = filename.substring(dotIndex);
-                }
-                destFile = new File(fadCamDir, nameWithoutExt + " (" + counter + ")" + extension);
-            }
-
-            try (InputStream in = context.getContentResolver().openInputStream(sourceUri);
-                    OutputStream out = new FileOutputStream(destFile)) {
-
-                if (in == null)
-                    throw new IOException("Failed to open input stream for " + sourceUri);
-
-                byte[] buf = new byte[8192]; // Increased buffer size
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                }
-                out.flush();
-                Utils.scanFileWithMediaStore(context, destFile.getAbsolutePath()); // Scan the new file
-                resultUri = Uri.fromFile(destFile); // Not entirely correct for MediaStore, but good for logs
-                success = true;
-                
-                // If move operation, delete the original file
-                if (moveFile && success) {
-                    try {
-                        boolean deleted = false;
-                        
-                        // Try to delete using File path (for app private directory files)
-                        if ("file".equals(sourceUri.getScheme())) {
-                            File originalFile = new File(sourceUri.getPath());
-                            if (originalFile.exists()) {
-                                deleted = originalFile.delete();
-                                FLog.d(TAG, "Attempted File.delete() on: " + originalFile.getAbsolutePath() + ", success: " + deleted);
-                            }
-                        } else {
-                            // Fallback to ContentResolver for other URI schemes
-                            deleted = context.getContentResolver().delete(sourceUri, null, null) > 0;
-                            FLog.d(TAG, "Attempted ContentResolver.delete() on: " + sourceUri + ", success: " + deleted);
-                        }
-                        
-                        if (deleted) {
-                            message = "Video moved to Downloads/FadCam";
-                            FLog.i(TAG, "Original file deleted after move to: " + destFile.getAbsolutePath());
-                            // Notify the adapter to refresh the list
-                            if (context instanceof Activity) {
-                                ((Activity) context).runOnUiThread(() -> {
-                                    // Remove the item from the list if successfully moved
-                                    removeVideoItemFromList(videoItem);
-                                });
-                            }
-                        } else {
-                            message = "Video copied to Downloads/FadCam (original could not be deleted)";
-                            FLog.w(TAG, "Could not delete original file after copy: " + sourceUri);
-                        }
-                    } catch (Exception moveEx) {
-                        FLog.e(TAG, "Error deleting original file after copy: " + moveEx.getMessage());
-                        message = "Video copied to Downloads/FadCam (original could not be deleted)";
-                    }
-                } else {
-                    message = "Video saved to Downloads/FadCam";
-                }
-                
-                FLog.i(TAG, "Video " + (moveFile ? "moved" : "copied") + " successfully to: " + destFile.getAbsolutePath());
-
-            } catch (Exception e) {
-                FLog.e(TAG, "Error saving video to gallery", e);
-                message = "Save Failed: " + e.getMessage();
-                if (destFile.exists()) { // Clean up partial file
-                    destFile.delete();
-                }
-            }
-
-            final boolean finalSuccess = success;
-            final String finalMessage = message;
-            final Uri finalResultUri = success ? Uri.fromFile(destFile) : null; // Use actual destFile URI if successful
-                                                                                // for listener
-
-            if (context instanceof Activity && actionListener != null) {
-                ((Activity) context).runOnUiThread(
-                        () -> actionListener.onSaveToGalleryFinished(finalSuccess, finalMessage, finalResultUri));
-            } else if (actionListener != null) { // Fallback if context not an activity (e.g. service context)
-                // This case is less likely for UI-triggered actions but good for robustness
-                // Directly call if Looper is available or handle differently
-                if (Looper.myLooper() == Looper.getMainLooper()) {
-                    actionListener.onSaveToGalleryFinished(finalSuccess, finalMessage, finalResultUri);
-                } else {
-                    new Handler(Looper.getMainLooper()).post(
-                            () -> actionListener.onSaveToGalleryFinished(finalSuccess, finalMessage, finalResultUri));
-                }
-            }
-        });
+        List<RecordsDeletionRequestItem> requestItems = new ArrayList<>(1);
+        requestItems.add(new RecordsDeletionRequestItem(
+                videoItem.uri.toString(),
+                videoItem.displayName,
+                Math.max(0L, videoItem.size),
+                "content".equals(videoItem.uri.getScheme())
+        ));
+        RecordsDeletionService.startSaveSession(context, requestItems, moveFile);
     }
     
     // Helper method to remove video item from list after move operation
