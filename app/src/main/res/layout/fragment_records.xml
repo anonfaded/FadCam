@@ -12,8 +12,7 @@
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
@@ -22,124 +21,240 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-        <ImageView
-            android:id="@+id/action_close"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:padding="2dp"
-            android:src="@drawable/ic_close"
-            android:contentDescription="@string/universal_close"
-            android:tint="@android:color/white"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:visibility="gone"
-            android:layout_marginEnd="12dp"/>
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:id="@+id/header_bar_top_row"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/title_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="start|center_vertical"
-                android:text="@string/records_title"
-                android:textColor="@android:color/white"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/action_close"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_close"
+                android:contentDescription="@string/universal_close"
+                android:tint="@android:color/white"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:visibility="gone" />
 
             <LinearLayout
-                android:id="@+id/records_header_stats_row"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/title_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start|center_vertical"
+                    android:text="@string/records_title"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/records_header_stats_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:src="@drawable/ic_stat_playback"
+                        android:tint="#CCFFFFFF" />
+
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/text_records_stat_videos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        tools:text="82" />
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginStart="10dp"
+                        android:src="@drawable/ic_photo"
+                        android:tint="#CCFFFFFF" />
+
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/text_records_stat_photos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        tools:text="20" />
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginStart="10dp"
+                        android:src="@drawable/database_24px"
+                        android:tint="#CCFFFFFF" />
+
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/text_records_stat_size"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        tools:text="1.8 GB" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/action_more_options"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_two_line_hamburger"
+                android:contentDescription="@string/more_options"
+                android:tint="@android:color/white"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <FrameLayout
+                android:id="@+id/action_select_all_container"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:visibility="gone">
+                <ImageView
+                    android:id="@+id/action_select_all_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/picker_check_background" />
+                <ImageView
+                    android:id="@+id/action_select_all_check"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/avd_check_draw"
+                    android:tint="@android:color/white"
+                    android:contentDescription="@string/trash_select_all" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/records_header_delete_dock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_records_delete_dock"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:src="@drawable/ic_stat_playback"
-                    android:tint="#CCFFFFFF" />
+                    android:id="@+id/records_header_delete_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_delete_white"
+                    android:tint="@android:color/white" />
 
-                <com.fadcam.ui.utils.AnimatedTextView
-                    android:id="@+id/text_records_stat_videos"
+                <TextView
+                    android:id="@+id/records_header_delete_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="@string/records_delete_header_default_title"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/records_header_delete_ok"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="11sp"
+                    android:background="@drawable/bg_records_delete_ok_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minWidth="58dp"
+                    android:paddingStart="14dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="7dp"
+                    android:text="@string/records_delete_header_action_ok"
+                    android:textAllCaps="true"
+                    android:textColor="#17305B"
+                    android:textSize="12sp"
+                    android:letterSpacing="0.08"
                     android:textStyle="bold"
-                    tools:text="82" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginStart="10dp"
-                    android:src="@drawable/ic_photo"
-                    android:tint="#CCFFFFFF" />
-
-                <com.fadcam.ui.utils.AnimatedTextView
-                    android:id="@+id/text_records_stat_photos"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    tools:text="20" />
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginStart="10dp"
-                    android:src="@drawable/database_24px"
-                    android:tint="#CCFFFFFF" />
-
-                <com.fadcam.ui.utils.AnimatedTextView
-                    android:id="@+id/text_records_stat_size"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    tools:text="1.8 GB" />
+                    android:visibility="gone" />
             </LinearLayout>
-        </LinearLayout>
 
-        <ImageView
-            android:id="@+id/action_more_options"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:padding="2dp"
-            android:src="@drawable/ic_two_line_hamburger"
-            android:contentDescription="@string/more_options"
-            android:tint="@android:color/white"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
-        
-        <FrameLayout
-            android:id="@+id/action_select_all_container"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="8dp"
-            android:visibility="gone">
-            <ImageView
-                android:id="@+id/action_select_all_bg"
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/records_header_delete_progress"
+                style="@style/Widget.Material3.LinearProgressIndicator"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/picker_check_background" />
-            <ImageView
-                android:id="@+id/action_select_all_check"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center"
-                android:src="@drawable/avd_check_draw"
-                android:tint="@android:color/white"
-                android:contentDescription="@string/trash_select_all" />
-        </FrameLayout>
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="30"
+                app:trackThickness="8dp"
+                app:trackColor="#40FFFFFF"
+                app:indicatorColor="@android:color/white" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/records_header_delete_current"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="#E6FFFFFF"
+                    android:textSize="13sp"
+                    tools:text="Large video file.mp4" />
+
+                <TextView
+                    android:id="@+id/records_header_delete_eta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp"
+                    tools:text="ETA 14s" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/records_header_delete_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="#CCFFFFFF"
+                android:textSize="12sp"
+                tools:text="2 of 3 complete • 1 failed" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Subtle loading progress indicator - only shown if loading takes >200ms -->

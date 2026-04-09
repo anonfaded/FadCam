@@ -6,6 +6,10 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.DocumentsContract;
+import android.provider.OpenableColumns;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.fadcam.Constants;
@@ -39,6 +43,20 @@ public class TrashManager {
 
     private static final String TAG = "TrashManager";
     private static final String METADATA_FILE_NAME = "trash_metadata.json";
+
+    public interface MoveToTrashProgressListener {
+        void onProgress(@NonNull MoveToTrashProgress progress);
+    }
+
+    public static class MoveToTrashProgress {
+        public final long bytesCopied;
+        public final long totalBytes;
+
+        public MoveToTrashProgress(long bytesCopied, long totalBytes) {
+            this.bytesCopied = Math.max(0L, bytesCopied);
+            this.totalBytes = Math.max(0L, totalBytes);
+        }
+    }
 
     /**
      * Gets the File object for the trash directory within the app's external files
@@ -159,7 +177,14 @@ public class TrashManager {
      * @return True if the video was successfully moved to trash, false otherwise.
      */
     public static boolean moveToTrash(Context context, Uri videoUri, String originalDisplayName, boolean isSafSource) {
-        return moveToTrash(context, videoUri, originalDisplayName, isSafSource, Constants.TRASH_SUBDIR_VIDEO_RECORDINGS);
+        return moveToTrash(
+                context,
+                videoUri,
+                originalDisplayName,
+                isSafSource,
+                Constants.TRASH_SUBDIR_VIDEO_RECORDINGS,
+                null
+        );
     }
 
     public static boolean moveToTrash(
@@ -168,6 +193,34 @@ public class TrashManager {
             String originalDisplayName,
             boolean isSafSource,
             String subDirectory
+    ) {
+        return moveToTrash(context, videoUri, originalDisplayName, isSafSource, subDirectory, null);
+    }
+
+    public static boolean moveToTrash(
+            Context context,
+            Uri videoUri,
+            String originalDisplayName,
+            boolean isSafSource,
+            @Nullable MoveToTrashProgressListener progressListener
+    ) {
+        return moveToTrash(
+                context,
+                videoUri,
+                originalDisplayName,
+                isSafSource,
+                Constants.TRASH_SUBDIR_VIDEO_RECORDINGS,
+                progressListener
+        );
+    }
+
+    public static boolean moveToTrash(
+            Context context,
+            Uri videoUri,
+            String originalDisplayName,
+            boolean isSafSource,
+            String subDirectory,
+            @Nullable MoveToTrashProgressListener progressListener
     ) {
         if (context == null || videoUri == null || originalDisplayName == null) {
             FLog.e(TAG, "moveToTrash: Invalid arguments (context, URI, or displayName is null).");
@@ -189,6 +242,8 @@ public class TrashManager {
         }
 
         boolean success = false;
+        long copiedBytes = 0L;
+        long totalBytes = getUriSize(context, videoUri);
         FLog.i(TAG, "Attempting to move to trash: '" + originalDisplayName + "' -> '" + targetTrashFile.getAbsolutePath()
                 + "'");
 
@@ -204,6 +259,8 @@ public class TrashManager {
                 int len;
                 while ((len = in.read(buf)) > 0) {
                     out.write(buf, 0, len);
+                    copiedBytes += len;
+                    dispatchProgress(progressListener, copiedBytes, totalBytes);
                 }
                 success = true;
                 FLog.d(TAG, "moveToTrash: Successfully COPIED SAF URI " + videoUri + " to "
@@ -240,6 +297,8 @@ public class TrashManager {
                         int len;
                         while ((len = in.read(buf)) > 0) {
                             out.write(buf, 0, len);
+                            copiedBytes += len;
+                            dispatchProgress(progressListener, copiedBytes, totalBytes <= 0L ? sourceFile.length() : totalBytes);
                         }
                         FLog.d(TAG, "moveToTrash: Fallback - Successfully COPIED internal file "
                                 + sourceFile.getAbsolutePath());
@@ -268,6 +327,11 @@ public class TrashManager {
         }
 
         if (success) {
+            if (!isSafSource && copiedBytes <= 0L) {
+                dispatchProgress(progressListener, sourceLengthForProgress(videoUri), sourceLengthForProgress(videoUri));
+            } else {
+                dispatchProgress(progressListener, Math.max(copiedBytes, totalBytes), totalBytes);
+            }
             int minutes = com.fadcam.SharedPreferencesManager.getInstance(context).getTrashAutoDeleteMinutes();
             if (minutes == 0) {
                 FLog.i(TAG, "moveToTrash: Immediate auto-delete active. Deleting trash file without metadata round-trip.");
@@ -301,6 +365,46 @@ public class TrashManager {
             FLog.e(TAG, "moveToTrash: File operation failed for: " + originalDisplayName);
             return false;
         }
+    }
+
+    private static void dispatchProgress(
+            @Nullable MoveToTrashProgressListener progressListener,
+            long copiedBytes,
+            long totalBytes
+    ) {
+        if (progressListener == null) {
+            return;
+        }
+        progressListener.onProgress(new MoveToTrashProgress(copiedBytes, totalBytes));
+    }
+
+    private static long sourceLengthForProgress(@NonNull Uri videoUri) {
+        if (!"file".equals(videoUri.getScheme())) {
+            return 0L;
+        }
+        try {
+            File sourceFile = new File(videoUri.getPath());
+            return sourceFile.exists() ? sourceFile.length() : 0L;
+        } catch (Exception ignored) {
+            return 0L;
+        }
+    }
+
+    private static long getUriSize(@NonNull Context context, @NonNull Uri videoUri) {
+        if ("file".equals(videoUri.getScheme())) {
+            return sourceLengthForProgress(videoUri);
+        }
+        try (android.database.Cursor cursor = context.getContentResolver()
+                .query(videoUri, new String[]{OpenableColumns.SIZE}, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int idx = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if (idx >= 0) {
+                    return Math.max(0L, cursor.getLong(idx));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return 0L;
     }
 
     /**

@@ -307,6 +307,18 @@ public abstract class Constants {
         "com.fadcam.ACTION_BATCH_MEDIA_COMPLETED";
     public static final String EXTRA_BATCH_COMPLETED_MESSAGE =
         "com.fadcam.EXTRA_BATCH_COMPLETED_MESSAGE";
+    public static final String ACTION_RECORDS_DELETE_SESSION_UPDATED =
+        "com.fadcam.ACTION_RECORDS_DELETE_SESSION_UPDATED";
+    public static final String ACTION_RECORDS_DELETE_ITEM_COMPLETED =
+        "com.fadcam.ACTION_RECORDS_DELETE_ITEM_COMPLETED";
+    public static final String ACTION_RECORDS_DELETE_SESSION_FINISHED =
+        "com.fadcam.ACTION_RECORDS_DELETE_SESSION_FINISHED";
+    public static final String EXTRA_RECORDS_DELETE_SESSION_JSON =
+        "com.fadcam.EXTRA_RECORDS_DELETE_SESSION_JSON";
+    public static final String EXTRA_RECORDS_DELETE_COMPLETED_URIS =
+        "com.fadcam.EXTRA_RECORDS_DELETE_COMPLETED_URIS";
+    public static final String EXTRA_RECORDS_DELETE_SESSION_ID =
+        "com.fadcam.EXTRA_RECORDS_DELETE_SESSION_ID";
 
     // Screen recording broadcast actions
     public static final String BROADCAST_ON_SCREEN_RECORDING_STARTED =

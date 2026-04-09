@@ -301,6 +301,8 @@
         <!-- Batch media action service for Records automation flows -->
         <service android:name=".service.BatchMediaActionService" android:exported="false" android:foregroundServiceType="dataSync" />
 
+        <service android:name=".service.RecordsDeletionService" android:exported="false" android:foregroundServiceType="dataSync" />
+
         <!-- Accessibility screenshot service for FadRec screenshot shortcut -->
         <service
             android:name=".service.FadRecScreenshotAccessibilityService"

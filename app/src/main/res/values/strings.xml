@@ -278,6 +278,39 @@
     <!-- Background Operation Progress Messages -->
     <string name="background_delete_progress">Deleting %1$s in background…</string>
     <string name="background_restore_progress">Restoring %1$s in background…</string>
+    <string name="records_delete_notification_channel_name">Deletion Progress</string>
+    <string name="records_delete_notification_channel_desc">Progress and results for background deletion in Records.</string>
+    <string name="records_delete_notification_title">Deleting recordings</string>
+    <string name="records_delete_notification_progress_text">%1$d of %2$d complete • %3$s</string>
+    <string name="records_delete_notification_summary_text">Deleted %1$d • Failed %2$d</string>
+    <string name="records_delete_notification_complete_success">Deletion complete</string>
+    <string name="records_delete_notification_complete_partial">Deletion finished with issues</string>
+    <string name="records_delete_notification_complete_failed">Deletion failed</string>
+    <string name="records_delete_error_invalid_item">Could not delete one of the selected items.</string>
+    <string name="records_delete_error_failed_item">Could not delete %1$s.</string>
+    <string name="records_delete_header_default_title">Deleting recordings</string>
+    <string name="records_delete_header_action_ok">OK</string>
+    <string name="records_delete_header_done_success">Deletion complete</string>
+    <string name="records_delete_header_done_partial">Deletion finished with issues</string>
+    <string name="records_delete_header_done_failed">Deletion failed</string>
+    <string name="records_delete_header_done_body_success">%1$d item(s) removed.</string>
+    <string name="records_delete_header_done_body_partial">%1$d removed • %2$d failed.</string>
+    <string name="records_delete_header_done_body_failed">%1$d item(s) failed.</string>
+    <string name="records_delete_header_preparing">Preparing deletion…</string>
+    <string name="records_delete_header_working">Working…</string>
+    <string name="records_delete_header_finishing">Finishing…</string>
+    <string name="records_delete_header_dismiss_hint">Tap OK to dismiss</string>
+    <string name="records_delete_header_eta_seconds">ETA %1$ds</string>
+    <string name="records_delete_header_eta_minutes">ETA %1$dm %2$02ds</string>
+    <string name="records_delete_header_summary">%1$d of %2$d complete • %3$d failed</string>
+    <plurals name="records_delete_header_running_title">
+        <item quantity="one">Deleting %d item</item>
+        <item quantity="other">Deleting %d items</item>
+    </plurals>
+    <plurals name="records_delete_queued_toast">
+        <item quantity="one">Deleting 1 item in background.</item>
+        <item quantity="other">Deleting %d items in background.</item>
+    </plurals>
     <string name="video_menu_rename">Rename</string>
     <string name="video_menu_info">Info</string>
     <string name="video_menu_copy_filename">Copy Filename</string>
