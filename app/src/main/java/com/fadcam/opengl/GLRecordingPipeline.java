@@ -194,6 +194,22 @@ public class GLRecordingPipeline {
 
     private final VideoCodec videoCodec;
 
+    // Pre-muxer video frame buffer: stores encoded video frames that arrive before the muxer
+    // is started (while waiting for audio track to be registered). Flushed when muxer starts.
+    private static final int MAX_PRE_MUXER_BUFFER_FRAMES = 60; // ~2 seconds at 30fps
+    private final java.util.List<PendingVideoFrame> preMuxerVideoFrameBuffer = new java.util.ArrayList<>();
+
+    /** Holds a copy of an encoded video frame produced before the muxer was ready. */
+    private static final class PendingVideoFrame {
+        final ByteBuffer data;
+        final MediaCodec.BufferInfo info;
+
+        PendingVideoFrame(ByteBuffer data, MediaCodec.BufferInfo info) {
+            this.data = data;
+            this.info = info;
+        }
+    }
+
     /** Optional dual camera config — when non-null, enables PiP rendering in the GL pipeline. */
     @Nullable
     private DualCameraConfig dualCameraConfig;
@@ -760,6 +776,7 @@ public class GLRecordingPipeline {
                                             if (mediaMuxer != null) {
                                                 mediaMuxer.start();
                                                 muxerStarted = true;
+                                                flushPreMuxerVideoBuffer();
                                                 FLog.d(TAG, "Muxer started via safety fallback (video-only mode)");
                                             }
                                         } catch (Exception e) {
@@ -985,6 +1002,7 @@ public class GLRecordingPipeline {
                     if (videoTrackIndex != -1) {
                         mediaMuxer.start();
                         muxerStarted = true;
+                        flushPreMuxerVideoBuffer();
                     }
                 }
             } else if (outputBufferIndex >= 0) {
@@ -1335,6 +1353,8 @@ public class GLRecordingPipeline {
         // DO NOT start muxer here - wait for encoder formats to be available
         // This prevents the format change issue that causes muxer restarts
     muxerStarted = false;
+    // Clear any pre-muxer buffered frames from the previous segment
+    preMuxerVideoFrameBuffer.clear();
     // Reset per-segment state
     segmentBytesWritten = 0L;
     pendingRollover = false;
@@ -1371,6 +1391,12 @@ public class GLRecordingPipeline {
     private final Runnable renderRunnable = new Runnable() {
         @Override
         public void run() {
+            final long runnableStartMs = System.nanoTime() / 1_000_000L;
+            long audioDrainMs = 0L;
+            long rendererActionMs = 0L;
+            long renderFrameMs = 0L;
+            long drainEncoderMs = 0L;
+            long rolloverMs = 0L;
             try {
                 if ((!isRecording && !previewOnlyRendering) || released) {
                     return;
@@ -1395,12 +1421,19 @@ public class GLRecordingPipeline {
                 // This ensures audio samples are queued in Media3 BEFORE video creates fragments
                 // Otherwise audio samples get dropped when video keyframes trigger fragment creation
                 if (audioRecordingEnabled && audioEncoder != null) {
-                    drainAudioEncoder();
+                    long phaseStartMs = System.nanoTime() / 1_000_000L;
+                    // Production-style startup priority: never let queued audio samples block
+                    // the first video frame. Before the muxer starts, drain only enough work to
+                    // discover/register the audio track. Once the muxer is running, keep audio
+                    // drain bounded per frame so video cadence stays smooth.
+                    drainAudioEncoderWithBudget(6L, true);
+                    audioDrainMs = (System.nanoTime() / 1_000_000L) - phaseStartMs;
                 }
 
                 // Do NOT update watermark every frame; a separate timer handles it to avoid FPS
                 // drops
                 // Drain any queued GL operations to ensure they run on the GL thread
+                long actionPhaseStartMs = System.nanoTime() / 1_000_000L;
                 Runnable action;
                 while ((action = rendererActions.poll()) != null) {
                     try {
@@ -1409,16 +1442,29 @@ public class GLRecordingPipeline {
                         FLog.w(TAG, "Renderer action failed", t);
                     }
                 }
+                rendererActionMs = (System.nanoTime() / 1_000_000L) - actionPhaseStartMs;
 
                 if (glRenderer != null) {
+                    long renderPhaseStartMs = System.nanoTime() / 1_000_000L;
                     glRenderer.renderFrame();
+                    renderFrameMs = (System.nanoTime() / 1_000_000L) - renderPhaseStartMs;
                 }
+                long drainPhaseStartMs = System.nanoTime() / 1_000_000L;
                 drainEncoder();
+                drainEncoderMs = (System.nanoTime() / 1_000_000L) - drainPhaseStartMs;
+
+                if (audioRecordingEnabled && audioEncoder != null && muxerStarted) {
+                    // Flush a small amount of queued audio after video drain so audio catches up
+                    // without stalling the render loop.
+                    drainAudioEncoderWithBudget(8L, false);
+                }
 
                 // Check if we need to split the segment due to size
                 if (shouldSplitSegment()) {
                     FLog.d(TAG, "Size limit reached, rolling over segment");
+                    long rolloverPhaseStartMs = System.nanoTime() / 1_000_000L;
                     rolloverSegment();
+                    rolloverMs = (System.nanoTime() / 1_000_000L) - rolloverPhaseStartMs;
                 }
 
                 // Continue rendering loop when new frames arrive (onFrameAvailable posts this
@@ -1427,6 +1473,15 @@ public class GLRecordingPipeline {
             } catch (Exception e) {
                 FLog.e(TAG, "Error in render loop", e);
             } finally {
+                long totalMs = System.nanoTime() / 1_000_000L - runnableStartMs;
+                if (totalMs > 80) {
+                    FLog.w(TAG, "SLOW renderRunnable: " + totalMs
+                            + " ms total [audioDrain=" + audioDrainMs
+                            + ", actions=" + rendererActionMs
+                            + ", renderFrame=" + renderFrameMs
+                            + ", drainEncoder=" + drainEncoderMs
+                            + ", rollover=" + rolloverMs + "]");
+                }
                 renderRunnableQueued.set(false);
             }
         }
@@ -1483,12 +1538,14 @@ public class GLRecordingPipeline {
                         if (!audioRecordingEnabled) {
                             mediaMuxer.start();
                             muxerStarted = true;
+                            flushPreMuxerVideoBuffer();
                         } else {
                             // Audio is enabled - check if audio track is already added
                             if (audioTrackIndex != -1) {
                                 // Both tracks are ready, start muxer
                                 mediaMuxer.start();
                                 muxerStarted = true;
+                                flushPreMuxerVideoBuffer();
                             } else {
                                 // Wait for audio track to be added
                                 FLog.d(TAG, "Video track added, waiting for audio track before starting muxer");
@@ -1579,10 +1636,23 @@ public class GLRecordingPipeline {
                             }
                         }
                     } else if (bufferInfo.size > 0 && !muxerStarted) {
-                        FLog.d(TAG, "Dropping encoded frame because muxer isn't started yet");
-                        try {
-                            FLog.w(TAG, "Dropping encoded frame (muxer not started yet)");
-                        } catch (Throwable ignore) {
+                        // Buffer the frame instead of dropping — will be flushed when muxer starts.
+                        // Only buffer non-codec-config frames; discard codec config (not writeable to muxer after start).
+                        if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0
+                                && preMuxerVideoFrameBuffer.size() < MAX_PRE_MUXER_BUFFER_FRAMES) {
+                            try {
+                                ByteBuffer copy = ByteBuffer.allocateDirect(bufferInfo.size);
+                                encodedData.position(bufferInfo.offset);
+                                encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                copy.put(encodedData);
+                                copy.flip();
+                                MediaCodec.BufferInfo infoCopy = new MediaCodec.BufferInfo();
+                                infoCopy.set(0, bufferInfo.size, bufferInfo.presentationTimeUs, bufferInfo.flags);
+                                preMuxerVideoFrameBuffer.add(new PendingVideoFrame(copy, infoCopy));
+                                FLog.d(TAG, "Buffered pre-muxer video frame (total=" + preMuxerVideoFrameBuffer.size() + ", pts=" + bufferInfo.presentationTimeUs + ")");
+                            } catch (Exception e) {
+                                FLog.w(TAG, "Failed to buffer pre-muxer frame, will be lost", e);
+                            }
                         }
                     }
 
@@ -1609,6 +1679,27 @@ public class GLRecordingPipeline {
         } catch (Exception e) {
             FLog.e(TAG, "Error draining encoder", e);
         }
+    }
+
+    /**
+     * Writes all video frames buffered before the muxer was started (pre-muxer buffer)
+     * to the muxer. Must be called immediately after {@code mediaMuxer.start()} while
+     * still holding the pipeline lock, so frames are written in presentation order with
+     * no gap at the start of the recording.
+     */
+    private void flushPreMuxerVideoBuffer() {
+        if (preMuxerVideoFrameBuffer.isEmpty()) return;
+        FLog.d(TAG, "Flushing " + preMuxerVideoFrameBuffer.size() + " pre-muxer buffered video frames");
+        for (PendingVideoFrame frame : preMuxerVideoFrameBuffer) {
+            try {
+                mediaMuxer.writeSampleData(videoTrackIndex, frame.data, frame.info);
+                videoSamplesWritten++;
+                lastVideoPts = frame.info.presentationTimeUs;
+            } catch (Exception e) {
+                FLog.w(TAG, "Error writing buffered pre-muxer video frame", e);
+            }
+        }
+        preMuxerVideoFrameBuffer.clear();
     }
 
     private boolean shouldSplitSegment() {
@@ -2770,6 +2861,10 @@ public class GLRecordingPipeline {
      * Call this regularly from the render loop or a timer.
      */
     private void drainAudioEncoder() {
+        drainAudioEncoderWithBudget(Long.MAX_VALUE, false);
+    }
+
+    private void drainAudioEncoderWithBudget(long maxDurationMs, boolean prioritizeVideoStartup) {
         if (!audioRecordingEnabled || audioEncoder == null || !audioEncoderStarted) {
             return;
         }
@@ -2778,8 +2873,16 @@ public class GLRecordingPipeline {
         }
 
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+        final long startMs = System.nanoTime() / 1_000_000L;
         try {
             while (true) {
+                if (maxDurationMs != Long.MAX_VALUE) {
+                    long elapsedMs = (System.nanoTime() / 1_000_000L) - startMs;
+                    if (elapsedMs >= maxDurationMs) {
+                        break;
+                    }
+                }
+
                 int outputBufferIndex = audioEncoder.dequeueOutputBuffer(bufferInfo, 0);
                 if (outputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                     break;
@@ -2820,6 +2923,7 @@ public class GLRecordingPipeline {
                                 // Both tracks are ready - start muxer
                                 mediaMuxer.start();
                                 muxerStarted = true;
+                                flushPreMuxerVideoBuffer();
                             } else if (!muxerStarted) {
                             }
                         } catch (Exception e) {
@@ -2827,6 +2931,13 @@ public class GLRecordingPipeline {
                         }
                     }
                 } else if (outputBufferIndex >= 0) {
+                    if (prioritizeVideoStartup && !muxerStarted && audioTrackIndex != -1 && bufferInfo.size > 0) {
+                        // Leave queued encoded audio in the codec until the first video frame has
+                        // started the muxer. Releasing all of it here causes a 200-300ms startup
+                        // stall before the first video frame is rendered.
+                        break;
+                    }
+
                     ByteBuffer encodedData = audioEncoder.getOutputBuffer(outputBufferIndex);
                     if (encodedData == null) {
                         FLog.e(TAG, "audioEncoderOutputBuffer " + outputBufferIndex + " was null");

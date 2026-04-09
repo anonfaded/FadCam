@@ -316,11 +316,21 @@ public class GLWatermarkRenderer {
     public void renderFrame() {
         try {
             // First render to encoder (critical for recording)
+            long encStart = System.nanoTime();
             renderToEncoder();
+            long encMs = (System.nanoTime() - encStart) / 1_000_000L;
+            if (encMs > 80) {
+                FLog.w(TAG, "SLOW renderToEncoder: " + encMs + " ms");
+            }
 
             // Then try to render to preview (non-critical)
             try {
+                long prevStart = System.nanoTime();
                 renderToPreview();
+                long prevMs = (System.nanoTime() - prevStart) / 1_000_000L;
+                if (prevMs > 80) {
+                    FLog.w(TAG, "SLOW renderToPreview: " + prevMs + " ms");
+                }
             } catch (Exception e) {
                 FLog.w(TAG, "Preview rendering failed in renderFrame", e);
             }
@@ -466,51 +476,16 @@ public class GLWatermarkRenderer {
                                 FLog.e(TAG, "Error recreating surface", e);
                             }
                         }
-                        // For EGL_BAD_ACCESS, try recreating the entire context
+                        // For EGL_BAD_ACCESS, do NOT destroy and recreate the context —
+                        // that wipes all GL state (OES texture, shader programs) and causes
+                        // a multi-second stall. Instead, just skip this frame.
                         else if (error == EGL14.EGL_BAD_ACCESS && attempt < 2) {
-                            FLog.d(TAG, "Trying to recover from EGL_BAD_ACCESS by releasing and recreating EGL");
+                            FLog.w(TAG, "eglMakeCurrent EGL_BAD_ACCESS on attempt " + (attempt + 1) + " — skipping frame, not destroying context");
+                            // Short pause to let the EGL driver recover before the next frame.
                             try {
-                                // Release current EGL resources
-                                EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
-                                        EGL14.EGL_NO_CONTEXT);
-                                if (eglSurface != EGL14.EGL_NO_SURFACE) {
-                                    EGL14.eglDestroySurface(eglDisplay, eglSurface);
-                                    eglSurface = EGL14.EGL_NO_SURFACE;
-                                }
-                                if (eglContext != EGL14.EGL_NO_CONTEXT) {
-                                    EGL14.eglDestroyContext(eglDisplay, eglContext);
-                                    eglContext = EGL14.EGL_NO_CONTEXT;
-                                }
-
-                                // Recreate EGL resources
-                                int[] attribList = {
-                                        EGL14.EGL_RED_SIZE, 8,
-                                        EGL14.EGL_GREEN_SIZE, 8,
-                                        EGL14.EGL_BLUE_SIZE, 8,
-                                        EGL14.EGL_ALPHA_SIZE, 8,
-                                        EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-                                        EGL14.EGL_NONE
-                                };
-                                EGLConfig[] configs = new EGLConfig[1];
-                                int[] numConfigs = new int[1];
-                                EGL14.eglChooseConfig(eglDisplay, attribList, 0, configs, 0, configs.length, numConfigs,
-                                        0);
-                                EGLConfig eglRecoveryConfig = configs[0];
-
-                                int[] contextAttribs = { EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE };
-                                eglContext = EGL14.eglCreateContext(eglDisplay, eglRecoveryConfig, EGL14.EGL_NO_CONTEXT,
-                                        contextAttribs, 0);
-
-                                int[] surfaceAttribs = { EGL14.EGL_NONE };
-                                eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglRecoveryConfig, outputSurface,
-                                        surfaceAttribs, 0);
-                                // Keep stored config in sync with the recovered one
-                                eglConfig = eglRecoveryConfig;
-
-                                // Try again with the new context
-                                Thread.sleep(50); // Short delay to let things settle
-                            } catch (Exception e) {
-                                FLog.e(TAG, "Error during EGL recovery", e);
+                                Thread.sleep(16);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
                             }
                         } else {
                             // For other errors, just wait a bit and retry
@@ -660,6 +635,14 @@ public class GLWatermarkRenderer {
 
             // Draw to encoder
             try {
+                // Always explicitly bind the OES texture before drawing.
+                // After EGL surface switches (renderToPreview ↔ renderToEncoder) or any
+                // rare context state reset, the GL_TEXTURE_EXTERNAL_OES binding in GL state
+                // may have been cleared. Re-binding here is cheap (just a GL state write)
+                // and eliminates the "No external texture bound" condition entirely.
+                if (oesTextureId != 0) {
+                    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
+                }
                 // Determine which texture is primary based on swap state
                 int primaryTextureId = camerasSwapped ? pipOesTextureId : oesTextureId;
                 if (mFullFrameBlit != null && primaryTextureId == oesTextureId) {
@@ -873,6 +856,11 @@ public class GLWatermarkRenderer {
             }
 
             updateMatrices();
+
+            // Explicitly bind OES texture for preview draw (same reason as encoder path).
+            if (oesTextureId != 0) {
+                GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
+            }
 
             // Pass 1: Zoom-fill background (drawn at the fill-crop viewport set above)
             if (needsLetterbox) {
@@ -1919,10 +1907,13 @@ public class GLWatermarkRenderer {
                 // Explicit clear: destroy the EGL surface so rendering stops.
                 if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
                     try {
-                        try {
-                            EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
-                                    EGL14.EGL_NO_CONTEXT);
-                        } catch (Exception ignore) {
+                        // IMPORTANT: Only switch surfaces, never detach the EGL context with
+                        // EGL_NO_CONTEXT. Detaching the context causes the ENCODER's GL state
+                        // (OES texture bindings, shader programs) to be lost, producing 5-second
+                        // frame-drop jank. Switching to the encoder surface is sufficient to
+                        // satisfy the EGL requirement that the destroyed surface is not current.
+                        if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                            EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
                         }
                         EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
                     } catch (Exception e) {
@@ -1957,14 +1948,16 @@ public class GLWatermarkRenderer {
     }
 
     public void releasePreviewEGL() {
-        // Unified: only destroy the preview EGLSurface; keep main display/context
+        // Only destroy the preview EGLSurface; preserve the encoder's EGL context.
+        // NEVER call eglMakeCurrent(NO_CONTEXT) here — that detaches the encoder context
+        // from the GL thread, causing the render loop to stall (5-second jank).
         synchronized (previewRenderLock) {
             if (previewEglSurface != EGL14.EGL_NO_SURFACE) {
                 try {
-                    try {
-                        EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
-                                EGL14.EGL_NO_CONTEXT);
-                    } catch (Exception ignore) {
+                    // Ensure the preview surface is not current before destroying it.
+                    // Switch to encoder surface (keeps context active) instead of releasing context.
+                    if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                        EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
                     }
                     EGL14.eglDestroySurface(eglDisplay, previewEglSurface);
                 } catch (Exception e) {

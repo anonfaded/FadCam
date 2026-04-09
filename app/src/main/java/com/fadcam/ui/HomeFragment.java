@@ -409,6 +409,9 @@ public class HomeFragment extends BaseFragment {
     // private static final String PREF_FIRST_LAUNCH = "first_launch";
 
     private RecordingState recordingState = RecordingState.NONE;
+    /** Last state applied to the UI via the state-callback broadcast; used to skip duplicate resets. */
+    private RecordingState lastAppliedServiceState = null;
+    private boolean lastAppliedPreviewOnlyActive = false;
 
     private BroadcastReceiver broadcastOnRecordingStarted;
     private BroadcastReceiver broadcastOnRecordingResumed;
@@ -2013,6 +2016,10 @@ public class HomeFragment extends BaseFragment {
 
         FLog.e(TAG, "HomeFragment stopped");
 
+        // Reset dedup state so the first callback after next resume always applies.
+        lastAppliedServiceState = null;
+        lastAppliedPreviewOnlyActive = false;
+
         // Call the centralized unregister method
         unregisterBroadcastReceivers();
 
@@ -2454,6 +2461,19 @@ public class HomeFragment extends BaseFragment {
                         Constants.INTENT_EXTRA_RECORDING_START_TIME,
                         0L
                     );
+
+                    // Deduplicate: skip redundant UI resets when the same NONE state arrives
+                    // multiple times in quick succession (e.g. 3x onResume startup queries).
+                    boolean previewOnlyChanged = (isPreviewOnlyActive != lastAppliedPreviewOnlyActive);
+                    boolean stateChanged = (serviceState != lastAppliedServiceState);
+                    boolean startTimeChanged = (callbackStartTime > 0L && callbackStartTime != recordingStartTime);
+                    if (!stateChanged && !previewOnlyChanged && !startTimeChanged) {
+                        FLog.d(TAG, "Service state callback deduplicated (same state=" + serviceState + ", skipping UI reset)");
+                        return;
+                    }
+                    lastAppliedServiceState = serviceState;
+                    lastAppliedPreviewOnlyActive = isPreviewOnlyActive;
+
                     if (callbackStartTime > 0L) {
                         recordingStartTime = callbackStartTime;
                     }
