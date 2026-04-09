@@ -1674,18 +1674,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (context == null)
             return;
         Uri videoUri = videoItem.uri;
-        int position = findPositionByUri(videoUri);
-
-        if (position == -1) {
-            FLog.e(TAG, "Cannot rename, item not found in adapter list: " + videoUri);
-            if (context instanceof Activity) {
-                ((Activity) context).runOnUiThread(() -> Toast.makeText(context,
-                        context.getString(R.string.toast_rename_failed) + " (Item not found)", Toast.LENGTH_SHORT)
-                        .show());
-            }
-            return;
-        }
-
         boolean renameSuccess = false;
         Uri newUri = null;
 
@@ -1765,8 +1753,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 VideoItem updatedItem = new VideoItem(
                         finalNewUri,
                         newFullName,
-                        videoItem.size, // Ideally, re-query size from newUri if possible
-                        System.currentTimeMillis());
+                        videoItem.size,
+                        System.currentTimeMillis(),
+                        videoItem.category,
+                        videoItem.mediaType,
+                        videoItem.shotSubtype,
+                        videoItem.cameraSubtype,
+                        videoItem.faditorSubtype);
 
                 // Update the persistent DB index: remove old URI, invalidate so
                 // the next loadRecordsList() picks up the renamed file.
@@ -1774,6 +1767,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     com.fadcam.data.VideoIndexRepository repo =
                             com.fadcam.data.VideoIndexRepository.getInstance(context);
                     repo.removeFromIndex(videoItem.uri.toString());
+                    repo.invalidateIndex();
                     FLog.d(TAG, "Removed old URI from index after rename: " + videoItem.uri);
                 } catch (Exception e) {
                     FLog.w(TAG, "Failed to update index after rename", e);
@@ -1781,20 +1775,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                 if (context instanceof Activity) {
                     ((Activity) context).runOnUiThread(() -> {
-                        if (position >= 0 && position < records.size()) {
-                            records.set(position, updatedItem);
+                        int livePosition = findPositionByUri(videoItem.uri);
+                        if (livePosition == -1) {
+                            livePosition = findPositionByUri(finalNewUri);
+                        }
+                        if (livePosition >= 0 && livePosition < records.size()) {
+                            records.set(livePosition, updatedItem);
                             if (selectedVideosUris.contains(videoItem.uri)) { // If old URI was selected
                                 selectedVideosUris.remove(videoItem.uri);
                                 selectedVideosUris.add(finalNewUri); // Replace with new URI
                             }
-                            notifyItemChanged(position);
+                            notifyItemChanged(livePosition);
                             Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
                         } else {
-                            FLog.e(TAG, "Rename success but position " + position + " is invalid for records list size "
+                            FLog.e(TAG, "Rename success but live position is invalid for records list size "
                                     + records.size());
-                            Toast.makeText(context, "Rename successful, but list update failed.", Toast.LENGTH_LONG)
-                                    .show();
-                            // Consider a full reload if this happens.
+                            notifyDataSetChanged();
+                            RecordsFragment.requestRefresh();
+                            Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
                         }
                     });
                 }

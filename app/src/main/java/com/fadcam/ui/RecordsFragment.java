@@ -572,7 +572,15 @@ public class RecordsFragment extends BaseFragment implements
         }
 
         if (snapshot.isFinished()) {
-            if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_SUCCESS) {
+            if (snapshot.state == RecordsDeletionSessionSnapshot.State.CANCELLED) {
+                deletionDockTitle.setText(getString(R.string.records_delete_notification_cancelled));
+                deletionDockIcon.setImageResource(R.drawable.ic_error);
+                deletionDockCurrentItem.setText(getString(
+                        R.string.records_delete_header_done_body_partial,
+                        snapshot.completedItemCount,
+                        snapshot.failedItemCount
+                ));
+            } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_SUCCESS) {
                 deletionDockTitle.setText(getString(R.string.records_delete_header_done_success));
                 deletionDockIcon.setImageResource(R.drawable.ic_check_circle);
                 deletionDockCurrentItem.setText(getString(
@@ -814,9 +822,17 @@ public class RecordsFragment extends BaseFragment implements
         if (!isAdded() || deletionSnapshot == null || !deletionSnapshot.isFinished()) {
             return;
         }
-        RecordsDeletionService.acknowledgeCompletion(requireContext(), deletionSnapshot.sessionId);
+        final String sessionId = deletionSnapshot.sessionId;
         deletionSnapshot = null;
         renderDeletionSnapshot(null, false);
+        new Handler(Looper.getMainLooper()).postDelayed(
+                () -> {
+                    if (isAdded()) {
+                        RecordsDeletionService.acknowledgeCompletion(requireContext(), sessionId);
+                    }
+                },
+                260L
+        );
     }
 
     // *** Register in onStart ***

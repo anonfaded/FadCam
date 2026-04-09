@@ -17,6 +17,7 @@ public class RecordsDeletionSessionSnapshot {
         IDLE,
         QUEUED,
         RUNNING,
+        CANCELLED,
         COMPLETED_SUCCESS,
         COMPLETED_PARTIAL,
         COMPLETED_FAILED
@@ -45,7 +46,8 @@ public class RecordsDeletionSessionSnapshot {
     }
 
     public boolean isFinished() {
-        return state == State.COMPLETED_SUCCESS
+        return state == State.CANCELLED
+                || state == State.COMPLETED_SUCCESS
                 || state == State.COMPLETED_PARTIAL
                 || state == State.COMPLETED_FAILED;
     }

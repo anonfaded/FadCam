@@ -35,7 +35,12 @@ public class RecordsDeletionNotificationManager {
         NotificationCompat.Builder builder = baseBuilder(snapshot)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setSilent(true);
+                .setSilent(true)
+                .addAction(
+                        0,
+                        context.getString(R.string.records_delete_notification_cancel),
+                        buildCancelPendingIntent(snapshot)
+                );
         applyProgress(builder, snapshot);
         return builder.build();
     }
@@ -48,6 +53,8 @@ public class RecordsDeletionNotificationManager {
         String title;
         if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_SUCCESS) {
             title = context.getString(R.string.records_delete_notification_complete_success);
+        } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.CANCELLED) {
+            title = context.getString(R.string.records_delete_notification_cancelled);
         } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_PARTIAL) {
             title = context.getString(R.string.records_delete_notification_complete_partial);
         } else {
@@ -70,6 +77,10 @@ public class RecordsDeletionNotificationManager {
         manager.cancel(NOTIFICATION_ID);
     }
 
+    public void cancelCompletion() {
+        manager.cancel(NOTIFICATION_ID + 1);
+    }
+
     @NonNull
     private NotificationCompat.Builder baseBuilder(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         Intent openIntent = new Intent(context, MainActivity.class);
@@ -88,6 +99,19 @@ public class RecordsDeletionNotificationManager {
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
+    }
+
+    @NonNull
+    private PendingIntent buildCancelPendingIntent(@NonNull RecordsDeletionSessionSnapshot snapshot) {
+        Intent cancelIntent = new Intent(context, RecordsDeletionService.class);
+        cancelIntent.setAction(RecordsDeletionService.ACTION_CANCEL_DELETE_SESSION);
+        cancelIntent.putExtra(RecordsDeletionService.EXTRA_SESSION_ID, snapshot.sessionId);
+        return PendingIntent.getService(
+                context,
+                1309,
+                cancelIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
     }
 
     private void applyProgress(

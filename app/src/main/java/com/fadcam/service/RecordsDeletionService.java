@@ -30,10 +30,12 @@ public class RecordsDeletionService extends Service {
     public static final String ACTION_START_DELETE_SESSION = "com.fadcam.action.START_DELETE_SESSION";
     public static final String ACTION_APPEND_TO_DELETE_SESSION = "com.fadcam.action.APPEND_TO_DELETE_SESSION";
     public static final String ACTION_ACKNOWLEDGE_DELETE_COMPLETION = "com.fadcam.action.ACKNOWLEDGE_DELETE_COMPLETION";
+    public static final String ACTION_CANCEL_DELETE_SESSION = "com.fadcam.action.CANCEL_DELETE_SESSION";
     public static final String EXTRA_DELETE_ITEMS_JSON = "delete_items_json";
     public static final String EXTRA_SESSION_ID = "delete_session_id";
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
+    private final AtomicBoolean cancelRequested = new AtomicBoolean(false);
     private ExecutorService executor;
     private RecordsDeletionSessionStore sessionStore;
     private RecordsDeletionNotificationManager notificationManager;
@@ -44,6 +46,10 @@ public class RecordsDeletionService extends Service {
         executor = Executors.newSingleThreadExecutor();
         sessionStore = new RecordsDeletionSessionStore(this);
         notificationManager = new RecordsDeletionNotificationManager(this);
+        RecordsDeletionSessionSnapshot existing = sessionStore.read();
+        if (existing != null && existing.isFinished()) {
+            notificationManager.cancelProgress();
+        }
     }
 
     @Override
@@ -57,6 +63,11 @@ public class RecordsDeletionService extends Service {
         if (ACTION_ACKNOWLEDGE_DELETE_COMPLETION.equals(action)) {
             acknowledgeCompletion(intent.getStringExtra(EXTRA_SESSION_ID));
             stopSelfResult(startId);
+            return START_NOT_STICKY;
+        }
+        if (ACTION_CANCEL_DELETE_SESSION.equals(action)) {
+            requestCancellation(intent.getStringExtra(EXTRA_SESSION_ID));
+            maybeResumeProcessing(startId);
             return START_NOT_STICKY;
         }
 
@@ -167,6 +178,10 @@ public class RecordsDeletionService extends Service {
 
                 while (true) {
                     RecordsDeletionSessionSnapshot latest = sessionStore.read();
+                    if (cancelRequested.get()) {
+                        finalizeCancelledSession(latest);
+                        break;
+                    }
                     if (latest == null || latest.pendingItems.isEmpty()) {
                         finalizeSession(latest);
                         break;
@@ -207,6 +222,9 @@ public class RecordsDeletionService extends Service {
                 item.displayName,
                 item.safSource,
                 progress -> {
+                    if (cancelRequested.get()) {
+                        throw new CancellationSignalException();
+                    }
                     RecordsDeletionSessionSnapshot live = sessionStore.read();
                     if (live == null) {
                         return;
@@ -226,6 +244,10 @@ public class RecordsDeletionService extends Service {
             return;
         }
 
+        if (cancelRequested.get()) {
+            finalizeCancelledSession(latest);
+            return;
+        }
         if (success) {
             latest.completedItemCount++;
             latest.processedBytes = baselineProcessed + itemTotalBytes;
@@ -277,6 +299,22 @@ public class RecordsDeletionService extends Service {
         }
         sessionStore.write(snapshot);
         publishSnapshot(snapshot, false, true, true);
+        notificationManager.cancelProgress();
+        notificationManager.showCompletion(snapshot);
+    }
+
+    private void finalizeCancelledSession(@Nullable RecordsDeletionSessionSnapshot snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+        snapshot.currentItemName = null;
+        snapshot.currentItemIndex = Math.max(0, snapshot.completedItemCount + snapshot.failedItemCount);
+        snapshot.finishedAtMs = System.currentTimeMillis();
+        snapshot.lastUpdatedAtMs = snapshot.finishedAtMs;
+        snapshot.state = RecordsDeletionSessionSnapshot.State.CANCELLED;
+        sessionStore.write(snapshot);
+        publishSnapshot(snapshot, false, true, true);
+        notificationManager.cancelProgress();
         notificationManager.showCompletion(snapshot);
     }
 
@@ -290,7 +328,23 @@ public class RecordsDeletionService extends Service {
         }
         snapshot.completionAcknowledged = true;
         sessionStore.clear();
+        notificationManager.cancelProgress();
+        notificationManager.cancelCompletion();
         publishSnapshot(snapshot, false, false, true);
+    }
+
+    private void requestCancellation(@Nullable String sessionId) {
+        RecordsDeletionSessionSnapshot snapshot = sessionStore.read();
+        if (snapshot == null) {
+            return;
+        }
+        if (sessionId != null && !sessionId.equals(snapshot.sessionId)) {
+            return;
+        }
+        cancelRequested.set(true);
+        snapshot.pendingItems.clear();
+        snapshot.lastUpdatedAtMs = System.currentTimeMillis();
+        sessionStore.write(snapshot);
     }
 
     private void publishSnapshot(
@@ -299,7 +353,9 @@ public class RecordsDeletionService extends Service {
             boolean sessionFinished,
             boolean includeCompletionIntent
     ) {
-        notificationManager.updateProgress(snapshot);
+        if (snapshot.isActive()) {
+            notificationManager.updateProgress(snapshot);
+        }
 
         Intent updateIntent = new Intent(Constants.ACTION_RECORDS_DELETE_SESSION_UPDATED);
         updateIntent.putExtra(Constants.EXTRA_RECORDS_DELETE_SESSION_JSON,
@@ -322,5 +378,8 @@ public class RecordsDeletionService extends Service {
                     RecordsDeletionSessionSnapshot.toJson(snapshot));
             sendBroadcast(finishedIntent);
         }
+    }
+
+    private static final class CancellationSignalException extends RuntimeException {
     }
 }
