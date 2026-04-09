@@ -39,6 +39,7 @@
 <br>
 <img src="app/src/main/assets/QRCodes/QRCode_patreon_shop.png" alt="Scan to visit Patreon shop" style="width: 150px; height: auto;" >
 <br>
+
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
 <!-- <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red"> -->
