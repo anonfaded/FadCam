@@ -4405,7 +4405,7 @@ public class HomeFragment extends BaseFragment {
         setupTextureView(view);
         setupButtonListeners();
         setupLongPressListener(); // Re-enabled for preview toggle during recording
-        setupClockLongPressListener(); // For display options on clock
+        setupClockClickListener(); // For display options on clock
         setupAppLogoLongPressListener(view); // <<< CALL NEW METHOD
 
         // Initialize easter egg messages and setup listener for preview placeholder
@@ -5588,14 +5588,16 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    private void setupClockLongPressListener() {
+    private void setupClockClickListener() {
         if (cardClock != null) {
-            cardClock.setOnLongClickListener(v -> {
+            cardClock.setClickable(true);
+            cardClock.setFocusable(true);
+            cardClock.setOnLongClickListener(null);
+            cardClock.setOnClickListener(v -> {
                 animatePressBounce(v, () -> {
                     performHapticFeedback();
                     showClockAppearanceDialog();
                 });
-                return true;
             });
         }
     }
