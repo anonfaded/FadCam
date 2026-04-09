@@ -292,6 +292,7 @@
     <string name="records_delete_error_failed_item">Could not delete %1$s.</string>
     <string name="records_delete_header_default_title">Deleting recordings</string>
     <string name="records_delete_header_action_ok">OK</string>
+    <string name="records_delete_header_action_cancel">Cancel</string>
     <string name="records_delete_header_done_success">Deletion complete</string>
     <string name="records_delete_header_done_partial">Deletion finished with issues</string>
     <string name="records_delete_header_done_failed">Deletion failed</string>
@@ -305,9 +306,15 @@
     <string name="records_delete_header_eta_seconds">ETA %1$ds</string>
     <string name="records_delete_header_eta_minutes">ETA %1$dm %2$02ds</string>
     <string name="records_delete_header_summary">%1$d of %2$d complete • %3$d failed</string>
+    <string name="records_delete_header_running_summary">%1$d done • %2$d failed</string>
+    <string name="records_delete_header_issue_prefix">Issue: %1$s</string>
     <plurals name="records_delete_header_running_title">
         <item quantity="one">Deleting %d item</item>
         <item quantity="other">Deleting %d items</item>
+    </plurals>
+    <plurals name="records_delete_header_progress_title">
+        <item quantity="one">Deleting %1$d of %2$d item</item>
+        <item quantity="other">Deleting %1$d of %2$d items</item>
     </plurals>
     <plurals name="records_delete_queued_toast">
         <item quantity="one">Deleting 1 item in background.</item>

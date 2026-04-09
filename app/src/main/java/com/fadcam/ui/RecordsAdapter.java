@@ -37,9 +37,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.card.MaterialCardView;
 // For getting drawables
@@ -50,6 +52,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.fadcam.utils.ShimmerEffectHelper;
 import com.fadcam.utils.RuntimeCompat;
 import com.fadcam.Constants;
+import com.fadcam.MainActivity;
 import com.fadcam.R;
 // Ensure VideoItem import is correct
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -1773,27 +1776,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     FLog.w(TAG, "Failed to update index after rename", e);
                 }
 
+                evictRenameCaches(videoItem.uri, finalNewUri);
+
                 if (context instanceof Activity) {
                     ((Activity) context).runOnUiThread(() -> {
-                        int livePosition = findPositionByUri(videoItem.uri);
-                        if (livePosition == -1) {
-                            livePosition = findPositionByUri(finalNewUri);
-                        }
-                        if (livePosition >= 0 && livePosition < records.size()) {
-                            records.set(livePosition, updatedItem);
-                            if (selectedVideosUris.contains(videoItem.uri)) { // If old URI was selected
-                                selectedVideosUris.remove(videoItem.uri);
-                                selectedVideosUris.add(finalNewUri); // Replace with new URI
-                            }
-                            notifyItemChanged(livePosition);
-                            Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
-                        } else {
-                            FLog.e(TAG, "Rename success but live position is invalid for records list size "
-                                    + records.size());
-                            notifyDataSetChanged();
-                            RecordsFragment.requestRefresh();
-                            Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
-                        }
+                        applyRenameLocally(videoItem, updatedItem);
+                        requestVisibleRecordsRefresh();
+                        Toast.makeText(context, R.string.toast_rename_success, Toast.LENGTH_SHORT).show();
                     });
                 }
             } else if (!renameSuccess) {
@@ -1809,6 +1798,89 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         context.getString(R.string.toast_rename_failed) + " (Error)", Toast.LENGTH_SHORT).show());
             }
         }
+    }
+
+    private void requestVisibleRecordsRefresh() {
+        if (!(context instanceof MainActivity)) {
+            return;
+        }
+        MainActivity activity = (MainActivity) context;
+        for (Fragment fragment : activity.getSupportFragmentManager().getFragments()) {
+            if (fragment instanceof RecordsFragment) {
+                ((RecordsFragment) fragment).refreshList();
+                return;
+            }
+        }
+        RecordsFragment.requestRefresh();
+    }
+
+    private void applyRenameLocally(@NonNull VideoItem originalItem, @NonNull VideoItem updatedItem) {
+        int recordsIndex = findRecordIndexByUri(originalItem.uri);
+        if (recordsIndex == -1) {
+            recordsIndex = findRecordIndexByUri(updatedItem.uri);
+        }
+
+        int entryIndex = findPositionByUri(originalItem.uri);
+        if (entryIndex == -1) {
+            entryIndex = findPositionByUri(updatedItem.uri);
+        }
+
+        if (recordsIndex >= 0 && recordsIndex < records.size()) {
+            records.set(recordsIndex, updatedItem);
+            entries = buildEntries(records);
+            updateSelectionUri(originalItem.uri, updatedItem.uri);
+            if (entryIndex >= 0 && entryIndex < entries.size()) {
+                notifyItemChanged(entryIndex);
+            } else {
+                notifyDataSetChanged();
+            }
+            FLog.d(TAG, "applyRenameLocally: updated record at recordsIndex=" + recordsIndex
+                    + ", entryIndex=" + entryIndex + ", newUri=" + updatedItem.uri);
+            return;
+        }
+
+        FLog.w(TAG, "applyRenameLocally: could not find renamed item in adapter. recordsSize="
+                + (records == null ? 0 : records.size()) + ", oldUri=" + originalItem.uri + ", newUri="
+                + updatedItem.uri);
+        notifyDataSetChanged();
+    }
+
+    private int findRecordIndexByUri(@Nullable Uri uri) {
+        if (uri == null || records == null) {
+            return -1;
+        }
+        for (int i = 0; i < records.size(); i++) {
+            VideoItem item = records.get(i);
+            if (item != null && uri.equals(item.uri)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void updateSelectionUri(@Nullable Uri oldUri, @Nullable Uri newUri) {
+        if (oldUri == null || newUri == null) {
+            return;
+        }
+
+        if (selectedVideosUris.remove(oldUri) && !selectedVideosUris.contains(newUri)) {
+            selectedVideosUris.add(newUri);
+        }
+
+        if (currentSelectedUris.remove(oldUri) && !currentSelectedUris.contains(newUri)) {
+            currentSelectedUris.add(newUri);
+        }
+    }
+
+    private void evictRenameCaches(@Nullable Uri oldUri, @Nullable Uri newUri) {
+        List<Uri> urisToEvict = new ArrayList<>(2);
+        if (oldUri != null) {
+            urisToEvict.add(oldUri);
+        }
+        if (newUri != null) {
+            urisToEvict.add(newUri);
+        }
+        evictCachesForUris(urisToEvict);
     }
 
     // --- Restored Save to Gallery Logic (using actionListener for progress) ---

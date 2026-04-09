@@ -53,13 +53,15 @@ public class RecordsDeletionSessionSnapshot {
     }
 
     public int getProgressPercent() {
+        int itemPercent = 0;
+        if (totalItemCount > 0) {
+            itemPercent = Math.max(0, Math.min(100, ((completedItemCount + failedItemCount) * 100) / totalItemCount));
+        }
         if (totalBytes > 0L) {
-            return (int) Math.max(0L, Math.min(100L, (processedBytes * 100L) / totalBytes));
+            int bytePercent = (int) Math.max(0L, Math.min(100L, (processedBytes * 100L) / totalBytes));
+            return Math.max(bytePercent, itemPercent);
         }
-        if (totalItemCount <= 0) {
-            return 0;
-        }
-        return Math.max(0, Math.min(100, ((completedItemCount + failedItemCount) * 100) / totalItemCount));
+        return itemPercent;
     }
 
     @NonNull

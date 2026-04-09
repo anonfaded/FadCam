@@ -123,6 +123,16 @@ public class RecordsDeletionService extends Service {
         context.startService(intent);
     }
 
+    public static void cancelSession(
+            @NonNull android.content.Context context,
+            @NonNull String sessionId
+    ) {
+        Intent intent = new Intent(context, RecordsDeletionService.class);
+        intent.setAction(ACTION_CANCEL_DELETE_SESSION);
+        intent.putExtra(EXTRA_SESSION_ID, sessionId);
+        context.startService(intent);
+    }
+
     private void startOrReplaceSession(@NonNull List<RecordsDeletionRequestItem> items) {
         if (items.isEmpty()) {
             return;

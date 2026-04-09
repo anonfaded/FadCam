@@ -611,15 +611,24 @@ public class RecordsFragment extends BaseFragment implements
                     snapshot.totalItemCount,
                     snapshot.failedItemCount
             ));
-            showDeletionDockOkButton(true, immediate);
+            if (!snapshot.errorSummaries.isEmpty()) {
+                String firstError = snapshot.errorSummaries.get(0);
+                String issueText = snapshot.errorSummaries.size() > 1
+                        ? firstError + " +" + (snapshot.errorSummaries.size() - 1)
+                        : firstError;
+                deletionDockCurrentItem.setText(getString(R.string.records_delete_header_issue_prefix, issueText));
+            }
+            showDeletionDockActionButton(true, false, immediate);
             animateDeletionDock(true, immediate);
             return;
         }
 
+        int activeIndex = Math.max(1, Math.min(Math.max(1, snapshot.totalItemCount), snapshot.currentItemIndex));
         deletionDockTitle.setText(getResources().getQuantityString(
-                R.plurals.records_delete_header_running_title,
+                R.plurals.records_delete_header_progress_title,
                 Math.max(1, snapshot.totalItemCount),
-                snapshot.totalItemCount
+                activeIndex,
+                Math.max(1, snapshot.totalItemCount)
         ));
         deletionDockIcon.setImageResource(R.drawable.ic_delete_white);
         deletionDockProgress.setProgress(snapshot.getProgressPercent());
@@ -629,12 +638,11 @@ public class RecordsFragment extends BaseFragment implements
         String eta = buildDeletionEta(snapshot);
         deletionDockEta.setText(eta == null ? getString(R.string.records_delete_header_working) : eta);
         deletionDockSummary.setText(getString(
-                R.string.records_delete_header_summary,
+                R.string.records_delete_header_running_summary,
                 snapshot.completedItemCount,
-                snapshot.totalItemCount,
                 snapshot.failedItemCount
         ));
-        showDeletionDockOkButton(false, immediate);
+        showDeletionDockActionButton(true, true, immediate);
         animateDeletionDock(true, immediate);
     }
 
@@ -769,11 +777,21 @@ public class RecordsFragment extends BaseFragment implements
         isDeletionDockVisible = show;
     }
 
-    private void showDeletionDockOkButton(boolean show, boolean immediate) {
+    private void showDeletionDockActionButton(boolean show, boolean activeSession, boolean immediate) {
         if (deletionDockOk == null) {
             return;
         }
         deletionDockOk.animate().cancel();
+        deletionDockOk.setText(activeSession
+                ? R.string.records_delete_header_action_cancel
+                : R.string.records_delete_header_action_ok);
+        deletionDockOk.setOnClickListener(v -> {
+            if (activeSession) {
+                cancelDeletionSession();
+            } else {
+                acknowledgeDeletionCompletion();
+            }
+        });
         if (immediate) {
             deletionDockOk.setVisibility(show ? View.VISIBLE : View.GONE);
             deletionDockOk.setAlpha(show ? 1f : 0f);
@@ -816,6 +834,13 @@ public class RecordsFragment extends BaseFragment implements
                     })
                     .start();
         }
+    }
+
+    private void cancelDeletionSession() {
+        if (!isAdded() || deletionSnapshot == null || !deletionSnapshot.isActive()) {
+            return;
+        }
+        RecordsDeletionService.cancelSession(requireContext(), deletionSnapshot.sessionId);
     }
 
     private void acknowledgeDeletionCompletion() {
@@ -4375,11 +4400,12 @@ public class RecordsFragment extends BaseFragment implements
         if (isAdded()) {
             // Invalidate persistent index to force full re-scan
             com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
+            com.fadcam.utils.VideoSessionCache.invalidateOnNextAccess(sharedPreferencesManager);
             if (recordsAdapter != null) {
                 recordsAdapter.clearCaches();
             }
             FLog.i(TAG, "refreshList: Invalidated index, reloading records list.");
-            loadRecordsList();
+            loadRecordsList(true);
         }
     }
 
