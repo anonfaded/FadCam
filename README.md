@@ -34,6 +34,11 @@
 [![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DFadedx%26type%3Dpatrons%26suffix%3Dpatrons%2520%257C%2520Shop&style=social)](https://www.patreon.com/cw/Fadedx/shop)
 <!-- [![Patreon](https://img.shields.io/badge/Patreon-orange?logo=patreon&label=Patreon)](https://www.patreon.com/cw/Fadedx/shop) -->
+<br>
+<sub>Scan to visit Patreon shop:</sub>
+<br>
+<img src="app/src/main/assets/QRCodes/QRCode_patreon_shop.png" alt="Scan to visit Patreon shop" style="width: 150px; height: auto;" >
+<br>
 [![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
 
 <!-- <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red"> -->
@@ -408,9 +413,13 @@ Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek he
 
 ## `>_` Support & Shop
 
-Buy FadCam Pro (lifetime access) from my Patreon shop. Your purchases help fund development and maintenance. 
+Buy FadCam Pro (lifetime access) from my Patreon shop. Your purchases help fund development and maintenance.
 
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DFadedx%26type%3Dpatrons%26suffix%3Dpatrons%2520%257C%2520Shop&style=for-the-badge)](https://www.patreon.com/cw/Fadedx/shop)
+
+<br>
+<sub>Scan to visit Patreon shop:</sub><br>
+<img src="app/src/main/assets/QRCodes/QRCode_patreon_shop.png" alt="Scan to visit Patreon shop" style="width: 150px; height: auto;" >
 
 
 ## `>_` Contributions
