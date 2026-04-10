@@ -6771,7 +6771,7 @@ public class HomeFragment extends BaseFragment {
      * Examples: "59m 59s" -> "1h 0m 0s" has format change (units went from m,s to h,m,s).
      * "30m 15s" -> "25m 10s" does NOT have format change (units stay m,s).
      */
-    private boolean hasTimeUnitFormatChanged(String oldText, String newText) {
+    protected boolean hasTimeUnitFormatChanged(String oldText, String newText) {
         java.util.regex.Pattern unitPattern = java.util.regex.Pattern.compile("[dhms]");
         java.util.regex.Matcher oldMatcher = unitPattern.matcher(oldText);
         java.util.regex.Matcher newMatcher = unitPattern.matcher(newText);

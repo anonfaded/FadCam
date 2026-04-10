@@ -1874,7 +1874,22 @@ public class FadRecHomeFragment extends HomeFragment {
 
                 // Remaining / estimate row — tvEstimateTitle is the real layout view
                 // (tvRemainingTitle is never bound to any view and is always null).
-                if (tvEstimateTitle != null)    tvEstimateTitle.setText(finalRemaining);
+                if (tvEstimateTitle != null) {
+                    String oldEstimate = tvEstimateTitle.getText() != null ? tvEstimateTitle.getText().toString() : "";
+                    if (!oldEstimate.equals(finalRemaining)) {
+                        if (tvEstimateTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                            // Check if the format (unit set) has changed between two time strings
+                            boolean formatChanged = hasTimeUnitFormatChanged(oldEstimate, finalRemaining);
+                            if (formatChanged) {
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotFullDown(finalRemaining, 400);
+                            } else {
+                                ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotDown(finalRemaining, 400);
+                            }
+                        } else {
+                            tvEstimateTitle.setText(finalRemaining);
+                        }
+                    }
+                }
                 if (tvEstimateSubtitle != null) tvEstimateSubtitle.setText(getString(R.string.recording_time_left));
 
                 // Storage row
