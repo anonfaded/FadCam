@@ -8950,6 +8950,14 @@ public class HomeFragment extends BaseFragment {
             }
         });
 
+        // Long press opens torch options dialog
+        buttonTorchSwitch.setOnLongClickListener(v -> {
+            if (!isAdded() || getContext() == null) return false;
+            performHapticFeedback();
+            showTorchOptionsDialog();
+            return true;
+        });
+
         // Initialize and register the broadcast receiver for torch state changes from
         // the service
         // This is important for when the service toggles the torch (e.g., during
@@ -8999,34 +9007,58 @@ public class HomeFragment extends BaseFragment {
     // Ensure toggleTorch method exists and correctly uses
     // CameraManager.setTorchMode
     // and updates the local isTorchOn variable and calls updateTorchUI.
-    // Example (ensure your actual toggleTorch matches this logic):
     private void toggleTorch() {
         if (cameraManager == null) {
             FLog.e(TAG, "CameraManager not available to toggle torch.");
             return;
         }
-        String currentCameraId = getCameraIdForTorch(); // Helper to get current camera ID
-        if (currentCameraId == null) {
+
+        // Read torch source preferences
+        android.content.SharedPreferences torchPrefs =
+                android.preference.PreferenceManager.getDefaultSharedPreferences(getContext());
+        String torchSource = torchPrefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+        boolean bothTorches = torchPrefs.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
+
+        // If "both torches" is selected, toggle both cameras' torches
+        if (bothTorches) {
+            toggleBothTorches(torchSource);
+            return;
+        }
+
+        // Otherwise use the selected torch source, or fall back to current camera
+        String targetCameraId = null;
+        if ("back".equals(torchSource)) {
+            targetCameraId = getBackCameraIdWithFlash();
+        } else if ("front".equals(torchSource)) {
+            targetCameraId = getFrontCameraIdWithFlash();
+        }
+
+        // If no torch source was configured or not found, fall back to current camera
+        if (targetCameraId == null) {
+            targetCameraId = getCameraIdForTorch();
+        }
+
+        if (targetCameraId == null) {
             FLog.e(TAG, "No valid camera ID found for torch.");
             return;
         }
 
         try {
             isTorchOn = !isTorchOn;
-            cameraManager.setTorchMode(currentCameraId, isTorchOn);
-            
+            cameraManager.setTorchMode(targetCameraId, isTorchOn);
+
             // Update SharedPreferences so RemoteStreamManager can read current torch state
             android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(getContext());
             prefs.edit()
                 .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn)
                 .apply();
-            
+
             FLog.d(
                 TAG,
                 "Torch toggled directly via CameraManager. New state: " +
                 isTorchOn +
                 " for camera " +
-                currentCameraId
+                targetCameraId
             );
             updateTorchUI(isTorchOn); // Update button appearance and any other UI
         } catch (CameraAccessException e) {
@@ -9038,7 +9070,7 @@ public class HomeFragment extends BaseFragment {
             FLog.e(
                 TAG,
                 "Failed to toggle torch: Camera device " +
-                currentCameraId +
+                targetCameraId +
                 " is no longer connected or available.",
                 e
             );
@@ -9048,6 +9080,85 @@ public class HomeFragment extends BaseFragment {
             updateTorchUI(false);
             Utils.showQuickToast(getContext(), "Torch unavailable.");
         }
+    }
+
+    /** Toggles both back and front torches simultaneously. */
+    private void toggleBothTorches(String preferredSource) {
+        String backId = getBackCameraIdWithFlash();
+        String frontId = getFrontCameraIdWithFlash();
+
+        if (backId == null && frontId == null) {
+            FLog.e(TAG, "No torch cameras available for both-torch toggle.");
+            return;
+        }
+
+        try {
+            isTorchOn = !isTorchOn;
+            if (backId != null) {
+                cameraManager.setTorchMode(backId, isTorchOn);
+            }
+            if (frontId != null) {
+                cameraManager.setTorchMode(frontId, isTorchOn);
+            }
+
+            android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(getContext());
+            prefs.edit()
+                .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn)
+                .apply();
+
+            FLog.d(TAG, "Both torches toggled. New state: " + isTorchOn);
+            updateTorchUI(isTorchOn);
+        } catch (CameraAccessException e) {
+            FLog.e(TAG, "Failed to toggle both torches", e);
+            isTorchOn = !isTorchOn;
+            updateTorchUI(isTorchOn);
+            Utils.showQuickToast(getContext(), "Error toggling torches.");
+        }
+    }
+
+    private String getBackCameraIdWithFlash() {
+        try {
+            if (cameraManager == null) return null;
+            // First try the user's selected back camera
+            String preferredId = sharedPreferencesManager.getSelectedBackCameraId();
+            if (preferredId != null) {
+                CameraCharacteristics chars = cameraManager.getCameraCharacteristics(preferredId);
+                Boolean flash = chars.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                if (Boolean.TRUE.equals(flash) && facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    return preferredId;
+                }
+            }
+            // Fallback: find any back camera with flash
+            for (String id : cameraManager.getCameraIdList()) {
+                CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                Boolean flash = chars.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                if (Boolean.TRUE.equals(flash) && facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    return id;
+                }
+            }
+        } catch (CameraAccessException e) {
+            FLog.w(TAG, "Error finding back camera with flash", e);
+        }
+        return null;
+    }
+
+    private String getFrontCameraIdWithFlash() {
+        try {
+            if (cameraManager == null) return null;
+            for (String id : cameraManager.getCameraIdList()) {
+                CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                Boolean flash = chars.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                if (Boolean.TRUE.equals(flash) && facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    return id;
+                }
+            }
+        } catch (CameraAccessException e) {
+            FLog.w(TAG, "Error finding front camera with flash", e);
+        }
+        return null;
     }
 
     private String getCameraIdForTorch() {
@@ -9150,161 +9261,96 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    // ── Torch options bottom sheet (uses same picker pattern as settings) ──
+
     private void showTorchOptionsDialog() {
-        // Check if recording is in progress first
+        if (!isAdded() || getActivity() == null) return;
+
         if (isRecordingInProgress()) {
-            Toast.makeText(
-                requireContext(),
-                R.string.torch_recording_note,
-                Toast.LENGTH_SHORT
-            ).show();
+            Toast.makeText(requireContext(), R.string.torch_recording_note, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        CameraManager cameraManager =
-            (CameraManager) requireContext().getSystemService(
-                Context.CAMERA_SERVICE
-            );
+        android.content.SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        String currentSource = prefs.getString(Constants.PREF_SELECTED_TORCH_SOURCE, null);
+        boolean bothEnabled = prefs.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);
+
+        // Detect available torch sources
+        CameraManager cameraManager = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+        if (cameraManager == null) return;
+
         try {
-            List<String> torchSources = new ArrayList<>();
-            boolean hasMultipleTorches = false;
+            String backCameraId = null;
+            String frontCameraId = null;
             boolean hasBackTorch = false;
             boolean hasFrontTorch = false;
 
-            // Check available torch sources
             for (String cameraId : cameraManager.getCameraIdList()) {
-                CameraCharacteristics characteristics =
-                    cameraManager.getCameraCharacteristics(cameraId);
-                Boolean hasFlash = characteristics.get(
-                    CameraCharacteristics.FLASH_INFO_AVAILABLE
-                );
-                int facing = characteristics.get(
-                    CameraCharacteristics.LENS_FACING
-                );
-
+                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                Boolean hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (hasFlash != null && hasFlash) {
-                    torchSources.add(cameraId);
-                    if (facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        backCameraId = cameraId;
                         hasBackTorch = true;
-                    } else if (
-                        facing == CameraCharacteristics.LENS_FACING_FRONT
-                    ) {
+                    } else if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        frontCameraId = cameraId;
                         hasFrontTorch = true;
                     }
                 }
             }
 
-            hasMultipleTorches = hasBackTorch && hasFrontTorch;
-            FLog.d(
-                TAG,
-                "Torch sources found: Back=" +
-                hasBackTorch +
-                ", Front=" +
-                hasFrontTorch
-            );
-
-            View dialogView = getLayoutInflater().inflate(
-                R.layout.dialog_torch_options,
-                null
-            );
-            RadioGroup torchGroup = dialogView.findViewById(R.id.torch_group);
-
-            // Setup torch source options
-            SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(requireContext());
-            String currentTorchSource = prefs.getString(
-                Constants.PREF_SELECTED_TORCH_SOURCE,
-                null
-            );
-            boolean currentBothTorches = prefs.getBoolean(
-                Constants.PREF_BOTH_TORCHES_ENABLED,
-                false
-            );
-
-            // Add individual torch options
-            for (String sourceId : torchSources) {
-                RadioButton rb = new RadioButton(requireContext());
-                CameraCharacteristics chars =
-                    cameraManager.getCameraCharacteristics(sourceId);
-                int facing = chars.get(CameraCharacteristics.LENS_FACING);
-                rb.setText(
-                    facing == CameraCharacteristics.LENS_FACING_BACK
-                        ? getString(R.string.torch_back)
-                        : getString(R.string.torch_front)
-                );
-                rb.setTag(sourceId);
-                torchGroup.addView(rb);
-
-                if (
-                    sourceId.equals(currentTorchSource) && !currentBothTorches
-                ) {
-                    rb.setChecked(true);
-                }
+            ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+            if (hasBackTorch) {
+                items.add(new com.fadcam.ui.picker.OptionItem("back", getString(R.string.torch_back)));
+            }
+            if (hasFrontTorch) {
+                items.add(new com.fadcam.ui.picker.OptionItem("front", getString(R.string.torch_front)));
+            }
+            if (hasBackTorch && hasFrontTorch) {
+                items.add(new com.fadcam.ui.picker.OptionItem("both", getString(R.string.torch_both)));
             }
 
-            // Add "Both Torches" option if multiple torches available
-            if (hasMultipleTorches) {
-                RadioButton bothTorches = new RadioButton(requireContext());
-                bothTorches.setText(R.string.torch_both);
-                bothTorches.setTag("both");
-                torchGroup.addView(bothTorches);
-
-                if (currentBothTorches) {
-                    bothTorches.setChecked(true);
-                }
-                FLog.d(TAG, "Added 'Both Torches' option");
+            String currentId;
+            if (bothEnabled) {
+                currentId = "both";
+            } else if (currentSource != null) {
+                currentId = currentSource;
+            } else {
+                currentId = hasBackTorch ? "back" : (hasFrontTorch ? "front" : null);
             }
 
-            // Select first source if none selected
-            if (
-                currentTorchSource == null &&
-                !currentBothTorches &&
-                torchGroup.getChildCount() > 0
-            ) {
-                ((RadioButton) torchGroup.getChildAt(0)).setChecked(true);
+            if (currentId == null) {
+                Toast.makeText(requireContext(), "No torch available", Toast.LENGTH_SHORT).show();
+                return;
             }
 
-            new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.torch_options_title)
-                .setView(dialogView)
-                .setPositiveButton(R.string.torch_apply, (dialog, which) -> {
-                    RadioButton selectedSource = dialogView.findViewById(
-                        torchGroup.getCheckedRadioButtonId()
-                    );
-                    if (selectedSource != null) {
-                        String selectedSourceId =
-                            (String) selectedSource.getTag();
-                        boolean isBothSelected = "both".equals(
-                            selectedSourceId
-                        );
+            final String fBackId = backCameraId;
+            final String fFrontId = frontCameraId;
+            final boolean fHasBack = hasBackTorch;
+            final boolean fHasFront = hasFrontTorch;
 
-                        // Save settings
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putBoolean(
-                            Constants.PREF_BOTH_TORCHES_ENABLED,
-                            isBothSelected
-                        );
-                        if (!isBothSelected) {
-                            editor.putString(
-                                Constants.PREF_SELECTED_TORCH_SOURCE,
-                                selectedSourceId
-                            );
-                        }
-                        editor.apply();
+            final String resultKey = "picker_result_torch";
+            getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
+                String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if (sel == null) return;
 
-                        FLog.d(
-                            TAG,
-                            "Saved torch settings - Both: " +
-                            isBothSelected +
-                            ", Source: " +
-                            selectedSourceId
-                        );
-                    }
-                })
-                .setNegativeButton(R.string.torch_cancel, null)
-                .show();
+                android.content.SharedPreferences.Editor editor = prefs.edit();
+                editor.putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, "both".equals(sel));
+                editor.putString(Constants.PREF_SELECTED_TORCH_SOURCE, "both".equals(sel) ? null : sel);
+                editor.apply();
+
+                FLog.d(TAG, "Saved torch settings - Both: " + "both".equals(sel) + ", Source: " + sel);
+                Toast.makeText(requireContext(), "Torch: " + sel, Toast.LENGTH_SHORT).show();
+            });
+
+            com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                            getString(R.string.torch_options_title), items, currentId, resultKey,
+                            "Choose which torch to use. Applies to both idle and recording torch toggle.");
+            sheet.show(getParentFragmentManager(), "torch_options_picker");
         } catch (CameraAccessException e) {
-            FLog.e(TAG, "Error accessing camera: " + e.getMessage());
+            FLog.e(TAG, "Error accessing camera for torch options: " + e.getMessage());
         }
     }
 

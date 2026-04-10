@@ -10,6 +10,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.animation.DecelerateInterpolator;
 import androidx.appcompat.widget.AppCompatTextView;
+import com.fadcam.FLog;
 
 /**
  * A TextView that animates text changes with an intelligent slot-machine effect.
@@ -227,9 +228,18 @@ public class AnimatedTextView extends AppCompatTextView {
                 .build();
 
         slotHasDifferentialRegions = hasDiff;
-        slotDrawBaseX = getCompoundPaddingLeft() + (hasDiff
-                ? computeHorizontalOffset(usableW, oldStr.isEmpty() ? 0f : paint.measureText(oldStr))
-                : 0f);
+        // Use the new text's width for slotDrawBaseX so the final animation frame is positioned
+        // exactly where super.onDraw() will center the new text — preventing a visible
+        // horizontal snap/oscillation at animation end for CENTER-gravity views.
+        float newStrWidth = newStr.isEmpty() ? 0f : paint.measureText(newStr);
+        float offset = hasDiff ? computeHorizontalOffset(usableW, newStrWidth) : 0f;
+        slotDrawBaseX = getCompoundPaddingLeft() + offset;
+        
+        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        FLog.d(TAG, "animateSlotInternal: '" + oldStr + "' -> '" + newStr +
+                "' gravity=" + gravity + " newStrW=" + newStrWidth + " offset=" + offset + 
+                " padding=" + getCompoundPaddingLeft() + " drawBaseX=" + slotDrawBaseX + 
+                " usableW=" + usableW + " hasDiff=" + hasDiff);
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
             slotPrefixWidth     = prefixW;
@@ -482,12 +492,19 @@ public class AnimatedTextView extends AppCompatTextView {
 
     private float computeHorizontalOffset(int availableWidth, float textWidth) {
         int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        FLog.d(TAG, "computeHorizontalOffset: gravity=" + gravity + " CENTER_HORIZ=" + Gravity.CENTER_HORIZONTAL +
+                " CENTER=" + Gravity.CENTER + " END=" + Gravity.END + " availW=" + availableWidth + " textW=" + textWidth);
         if (gravity == Gravity.CENTER_HORIZONTAL) {
-            return Math.max(0f, (availableWidth - textWidth) / 2f);
+            float result = Math.max(0f, (availableWidth - textWidth) / 2f);
+            FLog.d(TAG, "  -> CENTER_HORIZONTAL result=" + result);
+            return result;
         }
         if (gravity == Gravity.END) {
-            return Math.max(0f, availableWidth - textWidth);
+            float result = Math.max(0f, availableWidth - textWidth);
+            FLog.d(TAG, "  -> END result=" + result);
+            return result;
         }
+        FLog.d(TAG, "  -> START/OTHER result=0");
         return 0f;
     }
 
