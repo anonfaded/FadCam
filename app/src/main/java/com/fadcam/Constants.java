@@ -40,6 +40,7 @@ public abstract class Constants {
     public static final String PREF_RECORDING_PAUSE_STARTED_AT = "recording_pause_started_at";
     public static final String PREF_RECORDING_ACCUMULATED_PAUSED_DURATION = "recording_accumulated_paused_duration";
     public static final String PREF_HOME_ELAPSED_ALIGNMENT = "pref_home_elapsed_alignment";
+    public static final String PREF_HOME_ELAPSED_DISPLAY_MODE = "pref_home_elapsed_display_mode";
     public static final String PREF_HOME_ELAPSED_SIZE = "pref_home_elapsed_size";
     public static final String PREF_HOME_ELAPSED_FONT = "pref_home_elapsed_font";
     public static final String PREF_HOME_ELAPSED_SHOW_FLAG = "pref_home_elapsed_show_flag";

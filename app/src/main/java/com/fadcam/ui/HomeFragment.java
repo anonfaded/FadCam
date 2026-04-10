@@ -130,6 +130,7 @@ public class HomeFragment extends BaseFragment {
     private static final String TAG = "HomeFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
+    private static final String ELAPSED_DISPLAY_RESULT_KEY = "home_elapsed_display_picker";
     private static final String ELAPSED_SIZE_RESULT_KEY = "home_elapsed_size_picker";
     private static final String ELAPSED_FONT_RESULT_KEY = "home_elapsed_font_picker";
     private static final String ELAPSED_FLAG_RESULT_KEY = "home_elapsed_flag_picker";
@@ -145,6 +146,8 @@ public class HomeFragment extends BaseFragment {
     private static final String CLOCK_HOUR_FORMAT_RESULT_KEY = "home_clock_hour_format_picker";
     private static final String ELAPSED_ALIGNMENT_CENTER = "center";
     private static final String ELAPSED_ALIGNMENT_START = "start";
+    private static final String ELAPSED_DISPLAY_COMPACT_INLINE = "compact_inline";
+    private static final String ELAPSED_DISPLAY_DIGITAL = "digital";
     private static final String ELAPSED_SIZE_SMALL = "small";
     private static final String ELAPSED_SIZE_MEDIUM = "medium";
     private static final String ELAPSED_SIZE_LARGE = "large";
@@ -200,6 +203,8 @@ public class HomeFragment extends BaseFragment {
     private static final long CLOCK_COLOR_CACHE_MS = 1000; // Recalculate every 1 second
 
     private long recordingStartTime;
+    private long recordingPauseStartedAt;
+    private long recordingAccumulatedPausedDurationMs;
     private long videoBitrate;
 
     private double latitude;
@@ -208,6 +213,8 @@ public class HomeFragment extends BaseFragment {
     private Handler handlerClock = new Handler();
     private Runnable updateInfoRunnable;
     private Runnable updateClockRunnable; // Declare here
+    private boolean clockUpdatesRunning;
+    private boolean infoUpdatesRunning;
     
     private DebouncedRunnable debouncedStartRecording;
     private DebouncedRunnable debouncedStopRecording;
@@ -1200,8 +1207,11 @@ public class HomeFragment extends BaseFragment {
             );
             return;
         }
-        recordingStartTime = SystemClock.elapsedRealtime();
-        FLog.d(TAG, "resetTimers: Set fresh recordingStartTime=" + recordingStartTime);
+        recordingStartTime = 0L;
+        recordingPauseStartedAt = 0L;
+        recordingAccumulatedPausedDurationMs = 0L;
+        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        FLog.d(TAG, "resetTimers: Cleared elapsed timer state");
         updateStorageInfo();
     }
 
@@ -1521,6 +1531,13 @@ public class HomeFragment extends BaseFragment {
                 // Note: Timer value is written to SharedPreferences by service
                 // Fragment reads it directly when calculating elapsed time
                 FLog.d(TAG, "✅ BROADCAST_ON_RECORDING_STARTED received");
+                long startTimeFromBroadcast = i.getLongExtra(
+                    Constants.INTENT_EXTRA_RECORDING_START_TIME,
+                    0L
+                );
+                if (startTimeFromBroadcast > 0L) {
+                    recordingStartTime = startTimeFromBroadcast;
+                }
 
                 // Update our internal state first
                 onRecordingStarted(true);
@@ -1615,7 +1632,13 @@ public class HomeFragment extends BaseFragment {
         // This method only updates UI state
 
         recordingState = RecordingState.IN_PROGRESS;
+        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        recordingPauseStartedAt = 0L;
+        recordingAccumulatedPausedDurationMs = 0L;
         setUIForRecordingActive();
+        if (tvElapsedTitle != null) {
+            renderElapsedDisplay(latestElapsedDisplay, false);
+        }
         if (toast) Utils.showQuickToast(
             requireContext(),
             R.string.video_recording_started
@@ -1773,6 +1796,9 @@ public class HomeFragment extends BaseFragment {
         
         // Reset timer (service will have cleared its value too)
         recordingStartTime = 0;
+        recordingPauseStartedAt = 0L;
+        recordingAccumulatedPausedDurationMs = 0L;
+        latestElapsedDisplay = buildElapsedDisplayText(0L);
         FLog.d(TAG, "onRecordingStopped: Reset recordingStartTime to 0");
 
         // Release wake lock if it was acquired
@@ -2377,13 +2403,7 @@ public class HomeFragment extends BaseFragment {
                     if (!isAdded() || i == null) return;
 
                     // Get timestamp from the service with current time as fallback
-                    long startTimeFromService = i.getLongExtra(
-                        Constants.INTENT_EXTRA_RECORDING_START_TIME,
-                        0L
-                    );
-                    if (startTimeFromService > 0L) {
-                        recordingStartTime = startTimeFromService;
-                    }
+                    applyRecordingTimelineFromIntent(i);
 
                     // Perform non-UI actions previously in onRecordingStarted(true)
                     // WakeLock moved to service
@@ -2410,7 +2430,10 @@ public class HomeFragment extends BaseFragment {
             broadcastOnRecordingResumed = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context c, Intent i) {
-                    if (isAdded()) onRecordingResumed();
+                    if (isAdded()) {
+                        applyRecordingTimelineFromIntent(i);
+                        onRecordingResumed();
+                    }
                 }
             };
             FLog.d(TAG, "Initialized broadcastOnRecordingResumed receiver");
@@ -2420,7 +2443,10 @@ public class HomeFragment extends BaseFragment {
             broadcastOnRecordingPaused = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context c, Intent i) {
-                    if (isAdded()) onRecordingPaused();
+                    if (isAdded()) {
+                        applyRecordingTimelineFromIntent(i);
+                        onRecordingPaused();
+                    }
                 }
             };
             FLog.d(TAG, "Initialized broadcastOnRecordingPaused receiver");
@@ -2474,9 +2500,7 @@ public class HomeFragment extends BaseFragment {
                     lastAppliedServiceState = serviceState;
                     lastAppliedPreviewOnlyActive = isPreviewOnlyActive;
 
-                    if (callbackStartTime > 0L) {
-                        recordingStartTime = callbackStartTime;
-                    }
+                    applyRecordingTimelineFromIntent(i);
 
                     // *** CALL the handler method ***
                     handleServiceStateUpdate(serviceState);
@@ -2530,6 +2554,29 @@ public class HomeFragment extends BaseFragment {
                 }
             };
         }
+    }
+
+    private void applyRecordingTimelineFromIntent(@Nullable Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        long startTime = intent.getLongExtra(
+            Constants.INTENT_EXTRA_RECORDING_START_TIME,
+            0L
+        );
+        long pauseStartedAt = intent.getLongExtra(
+            Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT,
+            0L
+        );
+        long accumulatedPausedDuration = intent.getLongExtra(
+            Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION,
+            0L
+        );
+        if (startTime > 0L) {
+            recordingStartTime = startTime;
+        }
+        recordingPauseStartedAt = pauseStartedAt;
+        recordingAccumulatedPausedDurationMs = Math.max(0L, accumulatedPausedDuration);
     }
 
     // ── Dual Camera Broadcast Receivers ────────────────────────────────
@@ -5568,6 +5615,9 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void startUpdatingClock() {
+        if (clockUpdatesRunning) {
+            return;
+        }
         updateClockRunnable = new Runnable() {
             @Override
             public void run() {
@@ -5577,6 +5627,7 @@ public class HomeFragment extends BaseFragment {
                 }
             }
         };
+        clockUpdatesRunning = true;
         handlerClock.post(updateClockRunnable);
     }
 
@@ -5584,8 +5635,9 @@ public class HomeFragment extends BaseFragment {
     private void stopUpdatingClock() {
         if (updateClockRunnable != null) {
             handlerClock.removeCallbacks(updateClockRunnable);
-            updateClockRunnable = null;
         }
+        updateClockRunnable = null;
+        clockUpdatesRunning = false;
     }
 
     private void setupClockClickListener() {
@@ -6207,32 +6259,6 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
-     * Generate dynamic labels string for elapsed time (e.g., "d • h • m • s").
-     * Only includes labels for non-zero units to keep display clean.
-     * @param elapsedTimeMs elapsed time in milliseconds
-     * @return labels string aligned with timer display, or empty if all units are zero
-     */
-    protected String generateElapsedTimeLabels(long elapsedTimeMs) {
-        long totalSeconds = elapsedTimeMs / 1000;
-        long days = totalSeconds / (24 * 3600);
-        long hours = (totalSeconds % (24 * 3600)) / 3600;
-        long minutes = (totalSeconds % 3600) / 60;
-        
-        if (totalSeconds == 0) return "";
-        
-        // Build labels for active units only with bullet separator
-        if (days > 0) {
-            return "d • h • m • s";
-        } else if (hours > 0) {
-            return "h • m • s";
-        } else if (minutes > 0) {
-            return "m • s";
-        } else {
-            return "s";
-        }
-    }
-
-    /**
      * Updates storage UI with cached storage information for instant display
      */
     private void updateStorageUiWithCachedInfo(
@@ -6248,28 +6274,13 @@ public class HomeFragment extends BaseFragment {
         long estimatedBytesUsed = 0;
 
         if (isRecording() || isPaused()) {
-            // Always read from SharedPreferences - service is the source of truth
-            android.content.SharedPreferences prefs = sharedPreferencesManager.sharedPreferences;
-            long serviceStartTime = prefs.getLong(
-                Constants.PREF_RECORDING_START_TIME,
-                0
-            );
-            long pauseStartedAt = prefs.getLong(
-                Constants.PREF_RECORDING_PAUSE_STARTED_AT,
-                0
-            );
-            long accumulatedPausedDuration = prefs.getLong(
-                Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION,
-                0
-            );
-            
-            if (serviceStartTime > 0) {
-                long anchorTime = (isPaused() && pauseStartedAt > 0L)
-                    ? pauseStartedAt
+            if (recordingStartTime > 0L) {
+                long anchorTime = (isPaused() && recordingPauseStartedAt > 0L)
+                    ? recordingPauseStartedAt
                     : SystemClock.elapsedRealtime();
                 elapsedTime = Math.max(
                     0,
-                    anchorTime - serviceStartTime - accumulatedPausedDuration
+                    anchorTime - recordingStartTime - recordingAccumulatedPausedDurationMs
                 );
                 // Verbose timer logging removed - called too frequently (every 1s during recording)
             } else {
@@ -6388,8 +6399,11 @@ public class HomeFragment extends BaseFragment {
         // When not recording, all time components remain 0 (showing 00:00)
         // calculation)-----------
 
-        long elapsedMinutes = elapsedTime / 60000;
-        long elapsedSeconds = (elapsedTime / 1000) % 60;
+        long elapsedSecondsTotal = elapsedTime / 1000;
+        long elapsedDays = elapsedSecondsTotal / (24 * 3600);
+        long elapsedHours = (elapsedSecondsTotal % (24 * 3600)) / 3600;
+        long elapsedMinutes = (elapsedSecondsTotal % 3600) / 60;
+        long elapsedSeconds = elapsedSecondsTotal % 60;
 
         // Prepare UI data
         android.util.Size selectedRes =
@@ -6496,12 +6510,7 @@ public class HomeFragment extends BaseFragment {
         } else {
             finalTimeLeftText = selectedEstimate;
         }
-        final String elapsedTimeText = String.format(
-            Locale.getDefault(),
-            "%02d:%02d",
-            elapsedMinutes,
-            elapsedSeconds
-        );
+        final String elapsedTimeText = buildElapsedDisplayText(elapsedTime);
         latestElapsedDisplay = elapsedTimeText;
 
         // Capture final value for lambda (lambda variables must be final or effectively final)
@@ -6612,50 +6621,7 @@ public class HomeFragment extends BaseFragment {
                     applyStorageIndicatorStylePreference();
 
                     if (!suppressDefaultElapsedRowUpdates()) {
-                        // Elapsed row — time increases, animate UP.
-                        if (tvElapsedTitle != null) {
-                            String oldElapsed = tvElapsedTitle.getText() != null ? tvElapsedTitle.getText().toString() : "";
-                            if (!oldElapsed.equals(elapsedTimeText)) {
-                                if (tvElapsedTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                    ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedTitle).animateSlot(elapsedTimeText, 400);
-                                } else {
-                                    tvElapsedTitle.setText(elapsedTimeText);
-                                }
-                            }
-                        }
-                        if (tvElapsedSubtitle != null) {
-                            String newElapsedSub = getString(R.string.recording_elapsed_time);
-                            if (tvElapsedSubtitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                ((com.fadcam.ui.utils.AnimatedTextView) tvElapsedSubtitle).animateSlot(newElapsedSub, 400);
-                            } else {
-                                tvElapsedSubtitle.setText(newElapsedSub);
-                            }
-                        }
-                        
-                        // Update elapsed time labels (d • h • m • s) below timer
-                        if (tvElapsedReadable != null) {
-                            boolean showLabels = sharedPreferencesManager != null 
-                                ? sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible()
-                                : true; // Default to showing labels
-                            
-                            if (showLabels) {
-                                String elapsedTimeLabels = generateElapsedTimeLabels(elapsedTimeMillis);
-                                if (!elapsedTimeLabels.isEmpty()) {
-                                    tvElapsedReadable.setText(elapsedTimeLabels);
-                                    tvElapsedReadable.setVisibility(View.VISIBLE);
-                                } else {
-                                    tvElapsedReadable.setVisibility(View.GONE);
-                                }
-                            } else {
-                                tvElapsedReadable.setVisibility(View.GONE);
-                            }
-                        }
-                        
-                        updateElapsedHeroAppearance();
-                        applyElapsedAlignmentPreference();
-                        applyElapsedSizePreference();
-                        applyElapsedFontPreference();
-                        applyElapsedFlagPreference();
+                        renderElapsedDisplay(elapsedTimeText, true);
                     }
                     if (!suppressDefaultElapsedRowUpdates()) {
                         updateStartStopButtonForFoldedState();
@@ -6776,6 +6742,98 @@ public class HomeFragment extends BaseFragment {
             );
         }
         return remainingTime.toString().trim();
+    }
+
+    protected String buildElapsedDisplayText(long elapsedTimeMs) {
+        if (sharedPreferencesManager != null && isElapsedDigitalDisplayMode()) {
+            return formatElapsedDigitalTime(elapsedTimeMs);
+        }
+
+        long totalSeconds = Math.max(0L, elapsedTimeMs) / 1000L;
+        long days = totalSeconds / (24 * 3600);
+        long hours = (totalSeconds % (24 * 3600)) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        return formatRemainingTime(days, hours, minutes, seconds);
+    }
+
+    private String formatElapsedDigitalTime(long elapsedTimeMs) {
+        long totalSeconds = Math.max(0L, elapsedTimeMs) / 1000L;
+        long totalHours = totalSeconds / 3600L;
+        long minutes = (totalSeconds % 3600L) / 60L;
+        long seconds = totalSeconds % 60L;
+        if (totalHours > 0) {
+            return String.format(Locale.getDefault(), "%02d:%02d:%02d", totalHours, minutes, seconds);
+        }
+        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+    }
+
+    protected boolean isElapsedCompactDisplayMode() {
+        if (sharedPreferencesManager == null) {
+            return true;
+        }
+        String mode = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_HOME_ELAPSED_DISPLAY_MODE,
+                ELAPSED_DISPLAY_COMPACT_INLINE);
+        return !ELAPSED_DISPLAY_DIGITAL.equals(mode);
+    }
+
+    protected boolean isElapsedDigitalDisplayMode() {
+        if (sharedPreferencesManager == null) {
+            return false;
+        }
+        return ELAPSED_DISPLAY_DIGITAL.equals(
+                sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_ELAPSED_DISPLAY_MODE,
+                        ELAPSED_DISPLAY_COMPACT_INLINE));
+    }
+
+    protected boolean isElapsedTimerDisplayText(@Nullable CharSequence text) {
+        if (text == null) {
+            return false;
+        }
+        String value = text.toString().trim();
+        return value.matches("\\d+(?::\\d{2}){1,2}")
+                || value.matches("\\d+[dhms](?:\\s+\\d+[dhms])*$");
+    }
+
+    private boolean shouldAnimateElapsedTransition(String previous, String next) {
+        if (previous.equals(next)) {
+            return false;
+        }
+        if (previous.trim().isEmpty() || next.trim().isEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    protected void renderElapsedDisplay(String elapsedTimeText, boolean allowAnimation) {
+        if (tvElapsedTitle != null) {
+            String oldElapsed = tvElapsedTitle.getText() != null
+                    ? tvElapsedTitle.getText().toString()
+                    : "";
+            boolean animate = allowAnimation && shouldAnimateElapsedTransition(oldElapsed, elapsedTimeText);
+            if (tvElapsedTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                com.fadcam.ui.utils.AnimatedTextView animated =
+                        (com.fadcam.ui.utils.AnimatedTextView) tvElapsedTitle;
+                if (animate) {
+                    animated.animateSlot(elapsedTimeText, 400);
+                } else {
+                    animated.cancelAnimation();
+                    animated.setText(elapsedTimeText);
+                }
+            } else {
+                tvElapsedTitle.setText(elapsedTimeText);
+            }
+        }
+
+        if (tvElapsedSubtitle != null) {
+            tvElapsedSubtitle.setText(getString(R.string.recording_elapsed_time));
+        }
+        if (tvElapsedReadable != null) {
+            tvElapsedReadable.setVisibility(View.GONE);
+            tvElapsedReadable.setText("");
+        }
     }
 
 
@@ -6919,48 +6977,49 @@ public class HomeFragment extends BaseFragment {
     private void startUpdatingInfo() {
         // IMPORTANT: Check if already running to prevent duplicate handlers
         // Similar fix to clock update - prevent calling startUpdatingInfo twice in lifecycle
-        if (updateInfoRunnable != null) {
+        if (infoUpdatesRunning && updateInfoRunnable != null) {
             // Already running - don't create a second handler
             return;
         }
 
-        // Create a new runnable
-        updateInfoRunnable = new Runnable() {
-            private int updateCounter = 0; // Counter for less frequent stats updates
+        if (updateInfoRunnable == null) {
+            updateInfoRunnable = new Runnable() {
+                private int updateCounter = 0; // Counter for less frequent stats updates
 
-            @Override
-            public void run() {
-                boolean isFragmentAdded = isAdded();
-                boolean isRecordingActive = isRecording();
-                boolean isPausedActive = isPaused();
-                boolean shouldUpdate = (isRecordingActive || isPausedActive) && isFragmentAdded;
-                
-                if (shouldUpdate) {
-                    // Always update storage info (lightweight)
-                    // Timer calculation now reads directly from SharedPreferences in updateStorageUiWithCachedInfo
-                    updateStorageInfo();
+                @Override
+                public void run() {
+                    boolean isFragmentAdded = isAdded();
+                    boolean isRecordingActive = isRecording();
+                    boolean isPausedActive = isPaused();
+                    boolean shouldUpdate = (isRecordingActive || isPausedActive) && isFragmentAdded;
+                    
+                    if (shouldUpdate) {
+                        // Always update storage info (lightweight)
+                        // Timer calculation now reads directly from SharedPreferences in updateStorageUiWithCachedInfo
+                        updateStorageInfo();
 
-                    // Update stats every 3 seconds during recording for live feedback
-                    updateCounter++;
-                    if (updateCounter >= 3) {
-                        updateStats();
-                        updateCounter = 0;
+                        // Update stats every 3 seconds during recording for live feedback
+                        updateCounter++;
+                        if (updateCounter >= 3) {
+                            updateStats();
+                            updateCounter = 0;
+                        }
+
+                        handlerClock.postDelayed(this, 1000); // Update storage every second
                     } else {
-                        // Storage-only update tick
+                        FLog.d(
+                            TAG,
+                            "⛔ Update Loop Stopped: isAdded=" + isFragmentAdded + 
+                            ", isRecording=" + isRecordingActive + 
+                            ", isPaused=" + isPausedActive
+                        );
+                        stopUpdatingInfo(); // Clean up if recording state changed
                     }
-
-                    handlerClock.postDelayed(this, 1000); // Update storage every second
-                } else {
-                    FLog.d(
-                        TAG,
-                        "⛔ Update Loop Stopped: isAdded=" + isFragmentAdded + 
-                        ", isRecording=" + isRecordingActive + 
-                        ", isPaused=" + isPausedActive
-                    );
-                    stopUpdatingInfo(); // Clean up if recording state changed
                 }
-            }
-        };
+            };
+        }
+
+        infoUpdatesRunning = true;
 
         // Post immediately to start updates
         handlerClock.post(updateInfoRunnable);
@@ -6969,10 +7028,11 @@ public class HomeFragment extends BaseFragment {
     private void stopUpdatingInfo() {
         if (updateInfoRunnable != null) {
             handlerClock.removeCallbacks(updateInfoRunnable);
-            updateInfoRunnable = null;
             // Only log when we actually stop (not at every opportunity)
             FLog.d(TAG, "stopUpdatingInfo: Stopped real-time storage/stats updates");
         }
+        updateInfoRunnable = null;
+        infoUpdatesRunning = false;
     }
 
     // ────────────────────────────────────────────────────────────────────────────────
@@ -6988,13 +7048,7 @@ public class HomeFragment extends BaseFragment {
             @Override
             public void onStateChanged(@NonNull androidx.lifecycle.LifecycleOwner source, 
                                        @NonNull androidx.lifecycle.Lifecycle.Event event) {
-                if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
-                    FLog.d(TAG, "[LifecycleObserver] Fragment paused - pausing update handlers");
-                    pauseUpdateHandlers();
-                } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                    FLog.d(TAG, "[LifecycleObserver] Fragment resumed - resuming update handlers");
-                    resumeUpdateHandlers();
-                } else if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
                     FLog.d(TAG, "[LifecycleObserver] Fragment destroyed - cleaning up handlers");
                     cleanupUpdateHandlers();
                 }
@@ -7014,12 +7068,14 @@ public class HomeFragment extends BaseFragment {
             handlerClock.removeCallbacks(updateClockRunnable);
             FLog.d(TAG, "pauseUpdateHandlers: Clock handler paused");
         }
+        clockUpdatesRunning = false;
         
         // Stop storage + stats updates
         if (updateInfoRunnable != null) {
             handlerClock.removeCallbacks(updateInfoRunnable);
             FLog.d(TAG, "pauseUpdateHandlers: Info handler (storage + stats) paused");
         }
+        infoUpdatesRunning = false;
         
         // Pause background executor for file scanning
         if (executorService != null && !executorService.isShutdown()) {
@@ -7052,19 +7108,25 @@ public class HomeFragment extends BaseFragment {
         
         // Resume clock updates
         if (isRecording() || isPaused()) {
-            if (updateClockRunnable != null) {
-                handlerClock.post(updateClockRunnable);
+            if (!clockUpdatesRunning) {
+                if (updateClockRunnable == null) {
+                    startUpdatingClock();
+                } else {
+                    clockUpdatesRunning = true;
+                    handlerClock.post(updateClockRunnable);
+                }
                 FLog.d(TAG, "resumeUpdateHandlers: Clock handler resumed");
-            } else {
-                startUpdatingClock();
             }
-            
+
             // Resume storage + stats updates
-            if (updateInfoRunnable != null) {
-                handlerClock.post(updateInfoRunnable);
+            if (!infoUpdatesRunning) {
+                if (updateInfoRunnable == null) {
+                    startUpdatingInfo();
+                } else {
+                    infoUpdatesRunning = true;
+                    handlerClock.post(updateInfoRunnable);
+                }
                 FLog.d(TAG, "resumeUpdateHandlers: Info handler (storage + stats) resumed");
-            } else {
-                startUpdatingInfo();
             }
         } else {
             FLog.d(TAG, "resumeUpdateHandlers: Not recording or paused, handlers remain stopped");
@@ -7090,6 +7152,7 @@ public class HomeFragment extends BaseFragment {
             updateClockRunnable = null;
             FLog.d(TAG, "cleanupUpdateHandlers: Clock handler cleaned");
         }
+        clockUpdatesRunning = false;
         
         // Remove all pending info callbacks
         if (updateInfoRunnable != null) {
@@ -7097,6 +7160,7 @@ public class HomeFragment extends BaseFragment {
             updateInfoRunnable = null;
             FLog.d(TAG, "cleanupUpdateHandlers: Info handler cleaned");
         }
+        infoUpdatesRunning = false;
         
         // Shutdown executor service completely
         if (executorService != null && !executorService.isShutdown()) {
@@ -9598,6 +9662,14 @@ public class HomeFragment extends BaseFragment {
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
         tvElapsedReadable = view.findViewById(R.id.tvElapsedReadable);
+        if (tvElapsedReadable != null) {
+            tvElapsedReadable.setVisibility(View.GONE);
+        }
+        if (sharedPreferencesManager != null) {
+            sharedPreferencesManager.sharedPreferences.edit()
+                    .remove(Constants.PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS)
+                    .apply();
+        }
         cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
         tvElapsedStateIcon = view.findViewById(R.id.tvElapsedStateIcon);
         ivElapsedAccent = view.findViewById(R.id.ivElapsedAccent);
@@ -11329,7 +11401,7 @@ public class HomeFragment extends BaseFragment {
         boolean showTimerOnButton = folded && (isRecording() || isPaused());
         CharSequence currentText = buttonStartStop.getText();
         String currentValue = currentText != null ? currentText.toString() : "";
-        boolean currentShowsTimer = currentValue.matches("\\d{2}:\\d{2}");
+        boolean currentShowsTimer = isElapsedTimerDisplayText(currentText);
 
         if (showTimerOnButton) {
             buttonStartStop.setIcon(AppCompatResources.getDrawable(
@@ -11469,6 +11541,11 @@ public class HomeFragment extends BaseFragment {
 
         ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem(
+                "elapsed_display",
+                getString(R.string.home_elapsed_display_option),
+                getString(R.string.home_elapsed_display_option_desc),
+                null, null, R.drawable.ic_arrow_right, null, null, "timer"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
                 "elapsed_alignment",
                 getString(R.string.home_elapsed_alignment_option),
                 getString(R.string.home_elapsed_alignment_option_desc),
@@ -11491,13 +11568,6 @@ public class HomeFragment extends BaseFragment {
                 sharedPreferencesManager != null && sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, true),
                 "flag"));
         items.add(new com.fadcam.ui.picker.OptionItem(
-                "elapsed_labels",
-                "Timer Labels",
-                "Show time unit labels (d/h/m/s) below timer",
-                null, null, null, true,
-                sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible(),
-                "label"));
-        items.add(new com.fadcam.ui.picker.OptionItem(
                 "elapsed_background",
                 getString(R.string.home_elapsed_background_option),
                 getString(R.string.home_elapsed_background_option_desc),
@@ -11511,7 +11581,9 @@ public class HomeFragment extends BaseFragment {
                     String selected = bundle.getString(
                             com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
                             "");
-                    if ("elapsed_alignment".equals(selected)) {
+                    if ("elapsed_display".equals(selected)) {
+                        showElapsedDisplaySheet();
+                    } else if ("elapsed_alignment".equals(selected)) {
                         showElapsedAlignmentSheet();
                     } else if ("elapsed_size".equals(selected)) {
                         showElapsedSizeSheet();
@@ -11525,22 +11597,11 @@ public class HomeFragment extends BaseFragment {
                             sharedPreferencesManager.sharedPreferences.edit()
                                     .putBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, enabled)
                                     .apply();
+                            sharedPreferencesManager.sharedPreferences.edit()
+                                    .remove(Constants.PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS)
+                                    .apply();
                         }
                         applyElapsedFlagPreference();
-                    } else if ("elapsed_labels".equals(selected)) {
-                        boolean showLabels = bundle.getBoolean(
-                                com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE,
-                                true);
-                        if (sharedPreferencesManager != null) {
-                            sharedPreferencesManager.setScreenRecordingElapsedTimeLabelsVisible(showLabels);
-                            // Trigger immediate UI refresh for both HomeFragment and FadRecHomeFragment
-                            if (this instanceof com.fadcam.fadrec.ui.FadRecHomeFragment) {
-                                ((com.fadcam.fadrec.ui.FadRecHomeFragment) this).refreshTimerDisplay();
-                            } else {
-                                // For HomeFragment (camera recording), update storage info to refresh labels
-                                updateStorageInfo();
-                            }
-                        }
                     } else if ("elapsed_background".equals(selected)) {
                         showElapsedBackgroundSheet();
                     }
@@ -11559,6 +11620,58 @@ public class HomeFragment extends BaseFragment {
             args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
         }
         sheet.show(getParentFragmentManager(), "home_elapsed_customize_sheet");
+    }
+
+    private void showElapsedDisplaySheet() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_DISPLAY_COMPACT_INLINE,
+                getString(R.string.home_elapsed_display_compact),
+                getString(R.string.home_elapsed_display_compact_desc),
+                null, null, null, null, null, "timeline"));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                ELAPSED_DISPLAY_DIGITAL,
+                getString(R.string.home_elapsed_display_digital),
+                getString(R.string.home_elapsed_display_digital_desc),
+                null, null, null, null, null, "schedule"));
+
+        String selectedId = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_HOME_ELAPSED_DISPLAY_MODE,
+                        ELAPSED_DISPLAY_COMPACT_INLINE)
+                : ELAPSED_DISPLAY_COMPACT_INLINE;
+
+        getParentFragmentManager().setFragmentResultListener(
+                ELAPSED_DISPLAY_RESULT_KEY,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
+                            ELAPSED_DISPLAY_COMPACT_INLINE);
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.sharedPreferences.edit()
+                                .putString(Constants.PREF_HOME_ELAPSED_DISPLAY_MODE, selected)
+                                .apply();
+                    }
+                    updateStorageInfo();
+                });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
+                        getString(R.string.home_elapsed_display_option),
+                        items,
+                        selectedId,
+                        ELAPSED_DISPLAY_RESULT_KEY,
+                        getString(R.string.home_elapsed_display_helper),
+                        true);
+        Bundle args = sheet.getArguments();
+        if (args != null) {
+            args.putBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "home_elapsed_display_sheet");
     }
 
     private void showElapsedAlignmentSheet() {
@@ -12101,6 +12214,31 @@ public class HomeFragment extends BaseFragment {
         } else {
             textSizeSp = isLandscapeMode() ? 21f : 23f;
         }
+
+        CharSequence currentText = tvElapsedTitle.getText();
+        String elapsedText = currentText != null ? currentText.toString().trim() : "";
+        if (!elapsedText.isEmpty()) {
+            if (isElapsedDigitalDisplayMode()) {
+                if (elapsedText.length() > 8) {
+                    textSizeSp -= isLandscapeMode() ? 1.5f : 1.25f;
+                }
+                if (elapsedText.length() > 10) {
+                    textSizeSp -= isLandscapeMode() ? 1.5f : 1.25f;
+                }
+            } else {
+                int tokenCount = elapsedText.split("\\s+").length;
+                if (tokenCount >= 2) {
+                    textSizeSp -= isLandscapeMode() ? 1.25f : 1.5f;
+                }
+                if (elapsedText.length() > 10) {
+                    textSizeSp -= isLandscapeMode() ? 1.5f : 2f;
+                }
+                if (elapsedText.length() > 14) {
+                    textSizeSp -= isLandscapeMode() ? 1f : 1.5f;
+                }
+            }
+        }
+        textSizeSp = Math.max(isLandscapeMode() ? 14f : 15f, textSizeSp);
         tvElapsedTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeSp);
     }
 
@@ -12131,6 +12269,7 @@ public class HomeFragment extends BaseFragment {
                 tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
             }
         }
+        tvElapsedTitle.setFontFeatureSettings("tnum");
     }
 
     private void applyElapsedFlagPreference() {

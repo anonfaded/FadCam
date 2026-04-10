@@ -283,6 +283,9 @@
                         android:includeFontPadding="false"
                         android:gravity="center"
                         android:letterSpacing="0.005"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="1"
+                        android:ellipsize="end"
                         android:text="00:00"
                         android:textColor="#D6E2EA"
                         android:textSize="23sp"
@@ -297,7 +300,8 @@
                         android:gravity="center"
                         android:text="m • s"
                         android:textColor="#B0BEC5"
-                        android:textSize="10sp" />
+                        android:textSize="10sp"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 

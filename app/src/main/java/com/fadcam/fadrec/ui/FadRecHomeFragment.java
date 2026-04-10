@@ -1713,51 +1713,8 @@ public class FadRecHomeFragment extends HomeFragment {
         }
     }
 
-    /**
-     * Generate dynamic labels string for elapsed time (e.g., "d • h • m • s").
-     * Only includes labels for non-zero units to keep display clean.
-     * @param elapsedTimeMs elapsed time in milliseconds
-     * @return labels string aligned with timer display, or empty if all units are zero
-     */
-    protected String generateElapsedTimeLabels(long elapsedTimeMs) {
-        long totalSeconds = elapsedTimeMs / 1000;
-        long days = totalSeconds / (24 * 3600);
-        long hours = (totalSeconds % (24 * 3600)) / 3600;
-        long minutes = (totalSeconds % 3600) / 60;
-        
-        if (totalSeconds == 0) return "";
-        
-        // Build labels for active units only with bullet separator (matching camera controls style)
-        if (days > 0) {
-            return "d • h • m • s";
-        } else if (hours > 0) {
-            return "h • m • s";
-        } else if (minutes > 0) {
-            return "m • s";
-        } else {
-            return "s";
-        }
-    }
-
-    /**
-     * Format elapsed time as timer display (MM:SS or HH:MM:SS or DD:HH:MM:SS once it hits 24 hours).
-     * @param elapsedTimeMs elapsed time in milliseconds
-     * @return formatted time string
-     */
     private String formatElapsedTimeDisplay(long elapsedTimeMs) {
-        long totalSeconds = elapsedTimeMs / 1000;
-        long days = totalSeconds / (24 * 3600);
-        long hours = (totalSeconds % (24 * 3600)) / 3600;
-        long minutes = (totalSeconds % 3600) / 60;
-        long seconds = totalSeconds % 60;
-        
-        if (days > 0) {
-            return String.format(java.util.Locale.getDefault(), "%d:%02d:%02d:%02d", days, hours, minutes, seconds);
-        } else if (hours > 0) {
-            return String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds);
-        } else {
-            return String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds);
-        }
+        return buildElapsedDisplayText(elapsedTimeMs);
     }
 
     /**
@@ -1876,10 +1833,7 @@ public class FadRecHomeFragment extends HomeFragment {
             float availableFraction = gbTotal > 0
                 ? (float) Math.max(0, Math.min(1, gbAvailable / gbTotal)) : 0f;
 
-            String elapsedTimeText   = formatElapsedTimeDisplay(elapsedTime);
-            String elapsedTimeLabels = generateElapsedTimeLabels(elapsedTime);
-            boolean showLabels = sharedPreferencesManager == null
-                || sharedPreferencesManager.isScreenRecordingElapsedTimeLabelsVisible();
+            String elapsedTimeText = formatElapsedTimeDisplay(elapsedTime);
 
             // Keep latestElapsedDisplay in sync so the folded-rail start/stop button shows
             // the live elapsed time (base-class field read by updateStartStopButtonForFoldedState).
@@ -1895,16 +1849,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 updateScreenRecordingCardInfo();
 
                 // Elapsed row
-                if (tvElapsedTitle != null)    tvElapsedTitle.setText(elapsedTimeText);
-                if (tvElapsedSubtitle != null) tvElapsedSubtitle.setText(getString(R.string.recording_elapsed_time));
-                if (tvElapsedReadable != null) {
-                    if (showLabels && !elapsedTimeLabels.isEmpty()) {
-                        tvElapsedReadable.setText(elapsedTimeLabels);
-                        tvElapsedReadable.setVisibility(View.VISIBLE);
-                    } else {
-                        tvElapsedReadable.setVisibility(View.GONE);
-                    }
-                }
+                renderElapsedDisplay(elapsedTimeText, false);
 
                 // Remaining / estimate row — tvEstimateTitle is the real layout view
                 // (tvRemainingTitle is never bound to any view and is always null).
@@ -1917,7 +1862,6 @@ public class FadRecHomeFragment extends HomeFragment {
                 if (tvSpaceSubtitle != null) tvSpaceSubtitle.setText(getString(R.string.storage_available_space));
                 if (storageProgressRing != null) storageProgressRing.setProgress(availableFraction);
 
-                refreshElapsedHeroAppearance();
                 updateStartStopButtonForFoldedState();
             });
 
@@ -2369,7 +2313,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 || screenRecordingState == ScreenRecordingState.PAUSED);
         CharSequence currentText = buttonStartStop.getText();
         String currentValue = currentText != null ? currentText.toString() : "";
-        boolean currentShowsTimer = currentValue.matches("\\d{2}:\\d{2}");
+        boolean currentShowsTimer = isElapsedTimerDisplayText(currentText);
 
         if (showTimerOnButton) {
             buttonStartStop.setIcon(AppCompatResources.getDrawable(
@@ -2440,7 +2384,7 @@ public class FadRecHomeFragment extends HomeFragment {
             FLog.d(TAG, "Timer updates stopped");
         }
         
-        // Hide elapsed time labels when recording stops (but preserve the elapsed time value)
+        // Hide the obsolete secondary labels row when recording stops (but preserve the elapsed time value)
         if (tvElapsedReadable != null) {
             tvElapsedReadable.setVisibility(View.GONE);
             tvElapsedReadable.setText("");

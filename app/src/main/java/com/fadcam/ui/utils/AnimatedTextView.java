@@ -47,6 +47,7 @@ public class AnimatedTextView extends AppCompatTextView {
     private float slotPrefixWidth;     // px offset from view-left to column start
     private float slotColumnWidth;     // px width of animated column = max(oldChangedW, newChangedW)
     private float slotNewChangedWidth; // px width of new changed text (marks where suffix starts)
+    private boolean slotHasDifferentialRegions;
 
 
     public AnimatedTextView(Context context) {
@@ -177,6 +178,7 @@ public class AnimatedTextView extends AppCompatTextView {
         // ---- Differential diff: find unchanged prefix and suffix ----------------
         int prefixLen = commonPrefixLength(oldStr, newStr);
         int suffixLen = commonSuffixLength(oldStr, newStr, prefixLen);
+        prefixLen = adjustPrefixForNumericUnit(oldStr, newStr, prefixLen, suffixLen);
 
         String prefix     = newStr.substring(0, prefixLen);
         String oldChanged = oldStr.substring(prefixLen, oldStr.length() - suffixLen);
@@ -219,6 +221,7 @@ public class AnimatedTextView extends AppCompatTextView {
                 .build();
 
         boolean hasDiff = !forceFull && (prefixLen > 0 || suffixLen > 0);
+        slotHasDifferentialRegions = hasDiff;
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
             slotPrefixWidth     = prefixW;
@@ -276,6 +279,53 @@ public class AnimatedTextView extends AppCompatTextView {
         return i;
     }
 
+    /**
+     * Keep units (like "s", "m", "h") static but animate the full numeric chunk before them.
+     * This avoids razor-thin clip seams inside multi-digit values such as "10s" -> "11s".
+     */
+    private static int adjustPrefixForNumericUnit(
+            String oldText,
+            String newText,
+            int prefixLen,
+            int suffixLen
+    ) {
+        if (suffixLen <= 0) {
+            return prefixLen;
+        }
+
+        int newSuffixStart = newText.length() - suffixLen;
+        int oldSuffixStart = oldText.length() - suffixLen;
+        if (newSuffixStart <= 0 || oldSuffixStart <= 0) {
+            return prefixLen;
+        }
+
+        char suffixHead = newText.charAt(newSuffixStart);
+        if (!Character.isLetter(suffixHead)) {
+            return prefixLen;
+        }
+
+        int newNumEnd = newSuffixStart - 1;
+        int oldNumEnd = oldSuffixStart - 1;
+        if (newNumEnd < 0 || oldNumEnd < 0) {
+            return prefixLen;
+        }
+        if (!Character.isDigit(newText.charAt(newNumEnd)) || !Character.isDigit(oldText.charAt(oldNumEnd))) {
+            return prefixLen;
+        }
+
+        int newRunStart = newNumEnd;
+        while (newRunStart > 0 && Character.isDigit(newText.charAt(newRunStart - 1))) {
+            newRunStart--;
+        }
+
+        int oldRunStart = oldNumEnd;
+        while (oldRunStart > 0 && Character.isDigit(oldText.charAt(oldRunStart - 1))) {
+            oldRunStart--;
+        }
+
+        return Math.min(prefixLen, Math.min(newRunStart, oldRunStart));
+    }
+
     // ---- Animation lifecycle ----------------------------------------------------
 
     private void finishSlotAnimation() {
@@ -316,6 +366,7 @@ public class AnimatedTextView extends AppCompatTextView {
         slotOldLayout = null;
         slotNewLayout = null;
         slotPendingFinalText = null;
+        slotHasDifferentialRegions = false;
     }
 
     // ---- Drawing ----------------------------------------------------------------
@@ -367,7 +418,7 @@ public class AnimatedTextView extends AppCompatTextView {
         canvas.clipRect(0, top, getWidth(), bottom);
 
         // 1. Static PREFIX (differential mode only)
-        if (slotPrefixWidth > 0f) {
+        if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
             canvas.save();
             canvas.clipRect(left, top, colLeft, bottom);
             canvas.translate(left, top);
@@ -392,7 +443,7 @@ public class AnimatedTextView extends AppCompatTextView {
         canvas.restore(); // end column clip
 
         // 3. Static SUFFIX (differential mode only)
-        if (slotPrefixWidth > 0f) {
+        if (slotHasDifferentialRegions) {
             canvas.save();
             canvas.clipRect(suffixStart, top, right, bottom);
             canvas.translate(left, top);
@@ -419,4 +470,3 @@ public class AnimatedTextView extends AppCompatTextView {
         setAlpha(1f);
     }
 }
-

@@ -45,6 +45,7 @@ public class AnimatedMaterialButton extends MaterialButton {
 
     private float slotPrefixWidth;
     private float slotColumnWidth;
+    private boolean slotHasDifferentialRegions;
 
     public AnimatedMaterialButton(Context context) {
         super(context);
@@ -180,6 +181,7 @@ public class AnimatedMaterialButton extends MaterialButton {
         if (!forceFull) {
             int prefixLen = commonPrefixLength(oldStr, newStr);
             int suffixLen = commonSuffixLength(oldStr, newStr, prefixLen);
+            prefixLen = adjustPrefixForNumericUnit(oldStr, newStr, prefixLen, suffixLen);
             String prefix = newStr.substring(0, prefixLen);
             float prefixW = prefixLen > 0 ? paint.measureText(prefix) : 0f;
             String oldChanged = oldStr.substring(prefixLen, oldStr.length() - suffixLen);
@@ -188,9 +190,11 @@ public class AnimatedMaterialButton extends MaterialButton {
             float newChangedW = newChanged.isEmpty() ? 0f : paint.measureText(newChanged);
             slotPrefixWidth = prefixW;
             slotColumnWidth = Math.max(oldChangedW, newChangedW);
+            slotHasDifferentialRegions = prefixLen > 0 || suffixLen > 0;
         } else {
             slotPrefixWidth = 0f;
             slotColumnWidth = layoutW;
+            slotHasDifferentialRegions = false;
         }
 
         slotPendingFinalText = newText;
@@ -262,6 +266,7 @@ public class AnimatedMaterialButton extends MaterialButton {
         slotOldLayout = null;
         slotNewLayout = null;
         slotPendingFinalText = null;
+        slotHasDifferentialRegions = false;
     }
 
     @Override
@@ -307,7 +312,7 @@ public class AnimatedMaterialButton extends MaterialButton {
         canvas.clipRect(0, top, viewW, bottom);
 
         // Static prefix (differential mode only)
-        if (slotPrefixWidth > 0f) {
+        if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
             canvas.save();
             canvas.clipRect(left, top, colLeft, bottom);
             canvas.translate(left, top);
@@ -332,7 +337,7 @@ public class AnimatedMaterialButton extends MaterialButton {
         canvas.restore(); // end column clip
 
         // Static suffix (differential mode only)
-        if (slotPrefixWidth > 0f) {
+        if (slotHasDifferentialRegions) {
             int suffixL = (int) colRight;
             int suffixR = viewW - getCompoundPaddingRight();
             if (suffixL < suffixR) {
@@ -371,5 +376,48 @@ public class AnimatedMaterialButton extends MaterialButton {
             i++;
         }
         return i;
+    }
+
+    private static int adjustPrefixForNumericUnit(
+            String oldText,
+            String newText,
+            int prefixLen,
+            int suffixLen
+    ) {
+        if (suffixLen <= 0) {
+            return prefixLen;
+        }
+
+        int newSuffixStart = newText.length() - suffixLen;
+        int oldSuffixStart = oldText.length() - suffixLen;
+        if (newSuffixStart <= 0 || oldSuffixStart <= 0) {
+            return prefixLen;
+        }
+
+        char suffixHead = newText.charAt(newSuffixStart);
+        if (!Character.isLetter(suffixHead)) {
+            return prefixLen;
+        }
+
+        int newNumEnd = newSuffixStart - 1;
+        int oldNumEnd = oldSuffixStart - 1;
+        if (newNumEnd < 0 || oldNumEnd < 0) {
+            return prefixLen;
+        }
+        if (!Character.isDigit(newText.charAt(newNumEnd)) || !Character.isDigit(oldText.charAt(oldNumEnd))) {
+            return prefixLen;
+        }
+
+        int newRunStart = newNumEnd;
+        while (newRunStart > 0 && Character.isDigit(newText.charAt(newRunStart - 1))) {
+            newRunStart--;
+        }
+
+        int oldRunStart = oldNumEnd;
+        while (oldRunStart > 0 && Character.isDigit(oldText.charAt(oldRunStart - 1))) {
+            oldRunStart--;
+        }
+
+        return Math.min(prefixLen, Math.min(newRunStart, oldRunStart));
     }
 }

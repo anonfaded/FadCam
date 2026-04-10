@@ -1118,6 +1118,7 @@ public class RecordingService extends Service {
             if (recordingState == RecordingState.NONE) {
                 // Update the UI and Service state atomically
                 recordingState = RecordingState.STARTING;
+                clearRecordingTimelineState();
                 sharedPreferencesManager.setRecordingInProgress(true);
                 CameraType selectedType = sharedPreferencesManager.getCameraSelection();
                 recordingSessionCameraSource = selectedType == CameraType.FRONT
