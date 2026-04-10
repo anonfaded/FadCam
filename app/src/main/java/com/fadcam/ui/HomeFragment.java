@@ -246,6 +246,7 @@ public class HomeFragment extends BaseFragment {
     protected TextView tvElapsedTitle;
     protected TextView tvElapsedSubtitle;
     protected TextView tvElapsedReadable;
+    private com.fadcam.ui.utils.ElapsedCompactAnimatedView viewElapsedCompact;
     protected TextView tvRemainingTitle;
     protected TextView tvRemainingSubtitle;
     private MaterialCardView cardElapsedHero;
@@ -6578,7 +6579,14 @@ public class HomeFragment extends BaseFragment {
                             String oldEstimate = tvEstimateTitle.getText() != null ? tvEstimateTitle.getText().toString() : "";
                             if (!oldEstimate.equals(finalTimeLeftText)) {
                                 if (tvEstimateTitle instanceof com.fadcam.ui.utils.AnimatedTextView) {
-                                    ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotDown(finalTimeLeftText, 400);
+                                    // Check if the format (units) changed (e.g., "59m 59s" -> "1h 0m 0s")
+                                    // If format changed, use full animation; otherwise use differential
+                                    boolean formatChanged = hasTimeUnitFormatChanged(oldEstimate, finalTimeLeftText);
+                                    if (formatChanged) {
+                                        ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotFullDown(finalTimeLeftText, 400);
+                                    } else {
+                                        ((com.fadcam.ui.utils.AnimatedTextView) tvEstimateTitle).animateSlotDown(finalTimeLeftText, 400);
+                                    }
                                 } else {
                                     tvEstimateTitle.setText(finalTimeLeftText);
                                 }
@@ -6758,6 +6766,29 @@ public class HomeFragment extends BaseFragment {
         return formatRemainingTime(days, hours, minutes, seconds);
     }
 
+    /**
+     * Detects if the time format (unit set) has changed between two time strings.
+     * Examples: "59m 59s" -> "1h 0m 0s" has format change (units went from m,s to h,m,s).
+     * "30m 15s" -> "25m 10s" does NOT have format change (units stay m,s).
+     */
+    private boolean hasTimeUnitFormatChanged(String oldText, String newText) {
+        java.util.regex.Pattern unitPattern = java.util.regex.Pattern.compile("[dhms]");
+        java.util.regex.Matcher oldMatcher = unitPattern.matcher(oldText);
+        java.util.regex.Matcher newMatcher = unitPattern.matcher(newText);
+        
+        StringBuilder oldUnits = new StringBuilder();
+        while (oldMatcher.find()) {
+            oldUnits.append(oldMatcher.group());
+        }
+        
+        StringBuilder newUnits = new StringBuilder();
+        while (newMatcher.find()) {
+            newUnits.append(newMatcher.group());
+        }
+        
+        return !oldUnits.toString().equals(newUnits.toString());
+    }
+
     private String formatElapsedDigitalTime(long elapsedTimeMs) {
         long totalSeconds = Math.max(0L, elapsedTimeMs) / 1000L;
         long totalHours = totalSeconds / 3600L;
@@ -6809,7 +6840,15 @@ public class HomeFragment extends BaseFragment {
     }
 
     protected void renderElapsedDisplay(String elapsedTimeText, boolean allowAnimation) {
-        if (tvElapsedTitle != null) {
+        syncElapsedDisplayModeViews();
+
+        if (!isElapsedDigitalDisplayMode() && viewElapsedCompact != null) {
+            String oldElapsed = viewElapsedCompact.getDisplayText() != null
+                    ? viewElapsedCompact.getDisplayText().toString()
+                    : "";
+            boolean animate = allowAnimation && shouldAnimateElapsedTransition(oldElapsed, elapsedTimeText);
+            viewElapsedCompact.setElapsedText(elapsedTimeText, animate);
+        } else if (tvElapsedTitle != null) {
             String oldElapsed = tvElapsedTitle.getText() != null
                     ? tvElapsedTitle.getText().toString()
                     : "";
@@ -6818,6 +6857,7 @@ public class HomeFragment extends BaseFragment {
                 com.fadcam.ui.utils.AnimatedTextView animated =
                         (com.fadcam.ui.utils.AnimatedTextView) tvElapsedTitle;
                 if (animate) {
+                    // Use differential animation so only the changed digit animates
                     animated.animateSlot(elapsedTimeText, 400);
                 } else {
                     animated.cancelAnimation();
@@ -6834,6 +6874,16 @@ public class HomeFragment extends BaseFragment {
         if (tvElapsedReadable != null) {
             tvElapsedReadable.setVisibility(View.GONE);
             tvElapsedReadable.setText("");
+        }
+    }
+
+    private void syncElapsedDisplayModeViews() {
+        boolean digitalMode = isElapsedDigitalDisplayMode();
+        if (tvElapsedTitle != null) {
+            tvElapsedTitle.setVisibility(digitalMode ? View.VISIBLE : View.GONE);
+        }
+        if (viewElapsedCompact != null) {
+            viewElapsedCompact.setVisibility(digitalMode ? View.GONE : View.VISIBLE);
         }
     }
 
@@ -9707,6 +9757,7 @@ public class HomeFragment extends BaseFragment {
         storageProgressRing = view.findViewById(R.id.storageProgressRing);
         // ...existing code...
         tvElapsedTitle = view.findViewById(R.id.tvElapsedTitle);
+        viewElapsedCompact = view.findViewById(R.id.viewElapsedCompact);
         tvElapsedSubtitle = view.findViewById(R.id.tvElapsedSubtitle);
         tvElapsedReadable = view.findViewById(R.id.tvElapsedReadable);
         if (tvElapsedReadable != null) {
@@ -9802,6 +9853,7 @@ public class HomeFragment extends BaseFragment {
         tvVideoSize = view.findViewById(R.id.tvVideoSize);
         tvSpaceTotal = view.findViewById(R.id.tvSpaceTotal);
         setupHomeCustomizationListeners();
+        syncElapsedDisplayModeViews();
         applyElapsedAlignmentPreference();
         applyElapsedSizePreference();
         applyElapsedFontPreference();
@@ -11718,8 +11770,11 @@ public class HomeFragment extends BaseFragment {
                                 .putString(Constants.PREF_HOME_ELAPSED_DISPLAY_MODE, selected)
                                 .apply();
                     }
+                    syncElapsedDisplayModeViews();
+                    applyElapsedAlignmentPreference();
                     applyElapsedFontPreference();
                     applyElapsedSizePreference();
+                    renderElapsedDisplay(latestElapsedDisplay, false);
                     updateStorageInfo();
                 });
 
@@ -12257,13 +12312,23 @@ public class HomeFragment extends BaseFragment {
             tvElapsedTitle.setTextAlignment(startAligned ? View.TEXT_ALIGNMENT_VIEW_START : View.TEXT_ALIGNMENT_CENTER);
         }
 
+        if (viewElapsedCompact != null) {
+            viewElapsedCompact.setContentGravity(startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL);
+            ViewGroup.LayoutParams params = viewElapsedCompact.getLayoutParams();
+            if (params instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) params).gravity = startAligned ? Gravity.START : Gravity.CENTER_HORIZONTAL;
+                viewElapsedCompact.setLayoutParams(params);
+            }
+            viewElapsedCompact.setTextAlignment(startAligned ? View.TEXT_ALIGNMENT_VIEW_START : View.TEXT_ALIGNMENT_CENTER);
+        }
+
         if (tvElapsedSubtitle != null) {
             tvElapsedSubtitle.setTextAlignment(startAligned ? View.TEXT_ALIGNMENT_VIEW_START : View.TEXT_ALIGNMENT_CENTER);
         }
     }
 
     private void applyElapsedSizePreference() {
-        if (sharedPreferencesManager == null || tvElapsedTitle == null) {
+        if (sharedPreferencesManager == null || (tvElapsedTitle == null && viewElapsedCompact == null)) {
             return;
         }
 
@@ -12279,7 +12344,9 @@ public class HomeFragment extends BaseFragment {
             textSizeSp = isLandscapeMode() ? 21f : 23f;
         }
 
-        CharSequence currentText = tvElapsedTitle.getText();
+        CharSequence currentText = isElapsedDigitalDisplayMode()
+            ? (tvElapsedTitle != null ? tvElapsedTitle.getText() : null)
+            : (viewElapsedCompact != null ? viewElapsedCompact.getDisplayText() : null);
         String elapsedText = currentText != null ? currentText.toString().trim() : "";
         if (!elapsedText.isEmpty()) {
             if (isElapsedDigitalDisplayMode()) {
@@ -12303,45 +12370,55 @@ public class HomeFragment extends BaseFragment {
             }
         }
         textSizeSp = Math.max(isLandscapeMode() ? 14f : 15f, textSizeSp);
-        tvElapsedTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+        if (tvElapsedTitle != null) {
+            tvElapsedTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+        }
+        if (viewElapsedCompact != null) {
+            viewElapsedCompact.setSegmentTextSizeSp(textSizeSp);
+        }
     }
 
     private void applyElapsedFontPreference() {
-        if (sharedPreferencesManager == null || tvElapsedTitle == null) {
+        if (sharedPreferencesManager == null || (tvElapsedTitle == null && viewElapsedCompact == null)) {
             return;
         }
         if (isElapsedDigitalDisplayMode()) {
             // Keep digital timer spacing rigid to avoid colon-adjacent jitter.
-            tvElapsedTitle.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
-            tvElapsedTitle.setLetterSpacing(0f);
-            tvElapsedTitle.setFontFeatureSettings("tnum");
+            if (tvElapsedTitle != null) {
+                tvElapsedTitle.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+                tvElapsedTitle.setLetterSpacing(0f);
+                tvElapsedTitle.setFontFeatureSettings("tnum");
+            }
             return;
         }
         String fontPref = sharedPreferencesManager.sharedPreferences.getString(
                 Constants.PREF_HOME_ELAPSED_FONT,
                 ELAPSED_FONT_UBUNTU);
+        android.graphics.Typeface elapsedTypeface = null;
         if (ELAPSED_FONT_MONOSPACE.equals(fontPref)) {
-            tvElapsedTitle.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+            elapsedTypeface = android.graphics.Typeface.MONOSPACE;
         } else if (ELAPSED_FONT_DOTO.equals(fontPref)) {
             try {
-                android.graphics.Typeface doto = android.graphics.Typeface.createFromAsset(
+                elapsedTypeface = android.graphics.Typeface.createFromAsset(
                         requireContext().getAssets(),
                         "doto.ttf");
-                tvElapsedTitle.setTypeface(doto, android.graphics.Typeface.BOLD);
             } catch (Exception e) {
                 android.graphics.Typeface ubuntu = ResourcesCompat.getFont(requireContext(), R.font.ubuntu_regular);
-                if (ubuntu != null) {
-                    tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
-                }
+                elapsedTypeface = ubuntu;
             }
         } else {
-            android.graphics.Typeface ubuntu = ResourcesCompat.getFont(requireContext(), R.font.ubuntu_regular);
-            if (ubuntu != null) {
-                tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
-            }
+            elapsedTypeface = ResourcesCompat.getFont(requireContext(), R.font.ubuntu_regular);
         }
-        tvElapsedTitle.setLetterSpacing(0.005f);
-        tvElapsedTitle.setFontFeatureSettings("tnum");
+        if (tvElapsedTitle != null) {
+            tvElapsedTitle.setTypeface(elapsedTypeface, android.graphics.Typeface.BOLD);
+            tvElapsedTitle.setLetterSpacing(0.005f);
+            tvElapsedTitle.setFontFeatureSettings("tnum");
+        }
+        if (viewElapsedCompact != null) {
+            viewElapsedCompact.setSegmentTypeface(elapsedTypeface, android.graphics.Typeface.BOLD);
+            viewElapsedCompact.setSegmentLetterSpacing(0.005f);
+            viewElapsedCompact.setSegmentFontFeatureSettings("tnum");
+        }
     }
 
     private void applyElapsedFlagPreference() {
@@ -12461,6 +12538,9 @@ public class HomeFragment extends BaseFragment {
 
         if (tvElapsedTitle != null) {
             tvElapsedTitle.setTextColor(titleColor);
+        }
+        if (viewElapsedCompact != null) {
+            viewElapsedCompact.setSegmentTextColor(titleColor);
         }
         if (tvElapsedSubtitle != null) {
             tvElapsedSubtitle.setTextColor(subtitleColor);

@@ -10,7 +10,6 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.animation.DecelerateInterpolator;
 import androidx.appcompat.widget.AppCompatTextView;
-import com.fadcam.FLog;
 
 /**
  * A TextView that animates text changes with an intelligent slot-machine effect.
@@ -43,6 +42,7 @@ public class AnimatedTextView extends AppCompatTextView {
     private CharSequence slotPendingFinalText;
     private ValueAnimator slotAnimator;
     private long lastUpdateTime = 0;
+    private boolean suppressLayoutRequest = false;  // Suppress requestLayout during animation completion
 
     // Differential animation: column bounds (full-string layouts used for all regions)
     private float slotPrefixWidth;     // px offset from view-left to column start
@@ -228,18 +228,9 @@ public class AnimatedTextView extends AppCompatTextView {
                 .build();
 
         slotHasDifferentialRegions = hasDiff;
-        // Use the new text's width for slotDrawBaseX so the final animation frame is positioned
-        // exactly where super.onDraw() will center the new text — preventing a visible
-        // horizontal snap/oscillation at animation end for CENTER-gravity views.
-        float newStrWidth = newStr.isEmpty() ? 0f : paint.measureText(newStr);
-        float offset = hasDiff ? computeHorizontalOffset(usableW, newStrWidth) : 0f;
-        slotDrawBaseX = getCompoundPaddingLeft() + offset;
-        
-        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
-        FLog.d(TAG, "animateSlotInternal: '" + oldStr + "' -> '" + newStr +
-                "' gravity=" + gravity + " newStrW=" + newStrWidth + " offset=" + offset + 
-                " padding=" + getCompoundPaddingLeft() + " drawBaseX=" + slotDrawBaseX + 
-                " usableW=" + usableW + " hasDiff=" + hasDiff);
+        slotDrawBaseX = getCompoundPaddingLeft() + (hasDiff
+                ? computeHorizontalOffset(usableW, newStr.isEmpty() ? 0f : paint.measureText(newStr))
+                : 0f);
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
             slotPrefixWidth     = prefixW;
@@ -363,9 +354,6 @@ public class AnimatedTextView extends AppCompatTextView {
         // We must NOT call requestLayout here — the new text was already painted by
         // the last animated frame at progress=1, so there is zero visual change.
         if (slotPendingFinalText != null) {
-            // setText triggers requestLayout; suppress the frame cost by calling
-            // setTextKeepState via super directly is not possible, so we use the
-            // standard path but hide it inside the animation-complete flag reset.
             isSlotAnimating = false;
             CharSequence pending = slotPendingFinalText;
             slotPendingFinalText = null;
@@ -373,7 +361,10 @@ public class AnimatedTextView extends AppCompatTextView {
             slotNewLayout = null;
             slotAnimator = null;
             slotProgress = 1f;
+            // Suppress layout request during setText to prevent parent remeasure/reposition
+            suppressLayoutRequest = true;
             setText(pending);
+            suppressLayoutRequest = false;
             // setText already schedules a redraw; no extra invalidate needed.
         } else {
             isSlotAnimating = false;
@@ -383,6 +374,15 @@ public class AnimatedTextView extends AppCompatTextView {
             slotAnimator = null;
             invalidate();
         }
+    }
+
+    @Override
+    public void requestLayout() {
+        if (suppressLayoutRequest) {
+            // Suppress layout pass during animation completion to prevent oscillation
+            return;
+        }
+        super.requestLayout();
     }
 
     private void cancelSlotAnimation() {
@@ -492,19 +492,12 @@ public class AnimatedTextView extends AppCompatTextView {
 
     private float computeHorizontalOffset(int availableWidth, float textWidth) {
         int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
-        FLog.d(TAG, "computeHorizontalOffset: gravity=" + gravity + " CENTER_HORIZ=" + Gravity.CENTER_HORIZONTAL +
-                " CENTER=" + Gravity.CENTER + " END=" + Gravity.END + " availW=" + availableWidth + " textW=" + textWidth);
         if (gravity == Gravity.CENTER_HORIZONTAL) {
-            float result = Math.max(0f, (availableWidth - textWidth) / 2f);
-            FLog.d(TAG, "  -> CENTER_HORIZONTAL result=" + result);
-            return result;
+            return Math.max(0f, (availableWidth - textWidth) / 2f);
         }
         if (gravity == Gravity.END) {
-            float result = Math.max(0f, availableWidth - textWidth);
-            FLog.d(TAG, "  -> END result=" + result);
-            return result;
+            return Math.max(0f, availableWidth - textWidth);
         }
-        FLog.d(TAG, "  -> START/OTHER result=0");
         return 0f;
     }
 

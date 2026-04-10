@@ -301,6 +301,14 @@
                         android:textSize="23sp"
                         android:textStyle="bold" />
 
+                    <com.fadcam.ui.utils.ElapsedCompactAnimatedView
+                        android:id="@+id/viewElapsedCompact"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="0dp"
+                        android:gravity="center"
+                        android:visibility="gone" />
+
                     <TextView
                         android:id="@+id/tvElapsedReadable"
                         android:layout_width="wrap_content"
