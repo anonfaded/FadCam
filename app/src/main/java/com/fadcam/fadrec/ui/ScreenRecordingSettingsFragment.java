@@ -59,6 +59,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
     private TextView valueBitrate;
     private TextView valueOrientation;
     private TextView valueAudioSource;
+    private TextView valueSplitting;
 
     @Nullable
     @Override
@@ -76,6 +77,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
         valueBitrate = view.findViewById(R.id.value_bitrate);
         valueOrientation = view.findViewById(R.id.value_orientation);
         valueAudioSource = view.findViewById(R.id.value_audio_source);
+        valueSplitting = view.findViewById(R.id.value_splitting);
 
         ImageView backBtn = view.findViewById(R.id.back_button);
         if (backBtn != null) {
@@ -102,6 +104,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
         root.findViewById(R.id.row_bitrate).setOnClickListener(v -> showBitrateModePicker());
         root.findViewById(R.id.row_orientation).setOnClickListener(v -> showOrientationPicker());
         root.findViewById(R.id.row_audio_source).setOnClickListener(v -> showAudioSourcePicker());
+        root.findViewById(R.id.row_video_splitting).setOnClickListener(v -> showVideoSplittingPicker());
     }
 
     private void refreshValues() {
@@ -138,6 +141,23 @@ public class ScreenRecordingSettingsFragment extends Fragment {
                 valueAudioSource.setText(getString(R.string.fadrec_audio_source_internal));
             } else {
                 valueAudioSource.setText(getString(R.string.fadrec_audio_source_mic));
+            }
+        }
+
+        // Video splitting — uses shared prefs (same as FadCam)
+        if (valueSplitting != null) {
+            boolean enabled = prefs.isVideoSplittingEnabled();
+            int mb = prefs.getVideoSplitSizeMb();
+            if (!enabled) {
+                valueSplitting.setText("Disabled");
+            } else {
+                String sizeLabel;
+                if (mb == 500) sizeLabel = "500 MB";
+                else if (mb == 1024) sizeLabel = "1 GB";
+                else if (mb == 2048) sizeLabel = "2 GB";
+                else if (mb == 4096) sizeLabel = "4 GB";
+                else sizeLabel = "Custom (" + mb + " MB)";
+                valueSplitting.setText(sizeLabel + " (FadCam + FadRec)");
             }
         }
     }
@@ -330,6 +350,107 @@ public class ScreenRecordingSettingsFragment extends Fragment {
                 getString(R.string.fadrec_audio_source_title), items, current, resultKey,
                 getString(R.string.fadrec_audio_source_choose));
         sheet.show(getParentFragmentManager(), "screen_audio_source_picker");
+    }
+
+    // ── Video Splitting (reuses exact same logic & prefs as FadCam) ──
+
+    private void showVideoSplittingPicker() {
+        if (!isAdded() || getActivity() == null) return;
+
+        boolean enabled = prefs.isVideoSplittingEnabled();
+        int mb = prefs.getVideoSplitSizeMb();
+        String sizeLabel;
+        if (mb == 500) sizeLabel = "500 MB";
+        else if (mb == 1024) sizeLabel = "1 GB";
+        else if (mb == 2048) sizeLabel = "2 GB";
+        else if (mb == 4096) sizeLabel = "4 GB";
+        else sizeLabel = "Custom (" + mb + " MB)";
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem("size", "Change Split Size (Current: " + sizeLabel + ")"));
+
+        final String resultKey = "picker_result_screen_split";
+        getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
+            String sel = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel == null) return;
+
+            if ("size".equals(sel)) {
+                showVideoSplitSizePicker();
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceWithSwitchDependencies(
+                "Video Splitting", items, null, resultKey,
+                getString(R.string.video_splitting_description),
+                "Video Splitting",
+                enabled, new java.util.ArrayList<String>(java.util.Arrays.asList("size")));
+        sheet.show(getParentFragmentManager(), "screen_video_splitting_picker");
+    }
+
+    private void showVideoSplitSizePicker() {
+        if (!isAdded() || getActivity() == null) return;
+        if (!prefs.isVideoSplittingEnabled()) return;
+
+        final int[] presetMb = {500, 1024, 2048, 4096, -1};
+        ArrayList<OptionItem> items = new ArrayList<>();
+        for (int mb : presetMb) {
+            if (mb == -1) {
+                items.add(new OptionItem("custom", "Custom..."));
+            } else {
+                items.add(new OptionItem(String.valueOf(mb),
+                        (mb == 1024 ? "1 GB" : mb == 2048 ? "2 GB" : mb == 4096 ? "4 GB" : mb + " MB")));
+            }
+        }
+
+        int current = prefs.getVideoSplitSizeMb();
+        String currentId = null;
+        for (int mb : presetMb) {
+            if (mb == current) {
+                currentId = String.valueOf(mb);
+                break;
+            }
+        }
+
+        final String resultKey = "picker_result_screen_split_size";
+        getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
+            String sel = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel == null) return;
+            if ("custom".equals(sel)) {
+                showCustomSplitSizeInput();
+            } else {
+                try {
+                    int mbVal = Integer.parseInt(sel);
+                    prefs.setVideoSplitSizeMb(mbVal);
+                    refreshValues();
+                } catch (Exception ignored) {}
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+                getString(R.string.video_splitting_title), items, currentId, resultKey,
+                getString(R.string.video_splitting_description));
+        sheet.show(getParentFragmentManager(), "screen_split_size_picker");
+    }
+
+    private void showCustomSplitSizeInput() {
+        if (!isAdded() || getActivity() == null) return;
+
+        int current = prefs.getVideoSplitSizeMb();
+        if (current == 500 || current == 1024 || current == 2048 || current == 4096) current = 2048;
+
+        final String resultKey = "picker_result_screen_split_custom";
+        getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
+            if (bundle.containsKey(NumberInputBottomSheetFragment.RESULT_NUMBER)) {
+                int mb = bundle.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER);
+                prefs.setVideoSplitSizeMb(mb);
+                refreshValues();
+            }
+        });
+
+        NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
+                "Custom Split Size (MB)", 10, 102400, current, "10 - 102400", 0, 0,
+                null, null, resultKey);
+        sheet.show(getParentFragmentManager(), "screen_split_custom_input");
     }
 
     // ── Hardware query helpers ──

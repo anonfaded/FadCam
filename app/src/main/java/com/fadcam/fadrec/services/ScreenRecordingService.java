@@ -73,6 +73,10 @@ public class ScreenRecordingService extends Service {
     // SAF storage support (for custom storage location)
     private android.os.ParcelFileDescriptor safRecordingPfd;
     private android.net.Uri safRecordingUri; // Track SAF URI for notification/broadcasting
+
+    // Segment rollover PFD management (deferred close for SAF auto-splitting)
+    private android.os.ParcelFileDescriptor previousSegmentPfd;
+    private android.os.ParcelFileDescriptor currentSegmentPfd;
     
     // State management
     private ScreenRecordingState recordingState = ScreenRecordingState.NONE;
@@ -545,7 +549,7 @@ public class ScreenRecordingService extends Service {
                 .setAudioSource(audioSource)
                 .setMediaProjection(mediaProjection)
                 .setWatermarkInfoProvider(createWatermarkInfoProvider());
-            
+
             // Use FileDescriptor for SAF mode, file path for internal storage
             if (safRecordingPfd != null) {
                 FLog.d(TAG, "Using SAF FileDescriptor for output");
@@ -554,7 +558,98 @@ public class ScreenRecordingService extends Service {
                 FLog.d(TAG, "Using internal storage file path for output");
                 pipelineBuilder.setOutputFile(outputFile.getAbsolutePath());
             }
-            
+
+            // Auto-splitting: works for both internal storage and SAF
+            try {
+                boolean splitEnabled = sharedPreferencesManager.sharedPreferences.getBoolean(
+                        SharedPreferencesManager.PREF_VIDEO_SPLITTING_ENABLED, false);
+                if (splitEnabled) {
+                    int splitSizeMb = sharedPreferencesManager.sharedPreferences.getInt(
+                            SharedPreferencesManager.PREF_VIDEO_SPLIT_SIZE_MB, 2048);
+                    long maxBytes = splitSizeMb * 1024L * 1024L;
+                    String storageMode = sharedPreferencesManager.getStorageMode();
+                    final boolean isSaf = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode);
+
+                    if (isSaf) {
+                        FLog.d(TAG, "Auto-splitting enabled (SAF mode): " + splitSizeMb + " MB per segment");
+                    } else {
+                        FLog.d(TAG, "Auto-splitting enabled (internal): " + splitSizeMb + " MB per segment, base: "
+                                + outputFile.getAbsolutePath());
+                    }
+
+                    pipelineBuilder.setMaxFileSize(maxBytes, new ScreenRecordingPipeline.SegmentCallback() {
+                        @Override
+                        public void onSegmentRollover(int nextSegmentNumber) {
+                            if (isSaf) {
+                                // SAF: create new DocumentFile entry for the segment
+                                try {
+                                    String customUriString = sharedPreferencesManager.getCustomStorageUri();
+                                    androidx.documentfile.provider.DocumentFile pickedDir =
+                                            RecordingStoragePaths.getSafCategoryDir(
+                                                    ScreenRecordingService.this,
+                                                    customUriString,
+                                                    RecordingStoragePaths.Category.SCREEN,
+                                                    true);
+
+                                    if (pickedDir == null) {
+                                        FLog.e(TAG, "SAF directory null during segment rollover");
+                                        return;
+                                    }
+
+                                    String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss",
+                                            java.util.Locale.US).format(new java.util.Date());
+                                    String segmentSuffix = "_part" + nextSegmentNumber;
+                                    String baseFilename = Constants.RECORDING_FILE_PREFIX_FADREC + timestamp
+                                            + segmentSuffix + "." + Constants.RECORDING_FILE_EXTENSION;
+
+                                    androidx.documentfile.provider.DocumentFile videoFile =
+                                            pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION,
+                                                    baseFilename);
+
+                                    if (videoFile == null) {
+                                        FLog.e(TAG, "Failed to create SAF segment file: " + baseFilename);
+                                        return;
+                                    }
+
+                                    android.net.Uri safUri = videoFile.getUri();
+                                    android.os.ParcelFileDescriptor pfd =
+                                            getContentResolver().openFileDescriptor(safUri, "w");
+
+                                    if (pfd == null) {
+                                        FLog.e(TAG, "Failed to open PFD for SAF segment: " + safUri);
+                                        return;
+                                    }
+
+                                    // Defer closing previous PFD until next rollover
+                                    if (previousSegmentPfd != null) {
+                                        try {
+                                            previousSegmentPfd.close();
+                                        } catch (Exception ignore) {
+                                        }
+                                    }
+                                    previousSegmentPfd = currentSegmentPfd;
+                                    currentSegmentPfd = pfd;
+
+                                    recordingPipeline.setNextOutputPath(null, pfd.getFileDescriptor());
+                                    FLog.d(TAG, "SAF segment " + nextSegmentNumber + " created: " + safUri);
+                                } catch (Exception e) {
+                                    FLog.e(TAG, "Error creating SAF segment " + nextSegmentNumber, e);
+                                }
+                            } else {
+                                // Internal storage: just set the file path
+                                String basePath = outputFile.getAbsolutePath();
+                                String segmentPath = basePath.substring(0, basePath.lastIndexOf(".mp4"))
+                                        + "_part" + nextSegmentNumber + ".mp4";
+                                recordingPipeline.setNextOutputPath(segmentPath, null);
+                                FLog.d(TAG, "Internal segment " + nextSegmentNumber + ": " + segmentPath);
+                            }
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to configure auto-splitting, continuing without it", e);
+            }
+
             recordingPipeline = pipelineBuilder.build();
             recordingPipeline.setAudioMuted(initialMuted);
             recordingPipeline.setPreviewSurface(
@@ -755,6 +850,16 @@ public class ScreenRecordingService extends Service {
                 FLog.e(TAG, "Error closing SAF ParcelFileDescriptor", e);
             }
             safRecordingPfd = null;
+        }
+
+        // Close any pending segment rollover PFDs
+        if (previousSegmentPfd != null) {
+            try { previousSegmentPfd.close(); } catch (Exception ignore) {}
+            previousSegmentPfd = null;
+        }
+        if (currentSegmentPfd != null) {
+            try { currentSegmentPfd.close(); } catch (Exception ignore) {}
+            currentSegmentPfd = null;
         }
     }
 

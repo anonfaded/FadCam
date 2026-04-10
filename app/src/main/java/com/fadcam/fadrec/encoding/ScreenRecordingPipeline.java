@@ -40,9 +40,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * Architecture: MediaProjection → VirtualDisplay → GLWatermarkRenderer
  *               → MediaCodec encoder (watermarked recording) + preview TextureView
+ *
+ * Supports auto-splitting via SegmentCallback — when maxFileSizeBytes is set, the pipeline
+ * will roll over to a new output file when the size limit is reached, recreating the muxer
+ * and re-adding cached tracks without stopping the encoders.
  */
 public class ScreenRecordingPipeline {
-    
+
+    /** Callback for segment rollover — provides the next output file/descriptor. */
+    public interface SegmentCallback {
+        void onSegmentRollover(int nextSegmentNumber);
+    }
+
     private static final String TAG = "ScreenRecPipeline";
     private static final String VIDEO_MIME_TYPE = "video/avc";
     private static final int VIDEO_IFRAME_INTERVAL = 1;
@@ -69,7 +78,28 @@ public class ScreenRecordingPipeline {
     private final String audioSource;
     private final String outputFilePath;
     private final FileDescriptor outputFd;
-    
+
+    // Auto-splitting (segment rollover) fields
+    private long maxFileSizeBytes = Long.MAX_VALUE;
+    private int segmentNumber = 1;
+    private SegmentCallback segmentCallback;
+    private long segmentBytesWritten = 0L;
+    private long lastVideoSegmentBytes = 0L;
+    private long lastAudioSegmentBytes = 0L;
+    private static final double ROLLOVER_PREEMPT_THRESHOLD_RATIO = 0.95;
+    private boolean pendingRollover = false;
+    private boolean awaitingKeyframeForRollover = false;
+    private boolean rolloverInProgress = false;
+    private volatile boolean rolloverRequestedByDrain = false;
+
+    // Cached formats for muxer recreation during segment rollover
+    private MediaFormat cachedVideoFormat;
+    private MediaFormat cachedAudioFormat;
+
+    // Current output path/descriptor (mutable for rollover)
+    private String currentOutputFilePath;
+    private FileDescriptor currentOutputFd;
+
     // MediaProjection components
     private MediaProjection mediaProjection;
     private VirtualDisplay virtualDisplay;
@@ -173,7 +203,9 @@ public class ScreenRecordingPipeline {
         private String outputFilePath;
         private FileDescriptor outputFd;
         private MediaProjection mediaProjection;
-        
+        private long maxFileSizeBytes = Long.MAX_VALUE;
+        private SegmentCallback segmentCallback;
+
         public Builder(Context context) {
             this.context = context.getApplicationContext();
         }
@@ -224,6 +256,17 @@ public class ScreenRecordingPipeline {
             this.mediaProjection = projection;
             return this;
         }
+
+        /**
+         * Enable auto-splitting when file size reaches this limit.
+         * @param maxBytes Maximum bytes per segment. Set to 0 or negative to disable.
+         * @param callback Called to provide the next output file when rollover is needed.
+         */
+        public Builder setMaxFileSize(long maxBytes, SegmentCallback callback) {
+            this.maxFileSizeBytes = maxBytes;
+            this.segmentCallback = callback;
+            return this;
+        }
         
         public ScreenRecordingPipeline build() throws IOException {
             if (screenWidth <= 0 || screenHeight <= 0) {
@@ -265,6 +308,10 @@ public class ScreenRecordingPipeline {
         this.outputFilePath = builder.outputFilePath;
         this.outputFd = builder.outputFd;
         this.mediaProjection = builder.mediaProjection;
+        this.maxFileSizeBytes = builder.maxFileSizeBytes;
+        this.segmentCallback = builder.segmentCallback;
+        this.currentOutputFilePath = builder.outputFilePath;
+        this.currentOutputFd = builder.outputFd;
         
         initialize();
     }
@@ -342,10 +389,10 @@ public class ScreenRecordingPipeline {
      * Initialize FragmentedMp4Muxer for crash-safe recording
      */
     private void initializeMuxer() throws IOException {
-        if (outputFd != null) {
-            mediaMuxer = new FragmentedMp4MuxerWrapper(outputFd);
+        if (currentOutputFd != null) {
+            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
         } else {
-            mediaMuxer = new FragmentedMp4MuxerWrapper(outputFilePath);
+            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
         }
         // FLog.d(TAG, "FragmentedMp4Muxer created");
     }
@@ -773,40 +820,51 @@ public class ScreenRecordingPipeline {
         if (endOfStream) {
             videoEncoder.signalEndOfInputStream();
         }
-        
+
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-        
+
         while (true) {
             int outputBufferIndex = videoEncoder.dequeueOutputBuffer(bufferInfo, 0);
-            
+
             if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 // Muxer setup
                 MediaFormat newFormat = videoEncoder.getOutputFormat();
+                cachedVideoFormat = newFormat; // Cache for rollover
                 videoTrackIndex = mediaMuxer.addTrack(newFormat);
                 // FLog.d(TAG, "Video track added: " + videoTrackIndex);
-                
+
                 tryStartMuxer();
-                
+
             } else if (outputBufferIndex >= 0) {
                 ByteBuffer outputBuffer = videoEncoder.getOutputBuffer(outputBufferIndex);
-                
+
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
                     bufferInfo.size = 0;
                 }
-                
+
                 if (bufferInfo.size > 0 && muxerStarted && !isPaused) {
                     // Normalize timestamp
                     long presentationTimeUs = getSynchronizedVideoTimestamp(bufferInfo.presentationTimeUs);
                     bufferInfo.presentationTimeUs = presentationTimeUs;
-                    
+
                     outputBuffer.position(bufferInfo.offset);
                     outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                    
+
                     mediaMuxer.writeSampleData(videoTrackIndex, outputBuffer, bufferInfo);
+
+                    // Track segment bytes for auto-splitting
+                    segmentBytesWritten += bufferInfo.size;
+                    lastVideoSegmentBytes += bufferInfo.size;
+
+                    // Check if we need to split the segment due to size
+                    if (shouldSplitSegment()) {
+                        FLog.d(TAG, "Size limit reached, rolling over segment");
+                        rolloverSegment();
+                    }
                 }
-                
+
                 videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
-                
+
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     break;
                 }
@@ -910,9 +968,10 @@ public class ScreenRecordingPipeline {
             
             if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 MediaFormat newFormat = audioEncoder.getOutputFormat();
+                cachedAudioFormat = newFormat; // Cache for rollover
                 audioTrackIndex = mediaMuxer.addTrack(newFormat);
                 // FLog.d(TAG, "Audio track added: " + audioTrackIndex);
-                
+
                 tryStartMuxer();
                 
             } else if (outputBufferIndex >= 0) {
@@ -928,8 +987,11 @@ public class ScreenRecordingPipeline {
                     
                     outputBuffer.position(bufferInfo.offset);
                     outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                    
+
                     mediaMuxer.writeSampleData(audioTrackIndex, outputBuffer, bufferInfo);
+
+                    segmentBytesWritten += bufferInfo.size;
+                    lastAudioSegmentBytes += bufferInfo.size;
                 }
                 
                 audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
@@ -944,16 +1006,141 @@ public class ScreenRecordingPipeline {
     }
     
     /**
+     * Sets the next output file or FileDescriptor for segment rollover.
+     * Call this from the segment callback to update the output destination before
+     * the new muxer is created.
+     */
+    public void setNextOutputPath(String filePath, FileDescriptor fd) {
+        this.currentOutputFilePath = filePath;
+        this.currentOutputFd = fd;
+    }
+
+    /**
      * Try to start muxer when all tracks are ready
      */
     private void tryStartMuxer() {
         boolean videoReady = videoTrackIndex >= 0;
         boolean audioReady = !enableAudio || audioTrackIndex >= 0;
-        
+
         if (!muxerStarted && videoReady && audioReady) {
             mediaMuxer.start();
             muxerStarted = true;
             // FLog.d(TAG, "Muxer started");
+        }
+    }
+
+    // ── Segment rollover (auto-splitting) ──
+
+    private boolean shouldSplitSegment() {
+        if (maxFileSizeBytes <= 0) return false;
+        if (pendingRollover || awaitingKeyframeForRollover || rolloverInProgress || rolloverRequestedByDrain) return false;
+        return segmentBytesWritten >= maxFileSizeBytes;
+    }
+
+    /**
+     * Rolls over to a new output file segment. Stops the current muxer, requests
+     * the next file from the callback, creates a new muxer, re-adds cached tracks,
+     * and starts writing to the new file. Encoders keep running without interruption.
+     */
+    private void rolloverSegment() {
+        try {
+            FLog.i(TAG, "Auto-splitting: segment size limit reached, rolling over to next segment");
+            FLog.d(TAG, "Current segment number: " + segmentNumber + ", rolling over to " + (segmentNumber + 1));
+            if (rolloverInProgress) {
+                FLog.w(TAG, "Rollover already in progress; skipping");
+                return;
+            }
+            rolloverInProgress = true;
+
+            // Request the next segment file/descriptor from callback
+            segmentNumber++;
+            if (segmentCallback != null) {
+                segmentCallback.onSegmentRollover(segmentNumber);
+            } else {
+                FLog.e(TAG, "Segment callback is null, cannot continue rollover");
+                rolloverInProgress = false;
+                return;
+            }
+
+            // Check if callback set the new output
+            if (currentOutputFilePath == null && currentOutputFd == null) {
+                FLog.e(TAG, "Segment callback did not set new output path or descriptor");
+                rolloverInProgress = false;
+                return;
+            }
+
+            // Validate output path exists and is writable
+            if (currentOutputFilePath != null) {
+                try {
+                    java.io.File segFile = new java.io.File(currentOutputFilePath);
+                    java.io.File parentDir = segFile.getParentFile();
+                    if (parentDir != null && !parentDir.exists()) {
+                        if (!parentDir.mkdirs()) {
+                            FLog.e(TAG, "Failed to create segment directory: " + parentDir.getAbsolutePath());
+                            rolloverInProgress = false;
+                            return;
+                        }
+                    }
+                } catch (Exception e) {
+                    FLog.e(TAG, "Invalid segment path: " + currentOutputFilePath, e);
+                    rolloverInProgress = false;
+                    return;
+                }
+            }
+
+            // Stop and release the current muxer
+            if (mediaMuxer != null) {
+                try {
+                    if (muxerStarted) {
+                        mediaMuxer.stop();
+                    }
+                    mediaMuxer.release();
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error releasing muxer during rollover", e);
+                }
+                mediaMuxer = null;
+                muxerStarted = false;
+            }
+
+            // Reset track indices
+            audioTrackIndex = -1;
+            videoTrackIndex = -1;
+
+            // Reset byte counters for new segment
+            segmentBytesWritten = 0L;
+            lastVideoSegmentBytes = 0L;
+            lastAudioSegmentBytes = 0L;
+
+            // Create new muxer for the next segment
+            initializeMuxer();
+
+            // Re-add cached tracks because encoder will NOT emit format changed again
+            if (cachedVideoFormat != null) {
+                videoTrackIndex = mediaMuxer.addTrack(cachedVideoFormat);
+                FLog.d(TAG, "Added cached video track to new muxer. index=" + videoTrackIndex);
+            } else {
+                FLog.w(TAG, "Video format not cached; new segment will wait for format change");
+            }
+
+            if (enableAudio && cachedAudioFormat != null) {
+                try {
+                    audioTrackIndex = mediaMuxer.addTrack(cachedAudioFormat);
+                    FLog.d(TAG, "Added cached audio track to new muxer. index=" + audioTrackIndex);
+                } catch (Exception e) {
+                    FLog.e(TAG, "Failed adding cached audio track to new muxer", e);
+                }
+            }
+
+            // Start muxer if conditions met
+            tryStartMuxer();
+
+            FLog.i(TAG, "Started new segment: " + segmentNumber +
+                    (currentOutputFilePath != null ? " at path: " + currentOutputFilePath
+                            : " with file descriptor"));
+            rolloverInProgress = false;
+        } catch (Exception e) {
+            FLog.e(TAG, "Error during segment rollover — stopping recording", e);
+            rolloverInProgress = false;
         }
     }
     

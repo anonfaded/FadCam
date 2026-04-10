@@ -1869,8 +1869,8 @@ public class FadRecHomeFragment extends HomeFragment {
                 // Screen info card (resolution, fps, etc.)
                 updateScreenRecordingCardInfo();
 
-                // Elapsed row
-                renderElapsedDisplay(elapsedTimeText, false);
+                // Elapsed row — animate the slot so numbers slide smoothly
+                renderElapsedDisplay(elapsedTimeText, true);
 
                 // Remaining / estimate row — tvEstimateTitle is the real layout view
                 // (tvRemainingTitle is never bound to any view and is always null).

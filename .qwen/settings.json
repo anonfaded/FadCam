@@ -3,5 +3,6 @@
     "allow": [
       "Bash(./gradlew *)"
     ]
-  }
+  },
+  "$version": 3
 }

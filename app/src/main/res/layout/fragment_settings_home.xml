@@ -28,14 +28,41 @@
             android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/white"/>
-        <!-- Mode selector dropdown -->
-        <Spinner
-            android:id="@+id/settings_mode_spinner"
+        <!-- Mode selector button -->
+        <LinearLayout
+            android:id="@+id/mode_selector_btn"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:spinnerMode="dropdown"
-            android:backgroundTint="@android:color/white"/>
+            android:layout_height="28dp"
+            android:layout_marginStart="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/mode_selector_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            <ImageView
+                android:id="@+id/mode_selector_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/play_button_rounded"
+                android:tint="#A0A0A0"
+                android:layout_marginEnd="6dp"/>
+            <TextView
+                android:id="@+id/mode_selector_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp"
+                android:textStyle="bold"/>
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="#A0A0A0"/>
+        </LinearLayout>
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView

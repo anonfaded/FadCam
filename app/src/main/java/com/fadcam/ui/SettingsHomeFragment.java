@@ -1,514 +1,403 @@
 package com.fadcam.ui;
 
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.content.Intent;
-import android.widget.Spinner;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 
 import com.fadcam.R;
-import com.fadcam.ui.utils.NewFeatureManager;
-import android.widget.TextView;
 
 /**
  * SettingsHomeFragment
  * Lightweight entry point replacing the monolithic SettingsFragment.
- * Shows grouped navigation rows with a mode selector dropdown to filter
- * settings between FadCam, FadRec (Screen Recording), or All.
+ * Shows grouped navigation rows with a mode selector popup to filter
+ * settings between FadCam, FadRec (Screen Recording), FadMic, or All.
  */
 public class SettingsHomeFragment extends Fragment {
 
-    // Mode filter enum
     public enum SettingsMode { ALL, FADCAM, FADREC }
 
     private SettingsMode currentMode = SettingsMode.ALL;
-    private Spinner modeSpinner;
+
+    // View references for mode-specific groups
+    private View dividerAfterVideo;
+    private View dividerAfterAudio;
+    private View dividerAfterWatermark;
+
     private View groupVideoQuick;
     private View groupAudioQuick;
-    private View groupWatermark;
-    private View groupScreenRecording;
+    private View groupWatermarkFrame;   // the FrameLayout wrapping watermark row + badge
     private View groupWatermarkBadge;
+    private View groupScreenRecording;
+    private View dividerBeforeScreenRec;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
 
-        // Setup mode selector dropdown
         setupModeSelector(root);
-
-        // Cache references to mode-specific groups for filtering
-        groupVideoQuick = root.findViewById(R.id.group_video_quick);
-        groupAudioQuick = root.findViewById(R.id.group_audio_quick);
-        groupWatermark = root.findViewById(R.id.group_watermark_quick);
-        groupScreenRecording = root.findViewById(R.id.group_screen_recording);
-
-        View badge = root.findViewById(R.id.watermark_new_badge);
-        if (badge != null) {
-            groupWatermarkBadge = badge.getParent() instanceof View ? (View) badge.getParent() : null;
-        }
-        // If watermark row is wrapped in FrameLayout, hide/show the FrameLayout
-        if (groupWatermark instanceof LinearLayout) {
-            View parent = (View) groupWatermark.getParent();
-            if (parent instanceof android.widget.FrameLayout) {
-                groupWatermarkBadge = parent;
-            }
-        }
-
-        // Define row IDs and wire click handlers
         setupRowHandlers(root);
+        cacheGroupReferences(root);
 
         // Apply initial filter
-        applyModeFilter(SettingsMode.ALL);
+        applyModeFilter(SettingsMode.ALL, root);
+        refreshAppInlineValues(root);
+        manageBadgeVisibility(root);
 
         return root;
     }
 
-    /** Setup the FadCam / FadRec / All mode dropdown in the header. */
+    /** Setup the mode selector button that opens a custom popup. */
     private void setupModeSelector(View root) {
-        modeSpinner = root.findViewById(R.id.settings_mode_spinner);
-        if (modeSpinner == null) return;
+        View modeBtn = root.findViewById(R.id.mode_selector_btn);
+        if (modeBtn == null) return;
 
-        String[] modes = {"All", "FadCam", "FadRec"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_spinner_dropdown_item,
-                modes);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        modeSpinner.setAdapter(adapter);
-
-        modeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                switch (position) {
-                    case 0: currentMode = SettingsMode.ALL; break;
-                    case 1: currentMode = SettingsMode.FADCAM; break;
-                    case 2: currentMode = SettingsMode.FADREC; break;
-                }
-                applyModeFilter(currentMode);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        modeBtn.setOnClickListener(v -> showModePopup(v));
     }
 
-    /** Filter visibility of settings groups based on selected mode. */
-    private void applyModeFilter(SettingsMode mode) {
-        boolean showFadCam = (mode == SettingsMode.ALL || mode == SettingsMode.FADCAM);
-        boolean showFadRec = (mode == SettingsMode.ALL || mode == SettingsMode.FADREC);
+    /** Show the custom mode selector popup anchored below the header button. */
+    private void showModePopup(View anchor) {
+        View popupView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.mode_selector_popup, null);
 
-        if (groupVideoQuick != null) {
-            groupVideoQuick.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+        PopupWindow popup = new PopupWindow(
+                popupView,
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.WRAP_CONTENT,
+                true
+        );
+        popup.setBackgroundDrawable(new ColorDrawable(0x00000000));
+        popup.setOutsideTouchable(true);
+        popup.setElevation(12f);
+
+        // Set check states
+        updatePopupChecks(popupView, currentMode);
+
+        // Click handlers
+        popupView.findViewById(R.id.mode_all).setOnClickListener(v -> {
+            currentMode = SettingsMode.ALL;
+            updatePopupChecks(popupView, currentMode);
+            animatePopupDismiss(popup, popupView);
+            updateModeSelectorUI();
+            applyModeFilter(currentMode);
+        });
+        popupView.findViewById(R.id.mode_fadcam).setOnClickListener(v -> {
+            currentMode = SettingsMode.FADCAM;
+            updatePopupChecks(popupView, currentMode);
+            animatePopupDismiss(popup, popupView);
+            updateModeSelectorUI();
+            applyModeFilter(currentMode);
+        });
+        popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
+            currentMode = SettingsMode.FADREC;
+            updatePopupChecks(popupView, currentMode);
+            animatePopupDismiss(popup, popupView);
+            updateModeSelectorUI();
+            applyModeFilter(currentMode);
+        });
+
+        // Position popup below the anchor button
+        int[] anchorPos = new int[2];
+        anchor.getLocationOnScreen(anchorPos);
+        int x = anchorPos[0] + anchor.getWidth() / 2 - 100; // center the 200dp popup
+        int y = anchorPos[1] + anchor.getHeight() + 4;
+
+        popup.showAtLocation(anchor, android.view.Gravity.TOP | android.view.Gravity.START, x, y);
+
+        // Animate popup entrance
+        animatePopupEnter(popupView);
+    }
+
+    /** Animate the popup entrance with scale + fade */
+    private void animatePopupEnter(View popupView) {
+        popupView.setAlpha(0f);
+        popupView.setScaleX(0.9f);
+        popupView.setScaleY(0.9f);
+        popupView.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(180)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+    }
+
+    /** Animate the popup dismissal with scale + fade */
+    private void animatePopupDismiss(PopupWindow popup, View popupView) {
+        popupView.animate()
+                .alpha(0f)
+                .scaleX(0.95f)
+                .scaleY(0.95f)
+                .setDuration(120)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(() -> popup.dismiss())
+                .start();
+    }
+
+    private void updatePopupChecks(View popupView, SettingsMode mode) {
+        TextView checkAll = popupView.findViewById(R.id.check_all);
+        TextView checkFadCam = popupView.findViewById(R.id.check_fadcam);
+        TextView checkFadRec = popupView.findViewById(R.id.check_fadrec);
+
+        if (checkAll != null)
+            checkAll.setText(mode == SettingsMode.ALL ? "check_circle" : "radio_button_unchecked");
+        if (checkFadCam != null)
+            checkFadCam.setText(mode == SettingsMode.FADCAM ? "check_circle" : "radio_button_unchecked");
+        if (checkFadRec != null)
+            checkFadRec.setText(mode == SettingsMode.FADREC ? "check_circle" : "radio_button_unchecked");
+
+        int green = 0xFF4CAF50;
+        int grey = 0xFF666666;
+        if (checkAll != null) checkAll.setTextColor(mode == SettingsMode.ALL ? green : grey);
+        if (checkFadCam != null) checkFadCam.setTextColor(mode == SettingsMode.FADCAM ? green : grey);
+        if (checkFadRec != null) checkFadRec.setTextColor(mode == SettingsMode.FADREC ? green : grey);
+    }
+
+    /** Update the header button text/icon to reflect current mode. */
+    private void updateModeSelectorUI() {
+        View root = getView();
+        if (root == null) return;
+
+        TextView modeText = root.findViewById(R.id.mode_selector_text);
+        ImageView modeIcon = root.findViewById(R.id.mode_selector_icon);
+
+        if (modeText != null) {
+            switch (currentMode) {
+                case ALL: modeText.setText("All"); break;
+                case FADCAM: modeText.setText("FadCam"); break;
+                case FADREC: modeText.setText("FadRec"); break;
+            }
         }
-        if (groupAudioQuick != null) {
-            groupAudioQuick.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+        if (modeIcon != null) {
+            switch (currentMode) {
+                case ALL: modeIcon.setImageResource(R.drawable.play_button_rounded); break;
+                case FADCAM: modeIcon.setImageResource(R.drawable.ic_vid_cam); break;
+                case FADREC: modeIcon.setImageResource(R.drawable.screen_recorder); break;
+            }
         }
-        if (groupWatermark != null) {
-            groupWatermark.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+    }
+
+    /** Filter visibility of settings groups based on selected mode, with smooth animations. */
+    void applyModeFilter(SettingsMode mode) {
+        applyModeFilter(mode, getView());
+    }
+
+    /** Filter with explicit root view — use this from onCreateView. */
+    private void applyModeFilter(SettingsMode mode, View rootView) {
+        if (rootView == null) return;
+
+        boolean showVideo = (mode == SettingsMode.ALL || mode == SettingsMode.FADCAM);
+        boolean showAudio = (mode == SettingsMode.ALL || mode == SettingsMode.FADCAM);
+        boolean showWatermark = (mode == SettingsMode.ALL || mode == SettingsMode.FADCAM);
+        boolean showScreenRec = (mode == SettingsMode.ALL || mode == SettingsMode.FADREC);
+
+        // Collect all animatable views with their target visibility
+        java.util.List<ViewAnim> viewAnims = new java.util.ArrayList<>();
+        addViewAnim(viewAnims, groupVideoQuick, showVideo);
+        addViewAnim(viewAnims, dividerAfterVideo, showVideo);
+        addViewAnim(viewAnims, groupAudioQuick, showAudio);
+        addViewAnim(viewAnims, dividerAfterAudio, showAudio);
+        addViewAnim(viewAnims, groupWatermarkFrame, showWatermark);
+        addViewAnim(viewAnims, groupWatermarkBadge, showWatermark);
+        addViewAnim(viewAnims, dividerAfterWatermark, showWatermark);
+        addViewAnim(viewAnims, groupScreenRecording, showScreenRec);
+        addViewAnim(viewAnims, dividerBeforeScreenRec, showScreenRec);
+
+        // Animate items together: hide all first, then show all
+        // This creates a unified transition instead of cascading row-by-row
+        final java.util.List<View> toHide = new java.util.ArrayList<>();
+        final java.util.List<View> toShow = new java.util.ArrayList<>();
+
+        for (ViewAnim va : viewAnims) {
+            if (va.view == null) continue;
+            if (va.targetVisible && va.view.getVisibility() == View.VISIBLE) continue;
+            if (!va.targetVisible && va.view.getVisibility() == View.GONE) continue;
+
+            if (va.targetVisible) {
+                toShow.add(va.view);
+            } else {
+                toHide.add(va.view);
+            }
         }
-        if (groupWatermarkBadge != null) {
-            groupWatermarkBadge.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+
+        // Hide views first — all together with same duration
+        for (View v : toHide) {
+            v.animate()
+                    .alpha(0f)
+                    .setDuration(140)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                    .withEndAction(() -> v.setVisibility(View.GONE))
+                    .start();
         }
-        if (groupScreenRecording != null) {
-            groupScreenRecording.setVisibility(showFadRec ? View.VISIBLE : View.GONE);
+
+        // Show views after hide animations complete — all fade in together
+        int showDelay = 100;
+        for (View v : toShow) {
+            v.setVisibility(View.VISIBLE);
+            v.setAlpha(0f);
+            v.animate()
+                    .alpha(1f)
+                    .setStartDelay(showDelay)
+                    .setDuration(180)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+        }
+
+        // Remove trailing dividers after animations complete
+        int totalDuration = showDelay + 220;
+        rootView.postDelayed(this::fixTrailingDividers, totalDuration);
+    }
+
+    private static class ViewAnim {
+        final View view;
+        final boolean targetVisible;
+        ViewAnim(View view, boolean targetVisible) {
+            this.view = view;
+            this.targetVisible = targetVisible;
+        }
+    }
+
+    private void addViewAnim(java.util.List<ViewAnim> list, View v, boolean visible) {
+        if (v != null) list.add(new ViewAnim(v, visible));
+    }
+
+    /** Hide any divider that is immediately followed by GONE rows or is the last visible item. */
+    private void fixTrailingDividers() {
+        fixTrailingDividerInGroup(dividerAfterVideo, groupAudioQuick);
+        fixTrailingDividerInGroup(dividerAfterAudio, groupWatermarkFrame);
+        fixTrailingDividerInGroup(dividerAfterWatermark, groupScreenRecording);
+        fixTrailingDividerInGroup(dividerBeforeScreenRec, groupScreenRecording);
+    }
+
+    private void fixTrailingDividerInGroup(View divider, View nextRow) {
+        if (divider == null || divider.getVisibility() != View.VISIBLE) return;
+        // Hide divider if next row is also GONE
+        if (nextRow != null && nextRow.getVisibility() == View.GONE) {
+            divider.setVisibility(View.GONE);
+        }
+    }
+
+    /** Cache references to groups and their dividers for filtering. */
+    private void cacheGroupReferences(View root) {
+        groupVideoQuick = root.findViewById(R.id.group_video_quick);
+        groupAudioQuick = root.findViewById(R.id.group_audio_quick);
+
+        // Watermark is wrapped in FrameLayout — find the parent FrameLayout
+        View watermarkRow = root.findViewById(R.id.group_watermark_quick);
+        if (watermarkRow != null && watermarkRow.getParent() instanceof ViewGroup) {
+            groupWatermarkFrame = (View) watermarkRow.getParent();
+        }
+        groupWatermarkBadge = root.findViewById(R.id.watermark_new_badge);
+
+        groupScreenRecording = root.findViewById(R.id.group_screen_recording);
+
+        // Find dividers by position: they are View elements between rows inside the card
+        LinearLayout card = root.findViewById(R.id.group_card_quick_access);
+        if (card != null) {
+            int childCount = card.getChildCount();
+            for (int i = 0; i < childCount - 1; i++) {
+                View child = card.getChildAt(i);
+                if (child instanceof View && !(child instanceof LinearLayout) && child.getId() == View.NO_ID) {
+                    // This is a divider — identify which one by what comes before/after
+                    View prev = i > 0 ? card.getChildAt(i - 1) : null;
+                    View next = i + 1 < childCount ? card.getChildAt(i + 1) : null;
+
+                    if (prev instanceof FrameLayout) {
+                        // Divider after watermark FrameLayout
+                        if (dividerAfterWatermark == null) dividerAfterWatermark = child;
+                    } else if (next != null && next.getId() == R.id.group_screen_recording) {
+                        dividerBeforeScreenRec = child;
+                    } else if (prev instanceof LinearLayout && prev.getId() == R.id.group_video_quick) {
+                        dividerAfterVideo = child;
+                    } else if (prev instanceof LinearLayout && prev.getId() == R.id.group_audio_quick) {
+                        dividerAfterAudio = child;
+                    }
+                }
+            }
         }
     }
 
     /** Wire click handlers for all settings rows. */
     private void setupRowHandlers(View root) {
-    // Removed redundant Location & Privacy group (location embedding moved into Video settings)
-    int[] ids = new int[]{
-        R.id.group_appearance,
-        R.id.group_video_quick,
-        R.id.group_video_player_settings,
-        R.id.group_audio_quick,
-        R.id.group_screen_recording,
-        R.id.group_storage,
-        R.id.group_notifications,
-        R.id.group_security,
-        R.id.group_motion_lab,
-        R.id.group_digital_forensics,
-        R.id.group_widgets,
-        R.id.group_about,
-        R.id.group_review,
-        R.id.group_watermark_quick,
-        R.id.group_readme
-    };
-    String[] labels = new String[]{
-        "Appearance",
-        "Video Recording",
-        "Video Player Settings",
-        "Audio",
-        "Screen Recording",
-        "Storage",
-        "Notifications",
-        "Security",
-        "Motion Lab",
-        "Digital Forensics",
-        "Widgets",
-        "App",
-        "Review",
-        "Watermark",
-        "README"
-    };
-        for (int i = 0; i < ids.length; i++) {
-            if(ids[i] == R.id.group_appearance){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new AppearanceSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_video_quick){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new VideoSettingsFragment()));
-                }
-        } else if(ids[i] == R.id.group_video_player_settings){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-            // Open dedicated screen; inside that screen rows still open bottom pickers
-            row.setOnClickListener(v -> openSubFragment(new VideoPlayerSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_audio_quick){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new AudioSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_screen_recording){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_storage){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new StorageSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_security){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new SecuritySettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_motion_lab){
-                LinearLayout row = root.findViewById(ids[i]);
-                if (row != null) {
-                    row.setOnClickListener(v -> openSubFragment(new MotionLabSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_digital_forensics){
-                LinearLayout row = root.findViewById(ids[i]);
-                if (row != null) {
-                    row.setOnClickListener(v -> openSubFragment(new DigitalForensicsSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_widgets){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new ShortcutsSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_notifications){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new NotificationSettingsFragment()));
-                }
-            } else if(ids[i] == R.id.group_watermark_quick){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> {
-                        // Mark watermark badge as seen when clicking the row
-                        NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark");
-                        // Hide the badge immediately for instant feedback
-                        manageBadgeVisibility(root);
-                        // Open watermark settings
-                        openSubFragment(new WatermarkSettingsFragment());
-                    });
-                }
-            } else if(ids[i] == R.id.group_about){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row != null){
-                    row.setOnClickListener(v -> openSubFragment(new AboutFragment()));
-                }
-            } else if(ids[i] == R.id.group_review){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row!=null){
-                    row.setOnClickListener(v -> launchReview());
-                }
-            } else if(ids[i] == R.id.group_readme){
-                LinearLayout row = root.findViewById(ids[i]);
-                if(row!=null){
-                    row.setOnClickListener(v -> openReadmeDialog());
-                }
-            } else {
-                setupNav(root, ids[i], labels[i]);
-            }
-        }
-    wireAppInlineRows(root);
-    refreshAppInlineValues(root);
-    
-    // Show/hide watermark NEW badge based on whether user has seen it
-    manageBadgeVisibility(root);
+        bindRow(root, R.id.group_appearance, () -> openSubFragment(new AppearanceSettingsFragment()));
+        bindRow(root, R.id.group_video_quick, () -> openSubFragment(new VideoSettingsFragment()));
+        bindRow(root, R.id.group_video_player_settings, () -> openSubFragment(new VideoPlayerSettingsFragment()));
+        bindRow(root, R.id.group_audio_quick, () -> openSubFragment(new AudioSettingsFragment()));
+        bindRow(root, R.id.group_screen_recording, () -> openSubFragment(new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment()));
+        bindRow(root, R.id.group_storage, () -> openSubFragment(new StorageSettingsFragment()));
+        bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
+        bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));
+        bindRow(root, R.id.group_digital_forensics, () -> openSubFragment(new DigitalForensicsSettingsFragment()));
+        bindRow(root, R.id.group_widgets, () -> openSubFragment(new ShortcutsSettingsFragment()));
+        bindRow(root, R.id.group_notifications, () -> openSubFragment(new NotificationSettingsFragment()));
+        bindRow(root, R.id.group_watermark_quick, () -> openSubFragment(new WatermarkSettingsFragment()));
+        bindRow(root, R.id.group_about, () -> openSubFragment(new AboutFragment()));
+        bindRow(root, R.id.group_review, () -> launchReview());
+        bindRow(root, R.id.group_readme, () -> openReadmeDialog());
     }
 
-    /**
-     * Show or hide the watermark NEW badge based on whether the feature has been seen.
-     */
+    private void bindRow(View root, int id, Runnable action) {
+        View v = root.findViewById(id);
+        if (v != null) v.setOnClickListener(x -> action.run());
+    }
+
+    private void openSubFragment(Fragment fragment) {
+        OverlayNavUtil.show(requireActivity(), fragment, fragment.getClass().getSimpleName());
+    }
+
+    /** Launch Play Store review intent. */
+    private void launchReview() {
+        try {
+            android.net.Uri uri = android.net.Uri.parse("market://details?id=" + requireContext().getPackageName());
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NO_HISTORY |
+                    android.content.Intent.FLAG_ACTIVITY_NEW_DOCUMENT |
+                    android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            // Fallback to web
+            try {
+                android.net.Uri uri = android.net.Uri.parse("https://play.google.com/store/apps/details?id=" + requireContext().getPackageName());
+                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+            } catch (Exception ignore) {}
+        }
+    }
+
+    /** Open the README dialog. */
+    private void openReadmeDialog() {
+        new ReadmeBottomSheetFragment().show(getChildFragmentManager(), "readme");
+    }
+
+    /** Refresh inline value TextViews in settings rows (e.g. resolution subtitle). */
+    private void refreshAppInlineValues(View root) {
+        // Subtitles are static for now; can be made dynamic if needed
+    }
+
+    /** Show or hide the watermark NEW badge based on whether the feature has been seen. */
     private void manageBadgeVisibility(View root) {
         try {
             TextView watermarkBadge = root.findViewById(R.id.watermark_new_badge);
             if (watermarkBadge != null) {
-                boolean shouldShow = NewFeatureManager.shouldShowBadge(requireContext(), "watermark");
-                watermarkBadge.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+                android.content.SharedPreferences prefs = requireContext()
+                        .getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+                boolean hasSeen = prefs.getBoolean("seen_watermark", false);
+                watermarkBadge.setVisibility(hasSeen ? View.GONE : View.VISIBLE);
             }
-        } catch (Exception e) {
-            // Silently fail if badge view not found
-        }
-    }
-
-    /**
-     * Opens the unified Video Player Settings sheet, reusing PickerBottomSheetFragment.
-     * Contains two rows: Playback Speed and Quick Speed. Helper explains the difference.
-     */
-    private void showVideoPlayerSettingsSheet(){
-        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        // We don't compute dynamic subtitles here; keep concise labels.
-        items.add(new com.fadcam.ui.picker.OptionItem("row_playback_speed", getString(R.string.playback_speed_label), null, null, null, null, null, null, "speed", null, null, null));
-        items.add(new com.fadcam.ui.picker.OptionItem("row_quick_speed", getString(R.string.quick_speed_title), null, null, null, null, null, null, "bolt", null, null, null));
-        // Seek amount (show current seconds)
-        int seekSec = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).getPlayerSeekSeconds();
-        items.add(new com.fadcam.ui.picker.OptionItem("row_seek_amount", getString(R.string.seek_amount_title), getString(R.string.seek_amount_subtitle, seekSec), null, null, null, null, null, "replay_10", null, null, null));
-        final String RK_SETTINGS = "rk_settings_video_player";
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-                getString(R.string.video_player_settings_title), items, null, RK_SETTINGS, getString(R.string.video_player_settings_helper));
-        getParentFragmentManager().setFragmentResultListener(RK_SETTINGS, this, (key, bundle) -> {
-            String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if("row_playback_speed".equals(sel)){
-                showPlaybackSpeedPickerFromSettings();
-            } else if("row_quick_speed".equals(sel)){
-                showQuickSpeedPickerFromSettings();
-            } else if("row_seek_amount".equals(sel)){
-                // Show seek amount picker similar to VideoPlayerSettingsFragment
-                final String RK = "rk_settings_seek_amount";
-                java.util.ArrayList<com.fadcam.ui.picker.OptionItem> itemsSeek = new java.util.ArrayList<>();
-                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_5", "5s", null, null, null, null, null, null, "replay_10", null, null, null));
-                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_10", "10s", null, null, null, null, null, null, "replay_10", null, null, null));
-                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_15", "15s", null, null, null, null, null, null, "replay_10", null, null, null));
-                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_30", "30s", null, null, null, null, null, null, "replay_10", null, null, null));
-                itemsSeek.add(new com.fadcam.ui.picker.OptionItem("s_custom", getString(R.string.seek_amount_custom), null, null, null, null, null, null, "edit", null, null, null));
-                String selId = "s_" + seekSec; if(seekSec!=5 && seekSec!=10 && seekSec!=15 && seekSec!=30) selId = "s_custom";
-                com.fadcam.ui.picker.PickerBottomSheetFragment sheetSeek = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(getString(R.string.seek_amount_title), itemsSeek, selId, RK, getString(R.string.seek_amount_helper));
-                getParentFragmentManager().setFragmentResultListener(RK, this, (rk, b) -> {
-                    String s = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-                    if(s==null) return;
-                        if("s_custom".equals(s)){
-                        final String RK_NUM = "rk_settings_seek_amount_custom";
-                        com.fadcam.ui.picker.NumberInputBottomSheetFragment num = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
-                            getString(R.string.seek_amount_custom_title), 1, 300, 10, getString(R.string.universal_enter_number), 5, 60,
-                            getString(R.string.seek_amount_custom_low_hint), getString(R.string.seek_amount_custom_high_hint), RK_NUM);
-                        if(num.getArguments()!=null){ num.getArguments().putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.seek_amount_helper)); }
-                        getParentFragmentManager().setFragmentResultListener(RK_NUM, this, (rkn, nb) -> {
-                            int v = nb.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER, 0);
-                            if(v>0) com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setPlayerSeekSeconds(v);
-                        });
-                        // Dismiss parent picker first then show numeric input to avoid cross-sheet helper text
-                        try{ sheetSeek.dismissAllowingStateLoss(); } catch(Exception ignored){}
-                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> { try{ num.show(getParentFragmentManager(), "settings_seek_amount_custom_sheet"); } catch(Exception ignored){} }, 180);
-                        return;
-                    }
-                    if(s.startsWith("s_")){
-                        try{ int v = Integer.parseInt(s.substring(2)); com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setPlayerSeekSeconds(v); }catch(NumberFormatException ignored){}
-                    }
-                });
-                sheetSeek.show(getParentFragmentManager(), "settings_seek_amount_sheet");
-            }
-        });
-        sheet.show(getParentFragmentManager(), "video_player_settings_sheet_settings_tab");
-    }
-
-    private void showPlaybackSpeedPickerFromSettings(){
-        // Mirror the player's list for consistency
-    final String RK = "rk_pick_playback_speed_settings";
-    float[] speedValues = new float[]{0.25f,0.5f,0.6f,0.7f,0.8f,0.9f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
-    CharSequence[] labels = new CharSequence[]{"0.25x","0.5x","0.6x","0.7x","0.8x","0.9x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
-        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        for(int i=0;i<speedValues.length;i++){
-            items.add(new com.fadcam.ui.picker.OptionItem("spd_"+speedValues[i], String.valueOf(labels[i]), null, null, null, null, null, null, "speed", null, null, null));
-        }
-    float current = com.fadcam.SharedPreferencesManager.getInstance(requireContext())
-        .sharedPreferences.getFloat("pref_default_playback_speed", 1.0f);
-    String selectedId = "spd_"+current;
-    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-        getString(R.string.playback_speed_title), items, selectedId, RK, getString(R.string.playback_speed_helper_settings));
-        getParentFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
-            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if(sel!=null && sel.startsWith("spd_")){
-                try{
-                    float val = Float.parseFloat(sel.substring(4));
-                    // Persist as default playback speed for future videos
-                    com.fadcam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences
-                        .edit().putFloat("pref_default_playback_speed", val).apply();
-                    android.widget.Toast.makeText(requireContext(), getString(R.string.toast_default_playback_speed_set, val+"x"), android.widget.Toast.LENGTH_SHORT).show();
-                }catch(NumberFormatException ignored){}
-            }
-        });
-        sheet.show(getParentFragmentManager(), "playback_speed_picker_settings_tab");
-    }
-
-    private void showQuickSpeedPickerFromSettings(){
-        final String RK = "rk_pick_quick_speed_settings";
-    float[] speedValues = new float[]{0.25f,0.5f,0.6f,0.7f,0.8f,0.9f,1.0f,1.5f,2.0f,3.0f,4.0f,6.0f,8.0f,10.0f};
-    CharSequence[] labels = new CharSequence[]{"0.25x","0.5x","0.6x","0.7x","0.8x","0.9x","1x (Normal)","1.5x","2x","3x","4x","6x","8x","10x"};
-        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        for(int i=0;i<speedValues.length;i++){
-            String title = Math.abs(speedValues[i]-2.0f)<0.001f? getString(R.string.quick_speed_option_default): String.valueOf(labels[i]);
-            items.add(new com.fadcam.ui.picker.OptionItem("spd_"+speedValues[i], title, null, null, null, null, null, null, "bolt", null, null, null));
-        }
-        float current = com.fadcam.SharedPreferencesManager.getInstance(requireContext()).getQuickSpeed();
-        String selectedId = "spd_"+current;
-    com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-        getString(R.string.quick_speed_title), items, selectedId, RK, getString(R.string.quick_speed_helper));
-        getParentFragmentManager().setFragmentResultListener(RK, this, (k,b)->{
-            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if(sel!=null && sel.startsWith("spd_")){
-                try{
-                    float val = Float.parseFloat(sel.substring(4));
-                    com.fadcam.SharedPreferencesManager.getInstance(requireContext()).setQuickSpeed(val);
-                }catch(NumberFormatException ignored){}
-            }
-        });
-        sheet.show(getParentFragmentManager(), "quick_speed_picker_settings_tab");
-    }
-
-    private void setupNav(View root, int id, String label){
-        LinearLayout row = root.findViewById(id);
-        if (row != null) {
-            row.setOnClickListener(v -> Toast.makeText(requireContext(), label, Toast.LENGTH_SHORT).show());
-        }
-    }
-
-    private void openSubFragment(Fragment fragment){
-    OverlayNavUtil.show(requireActivity(), fragment, fragment.getClass().getSimpleName());
-    }
-
-    // Removed legacy widgets bottom sheet (replaced by full Shortcuts & Widgets screen)
-
-    private void wireAppInlineRows(View root){
-        View rowOnboarding = root.findViewById(R.id.group_onboarding);
-        if(rowOnboarding!=null){ rowOnboarding.setOnClickListener(v -> showOnboardingSwitchSheet()); }
-        View rowAutoUpdate = root.findViewById(R.id.group_auto_update);
-        if(rowAutoUpdate!=null){ rowAutoUpdate.setOnClickListener(v -> showAutoUpdateSwitchSheet()); }
-        View rowDebug = root.findViewById(R.id.group_debug_logging);
-        if(rowDebug!=null){
-            rowDebug.setOnClickListener(v -> {
-                DebugLogBottomSheetFragment sheet = DebugLogBottomSheetFragment.newInstance();
-                sheet.show(getParentFragmentManager(), "debug_log_tools");
-            });
-        }
-    View rowBackup = root.findViewById(R.id.group_prefs_backup);
-    if(rowBackup!=null){ rowBackup.setOnClickListener(v -> showPrefsBackupSheet()); }
-    }
-
-    private void refreshAppInlineValues(View root){
-        android.widget.TextView vOn = root.findViewById(R.id.value_onboarding);
-        android.widget.TextView vAuto = root.findViewById(R.id.value_auto_update);
-        android.widget.TextView vDebug = root.findViewById(R.id.value_debug_logging);
-        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
-        if(vOn!=null){ vOn.setText(prefs.isShowOnboarding()? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
-        boolean auto = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
-        if(vAuto!=null){ vAuto.setText(auto? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
-        if(vDebug!=null){ vDebug.setText(prefs.isDebugLoggingEnabled()? getString(R.string.universal_enable): getString(R.string.universal_disable)); }
-    }
-
-    private void openReadmeDialog(){
-        ReadmeBottomSheetFragment sheet = ReadmeBottomSheetFragment.newInstance();
-        sheet.show(getParentFragmentManager(), "readme_sheet");
-    }
-
-    private void launchReview(){
-        try {
-            android.content.Intent i = new android.content.Intent(requireContext(), WebViewActivity.class);
-            i.putExtra("url", "https://forms.gle/DvUoc1v9kB2bkFiS6");
-            startActivity(i);
-        } catch (Exception e){
-            android.widget.Toast.makeText(requireContext(), "Unable to open review form", android.widget.Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void showOnboardingSwitchSheet(){
-        final String resultKey = "picker_result_onboarding";
-        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
-        boolean enabled = prefs.isShowOnboarding();
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
-            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
-                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
-                if(state){ prefs.sharedPreferences.edit().putBoolean(com.fadcam.Constants.FIRST_INSTALL_CHECKED_KEY, false).apply(); }
-                prefs.setShowOnboarding(state);
-                refreshAppInlineValues(requireView());
-            }
-        });
-        String helper = getString(R.string.note_onboarding);
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
-                getString(R.string.setting_onboarding_title), new java.util.ArrayList<>(), null, resultKey, helper,
-                getString(R.string.setting_onboarding_title), enabled);
-        sheet.show(getParentFragmentManager(), "onboarding_switch_sheet");
-    }
-
-    private void showAutoUpdateSwitchSheet(){
-        final String resultKey = "picker_result_auto_update";
-        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
-        boolean enabled = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
-            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
-                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
-                prefs.sharedPreferences.edit().putBoolean("auto_update_check_enabled", state).apply();
-                refreshAppInlineValues(requireView());
-            }
-        });
-        String helper = getString(R.string.note_auto_update_check);
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
-                getString(R.string.setting_auto_update_check_title), new java.util.ArrayList<>(), null, resultKey, helper,
-                getString(R.string.setting_auto_update_check_title), enabled);
-        sheet.show(getParentFragmentManager(), "auto_update_switch_sheet");
-    }
-
-    private void showDebugLoggingSwitchSheet(){
-        final String resultKey = "picker_result_debug_logging";
-        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
-        boolean enabled = prefs.isDebugLoggingEnabled();
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
-            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
-                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
-                prefs.sharedPreferences.edit().putBoolean(com.fadcam.Constants.PREF_DEBUG_DATA, state).apply();
-                refreshAppInlineValues(requireView());
-            }
-        });
-    String helper = getString(R.string.note_debug_detailed);
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
-                getString(R.string.setting_debug_title), new java.util.ArrayList<>(), null, resultKey, helper,
-                getString(R.string.setting_debug_title), enabled);
-        sheet.show(getParentFragmentManager(), "debug_logging_switch_sheet");
-    }
-
-    private void showPrefsBackupSheet(){
-        PrefsBackupBottomSheetFragment sheet = PrefsBackupBottomSheetFragment.newInstance();
-        sheet.show(getParentFragmentManager(), "prefs_backup_sheet");
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Refresh badge visibility when returning to this fragment
-        View root = getView();
-        if (root != null) {
-            manageBadgeVisibility(root);
-        }
-        // Future: update dynamic subtitles (e.g., current theme, language) when preferences change.
+        } catch (Exception ignore) {}
     }
 }
