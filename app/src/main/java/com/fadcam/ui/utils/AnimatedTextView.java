@@ -47,6 +47,7 @@ public class AnimatedTextView extends AppCompatTextView {
     private float slotPrefixWidth;     // px offset from view-left to column start
     private float slotColumnWidth;     // px width of animated column = max(oldChangedW, newChangedW)
     private float slotNewChangedWidth; // px width of new changed text (marks where suffix starts)
+    private float slotDrawBaseX;       // draw origin for the animated layouts
     private boolean slotHasDifferentialRegions;
 
 
@@ -172,13 +173,13 @@ public class AnimatedTextView extends AppCompatTextView {
         cancelSlotAnimation();
 
         TextPaint paint = getPaint();
-        Layout.Alignment alignment = resolveLayoutAlignment();
         boolean includePad = getIncludeFontPadding();
 
         // ---- Differential diff: find unchanged prefix and suffix ----------------
         int prefixLen = commonPrefixLength(oldStr, newStr);
         int suffixLen = commonSuffixLength(oldStr, newStr, prefixLen);
         prefixLen = adjustPrefixForNumericUnit(oldStr, newStr, prefixLen, suffixLen);
+        boolean hasDiff = !forceFull && (prefixLen > 0 || suffixLen > 0);
 
         String prefix     = newStr.substring(0, prefixLen);
         String oldChanged = oldStr.substring(prefixLen, oldStr.length() - suffixLen);
@@ -209,6 +210,10 @@ public class AnimatedTextView extends AppCompatTextView {
         // Using partial-string layouts for the column caused a per-pixel Y mismatch with
         // canvas.drawText() for the prefix/suffix due to StaticLayout includeFontPadding,
         // which manifested as the whole row jiggling during animation.
+        Layout.Alignment alignment = hasDiff
+                ? Layout.Alignment.ALIGN_NORMAL
+                : resolveLayoutAlignment();
+
         slotOldLayout = StaticLayout.Builder
                 .obtain(oldStr, 0, oldStr.length(), paint, layoutW)
                 .setAlignment(alignment)
@@ -220,8 +225,12 @@ public class AnimatedTextView extends AppCompatTextView {
                 .setIncludePad(includePad)
                 .build();
 
-        boolean hasDiff = !forceFull && (prefixLen > 0 || suffixLen > 0);
         slotHasDifferentialRegions = hasDiff;
+        float oldWidth = oldStr.isEmpty() ? 0f : paint.measureText(oldStr);
+        float newWidth = newStr.isEmpty() ? 0f : paint.measureText(newStr);
+        slotDrawBaseX = getCompoundPaddingLeft() + (hasDiff
+                ? computeHorizontalOffset(usableW, Math.max(oldWidth, newWidth))
+                : 0f);
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
             slotPrefixWidth     = prefixW;
@@ -323,6 +332,15 @@ public class AnimatedTextView extends AppCompatTextView {
             oldRunStart--;
         }
 
+        int newRunLen = newSuffixStart - newRunStart;
+        int oldRunLen = oldSuffixStart - oldRunStart;
+        if (newRunLen == oldRunLen) {
+            // Keep normal differential behavior for equal-length numbers:
+            // 40s -> 41s should animate only the changed digit.
+            return prefixLen;
+        }
+
+        // For length changes (9s -> 10s), animate the full numeric run to avoid seam artifacts.
         return Math.min(prefixLen, Math.min(newRunStart, oldRunStart));
     }
 
@@ -401,7 +419,7 @@ public class AnimatedTextView extends AppCompatTextView {
         }
 
         // Column bounds derived from prefix/changed-text widths.
-        float colLeft     = left + slotPrefixWidth;
+        float colLeft     = slotDrawBaseX + slotPrefixWidth;
         float colRight    = colLeft + slotColumnWidth;
         // Suffix always starts at colRight so it never encroaches on the animated column,
         // even when the old changed-text is wider than the new one (prevents overlap).
@@ -420,8 +438,8 @@ public class AnimatedTextView extends AppCompatTextView {
         // 1. Static PREFIX (differential mode only)
         if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
             canvas.save();
-            canvas.clipRect(left, top, colLeft, bottom);
-            canvas.translate(left, top);
+            canvas.clipRect(slotDrawBaseX, top, colLeft, bottom);
+            canvas.translate(slotDrawBaseX, top);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }
@@ -431,12 +449,12 @@ public class AnimatedTextView extends AppCompatTextView {
         canvas.clipRect(colLeft, top, colRight, bottom);
 
         canvas.save();
-        canvas.translate(left, oldY);
+        canvas.translate(slotDrawBaseX, oldY);
         slotOldLayout.draw(canvas);
         canvas.restore();
 
         canvas.save();
-        canvas.translate(left, newY);
+        canvas.translate(slotDrawBaseX, newY);
         slotNewLayout.draw(canvas);
         canvas.restore();
 
@@ -446,7 +464,7 @@ public class AnimatedTextView extends AppCompatTextView {
         if (slotHasDifferentialRegions) {
             canvas.save();
             canvas.clipRect(suffixStart, top, right, bottom);
-            canvas.translate(left, top);
+            canvas.translate(slotDrawBaseX, top);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }
@@ -460,6 +478,17 @@ public class AnimatedTextView extends AppCompatTextView {
         if (gravity == Gravity.CENTER_HORIZONTAL) return Layout.Alignment.ALIGN_CENTER;
         if (gravity == Gravity.END)               return Layout.Alignment.ALIGN_OPPOSITE;
         return Layout.Alignment.ALIGN_NORMAL;
+    }
+
+    private float computeHorizontalOffset(int availableWidth, float textWidth) {
+        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        if (gravity == Gravity.CENTER_HORIZONTAL) {
+            return Math.max(0f, (availableWidth - textWidth) / 2f);
+        }
+        if (gravity == Gravity.END) {
+            return Math.max(0f, availableWidth - textWidth);
+        }
+        return 0f;
     }
 
     /** Cancel any running animation and reset state. */

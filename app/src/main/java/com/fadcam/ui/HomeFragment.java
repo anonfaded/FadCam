@@ -256,6 +256,7 @@ public class HomeFragment extends BaseFragment {
     private LinearLayout layoutElapsedMetaRow;
     private View rowStorageAvailable;
     private View rowEstimateTime;
+    private View rowCamera;
     private boolean cameraRowUiInitialized = false;
     private View layoutCards;
     private View layoutCardRailSection;
@@ -9677,6 +9678,7 @@ public class HomeFragment extends BaseFragment {
         layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
+        rowCamera = view.findViewById(R.id.rowCamera);
         cameraRowUiInitialized = false;
         layoutCards = view.findViewById(R.id.layoutCards);
         layoutCardRailSection = view.findViewById(R.id.layoutCardRailSection);
@@ -11360,6 +11362,21 @@ public class HomeFragment extends BaseFragment {
                 });
             });
         }
+
+        if (rowCamera != null) {
+            rowCamera.setOnClickListener(v -> {
+                animatePressBounce(v, () -> {
+                    performHapticFeedback();
+                    if (getActivity() != null) {
+                        OverlayNavUtil.show(
+                                getActivity(),
+                                new com.fadcam.ui.VideoSettingsFragment(),
+                                "VideoSettingsFragment"
+                        );
+                    }
+                });
+            });
+        }
     }
 
     private void setupCardRailToggle() {
@@ -11410,10 +11427,9 @@ public class HomeFragment extends BaseFragment {
             if (!currentValue.equals(latestElapsedDisplay)) {
                 if (buttonStartStop instanceof com.fadcam.ui.utils.AnimatedMaterialButton
                         && currentShowsTimer) {
-                    // Timer updates should behave like the elapsed card: only the
-                    // changed digits move while the stable prefix/suffix stay put.
-                    ((com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop)
-                            .animateSlot(latestElapsedDisplay, 400);
+                    com.fadcam.ui.utils.AnimatedMaterialButton animatedButton =
+                            (com.fadcam.ui.utils.AnimatedMaterialButton) buttonStartStop;
+                    animatedButton.animateSlot(latestElapsedDisplay, 400);
                 } else {
                     buttonStartStop.setText(latestElapsedDisplay);
                 }
@@ -11656,6 +11672,8 @@ public class HomeFragment extends BaseFragment {
                                 .putString(Constants.PREF_HOME_ELAPSED_DISPLAY_MODE, selected)
                                 .apply();
                     }
+                    applyElapsedFontPreference();
+                    applyElapsedSizePreference();
                     updateStorageInfo();
                 });
 
@@ -12246,6 +12264,13 @@ public class HomeFragment extends BaseFragment {
         if (sharedPreferencesManager == null || tvElapsedTitle == null) {
             return;
         }
+        if (isElapsedDigitalDisplayMode()) {
+            // Keep digital timer spacing rigid to avoid colon-adjacent jitter.
+            tvElapsedTitle.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+            tvElapsedTitle.setLetterSpacing(0f);
+            tvElapsedTitle.setFontFeatureSettings("tnum");
+            return;
+        }
         String fontPref = sharedPreferencesManager.sharedPreferences.getString(
                 Constants.PREF_HOME_ELAPSED_FONT,
                 ELAPSED_FONT_UBUNTU);
@@ -12269,6 +12294,7 @@ public class HomeFragment extends BaseFragment {
                 tvElapsedTitle.setTypeface(ubuntu, android.graphics.Typeface.BOLD);
             }
         }
+        tvElapsedTitle.setLetterSpacing(0.005f);
         tvElapsedTitle.setFontFeatureSettings("tnum");
     }
 

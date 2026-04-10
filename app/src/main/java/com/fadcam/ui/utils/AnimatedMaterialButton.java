@@ -45,6 +45,7 @@ public class AnimatedMaterialButton extends MaterialButton {
 
     private float slotPrefixWidth;
     private float slotColumnWidth;
+    private float slotDrawBaseX;
     private boolean slotHasDifferentialRegions;
 
     public AnimatedMaterialButton(Context context) {
@@ -167,21 +168,32 @@ public class AnimatedMaterialButton extends MaterialButton {
                 newStr.isEmpty() ? 0f : paint.measureText(newStr)));
         int layoutW = Math.max(usableW, maxNeededW);
 
+        int prefixLen = 0;
+        int suffixLen = 0;
+        boolean hasDiff = false;
+        if (!forceFull) {
+            prefixLen = commonPrefixLength(oldStr, newStr);
+            suffixLen = commonSuffixLength(oldStr, newStr, prefixLen);
+            prefixLen = adjustPrefixForNumericUnit(oldStr, newStr, prefixLen, suffixLen);
+            hasDiff = (prefixLen > 0 || suffixLen > 0);
+        }
+
+        Layout.Alignment alignment = hasDiff
+                ? Layout.Alignment.ALIGN_NORMAL
+                : resolveLayoutAlignment();
+
         slotOldLayout = StaticLayout.Builder
                 .obtain(oldStr, 0, oldStr.length(), paint, layoutW)
-                .setAlignment(resolveLayoutAlignment())
+                .setAlignment(alignment)
                 .setIncludePad(getIncludeFontPadding())
                 .build();
         slotNewLayout = StaticLayout.Builder
                 .obtain(newStr, 0, newStr.length(), paint, layoutW)
-                .setAlignment(resolveLayoutAlignment())
+                .setAlignment(alignment)
                 .setIncludePad(getIncludeFontPadding())
                 .build();
 
         if (!forceFull) {
-            int prefixLen = commonPrefixLength(oldStr, newStr);
-            int suffixLen = commonSuffixLength(oldStr, newStr, prefixLen);
-            prefixLen = adjustPrefixForNumericUnit(oldStr, newStr, prefixLen, suffixLen);
             String prefix = newStr.substring(0, prefixLen);
             float prefixW = prefixLen > 0 ? paint.measureText(prefix) : 0f;
             String oldChanged = oldStr.substring(prefixLen, oldStr.length() - suffixLen);
@@ -190,11 +202,16 @@ public class AnimatedMaterialButton extends MaterialButton {
             float newChangedW = newChanged.isEmpty() ? 0f : paint.measureText(newChanged);
             slotPrefixWidth = prefixW;
             slotColumnWidth = Math.max(oldChangedW, newChangedW);
-            slotHasDifferentialRegions = prefixLen > 0 || suffixLen > 0;
+            slotHasDifferentialRegions = hasDiff;
+            float oldWidth = oldStr.isEmpty() ? 0f : paint.measureText(oldStr);
+            float newWidth = newStr.isEmpty() ? 0f : paint.measureText(newStr);
+            slotDrawBaseX = getCompoundPaddingLeft() + computeHorizontalOffset(usableW,
+                    Math.max(oldWidth, newWidth));
         } else {
             slotPrefixWidth = 0f;
             slotColumnWidth = layoutW;
             slotHasDifferentialRegions = false;
+            slotDrawBaseX = getCompoundPaddingLeft();
         }
 
         slotPendingFinalText = newText;
@@ -303,7 +320,7 @@ public class AnimatedMaterialButton extends MaterialButton {
             newY = top - slideDistance * (1f - slotProgress);
         }
 
-        float colLeft  = left + slotPrefixWidth;
+        float colLeft  = slotDrawBaseX + slotPrefixWidth;
         float colRight = colLeft + slotColumnWidth;
 
         int viewW = getWidth();
@@ -314,8 +331,8 @@ public class AnimatedMaterialButton extends MaterialButton {
         // Static prefix (differential mode only)
         if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
             canvas.save();
-            canvas.clipRect(left, top, colLeft, bottom);
-            canvas.translate(left, top);
+            canvas.clipRect(slotDrawBaseX, top, colLeft, bottom);
+            canvas.translate(slotDrawBaseX, top);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }
@@ -325,12 +342,12 @@ public class AnimatedMaterialButton extends MaterialButton {
         canvas.clipRect(colLeft, top, colRight, bottom);
 
         canvas.save();
-        canvas.translate(left, oldY);
+        canvas.translate(slotDrawBaseX, oldY);
         slotOldLayout.draw(canvas);
         canvas.restore();
 
         canvas.save();
-        canvas.translate(left, newY);
+        canvas.translate(slotDrawBaseX, newY);
         slotNewLayout.draw(canvas);
         canvas.restore();
 
@@ -343,20 +360,13 @@ public class AnimatedMaterialButton extends MaterialButton {
             if (suffixL < suffixR) {
                 canvas.save();
                 canvas.clipRect(suffixL, top, suffixR, bottom);
-                canvas.translate(left, top);
+                canvas.translate(slotDrawBaseX, top);
                 slotNewLayout.draw(canvas);
                 canvas.restore();
             }
         }
 
         canvas.restore(); // end Y clip
-    }
-
-    private Layout.Alignment resolveLayoutAlignment() {
-        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
-        if (gravity == Gravity.CENTER_HORIZONTAL) return Layout.Alignment.ALIGN_CENTER;
-        if (gravity == Gravity.END) return Layout.Alignment.ALIGN_OPPOSITE;
-        return Layout.Alignment.ALIGN_NORMAL;
     }
 
     // ---- Diff helpers ----------------------------------------------------------
@@ -376,6 +386,24 @@ public class AnimatedMaterialButton extends MaterialButton {
             i++;
         }
         return i;
+    }
+
+    private Layout.Alignment resolveLayoutAlignment() {
+        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        if (gravity == Gravity.CENTER_HORIZONTAL) return Layout.Alignment.ALIGN_CENTER;
+        if (gravity == Gravity.END) return Layout.Alignment.ALIGN_OPPOSITE;
+        return Layout.Alignment.ALIGN_NORMAL;
+    }
+
+    private float computeHorizontalOffset(int availableWidth, float textWidth) {
+        int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        if (gravity == Gravity.CENTER_HORIZONTAL) {
+            return Math.max(0f, (availableWidth - textWidth) / 2f);
+        }
+        if (gravity == Gravity.END) {
+            return Math.max(0f, availableWidth - textWidth);
+        }
+        return 0f;
     }
 
     private static int adjustPrefixForNumericUnit(
@@ -416,6 +444,12 @@ public class AnimatedMaterialButton extends MaterialButton {
         int oldRunStart = oldNumEnd;
         while (oldRunStart > 0 && Character.isDigit(oldText.charAt(oldRunStart - 1))) {
             oldRunStart--;
+        }
+
+        int newRunLen = newSuffixStart - newRunStart;
+        int oldRunLen = oldSuffixStart - oldRunStart;
+        if (newRunLen == oldRunLen) {
+            return prefixLen;
         }
 
         return Math.min(prefixLen, Math.min(newRunStart, oldRunStart));
