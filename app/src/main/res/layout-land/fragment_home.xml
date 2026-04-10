@@ -124,6 +124,8 @@
 
                                     <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                 </LinearLayout>
+
+                                <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
@@ -151,6 +153,8 @@
 
                                     <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                 </LinearLayout>
+
+                                <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
@@ -181,6 +185,8 @@
 
                                     <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                 </LinearLayout>
+
+                                <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
@@ -318,13 +324,13 @@
                     </com.google.android.material.card.MaterialCardView>
 
                     <!-- Stats Card -->
-                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
                             <TextView android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:layout_marginEnd="4dp" android:fontFamily="@font/materialicons" android:text="folder" android:textColor="?attr/sectionHeaderColor" android:textSize="20sp" android:gravity="center" />
 
-                            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="4dp">
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
                                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
                                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_videos" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
                                     <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
@@ -334,6 +340,8 @@
                                     <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
                                 </LinearLayout>
                             </LinearLayout>
+
+                            <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_gravity="center" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open video stats" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -375,7 +383,7 @@
             android:layout_gravity="center"
             android:rotation="180"
             android:src="@drawable/ic_double_chevron"
-            android:tint="?attr/homeRailTextSecondary" />
+            android:tint="#555555" />
     </FrameLayout>
 
     <!-- Right Panel: Camera Preview and Controls (Half Screen) -->

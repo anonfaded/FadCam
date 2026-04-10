@@ -5006,7 +5006,7 @@ public class RecordingService extends Service {
                 return null;
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
+            String segmentSuffix = String.format(Locale.US, "_part%d", nextSegmentNumber);
             String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                     + Constants.RECORDING_FILE_EXTENSION;
             DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION,
@@ -5033,7 +5033,7 @@ public class RecordingService extends Service {
         } else {
             // Internal storage mode - Use same directory and naming as first segment
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
+            String segmentSuffix = String.format(Locale.US, "_part%d", nextSegmentNumber);
             String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                     + Constants.RECORDING_FILE_EXTENSION;
 
@@ -5922,7 +5922,7 @@ public class RecordingService extends Service {
                     return;
                 }
                 String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-                String segmentSuffix = String.format(Locale.US, "_%03d", nextSegmentNumber);
+                String segmentSuffix = String.format(Locale.US, "_part%d", nextSegmentNumber);
                 String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
                 String baseFilename = filenamePrefix + timestamp + segmentSuffix + ".mp4";
                 FLog.d(TAG, "Creating new segment file: " + baseFilename);

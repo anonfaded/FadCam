@@ -132,6 +132,8 @@
 
                         </LinearLayout>
 
+                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
+
                     </LinearLayout>
 
                 </com.google.android.material.card.MaterialCardView>
@@ -161,6 +163,8 @@
                             <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
 
                         </LinearLayout>
+
+                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
 
                     </LinearLayout>
 
@@ -197,6 +201,8 @@
                             <!-- total shown inline with available space (rendered programmatically) -->
 
                         </LinearLayout>
+
+                        <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
 
                     </LinearLayout>
 
@@ -335,7 +341,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp">
 
@@ -351,6 +357,8 @@
                             <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_gravity="center" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open video stats" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -392,7 +400,7 @@
             android:layout_height="16dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_expand_more"
-            android:tint="?attr/homeRailTextSecondary" />
+            android:tint="#555555" />
     </FrameLayout>
 
     <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/cardRailTogglePortrait" app:strokeColor="#4CAF50" app:strokeWidth="15dp">
