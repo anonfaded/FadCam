@@ -25,6 +25,9 @@
     <!-- Optional hardware features -->
     <uses-feature android:name="android.hardware.sensor.high_sampling_rate" android:required="false" />
     <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+    <!-- Android TV support -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <!-- For Android 12 and below -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>

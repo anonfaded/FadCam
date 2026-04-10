@@ -49,6 +49,7 @@ import android.util.Size;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -12702,5 +12703,31 @@ public class HomeFragment extends BaseFragment {
                 FLog.e(TAG, "Error updating hamburger badge visibility", e);
             }
         }
+    }
+
+    /**
+     * Handle D-pad key events for Android TV navigation.
+     * Delegates to system for focus navigation, handles ENTER/DPAD_CENTER for clicks.
+     */
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // Let system handle D-pad up/down for vertical focus navigation
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            return false;
+        }
+        
+        // D-pad center or ENTER: click focused view
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+            View view = getView();
+            if (view != null) {
+                View focused = view.findFocus();
+                if (focused != null && focused.isClickable()) {
+                    focused.performClick();
+                    return true;
+                }
+            }
+        }
+        
+        // Pass other keys to parent
+        return false;
     }
 }

@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.ui.RecordsFragment;
 import com.fadcam.ui.RemoteFragment;
+import com.fadcam.ui.HomeFragment;
 import com.fadcam.ui.FaditorMiniFragment;
 import com.fadcam.ui.SettingsHomeFragment;
 import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
@@ -51,7 +53,10 @@ import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.ViewCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.recyclerview.widget.RecyclerView;
+import android.content.pm.PackageManager;
 
 import android.widget.HorizontalScrollView;
 
@@ -1058,6 +1063,73 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Handle D-pad navigation for Android TV. Routes DPAD_LEFT/RIGHT to tab switching
+     * and passes other keys to current fragment.
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        Fragment currentFragment = getCurrentFragment();
+        int currentPos = getCurrentFragmentPosition();
+        
+        // D-pad right: navigate to next tab
+        if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            if (currentFragment instanceof HomeFragment) {
+                HomeFragment homeFragment = (HomeFragment) currentFragment;
+                if (homeFragment.onKeyDown(keyCode, event)) {
+                    return true; // Fragment consumed it (e.g., dialog navigation)
+                }
+            }
+            // Switch to next tab if not at end
+            if (currentPos < 4) {
+                switchFragment(currentPos + 1, true);
+                return true;
+            }
+            return true;
+        }
+        
+        // D-pad left: navigate to previous tab or stay on home
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+            if (currentFragment instanceof HomeFragment) {
+                HomeFragment homeFragment = (HomeFragment) currentFragment;
+                if (homeFragment.onKeyDown(keyCode, event)) {
+                    return true; // Fragment consumed it
+                }
+            }
+            // Switch to previous tab if not at start
+            if (currentPos > 0) {
+                switchFragment(currentPos - 1, true);
+                return true;
+            }
+            return true;
+        }
+        
+        // D-pad center/ENTER: let current fragment handle it
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+            if (currentFragment instanceof HomeFragment) {
+                if (((HomeFragment) currentFragment).onKeyDown(keyCode, event)) {
+                    return true;
+                }
+            }
+        }
+        
+        return super.onKeyDown(keyCode, event);
+    }
+
+    /**
+     * Get current fragment that's visible (not hidden).
+     */
+    private Fragment getCurrentFragment() {
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        for (String tag : getFragmentTagsForPosition(currentFragmentPosition)) {
+            Fragment fragment = fm.findFragmentByTag(tag);
+            if (fragment != null && fragment.isAdded() && !fragment.isHidden()) {
+                return fragment;
+            }
+        }
+        return null;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -1525,6 +1597,11 @@ public class MainActivity extends AppCompatActivity {
             androidx.core.graphics.Insets systemBars = insets
                     .getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
 
+            // Check if running on TV form factor (TV or Wear OS smartwatch)
+            boolean isTV = getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEVISION);
+            boolean isWear = getPackageManager().hasSystemFeature("android.hardware.type.watch");
+            boolean isFormFactorTV = isTV || isWear;
+
             // Apply insets to main content areas
             View fragmentContainer = findViewById(R.id.fragment_container);
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
@@ -1535,11 +1612,24 @@ public class MainActivity extends AppCompatActivity {
                         systemBars.right, systemBars.bottom);
             }
 
+            // Update status bar scrim height using ConstraintSet for proper constraint-based sizing
+            // This prevents ConstraintLayout from incorrectly expanding height="0dp" views to fill screen
             if (statusBarScrim != null) {
-                ViewGroup.LayoutParams lp = statusBarScrim.getLayoutParams();
-                if (lp != null && lp.height != systemBars.top) {
-                    lp.height = systemBars.top;
-                    statusBarScrim.setLayoutParams(lp);
+                // On TV/Wear: hide scrim (height=0). On phones: set to actual status bar height.
+                int scrimHeight = isFormFactorTV ? 0 : systemBars.top;
+                
+                // Use ConstraintSet to properly update constraints (not just LayoutParams)
+                // LayoutParams.height doesn't work with ConstraintLayout constraints
+                if (rootView instanceof ConstraintLayout) {
+                    ConstraintSet cs = new ConstraintSet();
+                    cs.clone((ConstraintLayout) rootView);
+                    cs.constrainHeight(R.id.status_bar_scrim, scrimHeight);
+                    cs.applyTo((ConstraintLayout) rootView);
+                    
+                    // Log for debugging TV form factors
+                    if (isFormFactorTV && scrimHeight == 0) {
+                        FLog.i("MainActivity", "TV/Wear form factor detected: status_bar_scrim hidden (height=0)");
+                    }
                 }
             }
 

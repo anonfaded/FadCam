@@ -25,7 +25,9 @@
                 android:contentDescription="@string/home_menu"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
-                android:focusable="true" />
+                android:focusable="true"
+                android:nextFocusDown="@+id/btnGetPro"
+                android:nextFocusRight="@+id/btnGetPro" />
 
             <!-- Hamburger Badge Dot -->
             <View

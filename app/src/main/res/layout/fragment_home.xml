@@ -25,7 +25,9 @@
                 android:contentDescription="@string/home_menu"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
-                android:focusable="true" />
+                android:focusable="true"
+                android:nextFocusDown="@+id/btnGetPro"
+                android:nextFocusRight="@+id/btnGetPro" />
 
             <!-- Hamburger Badge Dot -->
             <View
@@ -69,7 +71,10 @@
                 android:drawablePadding="0dp"
                 android:drawableTint="#1A1A1A"
                 android:focusable="true"
-                android:clickable="true" />
+                android:clickable="true"
+                android:nextFocusUp="@+id/btnHamburgerMenu"
+                android:nextFocusLeft="@+id/btnHamburgerMenu"
+                android:nextFocusDown="@+id/rowCamera" />
 
             <!-- Pro Badge Dot -->
             <View
@@ -114,6 +119,10 @@
         <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="12dp" app:cardElevation="3dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="6dp">
+                    android:nextFocusUp="@+id/btnGetPro"
+                    android:nextFocusDown="@+id/rowEstimateTime"
+                    android:nextFocusLeft="@+id/btnGetPro"
+                    android:nextFocusRight="@+id/rowEstimateTime"
 
                 <!-- Camera Row -->
                 <com.google.android.material.card.MaterialCardView android:id="@+id/rowCamera" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="3dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="10dp" app:cardElevation="0dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp">
@@ -145,6 +154,10 @@
                     android:layout_marginStart="38dp"
                     android:layout_marginEnd="2dp"
                     android:layout_marginBottom="3dp"
+                    android:nextFocusUp="@+id/rowCamera"
+                    android:nextFocusDown="@+id/rowStorage"
+                    android:nextFocusLeft="@+id/rowCamera"
+                    android:nextFocusRight="@+id/rowStorage"
                     android:alpha="0.5"
                     android:background="#22FFFFFF" />
 
@@ -180,7 +193,11 @@
                     android:background="#22FFFFFF" />
 
                 <!-- Available Space Row -->
-                <com.google.android.material.card.MaterialCardView android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="10dp" app:cardElevation="0dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="10dp" app:cardElevation="0dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp"
+                    android:nextFocusUp="@+id/rowEstimateTime"
+                    android:nextFocusDown="@+id/cardElapsedHero"
+                    android:nextFocusLeft="@+id/rowEstimateTime"
+                    android:nextFocusRight="@+id/cardElapsedHero">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
@@ -223,7 +240,11 @@
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
             app:rippleColor="#22FFFFFF"
-            app:strokeWidth="0dp">
+            app:strokeWidth="0dp"
+            android:nextFocusUp="@+id/rowStorageAvailable"
+            android:nextFocusDown="@+id/buttonTorchSwitch"
+            android:nextFocusLeft="@+id/rowStorageAvailable"
+            android:nextFocusRight="@+id/buttonTorchSwitch">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -640,9 +661,21 @@
             app:backgroundTint="@color/button_start"
             app:iconTint="@color/white"
             android:textColor="@color/white"
-            android:text="@string/button_start" />
+            android:text="@string/button_start"
+            android:nextFocusUp="@+id/cardElapsedHero"
+            android:nextFocusDown="@+id/buttonPauseResume"
+            android:nextFocusLeft="@+id/buttonTorchSwitch"
+            android:nextFocusRight="@+id/buttonPauseResume" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp"
+            android:nextFocusUp="@+id/cardElapsedHero"
+            android:nextFocusDown="@+id/buttonCamSwitch"
+            android:nextFocusLeft="@+id/buttonStartStop"
+            android:nextFocusRight="@+id/buttonFadRecMute" />
+            android:nextFocusUp="@+id/cardElapsedHero"
+            android:nextFocusDown="@+id/buttonMirrorSwitch"
+            android:nextFocusLeft="@+id/buttonPauseResume"
+            android:nextFocusRight="@+id/buttonMirrorSwitch"
 
         <com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_volume_up_24" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
 

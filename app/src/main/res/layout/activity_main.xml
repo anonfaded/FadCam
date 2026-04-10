@@ -5,9 +5,12 @@
     android:id="@+id/main_root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:colorBackground">
+    android:background="?android:colorBackground"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:descendantFocusability="beforeDescendants">
 
-    <!-- Fragment container for tab content -->
+    <!-- Status bar scrim: height constrained by bottom anchor to prevent expansion on TV/Wear -->
     <View
         android:id="@+id/status_bar_scrim"
         android:layout_width="match_parent"
@@ -17,12 +20,14 @@
         android:outlineProvider="none"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/fragment_container" />
 
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:focusable="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
@@ -58,6 +63,10 @@
             android:elevation="12dp"
             android:background="?attr/colorBottomNav"
             android:clipToOutline="true"
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:nextFocusUp="@+id/fragment_container"
+            android:nextFocusDown="@+id/bottom_navigation"
             app:itemIconSize="22dp"
             app:itemIconTint="@color/bottom_nav_icon_tint"
             app:itemTextColor="@android:color/white"
