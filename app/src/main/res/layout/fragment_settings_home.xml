@@ -28,6 +28,14 @@
             android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/white"/>
+        <!-- Mode selector dropdown -->
+        <Spinner
+            android:id="@+id/settings_mode_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:spinnerMode="dropdown"
+            android:backgroundTint="@android:color/white"/>
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -262,6 +270,43 @@
                     android:layout_marginTop="8dp"
                     android:layout_marginEnd="20dp" />
             </FrameLayout>
+            <View style="@style/SettingsDivider" />
+
+            <!-- Screen Recording Row -->
+            <LinearLayout
+                android:id="@+id/group_screen_recording"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/screen_recorder"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/screen_rec_settings_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/screen_rec_settings_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
         </LinearLayout>
 
         <!-- General Section Header -->

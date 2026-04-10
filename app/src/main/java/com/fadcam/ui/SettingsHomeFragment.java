@@ -4,8 +4,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.content.Intent;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,20 +23,117 @@ import android.widget.TextView;
 /**
  * SettingsHomeFragment
  * Lightweight entry point replacing the monolithic SettingsFragment.
- * Shows grouped navigation rows (placeholder toasts for now).
+ * Shows grouped navigation rows with a mode selector dropdown to filter
+ * settings between FadCam, FadRec (Screen Recording), or All.
  */
 public class SettingsHomeFragment extends Fragment {
+
+    // Mode filter enum
+    public enum SettingsMode { ALL, FADCAM, FADREC }
+
+    private SettingsMode currentMode = SettingsMode.ALL;
+    private Spinner modeSpinner;
+    private View groupVideoQuick;
+    private View groupAudioQuick;
+    private View groupWatermark;
+    private View groupScreenRecording;
+    private View groupWatermarkBadge;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
+
+        // Setup mode selector dropdown
+        setupModeSelector(root);
+
+        // Cache references to mode-specific groups for filtering
+        groupVideoQuick = root.findViewById(R.id.group_video_quick);
+        groupAudioQuick = root.findViewById(R.id.group_audio_quick);
+        groupWatermark = root.findViewById(R.id.group_watermark_quick);
+        groupScreenRecording = root.findViewById(R.id.group_screen_recording);
+
+        View badge = root.findViewById(R.id.watermark_new_badge);
+        if (badge != null) {
+            groupWatermarkBadge = badge.getParent() instanceof View ? (View) badge.getParent() : null;
+        }
+        // If watermark row is wrapped in FrameLayout, hide/show the FrameLayout
+        if (groupWatermark instanceof LinearLayout) {
+            View parent = (View) groupWatermark.getParent();
+            if (parent instanceof android.widget.FrameLayout) {
+                groupWatermarkBadge = parent;
+            }
+        }
+
+        // Define row IDs and wire click handlers
+        setupRowHandlers(root);
+
+        // Apply initial filter
+        applyModeFilter(SettingsMode.ALL);
+
+        return root;
+    }
+
+    /** Setup the FadCam / FadRec / All mode dropdown in the header. */
+    private void setupModeSelector(View root) {
+        modeSpinner = root.findViewById(R.id.settings_mode_spinner);
+        if (modeSpinner == null) return;
+
+        String[] modes = {"All", "FadCam", "FadRec"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                modes);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        modeSpinner.setAdapter(adapter);
+
+        modeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case 0: currentMode = SettingsMode.ALL; break;
+                    case 1: currentMode = SettingsMode.FADCAM; break;
+                    case 2: currentMode = SettingsMode.FADREC; break;
+                }
+                applyModeFilter(currentMode);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+    /** Filter visibility of settings groups based on selected mode. */
+    private void applyModeFilter(SettingsMode mode) {
+        boolean showFadCam = (mode == SettingsMode.ALL || mode == SettingsMode.FADCAM);
+        boolean showFadRec = (mode == SettingsMode.ALL || mode == SettingsMode.FADREC);
+
+        if (groupVideoQuick != null) {
+            groupVideoQuick.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+        }
+        if (groupAudioQuick != null) {
+            groupAudioQuick.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+        }
+        if (groupWatermark != null) {
+            groupWatermark.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+        }
+        if (groupWatermarkBadge != null) {
+            groupWatermarkBadge.setVisibility(showFadCam ? View.VISIBLE : View.GONE);
+        }
+        if (groupScreenRecording != null) {
+            groupScreenRecording.setVisibility(showFadRec ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    /** Wire click handlers for all settings rows. */
+    private void setupRowHandlers(View root) {
     // Removed redundant Location & Privacy group (location embedding moved into Video settings)
     int[] ids = new int[]{
         R.id.group_appearance,
         R.id.group_video_quick,
         R.id.group_video_player_settings,
         R.id.group_audio_quick,
+        R.id.group_screen_recording,
         R.id.group_storage,
         R.id.group_notifications,
         R.id.group_security,
@@ -50,6 +150,7 @@ public class SettingsHomeFragment extends Fragment {
         "Video Recording",
         "Video Player Settings",
         "Audio",
+        "Screen Recording",
         "Storage",
         "Notifications",
         "Security",
@@ -82,6 +183,11 @@ public class SettingsHomeFragment extends Fragment {
                 LinearLayout row = root.findViewById(ids[i]);
                 if(row != null){
                     row.setOnClickListener(v -> openSubFragment(new AudioSettingsFragment()));
+                }
+            } else if(ids[i] == R.id.group_screen_recording){
+                LinearLayout row = root.findViewById(ids[i]);
+                if(row != null){
+                    row.setOnClickListener(v -> openSubFragment(new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment()));
                 }
             } else if(ids[i] == R.id.group_storage){
                 LinearLayout row = root.findViewById(ids[i]);
@@ -149,9 +255,8 @@ public class SettingsHomeFragment extends Fragment {
     
     // Show/hide watermark NEW badge based on whether user has seen it
     manageBadgeVisibility(root);
-        return root;
     }
-    
+
     /**
      * Show or hide the watermark NEW badge based on whether the feature has been seen.
      */

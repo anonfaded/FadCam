@@ -2229,6 +2229,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="watch_fullscreen_not_recording">Not recording</string>
 
     <!-- Screen Recording Settings (FadRec) -->
+    <string name="screen_rec_settings_title">Screen Recording</string>
+    <string name="screen_rec_settings_subtitle">Quality, audio &amp; output settings</string>
     <string name="screen_rec_resolution">Resolution</string>
     <string name="screen_rec_framerate">Frame Rate</string>
     <string name="screen_rec_bitrate">Bitrate</string>
