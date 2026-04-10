@@ -46,6 +46,7 @@ public class AnimatedTextView extends AppCompatTextView {
     // Differential animation: column bounds (full-string layouts used for all regions)
     private float slotPrefixWidth;     // px offset from view-left to column start
     private float slotColumnWidth;     // px width of animated column = max(oldChangedW, newChangedW)
+    private float slotOldChangedWidth; // px width of old changed text (stable suffix anchor)
     private float slotNewChangedWidth; // px width of new changed text (marks where suffix starts)
     private float slotDrawBaseX;       // draw origin for the animated layouts
     private boolean slotHasDifferentialRegions;
@@ -226,20 +227,20 @@ public class AnimatedTextView extends AppCompatTextView {
                 .build();
 
         slotHasDifferentialRegions = hasDiff;
-        float oldWidth = oldStr.isEmpty() ? 0f : paint.measureText(oldStr);
-        float newWidth = newStr.isEmpty() ? 0f : paint.measureText(newStr);
         slotDrawBaseX = getCompoundPaddingLeft() + (hasDiff
-                ? computeHorizontalOffset(usableW, Math.max(oldWidth, newWidth))
+                ? computeHorizontalOffset(usableW, oldStr.isEmpty() ? 0f : paint.measureText(oldStr))
                 : 0f);
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
             slotPrefixWidth     = prefixW;
             slotColumnWidth     = columnW;       // max(oldChangedW, newChangedW)
+            slotOldChangedWidth = oldChangedW;
             slotNewChangedWidth = newChangedW;   // suffix starts here inside new layout
         } else {
             // Full-string animation — no stable prefix or suffix.
             slotPrefixWidth     = 0f;
             slotColumnWidth     = layoutW;       // cover the full rendered width
+            slotOldChangedWidth = layoutW;
             slotNewChangedWidth = layoutW;       // effectively no suffix
         }
 
@@ -421,9 +422,8 @@ public class AnimatedTextView extends AppCompatTextView {
         // Column bounds derived from prefix/changed-text widths.
         float colLeft     = slotDrawBaseX + slotPrefixWidth;
         float colRight    = colLeft + slotColumnWidth;
-        // Suffix always starts at colRight so it never encroaches on the animated column,
-        // even when the old changed-text is wider than the new one (prevents overlap).
-        float suffixStart = colRight;
+        // Keep suffix pinned to the CURRENT/old boundary while sliding so only digits move.
+        float suffixStart = colLeft + slotOldChangedWidth;
 
         // Clip Y to view bounds (never bleed above/below), but do NOT restrict X to
         // the view's current measured width — the new text may be wider than the current

@@ -130,16 +130,21 @@ public class ScreenRecordingService extends Service {
         backgroundThread = new HandlerThread("ScreenRecordingBackground");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
-        
+
         // Get screen metrics
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         if (windowManager != null) {
             DisplayMetrics metrics = new DisplayMetrics();
             windowManager.getDefaultDisplay().getRealMetrics(metrics);
-            screenWidth = metrics.widthPixels;
-            screenHeight = metrics.heightPixels;
             screenDensity = metrics.densityDpi;
-            FLog.d(TAG, String.format("Screen metrics: %dx%d @%ddpi", screenWidth, screenHeight, screenDensity));
+
+            // Read configured resolution from SharedPreferences, fall back to device screen size
+            com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(this);
+            android.util.Size res = prefs.getScreenRecordingResolution();
+            screenWidth = res.getWidth();
+            screenHeight = res.getHeight();
+            FLog.d(TAG, String.format("Screen recording resolution: %dx%d (device: %dx%d @%ddpi)",
+                    screenWidth, screenHeight, metrics.widthPixels, metrics.heightPixels, screenDensity));
         }
         
         // Create notification channel
@@ -499,20 +504,43 @@ public class ScreenRecordingService extends Service {
         }
         
         // Calculate bitrate based on resolution
-        int calculatedBitrate = calculateBitrate(screenWidth, screenHeight);
-        
-        FLog.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d, audio=%s (source=%s)",
-            screenWidth, screenHeight,
-            Constants.DEFAULT_SCREEN_RECORDING_FPS,
-            calculatedBitrate,
+        int fps = sharedPreferencesManager.getScreenRecordingFrameRate();
+        String screenOrientation = sharedPreferencesManager.getScreenRecordingOrientation();
+        boolean isLandscape = SharedPreferencesManager.ORIENTATION_LANDSCAPE.equals(screenOrientation);
+
+        // Apply orientation to dimensions: swap W/H for landscape, keep as-is for portrait
+        int videoWidth = isLandscape ? Math.max(screenWidth, screenHeight) : Math.min(screenWidth, screenHeight);
+        int videoHeight = isLandscape ? Math.min(screenWidth, screenHeight) : Math.max(screenWidth, screenHeight);
+
+        // Bitrate: 0 = Auto (VBR, encoder adapts); positive = fixed CBR bitrate
+        int userBitrate = sharedPreferencesManager.getScreenRecordingBitrate();
+
+        int finalBitrate;
+        String bitrateMode;
+        if (userBitrate <= 0) {
+            // Auto mode: use calculated bitrate with VBR encoding
+            finalBitrate = calculateBitrate(videoWidth, videoHeight, fps);
+            bitrateMode = getString(R.string.screen_rec_bitrate_mode_auto);
+        } else {
+            // Manual mode: use user-selected fixed bitrate
+            finalBitrate = userBitrate;
+            bitrateMode = getString(R.string.screen_rec_bitrate_mode_manual);
+        }
+
+        FLog.d(TAG, String.format("Video config: %dx%d @%dfps, bitrate=%d (%s), orientation=%s, audio=%s (source=%s)",
+            videoWidth, videoHeight,
+            fps,
+            finalBitrate,
+            bitrateMode,
+            screenOrientation,
             enableAudio ? "enabled" : "disabled",
             audioSource));
-        
+
         // Build recording pipeline
         try {
             ScreenRecordingPipeline.Builder pipelineBuilder = new ScreenRecordingPipeline.Builder(this)
-                .setScreenDimensions(screenWidth, screenHeight, screenDensity)
-                .setVideoConfig(Constants.DEFAULT_SCREEN_RECORDING_FPS, calculatedBitrate)
+                .setScreenDimensions(videoWidth, videoHeight, screenDensity)
+                .setVideoConfig(fps, finalBitrate)
                 .setEnableAudio(enableAudio)
                 .setAudioSource(audioSource)
                 .setMediaProjection(mediaProjection)
@@ -971,21 +999,20 @@ public class ScreenRecordingService extends Service {
     }
 
     /**
-     * Calculate appropriate bitrate based on resolution.
+     * Calculate appropriate bitrate based on resolution and frame rate.
      * Formula: pixels * fps * bpp (bits per pixel)
      */
-    private int calculateBitrate(int width, int height) {
+    private int calculateBitrate(int width, int height, int fps) {
         int pixels = width * height;
-        int fps = Constants.DEFAULT_SCREEN_RECORDING_FPS;
-        
+
         // Use 0.07 bits per pixel for good quality
         double bitsPerPixel = 0.07;
         int bitrate = (int) (pixels * fps * bitsPerPixel);
-        
+
         // Clamp between 2Mbps and 16Mbps
         int minBitrate = 2_000_000;  // 2Mbps
         int maxBitrate = 16_000_000; // 16Mbps
-        
+
         return Math.max(minBitrate, Math.min(maxBitrate, bitrate));
     }
 

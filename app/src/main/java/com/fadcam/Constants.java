@@ -352,6 +352,10 @@ public abstract class Constants {
         "pref_screen_recording_state"; // NONE/IN_PROGRESS/PAUSED
 
     // Default screen recording quality settings
+    public static final String PREF_SCREEN_RECORDING_RESOLUTION = "screen_recording_resolution"; // e.g. "1920x1080"
+    public static final String PREF_SCREEN_RECORDING_FPS = "screen_recording_fps";
+    public static final String PREF_SCREEN_RECORDING_BITRATE = "screen_recording_bitrate";
+    public static final String PREF_SCREEN_RECORDING_ORIENTATION = "screen_recording_orientation";
     public static final int DEFAULT_SCREEN_RECORDING_WIDTH = 1920; // FHD
     public static final int DEFAULT_SCREEN_RECORDING_HEIGHT = 1080; // FHD
     public static final int DEFAULT_SCREEN_RECORDING_FPS = 30;

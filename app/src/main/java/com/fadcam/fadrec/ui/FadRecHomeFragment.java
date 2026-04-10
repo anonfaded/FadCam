@@ -232,6 +232,33 @@ public class FadRecHomeFragment extends HomeFragment {
         // Setup button click handlers
         // FLog.d(TAG, "Setting up button handlers...");
         setupButtonHandlers(view);
+
+        // Override the camera row click handler: open screen recording settings
+        // (parent HomeFragment sets it to open VideoSettingsFragment)
+        View rowCamera = view.findViewById(com.fadcam.R.id.rowCamera);
+        if (rowCamera != null) {
+            rowCamera.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    com.fadcam.ui.OverlayNavUtil.show(
+                            getActivity(),
+                            new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment(),
+                            "ScreenRecordingSettingsFragment"
+                    );
+                }
+            });
+        }
+
+        // Refresh card info when the screen recording settings overlay is dismissed
+        androidx.fragment.app.FragmentManager fm = getActivity() != null
+                ? getActivity().getSupportFragmentManager() : null;
+        if (fm != null) {
+            fm.addOnBackStackChangedListener(() -> {
+                if (getView() != null && isAdded()) {
+                    updateScreenRecordingCardInfo();
+                }
+            });
+        }
+
         // FLog.d(TAG, "========== onViewCreated COMPLETE ==========");
         
         // NOTE: Receiver registration moved to onStart() to avoid double-registration
@@ -821,31 +848,28 @@ public class FadRecHomeFragment extends HomeFragment {
             }
             
             if (tvCameraTitle != null) {
-                // Get device screen resolution
-                android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
-                if (getActivity() != null) {
-                    getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
-                    int width = metrics.widthPixels;
-                    int height = metrics.heightPixels;
-                    
-                    // Update title to show screen recording info
-                    if (tvCameraTitle instanceof AnimatedTextView) {
-                        ((AnimatedTextView) tvCameraTitle).animateSlotFull("Screen Recording", 400);
+                // Read configured resolution/FPS from SharedPreferences
+                com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+                android.util.Size res = prefs.getScreenRecordingResolution();
+                int fps = prefs.getScreenRecordingFrameRate();
+
+                // Update title to show screen recording info
+                if (tvCameraTitle instanceof AnimatedTextView) {
+                    ((AnimatedTextView) tvCameraTitle).animateSlotFull("Screen Recording", 400);
+                } else {
+                    tvCameraTitle.setText("Screen Recording");
+                }
+                FLog.d(TAG, "Card title updated to Screen Recording");
+
+                // Update subtitle with configured resolution and fps
+                if (tvCameraSubtitle != null) {
+                    String subtitle = res.getWidth() + "x" + res.getHeight() + " \u2022 " + fps + "fps";
+                    if (tvCameraSubtitle instanceof AnimatedTextView) {
+                        ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
                     } else {
-                        tvCameraTitle.setText("Screen Recording");
+                        tvCameraSubtitle.setText(subtitle);
                     }
-                    FLog.d(TAG, "Card title updated to Screen Recording");
-                    
-                    // Update subtitle with device screen resolution and fps
-                    if (tvCameraSubtitle != null) {
-                        String subtitle = width + "x" + height + " • 30fps";
-                        if (tvCameraSubtitle instanceof AnimatedTextView) {
-                            ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
-                        } else {
-                            tvCameraSubtitle.setText(subtitle);
-                        }
-                        FLog.d(TAG, "Card subtitle updated to: " + subtitle);
-                    }
+                    FLog.d(TAG, "Card subtitle updated to: " + subtitle);
                 }
             }
         });
@@ -875,18 +899,15 @@ public class FadRecHomeFragment extends HomeFragment {
             }
             
             if (tvCameraSubtitle != null) {
-                // Get device screen resolution
-                android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
-                if (getActivity() != null) {
-                    getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
-                    int width = metrics.widthPixels;
-                    int height = metrics.heightPixels;
-                    String subtitle = width + "x" + height + " • 30fps";
-                    if (animate && tvCameraSubtitle instanceof AnimatedTextView) {
-                        ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
-                    } else {
-                        tvCameraSubtitle.setText(subtitle);
-                    }
+                // Read configured resolution/FPS from SharedPreferences
+                com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+                android.util.Size res = prefs.getScreenRecordingResolution();
+                int fps = prefs.getScreenRecordingFrameRate();
+                String subtitle = res.getWidth() + "x" + res.getHeight() + " \u2022 " + fps + "fps";
+                if (animate && tvCameraSubtitle instanceof AnimatedTextView) {
+                    ((AnimatedTextView) tvCameraSubtitle).animateSlotFull(subtitle, 400);
+                } else {
+                    tvCameraSubtitle.setText(subtitle);
                 }
             }
             screenCardInfoInitialized = true;

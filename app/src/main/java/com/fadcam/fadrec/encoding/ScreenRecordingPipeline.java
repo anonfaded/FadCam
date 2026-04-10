@@ -446,18 +446,16 @@ public class ScreenRecordingPipeline {
         format.setInteger(MediaFormat.KEY_BIT_RATE, effectiveBitrate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
-        
+
         // Baseline profile for maximum compatibility
         format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
-        
-        // Software encoder may need lower complexity
-        if (isSoftware) {
-            format.setInteger(MediaFormat.KEY_COMPLEXITY, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR);
-        }
-        
-        // FLog.d(TAG, String.format("Configuring %s encoder: %dx%d @%dfps, bitrate=%d",
+
+        // Bitrate mode: VBR for quality, CBR for consistent bitrate
+        format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
+
+        // FLog.d(TAG, String.format("Configuring %s encoder: %dx%d @%dfps, bitrate=%d, mode=VBR",
         //     isSoftware ? "software" : "hardware", width, height, videoFramerate, effectiveBitrate));
-        
+
         encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         encoderInputSurface = encoder.createInputSurface();
     }

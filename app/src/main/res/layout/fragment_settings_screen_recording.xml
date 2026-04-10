@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <!-- Fixed Header -->
+    <LinearLayout
+        android:id="@+id/header_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:background="@drawable/header_bar_rounded_bg"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        <ImageView
+            android:id="@+id/back_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="2dp"
+            android:src="@drawable/ic_close"
+            android:tint="@android:color/white"/>
+        <TextView
+            android:id="@+id/header_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Screen Recording"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="12dp"/>
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/content_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingBottom="76dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp">
+
+            <!-- Group Card -->
+            <LinearLayout
+                android:id="@+id/group_quality"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_group_card_bg"
+                android:padding="0dp">
+
+                <!-- Resolution Row -->
+                <LinearLayout
+                    android:id="@+id/row_resolution"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_grid"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Resolution"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_resolution"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1920×1080"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <!-- Frame Rate Row -->
+                <LinearLayout
+                    android:id="@+id/row_framerate"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_fps"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Frame Rate"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_framerate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="30 fps"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <!-- Bitrate Row -->
+                <LinearLayout
+                    android:id="@+id/row_bitrate"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_bitrate"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Bitrate"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_bitrate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8 Mbps"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <!-- Orientation Row -->
+                <LinearLayout
+                    android:id="@+id/row_orientation"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_screen_rotation"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/screen_rec_orientation"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_orientation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Portrait"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <!-- Audio Source Row -->
+                <LinearLayout
+                    android:id="@+id/row_audio_source"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_audio"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/fadrec_audio_source_title"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_audio_source"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Microphone"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

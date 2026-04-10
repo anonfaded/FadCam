@@ -2228,4 +2228,18 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="watch_fullscreen_hint">Camera is recording</string>
     <string name="watch_fullscreen_not_recording">Not recording</string>
 
+    <!-- Screen Recording Settings (FadRec) -->
+    <string name="screen_rec_resolution">Resolution</string>
+    <string name="screen_rec_framerate">Frame Rate</string>
+    <string name="screen_rec_bitrate">Bitrate</string>
+    <string name="screen_rec_orientation">Orientation</string>
+    <string name="screen_rec_bitrate_mode_auto">Auto (VBR)</string>
+    <string name="screen_rec_bitrate_mode_manual">Manual (CBR)</string>
+    <string name="screen_rec_bitrate_helper">VBR adapts to content complexity. CBR uses a fixed target bitrate.</string>
+    <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
+    <string name="screen_rec_bitrate_low_hint">Lower values save storage</string>
+    <string name="screen_rec_bitrate_high_hint">Higher values improve quality</string>
+    <string name="screen_rec_orientation_portrait">Portrait</string>
+    <string name="screen_rec_orientation_landscape">Landscape</string>
+
 </resources>

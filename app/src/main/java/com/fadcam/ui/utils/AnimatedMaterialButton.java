@@ -45,6 +45,8 @@ public class AnimatedMaterialButton extends MaterialButton {
 
     private float slotPrefixWidth;
     private float slotColumnWidth;
+    private float slotOldChangedWidth;
+    private float slotNewChangedWidth;
     private float slotDrawBaseX;
     private boolean slotHasDifferentialRegions;
 
@@ -202,14 +204,16 @@ public class AnimatedMaterialButton extends MaterialButton {
             float newChangedW = newChanged.isEmpty() ? 0f : paint.measureText(newChanged);
             slotPrefixWidth = prefixW;
             slotColumnWidth = Math.max(oldChangedW, newChangedW);
+            slotOldChangedWidth = oldChangedW;
+            slotNewChangedWidth = newChangedW;
             slotHasDifferentialRegions = hasDiff;
-            float oldWidth = oldStr.isEmpty() ? 0f : paint.measureText(oldStr);
-            float newWidth = newStr.isEmpty() ? 0f : paint.measureText(newStr);
             slotDrawBaseX = getCompoundPaddingLeft() + computeHorizontalOffset(usableW,
-                    Math.max(oldWidth, newWidth));
+                    oldStr.isEmpty() ? 0f : paint.measureText(oldStr));
         } else {
             slotPrefixWidth = 0f;
             slotColumnWidth = layoutW;
+            slotOldChangedWidth = layoutW;
+            slotNewChangedWidth = layoutW;
             slotHasDifferentialRegions = false;
             slotDrawBaseX = getCompoundPaddingLeft();
         }
@@ -355,7 +359,7 @@ public class AnimatedMaterialButton extends MaterialButton {
 
         // Static suffix (differential mode only)
         if (slotHasDifferentialRegions) {
-            int suffixL = (int) colRight;
+            int suffixL = (int) Math.ceil(colLeft + slotOldChangedWidth);
             int suffixR = viewW - getCompoundPaddingRight();
             if (suffixL < suffixR) {
                 canvas.save();

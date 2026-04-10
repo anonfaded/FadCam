@@ -1984,6 +1984,92 @@ public class SharedPreferencesManager {
     }
 
     /**
+     * Gets the screen recording resolution from preferences.
+     * Falls back to device screen size if not set.
+     */
+    public android.util.Size getScreenRecordingResolution() {
+        String saved = sharedPreferences.getString(Constants.PREF_SCREEN_RECORDING_RESOLUTION, null);
+        if (saved != null) {
+            try {
+                String[] parts = saved.split("x");
+                return new android.util.Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+            } catch (Exception e) {
+                // fall through to default
+            }
+        }
+        return new android.util.Size(
+            Constants.DEFAULT_SCREEN_RECORDING_WIDTH,
+            Constants.DEFAULT_SCREEN_RECORDING_HEIGHT
+        );
+    }
+
+    /**
+     * Sets the screen recording resolution preference.
+     */
+    public void setScreenRecordingResolution(int width, int height) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_RESOLUTION, width + "x" + height)
+            .apply();
+    }
+
+    /**
+     * Gets the screen recording frame rate from preferences.
+     */
+    public int getScreenRecordingFrameRate() {
+        return sharedPreferences.getInt(
+            Constants.PREF_SCREEN_RECORDING_FPS,
+            Constants.DEFAULT_SCREEN_RECORDING_FPS
+        );
+    }
+
+    /**
+     * Sets the screen recording frame rate preference.
+     */
+    public void setScreenRecordingFrameRate(int fps) {
+        sharedPreferences.edit()
+            .putInt(Constants.PREF_SCREEN_RECORDING_FPS, fps)
+            .apply();
+    }
+
+    /**
+     * Gets the screen recording bitrate from preferences.
+     */
+    public int getScreenRecordingBitrate() {
+        return sharedPreferences.getInt(
+            Constants.PREF_SCREEN_RECORDING_BITRATE,
+            Constants.DEFAULT_SCREEN_RECORDING_BITRATE
+        );
+    }
+
+    /**
+     * Sets the screen recording bitrate preference.
+     */
+    public void setScreenRecordingBitrate(int bitrate) {
+        sharedPreferences.edit()
+            .putInt(Constants.PREF_SCREEN_RECORDING_BITRATE, bitrate)
+            .apply();
+    }
+
+    /**
+     * Gets the screen recording orientation.
+     */
+    public String getScreenRecordingOrientation() {
+        return sharedPreferences.getString(
+            Constants.PREF_SCREEN_RECORDING_ORIENTATION,
+            SharedPreferencesManager.ORIENTATION_PORTRAIT
+        );
+    }
+
+    /**
+     * Sets the screen recording orientation.
+     */
+    public void setScreenRecordingOrientation(String orientation) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_ORIENTATION, orientation)
+            .apply();
+    }
+
+    /**
      * Gets the elapsed time labels visibility preference for screen recording.
      * @return true to show labels (d/h/m/s), false to hide
      */
