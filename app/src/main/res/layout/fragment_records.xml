@@ -172,7 +172,7 @@
                     android:src="@drawable/ic_delete_white"
                     android:tint="@android:color/white" />
 
-                <TextView
+                <com.fadcam.ui.utils.AnimatedTextView
                     android:id="@+id/records_header_delete_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -183,7 +183,7 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <TextView
+                <com.fadcam.ui.utils.AnimatedTextView
                     android:id="@+id/records_header_delete_ok"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

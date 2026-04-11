@@ -412,12 +412,12 @@ public class RecordsFragment extends BaseFragment implements
     private RecordsDeletionSessionSnapshot deletionSnapshot;
     private View deletionDock;
     private ImageView deletionDockIcon;
-    private TextView deletionDockTitle;
+    private com.fadcam.ui.utils.AnimatedTextView deletionDockTitle;
     private LinearProgressIndicator deletionDockProgress;
     private TextView deletionDockCurrentItem;
     private TextView deletionDockEta;
     private TextView deletionDockSummary;
-    private TextView deletionDockOk;
+    private com.fadcam.ui.utils.AnimatedTextView deletionDockOk;
     private boolean isDeletionDockVisible = false;
     private ValueAnimator deletionDockHeightAnimator;
 
@@ -573,19 +573,19 @@ public class RecordsFragment extends BaseFragment implements
 
         if (snapshot.isFinished()) {
             if (snapshot.state == RecordsDeletionSessionSnapshot.State.CANCELLED) {
-                deletionDockTitle.setText(getFinishedCancelledTitle(snapshot));
+                deletionDockTitle.animateSlot(getFinishedCancelledTitle(snapshot), 300);
                 deletionDockIcon.setImageResource(R.drawable.ic_error);
                 deletionDockCurrentItem.setText(getFinishedBodyPartial(snapshot));
             } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_SUCCESS) {
-                deletionDockTitle.setText(getFinishedSuccessTitle(snapshot));
+                deletionDockTitle.animateSlot(getFinishedSuccessTitle(snapshot), 300);
                 deletionDockIcon.setImageResource(R.drawable.ic_check_circle);
                 deletionDockCurrentItem.setText(getFinishedBodySuccess(snapshot));
             } else if (snapshot.state == RecordsDeletionSessionSnapshot.State.COMPLETED_PARTIAL) {
-                deletionDockTitle.setText(getFinishedPartialTitle(snapshot));
+                deletionDockTitle.animateSlot(getFinishedPartialTitle(snapshot), 300);
                 deletionDockIcon.setImageResource(R.drawable.ic_error);
                 deletionDockCurrentItem.setText(getFinishedBodyPartial(snapshot));
             } else {
-                deletionDockTitle.setText(getFinishedFailedTitle(snapshot));
+                deletionDockTitle.animateSlot(getFinishedFailedTitle(snapshot), 300);
                 deletionDockIcon.setImageResource(R.drawable.ic_error);
                 deletionDockCurrentItem.setText(getFinishedBodyFailed(snapshot));
             }
@@ -610,7 +610,7 @@ public class RecordsFragment extends BaseFragment implements
         }
 
         int activeIndex = Math.max(1, Math.min(Math.max(1, snapshot.totalItemCount), snapshot.currentItemIndex));
-        deletionDockTitle.setText(getRunningTitle(snapshot, activeIndex));
+        deletionDockTitle.animateSlot(getRunningTitle(snapshot, activeIndex), 300);
         deletionDockIcon.setImageResource(getRunningIcon(snapshot));
         deletionDockProgress.setProgress(snapshot.getProgressPercent());
         deletionDockCurrentItem.setText(snapshot.currentItemName == null || snapshot.currentItemName.trim().isEmpty()
@@ -886,9 +886,9 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
         deletionDockOk.animate().cancel();
-        deletionDockOk.setText(activeSession
+        deletionDockOk.animateSlot(getString(activeSession
                 ? R.string.records_delete_header_action_cancel
-                : R.string.records_delete_header_action_ok);
+                : R.string.records_delete_header_action_ok), 300);
         deletionDockOk.setOnClickListener(v -> {
             if (activeSession) {
                 cancelDeletionSession();
