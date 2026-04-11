@@ -671,6 +671,14 @@ public class RecordsFragment extends BaseFragment implements
                     total
             );
         }
+        if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
+            return getResources().getQuantityString(
+                    R.plurals.records_save_export_header_progress_title,
+                    total,
+                    activeIndex,
+                    total
+            );
+        }
         return getResources().getQuantityString(
                 R.plurals.records_delete_header_progress_title,
                 total,
@@ -686,6 +694,9 @@ public class RecordsFragment extends BaseFragment implements
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
             return R.drawable.ic_drive;
         }
+        if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
+            return R.drawable.ic_export_video;
+        }
         return R.drawable.ic_delete_white;
     }
 
@@ -696,6 +707,9 @@ public class RecordsFragment extends BaseFragment implements
         }
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
             return getString(R.string.records_save_header_preparing_move);
+        }
+        if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
+            return getString(R.string.records_save_header_preparing_export);
         }
         return getString(R.string.records_delete_header_preparing);
     }

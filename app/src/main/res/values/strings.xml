@@ -360,6 +360,10 @@
         <item quantity="one">Moving %1$d of %2$d item</item>
         <item quantity="other">Moving %1$d of %2$d items</item>
     </plurals>
+    <plurals name="records_save_export_header_progress_title">
+        <item quantity="one">Exporting %1$d of %2$d item</item>
+        <item quantity="other">Exporting %1$d of %2$d items</item>
+    </plurals>
     <plurals name="records_delete_queued_toast">
         <item quantity="one">Deleting 1 item in background.</item>
         <item quantity="other">Deleting %d items in background.</item>
