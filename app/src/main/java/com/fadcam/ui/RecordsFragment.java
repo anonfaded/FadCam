@@ -708,13 +708,17 @@ public class RecordsFragment extends BaseFragment implements
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
             return getString(R.string.records_save_header_done_success_move);
         }
+        if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
+            return getString(R.string.records_save_header_done_success_export);
+        }
         return getString(R.string.records_delete_header_done_success);
     }
 
     @NonNull
     private String getFinishedPartialTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
-                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
             return getString(R.string.records_save_header_done_partial);
         }
         return getString(R.string.records_delete_header_done_partial);
@@ -723,7 +727,8 @@ public class RecordsFragment extends BaseFragment implements
     @NonNull
     private String getFinishedFailedTitle(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
-                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
             return getString(R.string.records_save_header_done_failed);
         }
         return getString(R.string.records_delete_header_done_failed);
@@ -746,13 +751,17 @@ public class RecordsFragment extends BaseFragment implements
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
             return getString(R.string.records_save_header_done_body_success_move, snapshot.completedItemCount);
         }
+        if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
+            return getString(R.string.records_save_header_done_body_success_export, snapshot.completedItemCount);
+        }
         return getString(R.string.records_delete_header_done_body_success, snapshot.completedItemCount);
     }
 
     @NonNull
     private String getFinishedBodyPartial(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
-                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
             return getString(
                     R.string.records_save_header_done_body_partial,
                     snapshot.completedItemCount,
@@ -769,7 +778,8 @@ public class RecordsFragment extends BaseFragment implements
     @NonNull
     private String getFinishedBodyFailed(@NonNull RecordsDeletionSessionSnapshot snapshot) {
         if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
-                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY) {
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
+                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
             return getString(R.string.records_save_header_done_body_failed, snapshot.failedItemCount);
         }
         return getString(R.string.records_delete_header_done_body_failed, snapshot.failedItemCount);
@@ -1247,6 +1257,14 @@ public class RecordsFragment extends BaseFragment implements
                                 intent.getStringExtra(Constants.EXTRA_RECORDS_DELETE_SESSION_JSON));
                         deletionSnapshot = snapshot;
                         renderDeletionSnapshot(snapshot, false);
+                        
+                        // For COPY and EXPORT operations, trigger delta scan to refresh records list
+                        if (Constants.ACTION_RECORDS_DELETE_SESSION_FINISHED.equals(action)
+                                && snapshot != null
+                                && (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
+                                || snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE)) {
+                            triggerRecordsDeltaScanWithDelay(200);
+                        }
                     }
                 }
             };
@@ -5160,6 +5178,18 @@ public class RecordsFragment extends BaseFragment implements
     private void requestRealtimeRefresh(@NonNull String reason) {
         if (!isAdded()) return;
         loadRecordsList(true);
+    }
+
+    private void triggerRecordsDeltaScanWithDelay(long delayMs) {
+        if (progressHandler == null) {
+            return;
+        }
+        if (deferredRecordsDeltaScanRunnable != null) {
+            progressHandler.removeCallbacks(deferredRecordsDeltaScanRunnable);
+        }
+        if (deferredRecordsDeltaScanRunnable != null) {
+            progressHandler.postDelayed(deferredRecordsDeltaScanRunnable, delayMs);
+        }
     }
 
     private void drainPendingRealtimeRefresh() {

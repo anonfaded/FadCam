@@ -174,6 +174,9 @@ public class RecordsDeletionNotificationManager {
             case SAVE_MOVE_TO_GALLERY:
                 return context.getString(R.string.records_save_notification_summary_text_move,
                         completedCount, failedCount);
+            case SAVE_EXPORT_TO_CUSTOM_TREE:
+                return context.getString(R.string.records_save_notification_summary_text_export,
+                        completedCount, failedCount);
             case DELETE:
             default:
                 return context.getString(R.string.records_delete_notification_summary_text,
