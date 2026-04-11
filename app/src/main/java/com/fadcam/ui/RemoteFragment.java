@@ -181,7 +181,13 @@ public class RemoteFragment extends BaseFragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_remote, container, false);
+        View view = inflater.inflate(R.layout.fragment_remote, container, false);
+        // Request focus on first focusable element for D-pad/TV remote support.
+        view.post(() -> {
+            View first = com.fadcam.ui.utils.DpadSettingsFocusHelper.findFirstFocusable(view);
+            if (first != null) first.requestFocus();
+        });
+        return view;
     }
     
     @Override

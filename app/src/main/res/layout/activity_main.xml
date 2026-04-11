@@ -10,7 +10,8 @@
     android:focusableInTouchMode="true"
     android:descendantFocusability="beforeDescendants">
 
-    <!-- Status bar scrim: height constrained by bottom anchor to prevent expansion on TV/Wear -->
+    <!-- Status bar scrim: height is dynamically set via ConstraintSet in MainActivity -->
+    <!-- For phones: height = statusBars.top, For TV/Wear: height = 0 -->
     <View
         android:id="@+id/status_bar_scrim"
         android:layout_width="match_parent"
@@ -20,16 +21,19 @@
         android:outlineProvider="none"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/fragment_container" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:focusable="false"
+        android:clipToPadding="false"
+        android:clipChildren="false"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Full bottom focus scrim around dock -->
     <View
@@ -53,7 +57,9 @@
         android:paddingBottom="8dp"
         android:clipChildren="false"
         android:clipToPadding="false"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"

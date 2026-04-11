@@ -11,7 +11,9 @@
         android:layout_height="match_parent"
         android:paddingBottom="76dp"
         android:clipToPadding="false"
-        android:scrollbars="none">
+        android:scrollbars="none"
+        android:focusable="false"
+        android:descendantFocusability="afterDescendants">
 
         <LinearLayout
             android:layout_width="match_parent"

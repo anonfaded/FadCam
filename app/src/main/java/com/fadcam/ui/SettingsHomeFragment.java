@@ -58,6 +58,14 @@ public class SettingsHomeFragment extends Fragment {
         refreshAppInlineValues(root);
         manageBadgeVisibility(root);
 
+        // Request focus on first settings row for D-pad navigation (TV support)
+        root.post(() -> {
+            View firstFocusable = findFirstFocusableView(root.findViewById(R.id.group_readme));
+            if (firstFocusable != null) {
+                firstFocusable.requestFocus();
+            }
+        });
+
         return root;
     }
 
@@ -173,7 +181,8 @@ public class SettingsHomeFragment extends Fragment {
         if (root == null) return;
 
         TextView modeText = root.findViewById(R.id.mode_selector_text);
-        ImageView modeIcon = root.findViewById(R.id.mode_selector_icon);
+        android.widget.TextView modeIconText = root.findViewById(R.id.mode_selector_icon_text);
+        ImageView modeIconImage = root.findViewById(R.id.mode_selector_icon_image);
 
         if (modeText != null) {
             switch (currentMode) {
@@ -182,11 +191,19 @@ public class SettingsHomeFragment extends Fragment {
                 case FADREC: modeText.setText("FadRec"); break;
             }
         }
-        if (modeIcon != null) {
-            switch (currentMode) {
-                case ALL: modeIcon.setImageResource(R.drawable.play_button_rounded); break;
-                case FADCAM: modeIcon.setImageResource(R.drawable.ic_vid_cam); break;
-                case FADREC: modeIcon.setImageResource(R.drawable.screen_recorder); break;
+        // Toggle between material icon text (All/FadCam) and drawable image (FadRec)
+        // so the header button always shows the exact same icon as the popup dropdown.
+        if (modeIconText != null && modeIconImage != null) {
+            if (currentMode == SettingsMode.FADREC) {
+                modeIconText.setVisibility(View.GONE);
+                modeIconImage.setVisibility(View.VISIBLE);
+            } else {
+                modeIconImage.setVisibility(View.GONE);
+                modeIconText.setVisibility(View.VISIBLE);
+                switch (currentMode) {
+                    case ALL: modeIconText.setText("apps"); break;
+                    case FADCAM: modeIconText.setText("videocam"); break;
+                }
             }
         }
     }
@@ -399,5 +416,73 @@ public class SettingsHomeFragment extends Fragment {
                 watermarkBadge.setVisibility(hasSeen ? View.GONE : View.VISIBLE);
             }
         } catch (Exception ignore) {}
+    }
+
+    /**
+     * Handle D-pad/remote control key events for TV/Remote support.
+     * Provides navigation for settings rows on TV devices.
+     */
+    public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
+        View view = getView();
+        if (view == null) return false;
+        
+        switch (keyCode) {
+            case android.view.KeyEvent.KEYCODE_DPAD_UP: {
+                View currentFocus = view.findFocus();
+                if (currentFocus == null) {
+                    return view.requestFocus();
+                }
+                View next = currentFocus.focusSearch(android.view.View.FOCUS_UP);
+                if (next != null && next != currentFocus) {
+                    return next.requestFocus();
+                }
+                return false;
+            }
+            
+            case android.view.KeyEvent.KEYCODE_DPAD_DOWN: {
+                View currentFocus = view.findFocus();
+                if (currentFocus == null) {
+                    return view.requestFocus();
+                }
+                View next = currentFocus.focusSearch(android.view.View.FOCUS_DOWN);
+                if (next != null && next != currentFocus) {
+                    return next.requestFocus();
+                }
+                return false;
+            }
+            
+            case android.view.KeyEvent.KEYCODE_DPAD_CENTER:
+            case android.view.KeyEvent.KEYCODE_ENTER: {
+                View focused = view.findFocus();
+                if (focused != null && focused.isClickable()) {
+                    focused.performClick();
+                    return true;
+                }
+                return false;
+            }
+            
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Find first focusable view in hierarchy (for D-pad support).
+     */
+    private View findFirstFocusableView(View view) {
+        if (view == null) return null;
+        if (view.isFocusable() && view.getVisibility() == android.view.View.VISIBLE) {
+            return view;
+        }
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findFirstFocusableView(group.getChildAt(i));
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 }

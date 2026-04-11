@@ -135,6 +135,12 @@ public class FaditorMiniFragment extends BaseFragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_faditor_mini, container, false);
 
+        // Request focus on first focusable element for D-pad/TV remote support.
+        view.post(() -> {
+            View first = com.fadcam.ui.utils.DpadSettingsFocusHelper.findFirstFocusable(view);
+            if (first != null) first.requestFocus();
+        });
+
         // Setup "Start Project" button → opens video source chooser
         View selectButton = view.findViewById(R.id.btn_select_video);
         if (selectButton != null) {

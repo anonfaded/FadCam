@@ -49,7 +49,9 @@
         android:fillViewport="true"
         android:scrollbars="none"
         android:clipToPadding="false"
-        android:paddingBottom="76dp">
+        android:paddingBottom="76dp"
+        android:focusable="false"
+        android:descendantFocusability="afterDescendants">
 
         <LinearLayout
             android:layout_width="match_parent"

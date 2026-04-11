@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="20dp"
     android:background="@drawable/picker_bottom_sheet_dark_gradient_bg">
+
+    <!-- Scrollable content to support landscape/TV where bottom sheet would go off-screen -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
 
     <!-- Header -->
     <TextView
@@ -31,7 +40,8 @@
         android:paddingVertical="12dp"
         android:layout_marginBottom="8dp"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:nextFocusDown="@+id/rowMedium">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -78,7 +88,9 @@
         android:paddingVertical="12dp"
         android:layout_marginBottom="8dp"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:nextFocusUp="@+id/rowLow"
+        android:nextFocusDown="@+id/rowHigh">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -125,7 +137,8 @@
         android:paddingVertical="12dp"
         android:layout_marginBottom="8dp"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:nextFocusUp="@+id/rowMedium">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -172,7 +185,8 @@
         android:paddingVertical="12dp"
         android:layout_marginBottom="12dp"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:nextFocusUp="@+id/rowHigh">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -215,4 +229,8 @@
         android:textColor="@android:color/darker_gray"
         android:paddingTop="8dp" />
 
-</LinearLayout>
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</FrameLayout>

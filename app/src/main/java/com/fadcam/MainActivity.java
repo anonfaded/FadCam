@@ -53,8 +53,7 @@ import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.ViewCompat;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.ConstraintSet;
+
 import androidx.recyclerview.widget.RecyclerView;
 import android.content.pm.PackageManager;
 
@@ -703,6 +702,22 @@ public class MainActivity extends AppCompatActivity {
         }
         // theme change)-----------
 
+        // dpad_settings)-----------
+        // Register once so every settings sub-fragment gets proper D-pad focus when opened.
+        // The helper silently no-ops on non-settings fragments (those without content_scroll).
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                    @Override
+                    public void onFragmentViewCreated(
+                            @androidx.annotation.NonNull androidx.fragment.app.FragmentManager fm,
+                            @androidx.annotation.NonNull androidx.fragment.app.Fragment f,
+                            @androidx.annotation.NonNull View v,
+                            @androidx.annotation.Nullable android.os.Bundle savedInstanceState) {
+                        com.fadcam.ui.utils.DpadSettingsFocusHelper.setup(v);
+                    }
+                }, false /* non-recursive: only direct overlay_fragment_container children */);
+        // dpad_settings)-----------
+
         // shortcuts)-----------
         handleWidgetIntent();
         // shortcuts)-----------
@@ -1071,6 +1086,43 @@ public class MainActivity extends AppCompatActivity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         Fragment currentFragment = getCurrentFragment();
         int currentPos = getCurrentFragmentPosition();
+
+        // D-pad up/down: move focus explicitly so it always works even after state
+        // transitions that disable views (e.g. Start→recording causes buttonPauseResume to
+        // be disabled, Android loses the focus chain and DPAD stops working).
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            int direction = (keyCode == KeyEvent.KEYCODE_DPAD_UP) ? View.FOCUS_UP : View.FOCUS_DOWN;
+            View focused = getCurrentFocus();
+            // If a real descendant has focus, try to traverse from it
+            if (focused != null && focused.getId() != R.id.main_root_layout) {
+                View next = focused.focusSearch(direction);
+                if (next != null && next != focused && next.getId() != R.id.main_root_layout) {
+                    next.requestFocus();
+                    return true;
+                }
+            }
+            // Fallback: focus is lost (root grabbed it or no focused view).
+            // Try known anchors first, then fall back to ANY first focusable descendant.
+            // Only fall back if focus is truly missing (null or root). If a real view has
+            // focus but focusSearch failed, leave it alone so we don't reset the user's position.
+            View currentlyFocused = getCurrentFocus();
+            boolean focusLost = currentlyFocused == null || currentlyFocused.getId() == R.id.main_root_layout;
+            if (focusLost && currentFragment != null && currentFragment.getView() != null) {
+                View anchor = currentFragment.getView().findViewById(R.id.btnHamburgerMenu);
+                if (anchor == null) anchor = currentFragment.getView().findViewById(R.id.buttonStartStop);
+                if (anchor != null && anchor.isEnabled()) {
+                    anchor.requestFocus();
+                    return true;
+                }
+                // Generic fallback: find first focusable, visible, enabled descendant
+                View first = com.fadcam.ui.utils.DpadSettingsFocusHelper.findFirstFocusable(currentFragment.getView());
+                if (first != null) {
+                    first.requestFocus();
+                    return true;
+                }
+            }
+            return true;
+        }
         
         // D-pad right: navigate to next tab
         if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
@@ -1606,29 +1658,51 @@ public class MainActivity extends AppCompatActivity {
             View fragmentContainer = findViewById(R.id.fragment_container);
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
             if (fragmentContainer != null) {
-                // Apply all 4 sides: in landscape, nav bar moves to right (systemBars.right > 0).
+                // fragment_container spans the full screen (behind the dock).
+                // paddingTop  → pushes content below the floating status_bar_scrim.
+                // paddingBottom → reserves space for the dock so layoutControls seats
+                //                 just above it; clipToPadding=false allows visual overflow
+                //                 behind/below the dock for the gradient and other effects.
+                // On TV/Wear: no status bar, no dock → all padding = 0.
+                ((ViewGroup) fragmentContainer).setClipToPadding(false);
+                ((ViewGroup) fragmentContainer).setClipChildren(false);
+                int contentTopPadding = isFormFactorTV ? 0 : systemBars.top;
+                // Fragment spans full screen (floating dock UX):
+                // paddingBottom = only the system gesture bar so the last interactive
+                // element is never hidden behind the gesture area.
+                // Dock clearance is handled per-fragment via layout_marginBottom=72dp.
+                int contentBottomPadding = isFormFactorTV ? 0 : systemBars.bottom;
                 fragmentContainer.setPadding(
-                        systemBars.left, systemBars.top,
-                        systemBars.right, systemBars.bottom);
+                        systemBars.left, contentTopPadding,
+                        systemBars.right, contentBottomPadding);
+            }
+            if (overlayContainer != null) {
+                // Apply same insets to overlay container (for Trash, Settings sheets, etc.)
+                // These fragments appear on top and need proper padding for system bars.
+                // On TV/Wear force top=0 (no status bar) and bottom=0 (no nav bar pill).
+                int overlayTop = isFormFactorTV ? 0 : systemBars.top;
+                int overlayBottom = isFormFactorTV ? 0 : systemBars.bottom;
+                overlayContainer.setPadding(
+                        systemBars.left, overlayTop,
+                        systemBars.right, overlayBottom);
             }
 
-            // Update status bar scrim height using ConstraintSet for proper constraint-based sizing
-            // This prevents ConstraintLayout from incorrectly expanding height="0dp" views to fill screen
+            // Update status bar scrim height directly via LayoutParams.
+            // The scrim floats over fragment_container via elevation="11dp".
+            // On TV/Wear: hide scrim (GONE). On phones: set to actual status bar height.
             if (statusBarScrim != null) {
-                // On TV/Wear: hide scrim (height=0). On phones: set to actual status bar height.
-                int scrimHeight = isFormFactorTV ? 0 : systemBars.top;
-                
-                // Use ConstraintSet to properly update constraints (not just LayoutParams)
-                // LayoutParams.height doesn't work with ConstraintLayout constraints
-                if (rootView instanceof ConstraintLayout) {
-                    ConstraintSet cs = new ConstraintSet();
-                    cs.clone((ConstraintLayout) rootView);
-                    cs.constrainHeight(R.id.status_bar_scrim, scrimHeight);
-                    cs.applyTo((ConstraintLayout) rootView);
-                    
-                    // Log for debugging TV form factors
-                    if (isFormFactorTV && scrimHeight == 0) {
-                        FLog.i("MainActivity", "TV/Wear form factor detected: status_bar_scrim hidden (height=0)");
+                if (isFormFactorTV) {
+                    // GONE is definitive — a GONE view never renders regardless of constraints.
+                    // Setting height=0 on a MATCH_CONSTRAINT view doesn't reliably suppress it.
+                    statusBarScrim.setVisibility(View.GONE);
+                    FLog.i("MainActivity", "TV/Wear: status_bar_scrim set to GONE");
+                } else {
+                    statusBarScrim.setVisibility(View.VISIBLE);
+                    int scrimHeight = systemBars.top;
+                    ViewGroup.LayoutParams scrimLp = statusBarScrim.getLayoutParams();
+                    if (scrimLp != null && scrimLp.height != scrimHeight) {
+                        scrimLp.height = scrimHeight;
+                        statusBarScrim.setLayoutParams(scrimLp);
                     }
                 }
             }
@@ -1652,11 +1726,6 @@ public class MainActivity extends AppCompatActivity {
                     lp.height = requiredHeight;
                     dockGradientScrim.setLayoutParams(lp);
                 }
-            }
-
-            if (overlayContainer != null) {
-                // Apply all insets to overlay container (for trash, etc.)
-                overlayContainer.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             }
 
             return insets;

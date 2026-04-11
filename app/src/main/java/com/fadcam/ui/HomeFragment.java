@@ -3752,6 +3752,16 @@ public class HomeFragment extends BaseFragment {
 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         FLog.d(TAG, "[FragmentLifecycle] onCreateView: Layout inflated successfully");
+        
+        // Request focus on first focusable element for D-pad support (TV/Remote)
+        view.post(() -> {
+            View firstFocusable = view.findViewById(R.id.btnHamburgerMenu);
+            if (firstFocusable != null && firstFocusable.isFocusable()) {
+                firstFocusable.requestFocus();
+                FLog.d(TAG, "D-pad support: Focus requested on hamburger menu button");
+            }
+        });
+        
         return view;
     }
 
@@ -12710,21 +12720,57 @@ public class HomeFragment extends BaseFragment {
      * Delegates to system for focus navigation, handles ENTER/DPAD_CENTER for clicks.
      */
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        // Let system handle D-pad up/down for vertical focus navigation
-        if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+        View view = getView();
+        if (view == null) return false;
+        
+        // D-pad up/down: manual focus traversal with intelligent fallback
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+            View currentFocus = view.findFocus();
+            if (currentFocus == null) {
+                // No focus - request on first focusable element
+                return view.requestFocus();
+            }
+            // Try to move focus up
+            View next = currentFocus.focusSearch(View.FOCUS_UP);
+            if (next != null && next != currentFocus) {
+                return next.requestFocus();
+            }
             return false;
+        }
+        
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            View currentFocus = view.findFocus();
+            if (currentFocus == null) {
+                // No focus - request on first focusable element
+                return view.requestFocus();
+            }
+            // Try to move focus down
+            View next = currentFocus.focusSearch(View.FOCUS_DOWN);
+            if (next != null && next != currentFocus) {
+                return next.requestFocus();
+            }
+            return false;
+        }
+        
+        // D-pad left/right: switch tabs (already handled by MainActivity, but allow fallback)
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            return false; // Let MainActivity tab switching handle it
         }
         
         // D-pad center or ENTER: click focused view
         if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-            View view = getView();
-            if (view != null) {
-                View focused = view.findFocus();
-                if (focused != null && focused.isClickable()) {
+            View focused = view.findFocus();
+            if (focused != null) {
+                if (focused.isClickable()) {
+                    focused.performClick();
+                    return true;
+                } else if (focused.isFocusable()) {
+                    // If not clickable but focusable (like an item), simulate click effect
                     focused.performClick();
                     return true;
                 }
             }
+            return false;
         }
         
         // Pass other keys to parent

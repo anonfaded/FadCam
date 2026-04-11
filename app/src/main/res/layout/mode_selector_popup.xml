@@ -34,12 +34,13 @@
                 android:gravity="center_vertical"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp">
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/play_button_rounded"
-                    android:tint="#A0A0A0"
-                    android:scaleType="centerInside"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/materialicons"
+                    android:text="apps"
+                    android:textColor="#A0A0A0"
+                    android:textSize="16sp"
                     android:layout_marginEnd="12dp"/>
                 <TextView
                     android:layout_width="0dp"
@@ -79,12 +80,13 @@
                 android:gravity="center_vertical"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp">
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_vid_cam"
-                    android:tint="#A0A0A0"
-                    android:scaleType="centerInside"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/materialicons"
+                    android:text="videocam"
+                    android:textColor="#A0A0A0"
+                    android:textSize="16sp"
                     android:layout_marginEnd="12dp"/>
                 <TextView
                     android:layout_width="0dp"
@@ -125,8 +127,8 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp">
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
                     android:src="@drawable/screen_recorder"
                     android:tint="#A0A0A0"
                     android:scaleType="centerInside"

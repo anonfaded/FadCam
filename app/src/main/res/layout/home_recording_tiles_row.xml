@@ -21,10 +21,12 @@
         android:text="center_focus_strong"
         android:contentDescription="Autofocus toggle"
         android:textColor="?attr/homeRailTextPrimary"
-    android:textSize="24sp"
+        android:textSize="24sp"
         android:padding="6dp"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:nextFocusUp="@+id/cardStats"
+        android:nextFocusDown="@+id/cardRailTogglePortrait" />
 
 
 
@@ -39,12 +41,14 @@
         android:gravity="center"
         android:text="exposure"
         android:fontFamily="@font/materialicons"
-    android:textSize="24sp"
+        android:textSize="24sp"
         android:contentDescription="Exposure compensation"
         android:textColor="?attr/homeRailTextPrimary"
         android:padding="6dp"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:nextFocusUp="@+id/cardStats"
+        android:nextFocusDown="@+id/cardRailTogglePortrait" />
 
     <!-- Zoom ratio (quick access to zoom settings) -->
     <TextView
@@ -61,6 +65,8 @@
         android:contentDescription="Zoom ratio"
         android:textColor="?attr/homeRailTextPrimary"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:nextFocusUp="@+id/cardStats"
+        android:nextFocusDown="@+id/cardRailTogglePortrait" />
 
 </LinearLayout>
