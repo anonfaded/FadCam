@@ -10,17 +10,23 @@ public class TrashItem {
     private String trashFileName; // The actual name of the file in the trash folder
     private long dateTrashed; // Timestamp in milliseconds
     private boolean isFromSaf; // Was the original item from SAF storage?
+    private long sizeBytes; // File size in bytes
 
     // Default constructor for deserialization (e.g., by Gson)
     public TrashItem() {
     }
 
     public TrashItem(String originalUriString, String originalDisplayName, String trashFileName, long dateTrashed, boolean isFromSaf) {
+        this(originalUriString, originalDisplayName, trashFileName, dateTrashed, isFromSaf, 0L);
+    }
+
+    public TrashItem(String originalUriString, String originalDisplayName, String trashFileName, long dateTrashed, boolean isFromSaf, long sizeBytes) {
         this.originalUriString = originalUriString;
         this.originalDisplayName = originalDisplayName;
         this.trashFileName = trashFileName;
         this.dateTrashed = dateTrashed;
         this.isFromSaf = isFromSaf;
+        this.sizeBytes = Math.max(0L, sizeBytes);
     }
 
     // Getters
@@ -42,6 +48,10 @@ public class TrashItem {
 
     public boolean isFromSaf() {
         return isFromSaf;
+    }
+
+    public long getSizeBytes() {
+        return sizeBytes;
     }
 
     public boolean isForensicsEvidence() {
@@ -73,6 +83,10 @@ public class TrashItem {
         isFromSaf = fromSaf;
     }
 
+    public void setSizeBytes(long sizeBytes) {
+        this.sizeBytes = Math.max(0L, sizeBytes);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -97,6 +111,7 @@ public class TrashItem {
                 ", trashFileName='" + trashFileName + '\'' +
                 ", dateTrashed=" + dateTrashed +
                 ", isFromSaf=" + isFromSaf +
+                ", sizeBytes=" + sizeBytes +
                 '}';
     }
 } 

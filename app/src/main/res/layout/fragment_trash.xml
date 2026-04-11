@@ -38,7 +38,7 @@
             android:layout_marginStart="16dp"
             android:orientation="vertical">
 
-            <TextView
+            <com.fadcam.ui.utils.AnimatedTextView
                 android:id="@+id/title_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

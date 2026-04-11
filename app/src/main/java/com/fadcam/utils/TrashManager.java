@@ -343,8 +343,18 @@ public class TrashManager {
             }
 
             List<TrashItem> trashItems = loadTrashMetadata(context);
+            // Use actual file size if available, otherwise fall back to totalBytes calculated from source
+            long fileSizeBytes = 0L;
+            if (targetTrashFile.exists()) {
+                long actualSize = targetTrashFile.length();
+                // Use actual file size, or fall back to totalBytes if actual size is 0 but we had data
+                fileSizeBytes = (actualSize > 0L) ? actualSize : Math.max(0L, totalBytes);
+            } else {
+                fileSizeBytes = Math.max(0L, totalBytes);
+            }
+            FLog.d(TAG, "moveToTrash: File '" + originalDisplayName + "' size= " + fileSizeBytes + " bytes (targetExists=" + targetTrashFile.exists() + ", actualLength=" + (targetTrashFile.exists() ? targetTrashFile.length() : "N/A") + ", totalBytes=" + totalBytes + ")");
             trashItems.add(new TrashItem(videoUri.toString(), originalDisplayName, targetTrashFileName,
-                    System.currentTimeMillis(), isSafSource));
+                    System.currentTimeMillis(), isSafSource, fileSizeBytes));
             if (saveTrashMetadata(context, trashItems)) {
                 FLog.i(TAG, "moveToTrash: Successfully moved and updated metadata for: " + originalDisplayName);
                 return true;

@@ -320,6 +320,8 @@ public abstract class Constants {
         "com.fadcam.EXTRA_RECORDS_DELETE_COMPLETED_URIS";
     public static final String EXTRA_RECORDS_DELETE_SESSION_ID =
         "com.fadcam.EXTRA_RECORDS_DELETE_SESSION_ID";
+    public static final String EXTRA_RECORDS_DELETE_OPERATION_KIND =
+        "com.fadcam.EXTRA_RECORDS_DELETE_OPERATION_KIND";
 
     // Screen recording broadcast actions
     public static final String BROADCAST_ON_SCREEN_RECORDING_STARTED =

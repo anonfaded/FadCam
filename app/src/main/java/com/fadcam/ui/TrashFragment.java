@@ -81,7 +81,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     private Button buttonEmptyAllTrash;
 
     private TextView textViewEmptyTrash;
-    private TextView titleText;
+    private com.fadcam.ui.utils.AnimatedTextView titleText;
     private View emptyTrashLayout;
     private AlertDialog restoreProgressDialog;
     private ExecutorService executorService;
@@ -630,14 +630,37 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         // Update button states
         buttonRestoreSelected.setEnabled(anySelected);
         buttonDeleteSelectedPermanently.setEnabled(anySelected);
+        
+        // Update button appearances
+        updateDeleteButtonAppearance(anySelected);
+        updateRestoreButtonAppearance(anySelected);
 
-        // Update toolbar title
+        // Update toolbar title with size calculation (same as in onItemCheckChanged)
         if (titleText != null) {
             if (isInSelectionMode && trashAdapter != null) {
                 int selectedCount = trashAdapter.getSelectedItemsCount();
-                titleText.setText(selectedCount + " selected");
+                long totalSize = 0L;
+                
+                // Calculate total size by reading ACTUAL trash files (same method as cards)
+                File trashDirectory = TrashManager.getTrashDirectory(requireContext());
+                for (TrashItem selectedItem : trashAdapter.getSelectedItems()) {
+                    if (selectedItem != null) {
+                        long itemSize = 0L;
+                        if (trashDirectory != null && selectedItem.getTrashFileName() != null) {
+                            File trashedFile = new File(trashDirectory, selectedItem.getTrashFileName());
+                            if (trashedFile.exists()) {
+                                itemSize = trashedFile.length();
+                            }
+                        }
+                        totalSize += itemSize;
+                    }
+                }
+                
+                String sizeStr = Formatter.formatShortFileSize(requireContext(), totalSize);
+                String titleText_new = selectedCount + " selected • " + sizeStr;
+                titleText.animateSlot(titleText_new, 300);
             } else {
-                titleText.setText(getString(R.string.trash_fragment_title_text));
+                titleText.animateSlot(getString(R.string.trash_fragment_title_text), 300);
             }
         }
 
@@ -775,20 +798,8 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             boolean hasSelectedItems = trashAdapter != null && trashAdapter.getSelectedItemsCount() > 0;
             isInSelectionMode = hasSelectedItems;
 
-            // Update UI based on selection state
-            updateActionButtonsState();
-
-            // Explicitly update button appearances based on selection
-            updateDeleteButtonAppearance(hasSelectedItems);
-            updateRestoreButtonAppearance(hasSelectedItems);
-
-            // Update toolbar title if in selection mode
-            if (titleText != null && isInSelectionMode) {
-                int selectedCount = trashAdapter.getSelectedItemsCount();
-                titleText.setText(selectedCount + " selected");
-            } else if (titleText != null) {
-                titleText.setText(getString(R.string.trash_fragment_title_text));
-            }
+            // Trigger the UI update via the callback
+            onItemSelectedStateChanged(hasSelectedItems);
 
             // Update select all checkbox state
             updateSelectAllCheckboxState();
@@ -1169,7 +1180,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             updateActionButtonsState();
             // Reset any UI elements that change in selection mode
             if (titleText != null) {
-                titleText.setText(getString(R.string.trash_fragment_title_text));
+                titleText.animateSlot(getString(R.string.trash_fragment_title_text), 300);
             }
 
             // Explicitly update button appearances

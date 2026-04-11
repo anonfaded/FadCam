@@ -48,6 +48,7 @@ public class BatchMediaActionService extends Service {
     private ExecutorService executor;
     private BatchMediaNotificationManager notificationManager;
     private SharedPreferencesManager sharedPreferencesManager;
+    private BatchOperationSessionStore sessionStore;
 
     @Override
     public void onCreate() {
@@ -55,6 +56,7 @@ public class BatchMediaActionService extends Service {
         executor = Executors.newSingleThreadExecutor();
         notificationManager = new BatchMediaNotificationManager(this);
         sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        sessionStore = new BatchOperationSessionStore(this);
     }
 
     @Override
@@ -88,28 +90,53 @@ public class BatchMediaActionService extends Service {
         int skipped = 0;
         int total = task.actionType == BatchMediaActionTask.ActionType.MERGE_VIDEOS ? 1 : task.inputUris.size();
 
+        // Create session snapshot for batch operation
+        BatchOperationSessionSnapshot.OperationType opType =
+                task.actionType == BatchMediaActionTask.ActionType.MERGE_VIDEOS
+                        ? BatchOperationSessionSnapshot.OperationType.MERGE_VIDEOS
+                        : BatchOperationSessionSnapshot.OperationType.EXPORT_STANDARD_MP4;
+        BatchOperationSessionSnapshot session = BatchOperationSessionSnapshot.create(opType, total, 0L);
+        session.setState(BatchOperationSessionSnapshot.State.RUNNING);
+        sessionStore.write(session);
+        emitSessionUpdated(session);
+
         try {
             if (task.actionType == BatchMediaActionTask.ActionType.EXPORT_STANDARD_MP4) {
                 int done = 0;
                 for (Uri inputUri : task.inputUris) {
                     done++;
+                    session.setCurrentItemIndex(done - 1);
+                    session.setCurrentItemName(getDisplayName(inputUri));
+
                     String eta = buildEtaText(startedAtMs, done - 1, task.inputUris.size());
                     notificationManager.updateProgress(
                             getString(R.string.records_batch_faditor_export_standard),
                             getString(R.string.records_batch_progress_item, done, task.inputUris.size()) + eta,
                             done - 1,
                             task.inputUris.size());
+                    emitSessionUpdated(session);
 
                     ProcessResult result = exportStandardMp4(inputUri, done, task);
-                    if (result.success) completed++;
-                    else if (result.skipped) skipped++;
-                    else failed++;
+                    if (result.success) {
+                        completed++;
+                        session.addCompletedItemUri(inputUri.toString());
+                    } else if (result.skipped) {
+                        skipped++;
+                        session.addSkippedItemUri(inputUri.toString());
+                    } else {
+                        failed++;
+                        session.addFailedItemUri(inputUri.toString());
+                    }
+                    session.setCompletedItemCount(completed);
+                    session.setSkippedItemCount(skipped);
+                    session.setFailedItemCount(failed);
 
                     notificationManager.updateProgress(
                             getString(R.string.records_batch_faditor_export_standard),
                             getString(R.string.records_batch_progress_counts, completed, skipped, failed),
                             done,
                             task.inputUris.size());
+                    emitSessionUpdated(session);
                 }
             } else {
                 notificationManager.updateProgress(
@@ -117,8 +144,11 @@ public class BatchMediaActionService extends Service {
                         getString(R.string.records_batch_starting),
                         0,
                         task.inputUris.size() + 2);
+                session.setState(BatchOperationSessionSnapshot.State.RUNNING);
+                emitSessionUpdated(session);
 
                 MergeResult merge = mergeVideos(task.inputUris, task, (copied, totalInputs) -> {
+                    session.setCurrentItemIndex(copied);
                     String eta = buildEtaText(startedAtMs, copied, totalInputs + 2);
                     notificationManager.updateProgress(
                             getString(R.string.records_batch_faditor_merge),
@@ -126,20 +156,39 @@ public class BatchMediaActionService extends Service {
                             copied,
                             totalInputs + 2
                     );
+                    emitSessionUpdated(session);
                 });
-                if (merge.success) completed = 1;
-                else failed = 1;
+                if (merge.success) {
+                    completed = 1;
+                    session.setCompletedItemCount(1);
+                } else {
+                    failed = 1;
+                    session.setFailedItemCount(1);
+                }
                 skipped = merge.skippedCount;
+                session.setSkippedItemCount(skipped);
 
                 notificationManager.updateProgress(
                         getString(R.string.records_batch_faditor_merge),
                         getString(R.string.records_batch_progress_counts, completed, skipped, failed),
                         task.inputUris.size() + 2,
                         task.inputUris.size() + 2);
+                emitSessionUpdated(session);
             }
         } catch (Exception e) {
             FLog.e(TAG, "Batch action failed", e);
             failed = Math.max(failed, 1);
+            session.setFailedItemCount(Math.max(session.getFailedItemCount(), 1));
+            session.addErrorSummary(e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+
+        // Finalize session with completion state
+        if (failed > 0) {
+            session.setState(BatchOperationSessionSnapshot.State.COMPLETED_FAILED);
+        } else if (skipped > 0) {
+            session.setState(BatchOperationSessionSnapshot.State.COMPLETED_PARTIAL);
+        } else if (completed > 0) {
+            session.setState(BatchOperationSessionSnapshot.State.COMPLETED_SUCCESS);
         }
 
         final String summary = getString(
@@ -153,6 +202,10 @@ public class BatchMediaActionService extends Service {
                 ? getString(R.string.records_batch_export_done_title)
                 : getString(R.string.records_batch_merge_done_title);
         notificationManager.showCompletion(doneTitle, summary, failed == 0);
+
+        // Emit final session snapshot
+        sessionStore.write(session);
+        emitSessionFinished(session);
 
         Intent completedIntent = new Intent(Constants.ACTION_BATCH_MEDIA_COMPLETED);
         completedIntent.putExtra(Constants.EXTRA_BATCH_COMPLETED_MESSAGE, summary);
@@ -572,6 +625,22 @@ public class BatchMediaActionService extends Service {
     @NonNull
     private String timestampSuffix() {
         return new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+    }
+
+    private void emitSessionUpdated(@NonNull BatchOperationSessionSnapshot session) {
+        Intent intent = new Intent(BatchOperationConstants.ACTION_BATCH_OPERATION_UPDATED);
+        intent.putExtra(BatchOperationConstants.EXTRA_SESSION_SNAPSHOT_JSON,
+                BatchOperationSessionSnapshot.toJson(session));
+        sendBroadcast(intent);
+    }
+
+    private void emitSessionFinished(@NonNull BatchOperationSessionSnapshot session) {
+        Intent intent = new Intent(BatchOperationConstants.ACTION_BATCH_OPERATION_FINISHED);
+        intent.putExtra(BatchOperationConstants.EXTRA_SESSION_SNAPSHOT_JSON,
+                BatchOperationSessionSnapshot.toJson(session));
+        intent.putExtra(BatchOperationConstants.EXTRA_SESSION_ID, session.getSessionId());
+        intent.putExtra(BatchOperationConstants.EXTRA_SESSION_STATE, session.getState().name());
+        sendBroadcast(intent);
     }
 
     private void closeQuietly(@Nullable InputPathHolder holder) {

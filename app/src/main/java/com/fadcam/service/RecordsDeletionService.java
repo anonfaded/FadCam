@@ -623,6 +623,7 @@ public class RecordsDeletionService extends Service {
             itemIntent.putStringArrayListExtra(Constants.EXTRA_RECORDS_DELETE_COMPLETED_URIS,
                     new ArrayList<>(completed));
             itemIntent.putExtra(Constants.EXTRA_RECORDS_DELETE_SESSION_ID, snapshot.sessionId);
+            itemIntent.putExtra(Constants.EXTRA_RECORDS_DELETE_OPERATION_KIND, snapshot.operationKind.name());
             sendBroadcast(itemIntent);
         }
 

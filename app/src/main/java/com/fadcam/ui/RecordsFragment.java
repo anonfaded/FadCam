@@ -72,6 +72,9 @@ import com.fadcam.service.RecordsDeletionRequestItem;
 import com.fadcam.service.RecordsDeletionService;
 import com.fadcam.service.RecordsDeletionSessionSnapshot;
 import com.fadcam.service.RecordsDeletionSessionStore;
+import com.fadcam.service.BatchOperationSessionSnapshot;
+import com.fadcam.service.BatchOperationSessionStore;
+import com.fadcam.service.BatchOperationConstants;
 // Import the new VideoItem class
 // Ensure adapter import is correct
 import com.fadcam.utils.TrashManager; // <<< ADD IMPORT FOR TrashManager
@@ -408,8 +411,12 @@ public class RecordsFragment extends BaseFragment implements
     private boolean isBatchMediaReceiverRegistered = false;
     private BroadcastReceiver recordsDeletionUpdateReceiver;
     private boolean isRecordsDeletionReceiverRegistered = false;
+    private BroadcastReceiver batchOperationUpdateReceiver;
+    private boolean isBatchOperationReceiverRegistered = false;
     private RecordsDeletionSessionStore deletionSessionStore;
+    private BatchOperationSessionStore batchOperationSessionStore;
     private RecordsDeletionSessionSnapshot deletionSnapshot;
+    private BatchOperationSessionSnapshot batchOperationSnapshot;
     private View deletionDock;
     private ImageView deletionDockIcon;
     private com.fadcam.ui.utils.AnimatedTextView deletionDockTitle;
@@ -524,6 +531,22 @@ public class RecordsFragment extends BaseFragment implements
                 + " items without forcing a full records reload");
     }
 
+    /**
+     * Apply deleted items to UI based on operation kind.
+     * Only removes items if operation is DELETE or SAVE_MOVE_TO_GALLERY.
+     * For SAVE_COPY_TO_GALLERY, does not remove items from UI (they still exist on device).
+     */
+    private void applyDeletedItemsToUi(@NonNull List<Uri> deletedUris, @NonNull String operationKindStr) {
+        // Only remove items from UI if it's a destructive operation
+        if (operationKindStr.equals(RecordsDeletionSessionSnapshot.OperationKind.DELETE.name()) ||
+            operationKindStr.equals(RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY.name())) {
+            applyDeletedItemsToUi(deletedUris);
+        } else {
+            // For SAVE_COPY_TO_GALLERY, just update UI visibility without removing items
+            updateUiVisibility();
+        }
+    }
+
     private void syncDeletionUiFromStore(boolean immediate) {
         if (deletionSessionStore == null) {
             return;
@@ -609,8 +632,10 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
 
-        int activeIndex = Math.max(1, Math.min(Math.max(1, snapshot.totalItemCount), snapshot.currentItemIndex));
-        deletionDockTitle.animateSlot(getRunningTitle(snapshot, activeIndex), 300);
+        // Use completedItemCount + 1 for progress display (shows items completed + current being processed)
+        // This updates more reliably than currentItemIndex and gives accurate live progress
+        int progressIndex = Math.min(snapshot.completedItemCount + 1, snapshot.totalItemCount);
+        deletionDockTitle.animateSlot(getRunningTitle(snapshot, progressIndex), 300);
         deletionDockIcon.setImageResource(getRunningIcon(snapshot));
         deletionDockProgress.setProgress(snapshot.getProgressPercent());
         deletionDockCurrentItem.setText(snapshot.currentItemName == null || snapshot.currentItemName.trim().isEmpty()
@@ -893,7 +918,12 @@ public class RecordsFragment extends BaseFragment implements
             if (activeSession) {
                 cancelDeletionSession();
             } else {
-                acknowledgeDeletionCompletion();
+                // Check which operation is finished
+                if (deletionSnapshot != null && deletionSnapshot.isFinished() && !deletionSnapshot.completionAcknowledged) {
+                    acknowledgeDeletionCompletion();
+                } else if (batchOperationSnapshot != null && batchOperationSnapshot.isFinished() && !batchOperationSnapshot.completionAcknowledged) {
+                    acknowledgeBatchOperationCompletion();
+                }
             }
         });
         if (immediate) {
@@ -964,6 +994,151 @@ public class RecordsFragment extends BaseFragment implements
         );
     }
 
+    private void acknowledgeBatchOperationCompletion() {
+        if (!isAdded() || batchOperationSnapshot == null || !batchOperationSnapshot.isFinished()) {
+            return;
+        }
+        // Mark as acknowledged
+        batchOperationSnapshot.completionAcknowledged = true;
+        batchOperationSessionStore.write(batchOperationSnapshot);
+        batchOperationSnapshot = null;
+        renderBatchOperationSnapshot(null, false);
+        new Handler(Looper.getMainLooper()).postDelayed(
+                () -> {
+                    if (isAdded() && batchOperationSessionStore != null) {
+                        batchOperationSessionStore.clear();
+                    }
+                },
+                260L
+        );
+    }
+
+    private void syncBatchOperationUiFromStore(boolean immediate) {
+        if (batchOperationSessionStore == null) {
+            return;
+        }
+        BatchOperationSessionSnapshot snapshot = batchOperationSessionStore.read();
+        batchOperationSnapshot = snapshot;
+        renderBatchOperationSnapshot(snapshot, immediate);
+    }
+
+    private void renderBatchOperationSnapshot(
+            @Nullable BatchOperationSessionSnapshot snapshot,
+            boolean immediate
+    ) {
+        if (deletionDock == null || deletionDockTitle == null || deletionDockProgress == null
+                || deletionDockCurrentItem == null || deletionDockEta == null
+                || deletionDockSummary == null || deletionDockOk == null || deletionDockIcon == null) {
+            return;
+        }
+
+        // Don't show dock if we already have a deletion session active
+        if (deletionSnapshot != null && deletionSnapshot.isActive()) {
+            return;
+        }
+
+        boolean showDock = snapshot != null && (!snapshot.completionAcknowledged)
+                && (snapshot.isActive() || snapshot.isFinished());
+        if (!showDock) {
+            animateDeletionDock(false, immediate);
+            return;
+        }
+
+        if (snapshot.isFinished()) {
+            // Finished state
+            if (snapshot.getState() == BatchOperationSessionSnapshot.State.COMPLETED_SUCCESS) {
+                deletionDockTitle.animateSlot(
+                        getOperationTypeName(snapshot.getOperationType()) + " completed", 300);
+                deletionDockIcon.setImageResource(R.drawable.ic_check_circle);
+                deletionDockCurrentItem.setText("Successfully processed " + snapshot.getCompletedItemCount() + " items");
+            } else if (snapshot.getState() == BatchOperationSessionSnapshot.State.COMPLETED_PARTIAL) {
+                deletionDockTitle.animateSlot(
+                        getOperationTypeName(snapshot.getOperationType()) + " completed",
+                        300);
+                deletionDockIcon.setImageResource(R.drawable.ic_error);
+                deletionDockCurrentItem.setText("Processed " + snapshot.getCompletedItemCount() + ", skipped " + snapshot.getSkippedItemCount());
+            } else {
+                deletionDockTitle.animateSlot(
+                        getOperationTypeName(snapshot.getOperationType()) + " failed", 300);
+                deletionDockIcon.setImageResource(R.drawable.ic_error);
+                deletionDockCurrentItem.setText("Failed to process " + snapshot.getFailedItemCount() + " items");
+            }
+            deletionDockProgress.setProgress(100);
+            deletionDockEta.setText(getString(R.string.records_delete_header_dismiss_hint));
+            deletionDockSummary.setText("Completed: " + snapshot.getCompletedItemCount() + "/" + snapshot.getTotalItemCount() + " (Failed: " + snapshot.getFailedItemCount() + ")");
+            showDeletionDockActionButton(true, false, immediate);
+            animateDeletionDock(true, immediate);
+            return;
+        }
+
+        // Active/running state
+        int progressIndex = Math.min(snapshot.getCompletedItemCount() + 1, snapshot.getTotalItemCount());
+        deletionDockTitle.animateSlot(
+                getOperationTypeName(snapshot.getOperationType()) + " " + progressIndex + "/" + snapshot.getTotalItemCount(), 300);
+        deletionDockIcon.setImageResource(getOperationTypeIcon(snapshot.getOperationType()));
+        deletionDockProgress.setProgress(snapshot.getProgressPercent());
+        deletionDockCurrentItem.setText(snapshot.getCurrentItemName() == null || snapshot.getCurrentItemName().trim().isEmpty()
+                ? "Preparing..."
+                : snapshot.getCurrentItemName());
+        String eta = buildBatchOperationEta(snapshot);
+        deletionDockEta.setText(eta == null ? getString(R.string.records_delete_header_working) : eta);
+        deletionDockSummary.setText("Completed: " + snapshot.getCompletedItemCount() + ", Failed: " + snapshot.getFailedItemCount());
+        showDeletionDockActionButton(true, true, immediate);
+        animateDeletionDock(true, immediate);
+    }
+
+    @NonNull
+    private String getOperationTypeName(@NonNull BatchOperationSessionSnapshot.OperationType type) {
+        switch (type) {
+            case MERGE_VIDEOS:
+                return "Merge";
+            case EXPORT_STANDARD_MP4:
+                return "Export";
+            case EXPORT_CUSTOM:
+                return "Export Custom";
+            default:
+                return "Batch Operation";
+        }
+    }
+
+    private int getOperationTypeIcon(@NonNull BatchOperationSessionSnapshot.OperationType type) {
+        switch (type) {
+            case MERGE_VIDEOS:
+            case EXPORT_STANDARD_MP4:
+            case EXPORT_CUSTOM:
+                return R.drawable.ic_drive;
+            default:
+                return R.drawable.ic_delete_white;
+        }
+    }
+
+    @Nullable
+    private String buildBatchOperationEta(@NonNull BatchOperationSessionSnapshot snapshot) {
+        if (snapshot.getTotalBytes() <= 0L || snapshot.getProcessedBytes() <= 0L || snapshot.getStartedAtMs() <= 0L) {
+            return null;
+        }
+        long elapsedMs = System.currentTimeMillis() - snapshot.getStartedAtMs();
+        if (elapsedMs < 1500L) {
+            return null;
+        }
+        long remainingBytes = snapshot.getTotalBytes() - snapshot.getProcessedBytes();
+        if (remainingBytes <= 0L) {
+            return getString(R.string.records_delete_header_finishing);
+        }
+        double bytesPerMs = snapshot.getProcessedBytes() / (double) Math.max(1L, elapsedMs);
+        if (bytesPerMs <= 0d) {
+            return null;
+        }
+        long remainingMs = (long) (remainingBytes / bytesPerMs);
+        long totalSeconds = Math.max(1L, remainingMs / 1000L);
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        if (minutes > 0L) {
+            return getString(R.string.records_delete_header_eta_minutes, minutes, seconds);
+        }
+        return getString(R.string.records_delete_header_eta_seconds, seconds);
+    }
+
     // *** Register in onStart ***
     @Override
     public void onStart() {
@@ -974,6 +1149,7 @@ public class RecordsFragment extends BaseFragment implements
         registerSegmentCompleteReceiver();
         registerBatchMediaCompletedReceiver();
         registerRecordsDeletionReceiver();
+        registerBatchOperationReceiver();
         if (invalidationCoordinator == null && getContext() != null) {
             invalidationCoordinator = new RealtimeMediaInvalidationCoordinator(requireContext());
             invalidationCoordinator.addListener(reason -> requestRealtimeRefresh("coordinator:" + reason));
@@ -1004,6 +1180,7 @@ public class RecordsFragment extends BaseFragment implements
         unregisterSegmentCompleteReceiver();
         unregisterBatchMediaCompletedReceiver();
         unregisterRecordsDeletionReceiver();
+        unregisterBatchOperationReceiver();
     }
 
     private void registerBatchMediaCompletedReceiver() {
@@ -1057,7 +1234,12 @@ public class RecordsFragment extends BaseFragment implements
                     if (Constants.ACTION_RECORDS_DELETE_ITEM_COMPLETED.equals(action)) {
                         ArrayList<String> completedUris = intent.getStringArrayListExtra(
                                 Constants.EXTRA_RECORDS_DELETE_COMPLETED_URIS);
-                        applyDeletedItemsToUi(parseUriList(completedUris));
+                        // Get operation kind from intent, default to DELETE if not provided
+                        String operationKind = intent.getStringExtra(Constants.EXTRA_RECORDS_DELETE_OPERATION_KIND);
+                        if (operationKind == null) {
+                            operationKind = RecordsDeletionSessionSnapshot.OperationKind.DELETE.name();
+                        }
+                        applyDeletedItemsToUi(parseUriList(completedUris), operationKind);
                     }
                     if (Constants.ACTION_RECORDS_DELETE_SESSION_UPDATED.equals(action)
                             || Constants.ACTION_RECORDS_DELETE_SESSION_FINISHED.equals(action)) {
@@ -1092,6 +1274,52 @@ public class RecordsFragment extends BaseFragment implements
         } catch (IllegalArgumentException ignored) {
         }
         isRecordsDeletionReceiverRegistered = false;
+    }
+
+    private void registerBatchOperationReceiver() {
+        if (isBatchOperationReceiverRegistered || getContext() == null) {
+            return;
+        }
+        if (batchOperationUpdateReceiver == null) {
+            batchOperationUpdateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (!isAdded() || intent == null) {
+                        return;
+                    }
+                    String action = intent.getAction();
+                    if (BatchOperationConstants.ACTION_BATCH_OPERATION_UPDATED.equals(action)
+                            || BatchOperationConstants.ACTION_BATCH_OPERATION_FINISHED.equals(action)) {
+                        BatchOperationSessionSnapshot snapshot = BatchOperationSessionSnapshot.fromJson(
+                                intent.getStringExtra(BatchOperationConstants.EXTRA_SESSION_SNAPSHOT_JSON));
+                        batchOperationSnapshot = snapshot;
+                        renderBatchOperationSnapshot(snapshot, false);
+                    }
+                }
+            };
+        }
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BatchOperationConstants.ACTION_BATCH_OPERATION_UPDATED);
+        filter.addAction(BatchOperationConstants.ACTION_BATCH_OPERATION_FINISHED);
+        ContextCompat.registerReceiver(
+                requireContext(),
+                batchOperationUpdateReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+        isBatchOperationReceiverRegistered = true;
+        syncBatchOperationUiFromStore(true);
+    }
+
+    private void unregisterBatchOperationReceiver() {
+        if (!isBatchOperationReceiverRegistered || batchOperationUpdateReceiver == null || getContext() == null) {
+            return;
+        }
+        try {
+            requireContext().unregisterReceiver(batchOperationUpdateReceiver);
+        } catch (IllegalArgumentException ignored) {
+        }
+        isBatchOperationReceiverRegistered = false;
     }
 
     // ** NEW: Method to register the storage location change receiver **
@@ -1370,6 +1598,7 @@ public class RecordsFragment extends BaseFragment implements
 
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         deletionSessionStore = new RecordsDeletionSessionStore(requireContext());
+        batchOperationSessionStore = new BatchOperationSessionStore(requireContext());
 
         // Initialize header elements
         titleText = view.findViewById(R.id.title_text);
