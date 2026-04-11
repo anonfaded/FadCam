@@ -1702,7 +1702,12 @@ public class RecordsFragment extends BaseFragment implements
         }
         // Update title text
         if (titleText != null) {
-            titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+            CharSequence normalTitle = originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title);
+            if (titleText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) titleText).animateSlot(normalTitle, 300);
+            } else {
+                titleText.setText(normalTitle);
+            }
             FLog.d(TAG, "Title text updated in onResume.");
         } else {
             FLog.w(TAG, "Could not update title in onResume - titleText is null.");
@@ -1793,7 +1798,12 @@ public class RecordsFragment extends BaseFragment implements
             
             // Update title
             if (titleText != null) {
-                titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+                CharSequence normalTitle = originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title);
+                if (titleText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                    ((com.fadcam.ui.utils.AnimatedTextView) titleText).animateSlot(normalTitle, 300);
+                } else {
+                    titleText.setText(normalTitle);
+                }
             }
             syncDeletionUiFromStore(true);
             
@@ -2829,6 +2839,29 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     // --- UI Updates ---
+    /** Calculates total size of selected items */
+    private String getSelectedItemsSizeText() {
+        long totalBytes = 0;
+        for (Uri selectedUri : selectedUris) {
+            for (VideoItem item : videoItems) {
+                if (item.uri.equals(selectedUri)) {
+                    totalBytes += item.size;
+                    break;
+                }
+            }
+        }
+        return formatFileSize(totalBytes);
+    }
+
+    /** Format file size helper */
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024)
+            return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        char pre = "KMGTPE".charAt(exp - 1);
+        return String.format(Locale.US, "%.1f %sB", bytes / Math.pow(1024, exp), pre);
+    }
+
     /** Updates Title, FABs based on whether selection mode is active */
     private void updateUiForSelectionMode() {
         if (!isAdded() || titleText == null || getActivity() == null) {
@@ -2838,7 +2871,13 @@ public class RecordsFragment extends BaseFragment implements
 
         if (isInSelectionMode) {
             int count = selectedUris.size();
-            titleText.setText(count > 0 ? count + " selected" : "Select items");
+            String sizeText = count > 0 ? " • " + getSelectedItemsSizeText() : "";
+            String newTitle = count > 0 ? count + " selected" + sizeText : "Select items";
+            if (titleText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) titleText).animateSlot(newTitle, 300);
+            } else {
+                titleText.setText(newTitle);
+            }
             showBatchFabAnimated();
             if (filterChecklistButton != null) {
                 filterChecklistButton.setTextColor(resolveThemeColor(R.attr.colorToggle));
@@ -2857,7 +2896,12 @@ public class RecordsFragment extends BaseFragment implements
                 selectAllContainer.setVisibility(View.GONE);
             }
         } else {
-            titleText.setText(originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title));
+            CharSequence normalTitle = originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title);
+            if (titleText instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) titleText).animateSlot(normalTitle, 300);
+            } else {
+                titleText.setText(normalTitle);
+            }
             hideBatchFabAnimated();
             if (filterChecklistButton != null) {
                 filterChecklistButton.setTextColor(0xFF666666);
