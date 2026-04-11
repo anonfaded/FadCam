@@ -188,6 +188,8 @@ public class RecordsDeletionNotificationManager {
                 return context.getString(R.string.records_save_notification_title_copy);
             case SAVE_MOVE_TO_GALLERY:
                 return context.getString(R.string.records_save_notification_title_move);
+            case SAVE_EXPORT_TO_CUSTOM_TREE:
+                return context.getString(R.string.records_save_notification_title_export);
             case DELETE:
             default:
                 return context.getString(R.string.records_delete_notification_title);
@@ -201,6 +203,8 @@ public class RecordsDeletionNotificationManager {
                 return context.getString(R.string.records_save_notification_complete_success_copy);
             case SAVE_MOVE_TO_GALLERY:
                 return context.getString(R.string.records_save_notification_complete_success_move);
+            case SAVE_EXPORT_TO_CUSTOM_TREE:
+                return context.getString(R.string.records_save_notification_complete_success_export);
             case DELETE:
             default:
                 return context.getString(R.string.records_delete_notification_complete_success);
@@ -212,6 +216,7 @@ public class RecordsDeletionNotificationManager {
         switch (snapshot.operationKind) {
             case SAVE_COPY_TO_GALLERY:
             case SAVE_MOVE_TO_GALLERY:
+            case SAVE_EXPORT_TO_CUSTOM_TREE:
                 return context.getString(R.string.records_save_notification_complete_partial);
             case DELETE:
             default:
@@ -224,6 +229,7 @@ public class RecordsDeletionNotificationManager {
         switch (snapshot.operationKind) {
             case SAVE_COPY_TO_GALLERY:
             case SAVE_MOVE_TO_GALLERY:
+            case SAVE_EXPORT_TO_CUSTOM_TREE:
                 return context.getString(R.string.records_save_notification_complete_failed);
             case DELETE:
             default:
@@ -236,6 +242,7 @@ public class RecordsDeletionNotificationManager {
         switch (snapshot.operationKind) {
             case SAVE_COPY_TO_GALLERY:
             case SAVE_MOVE_TO_GALLERY:
+            case SAVE_EXPORT_TO_CUSTOM_TREE:
                 return context.getString(R.string.records_save_notification_cancelled);
             case DELETE:
             default:

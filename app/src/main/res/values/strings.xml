@@ -299,8 +299,10 @@
     <string name="records_delete_notification_cancel">Cancel</string>
     <string name="records_save_notification_title_copy">Saving to gallery</string>
     <string name="records_save_notification_title_move">Moving to gallery</string>
+    <string name="records_save_notification_title_export">Exporting</string>
     <string name="records_save_notification_complete_success_copy">Save complete</string>
     <string name="records_save_notification_complete_success_move">Move complete</string>
+    <string name="records_save_notification_complete_success_export">Export complete</string>
     <string name="records_save_notification_complete_partial">Save finished with issues</string>
     <string name="records_save_notification_complete_failed">Save failed</string>
     <string name="records_save_notification_cancelled">Save cancelled</string>
@@ -322,6 +324,7 @@
     <string name="records_delete_header_preparing">Preparing deletion…</string>
     <string name="records_save_header_preparing_copy">Preparing save…</string>
     <string name="records_save_header_preparing_move">Preparing move…</string>
+    <string name="records_save_header_preparing_export">Preparing export…</string>
     <string name="records_delete_header_working">Working…</string>
     <string name="records_delete_header_finishing">Finishing…</string>
     <string name="records_delete_header_dismiss_hint">Tap OK to dismiss</string>

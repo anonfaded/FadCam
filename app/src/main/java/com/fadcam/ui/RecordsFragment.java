@@ -4289,75 +4289,35 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
         if (getContext() == null) return;
-        final List<Uri> urisToExport = new ArrayList<>(pendingCustomExportUris);
+
+        // Convert URIs to RecordsDeletionRequestItem list
+        List<RecordsDeletionRequestItem> requestItems = new ArrayList<>(pendingCustomExportUris.size());
+        for (Uri uri : pendingCustomExportUris) {
+            VideoItem item = findVideoItemByUri(allLoadedItems, uri);
+            if (item != null && item.displayName != null) {
+                requestItems.add(new RecordsDeletionRequestItem(
+                        uri.toString(),
+                        item.displayName,
+                        Math.max(0L, item.size),
+                        "content".equals(uri.getScheme())
+                ));
+            }
+        }
         pendingCustomExportUris.clear();
-        Toast.makeText(requireContext(), getString(R.string.records_batch_custom_export_started, urisToExport.size()),
+
+        if (requestItems.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.records_delete_error_invalid_item, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Use RecordsDeletionService for consistent dock UI and progress tracking
+        RecordsDeletionService.startExportSession(requireContext(), requestItems, treeUri);
+        syncDeletionUiFromStore(false);
+        Toast.makeText(requireContext(),
+                getString(R.string.records_batch_save_queued, requestItems.size()),
                 Toast.LENGTH_SHORT).show();
-        executorService.submit(() -> {
-            int success = 0;
-            int failed = 0;
-            DocumentFile targetDir = DocumentFile.fromTreeUri(requireContext(), treeUri);
-            if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
-                            getString(R.string.records_batch_custom_export_invalid_folder), Toast.LENGTH_LONG).show());
-                }
-                return;
-            }
-            for (Uri uri : urisToExport) {
-                try {
-                    VideoItem item = findVideoItemByUri(allLoadedItems, uri);
-                    String name = item != null && item.displayName != null ? item.displayName : "video.mp4";
-                    DocumentFile out = createUniqueSafFile(targetDir, name);
-                    if (out == null) {
-                        failed++;
-                        continue;
-                    }
-                    try (java.io.InputStream in = requireContext().getContentResolver().openInputStream(uri);
-                         java.io.OutputStream os = requireContext().getContentResolver().openOutputStream(out.getUri(), "w")) {
-                        if (in == null || os == null) {
-                            failed++;
-                            continue;
-                        }
-                        byte[] buffer = new byte[16 * 1024];
-                        int len;
-                        while ((len = in.read(buffer)) > 0) {
-                            os.write(buffer, 0, len);
-                        }
-                        os.flush();
-                        success++;
-                    }
-                } catch (Exception e) {
-                    failed++;
-                }
-            }
-            final int successFinal = success;
-            final int failedFinal = failed;
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
-                        getString(R.string.records_batch_custom_export_done, successFinal, failedFinal),
-                        Toast.LENGTH_LONG).show());
-            }
-        });
     }
 
-    @Nullable
-    private DocumentFile createUniqueSafFile(@NonNull DocumentFile targetDir, @NonNull String originalName) {
-        String base = originalName;
-        String ext = "";
-        int dot = originalName.lastIndexOf('.');
-        if (dot > 0) {
-            base = originalName.substring(0, dot);
-            ext = originalName.substring(dot);
-        }
-        String candidate = originalName;
-        int suffix = 1;
-        while (targetDir.findFile(candidate) != null) {
-            candidate = base + " (" + suffix + ")" + ext;
-            suffix++;
-        }
-        return targetDir.createFile("video/mp4", candidate);
-    }
     // --- Deletion Logic ---
 
     private void enqueueRecordsDeletion(@NonNull List<VideoItem> itemsToDelete) {

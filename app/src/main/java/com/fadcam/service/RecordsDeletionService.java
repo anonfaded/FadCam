@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
 
+import android.provider.DocumentsContract;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -42,6 +43,7 @@ public class RecordsDeletionService extends Service {
     public static final String EXTRA_DELETE_ITEMS_JSON = "delete_items_json";
     public static final String EXTRA_SESSION_ID = "delete_session_id";
     public static final String EXTRA_OPERATION_KIND = "operation_kind";
+    public static final String EXTRA_CUSTOM_TREE_URI = "custom_tree_uri";
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
     private final AtomicBoolean cancelRequested = new AtomicBoolean(false);
@@ -89,11 +91,12 @@ public class RecordsDeletionService extends Service {
                 intent.getStringExtra(EXTRA_OPERATION_KIND),
                 action
         );
+        String customTreeUri = intent.getStringExtra(EXTRA_CUSTOM_TREE_URI);
 
         if (ACTION_APPEND_TO_DELETE_SESSION.equals(action)) {
-            appendItems(items, operationKind);
+            appendItems(items, operationKind, customTreeUri);
         } else {
-            startOrReplaceSession(items, operationKind);
+            startOrReplaceSession(items, operationKind, customTreeUri);
         }
 
         maybeResumeProcessing(startId);
@@ -119,7 +122,7 @@ public class RecordsDeletionService extends Service {
             @NonNull android.content.Context context,
             @NonNull List<RecordsDeletionRequestItem> items
     ) {
-        startSession(context, items, RecordsDeletionSessionSnapshot.OperationKind.DELETE);
+        startSession(context, items, RecordsDeletionSessionSnapshot.OperationKind.DELETE, null);
     }
 
     public static void startSaveSession(
@@ -132,14 +135,35 @@ public class RecordsDeletionService extends Service {
                 items,
                 moveToGallery
                         ? RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY
-                        : RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY
+                        : RecordsDeletionSessionSnapshot.OperationKind.SAVE_COPY_TO_GALLERY,
+                null
+        );
+    }
+
+    /**
+     * Start an export session to a custom tree URI (from DocumentsProvider picker).
+     * @param context The application context
+     * @param items The files to export
+     * @param customTreeUri The tree URI from OpenDocumentTree picker (e.g., content://com.android.externalstorage.documents/...)
+     */
+    public static void startExportSession(
+            @NonNull android.content.Context context,
+            @NonNull List<RecordsDeletionRequestItem> items,
+            @NonNull android.net.Uri customTreeUri
+    ) {
+        startSession(
+                context,
+                items,
+                RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE,
+                customTreeUri.toString()
         );
     }
 
     private static void startSession(
             @NonNull android.content.Context context,
             @NonNull List<RecordsDeletionRequestItem> items,
-            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind
+            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind,
+            @Nullable String customTreeUri
     ) {
         String action = ACTION_START_DELETE_SESSION;
         RecordsDeletionSessionSnapshot snapshot = new RecordsDeletionSessionStore(context).read();
@@ -150,6 +174,9 @@ public class RecordsDeletionService extends Service {
         intent.setAction(action);
         intent.putExtra(EXTRA_DELETE_ITEMS_JSON, RecordsDeletionRequestItem.toJson(items));
         intent.putExtra(EXTRA_OPERATION_KIND, operationKind.name());
+        if (customTreeUri != null) {
+            intent.putExtra(EXTRA_CUSTOM_TREE_URI, customTreeUri);
+        }
         ContextCompat.startForegroundService(context, intent);
     }
 
@@ -175,7 +202,8 @@ public class RecordsDeletionService extends Service {
 
     private void startOrReplaceSession(
             @NonNull List<RecordsDeletionRequestItem> items,
-            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind
+            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind,
+            @Nullable String customTreeUri
     ) {
         if (items.isEmpty()) {
             return;
@@ -193,13 +221,17 @@ public class RecordsDeletionService extends Service {
             return;
         }
         RecordsDeletionSessionSnapshot snapshot = RecordsDeletionSessionSnapshot.create(items, operationKind);
+        if (customTreeUri != null) {
+            snapshot.customTreeUri = customTreeUri;
+        }
         sessionStore.write(snapshot);
         publishSnapshot(snapshot, false, false, false);
     }
 
     private void appendItems(
             @NonNull List<RecordsDeletionRequestItem> items,
-            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind
+            @NonNull RecordsDeletionSessionSnapshot.OperationKind operationKind,
+            @Nullable String customTreeUri
     ) {
         if (items.isEmpty()) {
             return;
@@ -208,6 +240,9 @@ public class RecordsDeletionService extends Service {
         RecordsDeletionSessionSnapshot snapshot = sessionStore.read();
         if (snapshot == null || snapshot.isFinished()) {
             snapshot = RecordsDeletionSessionSnapshot.create(items, operationKind);
+            if (customTreeUri != null) {
+                snapshot.customTreeUri = customTreeUri;
+            }
         } else if (snapshot.operationKind != operationKind) {
             return;
         } else {
@@ -374,6 +409,12 @@ public class RecordsDeletionService extends Service {
             if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.DELETE) {
                 boolean success = processDeleteItemAsync(snapshot, item);
                 return new ProcessResult(item, success, success ? null : "Delete failed");
+            } else if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
+                if (snapshot.customTreeUri == null) {
+                    return new ProcessResult(item, false, "No export destination specified");
+                }
+                boolean success = processExportItemAsync(snapshot, item, snapshot.customTreeUri);
+                return new ProcessResult(item, success, success ? null : "Export failed");
             } else {
                 boolean success = processSaveItemAsync(snapshot, item,
                         snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY);
@@ -444,20 +485,137 @@ public class RecordsDeletionService extends Service {
             Utils.scanFileWithMediaStore(this, destination.getAbsolutePath());
 
             if (moveToGallery) {
-                boolean deletedOriginal = false;
-                if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
-                    File sourceFile = new File(uri.getPath());
-                    deletedOriginal = !sourceFile.exists() || sourceFile.delete();
-                } else {
-                    deletedOriginal = getContentResolver().delete(uri, null, null) > 0;
-                }
-                return deletedOriginal;
+                // For MOVE operations, deletion is required for success
+                return deleteOriginalFile(uri);
             }
+            // For COPY operations, copy succeeded even if we can't delete the original
             return true;
         } catch (Exception e) {
             FLog.w(TAG, "processSaveItemAsync failed for " + item.uriString, e);
             return false;
         }
+    }
+
+    /**
+     * Delete the original file after moving to gallery.
+     * For file:// URIs, directly delete the file.
+     * For SAF URIs (content://), use DocumentsContract.deleteDocument() which is the official API.
+     *
+     * @return true if deletion succeeded, false otherwise
+     */
+    private boolean deleteOriginalFile(@NonNull Uri uri) {
+        if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+            // Local file system - direct deletion
+            File sourceFile = new File(uri.getPath());
+            boolean deleted = !sourceFile.exists() || sourceFile.delete();
+            if (!deleted) {
+                FLog.w(TAG, "deleteOriginalFile: Failed to delete local file: " + uri.getPath());
+            }
+            return deleted;
+        } else {
+            // SAF URI (content://) - use official DocumentsContract.deleteDocument()
+            // This is the proper API for deleting document provider URIs
+            try {
+                boolean deleted = DocumentsContract.deleteDocument(getContentResolver(), uri);
+                if (deleted) {
+                    FLog.d(TAG, "deleteOriginalFile: Successfully deleted SAF URI via DocumentsContract: " + uri);
+                    return true;
+                } else {
+                    FLog.w(TAG, "deleteOriginalFile: DocumentsContract.deleteDocument returned false for: " + uri);
+                    return false;
+                }
+            } catch (UnsupportedOperationException e) {
+                // Some document providers don't support delete operation
+                FLog.w(TAG, "deleteOriginalFile: Provider doesn't support delete for: " + uri, e);
+                return false;
+            } catch (SecurityException e) {
+                // Insufficient permissions to delete
+                FLog.w(TAG, "deleteOriginalFile: Permission denied to delete: " + uri, e);
+                return false;
+            } catch (Exception e) {
+                // Other unexpected errors
+                FLog.e(TAG, "deleteOriginalFile: Unexpected error deleting: " + uri, e);
+                return false;
+            }
+        }
+    }
+
+    private boolean processExportItemAsync(
+            @NonNull RecordsDeletionSessionSnapshot snapshot,
+            @NonNull RecordsDeletionRequestItem item,
+            @NonNull String customTreeUriString
+    ) {
+        Uri sourceUri = item.toUri();
+        if (sourceUri == null) {
+            return false;
+        }
+
+        try {
+            Uri treeUri = Uri.parse(customTreeUriString);
+            androidx.documentfile.provider.DocumentFile targetDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri);
+            if (targetDir == null || !targetDir.isDirectory() || !targetDir.canWrite()) {
+                FLog.e(TAG, "processExportItemAsync: Invalid target directory");
+                return false;
+            }
+
+            // Create unique file in target directory
+            androidx.documentfile.provider.DocumentFile targetFile = createUniqueSafFile(targetDir, item.displayName);
+            if (targetFile == null) {
+                return false;
+            }
+
+            try (InputStream in = getContentResolver().openInputStream(sourceUri);
+                 OutputStream out = getContentResolver().openOutputStream(targetFile.getUri(), "w")) {
+                if (in == null || out == null) {
+                    return false;
+                }
+
+                byte[] buffer = new byte[16 * 1024];
+                int read;
+
+                while ((read = in.read(buffer)) != -1) {
+                    if (cancelRequested.get()) {
+                        throw new CancellationSignalException();
+                    }
+                    out.write(buffer, 0, read);
+                }
+                out.flush();
+            }
+
+            FLog.d(TAG, "processExportItemAsync: Successfully exported " + item.displayName);
+            return true;
+        } catch (Exception e) {
+            FLog.w(TAG, "processExportItemAsync failed for " + item.uriString, e);
+            return false;
+        }
+    }
+
+    @Nullable
+    private androidx.documentfile.provider.DocumentFile createUniqueSafFile(@NonNull androidx.documentfile.provider.DocumentFile targetDir, @NonNull String originalName) {
+        String base = originalName;
+        String ext = "";
+        int dot = originalName.lastIndexOf('.');
+        if (dot > 0) {
+            base = originalName.substring(0, dot);
+            ext = originalName.substring(dot);
+        }
+
+        // Try original name first
+        androidx.documentfile.provider.DocumentFile file = targetDir.createFile("*/*", originalName);
+        if (file != null) {
+            return file;
+        }
+
+        // If exists, try with number suffix
+        for (int i = 1; i <= 100; i++) {
+            String uniqueName = base + "_" + i + ext;
+            file = targetDir.createFile("*/*", uniqueName);
+            if (file != null) {
+                return file;
+            }
+        }
+
+        return null;
     }
 
     private void markFailed(

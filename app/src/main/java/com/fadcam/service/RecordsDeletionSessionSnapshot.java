@@ -26,7 +26,8 @@ public class RecordsDeletionSessionSnapshot {
     public enum OperationKind {
         DELETE,
         SAVE_COPY_TO_GALLERY,
-        SAVE_MOVE_TO_GALLERY
+        SAVE_MOVE_TO_GALLERY,
+        SAVE_EXPORT_TO_CUSTOM_TREE
     }
 
     @NonNull public String sessionId = UUID.randomUUID().toString();
@@ -47,6 +48,7 @@ public class RecordsDeletionSessionSnapshot {
     @NonNull public List<String> completedUriStrings = new ArrayList<>();
     @NonNull public List<String> failedUriStrings = new ArrayList<>();
     @NonNull public List<String> errorSummaries = new ArrayList<>();
+    @Nullable public String customTreeUri;  // For SAVE_EXPORT_TO_CUSTOM_TREE operations
 
     public boolean isActive() {
         return state == State.QUEUED || state == State.RUNNING;
