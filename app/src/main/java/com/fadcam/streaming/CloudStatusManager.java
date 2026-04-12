@@ -256,7 +256,12 @@ public class CloudStatusManager {
         if (!isRunning) {
             return;
         }
-        
+
+        // Push a final offline status to the relay BEFORE stopping the loops.
+        // This lets the dashboard know immediately that the server is offline,
+        // rather than waiting for the staleness threshold to expire.
+        pushFinalOfflineStatus();
+
         isRunning = false;
         
         if (statusRunnable != null) {
@@ -290,7 +295,31 @@ public class CloudStatusManager {
     // =========================================================================
     // Status Push
     // =========================================================================
-    
+
+    /**
+     * Push a single "server offline" status synchronously (fire-and-forget on executor).
+     * Called right before the polling loops are torn down so the relay gets an immediate
+     * update instead of waiting for the dashboard staleness timeout.
+     */
+    private void pushFinalOfflineStatus() {
+        String userUuid = authManager.getUserId();
+        String deviceId = getDeviceId();
+        String streamToken = authManager.getStreamToken();
+
+        if (userUuid == null || deviceId == null || streamToken == null) {
+            FLog.w(TAG, "☁️ Cannot push offline status — missing credentials");
+            return;
+        }
+
+        // Minimal offline JSON that the dashboard can parse immediately
+        String offlineJson = "{\"streaming\":false,\"state\":\"offline\",\"message\":\"Server stopped.\","
+                + "\"lastUpdated\":" + System.currentTimeMillis() + ","
+                + "\"serverVersion\":\"2.0.0\"}";
+
+        FLog.i(TAG, "☁️ Pushing final offline status before shutdown");
+        doPushStatus(offlineJson, userUuid, deviceId, streamToken);
+    }
+
     /**
      * Push current device status to relay server.
      * Uses RemoteStreamManager to get status JSON.
@@ -356,6 +385,11 @@ public class CloudStatusManager {
         if (consecutiveFailures > 0) {
             FLog.i(TAG, "☁️ ✅ Status push RECOVERED after " + consecutiveFailures + " failures (was offline for " + 
                     ((System.currentTimeMillis() - lastSuccessfulPushTime) / 1000) + "s)");
+            // Internet just came back — schedule an immediate extra push so the relay
+            // gets the latest status ASAP instead of waiting for the next 2s interval.
+            handler.post(() -> {
+                if (isRunning) pushStatus();
+            });
         }
         consecutiveFailures = 0;
         currentBackoffMs = STATUS_PUSH_INTERVAL_MS;

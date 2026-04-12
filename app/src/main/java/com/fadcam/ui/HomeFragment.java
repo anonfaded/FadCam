@@ -9398,10 +9398,19 @@ public class HomeFragment extends BaseFragment {
 
                 android.content.SharedPreferences.Editor editor = prefs.edit();
                 editor.putBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, "both".equals(sel));
-                editor.putString(Constants.PREF_SELECTED_TORCH_SOURCE, "both".equals(sel) ? null : sel);
+                // Map descriptive labels back to actual camera IDs for CameraManager.setTorchMode()
+                String torchIdToSave;
+                if ("back".equals(sel)) {
+                    torchIdToSave = fBackId;    // e.g. "0"
+                } else if ("front".equals(sel)) {
+                    torchIdToSave = fFrontId;   // e.g. "2"
+                } else {
+                    torchIdToSave = null;        // "both" mode — TorchService iterates all
+                }
+                editor.putString(Constants.PREF_SELECTED_TORCH_SOURCE, torchIdToSave);
                 editor.apply();
 
-                FLog.d(TAG, "Saved torch settings - Both: " + "both".equals(sel) + ", Source: " + sel);
+                FLog.d(TAG, "Saved torch settings - Both: " + "both".equals(sel) + ", Source: " + sel + ", CameraId: " + torchIdToSave);
                 Toast.makeText(requireContext(), "Torch: " + sel, Toast.LENGTH_SHORT).show();
             });
 

@@ -376,9 +376,8 @@ class ServerStatus {
     static get STALENESS_THRESHOLDS() {
         return {
             FRESH: 5000,      // < 5s = green (fresh)
-            DELAYED: 15000,   // 5-15s = yellow (delayed)
-            STALE: 30000,     // 15-30s = orange (stale)
-            OFFLINE: 120000   // > 120s = red (offline) — generous to tolerate upload lag
+            DELAYED: 10000,   // 5-10s = yellow (delayed — network blip)
+            OFFLINE: 10000    // >= 10s = red (offline) — phone pushes every 2s, 5 missed = definitely offline
         };
     }
 
@@ -410,20 +409,19 @@ class ServerStatus {
 
         if (age < t.FRESH) return 'fresh';
         if (age < t.DELAYED) return 'delayed';
-        if (age < t.STALE) return 'stale';
-        return 'offline';
+        return 'offline'; // >= OFFLINE threshold — clear UI immediately
     }
 
     /**
-     * Check if status is stale (> 30 seconds old)
+     * Check if status is stale (older than OFFLINE threshold)
      * @returns {boolean}
      */
     isStale() {
-        return this.getStatusAge() > ServerStatus.STALENESS_THRESHOLDS.OFFLINE;
+        return this.getStatusAge() >= ServerStatus.STALENESS_THRESHOLDS.OFFLINE;
     }
 
     /**
-     * Check if status is considered online (< 30 seconds old)
+     * Check if status is considered online (fresh enough)
      * @returns {boolean}
      */
     isOnline() {
